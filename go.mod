@@ -48,7 +48,7 @@ require (
 
 require (
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20231129132054-db03580cfec3
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20231231133915-5daca018774b
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
 	github.com/modern-go/reflect2 v1.0.2

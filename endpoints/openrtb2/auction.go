@@ -1010,10 +1010,10 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 		}
 	}
 
-	{
-	"ow_magnite": "rtbbidder",
-	"mag1": "ow_magnite",
-	}
+	// {
+	// "ow_magnite": "rtbbidder",
+	// "mag1": "ow_magnite",
+	// }
 	return nil
 }
 
