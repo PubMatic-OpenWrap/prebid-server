@@ -14,6 +14,8 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -443,5 +445,172 @@ func TestRestoreBidResponse(t *testing.T) {
 			}
 			assert.Equal(t, tt.want, tt.args.ao.Response, tt.name)
 		})
+	}
+}
+
+func TestSetWakandaWinningBidFlag(t *testing.T) {
+	type args struct {
+		wakandaDebug *wakanda.Debug
+		response     *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "all_empty_parameters",
+			args: args{},
+			want: false,
+		},
+		{
+			name: "only_wakanda_empty",
+			args: args{
+				wakandaDebug: nil,
+				response:     &openrtb2.BidResponse{},
+			},
+			want: false,
+		},
+		{
+			name: "only_response_empty",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response:     nil,
+			},
+			want: false,
+		},
+		{
+			name: "no_seatbid",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response:     &openrtb2.BidResponse{},
+			},
+			want: false,
+		},
+		{
+			name: "no_bid",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "no_price",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{},
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "zero_price",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									Price: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setWakandaWinningBidFlag(tt.args.wakandaDebug, tt.args.response)
+			actual := false
+			if tt.args.wakandaDebug != nil {
+				actual = tt.args.wakandaDebug.DebugData.WinningBid
+			}
+			assert.Equal(t, tt.want, actual)
+		})
+	}
+}
+
+func TestSetWakandaObject(t *testing.T) {
+	testCases := []struct {
+		description string
+		rCtx        *models.RequestCtx
+		ao          *analytics.AuctionObject
+		loggerURL   string
+	}{
+		// {
+		// 	description: "rctx is empty",
+		// 	rCtx:        &models.RequestCtx{},
+		// 	ao:          &analytics.AuctionObject{},
+		// 	loggerURL:   "",
+		// },
+		{
+			description: "wakanda is disabled",
+			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
+			ao:          &analytics.AuctionObject{},
+			loggerURL:   "",
+		},
+		{
+			description: "wakanda is enabled",
+			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+			ao: &analytics.AuctionObject{
+				RequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{},
+				},
+				Response: &openrtb2.BidResponse{},
+			},
+			loggerURL: "",
+		},
+		{
+			description: "wakanda enabled with valid flow",
+			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+			ao: &analytics.AuctionObject{
+				RequestWrapper: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Imp: []openrtb2.Imp{
+							{
+								ID: "imp_1",
+							},
+						},
+					},
+				},
+				Response: &openrtb2.BidResponse{
+					ID:    "123",
+					BidID: "bid-id-1",
+					Cur:   "USD",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp_1",
+									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			loggerURL: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
+		},
+	}
+	for _, test := range testCases {
+		setWakandaObject(test.rCtx, test.ao, test.loggerURL)
 	}
 }

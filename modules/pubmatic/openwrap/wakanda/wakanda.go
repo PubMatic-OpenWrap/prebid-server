@@ -96,7 +96,6 @@ func Handler(config Wakanda) http.HandlerFunc {
 func InitWakanda(config Wakanda) {
 	wakandaRulesMap = getNewRulesMap(config)
 	setCommandHandler()
-
 }
 
 func setCommandHandler() {

@@ -3,9 +3,11 @@ package wakanda
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
 
 	"git.pubmatic.com/PubMatic/go-common/logger"
 )
@@ -17,6 +19,47 @@ type Debug struct {
 	DebugLevel  int
 	DebugData   DebugData
 	Config      Wakanda
+}
+
+type DebugInterface interface {
+	IsEnable() bool
+	SetHTTPRequestData(HTTPRequest *http.Request, HTTPRequestBody json.RawMessage)
+	SetHTTPResponseWriter(HTTPResponse http.ResponseWriter)
+	SetHTTPResponseBodyWriter(HTTPResponseBody string)
+	SetOpenRTB(OpenRTB *openrtb2.BidRequest)
+	SetLogger(Logger json.RawMessage)
+	SetWinningBid(WinningBid bool)
+	EnableIfRequired(pubIDStr string, profIDStr string)
+	WriteLogToFiles()
+}
+
+func (wD *Debug) IsEnable() bool {
+	return wD.Enabled
+}
+
+func (wD *Debug) SetHTTPRequestData(HTTPRequest *http.Request, HTTPRequestBody json.RawMessage) {
+	wD.DebugData.HTTPRequest = HTTPRequest
+	wD.DebugData.HTTPRequestBody = HTTPRequestBody
+}
+
+func (wD *Debug) SetHTTPResponseWriter(HTTPResponse http.ResponseWriter) {
+	wD.DebugData.HTTPResponse = HTTPResponse
+}
+
+func (wD *Debug) SetHTTPResponseBodyWriter(HTTPResponseBody string) {
+	wD.DebugData.HTTPResponseBody = HTTPResponseBody
+}
+
+func (wD *Debug) SetOpenRTB(OpenRTB *openrtb2.BidRequest) {
+	wD.DebugData.OpenRTB = OpenRTB
+}
+
+func (wD *Debug) SetLogger(Logger json.RawMessage) {
+	wD.DebugData.Logger = Logger
+}
+
+func (wD *Debug) SetWinningBid(WinningBid bool) {
+	wD.DebugData.WinningBid = WinningBid
 }
 
 // EnableIfRequired will check if rule is applicable or not

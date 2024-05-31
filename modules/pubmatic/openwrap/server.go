@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
-func initOpenWrapServer(cfg *config.Config) {
+func initOpenWrapServer(cfg *config.Config) *http.Server {
 	cfg.Wakanda.HostName = cfg.Server.HostName
 	cfg.Wakanda.DCName = cfg.Server.DCName
 	cfg.Wakanda.PodName = getPodName()
@@ -16,12 +16,16 @@ func initOpenWrapServer(cfg *config.Config) {
 	hbMux := http.NewServeMux()
 	hbMux.HandleFunc("/wakanda", wakanda.Handler(cfg.Wakanda))
 	srvInterface := ":" + cfg.Server.EndPoint
-	go startServer(srvInterface, hbMux)
+	server := &http.Server{
+		Handler: hbMux,
+		Addr:    srvInterface,
+	}
+	go startServer(server)
+	return server
 }
 
-var startServer = func(srvInterface string, hbMux *http.ServeMux) error {
-	if err := http.ListenAndServe(srvInterface, hbMux); err != nil {
+func startServer(server *http.Server) {
+	if err := server.ListenAndServe(); err != nil {
 		logger.Fatal("main.main:unable to start http server for /wakanda handler due to : %s", err.Error())
 	}
-	return nil
 }

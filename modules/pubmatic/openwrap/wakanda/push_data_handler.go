@@ -27,6 +27,7 @@ func send(destFileName, pubProfDir string, data []byte, cfg SFTP) error {
 	if err != nil {
 		return err
 	}
+	defer srcFile.Close()
 	srcFile.Write(data)
 	user := cfg.User
 	password := cfg.Password

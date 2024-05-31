@@ -105,7 +105,7 @@ type RequestCtx struct {
 	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
-	WakandaDebug           wakanda.Debug
+	WakandaDebug           wakanda.DebugInterface
 }
 
 type OwBid struct {

@@ -127,7 +127,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return 0, err
 		},
-		WakandaDebug: wakanda.Debug{
+		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
 	}
@@ -165,9 +165,8 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
-	if rCtx.WakandaDebug.Enabled {
-		rCtx.WakandaDebug.DebugData.HTTPRequest = payload.Request
-		rCtx.WakandaDebug.DebugData.HTTPRequestBody = payload.Body
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
 	}
 
 	result.Reject = false

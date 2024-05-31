@@ -16,7 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
-const ParseUrlFormat = "json"
+const parseUrlFormat = "json"
 
 // PrepareLoggerURL returns the url for OW logger call
 func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) string {
@@ -108,33 +108,33 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 }
 
 func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
-	if rCtx.WakandaDebug.Enabled {
-		setWakandaWinningBidFlag(&rCtx.WakandaDebug, ao.Response)
+	if rCtx.WakandaDebug.IsEnable() {
+		setWakandaWinningBidFlag(rCtx.WakandaDebug, ao.Response)
 		parseURL, err := url.Parse(loggerURL)
 		if err != nil {
 			glog.Error("Failed to parse loggerURL while setting wakanda object")
 		}
 		if parseURL != nil {
-			jsonParam := parseURL.Query().Get(ParseUrlFormat)
-			rCtx.WakandaDebug.DebugData.Logger = json.RawMessage(jsonParam)
+			jsonParam := parseURL.Query().Get(parseUrlFormat)
+			rCtx.WakandaDebug.SetLogger(json.RawMessage(jsonParam))
 		}
 		bytes, err := json.Marshal(ao.Response)
 		if err != nil {
 			glog.Error("Failed to marshal ao.Response while setting wakanda object")
 		}
-		rCtx.WakandaDebug.DebugData.HTTPResponseBody = string(bytes)
-		rCtx.WakandaDebug.DebugData.OpenRTB = ao.RequestWrapper.BidRequest
+		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
+		rCtx.WakandaDebug.SetOpenRTB(ao.RequestWrapper.BidRequest)
 		rCtx.WakandaDebug.WriteLogToFiles()
 	}
 }
 
 // setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
-func setWakandaWinningBidFlag(wakandaDebug *wakanda.Debug, response *openrtb2.BidResponse) {
+func setWakandaWinningBidFlag(wakandaDebug wakanda.DebugInterface, response *openrtb2.BidResponse) {
 	if response != nil {
 		if len(response.SeatBid) > 0 &&
 			len(response.SeatBid[0].Bid) > 0 &&
 			response.SeatBid[0].Bid[0].Price > 0 {
-			wakandaDebug.DebugData.WinningBid = true
+			wakandaDebug.SetWinningBid(true)
 		}
 	}
 }

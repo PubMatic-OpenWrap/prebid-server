@@ -67,4 +67,4 @@ mockgenpublisherfeature:
 
 mockgenwakanda: 
 	mkdir -p modules/pubmatic/openwrap/wakanda/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda Commands > modules/pubmatic/openwrap/wakanda/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda Commands,DebugInterface > modules/pubmatic/openwrap/wakanda/mock/mock.go
