@@ -136,7 +136,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 	}
 
-	for _, adButlerBid := range adButlerResp.Bids {
+	for index, adButlerBid := range adButlerResp.Bids {
 
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := requestImpID + "_" + strconv.Itoa(index+1)
