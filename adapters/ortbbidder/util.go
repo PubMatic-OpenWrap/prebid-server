@@ -1,5 +1,7 @@
 package ortbbidder
 
+import "github.com/prebid/prebid-server/v2/errortypes"
+
 /*
 setValue updates or creates a value in a node based on a specified location.
 The location is a string that specifies a path through the node hierarchy,
@@ -14,13 +16,13 @@ Arguments:
 Example:
   - location = imp.ext.adunitid; value = 123  ==> {"imp": {"ext" : {"adunitid":123}}}
 */
-func setValue(node map[string]any, locations []string, value any) bool {
+func setValue(requestNode, impNode map[string]any, locations []string, value any) bool {
 	if value == nil || len(locations) == 0 {
 		return false
 	}
 
 	lastNodeIndex := len(locations) - 1
-	currentNode := node
+	currentNode := requestNode
 
 	for index, loc := range locations {
 		if len(loc) == 0 { // if location part is empty string
@@ -30,7 +32,7 @@ func setValue(node map[string]any, locations []string, value any) bool {
 			currentNode[loc] = value
 			break
 		}
-		nextNode := getNode(currentNode, loc)
+		nextNode := getNode(currentNode, impNode, loc)
 		// not the last part, navigate deeper
 		if nextNode == nil {
 			// loc does not exist, set currentNode to a new node
@@ -49,15 +51,24 @@ func setValue(node map[string]any, locations []string, value any) bool {
 	return true
 }
 
-// getNode retrieves the value for a given key from a map with special handling for the "appsite" key
-func getNode(nodes map[string]any, key string) any {
+// getNode retrieves the value for a given key from a map with special handling for the "appsite", "imp" key
+func getNode(requestNode, impNode map[string]any, key string) any {
 	switch key {
 	case appsiteKey:
 		// if key is "appsite" and if nodes contains "site" object then return nodes["site"] else return nodes["app"]
-		if value, ok := nodes[siteKey]; ok {
+		if value, ok := requestNode[siteKey]; ok {
 			return value
 		}
-		return nodes[appKey]
+		return requestNode[appKey]
+	case impKey:
+		return impNode
 	}
-	return nodes[key]
+	return requestNode[key]
+}
+
+// newBadInputError returns the error of type bad-input
+func newBadInputError(message string) error {
+	return &errortypes.BadInput{
+		Message: message,
+	}
 }

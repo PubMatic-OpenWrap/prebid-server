@@ -1,7 +1,6 @@
 package ortbbidder
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
@@ -10,12 +9,15 @@ import (
 
 func TestSetRequestParams(t *testing.T) {
 	type args struct {
-		requestBody []byte
-		mapper      map[string]bidderparams.BidderParamMapper
+		request      map[string]any
+		imp          map[string]any
+		bidderParams map[string]any
+		paramsMapper map[string]bidderparams.BidderParamMapper
 	}
 	type want struct {
-		err         string
-		requestBody []byte
+		request      map[string]any
+		imp          map[string]any
+		bidderParams map[string]any
 	}
 	tests := []struct {
 		name string
@@ -23,235 +25,158 @@ func TestSetRequestParams(t *testing.T) {
 		want want
 	}{
 		{
-			name: "empty_mapper",
+			name: "bidder_param_missing",
 			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{}}}]}`),
+				request: map[string]any{
+					"id": "req_1",
+				},
+				imp: map[string]any{
+					"id": "imp_1",
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
+				paramsMapper: nil,
 			},
 			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{}}}]}`),
-			},
-		},
-		{
-			name: "nil_requestbody",
-			args: args{
-				requestBody: nil,
-				mapper: map[string]bidderparams.BidderParamMapper{
-					"adunit": {},
+				request: map[string]any{
+					"id": "req_1",
+				},
+				imp: map[string]any{
+					"id": "imp_1",
+				},
+				bidderParams: map[string]any{
+					"param": "value",
 				},
 			},
-			want: want{
-				err: "unexpected end of JSON input",
-			},
 		},
 		{
-			name: "requestbody_has_invalid_imps",
+			name: "request_level_param_set_successfully",
 			args: args{
-				requestBody: json.RawMessage(`{"imp":{"id":"1"}}`),
-				mapper: map[string]bidderparams.BidderParamMapper{
-					"adunit": {},
+				request: map[string]any{
+					"id": "req_1",
 				},
-			},
-			want: want{
-				err: "error:[invalid_imp_found_in_requestbody], imp:[map[id:1]]",
-			},
-		},
-		{
-			name: "missing_imp_ext",
-			args: args{
-				requestBody: json.RawMessage(`{"imp":[{}]}`),
-				mapper: map[string]bidderparams.BidderParamMapper{
-					"adunit": {},
+				imp: map[string]any{
+					"id": "imp_1",
 				},
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{}]}`),
-			},
-		},
-		{
-			name: "missing_bidder_in_imp_ext",
-			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{}}]}`),
-				mapper: map[string]bidderparams.BidderParamMapper{
-					"adunit": {},
+				bidderParams: map[string]any{
+					"param": "value",
 				},
+				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
+					mapper := bidderparams.BidderParamMapper{}
+					mapper.SetLocation([]string{"param"})
+					return map[string]bidderparams.BidderParamMapper{
+						"param": mapper,
+					}
+				}(),
 			},
 			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{}}]}`),
-			},
-		},
-		{
-			name: "missing_bidderparams_in_imp_ext",
-			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{}}}]}`),
-				mapper: map[string]bidderparams.BidderParamMapper{
-					"adunit": {},
+				request: map[string]any{
+					"param": "value",
+					"id":    "req_1",
 				},
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{}}}]}`),
+				imp: map[string]any{
+					"id": "imp_1",
+				},
+				bidderParams: map[string]any{},
 			},
 		},
 		{
-			name: "mapper_not_contains_bidder_param_location",
+			name: "imp_level_param_set_successfully",
 			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"ext"})
+				request: map[string]any{
+					"id": "req_1",
+				},
+				imp: map[string]any{
+					"id": "imp_1",
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
+				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
+					mapper := bidderparams.BidderParamMapper{}
+					mapper.SetLocation([]string{"imp", "param"})
 					return map[string]bidderparams.BidderParamMapper{
-						"slot": bpm,
+						"param": mapper,
 					}
 				}(),
 			},
 			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-			},
-		},
-		{
-			name: "mapper_contains_bidder_param_location",
-			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"ext", "adunit"})
-					return map[string]bidderparams.BidderParamMapper{
-						"adunit": bpm,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"ext":{"adunit":123},"imp":[{"ext":{"bidder":{}}}]}`),
-			},
-		},
-		{
-			name: "do_not_delete_bidder_param_if_failed_to_set_value",
-			args: args{
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"req", "", ""})
-					return map[string]bidderparams.BidderParamMapper{
-						"adunit": bpm,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123}}}]}`),
-			},
-		},
-		{
-			name: "set_multiple_bidder_params",
-			args: args{
-				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					adunit := bidderparams.BidderParamMapper{}
-					adunit.SetLocation([]string{"adunit", "id"})
-					slot := bidderparams.BidderParamMapper{}
-					slot.SetLocation([]string{"imp", "tagid"})
-					wrapper := bidderparams.BidderParamMapper{}
-					wrapper.SetLocation([]string{"app", "ext"})
-					return map[string]bidderparams.BidderParamMapper{
-						"adunit":  adunit,
-						"slot":    slot,
-						"wrapper": wrapper,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"adunit":{"id":123},"app":{"ext":{"profile":1,"pubid":5890},"name":"sampleapp"},"imp":[{"ext":{"bidder":{"paramWithoutLocation":"value"}},"tagid":"test_slot"}]}`),
-			},
-		},
-		{
-			name: "conditional_mapping_set_app_object",
-			args: args{
-				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"appsite", "wrapper"})
-					return map[string]bidderparams.BidderParamMapper{
-						"wrapper": bpm,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"app":{"name":"sampleapp","wrapper":{"profile":1,"pubid":5890}},"imp":[{"ext":{"bidder":{"adunit":123,"paramWithoutLocation":"value","slot":"test_slot"}},"tagid":"oldtagid"}]}`),
-			},
-		},
-		{
-			name: "conditional_mapping_set_site_object",
-			args: args{
-				requestBody: json.RawMessage(`{"site":{"name":"sampleapp"},"imp":[{"tagid":"oldtagid","ext":{"bidder":{"paramWithoutLocation":"value","adunit":123,"slot":"test_slot","wrapper":{"pubid":5890,"profile":1}}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"appsite", "wrapper"})
-					return map[string]bidderparams.BidderParamMapper{
-						"wrapper": bpm,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"imp":[{"ext":{"bidder":{"adunit":123,"paramWithoutLocation":"value","slot":"test_slot"}},"tagid":"oldtagid"}],"site":{"name":"sampleapp","wrapper":{"profile":1,"pubid":5890}}}`),
-			},
-		},
-		{
-			name: "multi_imps_bidder_params_mapping",
-			args: args{
-				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"tagid_1","ext":{"bidder":{"paramWithoutLocation":"value","adunit":111,"slot":"test_slot_1","wrapper":{"pubid":5890,"profile":1}}}},{"tagid":"tagid_2","ext":{"bidder":{"slot":"test_slot_2","adunit":222}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					adunit := bidderparams.BidderParamMapper{}
-					adunit.SetLocation([]string{"adunit", "id"})
-					slot := bidderparams.BidderParamMapper{}
-					slot.SetLocation([]string{"imp", "tagid"})
-					wrapper := bidderparams.BidderParamMapper{}
-					wrapper.SetLocation([]string{"app", "ext"})
-					return map[string]bidderparams.BidderParamMapper{
-						"adunit":  adunit,
-						"slot":    slot,
-						"wrapper": wrapper,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"adunit":{"id":222},"app":{"ext":{"profile":1,"pubid":5890},"name":"sampleapp"},"imp":[{"ext":{"bidder":{"paramWithoutLocation":"value"}},"tagid":"test_slot_1"},{"ext":{"bidder":{}},"tagid":"test_slot_2"}]}`),
-			},
-		},
-		{
-			name: "multi_imps_bidder_params_mapping_override_if_same_param_present",
-			args: args{
-				requestBody: json.RawMessage(`{"app":{"name":"sampleapp"},"imp":[{"tagid":"tagid_1","ext":{"bidder":{"paramWithoutLocation":"value","adunit":111}}},{"tagid":"tagid_2","ext":{"bidder":{"adunit":222}}}]}`),
-				mapper: func() map[string]bidderparams.BidderParamMapper {
-					bpm := bidderparams.BidderParamMapper{}
-					bpm.SetLocation([]string{"adunit", "id"})
-					return map[string]bidderparams.BidderParamMapper{
-						"adunit": bpm,
-					}
-				}(),
-			},
-			want: want{
-				err:         "",
-				requestBody: json.RawMessage(`{"adunit":{"id":222},"app":{"name":"sampleapp"},"imp":[{"ext":{"bidder":{"paramWithoutLocation":"value"}},"tagid":"tagid_1"},{"ext":{"bidder":{}},"tagid":"tagid_2"}]}`),
+				request: map[string]any{
+					"id": "req_1",
+				},
+				imp: map[string]any{
+					"param": "value",
+					"id":    "imp_1",
+				},
+				bidderParams: map[string]any{},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := setRequestParams(tt.args.requestBody, tt.args.mapper)
-			assert.Equal(t, string(tt.want.requestBody), string(got), "mismatched request body")
-			assert.Equal(t, len(tt.want.err) == 0, err == nil, "mismatched error")
-			if err != nil {
-				assert.Equal(t, err.Error(), tt.want.err, "mismatched error string")
-			}
+			setRequestParams(tt.args.request, tt.args.imp, tt.args.bidderParams, tt.args.paramsMapper)
+			assert.Equal(t, tt.want.bidderParams, tt.args.bidderParams, "mismatched bidderparams")
+			assert.Equal(t, tt.want.imp, tt.args.imp, "mismatched imp")
+			assert.Equal(t, tt.want.request, tt.args.request, "mismatched request")
+		})
+	}
+}
+
+func TestGetImpExtBidderParams(t *testing.T) {
+	type args struct {
+		imp map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "ext_key_absent_in_imp",
+			args: args{
+				imp: map[string]any{},
+			},
+			want: nil,
+		},
+		{
+			name: "invalid_ext_key_in_imp",
+			args: args{
+				imp: map[string]any{
+					"ext": "invalid",
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "bidder_key_absent_in_imp_ext",
+			args: args{
+				imp: map[string]any{
+					"ext": map[string]any{},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "bidder_key_present_in_imp_ext",
+			args: args{
+				imp: map[string]any{
+					"ext": map[string]any{
+						"bidder": map[string]any{
+							"param": "value",
+						},
+					},
+				},
+			},
+			want: map[string]any{
+				"param": "value",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getImpExtBidderParams(tt.args.imp)
+			assert.Equal(t, tt.want, got, "mismatched bidder-params")
 		})
 	}
 }

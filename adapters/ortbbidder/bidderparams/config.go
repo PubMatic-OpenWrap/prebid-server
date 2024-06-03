@@ -46,7 +46,7 @@ func (bcfg *BidderConfig) GetRequestParams(bidderName string) (map[string]Bidder
 	if bcfg == nil || len(bcfg.bidderConfigMap) == 0 {
 		return nil, false
 	}
-	bidderConfig, _ := bcfg.bidderConfigMap[bidderName]
+	bidderConfig := bcfg.bidderConfigMap[bidderName]
 	if bidderConfig == nil {
 		return nil, false
 	}
