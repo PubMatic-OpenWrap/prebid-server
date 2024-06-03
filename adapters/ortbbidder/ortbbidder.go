@@ -224,6 +224,7 @@ func (o *adapter) makeBids(response openrtb2.BidResponse, bidderResponse *adapte
 	return resp, err
 }
 
+// implementation using Parser
 func setResponseParams(responseBody, adapterResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parser Parser) ([]byte, error) {
 	if len(responseBody) == 0 || len(adapterResponseBody) == 0 {
 		return adapterResponseBody, nil
@@ -287,6 +288,7 @@ func setResponseParams(responseBody, adapterResponseBody json.RawMessage, respon
 	return json.Marshal(bidderResponse)
 }
 
+// implementation using ParamMapperFactory
 func setResponseParams1(responseBody, adapterResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory ParamMapperFactory) ([]byte, error) {
 	if len(responseBody) == 0 || len(adapterResponseBody) == 0 {
 		return adapterResponseBody, nil
