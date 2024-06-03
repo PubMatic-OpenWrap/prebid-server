@@ -44,12 +44,8 @@ func (p *ParserImpl) Fledge(currNode, newNode map[string]any, location []string)
 
 func getBidParamParser() map[string]ParserFunc {
 	return map[string]ParserFunc{
-		"mtype": func(p Parser, currNode, newNode map[string]any, location []string) {
-			p.MType(currNode, newNode, location)
-		},
-		"dur": func(p Parser, currNode, newNode map[string]any, location []string) {
-			p.Dur(currNode, newNode, location)
-		},
+		"mtype": Parser.MType,
+		"dur":   Parser.Dur,
 	}
 }
 
