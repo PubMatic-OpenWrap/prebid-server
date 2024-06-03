@@ -26,6 +26,7 @@ func Test_initOpenWrapServer(t *testing.T) {
 					Server: config.Server{
 						HostName: "localhost",
 						DCName:   "abcd",
+						EndPoint: "http://localhost:18012",
 					},
 				},
 			},
