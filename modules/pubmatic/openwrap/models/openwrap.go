@@ -159,11 +159,12 @@ type ImpCtx struct {
 	BidderError string
 
 	// CTV
-	AdpodConfig *AdPod
-	ImpAdPodCfg []*ImpAdPodConfig
-	BidIDToAPRC map[string]int64
-	AdserverURL string
-	BidIDToDur  map[string]int64
+	IsAdPodRequest bool
+	AdpodConfig    *AdPod
+	ImpAdPodCfg    []*ImpAdPodConfig
+	BidIDToAPRC    map[string]int64
+	AdserverURL    string
+	BidIDToDur     map[string]int64
 }
 
 type PartnerData struct {
