@@ -63,13 +63,24 @@ func getNode(nodes map[string]any, key string) any {
 }
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
-func getValueFromLocation(val map[string]any, location []string) (interface{}, bool) {
-	var ok bool
-	for _, loc := range location {
-		val, ok = val[loc].(map[string]interface{})
+// getValueFromLocation retrieves a value from a map based on a specified location.
+func getValueFromLocation(val map[string]interface{}, location []string) (interface{}, bool) {
+	var (
+		ok        bool
+		next      interface{}
+		lastIndex = len(location) - 1
+	)
+	for i, loc := range location {
+		next, ok = val[loc]
 		if !ok {
 			return nil, false
 		}
+		if i < lastIndex {
+			val, ok = next.(map[string]interface{})
+			if !ok {
+				return nil, false
+			}
+		}
 	}
-	return val, true
+	return next, true
 }
