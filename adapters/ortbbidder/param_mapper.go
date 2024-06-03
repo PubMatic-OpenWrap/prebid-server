@@ -1,7 +1,7 @@
 package ortbbidder
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type ParserFunc func(p Parser, currNode, newNode map[string]any, location []string)
