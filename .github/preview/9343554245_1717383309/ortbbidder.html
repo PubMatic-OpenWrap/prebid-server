@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>ortbbidder: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/ortbbidder.go (93.9%)</option>
+				
+				<option value="file1">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/requestParamMapper.go (100.0%)</option>
+				
+				<option value="file2">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/util.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package ortbbidder
+
+import (
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "strings"
+        "text/template"
+
+        "github.com/prebid/openrtb/v20/openrtb2"
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+        "github.com/prebid/prebid-server/v2/config"
+        "github.com/prebid/prebid-server/v2/macros"
+        "github.com/prebid/prebid-server/v2/openrtb_ext"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+// adapter implements adapters.Bidder interface
+type adapter struct {
+        adapterInfo
+        bidderParamsConfig *bidderparams.BidderConfig
+}
+
+// adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
+type adapterInfo struct {
+        config.Adapter
+        extraInfo        extraAdapterInfo
+        bidderName       openrtb_ext.BidderName
+        endpointTemplate *template.Template
+}
+type extraAdapterInfo struct {
+        RequestMode string `json:"requestMode"`
+}
+
+// global instance to hold bidderParamsConfig
+var g_bidderParamsConfig *bidderparams.BidderConfig
+
+// InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
+func InitBidderParamsConfig(dirPath string) (err error) <span class="cov8" title="1">{
+        g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+        return err
+}</span>
+
+// makeRequestForAllImps processes a request map to create single RequestData object for all impressions.
+// It constructs the endpoint URL and maps the request-params in request to form the RequestData object.
+func (adapterInfo adapterInfo) makeRequestForAllImps(request map[string]any, bidderParamMapper map[string]bidderparams.BidderParamMapper) ([]*adapters.RequestData, []error) <span class="cov8" title="1">{
+        imps, ok := request[impKey].([]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError("invalid imp object found in request")}
+        }</span>
+        <span class="cov8" title="1">var (
+                err  error
+                uri  string
+                errs []error
+        )
+        // iterate through imps in reverse order to ensure setRequestParams prioritizes
+        // the parameters from imp[0].ext.bidder over those from imp[1..N].ext.bidder.
+        for impIndex := len(imps) - 1; impIndex &gt;= 0; impIndex-- </span><span class="cov8" title="1">{
+                imp, ok := imps[impIndex].(map[string]any)
+                if !ok || imp == nil </span><span class="cov8" title="1">{
+                        errs = append(errs, newBadInputError(fmt.Sprintf("invalid imp object found at index:%d", impIndex)))
+                        continue</span>
+                }
+                <span class="cov8" title="1">bidderParams := getImpExtBidderParams(imp)
+                // build endpoint URL once, using the imp[0].ext.bidder parameters
+                // this must be done before calling setRequestParams, as it removes the imp.ext.bidder parameters.
+                if impIndex == 0 </span><span class="cov8" title="1">{
+                        uri, err = macros.ResolveMacros(adapterInfo.endpointTemplate, bidderParams)
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, []error{newBadInputError(fmt.Sprintf("failed to form endpoint url, err:%s", err.Error()))}
+                        }</span>
+                }
+                // update the request and imp object by mapping bidderParams at expected location.
+                <span class="cov8" title="1">setRequestParams(request, imp, bidderParams, bidderParamMapper)</span>
+        }
+        <span class="cov8" title="1">requestBody, err := jsonutil.Marshal(request)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, []error{newBadInputError(fmt.Sprintf("failed to marshal request after setting bidder-params, err:%s", err.Error()))}
+        }</span>
+        <span class="cov8" title="1">return []*adapters.RequestData{
+                {
+                        Method: http.MethodPost,
+                        Uri:    uri,
+                        Body:   requestBody,
+                        Headers: http.Header{
+                                "Content-Type": {"application/json;charset=utf-8"},
+                                "Accept":       {"application/json"},
+                        },
+                },
+        }, errs</span>
+}
+
+// makeRequestPerImp processes a request map to generate 'N' RequestData objects, one for each of the 'N' impressions.
+// It constructs the endpoint URL and maps the request parameters to create the RequestData objects.
+func (adapterInfo adapterInfo) makeRequestPerImp(request map[string]any, requestParams map[string]bidderparams.BidderParamMapper) ([]*adapters.RequestData, []error) <span class="cov8" title="1">{
+        imps, ok := request[impKey].([]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError("invalid imp object found in request")}
+        }</span>
+        <span class="cov8" title="1">var (
+                bidderParams map[string]any
+                requestData  []*adapters.RequestData
+                errs         []error
+        )
+        for impIndex, imp := range imps </span><span class="cov8" title="1">{
+                imp, ok := imp.(map[string]any)
+                if !ok || imp == nil </span><span class="cov8" title="1">{
+                        errs = append(errs, newBadInputError(fmt.Sprintf("invalid imp object found at index:%d", impIndex)))
+                        continue</span>
+                }
+                <span class="cov8" title="1">bidderParams = getImpExtBidderParams(imp)
+                // build endpoint url from imp.ext.bidder
+                // this must be done before calling setRequestParams, as it removes the imp.ext.bidder parameters.
+                uri, err := macros.ResolveMacros(adapterInfo.endpointTemplate, bidderParams)
+                if err != nil </span><span class="cov8" title="1">{
+                        errs = append(errs, newBadInputError(fmt.Sprintf("failed to form endpoint url for imp at index:%d, err:%s", impIndex, err.Error())))
+                        continue</span>
+                }
+                // update the request and imp object by mapping bidderParams at expected location.
+                <span class="cov8" title="1">setRequestParams(request, imp, bidderParams, requestParams)
+                // request should contain single impression so override the request["imp"] field
+                request[impKey] = []any{imp}
+
+                requestBody, err := jsonutil.Marshal(request)
+                if err != nil </span><span class="cov0" title="0">{
+                        errs = append(errs, newBadInputError(fmt.Sprintf("failed to marshal request after seeting bidder-params for imp at index:%d, err:%s", impIndex, err.Error())))
+                        continue</span>
+                }
+                <span class="cov8" title="1">requestData = append(requestData, &amp;adapters.RequestData{
+                        Method: http.MethodPost,
+                        Uri:    uri,
+                        Body:   requestBody,
+                        Headers: http.Header{
+                                "Content-Type": {"application/json;charset=utf-8"},
+                                "Accept":       {"application/json"},
+                        },
+                })</span>
+        }
+        <span class="cov8" title="1">return requestData, errs</span>
+}
+
+// Builder returns an instance of oRTB adapter
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) <span class="cov8" title="1">{
+        extraAdapterInfo := extraAdapterInfo{}
+        if len(config.ExtraAdapterInfo) &gt; 0 </span><span class="cov8" title="1">{
+                err := jsonutil.Unmarshal([]byte(config.ExtraAdapterInfo), &amp;extraAdapterInfo)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("failed to parse extra_info: %s", err.Error())
+                }</span>
+        }
+        <span class="cov8" title="1">template, err := template.New("endpointTemplate").Parse(config.Endpoint)
+        if err != nil || template == nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to parse endpoint url template: %v", err)
+        }</span>
+        <span class="cov8" title="1">return &amp;adapter{
+                adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName, template},
+                bidderParamsConfig: g_bidderParamsConfig,
+        }, nil</span>
+}
+
+// MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
+func (o *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) <span class="cov8" title="1">{
+        if bidRequest == nil </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError("found nil request")}
+        }</span>
+        <span class="cov8" title="1">if o.bidderParamsConfig == nil </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError("found nil bidderParamsConfig")}
+        }</span>
+        <span class="cov8" title="1">rawRequest, err := jsonutil.Marshal(bidRequest)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, []error{newBadInputError(fmt.Sprintf("failed to marshal request, err:%s", err.Error()))}
+        }</span>
+        <span class="cov8" title="1">var request map[string]any
+        err = jsonutil.Unmarshal(rawRequest, &amp;request)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, []error{newBadInputError(fmt.Sprintf("failed to unmarshal request, err:%s", err.Error()))}
+        }</span>
+        <span class="cov8" title="1">var (
+                requestData []*adapters.RequestData
+                errs        []error
+        )
+        requestParams, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
+        switch o.adapterInfo.extraInfo.RequestMode </span>{
+        case requestModeSingle:<span class="cov8" title="1">
+                requestData, errs = o.adapterInfo.makeRequestPerImp(request, requestParams)</span>
+        default:<span class="cov8" title="1">
+                requestData, errs = o.adapterInfo.makeRequestForAllImps(request, requestParams)</span>
+        }
+        <span class="cov8" title="1">return requestData, errs</span>
+}
+
+// MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
+func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) <span class="cov8" title="1">{
+        if responseData == nil || adapters.IsResponseStatusCodeNoContent(responseData) </span><span class="cov8" title="1">{
+                return nil, nil
+        }</span>
+
+        <span class="cov8" title="1">if err := adapters.CheckResponseStatusCodeForErrors(responseData); err != nil </span><span class="cov8" title="1">{
+                return nil, []error{err}
+        }</span>
+
+        <span class="cov8" title="1">var response openrtb2.BidResponse
+        if err := jsonutil.Unmarshal(responseData.Body, &amp;response); err != nil </span><span class="cov0" title="0">{
+                return nil, []error{err}
+        }</span>
+
+        <span class="cov8" title="1">bidResponse := adapters.BidderResponse{
+                Bids: make([]*adapters.TypedBid, 0),
+        }
+        for _, seatBid := range response.SeatBid </span><span class="cov8" title="1">{
+                for bidInd, bid := range seatBid.Bid </span><span class="cov8" title="1">{
+                        bidResponse.Bids = append(bidResponse.Bids, &amp;adapters.TypedBid{
+                                Bid:     &amp;seatBid.Bid[bidInd],
+                                BidType: getMediaTypeForBid(bid),
+                        })
+                }</span>
+        }
+        <span class="cov8" title="1">return &amp;bidResponse, nil</span>
+}
+
+// getMediaTypeForBid returns the BidType as per the bid.MType field
+// bid.MType has high priority over bidExt.Prebid.Type
+func getMediaTypeForBid(bid openrtb2.Bid) openrtb_ext.BidType <span class="cov8" title="1">{
+        var bidType openrtb_ext.BidType
+        if bid.MType &gt; 0 </span><span class="cov8" title="1">{
+                bidType = getMediaTypeForBidFromMType(bid.MType)
+        }</span> else<span class="cov8" title="1"> {
+                if bid.Ext != nil </span><span class="cov8" title="1">{
+                        var bidExt openrtb_ext.ExtBid
+                        err := json.Unmarshal(bid.Ext, &amp;bidExt)
+                        if err == nil &amp;&amp; bidExt.Prebid != nil </span><span class="cov8" title="1">{
+                                bidType, _ = openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">if bidType == "" </span>{<span class="cov8" title="1">
+                // TODO : detect mediatype from bid.AdM and request.imp parameter
+        }</span>
+        <span class="cov8" title="1">return bidType</span>
+}
+
+// getMediaTypeForBidFromMType returns the bidType from the MarkupType field
+func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType <span class="cov8" title="1">{
+        var bidType openrtb_ext.BidType
+        switch mtype </span>{
+        case openrtb2.MarkupBanner:<span class="cov8" title="1">
+                bidType = openrtb_ext.BidTypeBanner</span>
+        case openrtb2.MarkupVideo:<span class="cov8" title="1">
+                bidType = openrtb_ext.BidTypeVideo</span>
+        case openrtb2.MarkupAudio:<span class="cov8" title="1">
+                bidType = openrtb_ext.BidTypeAudio</span>
+        case openrtb2.MarkupNative:<span class="cov8" title="1">
+                bidType = openrtb_ext.BidTypeNative</span>
+        }
+        <span class="cov8" title="1">return bidType</span>
+}
+
+// isORTBBidder returns true if the bidder is an oRTB bidder
+func isORTBBidder(bidderName string) bool <span class="cov8" title="1">{
+        return strings.HasPrefix(bidderName, "owortb_")
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package ortbbidder
+
+import (
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+)
+
+// setRequestParams updates the request and imp object by mapping bidderParams at expected location.
+func setRequestParams(request, imp, bidderParams map[string]any, paramsMapper map[string]bidderparams.BidderParamMapper) <span class="cov8" title="1">{
+        for paramName, paramValue := range bidderParams </span><span class="cov8" title="1">{
+                paramMapper, ok := paramsMapper[paramName]
+                if !ok </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+                // set the value in the request according to the mapping details
+                // remove the parameter from bidderParams after successful mapping
+                <span class="cov8" title="1">if setValue(request, imp, paramMapper.GetLocation(), paramValue) </span><span class="cov8" title="1">{
+                        delete(bidderParams, paramName)
+                }</span>
+        }
+}
+
+// getImpExtBidderParams returns imp.ext.bidder parameters
+func getImpExtBidderParams(imp map[string]any) map[string]any <span class="cov8" title="1">{
+        ext, ok := imp[extKey].(map[string]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">bidderParams, ok := ext[bidderKey].(map[string]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">return bidderParams</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package ortbbidder
+
+import "github.com/prebid/prebid-server/v2/errortypes"
+
+/*
+setValue updates or creates a value in a node based on a specified location.
+The location is a string that specifies a path through the node hierarchy,
+separated by dots ('.'). The value can be any type, and the function will
+create intermediate nodes as necessary if they do not exist.
+
+Arguments:
+- node: the root of the map in which to set the value
+- locations: slice of strings indicating the path to set the value.
+- value: The value to set at the specified location. Can be of any type.
+
+Example:
+  - location = imp.ext.adunitid; value = 123  ==&gt; {"imp": {"ext" : {"adunitid":123}}}
+*/
+func setValue(requestNode, impNode map[string]any, locations []string, value any) bool <span class="cov8" title="1">{
+        if value == nil || len(locations) == 0 </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">lastNodeIndex := len(locations) - 1
+        currentNode := requestNode
+
+        for index, loc := range locations </span><span class="cov8" title="1">{
+                if len(loc) == 0 </span><span class="cov8" title="1">{ // if location part is empty string
+                        return false
+                }</span>
+                <span class="cov8" title="1">if index == lastNodeIndex </span><span class="cov8" title="1">{ // if it's the last part in location, set the value
+                        currentNode[loc] = value
+                        break</span>
+                }
+                <span class="cov8" title="1">nextNode := getNode(currentNode, impNode, loc)
+                // not the last part, navigate deeper
+                if nextNode == nil </span><span class="cov8" title="1">{
+                        // loc does not exist, set currentNode to a new node
+                        newNode := make(map[string]any)
+                        currentNode[loc] = newNode
+                        currentNode = newNode
+                        continue</span>
+                }
+                // loc exists, set currentNode to nextNode
+                <span class="cov8" title="1">nextNodeTyped, ok := nextNode.(map[string]any)
+                if !ok </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+                <span class="cov8" title="1">currentNode = nextNodeTyped</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+// getNode retrieves the value for a given key from a map with special handling for the "appsite", "imp" key
+func getNode(requestNode, impNode map[string]any, key string) any <span class="cov8" title="1">{
+        switch key </span>{
+        case appsiteKey:<span class="cov8" title="1">
+                // if key is "appsite" and if nodes contains "site" object then return nodes["site"] else return nodes["app"]
+                if value, ok := requestNode[siteKey]; ok </span><span class="cov8" title="1">{
+                        return value
+                }</span>
+                <span class="cov8" title="1">return requestNode[appKey]</span>
+        case impKey:<span class="cov8" title="1">
+                return impNode</span>
+        }
+        <span class="cov8" title="1">return requestNode[key]</span>
+}
+
+// newBadInputError returns the error of type bad-input
+func newBadInputError(message string) error <span class="cov8" title="1">{
+        return &amp;errortypes.BadInput{
+                Message: message,
+        }
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
