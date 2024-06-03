@@ -68,7 +68,7 @@ func (a *CriteoRetailAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo
 	// Add other fields as needed
 
 	for key, value := range bidderParams {
-		values.Add(key, fmt.Sprintf("%v", value))
+		values.Set(key, fmt.Sprintf("%v", value))
 	}
 	
 	criteoQueryString := values.Encode()
@@ -91,5 +91,6 @@ func (a *CriteoRetailAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo
 	}
 
 }
+
 
 
