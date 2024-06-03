@@ -139,6 +139,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 	for _, adButlerBid := range adButlerResp.Bids {
 
 		bidID := adapters.GenerateUniqueBidIDComm()
+		impID := requestImpID + "_" + strconv.Itoa(index+1)
 		bidPrice := adButlerBid.CPCBid
 		campaignID := strconv.FormatInt(adButlerBid.CampaignID, 10)
 		clickPrice := adButlerBid.CPCSpend
@@ -197,6 +198,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
+			ImpID: impID,
 			Price: bidPrice,
 			CID:   campaignID,
 			NURL:  impressionUrl,

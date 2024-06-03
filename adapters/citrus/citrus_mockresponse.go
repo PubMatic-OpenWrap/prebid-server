@@ -80,7 +80,7 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 	for i := 1; i <= requestCount; i++ {
 		productid := GetRandomProductID()
 		bidID := adapters.GenerateUniqueBidIDComm()
-
+		impID := ImpID + "_" + strconv.Itoa(i)
 		impressionURL := TRACKING_IMPURL + TRACKINGID + "_" + strconv.Itoa(i)
 		clickURL := TRACKING_CLKURL + TRACKINGID + "_" + strconv.Itoa(i)
 
@@ -96,6 +96,7 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
+			ImpID: impID,
 			NURL: impressionURL,
 		}
 

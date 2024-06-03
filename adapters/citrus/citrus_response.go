@@ -89,6 +89,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 	for _, ad := range citrusResponse.Ads {
 		bidID := adapters.GenerateUniqueBidIDComm()
+		impID := requestImpID + "_" + strconv.Itoa(index)
 		productID := ad[PRODUCT_ID].(string)
 		bidTrackingID := ad[TRACKING_ID].(string)
 
@@ -120,6 +121,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 
 		bid := &openrtb2.Bid{
 			ID:    bidID,
+			ImpID: impID,
 			NURL:  impressionURL,
 		}
 
