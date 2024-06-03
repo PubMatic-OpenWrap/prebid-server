@@ -10,6 +10,7 @@ var ProfileTypePlatform = map[string]int{
 
 // App integration path
 var AppIntegrationPath map[string]int = map[string]int{
+	"iOS":                 1,
 	"Android":             2,
 	"React Native Plugin": 3,
 	"Flutter Plugin":      4,
