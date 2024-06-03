@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"net/http"
+	"strings"
 
 	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
@@ -16,9 +17,10 @@ func initOpenWrapServer(cfg *config.Config) *http.Server {
 	hbMux := http.NewServeMux()
 	hbMux.HandleFunc("/wakanda", wakanda.Handler(cfg.Wakanda))
 	srvInterface := ":" + cfg.Server.EndPoint
+	trimmedSrvInterface := strings.TrimPrefix(srvInterface, "http://")
 	server := &http.Server{
 		Handler: hbMux,
-		Addr:    srvInterface,
+		Addr:    trimmedSrvInterface,
 	}
 	go startServer(server)
 	return server
