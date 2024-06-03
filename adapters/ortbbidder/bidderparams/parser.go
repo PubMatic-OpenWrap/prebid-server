@@ -14,31 +14,101 @@ const (
 )
 
 // LoadBidderConfig creates a bidderConfig from JSON files specified in dirPath directory.
-func LoadBidderConfig(dirPath string, isBidderAllowed func(string) bool) (*BidderConfig, error) {
-	files, err := os.ReadDir(dirPath)
-	if err != nil {
-		return nil, fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), dirPath)
-	}
+// func LoadBidderConfig(requestParamsDirPath, responseParamsDirPath string, isBidderAllowed func(string) bool) (*BidderConfig, error) {
+// 	bidderConfigMap := &BidderConfig{bidderConfigMap: make(map[string]*config)}
+// 	files, err := os.ReadDir(requestParamsDirPath)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), requestParamsDirPath)
+// 	}
+
+// 	for _, file := range files {
+// 		bidderName, ok := strings.CutSuffix(file.Name(), ".json")
+// 		if !ok {
+// 			return nil, fmt.Errorf("error:[invalid_json_file_name] filename:[%s]", file.Name())
+// 		}
+// 		if !isBidderAllowed(bidderName) {
+// 			continue
+// 		}
+// 		requestParamsConfig, err := readFile(requestParamsDirPath, file.Name())
+// 		if err != nil {
+// 			return nil, fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", requestParamsDirPath, file.Name(), err.Error())
+// 		}
+// 		requestParams, err := prepareRequestParams(bidderName, requestParamsConfig)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		bidderConfigMap.setRequestParams(bidderName, requestParams)
+// 	}
+
+// 	files, err = os.ReadDir(responseParamsDirPath)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), responseParamsDirPath)
+// 	}
+// 	for _, file := range files {
+// 		bidderName, ok := strings.CutSuffix(file.Name(), ".json")
+// 		if !ok {
+// 			return nil, fmt.Errorf("error:[invalid_json_file_name] filename:[%s]", file.Name())
+// 		}
+// 		if !isBidderAllowed(bidderName) {
+// 			continue
+// 		}
+// 		responseParamsConfig, err := readFile(responseParamsDirPath, file.Name())
+// 		if err != nil {
+// 			return nil, fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", responseParamsDirPath, file.Name(), err.Error())
+// 		}
+// 		requestParams, err := prepareRequestParams(bidderName, responseParamsConfig)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		bidderConfigMap.setResponseParams(bidderName, requestParams)
+// 	}
+
+// 	return bidderConfigMap, nil
+// }
+
+// LoadBidderConfig creates a bidderConfig from JSON files specified in dirPath directory.
+func LoadBidderConfig(requestParamsDirPath, responseParamsDirPath string, isBidderAllowed func(string) bool) (*BidderConfig, error) {
 	bidderConfigMap := &BidderConfig{bidderConfigMap: make(map[string]*config)}
+
+	err := processParams(requestParamsDirPath, bidderConfigMap.setRequestParams, isBidderAllowed)
+	if err != nil {
+		return nil, err
+	}
+
+	err = processParams(responseParamsDirPath, bidderConfigMap.setResponseParams, isBidderAllowed)
+	if err != nil {
+		return nil, err
+	}
+
+	return bidderConfigMap, nil
+}
+
+func processParams(paramsDirPath string, setParams func(string, map[string]BidderParamMapper), isBidderAllowed func(string) bool) error {
+	files, err := os.ReadDir(paramsDirPath)
+	if err != nil {
+		return fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), paramsDirPath)
+	}
+
 	for _, file := range files {
 		bidderName, ok := strings.CutSuffix(file.Name(), ".json")
 		if !ok {
-			return nil, fmt.Errorf("error:[invalid_json_file_name] filename:[%s]", file.Name())
+			return fmt.Errorf("error:[invalid_json_file_name] filename:[%s]", file.Name())
 		}
 		if !isBidderAllowed(bidderName) {
 			continue
 		}
-		requestParamsConfig, err := readFile(dirPath, file.Name())
+		paramsConfig, err := readFile(paramsDirPath, file.Name())
 		if err != nil {
-			return nil, fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", dirPath, file.Name(), err.Error())
+			return fmt.Errorf("error:[fail_to_read_file] dir:[%s] filename:[%s] err:[%s]", paramsDirPath, file.Name(), err.Error())
 		}
-		requestParams, err := prepareRequestParams(bidderName, requestParamsConfig)
+		params, err := prepareParams(bidderName, paramsConfig)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		bidderConfigMap.setRequestParams(bidderName, requestParams)
+		setParams(bidderName, params)
 	}
-	return bidderConfigMap, nil
+
+	return nil
 }
 
 // readFile reads the file from directory and unmarshals it into the map[string]any
@@ -53,9 +123,9 @@ func readFile(dirPath, file string) (map[string]any, error) {
 	return contentMap, err
 }
 
-// prepareRequestParams parse the requestParamsConfig and returns the requestParams
-func prepareRequestParams(bidderName string, requestParamsConfig map[string]any) (map[string]BidderParamMapper, error) {
-	params, found := requestParamsConfig[propertiesKey]
+// prepareParams parse the requestParamsConfig and returns the requestParams
+func prepareParams(bidderName string, paramsConfig map[string]any) (map[string]BidderParamMapper, error) {
+	params, found := paramsConfig[propertiesKey]
 	if !found {
 		return nil, nil
 	}
@@ -63,7 +133,7 @@ func prepareRequestParams(bidderName string, requestParamsConfig map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("error:[invalid_json_file_content_malformed_properties] bidderName:[%s]", bidderName)
 	}
-	requestParams := make(map[string]BidderParamMapper, len(paramsMap))
+	paramsCfg := make(map[string]BidderParamMapper, len(paramsMap))
 	for paramName, paramValue := range paramsMap {
 		paramValueMap, ok := paramValue.(map[string]any)
 		if !ok {
@@ -77,9 +147,9 @@ func prepareRequestParams(bidderName string, requestParamsConfig map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[%s] bidderParam:[%s]", bidderName, paramName)
 		}
-		requestParams[paramName] = BidderParamMapper{
+		paramsCfg[paramName] = BidderParamMapper{
 			location: strings.Split(locationStr, "."),
 		}
 	}
-	return requestParams, nil
+	return paramsCfg, nil
 }

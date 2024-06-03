@@ -17,6 +17,7 @@ import (
 type adapter struct {
 	adapterInfo
 	bidderParamsConfig *bidderparams.BidderConfig
+	parser             Parser
 }
 
 const (
@@ -37,8 +38,8 @@ type extraAdapterInfo struct {
 var g_bidderParamsConfig *bidderparams.BidderConfig
 
 // InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
-func InitBidderParamsConfig(dirPath string) (err error) {
-	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+func InitBidderParamsConfig(requestParamsDirPath, responseParamsDirPath string) (err error) {
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, isORTBBidder)
 	return err
 }
 
@@ -131,7 +132,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	bidResponse := adapters.BidderResponse{
+	bidResponse := &adapters.BidderResponse{
 		Bids: make([]*adapters.TypedBid, 0),
 	}
 	for _, seatBid := range response.SeatBid {
@@ -142,7 +143,12 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 			})
 		}
 	}
-	return &bidResponse, nil
+
+	bidResponse, err := o.makeBids(response, bidResponse)
+	if err != nil {
+		return nil, []error{err}
+	}
+	return bidResponse, nil
 }
 
 // getMediaTypeForBid returns the BidType as per the bid.MType field
@@ -185,4 +191,89 @@ func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType 
 // isORTBBidder returns true if the bidder is an oRTB bidder
 func isORTBBidder(bidderName string) bool {
 	return strings.HasPrefix(bidderName, "owortb_")
+}
+
+// MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
+func (o *adapter) makeBids(response openrtb2.BidResponse, bidderResponse *adapters.BidderResponse) (*adapters.BidderResponse, error) {
+	responseParmas, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ortb response %s", err.Error())
+	}
+
+	adapterResonseBytes, err := json.Marshal(bidderResponse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal ortb response %s", err.Error())
+	}
+
+	responseBytes, err = setResponseParams(responseBytes, adapterResonseBytes, responseParmas, o.parser)
+	if err != nil {
+		return bidderResponse, err
+	}
+
+	var resp *adapters.BidderResponse
+	err = json.Unmarshal(responseBytes, &resp)
+	return resp, err
+}
+
+func setResponseParams(responseBody, adapterResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parser Parser) ([]byte, error) {
+	if len(responseBody) == 0 || len(adapterResponseBody) == 0 {
+		return adapterResponseBody, nil
+	}
+
+	response := map[string]any{}
+	err := json.Unmarshal(responseBody, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	bidderResponse := map[string]any{}
+	err = json.Unmarshal(adapterResponseBody, &bidderResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	for paramName, callback := range getRequestParamParser() {
+		paramMapper, ok := responseParams[paramName]
+		if !ok {
+			continue
+		}
+		callback(parser, response, bidderResponse, paramMapper.GetLocation())
+	}
+
+	seatBids, ok := response["seatbid"].([]any)
+	if !ok {
+		return nil, fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", response["seatbid"])
+	}
+	index := 0
+	for _, seatBid := range seatBids {
+		seatBid, ok := seatBid.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("error:[invalid_seatbid_found_in_seatbids], seatbid:[%v]", seatBids)
+		}
+
+		bids, ok := seatBid["bid"].([]any)
+		if !ok {
+			return nil, fmt.Errorf("error:[invalid_bid_found_in_seatbid], bid:[%v]", seatBid["bid"])
+		}
+
+		typeBids := bidderResponse["Bids"].([]any)
+		for _, bid := range bids {
+			bid, ok := bid.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("error:[invalid_bid_found_in_bids], bid:[%v]", bid)
+			}
+
+			typeBid := typeBids[index]
+			for paramName, callback := range getBidParamParser() {
+				paramMapper, ok := responseParams[paramName]
+				if !ok {
+					continue
+				}
+				callback(parser, bid, typeBid.(map[string]any), paramMapper.GetLocation())
+			}
+		}
+	}
+
+	return json.Marshal(adapterResponseBody)
 }
