@@ -35,13 +35,15 @@ func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float
 	targeting[models.CreatePartnerKey(seat, models.PWT_ECPM)] = fmt.Sprintf("%.2f", ecpm)
 	targeting[models.CreatePartnerKey(seat, models.PWT_PLATFORM)] = getPlatformName(models.PLATFORM_APP)
 	targeting[models.CreatePartnerKey(seat, models.PWT_BIDSTATUS)] = "1"
+	if len(bid.DealID) != 0 {
+		targeting[models.CreatePartnerKey(seat, models.PWT_DEALID)] = bid.DealID
+	}
 	var priceBucketKey string
 	if priceGranularity != nil {
 		priceBucketKey = exchange.GetPriceBucketOW(bid.Price, *priceGranularity)
 	}
-	targeting[models.CreatePartnerKey(seat, models.PwtPb)] = priceBucketKey
-	if len(bid.DealID) != 0 {
-		targeting[models.CreatePartnerKey(seat, models.PWT_DEALID)] = bid.DealID
+	if len(priceBucketKey) != 0 {
+		targeting[models.CreatePartnerKey(seat, models.PwtPb)] = priceBucketKey
 	}
 
 	if isWinningBid {
@@ -54,7 +56,9 @@ func addInAppTargettingKeys(targeting map[string]string, seat string, ecpm float
 		if len(bid.DealID) != 0 {
 			targeting[models.PWT_DEALID] = bid.DealID
 		}
-		targeting[models.PwtPb] = priceBucketKey
+		if len(priceBucketKey) != 0 {
+			targeting[models.PwtPb] = priceBucketKey
+		}
 	}
 }
 
