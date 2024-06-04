@@ -370,8 +370,8 @@ func getAppPlatform(partnerConfigMap map[int]map[string]string) int {
 
 func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
-		if AppIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
-			return AppIntegrationPath
+		if appIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
+			return appIntegrationPath
 		}
 	}
 	return -1
@@ -379,8 +379,8 @@ func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 
 func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
 	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
-		if AppSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
-			return AppSubIntegrationPath
+		if appSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
+			return appSubIntegrationPath
 		}
 	}
 	if adserverStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {

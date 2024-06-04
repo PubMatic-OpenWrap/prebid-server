@@ -105,15 +105,9 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 }
 
 func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
-	if rctx.ProfileType > 0 {
-		wlog.ProfileType = rctx.ProfileType
-	}
-	if rctx.ProfileTypePlatform > 0 {
-		wlog.ProfileTypePlatform = rctx.ProfileTypePlatform
-	}
-	if rctx.AppPlatform > 0 {
-		wlog.AppPlatform = rctx.AppPlatform
-	}
+	wlog.ProfileType = rctx.ProfileType
+	wlog.ProfileTypePlatform = rctx.ProfileTypePlatform
+	wlog.AppPlatform = rctx.AppPlatform
 	if rctx.AppIntegrationPath != nil && *rctx.AppIntegrationPath >= 0 {
 		wlog.AppIntegrationPath = rctx.AppIntegrationPath
 	}
