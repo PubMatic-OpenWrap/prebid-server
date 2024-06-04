@@ -7,6 +7,7 @@ const (
 	ADAPTER_NAME                = "adapterName"
 	PREBID_PARTNER_NAME         = "prebidPartnerName"
 	BidderCode                  = "bidderCode"
+	BidderFilters               = "bidderFilters"
 	IsAlias                     = "isAlias"
 	PROTOCOL                    = "protocol"
 	SERVER_SIDE_FLAG            = "serverSideEnabled"
