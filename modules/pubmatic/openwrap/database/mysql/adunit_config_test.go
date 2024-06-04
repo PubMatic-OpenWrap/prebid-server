@@ -2,13 +2,14 @@ package mysql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,6 +48,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -72,6 +74,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -102,6 +105,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -132,6 +136,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigForLiveVersion: "^SELECT (.+) FROM wrapper_media_config (.+) LIVE",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -157,6 +162,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -166,7 +172,17 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			want: &adunitconfig.AdUnitConfig{
 				ConfigPattern: "_DIV_",
 				Config: map[string]*adunitconfig.AdConfig{
-					"default": {BidFloor: ptrutil.ToPtr(3.1)},
+					"default": {
+						BidFloor: ptrutil.ToPtr(3.1),
+						BidderFilter: &adunitconfig.BidderFilter{
+							Filters: []adunitconfig.Filter{
+								{
+									Bidders:           []string{"A"},
+									BiddingConditions: json.RawMessage("\"{ \\\"in\\\": [{ \\\"var\\\": \\\"country\\\"}, [\\\"IND\\\"]]}\""),
+								},
+							},
+						},
+					},
 				},
 			},
 			wantErr: false,
@@ -175,7 +191,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern": "_DIV_", "config":{"default":{"bidfloor":3.1}}}`)
+				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern":"_DIV_","config":{"default":{"bidfloor":3.1,"bidderFilter":{"filterConfig":[{"bidders":["A"],"biddingConditions":"{ \"in\": [{ \"var\": \"country\"}, [\"IND\"]]}"}]}}}}`)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -187,6 +203,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -218,6 +235,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					Queries: config.Queries{
 						GetAdunitConfigQuery: "^SELECT (.+) FROM wrapper_media_config (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{

@@ -11,11 +11,11 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 var (
@@ -38,14 +38,14 @@ func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
 
 	for k, v := range result {
 		//sort.Slice(v[:], func(i, j int) bool { return v[i].Price > v[j].Price })
-		sortBids(v[:])
+		SortBids(v[:])
 		result[k] = v
 	}
 
 	return result
 }
 
-func sortBids(bids []*types.Bid) {
+func SortBids(bids []*types.Bid) {
 	sort.Slice(bids, func(i, j int) bool {
 		if bids[i].DealTierSatisfied == bids[j].DealTierSatisfied {
 			return bids[i].Price > bids[j].Price

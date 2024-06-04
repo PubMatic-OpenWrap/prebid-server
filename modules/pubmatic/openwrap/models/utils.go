@@ -13,10 +13,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 var videoRegex *regexp.Regexp
@@ -314,11 +314,11 @@ func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId s
 func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
 	// func (H, W, Div), no need to validate, will always be non-nil
 	switch kgp {
-	case "_AU_": // adunitconfig
+	case "_AU_", "_RE_": // adunitconfig or defaultmappingKGP
 		return tagid
 	case "_DIV_":
 		return div
-	case "_AU_@_W_x_H_":
+	case "_AU_@_W_x_H_", "_RE_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
 	case "_DIV_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", div, w, h)

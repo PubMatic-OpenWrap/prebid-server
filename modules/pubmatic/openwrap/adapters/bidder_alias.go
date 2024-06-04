@@ -1,8 +1,10 @@
 package adapters
 
 import (
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"strings"
+
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // Alias will return copy of exisiting alias
@@ -21,7 +23,8 @@ func Alias() map[string]string {
 //ResolveOWBidder it resolves hardcoded bidder alias names
 
 func ResolveOWBidder(bidderName string) string {
-	var coreBidderName string
+	var coreBidderName = bidderName
+	bidderName = strings.TrimSuffix(bidderName, "_deprecated")
 
 	switch bidderName {
 	case models.BidderAdGenerationAlias:
@@ -34,8 +37,14 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderAppnexus)
 	case models.BidderAndBeyondAlias:
 		coreBidderName = string(openrtb_ext.BidderAdkernel)
-	default:
-		coreBidderName = bidderName
+	case models.BidderAdformAdfAlias:
+		coreBidderName = string(openrtb_ext.BidderAdf)
+	case models.BidderTrustxAlias:
+		coreBidderName = string(openrtb_ext.BidderGrid)
+	case models.BidderSynacormediaAlias:
+		coreBidderName = string(openrtb_ext.BidderImds)
+	case models.BidderViewDeos:
+		coreBidderName = string(openrtb_ext.BidderAdtelligent)
 	}
 	return coreBidderName
 }

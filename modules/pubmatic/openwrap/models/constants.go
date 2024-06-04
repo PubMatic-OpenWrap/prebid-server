@@ -1,65 +1,66 @@
 package models
 
 const (
-	DEFAULT_PUB_ID             = 34576 // Default PubID to get generic data like regex for browsers etc
-	PARTNER_ID                 = "partnerId"
-	ADAPTER_ID                 = "adapterId"
-	PARTNER_ACCOUNT_NAME       = "partnerName"
-	ADAPTER_NAME               = "adapterName"
-	PREBID_PARTNER_NAME        = "prebidPartnerName"
-	BidderCode                 = "bidderCode"
-	IsAlias                    = "isAlias"
-	PROTOCOL                   = "protocol"
-	SERVER_SIDE_FLAG           = "serverSideEnabled"
-	DisplayVersionID           = "displayVersionId"
-	KEY_PUBLISHER_ID           = "publisherId"
-	KEY_PROFILE_ID             = "profileId"
-	KEY_SLOT_NAME              = "slotName"
-	LEVEL                      = "level"
-	KEY_GEN_PATTERN            = "kgp"
-	TIMEOUT                    = "timeout"
-	AdserverKey                = "adserver"
-	MopubAdserver              = "MoPub"
-	CustomAdserver             = "CUSTOM"
-	PriceGranularityKey        = "priceGranularity"
-	VideoAdDurationKey         = "videoAdDuration"
-	VideoAdDurationMatchingKey = "videoAdDurationMatching"
-	REVSHARE                   = "rev_share"
-	THROTTLE                   = "throttle"
-	REFRESH_INTERVAL           = "refreshInterval"
-	CreativeType               = "crtype"
-	GDPR_ENABLED               = "gdpr"
-	PLATFORM_KEY               = "platform"
-	SendAllBidsKey             = "sendAllBids"
-	VastUnwrapperEnableKey     = "enableVastUnwrapper"
-	SSTimeoutKey               = "ssTimeout"
-	PWC                        = "awc"
-	MAX_SLOT_COUNT             = 5000
-	SITE_CACHE_KEY             = "site"
-	TAG_CACHE_KEY              = "adtag"
-	GA_ID_CACHE_KEY            = "gaid"
-	FLOOR_CACHE_KEY            = "floor"
-	PUBMATIC                   = "PubMatic"
-	PUBMATIC_TIMEOUT           = "PubmaticTimeout"
-	PUBMATIC_PROTOCOL          = "/gads"
-	PUBMATIC_LEVEL             = "multi"
-	PUBMATIC_SS_FLAG           = "1"
-	PUBMATIC_PARTNER_ID_STRING = "1"
-	PUBMATIC_ADAPTER_ID_STRING = "1"
-	VersionLevelConfigID       = -1
-	ERROR_CODE                 = "ErrorCode"
-	ERROR_STRING               = "Error"
-	PUBMATIC_PARTNER_ID        = 1
-	PUBMATIC_ADAPTER_ID        = 1
-	DEFAULT_STRING             = ""
-	DEFAULT_INT                = 0
-	DEFAULT_FLOAT              = 0.00
-	BID_PRECISION              = 2
-	Debug                      = "debug"
-	WrapperLoggerDebug         = "owLoggerDebug"
-	KEY_OW_SLOT_NAME           = "owSlotName"
-	VENDORID                   = "vendorId"
-	BidderPubMatic             = "pubmatic"
+	PARTNER_ID                  = "partnerId"
+	ADAPTER_ID                  = "adapterId"
+	PARTNER_ACCOUNT_NAME        = "partnerName"
+	ADAPTER_NAME                = "adapterName"
+	PREBID_PARTNER_NAME         = "prebidPartnerName"
+	BidderCode                  = "bidderCode"
+	BidderFilters               = "bidderFilters"
+	IsAlias                     = "isAlias"
+	PROTOCOL                    = "protocol"
+	SERVER_SIDE_FLAG            = "serverSideEnabled"
+	DisplayVersionID            = "displayVersionId"
+	KEY_PUBLISHER_ID            = "publisherId"
+	KEY_PROFILE_ID              = "profileId"
+	KEY_SLOT_NAME               = "slotName"
+	LEVEL                       = "level"
+	KEY_GEN_PATTERN             = "kgp"
+	TIMEOUT                     = "timeout"
+	AdserverKey                 = "adserver"
+	MopubAdserver               = "MoPub"
+	CustomAdserver              = "CUSTOM"
+	PriceGranularityKey         = "priceGranularity"
+	VideoAdDurationKey          = "videoAdDuration"
+	VideoAdDurationMatchingKey  = "videoAdDurationMatching"
+	REVSHARE                    = "rev_share"
+	THROTTLE                    = "throttle"
+	REFRESH_INTERVAL            = "refreshInterval"
+	CreativeType                = "crtype"
+	GDPR_ENABLED                = "gdpr"
+	PLATFORM_KEY                = "platform"
+	SendAllBidsKey              = "sendAllBids"
+	VastUnwrapperEnableKey      = "enableVastUnwrapper"
+	VastUnwrapTrafficPercentKey = "vastUnwrapTrafficPercent"
+	SSTimeoutKey                = "ssTimeout"
+	PWC                         = "awc"
+	MAX_SLOT_COUNT              = 5000
+	SITE_CACHE_KEY              = "site"
+	TAG_CACHE_KEY               = "adtag"
+	GA_ID_CACHE_KEY             = "gaid"
+	FLOOR_CACHE_KEY             = "floor"
+	PUBMATIC                    = "PubMatic"
+	PUBMATIC_TIMEOUT            = "PubmaticTimeout"
+	PUBMATIC_PROTOCOL           = "/gads"
+	PUBMATIC_LEVEL              = "multi"
+	PUBMATIC_SS_FLAG            = "1"
+	PUBMATIC_PARTNER_ID_STRING  = "1"
+	PUBMATIC_ADAPTER_ID_STRING  = "1"
+	VersionLevelConfigID        = -1
+	ERROR_CODE                  = "ErrorCode"
+	ERROR_STRING                = "Error"
+	PUBMATIC_PARTNER_ID         = 1
+	PUBMATIC_ADAPTER_ID         = 1
+	DEFAULT_STRING              = ""
+	DEFAULT_INT                 = 0
+	DEFAULT_FLOAT               = 0.00
+	BID_PRECISION               = 2
+	Debug                       = "debug"
+	WrapperLoggerDebug          = "owLoggerDebug"
+	KEY_OW_SLOT_NAME            = "owSlotName"
+	VENDORID                    = "vendorId"
+	BidderPubMatic              = "pubmatic"
 	//ADSERVER_URL used by S2S to redirect the OW bids if owredirect parameter is not found in video/json
 	ADSERVER_URL = "adServerUrl"
 
@@ -359,6 +360,24 @@ const (
 	HardFloor = 1
 
 	CustomDimensions = "cds"
+	Enabled          = "1"
+
+	// VAST Unwrap
+	RequestContext     = "rctx"
+	UnwrapCount        = "unwrap-count"
+	UnwrapStatus       = "unwrap-status"
+	Timeout            = "Timeout"
+	UnwrapSucessStatus = "0"
+	UnwrapTimeout      = "unwrap-timeout"
+	MediaTypeVideo     = "video"
+	ProfileId          = "profileID"
+	VersionId          = "versionID"
+	DisplayId          = "DisplayID"
+	XUserIP            = "X-Forwarded-For"
+	XUserAgent         = "X-Device-User-Agent"
+	CreativeID         = "unwrap-ucrid"
+	PubID              = "pub_id"
+	ImpressionID       = "imr_id"
 )
 
 const (
@@ -372,6 +391,7 @@ const (
 	MACRO_VASTTAG       = "_VASTTAG_"
 
 	ADUNIT_SIZE_KGP           = "_AU_@_W_x_H_"
+	ADUNIT_SIZE_REGEX_KGP     = "_RE_@_W_x_H_"
 	REGEX_KGP                 = "_AU_@_DIV_@_W_x_H_"
 	DIV_SIZE_KGP              = "_DIV_@_W_x_H_"
 	ADUNIT_SOURCE_VASTTAG_KGP = "_AU_@_SRC_@_VASTTAG_"
@@ -418,26 +438,33 @@ const (
 )
 
 const (
+	AnanlyticsThrottlingLoggerType  = "wl"
+	AnanlyticsThrottlingTrackerType = "wt"
+)
+
+const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
 )
 
 const (
-	EndpointV25       = "v25"
-	EndpointAMP       = "amp"
-	EndpintInappVideo = "inappvideo"
-	EndpointVideo     = "video"
-	EndpointJson      = "json"
-	EndpointORTB      = "ortb"
-	EndpointVAST      = "vast"
-	EndpointWebS2S    = "webs2s"
-	EndPointCTV       = "ctv"
-	EndpointHybrid    = "hybrid"
-	Openwrap          = "openwrap"
-	ImpTypeBanner     = "banner"
-	ImpTypeVideo      = "video"
-	ContentTypeSite   = "site"
-	ContentTypeApp    = "app"
+	EndpointV25         = "v25"
+	EndpointAMP         = "amp"
+	EndpintInappVideo   = "inappvideo"
+	EndpointVideo       = "video"
+	EndpointJson        = "json"
+	EndpointORTB        = "ortb"
+	EndpointVAST        = "vast"
+	EndpointWebS2S      = "webs2s"
+	EndPointCTV         = "ctv"
+	EndpointHybrid      = "hybrid"
+	EndpointAppLovinMax = "applovinmax"
+
+	Openwrap        = "openwrap"
+	ImpTypeBanner   = "banner"
+	ImpTypeVideo    = "video"
+	ContentTypeSite = "site"
+	ContentTypeApp  = "app"
 )
 
 const (
@@ -454,19 +481,21 @@ const (
 
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetPartnerConfig"
-	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
-	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
-	AdunitConfigQuery              = "GetAdunitConfigQuery"
-	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
-	SlotNameHash                   = "GetSlotNameHash"
-	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
-	AllFscDisabledPublishersQuery  = "GetAllFscDisabledPublishersQuery"
-	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
-	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
+	PartnerConfigQuery                 = "GetPartnerConfig"
+	WrapperSlotMappingsQuery           = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings     = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery                  = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                       = "GetSlotNameHash"
+	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
+	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
+	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
+	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+	TestQuery = "TestQuery"
 )
 
 // constants for owlogger Integration Type
@@ -495,4 +524,24 @@ const (
 const (
 	Pbadslot    = "pbadslot"
 	GamAdServer = "gam"
+)
+
+// constants for feature id
+
+const (
+	FeatureFSC               = 1
+	FeatureTBF               = 2
+	FeatureAMPMultiFormat    = 3
+	FeatureAnalyticsThrottle = 4
+)
+
+// constants for applovinmax requests
+const (
+	Agent            = "agent"
+	AppLovinMaxAgent = "max"
+	TypeRewarded     = "rewarded"
+	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
+	MissingSignal    = "missing"
+	InvalidSignal    = "invalid"
 )

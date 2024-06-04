@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -339,7 +339,7 @@ func TestPrepareBidParamJSONForPartnerAdform(t *testing.T) {
 					"mid": "1234",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderAdform),
+				adapterName: string(openrtb_ext.BidderAdf),
 			},
 			want: json.RawMessage(`{"mid":1234}`),
 		},
@@ -351,14 +351,14 @@ func TestPrepareBidParamJSONForPartnerAdform(t *testing.T) {
 				height:      nil,
 				fieldMap:    map[string]interface{}{},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderAdform),
+				adapterName: string(openrtb_ext.BidderAdf),
 			},
 			want: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, string(openrtb_ext.BidderAdform), nil)
+			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, string(openrtb_ext.BidderAdf), nil)
 			AssertJSON(t, tt.want, got)
 		})
 	}
@@ -725,7 +725,7 @@ func TestPrepareBidParamJSONForPartnerForTripleLiftWhenRequiredParamMissing(t *t
 	}
 }
 
-func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testing.T) {
+func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementIdAndPublisherId(t *testing.T) {
 	type improveDigitalTestObj struct {
 		PlacementID  int    `json:"placementId,omitempty"`
 		PublisherID  int    `json:"publisherId,omitempty"`
@@ -734,6 +734,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 
 	fieldMap := map[string]interface{}{
 		"placementId": "121",
+		"publisherId": "911",
 	}
 
 	width := new(int64)
@@ -753,7 +754,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithPlacementId(t *testin
 		return
 	}
 
-	if obj.PublisherID != 0 {
+	if obj.PublisherID != 911 {
 		t.Error("wrong publisherId value set")
 		return
 	}
@@ -828,8 +829,7 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithoutPlacementId(t *tes
 	}
 
 	fieldMap := map[string]interface{}{
-		"publisherId":  "911",
-		"placementKey": "key_1",
+		"publisherId": "911",
 	}
 
 	width := new(int64)
@@ -838,24 +838,8 @@ func TestPrepareBidParamJSONForPartnerForImproveDigitalWithoutPlacementId(t *tes
 	*height = 250
 
 	jsonStrBuf, _ := PrepareBidParamJSONForPartner(width, height, fieldMap, "adunit", string(openrtb_ext.BidderImprovedigital), string(openrtb_ext.BidderImprovedigital), nil)
-	var obj improveDigitalTestObj
-	if err := json.Unmarshal([]byte(jsonStrBuf), &obj); err != nil {
-		t.Error("Failed to form json")
-		return
-	}
-
-	if obj.PlacementID != 0 {
-		t.Error("wrong placementId value set")
-		return
-	}
-
-	if obj.PublisherID != 911 {
-		t.Error("wrong publisherId value set")
-		return
-	}
-
-	if obj.PlacementKey != "key_1" {
-		t.Error("wrong placementKey value set")
+	if jsonStrBuf != nil {
+		t.Error("jsonStrBuf should be nil")
 		return
 	}
 }
@@ -1033,8 +1017,8 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"tagId":  "testTagId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: json.RawMessage(`{"seatId":"testSeatId","tagId":"testTagId"}`),
 		},
@@ -1047,8 +1031,8 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"tagId": "testTagId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: nil,
 		},
@@ -1061,110 +1045,10 @@ func TestPrepareBidParamJSONForPartnerSynacorMedia(t *testing.T) {
 					"seatId": "testSeatId",
 				},
 				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderSynacormedia),
-				bidderCode:  string(openrtb_ext.BidderSynacormedia),
+				adapterName: string(openrtb_ext.BidderImds),
+				bidderCode:  string(openrtb_ext.BidderImds),
 			},
 			want: json.RawMessage(`{"seatId":"testSeatId"}`),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, _ := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, tt.args.bidderCode, nil)
-			AssertJSON(t, tt.want, got)
-		})
-	}
-}
-
-func TestPrepareBidParamJSONForPartnerRhythmOne(t *testing.T) {
-	type args struct {
-		width       *int64
-		height      *int64
-		fieldMap    map[string]interface{}
-		slotKey     string
-		adapterName string
-		bidderCode  string
-	}
-	tests := []struct {
-		name string
-		args args
-		want json.RawMessage
-	}{
-		{
-			name: "All params present",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"path":        "testPath",
-					"zone":        "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: json.RawMessage(`{"placementId":"testPlacementId","path":"testPath","zone":"testZone"}`),
-		},
-		{
-			name: "placementId param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"path": "testPath",
-					"zone": "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "path param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"zone":        "testZone",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "zone param missing",
-			args: args{
-
-				width:  nil,
-				height: nil,
-				fieldMap: map[string]interface{}{
-					"placementId": "testPlacementId",
-					"path":        "testPath",
-				},
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
-		},
-		{
-			name: "required params are missing",
-			args: args{
-				width:       nil,
-				height:      nil,
-				fieldMap:    nil,
-				slotKey:     "",
-				adapterName: string(openrtb_ext.BidderRhythmone),
-				bidderCode:  string(openrtb_ext.BidderRhythmone),
-			},
-			want: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -2394,7 +2278,7 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"placementId":1234,"size":{"w":300,"h":250}}`),
+			want: json.RawMessage(`{"placementId":1234,"publisherId":5678,"size":{"w":300,"h":250}}`),
 		},
 		{
 			name: "PlacementId present, publisherId and placementKey missing",
@@ -2409,7 +2293,23 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"placementId":1234,"size":{"w":300,"h":250}}`),
+			want: nil,
+		},
+		{
+			name: "PlacementId and publisherId present, placementKey missing",
+			args: args{
+
+				width:  ptrutil.ToPtr[int64](300),
+				height: ptrutil.ToPtr[int64](250),
+				fieldMap: map[string]interface{}{
+					"placementId": "1234",
+					"publisherId": "5678",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderImprovedigital),
+				bidderCode:  string(openrtb_ext.BidderImprovedigital),
+			},
+			want: json.RawMessage(`{"placementId":1234,"publisherId":5678,"size":{"w":300,"h":250}}`),
 		},
 		{
 			name: "PlacementId absent, publisherId and placementKey present",
@@ -2425,7 +2325,7 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"publisherId":5678,"placementKey":"key1","size":{"w":300,"h":250}}`),
+			want: nil,
 		},
 		{
 			name: "required params missing",
@@ -2482,12 +2382,13 @@ func TestPrepareBidParamJSONForPartnerImproveDigital(t *testing.T) {
 				height: nil,
 				fieldMap: map[string]interface{}{
 					"placementId": "1234",
+					"publisherId": "5678",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderImprovedigital),
 				bidderCode:  string(openrtb_ext.BidderImprovedigital),
 			},
-			want: json.RawMessage(`{"placementId":1234}`),
+			want: json.RawMessage(`{"placementId":1234, "publisherId":5678}`),
 		},
 	}
 	for _, tt := range tests {
@@ -3015,6 +2916,53 @@ func TestBuilderNextmillennium(t *testing.T) {
 				return
 			}
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestBuilderRise(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (oneOf org or publisher_id) is present-org",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"org": "0"}}},
+			want:    json.RawMessage(`{"org": "0"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf org or publisher_id) is present-publisher_id",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"publisher_id": "0"}}},
+			want:    json.RawMessage(`{"publisher_id": "0"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf org or publisher_id), Both are present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"publisher_id": "0", "org": "0"}}},
+			want:    json.RawMessage(`{"org": "0"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of org or publisher_id) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderRise(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderRise() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
 		})
 	}
 }

@@ -1,6 +1,6 @@
 package nbr
 
-import "github.com/prebid/openrtb/v19/openrtb3"
+import "github.com/prebid/openrtb/v20/openrtb3"
 
 // vendor specific NoBidReasons (500+)
 const (
@@ -8,6 +8,7 @@ const (
 	LossBidLostToDealBid          openrtb3.NoBidReason = 502 // Response Rejected - Lost to a Bid for a Deal
 	RequestBlockedSlotNotMapped   openrtb3.NoBidReason = 503
 	RequestBlockedPartnerThrottle openrtb3.NoBidReason = 504
+	RequestBlockedPartnerFiltered openrtb3.NoBidReason = 505
 )
 
 // Openwrap module specific codes
@@ -24,4 +25,5 @@ const (
 	InternalError                  openrtb3.NoBidReason = 610
 	AllSlotsDisabled               openrtb3.NoBidReason = 611
 	ServerSidePartnerNotConfigured openrtb3.NoBidReason = 612
+	AllPartnersFiltered            openrtb3.NoBidReason = 613
 )

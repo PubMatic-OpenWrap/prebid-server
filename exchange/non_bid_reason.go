@@ -1,15 +1,17 @@
 package exchange
 
-import "github.com/prebid/openrtb/v19/openrtb3"
+import "github.com/prebid/openrtb/v20/openrtb3"
 
 // SeatNonBid list the reasons why bid was not resulted in positive bid
 // reason could be either No bid, Error, Request rejection or Response rejection
 // Reference:  https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/extensions/community_extensions/seat-non-bid.md
 const (
-	ErrorGeneral            openrtb3.NoBidReason = 100 // Error - General
-	ErrorTimeout            openrtb3.NoBidReason = 101 // Error - Timeout
-	ErrorInvalidBidResponse openrtb3.NoBidReason = 102 // Error - Invalid Bid Response
-	ErrorBidderUnreachable  openrtb3.NoBidReason = 103 // Error - Bidder Unreachable
+	NoBidUnknownError                      openrtb3.NoBidReason = 0   // No Bid - General
+	ResponseRejectedCategoryMappingInvalid openrtb3.NoBidReason = 303 // Response Rejected - Category Mapping Invalid
+	ErrorGeneral                           openrtb3.NoBidReason = 100 // Error - General
+	ErrorTimeout                           openrtb3.NoBidReason = 101 // Error - Timeout
+	ErrorInvalidBidResponse                openrtb3.NoBidReason = 102 // Error - Invalid Bid Response
+	ErrorBidderUnreachable                 openrtb3.NoBidReason = 103 // Error - Bidder Unreachable
 )
 
 const (

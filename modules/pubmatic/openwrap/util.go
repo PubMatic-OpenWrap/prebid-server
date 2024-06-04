@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 )
 
 var (
@@ -278,6 +278,8 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InternalError:
 		return 17 // ErrInvalidImpression
 
+	case nbr.AllPartnersFiltered:
+		return 26
 	}
 
 	return -1
@@ -298,10 +300,24 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 
 func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
 	ip := defaultIP
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
-		ip = bidRequest.Device.IP
+	if bidRequest != nil && bidRequest.Device != nil {
+		if len(bidRequest.Device.IP) > 0 {
+			ip = bidRequest.Device.IP
+		} else if len(bidRequest.Device.IPv6) > 0 {
+			ip = bidRequest.Device.IPv6
+		}
 	}
 	return ip
+}
+
+func getCountry(bidRequest *openrtb2.BidRequest) string {
+	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
+		return bidRequest.Device.Geo.Country
+	}
+	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
+		return bidRequest.User.Geo.Country
+	}
+	return ""
 }
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {

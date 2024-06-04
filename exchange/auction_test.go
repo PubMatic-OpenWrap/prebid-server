@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -12,12 +11,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/exchange/entities"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/prebid_cache_client"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/exchange/entities"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/prebid_cache_client"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -193,7 +193,7 @@ func loadCacheSpec(filename string) (*cacheSpec, error) {
 	}
 
 	var spec cacheSpec
-	if err := json.Unmarshal(specData, &spec); err != nil {
+	if err := jsonutil.UnmarshalValid(specData, &spec); err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal JSON from file: %v", err)
 	}
 
@@ -205,7 +205,7 @@ func loadCacheSpec(filename string) (*cacheSpec, error) {
 func runCacheSpec(t *testing.T, fileDisplayName string, specData *cacheSpec) {
 	var bid *entities.PbsOrtbBid
 	winningBidsByImp := make(map[string]*entities.PbsOrtbBid)
-	winningBidsByBidder := make(map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid)
+	allBidsByBidder := make(map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid)
 	roundedPrices := make(map[*entities.PbsOrtbBid]string)
 	bidCategory := make(map[string]string)
 
@@ -224,15 +224,15 @@ func runCacheSpec(t *testing.T, fileDisplayName string, specData *cacheSpec) {
 		}
 
 		// Map this bid if it's the highest we've seen from this bidder so far
-		if bidMap, ok := winningBidsByBidder[bid.Bid.ImpID]; ok {
+		if bidMap, ok := allBidsByBidder[bid.Bid.ImpID]; ok {
 			bidMap[pbsBid.Bidder] = append(bidMap[pbsBid.Bidder], bid)
 		} else {
-			winningBidsByBidder[bid.Bid.ImpID] = map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+			allBidsByBidder[bid.Bid.ImpID] = map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 				pbsBid.Bidder: {bid},
 			}
 		}
 
-		for _, topBidsPerBidder := range winningBidsByBidder {
+		for _, topBidsPerBidder := range allBidsByBidder {
 			for _, topBids := range topBidsPerBidder {
 				sort.Slice(topBids, func(i, j int) bool {
 					return isNewWinningBid(topBids[i].Bid, topBids[j].Bid, true)
@@ -277,9 +277,9 @@ func runCacheSpec(t *testing.T, fileDisplayName string, specData *cacheSpec) {
 	}
 
 	testAuction := &auction{
-		winningBids:         winningBidsByImp,
-		winningBidsByBidder: winningBidsByBidder,
-		roundedPrices:       roundedPrices,
+		winningBids:     winningBidsByImp,
+		allBidsByBidder: allBidsByBidder,
+		roundedPrices:   roundedPrices,
 	}
 	evTracking := &eventTracking{
 		accountID:          "TEST_ACC_ID",
@@ -300,18 +300,18 @@ func runCacheSpec(t *testing.T, fileDisplayName string, specData *cacheSpec) {
 		for i, expectedCacheable := range specData.ExpectedCacheables {
 			found := false
 			var expectedData interface{}
-			if err := json.Unmarshal(expectedCacheable.Data, &expectedData); err != nil {
+			if err := jsonutil.UnmarshalValid(expectedCacheable.Data, &expectedData); err != nil {
 				t.Fatalf("Failed to decode expectedCacheables[%d].value: %v", i, err)
 			}
 			if s, ok := expectedData.(string); ok && expectedCacheable.Type == prebid_cache_client.TypeJSON {
 				// decode again if we have pre-encoded json string values
-				if err := json.Unmarshal([]byte(s), &expectedData); err != nil {
+				if err := jsonutil.UnmarshalValid([]byte(s), &expectedData); err != nil {
 					t.Fatalf("Failed to re-decode expectedCacheables[%d].value :%v", i, err)
 				}
 			}
 			for j, cachedItem := range cache.items {
 				var actualData interface{}
-				if err := json.Unmarshal(cachedItem.Data, &actualData); err != nil {
+				if err := jsonutil.UnmarshalValid(cachedItem.Data, &actualData); err != nil {
 					t.Fatalf("Failed to decode actual cache[%d].value: %s", j, err)
 				}
 				if assert.ObjectsAreEqual(expectedData, actualData) &&
@@ -419,7 +419,7 @@ func TestNewAuction(t *testing.T) {
 				winningBids: map[string]*entities.PbsOrtbBid{
 					"imp1": &bid1p230,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p123},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p230},
@@ -447,7 +447,7 @@ func TestNewAuction(t *testing.T) {
 					"imp1": &bid1p230,
 					"imp2": &bid2p144,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p230},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p077},
@@ -476,7 +476,7 @@ func TestNewAuction(t *testing.T) {
 				winningBids: map[string]*entities.PbsOrtbBid{
 					"imp1": &bid1p123,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p123},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p088d},
@@ -500,7 +500,7 @@ func TestNewAuction(t *testing.T) {
 				winningBids: map[string]*entities.PbsOrtbBid{
 					"imp1": &bid1p088d,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p123},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p088d},
@@ -524,7 +524,7 @@ func TestNewAuction(t *testing.T) {
 				winningBids: map[string]*entities.PbsOrtbBid{
 					"imp1": &bid1p166d,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p088d},
@@ -551,7 +551,7 @@ func TestNewAuction(t *testing.T) {
 				winningBids: map[string]*entities.PbsOrtbBid{
 					"imp1": &bid1p166d,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d},
 						"rubicon":  []*entities.PbsOrtbBid{&bid1p088d},
@@ -577,7 +577,7 @@ func TestNewAuction(t *testing.T) {
 					"imp1": &bid1p166d,
 					"imp2": &bid2p166,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d, &bid1p077},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -659,11 +659,11 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 	}
 
 	type fields struct {
-		winningBids         map[string]*entities.PbsOrtbBid
-		winningBidsByBidder map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid
-		roundedPrices       map[*entities.PbsOrtbBid]string
-		cacheIds            map[*openrtb2.Bid]string
-		vastCacheIds        map[*openrtb2.Bid]string
+		winningBids     map[string]*entities.PbsOrtbBid
+		allBidsByBidder map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid
+		roundedPrices   map[*entities.PbsOrtbBid]string
+		cacheIds        map[*openrtb2.Bid]string
+		vastCacheIds    map[*openrtb2.Bid]string
 	}
 	type args struct {
 		adapterBids            map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
@@ -671,8 +671,8 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 		accountDefaultBidLimit int
 	}
 	type want struct {
-		winningBidsByBidder map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid
-		adapterBids         map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+		allBidsByBidder map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid
+		adapterBids     map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
 	}
 	tests := []struct {
 		description string
@@ -687,7 +687,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 					"imp1": &bid1p166d,
 					"imp2": &bid2p166,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p001, &bid1p166d, &bid1p077},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -711,7 +711,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 				preferDeals:            true,
 			},
 			want: want{
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d, &bid1p077, &bid1p001},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -738,7 +738,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 					"imp1": &bid1p166d,
 					"imp2": &bid2p166,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p001, &bid1p166d, &bid1p077},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -762,7 +762,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 				preferDeals:            true,
 			},
 			want: want{
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d, &bid1p077, &bid1p001},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -789,7 +789,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 					"imp1": &bid1p166d,
 					"imp2": &bid2p166,
 				},
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p001, &bid1p166d, &bid1p077},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -813,7 +813,7 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 				preferDeals:            true,
 			},
 			want: want{
-				winningBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
+				allBidsByBidder: map[string]map[openrtb_ext.BidderName][]*entities.PbsOrtbBid{
 					"imp1": {
 						"appnexus": []*entities.PbsOrtbBid{&bid1p166d, &bid1p077},
 						"pubmatic": []*entities.PbsOrtbBid{&bid1p088d, &bid1p123},
@@ -837,14 +837,14 @@ func TestValidateAndUpdateMultiBid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			a := &auction{
-				winningBids:         tt.fields.winningBids,
-				winningBidsByBidder: tt.fields.winningBidsByBidder,
-				roundedPrices:       tt.fields.roundedPrices,
-				cacheIds:            tt.fields.cacheIds,
-				vastCacheIds:        tt.fields.vastCacheIds,
+				winningBids:     tt.fields.winningBids,
+				allBidsByBidder: tt.fields.allBidsByBidder,
+				roundedPrices:   tt.fields.roundedPrices,
+				cacheIds:        tt.fields.cacheIds,
+				vastCacheIds:    tt.fields.vastCacheIds,
 			}
 			a.validateAndUpdateMultiBid(tt.args.adapterBids, tt.args.preferDeals, tt.args.accountDefaultBidLimit)
-			assert.Equal(t, tt.want.winningBidsByBidder, tt.fields.winningBidsByBidder, tt.description)
+			assert.Equal(t, tt.want.allBidsByBidder, tt.fields.allBidsByBidder, tt.description)
 			assert.Equal(t, tt.want.adapterBids, tt.args.adapterBids, tt.description)
 		})
 	}

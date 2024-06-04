@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // GetPartnerConfigMap returns partnerConfigMap using given parameters
-func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoint string) (map[int]map[string]string, error) {
+func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int) (map[int]map[string]string, error) {
 	dbAccessed := false
 	var err error
 	startTime := time.Now()
@@ -58,7 +58,7 @@ func (c *cache) GetPartnerConfigMap(pubID, profileID, displayVersion int, endpoi
 	}
 
 	if dbAccessed {
-		c.metricEngine.RecordGetProfileDataTime(endpoint, strconv.Itoa(profileID), time.Since(startTime))
+		c.metricEngine.RecordGetProfileDataTime(time.Since(startTime))
 	}
 	return partnerConfigMap, err
 }
@@ -75,25 +75,64 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
 	}
 
-	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-	if errWrapperSlotMapping := c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion); errWrapperSlotMapping != nil {
-		err = models.ErrorWrap(err, errWrapperSlotMapping)
+	err = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
+	if err != nil {
 		queryType := models.WrapperSlotMappingsQuery
 		if displayVersion == 0 {
 			queryType = models.WrapperLiveVersionSlotMappings
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		return err
 	}
-	if errAdunitConfig := c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion); errAdunitConfig != nil {
+
+	err = c.populateCacheWithAdunitConfig(pubID, profileID, displayVersion)
+	if err != nil {
 		queryType := models.AdunitConfigQuery
 		if displayVersion == 0 {
 			queryType = models.AdunitConfigForLiveVersion
 		}
-		if errors.Is(errAdunitConfig, adunitconfig.ErrAdUnitUnmarshal) {
+		if errors.Is(err, adunitconfig.ErrAdUnitUnmarshal) {
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		err = models.ErrorWrap(err, errAdunitConfig)
+		return err
 	}
+
+	c.updatePartnerConfigWithBidderFilters(partnerConfigMap, pubID, profileID, displayVersion)
+	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
+}
+
+func (c *cache) updatePartnerConfigWithBidderFilters(partnerConfigs map[int]map[string]string, pubID, profileID, displayVersion int) {
+
+	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
+	obj, ok := c.cache.Get(cacheKey)
+	if !ok {
+		return
+	}
+
+	adUnitCfg, ok := obj.(*adunitconfig.AdUnitConfig)
+	if !ok || adUnitCfg == nil {
+		return
+	}
+
+	bidderfilter := map[string]string{}
+	defaultAdUnitConfig := adUnitCfg.Config["default"]
+	if defaultAdUnitConfig.BidderFilter != nil {
+		for _, filter := range defaultAdUnitConfig.BidderFilter.Filters {
+			for _, bidder := range filter.Bidders {
+				bidderfilter[bidder] = string(filter.BiddingConditions)
+			}
+		}
+	}
+
+	if len(bidderfilter) == 0 {
+		return
+	}
+
+	for id, cfg := range partnerConfigs {
+		if biddingCodition, ok := bidderfilter[cfg[models.BidderCode]]; ok {
+			partnerConfigs[id][models.BidderFilters] = biddingCodition
+		}
+	}
 }

@@ -1,16 +1,13 @@
 package openwrap
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	vastmodels "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
-)
+	"context"
 
-const (
-	VastUnwrapperEnableValue = "1"
+	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
 )
 
 // GetConfig Temporary function to expose config to SSHB
@@ -44,18 +41,13 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
 }
 
-// GetVastUnwrapEnabled function return vastunwrap flag from the database
-func GetVastUnwrapEnabled(rctx vastmodels.RequestCtx) bool {
-	rCtx := models.RequestCtx{
-		Endpoint:  rctx.Endpoint,
-		PubID:     rctx.PubID,
-		ProfileID: rctx.ProfileID,
-		DisplayID: rctx.DisplayID,
-	}
-	partnerConfigMap, err := ow.getProfileData(rCtx, openrtb2.BidRequest{})
-	if err != nil || len(partnerConfigMap) == 0 {
-		return false
-	}
-	rCtx.PartnerConfigMap = partnerConfigMap
-	return models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VastUnwrapperEnableKey) == VastUnwrapperEnableValue
+// GetFeature Temporary function to expose feature to SSHB
+func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
+	return ow.pubFeatures
+}
+
+// getVastUnwrapperEnable checks for Vast unwrp is enabled in given context
+func getVastUnwrapperEnable(ctx context.Context, field string) bool {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper == models.Enabled
 }

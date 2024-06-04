@@ -3,8 +3,8 @@ package prometheus
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -14,6 +14,8 @@ const (
 	profileLabel = "profileid"
 	dealLabel    = "deal"
 	nodeal       = "nodeal"
+
+	wrapperCountLabel = "wrapper_count"
 )
 
 const (
@@ -68,10 +70,9 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"Count of total requests to header-bidding server labeled by type and status.",
 		[]string{requestTypeLabel, requestStatusLabel})
 
-	metrics.sendLoggerData = newHistogramVec(cfg, promRegistry,
+	metrics.sendLoggerData = newHistogram(cfg, promRegistry,
 		"sshb_logger_data_send_time",
-		"Time taken to send the wrapper logger body in seconds", []string{endpointLabel, profileIDLabel},
-		standardTimeBuckets)
+		"Time taken to send the wrapper logger body in seconds", standardTimeBuckets)
 
 	metrics.owRequestTime = newHistogramVec(cfg, promRegistry,
 		"sshb_request_time",
@@ -116,6 +117,16 @@ func newSSHBMetrics(metrics *Metrics, cfg *config.PrometheusMetrics, promRegistr
 		"sshb_amp_video_responses",
 		"Counts the AMP video responses labeled by pub id and profile id.",
 		[]string{pubIDLabel, profileIDLabel})
+
+	metrics.pubProfAdruleEnabled = newCounter(cfg, promRegistry,
+		"sshb_adrule_enable",
+		"Count of request where adRule is present",
+		[]string{pubIdLabel, profileLabel})
+
+	metrics.pubProfAdruleValidationfailure = newCounter(cfg, promRegistry,
+		"sshb_invalid_adrule",
+		"Count of request where adRule is invalid",
+		[]string{pubIdLabel, profileLabel})
 
 	preloadLabelValues(metrics)
 }
@@ -180,11 +191,8 @@ func (m *Metrics) RecordCtvUaAccuracy(pubId, status string) {
 }
 
 // RecordSendLoggerDataTime as a noop
-func (m *Metrics) RecordSendLoggerDataTime(endpoint, profileID string, sendTime time.Duration) {
-	m.sendLoggerData.With(prometheus.Labels{
-		endpointLabel:  endpoint,
-		profileIDLabel: profileID,
-	}).Observe(float64(sendTime.Seconds()))
+func (m *Metrics) RecordSendLoggerDataTime(sendTime time.Duration) {
+	m.sendLoggerData.Observe(float64(sendTime.Seconds()))
 }
 
 // RecordSendLoggerDataTime as a noop
@@ -217,6 +225,56 @@ func (m *Metrics) RecordAmpVideoResponses(pubid, profileid string) {
 	m.ampVideoResponses.With(prometheus.Labels{
 		pubIDLabel:     pubid,
 		profileIDLabel: profileid,
+	}).Inc()
+}
+
+// RecordUnwrapRequestStatus record counter with vast unwrap status
+func (m *Metrics) RecordUnwrapRequestStatus(accountId, bidder, status string) {
+	m.requests.With(prometheus.Labels{
+		pubIdLabel:  accountId,
+		bidderLabel: bidder,
+		statusLabel: status,
+	}).Inc()
+}
+
+// RecordUnwrapWrapperCount record counter of wrapper levels
+func (m *Metrics) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string) {
+	m.wrapperCount.With(prometheus.Labels{
+		pubIdLabel:        accountId,
+		bidderLabel:       bidder,
+		wrapperCountLabel: wrapper_count,
+	}).Inc()
+}
+
+// RecordUnwrapRequestTime records time takent to complete vast unwrap
+func (m *Metrics) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {
+	m.requestTime.With(prometheus.Labels{
+		pubIdLabel:  accountId,
+		bidderLabel: bidder,
+	}).Observe(float64(respTime.Milliseconds()))
+}
+
+// RecordUnwrapRespTime records time takent to complete vast unwrap per wrapper count level
+func (m *Metrics) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {
+	m.unwrapRespTime.With(prometheus.Labels{
+		pubIdLabel:        accountId,
+		wrapperCountLabel: wraperCnt,
+	}).Observe(float64(respTime.Milliseconds()))
+}
+
+// RecordAdruleEnabled records count of request in which adrule is present based on pubid and profileid
+func (m *Metrics) RecordAdruleEnabled(pubid, profileid string) {
+	m.pubProfAdruleEnabled.With(prometheus.Labels{
+		pubIdLabel:   pubid,
+		profileLabel: profileid,
+	}).Inc()
+}
+
+// RecordAdruleValidationFailure records count of request in which adrule validation fails based on pubid and profileid
+func (m *Metrics) RecordAdruleValidationFailure(pubid, profileid string) {
+	m.pubProfAdruleValidationfailure.With(prometheus.Labels{
+		pubIdLabel:   pubid,
+		profileLabel: profileid,
 	}).Inc()
 }
 
