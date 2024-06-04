@@ -9,13 +9,12 @@ import (
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) (map[string]struct{}, bool) {
 	filteredBidders := map[string]struct{}{}
-	data := m.generateEvaluationData(rCtx, bidRequest, m.geoInfoFetcher)
+	data := m.generateEvaluationData(rCtx, bidRequest)
 	allPartnersFilteredFlag := true
 	for _, partnerConfig := range rCtx.PartnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
@@ -37,16 +36,16 @@ func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb
 	return filteredBidders, allPartnersFilteredFlag
 }
 
-func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, gif geodb.Geography) string {
+func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
 	builder := &strings.Builder{}
 	builder.WriteString("{")
-	country := m.getCountryFromRequest(rCtx, bidRequest)
+	country := m.getCountryFromRequest(rCtx)
 	builder.WriteString(fmt.Sprintf(`"country":"%s"`, country))
 	builder.WriteString("}")
 	return builder.String()
 }
 
-func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) string {
+func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
 	if len(rctx.Country) > 0 {
 		return rctx.Country
 	}

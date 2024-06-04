@@ -286,7 +286,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 				geoInfoFetcher: mockGeoDb,
 			}
 			tt.setup()
-			got := m.getCountryFromRequest(tt.args.rCtx, tt.args.bidRequest)
+			got := m.getCountryFromRequest(tt.args.rCtx)
 			assert.Equal(t, got, tt.want)
 		})
 	}
