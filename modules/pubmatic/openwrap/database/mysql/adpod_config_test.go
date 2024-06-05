@@ -36,8 +36,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
 					Queries: config.Queries{
-						GetAdpodConfig:           "^SELECT (.+) FROM wrapper_ad_pod (.+)",
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
 				},
 			},
@@ -52,11 +52,11 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("4444", "4")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("4444", "4", "ctv")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rows := sqlmock.NewRows([]string{"pod_type", "s2s_ad_slots_config"}).AddRow("DYNAMIC", `[{"maxduration":60,"maxseq":5,"poddur":180,"minduration":1}]`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
 				return db
 			},
 			want: &adpodconfig.AdpodConfig{
@@ -77,8 +77,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
 					Queries: config.Queries{
-						GetAdpodConfig:        "^SELECT (.+) FROM wrapper_ad_pod (.+)",
-						LiveVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+) LIVE",
+						GetAdpodConfig:        "^SELECT (.+) FROM ad_pod (.+)",
+						LiveVersionInnerQuery: "^SELECT (.+) FROM version (.+) LIVE",
 					},
 				},
 			},
@@ -92,11 +92,11 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("4444", "4")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+) LIVE")).WithArgs(123, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("4444", "4", "ctv")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+) LIVE")).WithArgs(123, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rows := sqlmock.NewRows([]string{"pod_type", "s2s_ad_slots_config"}).AddRow("DYNAMIC", `[{"maxduration":60,"maxseq":5,"poddur":180,"minduration":1}]`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
 				return db
 			},
 			want: &adpodconfig.AdpodConfig{
@@ -117,8 +117,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
 					Queries: config.Queries{
-						GetAdpodConfig:           "^SELECT (.+) FROM wrapper_ad_pod (.+)",
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
 				},
 			},
@@ -132,11 +132,11 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("4444", "4")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("4444", "4", "ctv")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rows := sqlmock.NewRows([]string{"pod_type", "s2s_ad_slots_config"}).AddRow("DYNAMIC", `[{"maxseq":5,"poddur":600,"rqddurs":[6,60,120,600]}]`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM ad_pod (.+)")).WithArgs(4444).WillReturnRows(rows)
 				return db
 			},
 			want: &adpodconfig.AdpodConfig{
@@ -156,8 +156,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
 					Queries: config.Queries{
-						GetAdpodConfig:           "^SELECT (.+) FROM wrapper_ad_pod (.+)",
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
 				},
 			},
@@ -172,14 +172,14 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("4444", "4")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("4444", "4", "ctv")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rows := sqlmock.NewRows([]string{"pod_type", "s2s_ad_slots_config"}).
 					AddRow("DYNAMIC", `[{"maxduration":60,"maxseq":5,"poddur":180,"minduration":1}]`).
 					AddRow("HYBRID", `[{"maxduration":20,"minduration":5},{"maxduration":20,"maxseq":3,"poddur":60,"minduration":5}]`).
 					AddRow("STRUCTURED", `[{"maxduration":20,"minduration":5}]`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_ad_pod (.+)")).WillReturnRows(rows)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM ad_pod (.+)")).WillReturnRows(rows)
 				return db
 			},
 			want: &adpodconfig.AdpodConfig{
@@ -218,8 +218,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 50,
 					Queries: config.Queries{
-						GetAdpodConfig:           "^SELECT (.+) FROM wrapper_ad_pod (.+)",
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM wrapper_version (.+)",
+						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
 				},
 			},
@@ -233,10 +233,10 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId"}).AddRow("4444", "4")
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform"}).AddRow("4444", "4", "ctv")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
 
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_ad_pod (.+)")).WillReturnError(errors.New("context deadline exceeded"))
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM ad_pod (.+)")).WillReturnError(errors.New("context deadline exceeded"))
 				return db
 			},
 			want:    nil,
