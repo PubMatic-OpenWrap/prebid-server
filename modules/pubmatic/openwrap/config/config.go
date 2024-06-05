@@ -62,6 +62,7 @@ type Queries struct {
 	GetAllDspFscPcntQuery             string
 	GetPublisherFeatureMapQuery       string
 	GetAnalyticsThrottlingQuery       string
+	GetAdpodConfig                    string
 }
 
 type Cache struct {

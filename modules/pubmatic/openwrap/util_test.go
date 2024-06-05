@@ -1302,6 +1302,253 @@ func TestGetRequestUserAgent(t *testing.T) {
 	}
 }
 
+func Test_getProfileType(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid profile type",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.ProfileTypeKey: "1",
+					},
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "partnerConfigMap with invalid profile type",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					1: {
+						models.ProfileTypeKey: "invalid",
+					},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getProfileType(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func Test_getProfileTypePlatform(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.PLATFORM_KEY: "in-app",
+					},
+				},
+			},
+			want: 4,
+		},
+		{
+			name: "partnerConfigMap with invalid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-11: {
+						models.PLATFORM_KEY: "invalid",
+					},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getProfileTypePlatform(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func Test_getAppPlatform(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid AppPlatform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.AppPlatformKey: "5",
+					},
+				},
+			},
+			want: 5,
+		},
+		{
+			name: "partnerConfigMap with invalid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-11: {
+						models.AppPlatformKey: "invalid",
+					},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAppPlatform(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func Test_getAppIntegrationPath(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with valid AppIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.IntegrationPathKey: "React Native Plugin",
+					},
+				},
+			},
+			want: 3,
+		},
+		{
+			name: "partnerConfigMap with invalid AppIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.IntegrationPathKey: "invalid",
+					},
+				},
+			},
+			want: -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAppIntegrationPath(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func Test_getAppSubIntegrationPath(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with valid AppSubIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "AppLovin Max SDK Bidding",
+					},
+				},
+			},
+			want: 8,
+		},
+		{
+			name: "partnerConfigMap with invalid AppSubIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "invalid",
+					},
+				},
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with inavalid AppSubIntegrationPath but valid adserver",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "invalid",
+						models.AdserverKey:           "DFP",
+					},
+				},
+			},
+			want: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAppSubIntegrationPath(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
 func TestSearchAccountID(t *testing.T) {
 	// Correctness for lookup within Publisher object left to TestGetAccountID
 	// This however tests the expected lookup paths in outer site, app and dooh

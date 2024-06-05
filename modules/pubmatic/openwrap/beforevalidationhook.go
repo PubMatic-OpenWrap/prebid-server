@@ -147,6 +147,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	//set the profile MetaData for logging and tracking
+	rCtx.ProfileType = getProfileType(partnerConfigMap)
+	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap)
+	rCtx.AppPlatform = getAppPlatform(partnerConfigMap)
+	rCtx.AppIntegrationPath = ptrutil.ToPtr(getAppIntegrationPath(partnerConfigMap))
+	rCtx.AppSubIntegrationPath = ptrutil.ToPtr(getAppSubIntegrationPath(partnerConfigMap))
+
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
 		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
