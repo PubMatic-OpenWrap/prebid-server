@@ -21,6 +21,7 @@ type Config struct {
 	Stats         stats.Stats
 	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
 	Wakanda       wakanda.Wakanda
+	GeoDB         GeoDB
 }
 
 type Server struct {
@@ -99,4 +100,8 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
+}
+
+type GeoDB struct {
+	Location string
 }
