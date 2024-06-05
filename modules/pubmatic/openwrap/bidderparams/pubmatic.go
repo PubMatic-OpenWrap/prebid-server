@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
@@ -39,10 +39,12 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	hash := ""
 	var err error
 	var matchedSlot, matchedPattern string
-	isRegexSlot := false
+	var isRegexSlot, isRegexKGP bool
 
 	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
-	isRegexKGP := kgp == models.REGEX_KGP
+	if kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
+		isRegexKGP = true
+	}
 
 	// simple+regex key match
 	for _, slot := range slots {

@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 )
 
 func Test_findUniqueCombinations(t *testing.T) {
@@ -378,14 +378,10 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				Price:   10,
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &AdPodGenerator{
-				request:  tt.fields.request,
-				impIndex: tt.fields.impIndex,
-			}
+			o := &AdPodGenerator{}
 			got := o.getMaxAdPodBid(tt.args.results)
 			if nil != got {
 				sort.Strings(got.ADomain)

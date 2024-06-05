@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
+	if rCtx.TrackerDisabled {
+		return ""
+	}
+
 	floorsDetails := models.GetFloorsDetails(responseExt)
 	tracker := models.Tracker{
 		PubID:             rCtx.PubID,
 		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID:         fmt.Sprintf("%d", rCtx.DisplayID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayVersionID),
 		PageURL:           rCtx.PageURL,
 		Timestamp:         rCtx.StartTime,
 		IID:               rCtx.LoggerImpressionID,
@@ -27,7 +31,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 	}
 
 	if rCtx.DeviceCtx.Ext != nil {
-		tracker.ATTS = rCtx.DeviceCtx.Ext.ATTS
+		tracker.ATTS, _ = rCtx.DeviceCtx.Ext.GetAtts()
 	}
 
 	constructedURLString := constructTrackerURL(rCtx, tracker)

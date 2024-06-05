@@ -3,10 +3,10 @@ package pubmatic
 import (
 	"encoding/json"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // WloggerRecord structure for wrapper analytics logger object
@@ -51,9 +51,9 @@ type record struct {
 
 // Device struct for storing device information
 type Device struct {
-	Platform models.DevicePlatform             `json:"plt,omitempty"`
-	IFAType  *models.DeviceIFAType             `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
-	ATTS     *openrtb_ext.IOSAppTrackingStatus `json:"atts,omitempty"` //device.ext.atts
+	Platform models.DevicePlatform `json:"plt,omitempty"`
+	IFAType  *models.DeviceIFAType `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
+	ATTS     *float64              `json:"atts,omitempty"` //device.ext.atts
 }
 
 /*
@@ -137,9 +137,9 @@ type PartnerRecord struct {
 	OriginalCur string    `json:"ocry"`
 	MetaData    *MetaData `json:"md,omitempty"`
 
-	FloorValue     float64                    `json:"fv,omitempty"`
-	FloorRuleValue float64                    `json:"frv,omitempty"`
-	Nbr            *openrtb3.NonBidStatusCode `json:"nbr,omitempty"` // NonBR reason code
+	FloorValue     float64               `json:"fv,omitempty"`
+	FloorRuleValue float64               `json:"frv,omitempty"`
+	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
 
 }
 
@@ -178,7 +178,7 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 	switch endpoint {
 	case models.EndpointAMP:
 		wlog.IntegrationType = models.TypeAmp
-	case models.EndpointV25:
+	case models.EndpointV25, models.EndpointAppLovinMax:
 		wlog.IntegrationType = models.TypeSDK
 	case models.EndpointVAST:
 		wlog.IntegrationType = models.TypeTag
@@ -199,7 +199,7 @@ func (wlog *WloggerRecord) logDeviceObject(dvc *models.DeviceCtx) {
 	wlog.Device.Platform = dvc.Platform
 	wlog.Device.IFAType = dvc.IFATypeID
 	if dvc.Ext != nil {
-		wlog.record.Device.ATTS = dvc.Ext.ATTS
+		wlog.record.Device.ATTS, _ = dvc.Ext.GetAtts()
 	}
 }
 

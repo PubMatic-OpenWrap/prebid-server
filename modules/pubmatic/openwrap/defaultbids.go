@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -117,19 +118,19 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 }
 
 // getNonBRCodeFromBidRespExt maps the error-code present in prebid partner response with standard nonBR code
-func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *openrtb3.NonBidStatusCode {
+func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *openrtb3.NoBidReason {
 	errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
 	if len(errs) == 0 {
-		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneral)
+		return openrtb3.NoBidUnknownError.Ptr()
 	}
 
 	switch errs[0].Code {
 	case errortypes.TimeoutErrorCode:
-		return GetNonBidStatusCodePtr(openrtb3.NoBidTimeoutError)
+		return exchange.ErrorTimeout.Ptr()
 	case errortypes.UnknownErrorCode:
-		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
+		return exchange.ErrorGeneral.Ptr()
 	default:
-		return GetNonBidStatusCodePtr(openrtb3.NoBidGeneralError)
+		return exchange.ErrorGeneral.Ptr()
 	}
 }
 

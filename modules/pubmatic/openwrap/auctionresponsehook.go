@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tracker"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(
@@ -117,12 +117,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			// set response netecpm and logger/tracker en
 			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
-			bidExt.NetECPM = models.GetNetEcpm(bid.Price, revShare)
-			eg = bid.Price
+			bidExt.NetECPM = models.ToFixed(bid.Price, models.BID_PRECISION)
+			eg = models.GetGrossEcpmFromNetEcpm(bid.Price, revShare)
 			en = bidExt.NetECPM
 			if payload.BidResponse.Cur != "USD" {
-				eg = bidExt.OriginalBidCPMUSD
-				en = models.GetNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				eg = models.GetGrossEcpmFromNetEcpm(bidExt.OriginalBidCPMUSD, revShare)
+				en = bidExt.OriginalBidCPMUSD
 				bidExt.OriginalBidCPMUSD = 0
 			}
 
@@ -225,7 +225,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		addLostToDealBidNonBRCode(&rctx)
 	}
 
-	droppedBids, warnings := addPWTTargetingForBid(rctx, payload.BidResponse)
+	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse)
 	if len(droppedBids) != 0 {
 		rctx.DroppedBids = droppedBids
 	}
@@ -269,16 +269,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
-	// add seat-non-bids in the bidresponse only request.ext.prebid.returnallbidstatus is true
-	if rctx.ReturnAllBidStatus {
-		rctx.SeatNonBids = prepareSeatNonBids(rctx)
-		addSeatNonBidsInResponseExt(rctx, &responseExt)
-	}
+	result.SeatNonBid = prepareSeatNonBids(rctx)
 
 	if rctx.Debug {
 		rCtxBytes, _ := json.Marshal(rctx)
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
 	}
+
+	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -315,13 +313,16 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse.Ext = responseExtjson
 
 		resetBidIdtoOriginal(ap.BidResponse)
+
+		if rctx.Endpoint == models.EndpointAppLovinMax {
+			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
+		}
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
 	// TODO: move debug here
 	// result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
-
 	return result, nil
 }
 
@@ -390,21 +391,21 @@ func isNewWinningBid(bid, wbid *models.OwBid, preferDeals bool) bool {
 	if preferDeals {
 		//only wbid has deal
 		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
-			bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			bid.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			return false
 		}
 		//only bid has deal
 		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
-			wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToDealBid)
+			wbid.Nbr = nbr.LossBidLostToDealBid.Ptr()
 			return true
 		}
 	}
 	//both have deal or both do not have deal
 	if bid.NetEcpm > wbid.NetEcpm {
-		wbid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+		wbid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 		return true
 	}
-	bid.Nbr = GetNonBidStatusCodePtr(openrtb3.LossBidLostToHigherBid)
+	bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 	return false
 }
 

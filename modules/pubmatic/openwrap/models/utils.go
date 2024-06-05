@@ -13,10 +13,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 var videoRegex *regexp.Regexp
@@ -139,19 +139,14 @@ func GetRevenueShare(partnerConfig map[string]string) float64 {
 
 func GetNetEcpm(price float64, revShare float64) float64 {
 	if revShare == 0 {
-		return toFixed(price, BID_PRECISION)
+		return ToFixed(price, BID_PRECISION)
 	}
 	price = price * (1 - revShare/100)
-	return toFixed(price, BID_PRECISION)
+	return ToFixed(price, BID_PRECISION)
 }
 
 func GetGrossEcpm(price float64) float64 {
-	return toFixed(price, BID_PRECISION)
-}
-
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
+	return ToFixed(price, BID_PRECISION)
 }
 
 func round(num float64) int {
@@ -319,11 +314,11 @@ func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId s
 func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
 	// func (H, W, Div), no need to validate, will always be non-nil
 	switch kgp {
-	case "_AU_": // adunitconfig
+	case "_AU_", "_RE_": // adunitconfig or defaultmappingKGP
 		return tagid
 	case "_DIV_":
 		return div
-	case "_AU_@_W_x_H_":
+	case "_AU_@_W_x_H_", "_RE_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
 	case "_DIV_@_W_x_H_":
 		return fmt.Sprintf("%s@%dx%d", div, w, h)
@@ -412,4 +407,22 @@ func GetFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (floorDetails Floo
 		}
 	}
 	return floorDetails
+}
+
+func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
+
+	if revShare == 100 {
+		return 0
+	}
+	originalBidPrice := netEcpm / (1 - revShare/100)
+	return ToFixed(originalBidPrice, BID_PRECISION)
+}
+
+func GetBidAdjustmentValue(revShare float64) float64 {
+	return (1 - revShare/100)
+}
+
+func ToFixed(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }

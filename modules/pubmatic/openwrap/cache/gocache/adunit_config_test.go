@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -9,14 +10,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +26,14 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	Regex:         true,
 	Config: map[string]*adunitconfig.AdConfig{
 		"default": {
+			BidderFilter: &adunitconfig.BidderFilter{
+				Filters: []adunitconfig.Filter{
+					{
+						Bidders:           []string{"bidderA"},
+						BiddingConditions: json.RawMessage(`{ "in": [{ "var": "country"}, ["IND"]]}`),
+					},
+				},
+			},
 			Floors: &openrtb_ext.PriceFloorRules{
 				FloorMin: 15,
 				Data: &openrtb_ext.PriceFloorData{
@@ -144,7 +153,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	},
 }
 
-func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+func TestCachePopulateCacheWithAdunitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -268,7 +277,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	}
 }
 
-func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
+func TestCacheGetAdunitConfigFromCache(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)

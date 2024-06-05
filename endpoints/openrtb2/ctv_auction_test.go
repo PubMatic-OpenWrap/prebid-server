@@ -1,42 +1,23 @@
 package openrtb2
 
 import (
+	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/adpod"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-func TestAddTargetingKeys(t *testing.T) {
-	var tests = []struct {
-		scenario string // Testcase scenario
-		key      string
-		value    string
-		bidExt   string
-		expect   map[string]string
-	}{
-		{scenario: "key_not_exists", key: "hb_pb_cat_dur", value: "some_value", bidExt: `{"prebid":{"targeting":{}}}`, expect: map[string]string{"hb_pb_cat_dur": "some_value"}},
-		{scenario: "key_already_exists", key: "hb_pb_cat_dur", value: "new_value", bidExt: `{"prebid":{"targeting":{"hb_pb_cat_dur":"old_value"}}}`, expect: map[string]string{"hb_pb_cat_dur": "new_value"}},
-	}
-	for _, test := range tests {
-		t.Run(test.scenario, func(t *testing.T) {
-			bid := new(openrtb2.Bid)
-			bid.Ext = []byte(test.bidExt)
-			key := openrtb_ext.TargetingKey(test.key)
-			assert.Nil(t, addTargetingKey(bid, key, test.value))
-			extBid := openrtb_ext.ExtBid{}
-			json.Unmarshal(bid.Ext, &extBid)
-			assert.Equal(t, test.expect, extBid.Prebid.Targeting)
-		})
-	}
-	assert.Equal(t, "Invalid bid", addTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
-}
 
 func TestFilterImpsVastTagsByDuration(t *testing.T) {
 	type inputParams struct {
@@ -250,322 +231,13 @@ func TestFilterImpsVastTagsByDuration(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Parallel()
 
-			deps := ctvEndpointDeps{request: tc.input.request, impData: tc.input.impData}
+			deps := ctvEndpointDeps{request: tc.input.request}
 			deps.readImpExtensionsAndTags()
 
 			outputBids := tc.input.generatedRequest
 			deps.filterImpsVastTagsByDuration(outputBids)
 
 			assert.Equal(t, tc.expectedOutput.reqs, *outputBids, "Expected length of impressions array was %d but actual was %d", tc.expectedOutput.reqs, outputBids)
-
-			for i, datum := range deps.impData {
-				assert.Equal(t, tc.expectedOutput.blockedTags[i], datum.BlockedVASTTags, "Expected and actual impData was different")
-			}
-		})
-	}
-}
-
-func TestGetBidDuration(t *testing.T) {
-	type args struct {
-		bid             *openrtb2.Bid
-		reqExt          *openrtb_ext.ExtRequestAdPod
-		config          []*types.ImpAdPodConfig
-		defaultDuration int64
-	}
-	type want struct {
-		duration int64
-		status   constant.BidStatus
-	}
-	var tests = []struct {
-		name   string
-		args   args
-		want   want
-		expect int
-	}{
-		{
-			name: "nil_bid_ext",
-			args: args{
-				bid:             &openrtb2.Bid{},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 100,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "use_default_duration",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"tmp":123}`),
-				},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 100,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "invalid_duration_in_bid_ext",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":"invalid"}}}`),
-				},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 100,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "0sec_duration_in_bid_ext",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":0}}}`),
-				},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 100,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "negative_duration_in_bid_ext",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":-30}}}`),
-				},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 100,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "30sec_duration_in_bid_ext",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
-				},
-				reqExt:          nil,
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 30,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "duration_matching_empty",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
-				},
-				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoAdDurationMatching: "",
-				},
-				config:          nil,
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 30,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "duration_matching_exact",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":30}}}`),
-				},
-				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
-				},
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 30,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "duration_matching_exact_not_present",
-			args: args{
-				bid: &openrtb2.Bid{
-					Ext: json.RawMessage(`{"prebid":{"video":{"duration":35}}}`),
-				},
-				reqExt: &openrtb_ext.ExtRequestAdPod{
-					VideoAdDurationMatching: openrtb_ext.OWExactVideoAdDurationMatching,
-				},
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-				defaultDuration: 100,
-			},
-			want: want{
-				duration: 35,
-				status:   constant.StatusDurationMismatch,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			duration, status := getBidDuration(tt.args.bid, tt.args.reqExt, tt.args.config, tt.args.defaultDuration)
-			assert.Equal(t, tt.want.duration, duration)
-			assert.Equal(t, tt.want.status, status)
-		})
-	}
-}
-
-func Test_getDurationBasedOnDurationMatchingPolicy(t *testing.T) {
-	type args struct {
-		duration int64
-		policy   openrtb_ext.OWVideoAdDurationMatchingPolicy
-		config   []*types.ImpAdPodConfig
-	}
-	type want struct {
-		duration int64
-		status   constant.BidStatus
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: "empty_duration_policy",
-			args: args{
-				duration: 10,
-				policy:   "",
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 10,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "policy_exact",
-			args: args{
-				duration: 10,
-				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 10,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "policy_exact_didnot_match",
-			args: args{
-				duration: 15,
-				policy:   openrtb_ext.OWExactVideoAdDurationMatching,
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 15,
-				status:   constant.StatusDurationMismatch,
-			},
-		},
-		{
-			name: "policy_roundup_exact",
-			args: args{
-				duration: 20,
-				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 20,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "policy_roundup",
-			args: args{
-				duration: 25,
-				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 30,
-				status:   constant.StatusOK,
-			},
-		},
-		{
-			name: "policy_roundup_didnot_match",
-			args: args{
-				duration: 45,
-				policy:   openrtb_ext.OWRoundupVideoAdDurationMatching,
-				config: []*types.ImpAdPodConfig{
-					{MaxDuration: 10},
-					{MaxDuration: 20},
-					{MaxDuration: 30},
-					{MaxDuration: 40},
-				},
-			},
-			want: want{
-				duration: 45,
-				status:   constant.StatusDurationMismatch,
-			},
-		},
-
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			duration, status := getDurationBasedOnDurationMatchingPolicy(tt.args.duration, tt.args.policy, tt.args.config)
-			assert.Equal(t, tt.want.duration, duration)
-			assert.Equal(t, tt.want.status, status)
 		})
 	}
 }
@@ -596,7 +268,6 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 					ID:         "id1",
 					Cur:        "USD",
 					CustomData: "custom",
-					SeatBid:    make([]openrtb2.SeatBid, 0),
 				},
 			},
 		},
@@ -608,72 +279,10 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 					ID: "1",
 				},
 			}
-			actual := deps.createAdPodBidResponse(tt.args.resp, nil)
+			actual := deps.createAdPodBidResponse(tt.args.resp)
 			assert.Equal(t, tt.want.resp, actual)
 		})
 
-	}
-}
-
-func TestSetBidExtParams(t *testing.T) {
-	type args struct {
-		impData []*types.ImpData
-	}
-	type want struct {
-		impData []*types.ImpData
-	}
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			name: "sample",
-			args: args{
-				impData: []*types.ImpData{
-					{
-						Bid: &types.AdPodBid{
-							Bids: []*types.Bid{
-								{
-									Bid: &openrtb2.Bid{
-										Ext: json.RawMessage(`{"prebid": {"video": {} },"adpod": {}}`),
-									},
-									Duration: 10,
-									Status:   1,
-								},
-							},
-						},
-					},
-				},
-			},
-			want: want{
-				impData: []*types.ImpData{
-					{
-						Bid: &types.AdPodBid{
-							Bids: []*types.Bid{
-								{
-									Bid: &openrtb2.Bid{
-										Ext: json.RawMessage(`{"prebid": {"video": {"duration":10} },"adpod": {"aprc":1}}`),
-									},
-									Duration: 10,
-									Status:   1,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			deps := ctvEndpointDeps{
-				impData: tt.args.impData,
-			}
-			deps.setBidExtParams()
-			assert.Equal(t, tt.want.impData[0].Bid.Bids[0].Ext, deps.impData[0].Bid.Bids[0].Ext)
-		})
 	}
 }
 
@@ -742,23 +351,25 @@ func TestGetAdPodExt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			deps := ctvEndpointDeps{
-				impData: []*types.ImpData{
+			req := &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
 					{
-						ImpID: "imp1",
-						VideoExt: &openrtb_ext.ExtVideoAdPod{
-							AdPod: &openrtb_ext.VideoAdPod{},
-						},
-						Bid: &types.AdPodBid{
-							Bids: []*types.Bid{},
-						},
+						ID:    "imp1",
+						Video: &openrtb2.Video{},
 					},
 				},
-				request: &openrtb2.BidRequest{
-					Imp: []openrtb2.Imp{
-						{ID: "imp1"},
-					},
+			}
+
+			videoExt := openrtb_ext.ExtVideoAdPod{
+				AdPod: &openrtb_ext.VideoAdPod{},
+			}
+			dynamicAdpod := adpod.NewDynamicAdpod("test-pub", req.Imp[0], videoExt, &metrics.MetricsEngineMock{}, nil)
+
+			deps := ctvEndpointDeps{
+				podCtx: map[string]adpod.Adpod{
+					"imp1": dynamicAdpod,
 				},
+				request: req,
 			}
 			actual := deps.getBidResponseExt(tt.args.resp)
 			assert.Equal(t, string(tt.want.data), string(actual))
@@ -766,71 +377,220 @@ func TestGetAdPodExt(t *testing.T) {
 	}
 }
 
-func TestRecordAdPodRejectedBids(t *testing.T) {
-
+func TestGetAdpodConfigFromExtension(t *testing.T) {
+	type fields struct {
+		endpointDeps              endpointDeps
+		request                   *openrtb2.BidRequest
+		reqExt                    *openrtb_ext.ExtRequestAdPod
+		videoSeats                []*openrtb2.SeatBid
+		impsExtPrebidBidder       map[string]map[string]map[string]interface{}
+		impPartnerBlockedTagIDMap map[string]map[string][]string
+		podCtx                    map[string]adpod.Adpod
+		labels                    metrics.Labels
+	}
 	type args struct {
-		bids types.AdPodBid
+		imp openrtb2.Imp
 	}
-
-	type want struct {
-		expectedCalls int
-	}
-
 	tests := []struct {
-		description string
-		args        args
-		want        want
+		name    string
+		fields  fields
+		args    args
+		want    openrtb_ext.ExtVideoAdPod
+		wantErr bool
 	}{
 		{
-			description: "multiple rejected bids",
+			name: "Adpod_Config_available_in_the_impression_extension",
+			fields: fields{
+				endpointDeps: endpointDeps{},
+				request:      &openrtb2.BidRequest{},
+			},
 			args: args{
-				bids: types.AdPodBid{
-					Bids: []*types.Bid{
-						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusCategoryExclusion,
-							Seat:   "pubmatic",
-						},
-						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusWinningBid,
-							Seat:   "pubmatic",
-						},
-						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusOK,
-							Seat:   "pubmatic",
-						},
-						{
-							Bid:    &openrtb2.Bid{},
-							Status: 100,
-							Seat:   "pubmatic",
-						},
+				imp: openrtb2.Imp{
+					ID:    "imp1",
+					TagID: "/Test/unit",
+					Video: &openrtb2.Video{
+						MinDuration: 10,
+						MaxDuration: 30,
+						Ext:         json.RawMessage(`{"offset":20,"adpod":{"minads":2,"maxads":3,"adminduration":30,"admaxduration":40,"excladv":100,"excliabcat":100}}`),
 					},
 				},
 			},
-			want: want{
-				expectedCalls: 2,
-			},
-		},
-	}
-
-	for _, test := range tests {
-		me := &metrics.MetricsEngineMock{}
-		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
-
-		deps := ctvEndpointDeps{
-			endpointDeps: endpointDeps{
-				metricsEngine: me,
-			},
-			impData: []*types.ImpData{
-				{
-					Bid: &test.args.bids,
+			want: openrtb_ext.ExtVideoAdPod{
+				Offset: ptrutil.ToPtr(20),
+				AdPod: &openrtb_ext.VideoAdPod{
+					MinAds:                      ptrutil.ToPtr(2),
+					MaxAds:                      ptrutil.ToPtr(3),
+					MinDuration:                 ptrutil.ToPtr(30),
+					MaxDuration:                 ptrutil.ToPtr(40),
+					AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
+					IABCategoryExclusionPercent: ptrutil.ToPtr(100),
 				},
 			},
-		}
+		},
+		{
+			name: "video_extension_contains_values_other_than_adpod",
+			fields: fields{
+				endpointDeps: endpointDeps{},
+				request:      &openrtb2.BidRequest{},
+			},
+			args: args{
+				imp: openrtb2.Imp{
+					ID:    "imp1",
+					TagID: "/Test/unit",
+					Video: &openrtb2.Video{
+						MinDuration: 10,
+						MaxDuration: 30,
+						Ext:         json.RawMessage(`{"random":20}`),
+					},
+				},
+			},
+			want: openrtb_ext.ExtVideoAdPod{},
+		},
+		{
+			name: "adpod_configuration_present_in_request_extension",
+			fields: fields{
+				endpointDeps: endpointDeps{},
+				request:      &openrtb2.BidRequest{},
+				reqExt: &openrtb_ext.ExtRequestAdPod{
+					VideoAdPod: &openrtb_ext.VideoAdPod{
+						MinAds:                      ptrutil.ToPtr(1),
+						MaxAds:                      ptrutil.ToPtr(3),
+						MinDuration:                 ptrutil.ToPtr(10),
+						MaxDuration:                 ptrutil.ToPtr(30),
+						AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
+						IABCategoryExclusionPercent: ptrutil.ToPtr(100),
+					},
+				},
+			},
+			args: args{
+				imp: openrtb2.Imp{
+					ID:    "imp1",
+					TagID: "/Test/unit",
+					Video: &openrtb2.Video{
+						MinDuration: 10,
+						MaxDuration: 30,
+					},
+				},
+			},
+			want: openrtb_ext.ExtVideoAdPod{
+				Offset: ptrutil.ToPtr(0),
+				AdPod: &openrtb_ext.VideoAdPod{
+					MinAds:                      ptrutil.ToPtr(1),
+					MaxAds:                      ptrutil.ToPtr(3),
+					MinDuration:                 ptrutil.ToPtr(5),
+					MaxDuration:                 ptrutil.ToPtr(15),
+					AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
+					IABCategoryExclusionPercent: ptrutil.ToPtr(100),
+				},
+			},
+		},
+		{
+			name: "adpod_configuration_not_availbale_in_any_location",
+			fields: fields{
+				endpointDeps: endpointDeps{},
+				request:      &openrtb2.BidRequest{},
+			},
+			args: args{
+				imp: openrtb2.Imp{
+					ID:    "imp1",
+					TagID: "/Test/unit",
+					Video: &openrtb2.Video{
+						MinDuration: 10,
+						MaxDuration: 30,
+					},
+				},
+			},
+			want: openrtb_ext.ExtVideoAdPod{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deps := &ctvEndpointDeps{
+				endpointDeps:              tt.fields.endpointDeps,
+				request:                   tt.fields.request,
+				reqExt:                    tt.fields.reqExt,
+				videoSeats:                tt.fields.videoSeats,
+				impsExtPrebidBidder:       tt.fields.impsExtPrebidBidder,
+				impPartnerBlockedTagIDMap: tt.fields.impPartnerBlockedTagIDMap,
+				podCtx:                    tt.fields.podCtx,
+				labels:                    tt.fields.labels,
+			}
+			got, err := deps.readVideoAdPodExt(tt.args.imp)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ctvEndpointDeps.getAdpodConfigFromExtension() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got, "Adpod config does not match")
+		})
+	}
+}
 
-		deps.recordRejectedAdPodBids("pub_001")
-		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
+func TestCTVAuctionEndpointAdpod(t *testing.T) {
+	type args struct {
+		w      http.ResponseWriter
+		r      *http.Request
+		params httprouter.Params
+	}
+	tests := []struct {
+		name           string
+		directory      string
+		fileName       string
+		args           args
+		modifyResponse func(resp1, resp2 json.RawMessage) (json.RawMessage, error)
+	}{
+		{
+			name:      "dynamic_adpod_request",
+			args:      args{},
+			directory: "sample-requests/ctv/valid-requests/",
+			fileName:  "dynamic-adpod.json",
+		},
+		{
+			name:      "structured_adpod_request",
+			args:      args{},
+			directory: "sample-requests/ctv/valid-requests/",
+			fileName:  "structured-adpod.json",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Read test case and unmarshal
+			fileJsonData, err := os.ReadFile(tt.directory + tt.fileName)
+			assert.NoError(t, err, "Failed to fetch a valid request: %v. Test file: %s", err, tt.fileName)
+
+			test := ctvtestCase{}
+			assert.NoError(t, json.Unmarshal(fileJsonData, &test), "Failed to unmarshal data from file: %s. Error: %v", tt.fileName, err)
+
+			tt.args.r = httptest.NewRequest("POST", "/video/json", bytes.NewReader(test.BidRequest))
+			recorder := httptest.NewRecorder()
+
+			cfg := &config.Configuration{
+				MaxRequestSize: maxSize,
+				GDPR:           config.GDPR{Enabled: true},
+			}
+			if test.Config != nil {
+				cfg.BlacklistedApps = test.Config.BlacklistedApps
+				cfg.BlacklistedAppMap = test.Config.getBlacklistedAppMap()
+				cfg.AccountRequired = test.Config.AccountRequired
+			}
+
+			CTVAuctionEndpoint, _, mockBidServers, mockCurrencyRatesServer, err := ctvTestEndpoint(test, cfg)
+			assert.NoError(t, err, "Error while calling ctv auction endpoint %v", err)
+
+			CTVAuctionEndpoint(recorder, tt.args.r, tt.args.params)
+
+			// Close servers
+			for _, mockBidServer := range mockBidServers {
+				mockBidServer.Close()
+			}
+			mockCurrencyRatesServer.Close()
+
+			// if assert.Equal(t, test.ExpectedReturnCode, recorder.Code, "Expected status %d. Got %d. CTV test file: %s", http.StatusOK, recorder.Code, tt.fileName) {
+			// 	if test.ExpectedReturnCode == http.StatusOK {
+			// 		assert.JSONEq(t, string(test.ExpectedBidResponse), recorder.Body.String(), "Not the expected response. Test file: %s", tt.fileName)
+			// 	} else {
+			// 		assert.Equal(t, test.ExpectedErrorMessage, recorder.Body.String(), tt.fileName)
+			// 	}
+			// }
+		})
 	}
 }

@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/usersync"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -41,7 +42,7 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 		} else {
 			result.ModuleContext = make(hookstage.ModuleContext)
 			result.ModuleContext["rctx"] = rCtx
@@ -50,62 +51,38 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
-	if queryParams.Get("sshb") == "1" {
+	if rCtx.Sshb == models.Enabled {
+		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
+		return result, nil
+	}
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+	if endpoint == models.EndpointHybrid {
+		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
 
-	switch payload.Request.URL.Path {
-	// Direct call to 8000 port
-	case hookexecution.EndpointAuction:
-		switch source {
-		case "pbjs":
-			endpoint = models.EndpointWebS2S
-			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		case "owsdk":
-			requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-			endpoint = models.EndpointV25
-		default:
-			rCtx.Endpoint = models.EndpointHybrid
-			return result, nil
-		}
-	// call to 8001 port and here via reverse proxy
-	case OpenWrapAuction: // legacy hybrid api should not execute module
-		// m.metricEngine.RecordPBSAuctionRequestsStats()  //TODO: uncomment after hybrid call through module
-		rCtx.Endpoint = models.EndpointHybrid
-		return result, nil
-	case OpenWrapV25:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointV25
-	case OpenWrapV25Video:
-		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
-		endpoint = models.EndpointVideo
-	case OpenWrapAmp:
-		requestExtWrapper, pubid, err = models.GetQueryParamRequestExtWrapper(payload.Request)
-		endpoint = models.EndpointAMP
-	case OpenWrapOpenRTBVideo:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointVideo
-	case OpenWrapVAST:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointVAST
-	case OpenWrapJSON:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointJson
-	default:
-		// we should return from here
+	if endpoint == models.EndpointAppLovinMax {
+		rCtx.MetricsEngine = m.metricEngine
+		// updating body locally to access updated fields from signal
+		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
 	}
 
 	// init default for all modules
 	result.Reject = true
 
+	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequestWrapperExtension
+		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 
 	if requestExtWrapper.ProfileId <= 0 {
-		result.NbrCode = nbr.InvalidProfileID
+		result.NbrCode = int(nbr.InvalidProfileID)
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
 	}
@@ -168,4 +145,58 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 	return result, nil
+}
+
+func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
+	var requestExtWrapper models.RequestExtWrapper
+	var err error
+	switch endpoint {
+	case models.EndpintInappVideo:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+	case models.EndpointAMP:
+		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+	case models.EndpointV25:
+		fallthrough
+	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointWebS2S, models.EndpointAppLovinMax:
+		fallthrough
+	default:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+	}
+
+	return requestExtWrapper, err
+}
+
+func GetEndpoint(path, source string, agent string) string {
+	switch path {
+	case hookexecution.EndpointAuction:
+		switch source {
+		case "pbjs":
+			return models.EndpointWebS2S
+		case "owsdk":
+			switch agent {
+			case models.AppLovinMaxAgent:
+				return models.EndpointAppLovinMax
+			}
+			return models.EndpointV25
+		default:
+			return models.EndpointHybrid
+		}
+	case OpenWrapAuction:
+		return models.EndpointHybrid
+	case OpenWrapV25:
+		return models.EndpointV25
+	case OpenWrapV25Video:
+		return models.EndpintInappVideo
+	case OpenWrapAmp:
+		return models.EndpointAMP
+	case OpenWrapOpenRTBVideo:
+		return models.EndpointVideo
+	case OpenWrapVAST:
+		return models.EndpointVAST
+	case OpenWrapJSON:
+		return models.EndpointJson
+	}
+	return ""
 }

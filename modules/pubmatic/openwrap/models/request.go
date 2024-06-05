@@ -3,7 +3,7 @@ package models
 import (
 	"encoding/json"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type ExtRegs struct {
@@ -106,6 +106,7 @@ type RequestExtWrapper struct {
 	ABTestConfig         int    `json:"abtest,omitempty"`
 	LoggerImpressionID   string `json:"wiid,omitempty"`
 	SSAI                 string `json:"ssai,omitempty"`
+	PubId                int    `json:"-"`
 }
 
 type BidderWrapper struct {

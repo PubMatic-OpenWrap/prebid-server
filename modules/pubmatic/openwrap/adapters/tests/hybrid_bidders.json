@@ -173,6 +173,7 @@
         "want": {
             "expectedJSON": {
                 "placementId": 1234567,
+                "publisherId": 5890,
                 "size": {
                     "w": 720,
                     "h": 120

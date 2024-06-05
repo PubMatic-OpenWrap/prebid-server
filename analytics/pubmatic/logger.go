@@ -8,33 +8,41 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
 type bidWrapper struct {
 	*openrtb2.Bid
-	Nbr *openrtb3.NonBidStatusCode
+	Nbr *openrtb3.NoBidReason
 }
 
-// getUUID is a function variable which will return uuid
-var getUUID = func() string {
+// GetUUID is a function variable which will return uuid
+var GetUUID = func() string {
 	return uuid.NewV4().String()
+}
+
+var blockListedNBR = map[openrtb3.NoBidReason]struct{}{
+	nbr.RequestBlockedPartnerThrottle: {},
+	nbr.RequestBlockedPartnerFiltered: {},
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
-	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
+	// Get Updated Floor values using floor rules from updated request
+	getFloorValueFromUpdatedRequest(ao.RequestWrapper, rCtx)
 
 	wlog := WloggerRecord{
 		record: record{
@@ -103,7 +111,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		}
 
 		slots = append(slots, SlotRecord{
-			SlotId:            getUUID(),
+			SlotId:            GetUUID(),
 			SlotName:          impCtx.SlotName,
 			SlotSize:          impCtx.IncomingSlots,
 			Adunit:            impCtx.AdUnitName,
@@ -191,6 +199,19 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 	return nil
 }
 
+// getFloorValueFromUpdatedRequest gets updated floor values by floor module
+func getFloorValueFromUpdatedRequest(reqWrapper *openrtb_ext.RequestWrapper, rCtx *models.RequestCtx) {
+	for _, imp := range reqWrapper.BidRequest.Imp {
+		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+			if imp.BidFloor > 0 && impCtx.BidFloor != imp.BidFloor {
+				impCtx.BidFloor = imp.BidFloor
+				impCtx.BidFloorCur = imp.BidFloorCur
+				rCtx.ImpBidCtx[imp.ID] = impCtx
+			}
+		}
+	}
+}
+
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
 	bid.Bid = &openrtb2.Bid{
 		Price:   nonBid.Ext.Prebid.Bid.Price,
@@ -228,7 +249,7 @@ func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
 	}
 	// the 'nbr' field will be lost due to json.Marshal hence do not set it inside bid.Ext
 	// set the 'nbr' code at bid level, while forming partner-records we give high priority to bid.nbr over bid.ext.nbr
-	bid.Nbr = openwrap.GetNonBidStatusCodePtr(openrtb3.NonBidStatusCode(nonBid.StatusCode))
+	bid.Nbr = openrtb3.NoBidReason(nonBid.StatusCode).Ptr()
 	return bid
 }
 
@@ -360,8 +381,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			price := bid.Price
 			if ao.Response.Cur != models.USD {
-				if bidCtx.EG != 0 { // valid-bids + dropped-bids+ default-bids
-					price = bidCtx.EG
+				if bidCtx.EN != 0 { // valid-bids + dropped-bids+ default-bids
+					price = bidCtx.EN
 				} else if bidExt.OriginalBidCPMUSD != 0 { // valid non-bids
 					price = bidExt.OriginalBidCPMUSD
 				}
@@ -378,6 +399,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			nbr := bid.Nbr // only for seat-non-bids this will present at bid level
 			if nbr == nil {
 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
+			}
+
+			if nbr != nil {
+				if _, ok := blockListedNBR[*nbr]; ok {
+					continue
+				}
 			}
 
 			pr := PartnerRecord{
@@ -403,11 +430,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if pr.NetECPM == 0 {
-				pr.NetECPM = models.GetNetEcpm(price, revShare)
+				pr.NetECPM = models.ToFixed(price, models.BID_PRECISION)
 			}
 
 			if pr.GrossECPM == 0 {
-				pr.GrossECPM = models.GetGrossEcpm(price)
+				pr.GrossECPM = models.GetGrossEcpmFromNetEcpm(price, revShare)
 			}
 
 			if pr.PartnerSize == "" {
@@ -421,7 +448,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.FloorValue, pr.FloorRuleValue = models.GetBidLevelFloorsDetails(bidExt, impCtx, rCtx.CurrencyConversion)
 			}
 
-			if nbr != nil && *nbr == openrtb3.NoBidTimeoutError {
+			if nbr != nil && *nbr == exchange.ErrorTimeout {
 				pr.PostTimeoutBidStatus = 1
 				pr.Latency1 = 0
 			}

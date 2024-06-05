@@ -8,20 +8,25 @@ import (
 	"strings"
 	"time"
 
+	"sync"
+
+	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/currency"
-	"github.com/prebid/prebid-server/modules/moduledeps"
-	ow_adapters "github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	ow_gocache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache/gocache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mysql"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/fullscreenclickability"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
-	metrics_cfg "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/tbf"
+	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/modules/moduledeps"
+	ow_adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
 )
 
 const (
@@ -33,9 +38,15 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
+	geoInfoFetcher     geodb.Geography
+	pubFeatures        publisherfeature.Feature
+	unwrap             unwrap.Unwrap
 }
 
+var ow *OpenWrap
+
 func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (OpenWrap, error) {
+	var once sync.Once
 	cfg := config.Config{}
 
 	err := json.Unmarshal(rawCfg, &cfg)
@@ -69,18 +80,38 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
-	// Init FSC and related services
-	fullscreenclickability.Init(owCache, cfg.Cache.CacheDefaultExpiry)
+	// Init Feature reloader service
+	pubFeatures := publisherfeature.New(publisherfeature.Config{
+		Cache:                 owCache,
+		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
+		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
+	})
+	pubFeatures.Start()
 
-	// Init TBF (tracking-beacon-first) feature related services
-	tbf.Init(cfg.Cache.CacheDefaultExpiry, owCache)
+	// Init VAST Unwrap
+	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
+	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
+		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
-	return OpenWrap{
-		cfg:                cfg,
-		cache:              owCache,
-		metricEngine:       &metricEngine,
-		currencyConversion: moduleDeps.CurrencyConversion,
-	}, nil
+	// init geoDBClient
+	geoDBClient := netacuity.DummyNetAcuity{}
+	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
+	if err != nil {
+		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
+	}
+
+	once.Do(func() {
+		ow = &OpenWrap{
+			cfg:                cfg,
+			cache:              owCache,
+			metricEngine:       &metricEngine,
+			currencyConversion: moduleDeps.CurrencyConversion,
+			geoInfoFetcher:     geoDBClient,
+			pubFeatures:        pubFeatures,
+			unwrap:             uw,
+		}
+	})
+	return *ow, nil
 }
 
 func open(driverName string, cfg config.Database) (*sql.DB, error) {

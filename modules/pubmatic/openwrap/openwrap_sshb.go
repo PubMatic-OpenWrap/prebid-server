@@ -1,9 +1,13 @@
 package openwrap
 
 import (
-	cache "github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"context"
+
+	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
 )
 
 // GetConfig Temporary function to expose config to SSHB
@@ -35,4 +39,15 @@ func (ow *OpenWrap) SetCache(c cache.Cache) {
 // GetMetricEngine Temporary function to expose mertics to SSHB
 func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 	ow.metricEngine = m
+}
+
+// GetFeature Temporary function to expose feature to SSHB
+func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
+	return ow.pubFeatures
+}
+
+// getVastUnwrapperEnable checks for Vast unwrp is enabled in given context
+func getVastUnwrapperEnable(ctx context.Context, field string) bool {
+	vastEnableUnwrapper, _ := ctx.Value(field).(string)
+	return vastEnableUnwrapper == models.Enabled
 }

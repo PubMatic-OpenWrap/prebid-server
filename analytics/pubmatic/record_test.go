@@ -3,10 +3,10 @@ package pubmatic
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,6 +19,11 @@ func TestLogIntegrationType(t *testing.T) {
 		{
 			name:            "sdk",
 			endpoint:        models.EndpointV25,
+			integrationType: models.TypeSDK,
+		},
+		{
+			name:            "applovinmax",
+			endpoint:        models.EndpointAppLovinMax,
 			integrationType: models.TypeSDK,
 		},
 		{
@@ -415,9 +420,7 @@ func TestLogDeviceObject(t *testing.T) {
 				dvc: &models.DeviceCtx{
 					Platform:  models.DevicePlatformDesktop,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{},
-					},
+					Ext:       &models.ExtDevice{},
 				},
 			},
 			want: Device{
@@ -431,17 +434,17 @@ func TestLogDeviceObject(t *testing.T) {
 				dvc: &models.DeviceCtx{
 					Platform:  models.DevicePlatformDesktop,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-					Ext: &models.ExtDevice{
-						ExtDevice: openrtb_ext.ExtDevice{
-							ATTS: ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
-						},
-					},
+					Ext: func() *models.ExtDevice {
+						extDevice := models.ExtDevice{}
+						extDevice.UnmarshalJSON([]byte(`{"atts":0}`))
+						return &extDevice
+					}(),
 				},
 			},
 			want: Device{
 				Platform: models.DevicePlatformDesktop,
 				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
-				ATTS:     ptrutil.ToPtr(openrtb_ext.IOSAppTrackingStatusNotDetermined),
+				ATTS:     ptrutil.ToPtr(float64(openrtb_ext.IOSAppTrackingStatusNotDetermined)),
 			},
 		},
 	}

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -164,8 +164,8 @@ func TestSortByDealPriority(t *testing.T) {
 		for _, bid := range bids {
 			fmt.Println(bid.ID, ",", bid.Price, ",", bid.DealTierSatisfied)
 		}
-		sortBids(bids[:])
-		fmt.Println("After sort")
+		SortBids(bids[:])
+
 		actual := []string{}
 		for _, bid := range bids {
 			fmt.Println(bid.ID, ",", bid.Price, ", ", bid.DealTierSatisfied)
