@@ -445,3 +445,104 @@ func TestRestoreBidResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestWloggerRecord_logProfileMetaData(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		rctx *models.RequestCtx
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "all feilds are empty",
+			args: args{
+				rctx: &models.RequestCtx{},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "all feilds are set",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    ptrutil.ToPtr(4),
+					AppSubIntegrationPath: ptrutil.ToPtr(5),
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    ptrutil.ToPtr(4),
+				AppSubIntegrationPath: ptrutil.ToPtr(5),
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are nil",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    nil,
+					AppSubIntegrationPath: nil,
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are not nil but less than 0",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    ptrutil.ToPtr(-1),
+					AppSubIntegrationPath: ptrutil.ToPtr(-1),
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logProfileMetaData(tt.args.rctx)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
