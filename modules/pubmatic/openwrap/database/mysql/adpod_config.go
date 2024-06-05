@@ -12,7 +12,7 @@ import (
 )
 
 func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
-	versionID, displayVersion, _, err := db.getVersionID(profileID, displayVersion, pubID)
+	versionID, displayVersion, _, _, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
 	if err != nil {
 		return nil, err
 	}
