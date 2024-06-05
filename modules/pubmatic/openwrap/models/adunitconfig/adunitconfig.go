@@ -56,6 +56,7 @@ type Video struct {
 	Enabled              *bool        `json:"enabled,omitempty"`
 	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
 	Config               *VideoConfig `json:"config,omitempty"`
+	UsePodConfig         *bool        `json:"usepodconfig,omitempty"`
 }
 
 // Struct for UniversalPixel

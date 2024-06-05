@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	adpodconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adpodconfig"
 	adunitconfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
@@ -48,6 +49,21 @@ func (m *MockDatabase) GetActivePartnerConfigurations(arg0, arg1, arg2 int) (map
 func (mr *MockDatabaseMockRecorder) GetActivePartnerConfigurations(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivePartnerConfigurations", reflect.TypeOf((*MockDatabase)(nil).GetActivePartnerConfigurations), arg0, arg1, arg2)
+}
+
+// GetAdpodConfig mocks base method.
+func (m *MockDatabase) GetAdpodConfig(arg0, arg1, arg2 int) (*adpodconfig.AdpodConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAdpodConfig", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*adpodconfig.AdpodConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAdpodConfig indicates an expected call of GetAdpodConfig.
+func (mr *MockDatabaseMockRecorder) GetAdpodConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdpodConfig", reflect.TypeOf((*MockDatabase)(nil).GetAdpodConfig), arg0, arg1, arg2)
 }
 
 // GetAdunitConfig mocks base method.
