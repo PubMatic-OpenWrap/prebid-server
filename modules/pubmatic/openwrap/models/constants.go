@@ -7,6 +7,7 @@ const (
 	ADAPTER_NAME                = "adapterName"
 	PREBID_PARTNER_NAME         = "prebidPartnerName"
 	BidderCode                  = "bidderCode"
+	BidderFilters               = "bidderFilters"
 	IsAlias                     = "isAlias"
 	PROTOCOL                    = "protocol"
 	SERVER_SIDE_FLAG            = "serverSideEnabled"
@@ -497,6 +498,7 @@ const (
 	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
+	GetAdpodConfig                     = "GetAdpodConfig"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
@@ -531,8 +533,14 @@ const (
 	GamAdServer = "gam"
 )
 
-// constants for feature id
+// constants for adpod type
+const (
+	AdPodTypeDynamic    = "dynamic"
+	AdPodTypeStructured = "structured"
+	AdPodTypeHybrid     = "hybrid"
+)
 
+// constants for feature id
 const (
 	FeatureFSC               = 1
 	FeatureTBF               = 2
