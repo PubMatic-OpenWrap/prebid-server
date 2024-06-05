@@ -1,5 +1,7 @@
 package ortbbidder
 
+import "strconv"
+
 /*
 setValue updates or creates a value in a node based on a specified location.
 The location is a string that specifies a path through the node hierarchy,
@@ -64,22 +66,29 @@ func getNode(nodes map[string]any, key string) any {
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
 // getValueFromLocation retrieves a value from a map based on a specified location.
-func getValueFromLocation(val map[string]interface{}, location []string) (interface{}, bool) {
+func getValueFromLocation(val interface{}, location []string) (interface{}, bool) {
 	var (
-		ok        bool
-		next      interface{}
-		lastIndex = len(location) - 1
+		ok   bool
+		next interface{} = val
 	)
-	for i, loc := range location {
-		next, ok = val[loc]
-		if !ok {
-			return nil, false
-		}
-		if i < lastIndex {
-			val, ok = next.(map[string]interface{})
+	for _, loc := range location {
+		switch nxt := next.(type) {
+		case map[string]interface{}:
+			next, ok = nxt[loc]
 			if !ok {
 				return nil, false
 			}
+		case []interface{}:
+			index, err := strconv.Atoi(loc)
+			if err != nil {
+				return nil, false
+			}
+			if index < 0 || index >= len(nxt) {
+				return nil, false
+			}
+			next = nxt[index]
+		default:
+			return nil, false
 		}
 	}
 	return next, true
