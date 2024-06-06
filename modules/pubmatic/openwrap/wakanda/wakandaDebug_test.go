@@ -11,7 +11,7 @@ func TestEnable(t *testing.T) {
 	pubID := "31445"
 	profID := "55"
 	config := Wakanda{HostName: "", DCName: "DC1"}
-	InitWakanda(config)
+	Init(config)
 	_ = wakandaRulesMap.AddIfNotPresent(generateKeyFromWakandaRequest(pubID, profID), 2, "local")
 
 	wd := &Debug{

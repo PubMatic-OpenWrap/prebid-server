@@ -13,7 +13,7 @@ func initOpenWrapServer(cfg *config.Config) *http.Server {
 	cfg.Wakanda.HostName = cfg.Server.HostName
 	cfg.Wakanda.DCName = cfg.Server.DCName
 	cfg.Wakanda.PodName = getPodName()
-	wakanda.InitWakanda(cfg.Wakanda)
+	wakanda.Init(cfg.Wakanda)
 	hbMux := http.NewServeMux()
 	hbMux.HandleFunc("/wakanda", wakanda.Handler(cfg.Wakanda))
 	srvInterface := strings.TrimPrefix(cfg.Server.EndPoint, "http://")

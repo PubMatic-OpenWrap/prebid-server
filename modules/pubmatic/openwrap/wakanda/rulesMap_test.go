@@ -22,7 +22,7 @@ func TestAddRule(t *testing.T) {
 	assert.Equal(t, "local"+"__FIRST_RULE", wr.FolderPath, "FolderPath formation is not as expected")
 }
 
-func Test_rulesMap_cleanRules(t *testing.T) {
+func TestRulesMapCleanRules(t *testing.T) {
 	now := time.Now()
 
 	maxDuration := time.Minute * 10

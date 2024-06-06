@@ -93,7 +93,7 @@ func Handler(config Wakanda) http.HandlerFunc {
 	}
 }
 
-func InitWakanda(config Wakanda) {
+func Init(config Wakanda) {
 	wakandaRulesMap = getNewRulesMap(config)
 	setCommandHandler()
 }

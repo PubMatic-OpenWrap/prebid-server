@@ -39,7 +39,7 @@ func wakndaGetTester(t *testing.T, handler http.HandlerFunc, call string, output
 
 func TestHttpHandler(t *testing.T) {
 	config := Wakanda{HostName: "", DCName: "DC1"}
-	InitWakanda(config)
+	Init(config)
 	handler := http.HandlerFunc(Handler(config))
 	wakndaGetTester(t, handler, "/wakanda", `{success: "false", statusMsg: "No key was generated for the request.", host: ""}`)
 	wakndaGetTester(t, handler, "/wakanda/", `{success: "false", statusMsg: "No key was generated for the request.", host: ""}`)

@@ -21,7 +21,7 @@ import (
 func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-	wakanda.InitWakanda(wakanda.Wakanda{})
+	wakanda.Init(wakanda.Wakanda{})
 
 	defer ctrl.Finish()
 
