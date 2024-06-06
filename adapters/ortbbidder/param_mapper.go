@@ -4,26 +4,29 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-type ParserFunc func(p Parser, currNode, newNode map[string]any, location []string)
-
+type (
+	ParserFunc         func(p Parser, bid, typeBid map[string]any, path string)
+	ResponseParserFunc func(p Parser, adapterRespnse map[string]any, path string)
+)
 type Parser interface {
-	MType(currNode, newNode map[string]any, location []string)
-	Dur(currNode, newNode map[string]any, location []string)
-	Fledge(currNode, newNode map[string]any, location []string)
+	MType(bid, typeBid map[string]any, path string)
+	Dur(bid, typeBid map[string]any, path string)
+	Fledge(adapterRespnse map[string]any, path string)
 }
 
 type ParserImpl struct {
+	bidResponse map[string]any
 }
 
-func (p *ParserImpl) MType(bid, typeBid map[string]any, location []string) {
-	var getMType = func(bid map[string]any, location []string) openrtb_ext.BidType {
+func (p *ParserImpl) MType(bid, typeBid map[string]any, path string) {
+	typeBid["bidType"] = func(bid map[string]any, path string) openrtb_ext.BidType {
 
 		mType, ok := bid["mtype"].(string)
 		if ok {
 			return openrtb_ext.BidType(mType)
 		}
 
-		value, ok := getValueFromLocation(bid, location[2:])
+		value, ok := getValueFromLocation(p.bidResponse, path)
 		if ok {
 			mType, ok := value.(string)
 			if ok {
@@ -32,27 +35,38 @@ func (p *ParserImpl) MType(bid, typeBid map[string]any, location []string) {
 		}
 		return ""
 	}
-
-	typeBid["bidType"] = getMType(bid, location)
 }
 
-func (p *ParserImpl) Dur(currNode, newNode map[string]any, location []string) {
+func (p *ParserImpl) Dur(bid, typeBid map[string]any, path string) {
 }
 
-func (p *ParserImpl) Fledge(currNode, newNode map[string]any, location []string) {
+func (p *ParserImpl) Fledge(adapterResponse map[string]any, path string) {
 }
 
-func getBidParamParser() map[string]ParserFunc {
+type parserFactory interface {
+	getBidParamParser() map[string]ParserFunc
+	getResponseParamParser() map[string]ResponseParserFunc
+	NewParser(bidResponse map[string]any) Parser
+}
+
+type parserFactoryImpl struct {
+}
+
+func (parserFactoryImpl) NewParser(bidResponse map[string]any) Parser {
+	return &ParserImpl{
+		bidResponse: bidResponse,
+	}
+}
+
+func (parserFactoryImpl) getBidParamParser() map[string]ParserFunc {
 	return map[string]ParserFunc{
 		"mtype": Parser.MType,
 		"dur":   Parser.Dur,
 	}
 }
 
-func getRequestParamParser() map[string]ParserFunc {
-	return map[string]ParserFunc{
-		"fledge": func(p Parser, currNode, newNode map[string]any, location []string) {
-			p.Fledge(currNode, newNode, location)
-		},
+func (parserFactoryImpl) getResponseParamParser() map[string]ResponseParserFunc {
+	return map[string]ResponseParserFunc{
+		"fledge": Parser.Fledge,
 	}
 }

@@ -17,8 +17,7 @@ import (
 type adapter struct {
 	adapterInfo
 	bidderParamsConfig *bidderparams.BidderConfig
-	parser             Parser
-	paramMapperFactory ParamMapperFactory
+	parser             parserFactory
 }
 
 const (
@@ -80,8 +79,8 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	return &adapter{
 		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
 		bidderParamsConfig: g_bidderParamsConfig,
-		parser:             &ParserImpl{},
-		paramMapperFactory: ParamMapperFactoryImpl{},
+		parser:             &parserFactoryImpl{},
+		// paramMapperFactory: ParamMapperFactoryImpl{},
 	}, nil
 }
 
@@ -130,27 +129,11 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	var response openrtb2.BidResponse
-	if err := json.Unmarshal(responseData.Body, &response); err != nil {
-		return nil, []error{err}
-	}
-
-	bidResponse := &adapters.BidderResponse{
-		Bids: make([]*adapters.TypedBid, 0),
-	}
-	for _, seatBid := range response.SeatBid {
-		for bidInd, bid := range seatBid.Bid {
-			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:     &seatBid.Bid[bidInd],
-				BidType: getMediaTypeForBid(bid),
-			})
-		}
-	}
-
-	bidResponse, err := o.makeBids(response, bidResponse)
+	bidResponse, err := o.makeBids(responseData.Body)
 	if err != nil {
 		return nil, []error{err}
 	}
+
 	return bidResponse, nil
 }
 
@@ -197,65 +180,50 @@ func isORTBBidder(bidderName string) bool {
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
-func (o *adapter) makeBids(response openrtb2.BidResponse, bidderResponse *adapters.BidderResponse) (*adapters.BidderResponse, error) {
+func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
 	responseParmas, _ := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
-	responseBytes, err := json.Marshal(response)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal ortb response %s", err.Error())
-	}
 
-	adapterResonseBytes, err := json.Marshal(bidderResponse)
+	adapterResponseBytes, err := setResponseParams(bidderResponseBytes, responseParmas, o.parser)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal ortb response %s", err.Error())
-	}
-
-	responseBytes, err = setResponseParams(responseBytes, adapterResonseBytes, responseParmas, o.parser)
-	if err != nil {
-		return bidderResponse, err
-	}
-
-	responseBytes, err = setResponseParams1(responseBytes, adapterResonseBytes, responseParmas, o.paramMapperFactory)
-	if err != nil {
-		return bidderResponse, err
+		return nil, err
 	}
 
 	var resp *adapters.BidderResponse
-	err = json.Unmarshal(responseBytes, &resp)
+	err = json.Unmarshal(adapterResponseBytes, &resp)
 	return resp, err
 }
 
 // implementation using Parser
-func setResponseParams(responseBody, adapterResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parser Parser) ([]byte, error) {
-	if len(responseBody) == 0 || len(adapterResponseBody) == 0 {
-		return adapterResponseBody, nil
+func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory parserFactory) ([]byte, error) {
+	if len(bidderResponseBody) == 0 {
+		return nil, fmt.Errorf("invalid responseBody")
 	}
 
 	response := map[string]any{}
-	err := json.Unmarshal(responseBody, &response)
+	err := json.Unmarshal(bidderResponseBody, &response)
 	if err != nil {
 		return nil, err
 	}
 
-	bidderResponse := map[string]any{}
-	err = json.Unmarshal(adapterResponseBody, &bidderResponse)
-	if err != nil {
-		return nil, err
-	}
+	// build adapter response
 
-	for paramName, callback := range getRequestParamParser() {
+	adapterResponse := map[string]any{}
+	adapterResponse["Currency"] = ""
+
+	parser := parserFactory.NewParser(response)
+	typeBids := []any{}
+	for paramName, callback := range parserFactory.getResponseParamParser() {
 		paramMapper, ok := responseParams[paramName]
 		if !ok {
 			continue
 		}
-		callback(parser, response, bidderResponse, paramMapper.GetLocation())
+		callback(parser, adapterResponse, paramMapper.GetPath())
 	}
-
 	seatBids, ok := response["seatbid"].([]any)
 	if !ok {
 		return nil, fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", response["seatbid"])
 	}
-	index := 0
-	for _, seatBid := range seatBids {
+	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("error:[invalid_seatbid_found_in_seatbids], seatbid:[%v]", seatBids)
@@ -266,80 +234,30 @@ func setResponseParams(responseBody, adapterResponseBody json.RawMessage, respon
 			return nil, fmt.Errorf("error:[invalid_bid_found_in_seatbid], bid:[%v]", seatBid["bid"])
 		}
 
-		typeBids := bidderResponse["Bids"].([]any)
-		for _, bid := range bids {
+		for bidIndex, bid := range bids {
 			bid, ok := bid.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("error:[invalid_bid_found_in_bids], bid:[%v]", bid)
 			}
-
-			typeBid := typeBids[index]
-			for paramName, callback := range getBidParamParser() {
+			typeBid := map[string]any{
+				"Bid": bid,
+			}
+			for paramName, callback := range parserFactory.getBidParamParser() {
 				paramMapper, ok := responseParams[paramName]
 				if !ok {
 					continue
 				}
-				callback(parser, bid, typeBid.(map[string]any), paramMapper.GetLocation())
-			}
-			index++
-		}
-	}
-
-	return json.Marshal(bidderResponse)
-}
-
-// implementation using ParamMapperFactory
-func setResponseParams1(responseBody, adapterResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory ParamMapperFactory) ([]byte, error) {
-	if len(responseBody) == 0 || len(adapterResponseBody) == 0 {
-		return adapterResponseBody, nil
-	}
-
-	response := map[string]any{}
-	err := json.Unmarshal(responseBody, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	bidderResponse := map[string]any{}
-	err = json.Unmarshal(adapterResponseBody, &bidderResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	seatBids, ok := response["seatbid"].([]any)
-	if !ok {
-		return nil, fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", response["seatbid"])
-	}
-	index := 0
-	for _, seatBid := range seatBids {
-		seatBid, ok := seatBid.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("error:[invalid_seatbid_found_in_seatbids], seatbid:[%v]", seatBids)
-		}
-
-		bids, ok := seatBid["bid"].([]any)
-		if !ok {
-			return nil, fmt.Errorf("error:[invalid_bid_found_in_seatbid], bid:[%v]", seatBid["bid"])
-		}
-
-		typeBids := bidderResponse["Bids"].([]any)
-		for _, bid := range bids {
-			bid, ok := bid.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("error:[invalid_bid_found_in_bids], bid:[%v]", bid)
-			}
-
-			typeBid := typeBids[index]
-			for paramName, mapper := range parserFactory.NewBidParamMapper() {
-				paramMapper, ok := responseParams[paramName]
+				path := getPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
 				if !ok {
 					continue
 				}
-				mapper.ProcessParam(bid, typeBid.(map[string]any), paramMapper.GetLocation())
+				callback(parser, bid, typeBid, path)
 			}
-			index++
+			typeBids = append(typeBids, typeBid)
 		}
 	}
 
-	return json.Marshal(adapterResponseBody)
+	adapterResponse["Bids"] = typeBids
+
+	return json.Marshal(adapterResponse)
 }

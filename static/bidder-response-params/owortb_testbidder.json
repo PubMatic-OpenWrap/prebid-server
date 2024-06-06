@@ -6,8 +6,8 @@
     "properties": {
       "mtype": {
         "type": "string",
-        "description": "adunitID param",
-        "location": "ext.bid.ext.type"
+        "description": "mtype",
+        "location": "seat.#.bid.#.ext.type"
       }
     },
     "required": ["adunitID"]

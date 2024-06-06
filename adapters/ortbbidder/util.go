@@ -1,6 +1,9 @@
 package ortbbidder
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 /*
 setValue updates or creates a value in a node based on a specified location.
@@ -66,7 +69,8 @@ func getNode(nodes map[string]any, key string) any {
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
 // getValueFromLocation retrieves a value from a map based on a specified location.
-func getValueFromLocation(val interface{}, location []string) (interface{}, bool) {
+func getValueFromLocation(val interface{}, path string) (interface{}, bool) {
+	location := strings.Split(path, ".")
 	var (
 		ok   bool
 		next interface{} = val
@@ -92,4 +96,54 @@ func getValueFromLocation(val interface{}, location []string) (interface{}, bool
 		}
 	}
 	return next, true
+}
+
+func setValueAtLocation(node map[string]interface{}, path string, value interface{}) bool {
+	location := strings.Split(path, ".")
+	var (
+		ok   bool
+		next interface{} = node
+	)
+	lastIndex := len(location) - 1
+	for i, loc := range location {
+		switch nxt := next.(type) {
+		case map[string]interface{}:
+			if i == lastIndex {
+				nxt[loc] = value
+				return true
+			}
+			next, ok = nxt[loc]
+			if !ok {
+				return false
+			}
+		case []interface{}:
+			index, err := strconv.Atoi(loc)
+			if err != nil || index < 0 || index >= len(nxt) {
+				return false
+			}
+			if i == lastIndex {
+				nxt[index] = value
+				return true
+			}
+			next = nxt[index]
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func getPath(path string, array []int) string {
+	parts := strings.Split(path, ".")
+	j := 0
+	for i, part := range parts {
+		if part == "#" {
+			if j >= len(array) {
+				break
+			}
+			parts[i] = strconv.Itoa(array[j])
+			j++
+		}
+	}
+	return strings.Join(parts, ".")
 }

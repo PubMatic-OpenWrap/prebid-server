@@ -149,6 +149,7 @@ func prepareParams(bidderName string, paramsConfig map[string]any) (map[string]B
 		}
 		paramsCfg[paramName] = BidderParamMapper{
 			location: strings.Split(locationStr, "."),
+			path:     locationStr,
 		}
 	}
 	return paramsCfg, nil

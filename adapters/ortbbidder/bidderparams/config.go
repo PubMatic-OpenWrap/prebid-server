@@ -3,11 +3,16 @@ package bidderparams
 // BidderParamMapper contains property details like location
 type BidderParamMapper struct {
 	location []string
+	path     string
 }
 
 // GetLocation returns the location of bidderParam
 func (bpm *BidderParamMapper) GetLocation() []string {
 	return bpm.location
+}
+
+func (bpm *BidderParamMapper) GetPath() string {
+	return bpm.path
 }
 
 // SetLocation sets the location in BidderParamMapper
