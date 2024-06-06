@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
@@ -42,17 +43,29 @@ func InitBidderParamsConfig(dirPath string) (err error) {
 	return err
 }
 
-// makeRequestForAllImps processes a request map to create single RequestData object for all impressions.
-// It constructs the endpoint URL and maps the request-params in request to form the RequestData object.
-func (adapterInfo adapterInfo) makeRequestForAllImps(request map[string]any, bidderParamMapper map[string]bidderparams.BidderParamMapper) ([]*adapters.RequestData, []error) {
+// makeRequest constructs the endpoint URL and maps the bidder-parameters in request to create the RequestData objects.
+// when supportSingleImpInRequest is true, it processes a request to generate 'N' RequestData objects, one for each of the 'N' impressions
+// else it create single RequestData object for all impressions.
+func (adapterInfo adapterInfo) makeRequest(rawRequest []byte, bidderParamMapper map[string]bidderparams.BidderParamMapper, supportSingleImpInRequest bool) ([]*adapters.RequestData, []error) {
+	request, err := convertRequestToMap(rawRequest)
+	if err != nil {
+		return nil, []error{newBadInputError(err.Error())}
+	}
 	imps, ok := request[impKey].([]any)
 	if !ok {
-		return nil, []error{newBadInputError("invalid imp object found in request")}
+		return nil, []error{newBadInputError("imp object not found in request")}
+	}
+	// set "imp" object in request to empty to improve performance while creating deep copy of request
+	if supportSingleImpInRequest {
+		rawRequest, err = jsonparser.Set(rawRequest, []byte("[]"), impKey)
+		if err != nil {
+			return nil, []error{fmt.Errorf("failed to empty the imp key in request")}
+		}
 	}
 	var (
-		err  error
-		uri  string
-		errs []error
+		uri         string
+		errs        []error
+		requestData []*adapters.RequestData
 	)
 	// iterate through imps in reverse order to ensure setRequestParams prioritizes
 	// the parameters from imp[0].ext.bidder over those from imp[1..N].ext.bidder.
@@ -63,81 +76,91 @@ func (adapterInfo adapterInfo) makeRequestForAllImps(request map[string]any, bid
 			continue
 		}
 		bidderParams := getImpExtBidderParams(imp)
-		// build endpoint URL once, using the imp[0].ext.bidder parameters
-		// this must be done before calling setRequestParams, as it removes the imp.ext.bidder parameters.
-		if impIndex == 0 {
-			uri, err = macros.ResolveMacros(adapterInfo.endpointTemplate, bidderParams)
+		if supportSingleImpInRequest {
+			// build endpoint-url from bidder-params, it must be done before calling setRequestParams, as it removes the imp.ext.bidder parameters.
+			// for "single" requestMode, build endpoint-uri separately using each imp's bidder-params
+			uri, err = buildEndpoint(adapterInfo.endpointTemplate, bidderParams)
 			if err != nil {
-				return nil, []error{newBadInputError(fmt.Sprintf("failed to form endpoint url, err:%s", err.Error()))}
+				errs = append(errs, newBadInputError(err.Error()))
+				continue
+			}
+			// override "imp" key in request to ensure request contains single imp
+			request[impKey] = []any{imp}
+			// update the request and imp object by mapping bidderParams at expected location.
+			setRequestParams(request, bidderParams, bidderParamMapper, []int{0})
+			requestData, err = appendRequestData(requestData, request, uri)
+			if err != nil {
+				errs = append(errs, newBadInputError(err.Error()))
+			}
+			// create a deep copy of the request to ensure common fields are not altered.
+			// example - if imp2 modifies the original req.bcat field using its bidder-params, imp1 should still be able to use the original req.bcat value.
+			if impIndex != 0 {
+				request, err = convertRequestToMap(rawRequest)
+				if err != nil {
+					errs = append(errs, newBadInputError(fmt.Sprintf("failed to build request from rawRequest, err:%s", err.Error())))
+					return requestData, errs
+				}
+			}
+			continue
+		}
+		// processing for "multi" requestMode
+		if impIndex == 0 {
+			// build endpoint-url only once using first imp's bidder-params
+			uri, err = buildEndpoint(adapterInfo.endpointTemplate, bidderParams)
+			if err != nil {
+				errs = append(errs, newBadInputError(err.Error()))
+				return nil, errs
 			}
 		}
 		// update the request and imp object by mapping bidderParams at expected location.
-		setRequestParams(request, imp, bidderParams, bidderParamMapper)
+		setRequestParams(request, bidderParams, bidderParamMapper, []int{impIndex})
 	}
-	requestBody, err := jsonutil.Marshal(request)
-	if err != nil {
-		return nil, []error{newBadInputError(fmt.Sprintf("failed to marshal request after setting bidder-params, err:%s", err.Error()))}
+	// for "multi" requestMode, combine all the prepared requests
+	if !supportSingleImpInRequest {
+		requestData, err = appendRequestData(requestData, request, uri)
+		if err != nil {
+			errs = append(errs, newBadInputError(err.Error()))
+		}
 	}
-	return []*adapters.RequestData{
-		{
-			Method: http.MethodPost,
-			Uri:    uri,
-			Body:   requestBody,
-			Headers: http.Header{
-				"Content-Type": {"application/json;charset=utf-8"},
-				"Accept":       {"application/json"},
-			},
-		},
-	}, errs
+
+	return requestData, errs
 }
 
-// makeRequestPerImp processes a request map to generate 'N' RequestData objects, one for each of the 'N' impressions.
-// It constructs the endpoint URL and maps the request parameters to create the RequestData objects.
-func (adapterInfo adapterInfo) makeRequestPerImp(request map[string]any, requestParams map[string]bidderparams.BidderParamMapper) ([]*adapters.RequestData, []error) {
-	imps, ok := request[impKey].([]any)
-	if !ok {
-		return nil, []error{newBadInputError("invalid imp object found in request")}
+// appendRequestData creates new RequestData using request and uri then appends it to requestData passed as argument
+func appendRequestData(requestData []*adapters.RequestData, request map[string]any, uri string) ([]*adapters.RequestData, error) {
+	rawRequest, err := jsonutil.Marshal(request)
+	if err != nil {
+		return requestData, fmt.Errorf("failed to marshal request after setting bidder-params, err:%s", err.Error())
 	}
-	var (
-		bidderParams map[string]any
-		requestData  []*adapters.RequestData
-		errs         []error
-	)
-	for impIndex, imp := range imps {
-		imp, ok := imp.(map[string]any)
-		if !ok || imp == nil {
-			errs = append(errs, newBadInputError(fmt.Sprintf("invalid imp object found at index:%d", impIndex)))
-			continue
-		}
-		bidderParams = getImpExtBidderParams(imp)
-		// build endpoint url from imp.ext.bidder
-		// this must be done before calling setRequestParams, as it removes the imp.ext.bidder parameters.
-		uri, err := macros.ResolveMacros(adapterInfo.endpointTemplate, bidderParams)
-		if err != nil {
-			errs = append(errs, newBadInputError(fmt.Sprintf("failed to form endpoint url for imp at index:%d, err:%s", impIndex, err.Error())))
-			continue
-		}
-		// update the request and imp object by mapping bidderParams at expected location.
-		setRequestParams(request, imp, bidderParams, requestParams)
-		// request should contain single impression so override the request["imp"] field
-		request[impKey] = []any{imp}
+	requestData = append(requestData, &adapters.RequestData{
+		Method: http.MethodPost,
+		Uri:    uri,
+		Body:   rawRequest,
+		Headers: http.Header{
+			"Content-Type": {"application/json;charset=utf-8"},
+			"Accept":       {"application/json"},
+		},
+	})
+	return requestData, nil
+}
 
-		requestBody, err := jsonutil.Marshal(request)
-		if err != nil {
-			errs = append(errs, newBadInputError(fmt.Sprintf("failed to marshal request after seeting bidder-params for imp at index:%d, err:%s", impIndex, err.Error())))
-			continue
-		}
-		requestData = append(requestData, &adapters.RequestData{
-			Method: http.MethodPost,
-			Uri:    uri,
-			Body:   requestBody,
-			Headers: http.Header{
-				"Content-Type": {"application/json;charset=utf-8"},
-				"Accept":       {"application/json"},
-			},
-		})
+// buildEndpoint replaces macros present in the endpoint-url and returns the updated uri
+func buildEndpoint(endpointTemplate *template.Template, bidderParams map[string]any) (uri string, err error) {
+	uri, err = macros.ResolveMacros(endpointTemplate, bidderParams)
+	if err != nil {
+		return uri, fmt.Errorf("failed to replace macros in endpoint, err:%s", err.Error())
 	}
-	return requestData, errs
+	uri = strings.ReplaceAll(uri, "<no value>", "")
+	return uri, err
+}
+
+// convertRequestToMap converts request from []byte to map[string]any, it creates deep copy of request using json-unmarshal
+func convertRequestToMap(rawRequest []byte) (request map[string]any, err error) {
+	err = jsonutil.Unmarshal(rawRequest, &request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request, err:%s", err.Error())
+	}
+	return request, err
 }
 
 // Builder returns an instance of oRTB adapter
@@ -149,7 +172,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 			return nil, fmt.Errorf("failed to parse extra_info: %s", err.Error())
 		}
 	}
-	template, err := template.New("endpointTemplate").Parse(config.Endpoint)
+	template, err := template.New("endpointTemplate").Option("missingkey=zero").Parse(config.Endpoint)
 	if err != nil || template == nil {
 		return nil, fmt.Errorf("failed to parse endpoint url template: %v", err)
 	}
@@ -160,34 +183,20 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 }
 
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
-func (o *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	if bidRequest == nil {
+func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+	if request == nil {
 		return nil, []error{newBadInputError("found nil request")}
 	}
 	if o.bidderParamsConfig == nil {
 		return nil, []error{newBadInputError("found nil bidderParamsConfig")}
 	}
-	rawRequest, err := jsonutil.Marshal(bidRequest)
+	rawRequest, err := jsonutil.Marshal(request)
 	if err != nil {
 		return nil, []error{newBadInputError(fmt.Sprintf("failed to marshal request, err:%s", err.Error()))}
 	}
-	var request map[string]any
-	err = jsonutil.Unmarshal(rawRequest, &request)
-	if err != nil {
-		return nil, []error{newBadInputError(fmt.Sprintf("failed to unmarshal request, err:%s", err.Error()))}
-	}
-	var (
-		requestData []*adapters.RequestData
-		errs        []error
-	)
-	requestParams, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
-	switch o.adapterInfo.extraInfo.RequestMode {
-	case requestModeSingle:
-		requestData, errs = o.adapterInfo.makeRequestPerImp(request, requestParams)
-	default:
-		requestData, errs = o.adapterInfo.makeRequestForAllImps(request, requestParams)
-	}
-	return requestData, errs
+	requestParams := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
+	return o.adapterInfo.makeRequest(
+		rawRequest, requestParams, o.adapterInfo.extraInfo.RequestMode == requestModeSingle)
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response

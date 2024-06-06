@@ -12,7 +12,7 @@
     "tagid": {
       "type": "string",
       "description": "tagid param",
-      "location": "imp.tagid"
+      "location": "imp.#.tagid"
     },
     "zone": {
       "type": "string",
@@ -22,17 +22,17 @@
     "maxduration": {
       "type": "integer",
       "description": "maxduration param",
-      "location": "imp.video.maxduration"
+      "location": "imp.#.video.maxduration"
     },
     "livestream": {
       "type": "integer",
       "description": "livestream param",
-      "location": "app.cnt.livestream"
+      "location": "appsite.cnt.livestream"
     },
     "url": {
       "type": "string",
       "description": "URL param setting in video-startdelay",
-      "location": "imp.video.startdelay"
+      "location": "imp.#.video.startdelay"
     },
     "randomKey": {
       "type": "string",

@@ -119,7 +119,7 @@ func TestPrepareRequestParams(t *testing.T) {
 			},
 			want: want{
 				requestParams: map[string]BidderParamMapper{
-					"adunitid": {location: []string{"app", "adunitid"}},
+					"adunitid": {location: "app.adunitid"},
 				},
 				err: nil,
 			},
@@ -144,8 +144,8 @@ func TestPrepareRequestParams(t *testing.T) {
 			},
 			want: want{
 				requestParams: map[string]BidderParamMapper{
-					"adunitid": {location: []string{"app", "adunitid"}},
-					"slotname": {location: []string{"ext", "slot"}},
+					"adunitid": {location: "app.adunitid"},
+					"slotname": {location: "ext.slot"},
 				},
 				err: nil,
 			},
@@ -249,8 +249,8 @@ func TestLoadBidderConfig(t *testing.T) {
 					bidderConfigMap: map[string]*config{
 						"owortb_test": {
 							requestParams: map[string]BidderParamMapper{
-								"adunitid": {location: []string{"app", "adunit", "id"}},
-								"slotname": {location: []string{"ext", "slotname"}},
+								"adunitid": {location: "app.adunit.id"},
+								"slotname": {location: "ext.slotname"},
 							},
 						},
 					}},

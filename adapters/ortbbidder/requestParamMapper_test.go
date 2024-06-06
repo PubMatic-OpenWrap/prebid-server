@@ -10,13 +10,12 @@ import (
 func TestSetRequestParams(t *testing.T) {
 	type args struct {
 		request      map[string]any
-		imp          map[string]any
 		bidderParams map[string]any
 		paramsMapper map[string]bidderparams.BidderParamMapper
+		paramIndices []int
 	}
 	type want struct {
 		request      map[string]any
-		imp          map[string]any
 		bidderParams map[string]any
 	}
 	tests := []struct {
@@ -30,9 +29,6 @@ func TestSetRequestParams(t *testing.T) {
 				request: map[string]any{
 					"id": "req_1",
 				},
-				imp: map[string]any{
-					"id": "imp_1",
-				},
 				bidderParams: map[string]any{
 					"param": "value",
 				},
@@ -41,9 +37,6 @@ func TestSetRequestParams(t *testing.T) {
 			want: want{
 				request: map[string]any{
 					"id": "req_1",
-				},
-				imp: map[string]any{
-					"id": "imp_1",
 				},
 				bidderParams: map[string]any{
 					"param": "value",
@@ -56,27 +49,22 @@ func TestSetRequestParams(t *testing.T) {
 				request: map[string]any{
 					"id": "req_1",
 				},
-				imp: map[string]any{
-					"id": "imp_1",
-				},
 				bidderParams: map[string]any{
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
 					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation([]string{"param"})
+					mapper.SetLocation("param")
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
 				}(),
+				paramIndices: nil,
 			},
 			want: want{
 				request: map[string]any{
 					"param": "value",
 					"id":    "req_1",
-				},
-				imp: map[string]any{
-					"id": "imp_1",
 				},
 				bidderParams: map[string]any{},
 			},
@@ -86,38 +74,105 @@ func TestSetRequestParams(t *testing.T) {
 			args: args{
 				request: map[string]any{
 					"id": "req_1",
-				},
-				imp: map[string]any{
-					"id": "imp_1",
+					"imp": []any{
+						map[string]any{},
+					},
 				},
 				bidderParams: map[string]any{
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
 					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation([]string{"imp", "param"})
+					mapper.SetLocation("imp.#.param")
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
 				}(),
+				paramIndices: []int{0},
 			},
 			want: want{
 				request: map[string]any{
 					"id": "req_1",
-				},
-				imp: map[string]any{
-					"param": "value",
-					"id":    "imp_1",
+					"imp": []any{
+						map[string]any{
+							"param": "value",
+						},
+					},
 				},
 				bidderParams: map[string]any{},
+			},
+		},
+		{
+			name: "attempt_to_set_imp_level_param_in_invalid_index_position",
+			args: args{
+				request: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{},
+					},
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
+				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
+					mapper := bidderparams.BidderParamMapper{}
+					mapper.SetLocation("imp.#.param")
+					return map[string]bidderparams.BidderParamMapper{
+						"param": mapper,
+					}
+				}(),
+				paramIndices: []int{1},
+			},
+			want: want{
+				request: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{},
+					},
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
+			},
+		},
+		{
+			name: "attempt_to_set_imp_level_param_when_no_index_is_given",
+			args: args{
+				request: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{},
+					},
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
+				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
+					mapper := bidderparams.BidderParamMapper{}
+					mapper.SetLocation("imp.#.param")
+					return map[string]bidderparams.BidderParamMapper{
+						"param": mapper,
+					}
+				}(),
+				paramIndices: []int{},
+			},
+			want: want{
+				request: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{},
+					},
+				},
+				bidderParams: map[string]any{
+					"param": "value",
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setRequestParams(tt.args.request, tt.args.imp, tt.args.bidderParams, tt.args.paramsMapper)
+			setRequestParams(tt.args.request, tt.args.bidderParams, tt.args.paramsMapper, tt.args.paramIndices)
 			assert.Equal(t, tt.want.bidderParams, tt.args.bidderParams, "mismatched bidderparams")
-			assert.Equal(t, tt.want.imp, tt.args.imp, "mismatched imp")
 			assert.Equal(t, tt.want.request, tt.args.request, "mismatched request")
 		})
 	}

@@ -9,14 +9,12 @@ import (
 func TestSetValue(t *testing.T) {
 	type args struct {
 		requestNode map[string]any
-		impNode     map[string]any
 		location    []string
 		value       any
 	}
 	type want struct {
 		node   map[string]any
 		status bool
-		imp    map[string]any
 	}
 	tests := []struct {
 		name string
@@ -186,40 +184,153 @@ func TestSetValue(t *testing.T) {
 			},
 		},
 		{
-			name: "imp_key_present",
+			name: "request_has_list_of_interface",
 			args: args{
-				requestNode: map[string]any{"id": map[string]any{
+				requestNode: map[string]any{
 					"id": "req_1",
-					"imp": map[string]any{
-						"id": "imp_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
 					},
-				}},
-				impNode: map[string]any{
-					"id": "imp_1",
 				},
-				location: []string{"imp", "ext"},
+				location: []string{"imp", "0", "ext"},
 				value:    "value",
 			},
 			want: want{
 				status: true,
-				imp: map[string]any{
-					"ext": "value",
-					"id":  "imp_1",
-				},
-				node: map[string]any{"id": map[string]any{
+				node: map[string]any{
 					"id": "req_1",
-					"imp": map[string]any{
-						"id": "imp_1",
+					"imp": []any{
+						map[string]any{
+							"id":  "imp_1",
+							"ext": "value",
+						},
 					},
-				}},
+				},
+			},
+		},
+		{
+			name: "request_has_list_of_interface_with_multi_items",
+			args: args{
+				requestNode: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+						map[string]any{
+							"id": "imp_2",
+						},
+					},
+				},
+				location: []string{"imp", "1", "ext"},
+				value:    "value",
+			},
+			want: want{
+				status: true,
+				node: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+						map[string]any{
+							"id":  "imp_2",
+							"ext": "value",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "request_has_list_of_interface_with_multi_items_but_invalid_index_to_update",
+			args: args{
+				requestNode: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+					},
+				},
+				location: []string{"imp", "3", "ext"},
+				value:    "value",
+			},
+			want: want{
+				status: false,
+				node: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "request_has_list_of_interface_with_multi_items_but_valid_index_to_update",
+			args: args{
+				requestNode: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+					},
+				},
+				location: []string{"imp", "0"},
+				value: map[string]any{
+					"id": "updated_id",
+				},
+			},
+			want: want{
+				status: true,
+				node: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"id": "updated_id",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "request_has_list_of_interface_where_new_node_need_to_be_created",
+			args: args{
+				requestNode: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						nil, nil,
+					},
+				},
+				location: []string{"imp", "0", "ext"},
+				value: map[string]any{
+					"id": "updated_id",
+				},
+			},
+			want: want{
+				status: true,
+				node: map[string]any{
+					"id": "req_1",
+					"imp": []any{
+						map[string]any{
+							"ext": map[string]any{
+								"id": "updated_id",
+							},
+						},
+						nil,
+					},
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := setValue(tt.args.requestNode, tt.args.impNode, tt.args.location, tt.args.value)
+			got := setValue(tt.args.requestNode, tt.args.location, tt.args.value)
 			assert.Equalf(t, tt.want.node, tt.args.requestNode, "SetValue failed to update node object")
-			assert.Equalf(t, tt.want.imp, tt.args.impNode, "SetValue failed to update imp object")
 			assert.Equalf(t, tt.want.status, got, "SetValue returned invalid status")
 		})
 	}
@@ -228,7 +339,6 @@ func TestSetValue(t *testing.T) {
 func TestGetNode(t *testing.T) {
 	type args struct {
 		requestNode map[string]any
-		impNode     map[string]any
 		key         string
 	}
 	tests := []struct {
@@ -273,21 +383,24 @@ func TestGetNode(t *testing.T) {
 					"device": map[string]any{
 						"deviceKey": "deviceVal",
 					},
-					"imp": []string{},
-				},
-				impNode: map[string]any{
-					"id": "imp_1",
+					"imp": []any{
+						map[string]any{
+							"id": "imp_1",
+						},
+					},
 				},
 				key: "imp",
 			},
-			want: map[string]any{
-				"id": "imp_1",
+			want: []any{
+				map[string]any{
+					"id": "imp_1",
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node := getNode(tt.args.requestNode, tt.args.impNode, tt.args.key)
+			node := getNode(tt.args.requestNode, tt.args.key)
 			assert.Equal(t, tt.want, node)
 		})
 	}

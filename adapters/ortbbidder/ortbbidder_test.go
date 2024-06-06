@@ -108,7 +108,7 @@ func TestMakeRequests(t *testing.T) {
 					{
 						Method: http.MethodPost,
 						Uri:    "http://test_bidder.com",
-						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"}]}`),
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -117,7 +117,7 @@ func TestMakeRequests(t *testing.T) {
 					{
 						Method: http.MethodPost,
 						Uri:    "http://test_bidder.com",
-						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -147,8 +147,8 @@ func TestMakeRequests(t *testing.T) {
 				requestData: []*adapters.RequestData{
 					{
 						Method: http.MethodPost,
-						Uri:    "http://localhost.com",
-						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp1","tagid":"tag1"}]}`),
+						Uri:    "http://",
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -156,8 +156,8 @@ func TestMakeRequests(t *testing.T) {
 					},
 					{
 						Method: http.MethodPost,
-						Uri:    "http://<no value>",
-						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
+						Uri:    "http://localhost.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp1","tagid":"tag1"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -520,7 +520,7 @@ func TestBuilder(t *testing.T) {
 						},
 						bidderName: "ortbbidder",
 						endpointTemplate: func() *template.Template {
-							template, _ := template.New("endpointTemplate").Parse("")
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
 							return template
 						}(),
 					},
@@ -546,7 +546,7 @@ func TestBuilder(t *testing.T) {
 						},
 						bidderName: "ortbbidder",
 						endpointTemplate: func() *template.Template {
-							template, _ := template.New("endpointTemplate").Parse("")
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
 							return template
 						}(),
 					},
@@ -622,13 +622,14 @@ func TestIsORTBBidder(t *testing.T) {
 	}
 }
 
-func TestMakeRequestForAllImps(t *testing.T) {
+func TestMakeRequest(t *testing.T) {
 	type fields struct {
 		endpointTemplate *template.Template
 	}
 	type args struct {
-		request           map[string]any
-		bidderParamMapper map[string]bidderparams.BidderParamMapper
+		rawRequest                json.RawMessage
+		bidderParamMapper         map[string]bidderparams.BidderParamMapper
+		supportSingleImpInRequest bool
 	}
 	type want struct {
 		requestData []*adapters.RequestData
@@ -641,23 +642,32 @@ func TestMakeRequestForAllImps(t *testing.T) {
 		want   want
 	}{
 		{
-			name:   "no_imp_object",
+			name:   "nil_request",
 			fields: fields{},
 			args: args{
-				request: map[string]any{},
+				rawRequest: nil,
 			},
 			want: want{
 				requestData: nil,
-				errs:        []error{newBadInputError("invalid imp object found in request")},
+				errs:        []error{newBadInputError("failed to unmarshal request, err:expect { or n, but found \x00")},
+			},
+		},
+		{
+			name:   "no_imp_object",
+			fields: fields{},
+			args: args{
+				rawRequest: json.RawMessage(`{}`),
+			},
+			want: want{
+				requestData: nil,
+				errs:        []error{newBadInputError("imp object not found in request")},
 			},
 		},
 		{
 			name:   "invalid_imp_object",
 			fields: fields{},
 			args: args{
-				request: map[string]any{
-					"imp": []any{"invalid"},
-				},
+				rawRequest: json.RawMessage(`{"imp":["invalid"]}`),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -675,26 +685,12 @@ func TestMakeRequestForAllImps(t *testing.T) {
 			},
 		},
 		{
-			name: "replace_macros_to_form_endpoint_url",
+			name: "multiRequestMode_replace_macros_to_form_endpoint_url",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -712,25 +708,18 @@ func TestMakeRequestForAllImps(t *testing.T) {
 			},
 		},
 		{
-			name: "macros_value_absent_in_bidder_params",
+			name: "multiRequestMode_macros_value_absent_in_bidder_params",
 			fields: fields{
-				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
+				endpointTemplate: template.Must(template.New("endpointTemplate").Option("missingkey=default").Parse(`http://{{.host}}/publisher/{{.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id":  "imp_1",
-							"ext": map[string]any{},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
 					{
 						Method: http.MethodPost,
-						Uri:    "http://<no value>/publisher/<no value>",
+						Uri:    "http:///publisher/",
 						Body:   json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
@@ -742,7 +731,7 @@ func TestMakeRequestForAllImps(t *testing.T) {
 			},
 		},
 		{
-			name: "macro_replacement_failure",
+			name: "multiRequestMode_macro_replacement_failure",
 			fields: fields{
 				endpointTemplate: func() *template.Template {
 					errorFunc := template.FuncMap{
@@ -755,47 +744,22 @@ func TestMakeRequestForAllImps(t *testing.T) {
 				}(),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id":  "imp_1",
-							"ext": map[string]any{},
-						},
-					},
-				},
+				supportSingleImpInRequest: false,
+				rawRequest:                json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
 			},
 			want: want{
 				requestData: nil,
-				errs: []error{newBadInputError("failed to form endpoint url, err:template: endpointTemplate:1:2: " +
+				errs: []error{newBadInputError("failed to replace macros in endpoint, err:template: endpointTemplate:1:2: " +
 					"executing \"endpointTemplate\" at <errorFunc>: error calling errorFunc: intentional error")},
 			},
 		},
 		{
-			name: "first_imp_bidder_params_has_high_priority_while_replacing_macros_in_endpoint",
+			name: "multiRequestMode_first_imp_bidder_params_has_high_priority_while_replacing_macros_in_endpoint",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-								},
-							},
-						},
-						map[string]any{
-							"id": "imp_2",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "imp2.host.com",
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp_1"},{"ext":{"bidder":{"host":"imp2.host.com"}},"id":"imp_2"}]}`),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -818,26 +782,12 @@ func TestMakeRequestForAllImps(t *testing.T) {
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
 				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
 					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
+					hostMapper.SetLocation("host")
 					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
+					extMapper.SetLocation("device")
 					return map[string]bidderparams.BidderParamMapper{
 						"host": hostMapper,
 						"ext":  extMapper,
@@ -860,41 +810,19 @@ func TestMakeRequestForAllImps(t *testing.T) {
 			},
 		},
 		{
-			name: "map_bidder_params_in_multi_imp",
+			name: "multiRequestMode_map_bidder_params_in_multi_imp",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-						map[string]any{
-							"id": "imp_2",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"tagid": "valid_tag_id",
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"},{"ext":{"bidder":{"tagid":"valid_tag_id"}},"id":"imp_2"}]}`),
 				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
 					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
+					hostMapper.SetLocation("host")
 					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
+					extMapper.SetLocation("device")
 					tagMapper := bidderparams.BidderParamMapper{}
-					tagMapper.SetLocation([]string{"imp", "tagid"})
+					tagMapper.SetLocation("imp.#.tagid")
 					return map[string]bidderparams.BidderParamMapper{
 						"host":  hostMapper,
 						"ext":   extMapper,
@@ -918,41 +846,17 @@ func TestMakeRequestForAllImps(t *testing.T) {
 			},
 		},
 		{
-			name: "first_imp_bidder_param_has_high_pririty",
+			name: "multiRequestMode_first_imp_bidder_param_has_high_pririty",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-						map[string]any{
-							"id": "imp_2",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"ext": map[string]any{
-										"pubid": 1111,
-									},
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"},{"ext":{"bidder":{"ext":{"pubid":1111}}},"id":"imp_2"}]}`),
 				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
 					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
+					hostMapper.SetLocation("host")
 					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
+					extMapper.SetLocation("device")
 					return map[string]bidderparams.BidderParamMapper{
 						"host": hostMapper,
 						"ext":  extMapper,
@@ -980,21 +884,7 @@ func TestMakeRequestForAllImps(t *testing.T) {
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
+				rawRequest:        json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
 				bidderParamMapper: nil,
 			},
 			want: want{
@@ -1012,246 +902,24 @@ func TestMakeRequestForAllImps(t *testing.T) {
 				errs: nil,
 			},
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := adapterInfo{
-				endpointTemplate: tt.fields.endpointTemplate,
-			}
-			requestData, errs := o.makeRequestForAllImps(tt.args.request, tt.args.bidderParamMapper)
-			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
-			assert.Equalf(t, tt.want.errs, errs, "mismatched errs")
-		})
-	}
-}
-
-func TestMakeRequestPerImp(t *testing.T) {
-	type fields struct {
-		endpointTemplate *template.Template
-	}
-	type args struct {
-		request           map[string]any
-		bidderParamMapper map[string]bidderparams.BidderParamMapper
-	}
-	type want struct {
-		requestData []*adapters.RequestData
-		errs        []error
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   want
-	}{
 		{
-			name:   "no_imp_object",
-			fields: fields{},
-			args: args{
-				request: map[string]any{},
-			},
-			want: want{
-				requestData: nil,
-				errs:        []error{newBadInputError("invalid imp object found in request")},
-			},
-		},
-		{
-			name:   "invalid_imp_object",
-			fields: fields{},
-			args: args{
-				request: map[string]any{
-					"imp": []any{"invalid"},
-				},
-			},
-			want: want{
-				requestData: nil,
-				errs:        []error{newBadInputError("invalid imp object found at index:0")},
-			},
-		},
-		{
-			name: "replace_macros_to_form_endpoint_url",
+			name: "singleRequestMode_single_imp_request",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want: want{
-				requestData: []*adapters.RequestData{
-					{
-						Method: http.MethodPost,
-						Uri:    "http://localhost.com/publisher/5890",
-						Body:   json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
-						Headers: http.Header{
-							"Content-Type": {"application/json;charset=utf-8"},
-							"Accept":       {"application/json"},
-						},
-					},
-				},
-				errs: nil,
-			},
-		},
-		{
-			name: "macros_value_absent_in_bidder_params",
-			fields: fields{
-				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
-			},
-			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id":  "imp_1",
-							"ext": map[string]any{},
-						},
-					},
-				},
-			},
-			want: want{
-				requestData: []*adapters.RequestData{
-					{
-						Method: http.MethodPost,
-						Uri:    "http://<no value>/publisher/<no value>",
-						Body:   json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
-						Headers: http.Header{
-							"Content-Type": {"application/json;charset=utf-8"},
-							"Accept":       {"application/json"},
-						},
-					},
-				},
-				errs: nil,
-			},
-		},
-		{
-			name: "macro_replacement_failure",
-			fields: fields{
-				endpointTemplate: func() *template.Template {
-					errorFunc := template.FuncMap{
-						"errorFunc": func() (string, error) {
-							return "", errors.New("intentional error")
-						},
-					}
-					t := template.Must(template.New("endpointTemplate").Funcs(errorFunc).Parse(`{{errorFunc}}`))
-					return t
-				}(),
-			},
-			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id":  "imp_1",
-							"ext": map[string]any{},
-						},
-					},
-				},
-			},
-			want: want{
-				requestData: nil,
-				errs: []error{newBadInputError("failed to form endpoint url for imp at index:0, err:template: endpointTemplate:1:2: " +
-					"executing \"endpointTemplate\" at <errorFunc>: error calling errorFunc: intentional error")},
-			},
-		},
-		{
-			name: "single_imp_request",
-			fields: fields{
-				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
-			},
-			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"}]}`),
 				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
 					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
+					hostMapper.SetLocation("host")
 					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
+					extMapper.SetLocation("device")
 					return map[string]bidderparams.BidderParamMapper{
 						"host": hostMapper,
 						"ext":  extMapper,
 					}
 				}(),
-			},
-			want: want{
-				requestData: []*adapters.RequestData{
-					{
-						Method: http.MethodPost,
-						Uri:    "http://localhost.com/publisher/5890",
-						Body:   json.RawMessage(`{"device":{"pubid":5890},"host":"localhost.com","imp":[{"ext":{"bidder":{}},"id":"imp_1"}]}`),
-						Headers: http.Header{
-							"Content-Type": {"application/json;charset=utf-8"},
-							"Accept":       {"application/json"},
-						},
-					},
-				},
-				errs: nil,
-			},
-		},
-		{
-			name: "multi_imps_request",
-			fields: fields{
-				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
-			},
-			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "imp1.host.com",
-									"ext": map[string]any{
-										"pubid": 1111,
-									},
-								},
-							},
-						},
-						map[string]any{
-							"id": "imp_2",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "imp2.host.com",
-									"ext": map[string]any{
-										"pubid": 2222,
-									},
-								},
-							},
-						},
-					},
-				},
-				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
-					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
-					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
-					return map[string]bidderparams.BidderParamMapper{
-						"host": hostMapper,
-						"ext":  extMapper,
-					}
-				}(),
+				supportSingleImpInRequest: true,
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -1264,10 +932,44 @@ func TestMakeRequestPerImp(t *testing.T) {
 							"Accept":       {"application/json"},
 						},
 					},
+				},
+				errs: nil,
+			},
+		},
+		{
+			name: "singleRequestMode_multi_imps_request",
+			fields: fields{
+				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
+			},
+			args: args{
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"},{"ext":{"bidder":{"ext":{"pubid":2222},"host":"imp2.host.com"}},"id":"imp_2"}]}`),
+				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
+					hostMapper := bidderparams.BidderParamMapper{}
+					hostMapper.SetLocation("host")
+					extMapper := bidderparams.BidderParamMapper{}
+					extMapper.SetLocation("device")
+					return map[string]bidderparams.BidderParamMapper{
+						"host": hostMapper,
+						"ext":  extMapper,
+					}
+				}(),
+				supportSingleImpInRequest: true,
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
 					{
 						Method: http.MethodPost,
 						Uri:    "http://imp2.host.com/publisher/2222",
 						Body:   json.RawMessage(`{"device":{"pubid":2222},"host":"imp2.host.com","imp":[{"ext":{"bidder":{}},"id":"imp_2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+					},
+					{
+						Method: http.MethodPost,
+						Uri:    "http://imp1.host.com/publisher/1111",
+						Body:   json.RawMessage(`{"device":{"pubid":1111},"host":"imp1.host.com","imp":[{"ext":{"bidder":{}},"id":"imp_1"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -1278,37 +980,23 @@ func TestMakeRequestPerImp(t *testing.T) {
 			},
 		},
 		{
-			name: "multi_imps_request_with_one_invalid_imp",
+			name: "singleRequestMode_multi_imps_request_with_one_invalid_imp",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "imp1.host.com",
-									"ext": map[string]any{
-										"pubid": 1111,
-									},
-								},
-							},
-						},
-						"invalid-imp",
-					},
-				},
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"},"invalid-imp"]}`),
 				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
 					hostMapper := bidderparams.BidderParamMapper{}
-					hostMapper.SetLocation([]string{"host"})
+					hostMapper.SetLocation("host")
 					extMapper := bidderparams.BidderParamMapper{}
-					extMapper.SetLocation([]string{"device"})
+					extMapper.SetLocation("device")
 					return map[string]bidderparams.BidderParamMapper{
 						"host": hostMapper,
 						"ext":  extMapper,
 					}
 				}(),
+				supportSingleImpInRequest: true,
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -1326,34 +1014,39 @@ func TestMakeRequestPerImp(t *testing.T) {
 			},
 		},
 		{
-			name: "bidder_param_mapping_absent",
+			name: "singleRequestMode_one_imp_updates_request_level_param_but_another_imp_does_not_update",
 			fields: fields{
 				endpointTemplate: template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 			},
 			args: args{
-				request: map[string]any{
-					"imp": []any{
-						map[string]any{
-							"id": "imp_1",
-							"ext": map[string]any{
-								"bidder": map[string]any{
-									"host": "localhost.com",
-									"ext": map[string]any{
-										"pubid": 5890,
-									},
-								},
-							},
-						},
-					},
-				},
-				bidderParamMapper: nil,
+				rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111}}},"id":"imp_1"},{"ext":{"bidder":{"ext":{"pubid":2222},"host":"imp2.host.com"}},"id":"imp_2"}]}`),
+				bidderParamMapper: func() map[string]bidderparams.BidderParamMapper {
+					hostMapper := bidderparams.BidderParamMapper{}
+					hostMapper.SetLocation("host")
+					extMapper := bidderparams.BidderParamMapper{}
+					extMapper.SetLocation("device")
+					return map[string]bidderparams.BidderParamMapper{
+						"host": hostMapper,
+						"ext":  extMapper,
+					}
+				}(),
+				supportSingleImpInRequest: true,
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
 					{
 						Method: http.MethodPost,
-						Uri:    "http://localhost.com/publisher/5890",
-						Body:   json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
+						Uri:    "http://imp2.host.com/publisher/2222",
+						Body:   json.RawMessage(`{"device":{"pubid":2222},"host":"imp2.host.com","imp":[{"ext":{"bidder":{}},"id":"imp_2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+					},
+					{
+						Method: http.MethodPost,
+						Uri:    "http:///publisher/1111",
+						Body:   json.RawMessage(`{"device":{"pubid":1111},"imp":[{"ext":{"bidder":{}},"id":"imp_1"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
@@ -1363,13 +1056,36 @@ func TestMakeRequestPerImp(t *testing.T) {
 				errs: nil,
 			},
 		},
+		{
+			name: "singleRequestMode_macro_replacement_failure",
+			fields: fields{
+				endpointTemplate: func() *template.Template {
+					errorFunc := template.FuncMap{
+						"errorFunc": func() (string, error) {
+							return "", errors.New("intentional error")
+						},
+					}
+					t := template.Must(template.New("endpointTemplate").Funcs(errorFunc).Parse(`{{errorFunc}}`))
+					return t
+				}(),
+			},
+			args: args{
+				supportSingleImpInRequest: true,
+				rawRequest:                json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
+			},
+			want: want{
+				requestData: nil,
+				errs: []error{newBadInputError("failed to replace macros in endpoint, err:template: endpointTemplate:1:2: " +
+					"executing \"endpointTemplate\" at <errorFunc>: error calling errorFunc: intentional error")},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := adapterInfo{
 				endpointTemplate: tt.fields.endpointTemplate,
 			}
-			requestData, errs := o.makeRequestPerImp(tt.args.request, tt.args.bidderParamMapper)
+			requestData, errs := o.makeRequest(tt.args.rawRequest, tt.args.bidderParamMapper, tt.args.supportSingleImpInRequest)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errs, errs, "mismatched errs")
 		})
