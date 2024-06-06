@@ -1,6 +1,7 @@
 package ortbbidder
 
 import (
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -20,12 +21,13 @@ type ParserImpl struct {
 
 func (p *ParserImpl) MType(bid, typeBid map[string]any, path string) {
 	typeBid["bidType"] = func(bid map[string]any, path string) openrtb_ext.BidType {
-
-		mType, ok := bid["mtype"].(string)
+		// check in ortb bid.MType
+		mType, ok := bid["mtype"].(int)
 		if ok {
-			return openrtb_ext.BidType(mType)
+			return getMediaTypeForBidFromMType(openrtb2.MarkupType(mType))
 		}
 
+		// get from bidder param location
 		value, ok := getValueFromLocation(p.bidResponse, path)
 		if ok {
 			mType, ok := value.(string)
@@ -33,39 +35,43 @@ func (p *ParserImpl) MType(bid, typeBid map[string]any, path string) {
 				return openrtb_ext.BidType(mType)
 			}
 		}
+
+		// auto detection logic here
 		return ""
 	}
 }
 
 func (p *ParserImpl) Dur(bid, typeBid map[string]any, path string) {
+
 }
 
 func (p *ParserImpl) Fledge(adapterResponse map[string]any, path string) {
+
 }
 
-type parserFactory interface {
-	getBidParamParser() map[string]ParserFunc
-	getResponseParamParser() map[string]ResponseParserFunc
+type ParserFactory interface {
+	GetBidParamParser() map[string]ParserFunc
+	GetResponseParamParser() map[string]ResponseParserFunc
 	NewParser(bidResponse map[string]any) Parser
 }
 
-type parserFactoryImpl struct {
+type ParserFactoryImpl struct {
 }
 
-func (parserFactoryImpl) NewParser(bidResponse map[string]any) Parser {
+func (ParserFactoryImpl) NewParser(bidResponse map[string]any) Parser {
 	return &ParserImpl{
 		bidResponse: bidResponse,
 	}
 }
 
-func (parserFactoryImpl) getBidParamParser() map[string]ParserFunc {
+func (ParserFactoryImpl) GetBidParamParser() map[string]ParserFunc {
 	return map[string]ParserFunc{
 		"mtype": Parser.MType,
 		"dur":   Parser.Dur,
 	}
 }
 
-func (parserFactoryImpl) getResponseParamParser() map[string]ResponseParserFunc {
+func (ParserFactoryImpl) GetResponseParamParser() map[string]ResponseParserFunc {
 	return map[string]ResponseParserFunc{
 		"fledge": Parser.Fledge,
 	}

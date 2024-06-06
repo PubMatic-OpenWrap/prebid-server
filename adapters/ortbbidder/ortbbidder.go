@@ -2,6 +2,7 @@ package ortbbidder
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,7 +18,7 @@ import (
 type adapter struct {
 	adapterInfo
 	bidderParamsConfig *bidderparams.BidderConfig
-	parser             parserFactory
+	parser             ParserFactory
 }
 
 const (
@@ -79,7 +80,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	return &adapter{
 		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
 		bidderParamsConfig: g_bidderParamsConfig,
-		parser:             &parserFactoryImpl{},
+		parser:             &ParserFactoryImpl{},
 		// paramMapperFactory: ParamMapperFactoryImpl{},
 	}, nil
 }
@@ -87,10 +88,10 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
 func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if request == nil || requestInfo == nil {
-		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
+		return nil, []error{errors.New("found either nil request or nil requestInfo")}
 	}
 	if o.bidderParamsConfig == nil {
-		return nil, []error{fmt.Errorf("Found nil bidderParamsConfig")}
+		return nil, []error{errors.New("found nil bidderParamsConfig")}
 	}
 	var errs []error
 	adapterInfo := o.adapterInfo
@@ -194,9 +195,9 @@ func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.Bidde
 }
 
 // implementation using Parser
-func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory parserFactory) ([]byte, error) {
+func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory ParserFactory) ([]byte, error) {
 	if len(bidderResponseBody) == 0 {
-		return nil, fmt.Errorf("invalid responseBody")
+		return nil, errors.New("invalid responseBody")
 	}
 
 	response := map[string]any{}
@@ -206,13 +207,12 @@ func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[st
 	}
 
 	// build adapter response
-
 	adapterResponse := map[string]any{}
 	adapterResponse["Currency"] = ""
 
 	parser := parserFactory.NewParser(response)
 	typeBids := []any{}
-	for paramName, callback := range parserFactory.getResponseParamParser() {
+	for paramName, callback := range parserFactory.GetResponseParamParser() {
 		paramMapper, ok := responseParams[paramName]
 		if !ok {
 			continue
@@ -242,15 +242,12 @@ func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[st
 			typeBid := map[string]any{
 				"Bid": bid,
 			}
-			for paramName, callback := range parserFactory.getBidParamParser() {
+			for paramName, callback := range parserFactory.GetBidParamParser() {
 				paramMapper, ok := responseParams[paramName]
 				if !ok {
 					continue
 				}
 				path := getPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
-				if !ok {
-					continue
-				}
 				callback(parser, bid, typeBid, path)
 			}
 			typeBids = append(typeBids, typeBid)
