@@ -47,6 +47,11 @@ type record struct {
 	PDC               string           `json:"pdc,omitempty"`
 	CustomDimensions  string           `json:"cds,omitempty"`
 	//Geo             GeoRecord    	`json:"geo,omitempty"`
+	ProfileType           int  `json:"pt,omitempty"`
+	ProfileTypePlatform   int  `json:"ptp,omitempty"`
+	AppPlatform           int  `json:"ap,omitempty"`
+	AppIntegrationPath    *int `json:"aip,omitempty"`
+	AppSubIntegrationPath *int `json:"asip,omitempty"`
 }
 
 // Device struct for storing device information

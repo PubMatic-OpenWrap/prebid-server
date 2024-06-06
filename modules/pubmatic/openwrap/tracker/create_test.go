@@ -527,6 +527,30 @@ func TestConstructTrackerURL(t *testing.T) {
 			},
 			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
+		{
+			name: "profileMetadata_details_updated_in_tracker",
+			args: args{
+				rctx: models.RequestCtx{
+					TrackerEndpoint: "//t.pubmatic.com/wt",
+					Platform:        models.PLATFORM_APP,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							"type":               "1",
+							"platform":           "in-app",
+							"appPlatform":        "5",
+							"integrationPath":    "React Native Plugin",
+							"subIntegrationPath": "AppLovin Max SDK Bidding",
+						},
+					},
+					ProfileType:           1,
+					ProfileTypePlatform:   4,
+					AppPlatform:           5,
+					AppIntegrationPath:    ptrutil.ToPtr(3),
+					AppSubIntegrationPath: ptrutil.ToPtr(8),
+				},
+			},
+			want: "//t.pubmatic.com/wt?adv=&af=&aip=3&ap=5&aps=0&asip=8&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pt=1&ptp=4&pubid=0&purl=&sl=1&slot=&ss=0&tgid=0&tst=0",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -95,6 +95,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
 	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
+	rCtx.Country = getCountry(payload.BidRequest)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
@@ -193,6 +194,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	//set the profile MetaData for logging and tracking
+	rCtx.ProfileType = getProfileType(partnerConfigMap)
+	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap)
+	rCtx.AppPlatform = getAppPlatform(partnerConfigMap)
+	rCtx.AppIntegrationPath = ptrutil.ToPtr(getAppIntegrationPath(partnerConfigMap))
+	rCtx.AppSubIntegrationPath = ptrutil.ToPtr(getAppSubIntegrationPath(partnerConfigMap))
+
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
 		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
@@ -202,7 +210,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
-	var allPartnersThrottledFlag bool
+	var (
+		allPartnersThrottledFlag bool
+		allPartnersFilteredFlag  bool
+	)
+
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 
 	if allPartnersThrottledFlag {
@@ -210,6 +222,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
+	}
+
+	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
+
+	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, payload)
+
+	if allPartnersFilteredFlag {
+		result.NbrCode = int(nbr.AllPartnersFiltered)
+		result.Errors = append(result.Errors, "All partners filtered")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		return result, err
 	}
 
 	priceGranularity, err := computePriceGranularity(rCtx)
@@ -397,6 +420,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
 			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+
+			if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
+				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
+				continue
+			}
 
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
