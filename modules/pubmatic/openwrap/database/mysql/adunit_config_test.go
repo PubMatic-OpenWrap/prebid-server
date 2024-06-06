@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"regexp"
 	"testing"
 
@@ -171,7 +172,17 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			want: &adunitconfig.AdUnitConfig{
 				ConfigPattern: "_DIV_",
 				Config: map[string]*adunitconfig.AdConfig{
-					"default": {BidFloor: ptrutil.ToPtr(3.1)},
+					"default": {
+						BidFloor: ptrutil.ToPtr(3.1),
+						BidderFilter: &adunitconfig.BidderFilter{
+							Filters: []adunitconfig.Filter{
+								{
+									Bidders:           []string{"A"},
+									BiddingConditions: json.RawMessage("\"{ \\\"in\\\": [{ \\\"var\\\": \\\"country\\\"}, [\\\"IND\\\"]]}\""),
+								},
+							},
+						},
+					},
 				},
 			},
 			wantErr: false,
@@ -180,7 +191,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern": "_DIV_", "config":{"default":{"bidfloor":3.1}}}`)
+				rows := sqlmock.NewRows([]string{"adunitConfig"}).AddRow(`{"configPattern":"_DIV_","config":{"default":{"bidfloor":3.1,"bidderFilter":{"filterConfig":[{"bidders":["A"],"biddingConditions":"{ \"in\": [{ \"var\": \"country\"}, [\"IND\"]]}"}]}}}}`)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_media_config (.+)")).WillReturnRows(rows)
 				return db
 			},
