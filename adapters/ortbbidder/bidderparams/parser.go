@@ -36,10 +36,7 @@ func LoadBidderConfig(dirPath string, isBidderAllowed func(string) bool) (*Bidde
 		if err != nil {
 			return nil, err
 		}
-		err = bidderConfigMap.setRequestParams(bidderName, requestParams)
-		if err != nil {
-			return nil, fmt.Errorf("error:[fail_to_set_request_param] dir:[%s] filename:[%s] err:[%s]", dirPath, file.Name(), err.Error())
-		}
+		bidderConfigMap.setRequestParams(bidderName, requestParams)
 	}
 	return bidderConfigMap, nil
 }
@@ -81,7 +78,7 @@ func prepareRequestParams(bidderName string, requestParamsConfig map[string]any)
 			return nil, fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[%s] bidderParam:[%s]", bidderName, paramName)
 		}
 		requestParams[paramName] = BidderParamMapper{
-			location: locationStr,
+			Location: locationStr,
 		}
 	}
 	return requestParams, nil

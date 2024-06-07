@@ -53,8 +53,7 @@ func TestSetRequestParams(t *testing.T) {
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
-					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation("param")
+					mapper := bidderparams.BidderParamMapper{Location: "param"}
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
@@ -82,8 +81,7 @@ func TestSetRequestParams(t *testing.T) {
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
-					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation("imp.#.param")
+					mapper := bidderparams.BidderParamMapper{Location: "imp.#.param"}
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
@@ -115,8 +113,7 @@ func TestSetRequestParams(t *testing.T) {
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
-					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation("imp.#.param")
+					mapper := bidderparams.BidderParamMapper{Location: "imp.#.param"}
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
@@ -148,8 +145,7 @@ func TestSetRequestParams(t *testing.T) {
 					"param": "value",
 				},
 				paramsMapper: func() map[string]bidderparams.BidderParamMapper {
-					mapper := bidderparams.BidderParamMapper{}
-					mapper.SetLocation("imp.#.param")
+					mapper := bidderparams.BidderParamMapper{Location: "imp.#.param"}
 					return map[string]bidderparams.BidderParamMapper{
 						"param": mapper,
 					}
