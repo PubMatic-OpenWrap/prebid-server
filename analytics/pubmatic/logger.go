@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
@@ -28,6 +29,11 @@ type bidWrapper struct {
 // GetUUID is a function variable which will return uuid
 var GetUUID = func() string {
 	return uuid.NewV4().String()
+}
+
+var blockListedNBR = map[openrtb3.NoBidReason]struct{}{
+	nbr.RequestBlockedPartnerThrottle: {},
+	nbr.RequestBlockedPartnerFiltered: {},
 }
 
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
@@ -54,6 +60,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			CachePutMiss:      rCtx.CachePutMiss,
 		},
 	}
+
+	wlog.logProfileMetaData(rCtx)
 
 	wlog.logIntegrationType(rCtx.Endpoint)
 
@@ -393,6 +401,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			nbr := bid.Nbr // only for seat-non-bids this will present at bid level
 			if nbr == nil {
 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
+			}
+
+			if nbr != nil {
+				if _, ok := blockListedNBR[*nbr]; ok {
+					continue
+				}
 			}
 
 			pr := PartnerRecord{
