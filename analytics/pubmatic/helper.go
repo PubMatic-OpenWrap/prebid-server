@@ -124,7 +124,7 @@ func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, logg
 		setWakandaWinningBidFlag(rCtx.WakandaDebug, ao.Response)
 		parseURL, err := url.Parse(loggerURL)
 		if err != nil {
-			glog.Error("Failed to parse loggerURL while setting wakanda object")
+			glog.Error("Failed to parse loggerURL while setting wakanda object err:%s", err.Error())
 		}
 		if parseURL != nil {
 			jsonParam := parseURL.Query().Get(parseUrlFormat)
@@ -132,7 +132,7 @@ func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, logg
 		}
 		bytes, err := json.Marshal(ao.Response)
 		if err != nil {
-			glog.Error("Failed to marshal ao.Response while setting wakanda object")
+			glog.Error("Failed to marshal ao.Response while setting wakanda object err:%s", err.Error())
 		}
 		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
 		rCtx.WakandaDebug.SetOpenRTB(ao.RequestWrapper.BidRequest)
