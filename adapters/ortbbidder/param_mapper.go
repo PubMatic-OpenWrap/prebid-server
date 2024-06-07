@@ -20,9 +20,9 @@ type ParserImpl struct {
 }
 
 func (p *ParserImpl) MType(bid, typeBid map[string]any, path string) {
-	typeBid["bidType"] = func(bid map[string]any, path string) openrtb_ext.BidType {
+	getMType := func(bid map[string]any, path string) openrtb_ext.BidType {
 		// check in ortb bid.MType
-		mType, ok := bid["mtype"].(int)
+		mType, ok := bid["mtype"].(float64)
 		if ok {
 			return getMediaTypeForBidFromMType(openrtb2.MarkupType(mType))
 		}
@@ -39,6 +39,7 @@ func (p *ParserImpl) MType(bid, typeBid map[string]any, path string) {
 		// auto detection logic here
 		return ""
 	}
+	typeBid["BidType"] = getMType(bid, path)
 }
 
 func (p *ParserImpl) Dur(bid, typeBid map[string]any, path string) {
@@ -64,15 +65,20 @@ func (ParserFactoryImpl) NewParser(bidResponse map[string]any) Parser {
 	}
 }
 
-func (ParserFactoryImpl) GetBidParamParser() map[string]ParserFunc {
-	return map[string]ParserFunc{
+var (
+	bidParamParser = map[string]ParserFunc{
 		"mtype": Parser.MType,
 		"dur":   Parser.Dur,
 	}
+	responseParamParser = map[string]ResponseParserFunc{
+		"fledge": Parser.Fledge,
+	}
+)
+
+func (ParserFactoryImpl) GetBidParamParser() map[string]ParserFunc {
+	return bidParamParser
 }
 
 func (ParserFactoryImpl) GetResponseParamParser() map[string]ResponseParserFunc {
-	return map[string]ResponseParserFunc{
-		"fledge": Parser.Fledge,
-	}
+	return responseParamParser
 }
