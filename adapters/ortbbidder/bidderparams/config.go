@@ -18,9 +18,6 @@ type BidderConfig struct {
 
 // setRequestParams sets the bidder specific requestParams
 func (bcfg *BidderConfig) setRequestParams(bidderName string, requestParams map[string]BidderParamMapper) {
-	if bcfg.bidderConfigMap == nil {
-		bcfg.bidderConfigMap = make(map[string]*config)
-	}
 	if _, found := bcfg.bidderConfigMap[bidderName]; !found {
 		bcfg.bidderConfigMap[bidderName] = &config{}
 	}

@@ -16,7 +16,6 @@ func TestSetRequestParams(t *testing.T) {
 	}
 	type want struct {
 		bidderCfg *BidderConfig
-		err       error
 	}
 	tests := []struct {
 		name   string
@@ -24,35 +23,6 @@ func TestSetRequestParams(t *testing.T) {
 		args   args
 		want   want
 	}{
-		{
-			name: "bidderConfigMap_is_nil",
-			fields: fields{
-				bidderConfig: &BidderConfig{
-					bidderConfigMap: nil,
-				},
-			},
-			args: args{
-				bidderName: "test",
-				requestParams: map[string]BidderParamMapper{
-					"adunit": {
-						Location: "ext.adunit",
-					},
-				},
-			},
-			want: want{
-				bidderCfg: &BidderConfig{
-					bidderConfigMap: map[string]*config{
-						"test": {
-							requestParams: map[string]BidderParamMapper{
-								"adunit": {
-									Location: "ext.adunit",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
 		{
 			name: "bidderName_not_found",
 			fields: fields{

@@ -39,11 +39,6 @@ func (reqBuilder *requestBuilder) parseRequest(request *openrtb2.BidRequest) (er
 	if !ok {
 		return errImpMissing
 	}
-	for impIndex := range reqBuilder.imps {
-		imp := reqBuilder.imps[impIndex].(map[string]any)
-		delete(imp, "id")
-	}
-
 	return
 }
 
@@ -157,7 +152,6 @@ func (reqBuilder *multiRequestModeBuilder) makeRequest(endpointTemplate *templat
 		requestData   []*adapters.RequestData
 		foundValidImp bool
 	)
-	// reqBuilder.requestNode[impKey] = reqBuilder.imps
 	// iterate through imps in reverse order to ensure setRequestParams prioritizes
 	// the parameters from imp[0].ext.bidder over those from imp[1..N].ext.bidder.
 	for impIndex := len(reqBuilder.imps) - 1; impIndex >= 0; impIndex-- {
