@@ -14,28 +14,24 @@ import (
 // return the list of active server side header bidding partners
 // with their configurations at publisher-profile-version level
 func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayVersion int) (map[int]map[string]string, error) {
-	versionID, displayVersionID, platform, profileType, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
+	versionID, displayVersionID, platform, err := db.getVersionID(profileID, displayVersion, pubID)
 	if err != nil {
 		return nil, err
 	}
 
-	partnerConfigMap, err := db.getActivePartnerConfigurations(profileID, versionID)
+	partnerConfigMap, err := db.getActivePartnerConfigurations(versionID)
 	if err == nil && partnerConfigMap[-1] != nil {
 		partnerConfigMap[-1][models.DisplayVersionID] = strconv.Itoa(displayVersionID)
 		// check for SDK new UI
 		if platform != "" {
 			partnerConfigMap[-1][models.PLATFORM_KEY] = platform
 		}
-		if profileType != 0 {
-			partnerConfigMap[-1][models.ProfileTypeKey] = strconv.Itoa(profileType)
-
-		}
 	}
 	return partnerConfigMap, err
 }
 
-func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map[int]map[string]string, error) {
-	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, profileID, versionID, versionID)
+func (db *mySqlDB) getActivePartnerConfigurations(versionID int) (map[int]map[string]string, error) {
+	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, versionID, versionID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
@@ -84,7 +80,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 	return partnerConfigMap, nil
 }
 
-func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubID int) (int, int, string, int, error) {
+func (db *mySqlDB) getVersionID(profileID, displayVersion, pubID int) (int, int, string, error) {
 	var row *sql.Row
 	if displayVersion == 0 {
 		row = db.conn.QueryRow(db.cfg.Queries.LiveVersionInnerQuery, profileID, pubID)
@@ -93,11 +89,10 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 	}
 
 	var platform sql.NullString
-	var versionID, displayVersionIDFromDB, profileType int
-	//AUK_TODO: use gorm UOE-10651
-	err := row.Scan(&versionID, &displayVersionIDFromDB, &platform, &profileType)
+	var versionID, displayVersionIDFromDB int
+	err := row.Scan(&versionID, &displayVersionIDFromDB, &platform)
 	if err != nil {
-		return versionID, displayVersionIDFromDB, platform.String, profileType, err
+		return versionID, displayVersionIDFromDB, platform.String, err
 	}
-	return versionID, displayVersionIDFromDB, platform.String, profileType, nil
+	return versionID, displayVersionIDFromDB, platform.String, nil
 }

@@ -98,41 +98,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 		return err
 	}
 
-	c.updatePartnerConfigWithBidderFilters(partnerConfigMap, pubID, profileID, displayVersion)
 	c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
-}
-
-func (c *cache) updatePartnerConfigWithBidderFilters(partnerConfigs map[int]map[string]string, pubID, profileID, displayVersion int) {
-
-	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
-	obj, ok := c.cache.Get(cacheKey)
-	if !ok {
-		return
-	}
-
-	adUnitCfg, ok := obj.(*adunitconfig.AdUnitConfig)
-	if !ok || adUnitCfg == nil {
-		return
-	}
-
-	bidderfilter := map[string]string{}
-	defaultAdUnitConfig := adUnitCfg.Config["default"]
-	if defaultAdUnitConfig.BidderFilter != nil {
-		for _, filter := range defaultAdUnitConfig.BidderFilter.Filters {
-			for _, bidder := range filter.Bidders {
-				bidderfilter[bidder] = string(filter.BiddingConditions)
-			}
-		}
-	}
-
-	if len(bidderfilter) == 0 {
-		return
-	}
-
-	for id, cfg := range partnerConfigs {
-		if biddingCodition, ok := bidderfilter[cfg[models.BidderCode]]; ok {
-			partnerConfigs[id][models.BidderFilters] = biddingCodition
-		}
-	}
 }

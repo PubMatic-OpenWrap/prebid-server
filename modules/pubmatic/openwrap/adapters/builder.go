@@ -55,7 +55,6 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderBoldwin):        builderBoldwin,
 		string(openrtb_ext.BidderColossus):       builderColossus,
 		string(openrtb_ext.BidderNextMillennium): builderNextmillennium,
-		string(openrtb_ext.BidderRise):           builderRise,
 	}
 }
 

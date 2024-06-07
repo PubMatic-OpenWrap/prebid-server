@@ -7,7 +7,6 @@ const (
 	ADAPTER_NAME                = "adapterName"
 	PREBID_PARTNER_NAME         = "prebidPartnerName"
 	BidderCode                  = "bidderCode"
-	BidderFilters               = "bidderFilters"
 	IsAlias                     = "isAlias"
 	PROTOCOL                    = "protocol"
 	SERVER_SIDE_FLAG            = "serverSideEnabled"
@@ -378,12 +377,6 @@ const (
 	CreativeID         = "unwrap-ucrid"
 	PubID              = "pub_id"
 	ImpressionID       = "imr_id"
-
-	//Constants for new SDK reporting
-	ProfileTypeKey        = "type"
-	AppPlatformKey        = "appPlatform"
-	IntegrationPathKey    = "integrationPath"
-	SubIntegrationPathKey = "subIntegrationPath"
 )
 
 const (
@@ -498,7 +491,6 @@ const (
 	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
-	GetAdpodConfig                     = "GetAdpodConfig"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
@@ -533,14 +525,8 @@ const (
 	GamAdServer = "gam"
 )
 
-// constants for adpod type
-const (
-	AdPodTypeDynamic    = "dynamic"
-	AdPodTypeStructured = "structured"
-	AdPodTypeHybrid     = "hybrid"
-)
-
 // constants for feature id
+
 const (
 	FeatureFSC               = 1
 	FeatureTBF               = 2

@@ -20,8 +20,6 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -38,7 +36,6 @@ type OpenWrap struct {
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
 	currencyConversion currency.Conversions
-	geoInfoFetcher     geodb.Geography
 	pubFeatures        publisherfeature.Feature
 	unwrap             unwrap.Unwrap
 }
@@ -93,20 +90,12 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
-	// init geoDBClient
-	geoDBClient := netacuity.DummyNetAcuity{}
-	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
-	if err != nil {
-		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
-	}
-
 	once.Do(func() {
 		ow = &OpenWrap{
 			cfg:                cfg,
 			cache:              owCache,
 			metricEngine:       &metricEngine,
 			currencyConversion: moduleDeps.CurrencyConversion,
-			geoInfoFetcher:     geoDBClient,
 			pubFeatures:        pubFeatures,
 			unwrap:             uw,
 		}

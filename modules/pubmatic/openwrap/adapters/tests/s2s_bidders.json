@@ -75,20 +75,5 @@
                 "placement_id": "1234"
             }
         }
-    },
-    {
-        "name": "rise_json_OneOf - org/publisher_id",
-        "args" : {
-            "adapterName": "rise",
-            "requestJSON": {
-                "org": "1",
-                "publisher_id":"1"   
-            }
-        },
-        "want": {
-            "expectedJSON": {
-                "org": "1"
-            }
-        }
     }
 ]

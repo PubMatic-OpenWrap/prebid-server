@@ -425,7 +425,7 @@ func assertHistogram(t *testing.T, name string, histogram dto.Histogram, expecte
 	assert.Equal(t, expectedSum, histogram.GetSampleSum(), name+":sum")
 }
 
-func assertCounterValue(t *testing.T, description string, counter prometheus.Counter, expected float64) {
+func assertCounterValue(t *testing.T, description, name string, counter prometheus.Counter, expected float64) {
 	m := dto.Metric{}
 	counter.Write(&m)
 	actual := *m.GetCounter().Value
@@ -435,5 +435,5 @@ func assertCounterValue(t *testing.T, description string, counter prometheus.Cou
 
 func assertCounterVecValue(t *testing.T, description, name string, counterVec *prometheus.CounterVec, expected float64, labels prometheus.Labels) {
 	counter := counterVec.With(labels)
-	assertCounterValue(t, description, counter, expected)
+	assertCounterValue(t, description, name, counter, expected)
 }

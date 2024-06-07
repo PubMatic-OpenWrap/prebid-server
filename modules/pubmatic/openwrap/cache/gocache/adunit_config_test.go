@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -26,14 +25,6 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	Regex:         true,
 	Config: map[string]*adunitconfig.AdConfig{
 		"default": {
-			BidderFilter: &adunitconfig.BidderFilter{
-				Filters: []adunitconfig.Filter{
-					{
-						Bidders:           []string{"bidderA"},
-						BiddingConditions: json.RawMessage(`{ "in": [{ "var": "country"}, ["IND"]]}`),
-					},
-				},
-			},
 			Floors: &openrtb_ext.PriceFloorRules{
 				FloorMin: 15,
 				Data: &openrtb_ext.PriceFloorData{
@@ -153,7 +144,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	},
 }
 
-func TestCachePopulateCacheWithAdunitConfig(t *testing.T) {
+func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -277,7 +268,7 @@ func TestCachePopulateCacheWithAdunitConfig(t *testing.T) {
 	}
 }
 
-func TestCacheGetAdunitConfigFromCache(t *testing.T) {
+func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)

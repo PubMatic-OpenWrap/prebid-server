@@ -33,9 +33,9 @@ type RequestCtx struct {
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-	Country            string
-	IP                 string
-	TMax               int64
+
+	IP   string
+	TMax int64
 
 	//NYC_TODO: use enum?
 	IsTestRequest                     int8
@@ -73,7 +73,6 @@ type RequestCtx struct {
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
-	AdapterFilteredMap map[string]struct{}
 
 	AdUnitConfig *adunitconfig.AdUnitConfig
 
@@ -105,11 +104,6 @@ type RequestCtx struct {
 	AppLovinMax            AppLovinMax
 	LoggerDisabled         bool
 	TrackerDisabled        bool
-	ProfileType            int
-	ProfileTypePlatform    int
-	AppPlatform            int
-	AppIntegrationPath     *int
-	AppSubIntegrationPath  *int
 }
 
 type OwBid struct {

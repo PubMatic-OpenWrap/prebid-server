@@ -56,7 +56,6 @@ type Video struct {
 	Enabled              *bool        `json:"enabled,omitempty"`
 	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
 	Config               *VideoConfig `json:"config,omitempty"`
-	UsePodConfig         *bool        `json:"usepodconfig,omitempty"`
 }
 
 // Struct for UniversalPixel
@@ -85,14 +84,4 @@ type AdConfig struct {
 	UniversalPixel     []UniversalPixel  `json:"universalpixel,omitempty"`
 	EnableGAMUrlLookup bool              `json:"enablegamurllookup,omitempty"`
 	Adrule             []*openrtb2.Video `json:"adrule,omitempty"`
-	BidderFilter       *BidderFilter     `json:"bidderFilter,omitempty"`
-}
-
-type BidderFilter struct {
-	Filters []Filter `json:"filterConfig,omitempty"`
-}
-
-type Filter struct {
-	Bidders           []string        `json:"bidders,omitempty"`
-	BiddingConditions json.RawMessage `json:"biddingConditions,omitempty"`
 }

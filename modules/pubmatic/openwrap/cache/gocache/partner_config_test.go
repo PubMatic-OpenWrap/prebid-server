@@ -1,7 +1,6 @@
 package gocache
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -18,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCacheGetPartnerConfigMap(t *testing.T) {
+func Test_cache_GetPartnerConfigMap(t *testing.T) {
 	type fields struct {
 		Map   sync.Map
 		cache *gocache.Cache
@@ -57,22 +56,7 @@ func TestCacheGetPartnerConfigMap(t *testing.T) {
 				mockDatabase.EXPECT().GetActivePartnerConfigurations(testPubID, testProfileID, testVersionID).Return(formTestPartnerConfig(), nil)
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(testPubID).Return(map[string]string{"adunit@728x90": "2aa34b52a9e941c1594af7565e599c8d"}, nil)
 				mockDatabase.EXPECT().GetPublisherVASTTags(testPubID).Return(nil, nil)
-				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(&adunitconfig.AdUnitConfig{
-					Config: map[string]*adunitconfig.AdConfig{
-						"default": {
-							BidderFilter: &adunitconfig.BidderFilter{
-								Filters: []adunitconfig.Filter{
-									{
-										Bidders: []string{
-											"pubmatic",
-										},
-										BiddingConditions: json.RawMessage(`{"in":[{"var":"country"},["IND"]]}`),
-									},
-								},
-							},
-						},
-					},
-				}, nil)
+				mockDatabase.EXPECT().GetAdunitConfig(testProfileID, testVersionID).Return(nil, nil)
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(map[int][]models.SlotMapping{
 					1: {
 						{
@@ -97,7 +81,6 @@ func TestCacheGetPartnerConfigMap(t *testing.T) {
 					"kgp":               "_AU_@_W_x_H",
 					"timeout":           "220",
 					"bidderCode":        "pubmatic",
-					"bidderFilters":     `{"in":[{"var":"country"},["IND"]]}`,
 				},
 			},
 		},
@@ -186,8 +169,7 @@ func TestCacheGetPartnerConfigMap(t *testing.T) {
 				return mockDatabase, mockEngine
 			},
 			wantErr: true,
-			want:    nil,
-		},
+			want:    nil},
 		{
 			name: "db_queries_failed_getting_wrapper_slotmappings",
 			fields: fields{

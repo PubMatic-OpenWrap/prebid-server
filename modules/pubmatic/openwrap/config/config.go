@@ -19,7 +19,6 @@ type Config struct {
 	Log           Log
 	Stats         stats.Stats
 	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
-	GeoDB         GeoDB
 }
 
 type Server struct {
@@ -59,7 +58,6 @@ type Queries struct {
 	GetAllDspFscPcntQuery             string
 	GetPublisherFeatureMapQuery       string
 	GetAnalyticsThrottlingQuery       string
-	GetAdpodConfig                    string
 }
 
 type Cache struct {
@@ -98,8 +96,4 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
-}
-
-type GeoDB struct {
-	Location string
 }
