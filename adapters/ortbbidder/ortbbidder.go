@@ -18,7 +18,7 @@ import (
 type adapter struct {
 	adapterInfo
 	bidderParamsConfig *bidderparams.BidderConfig
-	parser             ParserFactory
+	paramProcessor     BidderParamProcessor
 }
 
 const (
@@ -80,7 +80,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	return &adapter{
 		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
 		bidderParamsConfig: g_bidderParamsConfig,
-		parser:             &ParserFactoryImpl{},
+		paramProcessor:     NewParamProcessor(),
 		// paramMapperFactory: ParamMapperFactoryImpl{},
 	}, nil
 }
@@ -138,27 +138,6 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	return bidResponse, nil
 }
 
-// getMediaTypeForBid returns the BidType as per the bid.MType field
-// bid.MType has high priority over bidExt.Prebid.Type
-func getMediaTypeForBid(bid openrtb2.Bid) openrtb_ext.BidType {
-	var bidType openrtb_ext.BidType
-	if bid.MType > 0 {
-		bidType = getMediaTypeForBidFromMType(bid.MType)
-	} else {
-		if bid.Ext != nil {
-			var bidExt openrtb_ext.ExtBid
-			err := json.Unmarshal(bid.Ext, &bidExt)
-			if err == nil && bidExt.Prebid != nil {
-				bidType, _ = openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
-			}
-		}
-	}
-	if bidType == "" {
-		// TODO : detect mediatype from bid.AdM and request.imp parameter
-	}
-	return bidType
-}
-
 // getMediaTypeForBidFromMType returns the bidType from the MarkupType field
 func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType {
 	var bidType openrtb_ext.BidType
@@ -184,7 +163,7 @@ func isORTBBidder(bidderName string) bool {
 func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
 	responseParmas, _ := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
 
-	adapterResponseBytes, err := setResponseParams(bidderResponseBytes, responseParmas, o.parser)
+	adapterResponseBytes, err := o.setResponseParams(bidderResponseBytes, responseParmas)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +174,7 @@ func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.Bidde
 }
 
 // implementation using Parser
-func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, parserFactory ParserFactory) ([]byte, error) {
+func (o *adapter) setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper) ([]byte, error) {
 	if len(bidderResponseBody) == 0 {
 		return nil, errors.New("invalid responseBody")
 	}
@@ -210,14 +189,20 @@ func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[st
 	adapterResponse := map[string]any{}
 	adapterResponse["Currency"] = ""
 
-	parser := parserFactory.NewParser(response)
 	typeBids := []any{}
-	for paramName, callback := range parserFactory.GetResponseParamParser() {
+	// for paramName, callback := range parserFactory.GetResponseParamParser() {
+	// 	paramMapper, ok := responseParams[paramName]
+	// 	if !ok {
+	// 		continue
+	// 	}
+	// 	callback(parser, adapterResponse, paramMapper.GetPath())
+	// }
+	for _, paramName := range responseLevelParams {
 		paramMapper, ok := responseParams[paramName]
 		if !ok {
 			continue
 		}
-		callback(parser, adapterResponse, paramMapper.GetPath())
+		o.paramProcessor.ResolveParam(adapterResponse, response, response, paramMapper.GetPath(), paramName)
 	}
 	seatBids, ok := response["seatbid"].([]any)
 	if !ok {
@@ -242,13 +227,22 @@ func setResponseParams(bidderResponseBody json.RawMessage, responseParams map[st
 			typeBid := map[string]any{
 				"Bid": bid,
 			}
-			for paramName, callback := range parserFactory.GetBidParamParser() {
+			// for paramName, callback := range parserFactory.GetBidParamParser() {
+			// 	paramMapper, ok := responseParams[paramName]
+			// 	if !ok {
+			// 		continue
+			// 	}
+
+			// 	callback(parser, bid, typeBid, path)
+			// }
+
+			for _, paramName := range bidLevelParams {
 				paramMapper, ok := responseParams[paramName]
 				if !ok {
 					continue
 				}
 				path := getPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
-				callback(parser, bid, typeBid, path)
+				o.paramProcessor.ResolveParam(bid, typeBid, response, path, paramName)
 			}
 			typeBids = append(typeBids, typeBid)
 		}
