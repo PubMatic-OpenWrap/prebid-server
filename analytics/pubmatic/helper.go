@@ -120,7 +120,7 @@ func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
 }
 
 func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
-	if rCtx.WakandaDebug.IsEnable() {
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
 		setWakandaWinningBidFlag(rCtx.WakandaDebug, ao.Response)
 		parseURL, err := url.Parse(loggerURL)
 		if err != nil {

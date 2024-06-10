@@ -627,7 +627,7 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 			want: &wakanda.Debug{},
 		},
 		{
-			name: "zero_price",
+			name: "non_zero_price",
 			args: args{
 				wakandaDebug: &wakanda.Debug{},
 				response: &openrtb2.BidResponse{
@@ -654,70 +654,98 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 }
 
 func TestSetWakandaObject(t *testing.T) {
+	type args struct {
+		rCtx      *models.RequestCtx
+		ao        *analytics.AuctionObject
+		loggerURL string
+	}
 	testCases := []struct {
-		description string
-		rCtx        *models.RequestCtx
-		ao          *analytics.AuctionObject
-		loggerURL   string
+		name string
+		args args
+		want *models.RequestCtx
 	}{
-		// {
-		// 	description: "rctx is empty",
-		// 	rCtx:        &models.RequestCtx{},
-		// 	ao:          &analytics.AuctionObject{},
-		// 	loggerURL:   "",
-		// },
 		{
-			description: "wakanda is disabled",
-			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
-			ao:          &analytics.AuctionObject{},
-			loggerURL:   "",
-		},
-		{
-			description: "wakanda is enabled",
-			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
-			ao: &analytics.AuctionObject{
-				RequestWrapper: &openrtb_ext.RequestWrapper{
-					BidRequest: &openrtb2.BidRequest{},
-				},
-				Response: &openrtb2.BidResponse{},
+			name: "rctx is empty",
+			args: args{
+				rCtx:      &models.RequestCtx{},
+				ao:        &analytics.AuctionObject{},
+				loggerURL: "",
 			},
-			loggerURL: "",
+			want: &models.RequestCtx{},
 		},
 		{
-			description: "wakanda enabled with valid flow",
-			rCtx:        &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
-			ao: &analytics.AuctionObject{
-				RequestWrapper: &openrtb_ext.RequestWrapper{
-					BidRequest: &openrtb2.BidRequest{
-						Imp: []openrtb2.Imp{
-							{
-								ID: "imp_1",
+			name: "wakanda is disabled",
+			args: args{
+				rCtx:      &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
+				ao:        &analytics.AuctionObject{},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
+		},
+		{
+			name: "wakanda is enabled",
+			args: args{
+				rCtx: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+				ao: &analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true, DebugData: wakanda.DebugData{WinningBid: false, HTTPResponseBody: "{\"id\":\"\"}", OpenRTB: &openrtb2.BidRequest{}, Logger: json.RawMessage{}}}},
+		},
+		{
+			name: "wakanda enabled with valid flow",
+			args: args{
+				rCtx: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+				ao: &analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID: "imp_1",
+								},
 							},
 						},
 					},
-				},
-				Response: &openrtb2.BidResponse{
-					ID:    "123",
-					BidID: "bid-id-1",
-					Cur:   "USD",
-					SeatBid: []openrtb2.SeatBid{
-						{
-							Seat: "pubmatic",
-							Bid: []openrtb2.Bid{
-								{
-									ID:    "bid-id-1",
-									ImpID: "imp_1",
-									Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":0}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp_1",
+										Price: 5,
+										Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":5}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
+									},
 								},
 							},
 						},
 					},
 				},
+				loggerURL: "",
 			},
-			loggerURL: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true, DebugData: wakanda.DebugData{WinningBid: true, HTTPResponseBody: "{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":5,\"ext\":{\"signaldata\":\"{\\\"id\\\":\\\"123\\\",\\\"seatbid\\\":[{\\\"bid\\\":[{\\\"id\\\":\\\"bid-id-1\\\",\\\"impid\\\":\\\"imp_1\\\",\\\"price\\\":5}],\\\"seat\\\":\\\"pubmatic\\\"}],\\\"bidid\\\":\\\"bid-id-1\\\",\\\"cur\\\":\\\"USD\\\",\\\"ext\\\":{\\\"matchedimpression\\\":{\\\"appnexus\\\":50,\\\"pubmatic\\\":50}}}\\r\\n\"}}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\"}",
+				Logger: json.RawMessage{},
+				OpenRTB: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID: "imp_1",
+						},
+					},
+				}}}},
 		},
 	}
-	for _, test := range testCases {
-		setWakandaObject(test.rCtx, test.ao, test.loggerURL)
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			setWakandaObject(tt.args.rCtx, tt.args.ao, tt.args.loggerURL)
+			assert.Equal(t, tt.want, tt.args.rCtx)
+		})
 	}
 }
