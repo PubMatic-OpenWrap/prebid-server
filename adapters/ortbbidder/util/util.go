@@ -1,8 +1,20 @@
-package ortbbidder
+package util
 
 import (
 	"strconv"
 	"strings"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+)
+
+const (
+	impKey     = "imp"
+	extKey     = "ext"
+	bidderKey  = "bidder"
+	appsiteKey = "appsite"
+	siteKey    = "site"
+	appKey     = "app"
 )
 
 /*
@@ -19,7 +31,7 @@ Arguments:
 Example:
   - location = imp.ext.adunitid; value = 123  ==> {"imp": {"ext" : {"adunitid":123}}}
 */
-func setValue(node map[string]any, locations []string, value any) bool {
+func SetValue(node map[string]any, locations []string, value any) bool {
 	if value == nil || len(locations) == 0 {
 		return false
 	}
@@ -69,7 +81,7 @@ func getNode(nodes map[string]any, key string) any {
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
 // getValueFromLocation retrieves a value from a map based on a specified location.
-func getValueFromLocation(val interface{}, path string) (interface{}, bool) {
+func GetValueFromLocation(val interface{}, path string) (interface{}, bool) {
 	location := strings.Split(path, ".")
 	var (
 		ok   bool
@@ -133,7 +145,7 @@ func setValueAtLocation(node map[string]interface{}, path string, value interfac
 	return false
 }
 
-func getPath(path string, array []int) string {
+func GetPath(path string, array []int) string {
 	parts := strings.Split(path, ".")
 	j := 0
 	for i, part := range parts {
@@ -146,4 +158,20 @@ func getPath(path string, array []int) string {
 		}
 	}
 	return strings.Join(parts, ".")
+}
+
+// GetValueofMediaType returns the bidType from the MarkupType field
+func GetValueofMediaType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name
+	var bidType openrtb_ext.BidType
+	switch mtype {
+	case openrtb2.MarkupBanner:
+		bidType = openrtb_ext.BidTypeBanner
+	case openrtb2.MarkupVideo:
+		bidType = openrtb_ext.BidTypeVideo
+	case openrtb2.MarkupAudio:
+		bidType = openrtb_ext.BidTypeAudio
+	case openrtb2.MarkupNative:
+		bidType = openrtb_ext.BidTypeNative
+	}
+	return bidType
 }

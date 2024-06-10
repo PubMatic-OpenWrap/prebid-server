@@ -1,4 +1,4 @@
-package ortbbidder
+package util
 
 // import (
 // 	"testing"

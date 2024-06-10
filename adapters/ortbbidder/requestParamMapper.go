@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
 const (
@@ -51,7 +52,7 @@ func setRequestParams(requestBody []byte, requestParams map[string]bidderparams.
 				continue
 			}
 			// set the value in the request according to the mapping details and remove the parameter.
-			if setValue(request, paramMapper.GetLocation(), paramValue) {
+			if util.SetValue(request, paramMapper.GetLocation(), paramValue) {
 				delete(bidderParams, paramName)
 				updatedRequest = true
 			}

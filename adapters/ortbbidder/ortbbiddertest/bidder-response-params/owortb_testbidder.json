@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "testbidder (oRTB Integration) Adapter Params",
+    "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
+    "type": "object",
+    "properties": {
+      "mtype": {
+        "type": "string",
+        "description": "mtype",
+        "location": "seatbid.#.bid.#.ext.mtype"
+      },
+      "currency": {
+        "type": "string",
+        "description": "mtype",
+        "location": ""
+      }
+    },
+    "required": [""]
+  }
