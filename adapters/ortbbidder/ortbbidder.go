@@ -64,13 +64,18 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	if o.bidderParamsConfig == nil {
 		return nil, []error{newBadInputError(errNilBidderParamCfg.Error())}
 	}
-	requestBuilder := newRequestBuilder(o.adapterInfo.extraInfo.RequestMode, o.Endpoint)
-	err := requestBuilder.parseRequest(request)
-	if err != nil {
+
+	requestBuilder := newRequestBuilder(
+		o.adapterInfo.extraInfo.RequestMode,
+		o.Endpoint,
+		o.endpointTemplate,
+		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
+
+	if err := requestBuilder.parseRequest(request); err != nil {
 		return nil, []error{newBadInputError(err.Error())}
 	}
-	requestParams := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
-	return requestBuilder.makeRequest(o.endpointTemplate, requestParams)
+
+	return requestBuilder.makeRequest()
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response

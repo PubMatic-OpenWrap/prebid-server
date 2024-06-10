@@ -68,11 +68,11 @@ func TestParseRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqBuilder := &requestBuilder{}
+			reqBuilder := &requestBuilderImpl{}
 			err := reqBuilder.parseRequest(tt.args.request)
 			assert.Equalf(t, tt.want.err, err, "mismatched error")
 			assert.Equalf(t, string(tt.want.rawRequest), string(reqBuilder.rawRequest), "mismatched rawRequest")
-			assert.Equalf(t, tt.want.requestNode, reqBuilder.requestNode, "mismatched requestNode")
+			assert.Equalf(t, tt.want.requestNode, reqBuilder.request, "mismatched requestNode")
 			assert.Equalf(t, tt.want.imps, reqBuilder.imps, "mismatched imps")
 		})
 	}
@@ -168,7 +168,7 @@ func TestBuildEndpoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqBuilder := &requestBuilder{
+			reqBuilder := &requestBuilderImpl{
 				endpoint:            tt.fields.endpoint,
 				hasMacrosInEndpoint: tt.fields.hasMacrosInEndpoint,
 			}
@@ -187,7 +187,7 @@ func TestNewRequestBuilder(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want requestModeBuilder
+		want requestBuilder
 	}{
 		{
 			name: "singleRequestMode",
@@ -195,8 +195,8 @@ func TestNewRequestBuilder(t *testing.T) {
 				requestMode: requestModeSingle,
 				endpoint:    "http://localhost/publisher",
 			},
-			want: &singleRequestModeBuilder{
-				&requestBuilder{
+			want: &multiRequestBuilder{
+				&requestBuilderImpl{
 					endpoint: "http://localhost/publisher",
 				},
 			},
@@ -208,8 +208,8 @@ func TestNewRequestBuilder(t *testing.T) {
 				requestMode: requestModeSingle,
 				endpoint:    "http://{{.host}}/publisher",
 			},
-			want: &singleRequestModeBuilder{
-				&requestBuilder{
+			want: &multiRequestBuilder{
+				&requestBuilderImpl{
 					endpoint:            "http://{{.host}}/publisher",
 					hasMacrosInEndpoint: true,
 				},
@@ -225,7 +225,7 @@ func TestNewRequestBuilder(t *testing.T) {
 
 func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 	type fields struct {
-		requestBuilder *requestBuilder
+		requestBuilder *requestBuilderImpl
 	}
 	type args struct {
 		endpointTemplate  *template.Template
@@ -244,7 +244,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "nil_request",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: nil,
 				},
 			},
@@ -257,7 +257,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "no_imp_object_in_builder",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{}`),
 				},
 			},
@@ -272,7 +272,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "invalid_imp_object",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{"imp":["invalid"]}`),
 					imps:       []any{"invalid"},
 				},
@@ -286,7 +286,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "replace_macros_to_form_endpoint_url",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
 					imps: []any{
 						map[string]any{
@@ -301,7 +301,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 							},
 						},
 					},
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{
@@ -340,10 +340,10 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "macros_value_absent_in_bidder_params",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{},
@@ -380,10 +380,10 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "buildEndpoint_returns_error",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{},
@@ -419,10 +419,10 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "multi_imps_request",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"},{"ext":{"bidder":{"ext":{"pubid":2222},"host":"imp2.host.com"}},"id":"imp_2"}]}`),
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{
@@ -512,10 +512,10 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "multi_imps_request_with_one_invalid_imp",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"},"invalid-imp"]}`),
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{
@@ -576,10 +576,10 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "one_imp_updates_request_level_param_but_another_imp_does_not_update",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111}}},"id":"imp_1"},{"ext":{"bidder":{"ext":{"pubid":2222},"host":"imp2.host.com"}},"id":"imp_2"}]}`),
-					requestNode: map[string]any{
+					request: map[string]any{
 						"imp": []any{
 							map[string]any{
 								"ext": map[string]any{
@@ -667,8 +667,8 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sreq := &singleRequestModeBuilder{
-				requestBuilder: tt.fields.requestBuilder,
+			sreq := &multiRequestBuilder{
+				requestBuilderImpl: tt.fields.requestBuilder,
 			}
 			requestData, errs := sreq.makeRequest(tt.args.endpointTemplate, tt.args.bidderParamMapper)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
@@ -679,7 +679,7 @@ func Test_singleRequestModeBuilder_makeRequest(t *testing.T) {
 
 func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 	type fields struct {
-		requestBuilder *requestBuilder
+		requestBuilder *requestBuilderImpl
 	}
 	type args struct {
 		endpointTemplate  *template.Template
@@ -698,7 +698,7 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "no_imp_object_in_builder",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{}`),
 				},
 			},
@@ -713,7 +713,7 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "invalid_imp_object",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{"imp":["invalid"]}`),
 					imps:       []any{"invalid"},
 				},
@@ -727,7 +727,7 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "replace_macros_to_form_endpoint_url",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					rawRequest: json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"}]}`),
 					imps: []any{
 						map[string]any{
@@ -742,7 +742,7 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 							},
 						},
 					},
-					requestNode:         map[string]any{},
+					request:             map[string]any{},
 					hasMacrosInEndpoint: true,
 				},
 			},
@@ -767,10 +767,10 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "buildEndpoint_returns_error",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{},"id":"imp_1"}]}`),
-					requestNode:         map[string]any{},
+					request:             map[string]any{},
 					imps: []any{
 						map[string]any{
 							"ext": map[string]any{},
@@ -799,10 +799,10 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "map_bidder_params_in_multi_imp",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":5890},"host":"localhost.com"}},"id":"imp_1"},{"ext":{"bidder":{"tagid":"valid_tag_id"}},"id":"imp_2"}]}`),
-					requestNode:         map[string]any{},
+					request:             map[string]any{},
 					imps: []any{
 						map[string]any{
 							"ext": map[string]any{
@@ -857,10 +857,10 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 		{
 			name: "multi_imps_request_with_one_invalid_imp",
 			fields: fields{
-				requestBuilder: &requestBuilder{
+				requestBuilder: &requestBuilderImpl{
 					hasMacrosInEndpoint: true,
 					rawRequest:          json.RawMessage(`{"imp":[{"ext":{"bidder":{"ext":{"pubid":1111},"host":"imp1.host.com"}},"id":"imp_1"},"invalid-imp"]}`),
-					requestNode:         map[string]any{},
+					request:             map[string]any{},
 					imps: []any{
 						map[string]any{
 							"ext": map[string]any{
@@ -908,11 +908,11 @@ func Test_multiRequestModeBuilder_makeRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := &multiRequestModeBuilder{
-				requestBuilder: tt.fields.requestBuilder,
+			builder := &singleRequestBuilder{
+				requestBuilderImpl: tt.fields.requestBuilder,
 			}
-			if builder.requestNode != nil {
-				builder.requestNode[impKey] = builder.imps
+			if builder.request != nil {
+				builder.request[impKey] = builder.imps
 			}
 			requestData, errs := builder.makeRequest(tt.args.endpointTemplate, tt.args.bidderParamMapper)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
