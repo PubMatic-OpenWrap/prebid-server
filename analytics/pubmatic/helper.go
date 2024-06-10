@@ -142,7 +142,7 @@ func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, logg
 
 // setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
 func setWakandaWinningBidFlag(wakandaDebug wakanda.DebugInterface, response *openrtb2.BidResponse) {
-	if response != nil {
+	if wakandaDebug != nil && response != nil {
 		if len(response.SeatBid) > 0 &&
 			len(response.SeatBid[0].Bid) > 0 &&
 			response.SeatBid[0].Bid[0].Price > 0 {

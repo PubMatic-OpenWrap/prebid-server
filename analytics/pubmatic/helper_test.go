@@ -551,26 +551,36 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 
 func TestSetWakandaWinningBidFlag(t *testing.T) {
 	type args struct {
-		wakandaDebug *wakanda.Debug
+		wakandaDebug wakanda.DebugInterface
 		response     *openrtb2.BidResponse
 	}
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want wakanda.DebugInterface
 	}{
 		{
 			name: "all_empty_parameters",
 			args: args{},
-			want: false,
+			want: nil,
 		},
 		{
 			name: "only_wakanda_empty",
 			args: args{
 				wakandaDebug: nil,
-				response:     &openrtb2.BidResponse{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									Price: 5,
+								},
+							},
+						},
+					},
+				},
 			},
-			want: false,
+			want: nil,
 		},
 		{
 			name: "only_response_empty",
@@ -578,7 +588,7 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 				wakandaDebug: &wakanda.Debug{},
 				response:     nil,
 			},
-			want: false,
+			want: &wakanda.Debug{},
 		},
 		{
 			name: "no_seatbid",
@@ -586,7 +596,7 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 				wakandaDebug: &wakanda.Debug{},
 				response:     &openrtb2.BidResponse{},
 			},
-			want: false,
+			want: &wakanda.Debug{},
 		},
 		{
 			name: "no_bid",
@@ -598,7 +608,7 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want: &wakanda.Debug{},
 		},
 		{
 			name: "no_price",
@@ -614,7 +624,7 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want: &wakanda.Debug{},
 		},
 		{
 			name: "zero_price",
@@ -625,24 +635,20 @@ func TestSetWakandaWinningBidFlag(t *testing.T) {
 						{
 							Bid: []openrtb2.Bid{
 								{
-									Price: 0,
+									Price: 5,
 								},
 							},
 						},
 					},
 				},
 			},
-			want: false,
+			want: &wakanda.Debug{DebugData: wakanda.DebugData{WinningBid: true}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setWakandaWinningBidFlag(tt.args.wakandaDebug, tt.args.response)
-			actual := false
-			if tt.args.wakandaDebug != nil {
-				actual = tt.args.wakandaDebug.DebugData.WinningBid
-			}
-			assert.Equal(t, tt.want, actual)
+			assert.Equal(t, tt.want, tt.args.wakandaDebug)
 		})
 	}
 }
