@@ -15,7 +15,7 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
 }
 
-func (r *mtypeResolver) getUsingBidderParam(ortbResponse map[string]any, path string) (any, bool) {
+func (r *mtypeResolver) getUsingBidderParamLocation(ortbResponse map[string]any, path string) (any, bool) {
 	return util.GetValueFromLocation(ortbResponse, path)
 }
 
@@ -25,22 +25,4 @@ func (r *mtypeResolver) autoDetect(bid map[string]any) (any, bool) {
 
 func (r *mtypeResolver) setValue(adapterBid map[string]any, value any) {
 	adapterBid["BidType"] = value
-}
-
-type currencyResolver struct{}
-
-func (r *currencyResolver) getFromORTBObject(ortbResponse map[string]any) (any, bool) {
-	return ortbResponse["cur"], true
-}
-
-func (r *currencyResolver) getUsingBidderParam(ortbResponse map[string]any, path string) (any, bool) {
-	return util.GetValueFromLocation(ortbResponse, path)
-}
-
-func (r *currencyResolver) autoDetect(bid map[string]any) (any, bool) {
-	return nil, false
-}
-
-func (r *currencyResolver) setValue(adapterBid map[string]any, value any) {
-	adapterBid["Currency"] = value
 }

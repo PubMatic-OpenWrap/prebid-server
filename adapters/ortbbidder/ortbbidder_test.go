@@ -1,12 +1,5 @@
 package ortbbidder
 
-import (
-	"testing"
-
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
-)
-
 // import (
 // 	"encoding/json"
 // 	"net/http"
@@ -352,26 +345,26 @@ import (
 // 	}
 // }
 
-func BenchmarkSetResponseParams(b *testing.B) {
-	// Initialize an instance of adapter
-	adapter := adapter{}
+// func BenchmarkSetResponseParams(b *testing.B) {
+// 	// Initialize an instance of adapter
+// 	adapter := adapter{}
 
-	// Prepare the input parameters
-	bidderResponseBody := []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}]}`) // replace with actual JSON response
-	responseParams := map[string]bidderparams.BidderParamMapper{
-		"mtype": {
-			Path: "seatbid.#.bid.#.ext.mtype",
-		},
-		"currency": {
-			Path: "cur",
-		},
-	}
-	processor := &resolver.ParamResolver{}
-	// Run the benchmark
-	for i := 0; i < b.N; i++ {
-		adapter.setResponseParams(bidderResponseBody, responseParams, processor)
-	}
-}
+// 	// Prepare the input parameters
+// 	bidderResponseBody := []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}]}`) // replace with actual JSON response
+// 	responseParams := map[string]bidderparams.BidderParamMapper{
+// 		"mtype": {
+// 			Path: "seatbid.#.bid.#.ext.mtype",
+// 		},
+// 		"currency": {
+// 			Path: "cur",
+// 		},
+// 	}
+// 	processor := &resolver.ParamResolver{}
+// 	// Run the benchmark
+// 	for i := 0; i < b.N; i++ {
+// 		adapter.setResponseParams(bidderResponseBody, responseParams, processor)
+// 	}
+// }
 
 // func TestSetResponseParams(t *testing.T) {
 // 	// Initialize an instance of adapter

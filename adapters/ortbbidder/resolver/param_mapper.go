@@ -1,4 +1,4 @@
-package ortbbidder
+package resolver
 
 // import (
 // 	"github.com/prebid/openrtb/v20/openrtb2"
