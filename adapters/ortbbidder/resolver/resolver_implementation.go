@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
@@ -11,7 +12,7 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	if !ok {
 		return nil, false
 	}
-	return util.GetMType(mtype), true
+	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
 }
 
 func (r *mtypeResolver) getUsingBidderParam(ortbResponse map[string]any, path string) (any, bool) {

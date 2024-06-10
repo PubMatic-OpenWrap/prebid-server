@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 const (
@@ -160,8 +160,8 @@ func GetPath(path string, array []int) string {
 	return strings.Join(parts, ".")
 }
 
-// GetValueofMediaType returns the bidType from the MarkupType field
-func GetValueofMediaType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name
+// GetMediaType returns the bidType from the MarkupType field
+func GetMediaType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name
 	var bidType openrtb_ext.BidType
 	switch mtype {
 	case openrtb2.MarkupBanner:

@@ -7,20 +7,21 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/resolver"
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/util"
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // adapter implements adapters.Bidder interface
 type adapter struct {
 	adapterInfo
 	bidderParamsConfig *bidderparams.BidderConfig
+	processor          *resolver.ParamResolver
 }
 
 const (
@@ -82,6 +83,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	return &adapter{
 		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
 		bidderParamsConfig: g_bidderParamsConfig,
+		processor:          &resolver.ParamResolver{},
 	}, nil
 }
 
@@ -150,7 +152,7 @@ func isORTBBidder(bidderName string) bool {
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
 func (o *adapter) makeBids(bidderResponseBytes json.RawMessage, responseParmas map[string]bidderparams.BidderParamMapper) (*adapters.BidderResponse, error) {
 
-	adapterResponseBytes, err := o.setResponseParams(bidderResponseBytes, responseParmas)
+	adapterResponseBytes, err := o.setResponseParams(bidderResponseBytes, responseParmas, &resolver.ParamResolver{})
 	if err != nil {
 		return nil, err
 	}
@@ -160,38 +162,33 @@ func (o *adapter) makeBids(bidderResponseBytes json.RawMessage, responseParmas m
 	return resp, err
 }
 
-// implementation using Parser
-func (o *adapter) setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper) ([]byte, error) {
+func (o *adapter) setResponseParams(bidderResponseBody json.RawMessage, responseParams map[string]bidderparams.BidderParamMapper, paramResolver *resolver.ParamResolver) ([]byte, error) {
 
-	response := map[string]any{}
-	err := jsonutil.UnmarshalValid(bidderResponseBody, &response)
+	bidderResponse := map[string]any{}
+	err := jsonutil.UnmarshalValid(bidderResponseBody, &bidderResponse)
 	if err != nil {
 		return nil, err
 	}
-
+	// setting bidder response in paramResolver one time
+	paramResolver.BidderResponse = bidderResponse
 	// build adapter response
 	adapterResponse := map[string]any{}
-	if curr, ok := response["cur"].(string); ok {
+	if curr, ok := bidderResponse["cur"].(string); ok {
 		adapterResponse["Currency"] = curr
 	}
 
 	typeBids := []any{}
+	// resolve response level params with bidder response and adapter response
 	for _, paramName := range resolver.ResponseLevelParams {
 		paramMapper, ok := responseParams[paramName]
 		if !ok {
 			continue
 		}
-		resolver := resolver.ParamResolver{
-			SourceNode:     response,
-			TargetNode:     adapterResponse,
-			BidderResponse: response,
-			Location:       paramMapper.GetPath(),
-		}
-		resolver.Resolve(paramName)
+		paramResolver.Resolve(bidderResponse, adapterResponse, paramMapper.GetPath(), paramName)
 	}
-	seatBids, ok := response["seatbid"].([]any)
+	seatBids, ok := bidderResponse["seatbid"].([]any)
 	if !ok {
-		return nil, fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", response["seatbid"])
+		return nil, fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", bidderResponse["seatbid"])
 	}
 	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
@@ -220,15 +217,7 @@ func (o *adapter) setResponseParams(bidderResponseBody json.RawMessage, response
 				}
 
 				path := util.GetPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
-
-				resolver := resolver.ParamResolver{
-					SourceNode:     bid,
-					TargetNode:     typeBid,
-					BidderResponse: response,
-					Location:       path,
-				}
-
-				resolver.Resolve(paramName)
+				paramResolver.Resolve(bid, typeBid, path, paramName)
 			}
 			typeBids = append(typeBids, typeBid)
 		}

@@ -1,5 +1,12 @@
 package ortbbidder
 
+import (
+	"testing"
+
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
+)
+
 // import (
 // 	"encoding/json"
 // 	"net/http"
@@ -344,3 +351,110 @@ package ortbbidder
 // 		})
 // 	}
 // }
+
+func BenchmarkSetResponseParams(b *testing.B) {
+	// Initialize an instance of adapter
+	adapter := adapter{}
+
+	// Prepare the input parameters
+	bidderResponseBody := []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}]}`) // replace with actual JSON response
+	responseParams := map[string]bidderparams.BidderParamMapper{
+		"mtype": {
+			Path: "seatbid.#.bid.#.ext.mtype",
+		},
+		"currency": {
+			Path: "cur",
+		},
+	}
+	processor := &resolver.ParamResolver{}
+	// Run the benchmark
+	for i := 0; i < b.N; i++ {
+		adapter.setResponseParams(bidderResponseBody, responseParams, processor)
+	}
+}
+
+// func TestSetResponseParams(t *testing.T) {
+// 	// Initialize an instance of adapter
+// 	adapter := adapter{
+// 		processor: resolver.NewParamProcessor(),
+// 	}
+
+// 	// Prepare the input parameters
+// 	bidderResponseBody := []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}]}`) // replace with actual JSON response
+// 	responseParams := map[string]bidderparams.BidderParamMapper{
+// 		"mtype": {
+// 			Path: "seatbid.#.bid.#.ext.mtype",
+// 		},
+// 		"currency": {
+// 			Path: "cur",
+// 		},
+// 	}
+
+// 	_, err := adapter.setResponseParams(bidderResponseBody, responseParams)
+// 	fmt.Println(err)
+// }
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  105494	     11169 ns/op	    4599 B/op	      94 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.983s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  104610	     11217 ns/op	    4599 B/op	      94 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.572s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	   98408	     11577 ns/op	    4599 B/op	      94 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.542s
+
+// Function arguments
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  128482	      9009 ns/op	    3926 B/op	      85 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.990s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  127963	      9854 ns/op	    3926 B/op	      85 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.636s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  123307	     10853 ns/op	    3926 B/op	      85 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.730s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  126006	      9230 ns/op	    3926 B/op	      85 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.545s
+
+// goos: darwin
+// goarch: amd64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder
+// cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+// BenchmarkSetResponseParams-12    	  130268	      8953 ns/op	    3926 B/op	      85 allocs/op
+// PASS
+// ok  	github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder	1.990s
