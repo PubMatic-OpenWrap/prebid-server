@@ -1,15 +1,11 @@
 package resolver
 
-import "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
-
-type currencyResolver struct{}
+type currencyResolver struct {
+	valueResolver
+}
 
 func (r *currencyResolver) getFromORTBObject(ortbResponse map[string]any) (any, bool) {
 	return ortbResponse["cur"], true
-}
-
-func (r *currencyResolver) getUsingBidderParamLocation(ortbResponse map[string]any, path string) (any, bool) {
-	return util.GetValueFromLocation(ortbResponse, path)
 }
 
 func (r *currencyResolver) autoDetect(bid map[string]any) (any, bool) {

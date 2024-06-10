@@ -39,49 +39,49 @@ func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) (e
 // If any invalid seatbid or bid is found in the response, an error is returned.
 func (rb *responseBuilder) buildResponse() error {
 	// Create a new ParamResolver with the bidder response.
-	paramResolver := resolver.NewParamResolver(rb.bidderResponse)
+	paramResolver := resolver.New(rb.bidderResponse)
 
 	// Initialize the adapter response with the currency from the bidder response.
-	adapterResponse := map[string]interface{}{
+	adapterResponse := map[string]any{
 		"Currency": rb.bidderResponse["cur"],
 	}
 
 	// Loop over the response level parameters.
 	// If the parameter exists in the response parameters, resolve it.s
-	for _, paramName := range resolver.ResponseLevelParams {
+	for _, paramName := range resolver.AdapterResponseFields {
 		if paramMapper, ok := rb.responseParams[paramName]; ok {
 			paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.GetPath(), paramName)
 		}
 	}
 
 	// Extract the seat bids from the bidder response.
-	seatBids, ok := rb.bidderResponse["seatbid"].([]interface{})
+	seatBids, ok := rb.bidderResponse["seatbid"].([]any)
 	if !ok {
 		return fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", rb.bidderResponse["seatbid"])
 	}
 	// Initialize the list of type bids.
-	typeBids := make([]interface{}, 0)
+	typeBids := make([]any, 0)
 	for seatIndex, seatBid := range seatBids {
-		seatBid, ok := seatBid.(map[string]interface{})
+		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
 			return fmt.Errorf("error:[invalid_seatbid_found_in_seatbids_list], seatbid:[%v]", seatBids)
 		}
-		bids, ok := seatBid["bid"].([]interface{})
+		bids, ok := seatBid["bid"].([]any)
 		if !ok {
 			return fmt.Errorf("error:[invalid_bid_found_in_seatbid], bid:[%v]", seatBid["bid"])
 		}
 		for bidIndex, bid := range bids {
-			bid, ok := bid.(map[string]interface{})
+			bid, ok := bid.(map[string]any)
 			if !ok {
 				return fmt.Errorf("error:[invalid_bid_found_in_bids_list], bid:[%v]", seatBid["bid"])
 			}
 			// Initialize the type bid with the bid.
-			typeBid := map[string]interface{}{
+			typeBid := map[string]any{
 				"Bid": bid,
 			}
 			// Loop over the bid level parameters.
 			// If the parameter exists in the response parameters, resolve it.
-			for _, paramName := range resolver.BidLevelParams {
+			for _, paramName := range resolver.TypeBidFields {
 				if paramMapper, ok := rb.responseParams[paramName]; ok {
 					path := util.GetPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
 					paramResolver.Resolve(bid, typeBid, path, paramName)

@@ -5,7 +5,9 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
-type mtypeResolver struct{}
+type mtypeResolver struct {
+	valueResolver
+}
 
 func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	mtype, ok := bid["mtype"].(float64)
@@ -13,10 +15,6 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 		return nil, false
 	}
 	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
-}
-
-func (r *mtypeResolver) getUsingBidderParamLocation(ortbResponse map[string]any, path string) (any, bool) {
-	return util.GetValueFromLocation(ortbResponse, path)
 }
 
 func (r *mtypeResolver) autoDetect(bid map[string]any) (any, bool) {

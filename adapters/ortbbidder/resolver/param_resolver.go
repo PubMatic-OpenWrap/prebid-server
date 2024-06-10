@@ -1,8 +1,8 @@
 package resolver
 
 var (
-	BidLevelParams      = [...]string{"mtype", "duration", "meta"}
-	ResponseLevelParams = [...]string{"currency", "fledge"}
+	TypeBidFields         = [...]string{"mtype", "duration", "meta"}
+	AdapterResponseFields = [...]string{"currency", "fledge"}
 )
 
 var (
@@ -25,7 +25,7 @@ type paramResolver struct {
 	bidderResponse map[string]any
 }
 
-func NewParamResolver(bidderResponse map[string]any) *paramResolver {
+func New(bidderResponse map[string]any) *paramResolver {
 	return &paramResolver{
 		bidderResponse: bidderResponse,
 	}
