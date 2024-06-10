@@ -29,16 +29,16 @@ func TestParseRequest(t *testing.T) {
 		args args
 		want want
 	}{
-		// {
-		// 	name: "request_is_nil",
-		// 	args: args{
-		// 		request: nil,
-		// 	},
-		// 	want: want{
-		// 		err:        errImpMissing,
-		// 		rawRequest: json.RawMessage(`null`),
-		// 	},
-		// },
+		{
+			name: "request_is_nil",
+			args: args{
+				request: nil,
+			},
+			want: want{
+				err:        errImpMissing,
+				rawRequest: json.RawMessage(`null`),
+			},
+		},
 		{
 			name: "request_is_valid",
 			args: args{
