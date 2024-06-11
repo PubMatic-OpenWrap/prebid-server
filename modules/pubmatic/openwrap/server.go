@@ -27,6 +27,6 @@ func initOpenWrapServer(cfg *config.Config) *http.Server {
 
 func startServer(server *http.Server) {
 	if err := server.ListenAndServe(); err != nil {
-		logger.Fatal("main.main:unable to start http server for /wakanda handler due to : %s", err.Error())
+		logger.Fatal("openwrap: unable to start http server for /wakanda handler due to err : %s", err.Error())
 	}
 }

@@ -551,13 +551,13 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 
 func TestSetWakandaWinningBidFlag(t *testing.T) {
 	type args struct {
-		wakandaDebug wakanda.DebugInterface
+		wakandaDebug wakanda.WakandaDebug
 		response     *openrtb2.BidResponse
 	}
 	tests := []struct {
 		name string
 		args args
-		want wakanda.DebugInterface
+		want wakanda.WakandaDebug
 	}{
 		{
 			name: "all_empty_parameters",

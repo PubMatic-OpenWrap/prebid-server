@@ -6,19 +6,6 @@ import (
 	"strconv"
 )
 
-const (
-	//CMaxTraceCount maximum trace request can be logged
-	CMaxTraceCount = 20
-	//CAPIDebugLevel debug level parameter of wakanda handler
-	CAPIDebugLevel = "debugLevel"
-	//CAPIPublisherID publisher id paramater of wakanda handler
-	CAPIPublisherID = "pubId"
-	//CAPIProfileID profile id parameter of wakanda handler
-	CAPIProfileID = "profId"
-	//CRuleKeyPubProfile rule format ,same is used for folder name with "__DC"
-	CRuleKeyPubProfile = "PUB:%s__PROF:%s"
-)
-
 var wakandaRulesMap *rulesMap
 
 // generateKeyFromWakandaRequest returns only one qualifying rule
@@ -27,11 +14,11 @@ func generateKeyFromWakandaRequest(pubIDStr string, profIDStr string) string {
 	// note: for new rule-key extra code will be needed to be added
 
 	if len(pubIDStr) > 3 && len(profIDStr) >= 1 {
-		return fmt.Sprintf(CRuleKeyPubProfile, pubIDStr, profIDStr)
+		return fmt.Sprintf(cRuleKeyPubProfile, pubIDStr, profIDStr)
 	}
 
 	if len(pubIDStr) > 3 {
-		return fmt.Sprintf(CRuleKeyPubProfile, pubIDStr, "0") // setting profile id as 0 for all profile ids
+		return fmt.Sprintf(cRuleKeyPubProfile, pubIDStr, "0") // setting profile id as 0 for all profile ids
 	}
 
 	return ""
@@ -48,8 +35,8 @@ func generateKeyFromWakandaRequest(pubIDStr string, profIDStr string) string {
 func generateKeysFromHBRequest(pubIDStr string, profIDStr string) (generatedKeys []string) {
 	generatedKeys = append(
 		generatedKeys,
-		fmt.Sprintf(CRuleKeyPubProfile, pubIDStr, profIDStr),
-		fmt.Sprintf(CRuleKeyPubProfile, pubIDStr, "0"), // setting profile id as 0 for all profile ids
+		fmt.Sprintf(cRuleKeyPubProfile, pubIDStr, profIDStr),
+		fmt.Sprintf(cRuleKeyPubProfile, pubIDStr, "0"), // setting profile id as 0 for all profile ids
 	)
 	return
 }
@@ -58,7 +45,7 @@ func generateKeysFromHBRequest(pubIDStr string, profIDStr string) (generatedKeys
 func Handler(config Wakanda) http.HandlerFunc {
 	return func(httpRespWriter http.ResponseWriter, httpRequest *http.Request) {
 
-		debugLevel, _ := strconv.Atoi(httpRequest.FormValue(CAPIDebugLevel))
+		debugLevel, _ := strconv.Atoi(httpRequest.FormValue(cAPIDebugLevel))
 		if debugLevel == 0 {
 			debugLevel = 1 // default debugLevel
 			// 1: pbs debug 1
@@ -73,7 +60,7 @@ func Handler(config Wakanda) http.HandlerFunc {
 		successStatus := "true"
 		statusMsg := ""
 
-		key := generateKeyFromWakandaRequest(httpRequest.FormValue(CAPIPublisherID), httpRequest.FormValue(CAPIProfileID))
+		key := generateKeyFromWakandaRequest(httpRequest.FormValue(cAPIPublisherID), httpRequest.FormValue(cAPIProfileID))
 		if len(key) > 0 {
 
 			if wakandaRulesMap.AddIfNotPresent(key, debugLevel, config.DCName) {

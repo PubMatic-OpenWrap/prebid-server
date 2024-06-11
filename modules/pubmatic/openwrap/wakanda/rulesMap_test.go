@@ -139,7 +139,7 @@ func TestRulesMapIncr(t *testing.T) {
 			fields: fields{
 				rules: map[string]*wakandaRule{
 					`key1`: {
-						TraceCount: CMaxTraceCount,
+						TraceCount: cMaxTraceCount,
 					},
 				},
 			},

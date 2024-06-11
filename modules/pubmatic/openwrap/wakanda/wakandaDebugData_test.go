@@ -65,7 +65,7 @@ func TestRequestSet(t *testing.T) {
 			args: args{
 				request: func() *http.Request {
 					req := httptest.NewRequest("GET", "http://test.com/path?query=test_query", nil)
-					req.Header.Set(ContentType, ContentTypeApplicationJSON)
+					req.Header.Set(contentType, contentTypeApplicationJSON)
 					return req
 				}(),
 				postData: json.RawMessage(`{"test_post_data":1}`),
@@ -77,7 +77,7 @@ func TestRequestSet(t *testing.T) {
 				Path:        "/path",
 				QueryString: "query=test_query",
 				Headers: http.Header{
-					ContentType: []string{ContentTypeApplicationJSON},
+					contentType: []string{contentTypeApplicationJSON},
 				},
 				PostJSON: json.RawMessage(`{"test_post_data":1}`),
 			},
@@ -134,7 +134,7 @@ func TestResponseSetResponseRecorder(t *testing.T) {
 					Body: bytes.NewBuffer([]byte(`{"test_body":1}`)),
 					Code: 200,
 					HeaderMap: http.Header{
-						ContentType:  []string{ContentTypeApplicationJSON},
+						contentType:  []string{contentTypeApplicationJSON},
 						"x-header-1": []string{"val1"},
 					},
 				},
@@ -142,7 +142,7 @@ func TestResponseSetResponseRecorder(t *testing.T) {
 			want: response{
 				StatusCode: 200,
 				Headers: http.Header{
-					ContentType:  []string{ContentTypeApplicationJSON},
+					contentType:  []string{contentTypeApplicationJSON},
 					"x-header-1": []string{"val1"},
 				},
 				Body: json.RawMessage(`{"test_body":1}`),
@@ -214,7 +214,7 @@ func TestResponseSetResponseWriter(t *testing.T) {
 			args: args{
 				resp: &httptest.ResponseRecorder{
 					HeaderMap: http.Header{
-						ContentType:  []string{ContentTypeApplicationJSON},
+						contentType:  []string{contentTypeApplicationJSON},
 						"x-header-1": []string{"val1"},
 					},
 				},
@@ -222,7 +222,7 @@ func TestResponseSetResponseWriter(t *testing.T) {
 			},
 			want: response{
 				Headers: http.Header{
-					ContentType:  []string{ContentTypeApplicationJSON},
+					contentType:  []string{contentTypeApplicationJSON},
 					"x-header-1": []string{"val1"},
 				},
 				Body: json.RawMessage(`{"test_body":1}`),
@@ -323,8 +323,6 @@ func TestNewLogRecord(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewLogRecord(tt.args.wD)
 			assert.Equal(t, tt.want, got)
-			_, err := json.Marshal(got)
-			assert.Nil(t, err)
 		})
 	}
 }

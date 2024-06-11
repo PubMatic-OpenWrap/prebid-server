@@ -30,7 +30,6 @@ func wakndaGetTester(t *testing.T, handler http.HandlerFunc, call string, output
 		t.Errorf("For input Query: %s, handler returned wrong status code: \nGOT %v \nWANT %v",
 			call, status, http.StatusOK)
 	}
-	// expected := `{success: "false", statusMsg: "No key was generated for the request."}`
 	if rr.Body.String() != output {
 		t.Errorf("For input Query: %s, handler returned unexpected body:\nGOT %v \nWANT %v",
 			call, rr.Body.String(), output)

@@ -30,7 +30,7 @@ func (rm *rulesMap) Incr(key string) *wakandaRule {
 	}
 	//below line can be moved outside of function
 	aWakandaRule.TraceCount++
-	if aWakandaRule.TraceCount > CMaxTraceCount {
+	if aWakandaRule.TraceCount > cMaxTraceCount {
 		// this rule has got enough traces so we can delete this active rule
 		delete(rm.rules, key)
 		return nil

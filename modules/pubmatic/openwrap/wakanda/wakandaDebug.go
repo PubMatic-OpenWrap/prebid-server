@@ -21,7 +21,7 @@ type Debug struct {
 	Config      Wakanda
 }
 
-type DebugInterface interface {
+type WakandaDebug interface {
 	IsEnable() bool
 	SetHTTPRequestData(HTTPRequest *http.Request, HTTPRequestBody json.RawMessage)
 	SetHTTPResponseWriter(HTTPResponse http.ResponseWriter)

@@ -44,7 +44,7 @@ func (r *request) set(request *http.Request, postData json.RawMessage) {
 		r.Path = request.URL.Path
 	}
 	if len(postData) > 0 {
-		if r.Headers.Get(ContentType) == ContentTypeApplicationJSON {
+		if r.Headers.Get(contentType) == contentTypeApplicationJSON {
 			r.PostJSON = postData
 		} else {
 			r.PostBody = string(postData)
@@ -63,7 +63,7 @@ func (r *response) setResponseRecorder(resp *httptest.ResponseRecorder) {
 	if resp != nil {
 		r.StatusCode = resp.Code
 		r.Headers = resp.HeaderMap
-		if r.Headers.Get(ContentType) == ContentTypeApplicationJSON {
+		if r.Headers.Get(contentType) == contentTypeApplicationJSON {
 			r.Body = resp.Body.Bytes()[:]
 		} else {
 			r.Response = resp.Body.String()
@@ -75,7 +75,7 @@ func (r *response) setResponseWriter(resp http.ResponseWriter, body string) {
 	if resp != nil {
 		r.Headers = resp.Header()
 	}
-	if r.Headers.Get(ContentType) == ContentTypeApplicationJSON {
+	if r.Headers.Get(contentType) == contentTypeApplicationJSON {
 		r.Body = json.RawMessage(body)
 	} else {
 		r.Response = body

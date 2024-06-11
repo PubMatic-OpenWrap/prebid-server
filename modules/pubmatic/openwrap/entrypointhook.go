@@ -154,15 +154,14 @@ func (m OpenWrap) handleEntrypointHook(
 		result.Errors = append(result.Errors, errs[0].Error())
 		return result, errs[0]
 	}
-	if len(pubIdStr) > 0 {
-		rCtx.PubID, err = strconv.Atoi(pubIdStr)
-		if err != nil {
-			result.NbrCode = int(nbr.InvalidPublisherID)
-			result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-			return result, fmt.Errorf("invalid publisher id : %v", err)
-		}
-		rCtx.PubIDStr = pubIdStr
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
+	rCtx.PubIDStr = pubIdStr
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {

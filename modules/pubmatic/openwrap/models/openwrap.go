@@ -111,7 +111,7 @@ type RequestCtx struct {
 	AppPlatform            int
 	AppIntegrationPath     *int
 	AppSubIntegrationPath  *int
-	WakandaDebug           wakanda.DebugInterface
+	WakandaDebug           wakanda.WakandaDebug
 }
 
 type OwBid struct {

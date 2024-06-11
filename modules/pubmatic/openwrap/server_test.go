@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_initOpenWrapServer(t *testing.T) {
+func TestInitOpenWrapServer(t *testing.T) {
 	type args struct {
 		cfg *config.Config
 	}
