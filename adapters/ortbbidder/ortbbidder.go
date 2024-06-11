@@ -49,7 +49,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 			return nil, fmt.Errorf("failed to parse extra_info: %s", err.Error())
 		}
 	}
-	template, err := template.New("endpointTemplate").Option("missingkey=zero").Parse(config.Endpoint)
+	template, err := template.New(endpointTemplate).Option(templateOption).Parse(config.Endpoint)
 	if err != nil || template == nil {
 		return nil, fmt.Errorf("failed to parse endpoint url template: %v", err)
 	}

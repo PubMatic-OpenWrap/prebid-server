@@ -15,4 +15,6 @@ const (
 	urlMacroNoValue    = "<no value>"
 	requestModeSingle  = "single"
 	locationIndexMacro = "#"
+	endpointTemplate   = "endpointTemplate"
+	templateOption     = "missingkey=zero"
 )
