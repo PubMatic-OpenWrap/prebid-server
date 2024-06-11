@@ -2,6 +2,7 @@ package ortbbidder
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
@@ -19,7 +20,6 @@ type requestBuilder interface {
 	makeRequest() ([]*adapters.RequestData, []error)
 }
 
-// requestBuilderImpl is a struct used for constructing RequestData object
 type requestBuilderImpl struct {
 	endpoint            string
 	endpointTemplate    *template.Template
@@ -36,26 +36,24 @@ func newRequestBuilder(requestMode, endpoint string, endpointTemplate *template.
 		requestParams:       requestParams,
 		hasMacrosInEndpoint: strings.Contains(endpoint, urlMacroPrefix),
 	}
-
 	if requestMode == requestModeSingle {
 		return &multiRequestBuilder{
 			requestBuilderImpl: requestBuilder,
 		}
 	}
-
 	return &singleRequestBuilder{
 		requestBuilderImpl: requestBuilder,
 	}
 }
 
+// getEndpoint returns the endpoint-url, if required replaces macros
 func (rb *requestBuilderImpl) getEndpoint(values map[string]any) (string, error) {
 	if !rb.hasMacrosInEndpoint {
 		return rb.endpoint, nil
 	}
-
 	uri, err := macros.ResolveMacros(rb.endpointTemplate, values)
 	if err != nil {
-		return uri, err
+		return uri, fmt.Errorf("failed to replace macros in endpoint, err:%s", err.Error())
 	}
 	uri = strings.ReplaceAll(uri, urlMacroNoValue, "")
 	return uri, err

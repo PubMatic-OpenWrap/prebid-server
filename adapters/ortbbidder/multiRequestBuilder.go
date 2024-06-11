@@ -6,7 +6,7 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
-// struct to build the request for single request mode where single imp is supported in a request
+// struct to build the multi requests each containing sinlge impression when requestMode="single"
 type multiRequestBuilder struct {
 	requestBuilderImpl
 	imps []map[string]any
@@ -15,8 +15,7 @@ type multiRequestBuilder struct {
 // parseRequest parse the incoming request and populates intermediate fields required for building requestData object
 func (rb *multiRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err error) {
 	if len(request.Imp) == 0 {
-		//set errors
-		return err
+		return errImpMissing
 	}
 
 	//get rawrequests without impression objects
@@ -32,7 +31,7 @@ func (rb *multiRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err e
 	if err != nil {
 		return err
 	}
-	if err = jsonutil.Unmarshal(data, rb.imps); err != nil {
+	if err = jsonutil.Unmarshal(data, &rb.imps); err != nil {
 		return err
 	}
 
@@ -55,17 +54,18 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		//step 1: clone request
 		if requestCloneRequired {
 			if newRequest, err = cloneRequest(rb.rawRequest); err != nil {
+				errs = append(errs, newBadInputError(err.Error()))
 				continue
 			}
 		}
 
 		//step 2: get impression extension
-		// set "imp" object in request to empty to improve performance while creating deep copy of request
 		imp := rb.imps[index]
 		bidderParams := getImpExtBidderParams(imp)
 
 		//step 3: get endpoint
 		if endpoint, err = rb.getEndpoint(bidderParams); err != nil {
+			errs = append(errs, newBadInputError(err.Error()))
 			continue
 		}
 

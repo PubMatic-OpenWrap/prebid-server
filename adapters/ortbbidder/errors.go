@@ -9,7 +9,6 @@ import (
 // list of constant errors
 var (
 	errImpMissing        error = errors.New("imp object not found in request")
-	errImpSetToEmpty     error = errors.New("failed to empty the imp key in request")
 	errNilBidderParamCfg error = errors.New("found nil bidderParamsConfig")
 )
 
