@@ -2,13 +2,21 @@ package ortbbidder
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+const (
+	currencyKey    = "Currency"
+	seatBidKey     = "seatbid"
+	typeBidKey     = "Bid"
+	bidKey         = "bid"
+	bidsKey        = "Bids"
+	ortbCurrenyKey = "cur"
 )
 
 type responseBuilder struct {
@@ -40,44 +48,41 @@ func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) (e
 func (rb *responseBuilder) buildResponse() error {
 	// Create a new ParamResolver with the bidder response.
 	paramResolver := resolver.New(rb.bidderResponse)
-
 	// Initialize the adapter response with the currency from the bidder response.
 	adapterResponse := map[string]any{
-		"Currency": rb.bidderResponse["cur"],
+		currencyKey: rb.bidderResponse[ortbCurrenyKey],
 	}
-
 	// Loop over the response level parameters.
-	// If the parameter exists in the response parameters, resolve it.s
+	// If the parameter exists in the response parameters, resolve it.
 	for _, paramName := range resolver.AdapterResponseFields {
 		if paramMapper, ok := rb.responseParams[paramName]; ok {
 			paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.GetPath(), paramName)
 		}
 	}
-
 	// Extract the seat bids from the bidder response.
-	seatBids, ok := rb.bidderResponse["seatbid"].([]any)
+	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
 	if !ok {
-		return fmt.Errorf("error:[invalid_seatbid_found_in_responsebody], seatbid:[%v]", rb.bidderResponse["seatbid"])
+		return newBadServerResponseError("invalid seatbid array found in response, seatbids:[%v]", rb.bidderResponse[seatBidKey])
 	}
 	// Initialize the list of type bids.
 	typeBids := make([]any, 0)
 	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
-			return fmt.Errorf("error:[invalid_seatbid_found_in_seatbids_list], seatbid:[%v]", seatBids)
+			return newBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids)
 		}
-		bids, ok := seatBid["bid"].([]any)
+		bids, ok := seatBid[bidKey].([]any)
 		if !ok {
-			return fmt.Errorf("error:[invalid_bid_found_in_seatbid], bid:[%v]", seatBid["bid"])
+			return newBadServerResponseError("invalid bid array found in seatbid, bids:[%v]", seatBid[bidKey])
 		}
 		for bidIndex, bid := range bids {
 			bid, ok := bid.(map[string]any)
 			if !ok {
-				return fmt.Errorf("error:[invalid_bid_found_in_bids_list], bid:[%v]", seatBid["bid"])
+				return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", seatBid[bidKey])
 			}
 			// Initialize the type bid with the bid.
 			typeBid := map[string]any{
-				"Bid": bid,
+				typeBidKey: bid,
 			}
 			// Loop over the bid level parameters.
 			// If the parameter exists in the response parameters, resolve it.
@@ -92,7 +97,7 @@ func (rb *responseBuilder) buildResponse() error {
 		}
 	}
 	// Add the type bids to the adapter response.
-	adapterResponse["Bids"] = typeBids
+	adapterResponse[bidsKey] = typeBids
 	// Set the adapter response in the response builder.
 	rb.adapterRespone = adapterResponse
 	return nil
@@ -108,5 +113,8 @@ func (rb *responseBuilder) convertToAdapterResponse() (resp *adapters.BidderResp
 	}
 
 	err = jsonutil.UnmarshalValid(adapterResponeBytes, &resp)
+	if err != nil {
+		return nil, err
+	}
 	return
 }

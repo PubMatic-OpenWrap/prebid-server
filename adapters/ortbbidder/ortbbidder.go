@@ -127,9 +127,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	responseParmas, _ := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
-
-	bidResponse, err := o.makeBids(responseData.Body, responseParmas)
+	bidResponse, err := o.makeBids(responseData.Body)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -143,13 +141,15 @@ func isORTBBidder(bidderName string) bool {
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
-func (o *adapter) makeBids(bidderResponseBytes json.RawMessage, responseParmas map[string]bidderparams.BidderParamMapper) (*adapters.BidderResponse, error) {
-
+func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
+	responseParmas, _ := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
 	rb := newResponseBuilder(responseParmas)
+
 	err := rb.parseResponse(bidderResponseBytes)
 	if err != nil {
 		return nil, err
 	}
+
 	err = rb.buildResponse()
 	if err != nil {
 		return nil, err

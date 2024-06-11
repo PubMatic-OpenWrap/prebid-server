@@ -11,8 +11,8 @@
       },
       "currency": {
         "type": "string",
-        "description": "mtype",
-        "location": ""
+        "description": "currency",
+        "location": "cur"
       }
     },
     "required": [""]
