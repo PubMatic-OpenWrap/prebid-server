@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
@@ -173,6 +174,9 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue: floorRuleValue,
 				DealID:         "-1",
 			}
+			if rctx.PriceGranularity != nil {
+				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
+			}
 			if len(bidId) > 0 {
 				tracker.PartnerInfo.BidID = bidId
 			}
@@ -273,6 +277,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if tracker.ATTS != nil {
 		v.Set(models.TRKATTS, strconv.Itoa(int(*tracker.ATTS)))
+	}
+	if tracker.PartnerInfo.PriceBucket != "" {
+		v.Set(models.TRKPriceBucket, tracker.PartnerInfo.PriceBucket)
 	}
 
 	//ProfileMetadata parameters

@@ -50,6 +50,7 @@ const (
 	TRKAppPlatform           = "ap"
 	TRKAppIntegrationPath    = "aip"
 	TRKAppSubIntegrationPath = "asip"
+	TRKPriceBucket           = "pb"
 )
 
 // video error tracker url parameters
