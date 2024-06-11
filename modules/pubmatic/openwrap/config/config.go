@@ -27,7 +27,7 @@ type Config struct {
 type Server struct {
 	HostName string
 	DCName   string //Name of the data center
-	EndPoint string
+	Endpoint string
 }
 
 type Database struct {
