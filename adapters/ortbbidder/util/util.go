@@ -139,41 +139,6 @@ func GetValueFromLocation(val interface{}, path string) (interface{}, bool) {
 	return next, true
 }
 
-func setValueAtLocation(node map[string]interface{}, path string, value interface{}) bool {
-	location := strings.Split(path, ".")
-	var (
-		ok   bool
-		next interface{} = node
-	)
-	lastIndex := len(location) - 1
-	for i, loc := range location {
-		switch nxt := next.(type) {
-		case map[string]interface{}:
-			if i == lastIndex {
-				nxt[loc] = value
-				return true
-			}
-			next, ok = nxt[loc]
-			if !ok {
-				return false
-			}
-		case []interface{}:
-			index, err := strconv.Atoi(loc)
-			if err != nil || index < 0 || index >= len(nxt) {
-				return false
-			}
-			if i == lastIndex {
-				nxt[index] = value
-				return true
-			}
-			next = nxt[index]
-		default:
-			return false
-		}
-	}
-	return false
-}
-
 func GetPath(path string, array []int) string {
 	parts := strings.Split(path, ".")
 	j := 0

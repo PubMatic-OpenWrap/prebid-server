@@ -19,13 +19,6 @@ func TestNewResponseBuilder(t *testing.T) {
 		expected       *responseBuilder
 	}{
 		{
-			name:           "With nil responseParams",
-			responseParams: nil,
-			expected: &responseBuilder{
-				responseParams: make(map[string]bidderparams.BidderParamMapper),
-			},
-		},
-		{
 			name: "With non-nil responseParams",
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"test": {},

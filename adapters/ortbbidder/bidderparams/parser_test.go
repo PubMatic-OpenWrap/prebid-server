@@ -156,6 +156,7 @@ func TestPrepareRequestParams(t *testing.T) {
 			requestParams, err := prepareParams(tt.args.bidderName, tt.args.requestParamCfg)
 			assert.Equalf(t, tt.want.err, err, "updateBidderParamsMapper returned unexpected error")
 			assert.Equalf(t, tt.want.requestParams, requestParams, "updateBidderParamsMapper returned unexpected mapper")
+
 		})
 	}
 }
@@ -174,7 +175,7 @@ func TestLoadBidderConfig(t *testing.T) {
 			name: "read_directory_fail",
 			want: want{
 				biddersConfigMap: nil,
-				err:              "error:[open invalid-path: no such file or directory] dirPath:[invalid-path]",
+				err:              "error handling request params: error:[open invalid-request-param-path: no such file or directory] dirPath:[invalid-request-param-path]",
 			},
 			setup: func() (string, string, error) {
 				return "invalid-request-param-path", "invalid-response-param-path", nil
@@ -184,12 +185,41 @@ func TestLoadBidderConfig(t *testing.T) {
 			name: "found_file_without_.json_extension",
 			want: want{
 				biddersConfigMap: nil,
-				err:              "error:[invalid_json_file_name] filename:[example.txt]",
+				err:              "error handling request params: error:[invalid_json_file_name] filename:[example.txt]",
 			},
 			setup: func() (string, string, error) {
 				dirPath := t.TempDir()
 				err := os.WriteFile(dirPath+"/example.txt", []byte("anything"), 0644)
 				return dirPath, "", err
+			},
+		},
+		{
+			name: "response params - read_directory_fail",
+			want: want{
+				biddersConfigMap: nil,
+				err:              "error handling response params: error:[open invalid-path: no such file or directory] dirPath:[invalid-path]",
+			},
+			setup: func() (string, string, error) {
+				dirPath := t.TempDir()
+				err := os.WriteFile(dirPath+"/example.json", []byte("anything"), 0644)
+				return dirPath, "invalid-path", err
+			},
+		},
+		{
+			name: "response params - found_file_without_.json_extension",
+			want: want{
+				biddersConfigMap: nil,
+				err:              "error handling response params: error:[invalid_json_file_name] filename:[example.txt]",
+			},
+			setup: func() (string, string, error) {
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/example.json", []byte("anything"), 0644)
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/example.txt", []byte("anything"), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 		{
@@ -199,21 +229,31 @@ func TestLoadBidderConfig(t *testing.T) {
 				err:              "",
 			},
 			setup: func() (string, string, error) {
-				dirPath := t.TempDir()
-				err := os.WriteFile(dirPath+"/example.json", []byte("anything"), 0644)
-				return dirPath, "", err
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/example.json", []byte("anything"), 0644)
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/example.json", []byte("anything"), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 		{
 			name: "oRTB_bidder_found_but_invalid_json_present",
 			want: want{
 				biddersConfigMap: nil,
-				err:              "error:[fail_to_read_file]",
+				err:              "error handling request params: error:[fail_to_read_file]",
 			},
 			setup: func() (string, string, error) {
-				dirPath := t.TempDir()
-				err := os.WriteFile(dirPath+"/owortb_test.json", []byte("anything"), 0644)
-				return dirPath, "", err
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/owortb_test.json", []byte("anything"), 0644)
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/owortb_test.json", []byte("anything"), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 		{
@@ -227,9 +267,14 @@ func TestLoadBidderConfig(t *testing.T) {
 				err: "",
 			},
 			setup: func() (string, string, error) {
-				dirPath := t.TempDir()
-				err := os.WriteFile(dirPath+"/owortb_test.json", []byte("{}"), 0644)
-				return dirPath, "", err
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/owortb_test.json", []byte("{}"), 0644)
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/owortb_test.json", []byte("{}"), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 		{
@@ -239,9 +284,14 @@ func TestLoadBidderConfig(t *testing.T) {
 				err:              "error:[invalid_json_file_content_malformed_properties] bidderName:[owortb_test]",
 			},
 			setup: func() (string, string, error) {
-				dirPath := t.TempDir()
-				err := os.WriteFile(dirPath+"/owortb_test.json", []byte(`{"properties":"invalid-properties"}`), 0644)
-				return dirPath, "", err
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/owortb_test.json", []byte(`{"properties":"invalid-properties"}`), 0644)
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/owortb_test.json", []byte(`{"properties":"invalid-properties"}`), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 		{
@@ -254,13 +304,16 @@ func TestLoadBidderConfig(t *testing.T) {
 								"adunitid": {Location: "app.adunit.id"},
 								"slotname": {Location: "ext.slotname"},
 							},
+							responseParams: map[string]BidderParamMapper{
+								"mtype": {Location: "seatbid.#.bid.#.ext.mtype"},
+							},
 						},
 					}},
 				err: "",
 			},
 			setup: func() (string, string, error) {
-				dirPath := t.TempDir()
-				err := os.WriteFile(dirPath+"/owortb_test.json", []byte(`
+				requestDirPath := t.TempDir()
+				err := os.WriteFile(requestDirPath+"/owortb_test.json", []byte(`
 				{
 					"title":"ortb bidder",
 					"properties": {
@@ -275,7 +328,20 @@ func TestLoadBidderConfig(t *testing.T) {
 					}
 				}
 				`), 0644)
-				return dirPath, "", err
+				if err != nil {
+					return "", "", err
+				}
+				responseDirPath := t.TempDir()
+				err = os.WriteFile(responseDirPath+"/owortb_test.json", []byte(`{
+					"title":"ortb bidder",
+					"properties": {
+						"mtype": {
+							"type": "string",
+							"location": "seatbid.#.bid.#.ext.mtype"
+						}
+					}
+				}`), 0644)
+				return requestDirPath, responseDirPath, err
 			},
 		},
 	}

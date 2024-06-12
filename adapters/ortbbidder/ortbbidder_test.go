@@ -2,6 +2,7 @@ package ortbbidder
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 	"text/template"
@@ -11,8 +12,119 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestBuilder(t *testing.T) {
+	InitBidderParamsConfig("../../static/bidder-params", "../../static/bidder-params")
+	type args struct {
+		bidderName openrtb_ext.BidderName
+		config     config.Adapter
+		server     config.Server
+	}
+	type want struct {
+		err    error
+		bidder adapters.Bidder
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "fails_to_parse_extra_info",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: "invalid-string",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: nil,
+				err:    fmt.Errorf("failed to parse extra_info: expect { or n, but found i"),
+			},
+		},
+		{
+			name: "fails_to_parse_template_endpoint",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: "{}",
+					Endpoint:         "http://{{.Host}",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: nil,
+				err:    fmt.Errorf("failed to parse endpoint url template: template: endpointTemplate:1: bad character U+007D '}'"),
+			},
+		},
+		{
+			name: "bidder_with_requestMode",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: `{"requestMode":"single"}`,
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: &adapter{
+					adapterInfo: adapterInfo{
+						extraInfo: extraAdapterInfo{
+							RequestMode: "single",
+						},
+						Adapter: config.Adapter{
+							ExtraAdapterInfo: `{"requestMode":"single"}`,
+						},
+						bidderName: "ortbbidder",
+						endpointTemplate: func() *template.Template {
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
+							return template
+						}(),
+					},
+					bidderParamsConfig: g_bidderParamsConfig,
+				},
+				err: nil,
+			},
+		},
+		{
+			name: "bidder_without_requestMode",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: "",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: &adapter{
+					adapterInfo: adapterInfo{
+						Adapter: config.Adapter{
+							ExtraAdapterInfo: ``,
+						},
+						bidderName: "ortbbidder",
+						endpointTemplate: func() *template.Template {
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
+							return template
+						}(),
+					},
+					bidderParamsConfig: g_bidderParamsConfig,
+				},
+				err: nil,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Builder(tt.args.bidderName, tt.args.config, tt.args.server)
+			assert.Equal(t, tt.want.bidder, got, "mismatched bidder")
+			assert.Equal(t, tt.want.err, err, "mismatched error")
+		})
+	}
+}
 
 func TestMakeRequests(t *testing.T) {
 	type args struct {
@@ -304,14 +416,18 @@ func TestMakeBids(t *testing.T) {
 			expectedResponse: nil,
 			responseData:     nil,
 			setup: func() adapter {
-				return adapter{}
+				return adapter{
+					bidderParamsConfig: &bidderparams.BidderConfig{},
+				}
 			},
 		},
 		{
 			name:         "no content response data",
 			responseData: &adapters.ResponseData{StatusCode: http.StatusNoContent},
 			setup: func() adapter {
-				return adapter{}
+				return adapter{
+					bidderParamsConfig: &bidderparams.BidderConfig{},
+				}
 			},
 			expectedResponse: nil,
 			expectedErrors:   nil,
@@ -320,7 +436,9 @@ func TestMakeBids(t *testing.T) {
 			name:         "status bad request in response data",
 			responseData: &adapters.ResponseData{StatusCode: http.StatusBadRequest},
 			setup: func() adapter {
-				return adapter{}
+				return adapter{
+					bidderParamsConfig: &bidderparams.BidderConfig{},
+				}
 			},
 			expectedResponse: nil,
 			expectedErrors: []error{&errortypes.BadInput{
@@ -332,7 +450,9 @@ func TestMakeBids(t *testing.T) {
 
 			responseData: &adapters.ResponseData{StatusCode: http.StatusTooManyRequests},
 			setup: func() adapter {
-				return adapter{}
+				return adapter{
+					bidderParamsConfig: &bidderparams.BidderConfig{},
+				}
 			},
 			expectedResponse: nil,
 			expectedErrors: []error{&errortypes.BadServerResponse{
@@ -347,7 +467,9 @@ func TestMakeBids(t *testing.T) {
 				Body:       []byte(`{"id":1,"seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1","mtype":2}]}]`),
 			},
 			setup: func() adapter {
-				return adapter{}
+				return adapter{
+					bidderParamsConfig: &bidderparams.BidderConfig{},
+				}
 			},
 			expectedResponse: nil,
 			expectedErrors: []error{&errortypes.FailedToUnmarshal{

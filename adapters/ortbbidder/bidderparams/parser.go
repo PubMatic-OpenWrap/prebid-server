@@ -1,11 +1,12 @@
 package bidderparams
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 const (
@@ -64,7 +65,7 @@ func readFile(dirPath, file string) (map[string]any, error) {
 		return nil, err
 	}
 	var contentMap map[string]any
-	err = json.Unmarshal(content, &contentMap)
+	err = jsonutil.UnmarshalValid(content, &contentMap)
 	return contentMap, err
 }
 
