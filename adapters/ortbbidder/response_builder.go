@@ -85,7 +85,7 @@ func (rb *responseBuilder) buildResponse() error {
 			// If the parameter exists in the response parameters, resolve it.
 			for _, paramName := range resolver.TypeBidFields {
 				if paramMapper, ok := rb.responseParams[paramName]; ok {
-					path := util.GetPath(paramMapper.Location, []int{seatIndex, bidIndex})
+					path := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
 					paramResolver.Resolve(bid, typeBid, path, paramName)
 				}
 			}

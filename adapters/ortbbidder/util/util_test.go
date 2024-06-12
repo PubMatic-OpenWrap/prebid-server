@@ -3,6 +3,8 @@ package util
 import (
 	"testing"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -402,6 +404,168 @@ func TestGetNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			node := getNode(tt.args.requestNode, tt.args.key)
 			assert.Equal(t, tt.want, node)
+		})
+	}
+}
+
+func TestReplaceLocationMacro(t *testing.T) {
+	tests := []struct {
+		name              string
+		path              string
+		array             []int
+		expectedValuePath string
+	}{
+		{
+			name:              "Empty path",
+			path:              "",
+			array:             []int{0, 1},
+			expectedValuePath: "",
+		},
+		{
+			name:              "Replace # in path with array",
+			path:              "seatbid.#.bid.#.ext.mtype",
+			array:             []int{0, 1},
+			expectedValuePath: "seatbid.0.bid.1.ext.mtype",
+		},
+		{
+			name:              "Array length less than # count in path",
+			path:              "seatbid.#.bid.#.ext.mtype",
+			array:             []int{0},
+			expectedValuePath: "seatbid.0.bid.#.ext.mtype",
+		},
+		{
+			name:              "No # in path",
+			path:              "seatbid.bid.ext.mtype",
+			array:             []int{0, 1},
+			expectedValuePath: "seatbid.bid.ext.mtype",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ReplaceLocationMacro(tt.path, tt.array)
+			assert.Equal(t, tt.expectedValuePath, result)
+		})
+	}
+}
+
+func TestGetValueFromLocation(t *testing.T) {
+	node := map[string]interface{}{
+		"seatbid": []interface{}{
+			map[string]interface{}{
+				"bid": []interface{}{
+					map[string]interface{}{
+						"ext": map[string]interface{}{
+							"mtype": "video",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		node          interface{}
+		path          string
+		expectedValue interface{}
+		ok            bool
+	}{
+		{
+			name:          "Node is empty",
+			node:          nil,
+			path:          "seatbid.0.bid.0.ext.mtype",
+			expectedValue: nil,
+			ok:            false,
+		},
+		{
+			name:          "Path is empty",
+			node:          node,
+			path:          "",
+			expectedValue: nil,
+			ok:            false,
+		},
+		{
+			name:          "Value is present in node",
+			node:          node,
+			path:          "seatbid.0.bid.0.ext.mtype",
+			expectedValue: "video",
+			ok:            true,
+		},
+		{
+			name:          "Value is not present in node",
+			node:          node,
+			path:          "seatbid.0.bid.0.ext.mtype1",
+			expectedValue: nil,
+			ok:            false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, ok := GetValueFromLocation(tt.node, tt.path)
+			assert.Equal(t, tt.ok, ok)
+			assert.Equal(t, tt.expectedValue, result)
+		})
+	}
+}
+
+func TestGetMediaType(t *testing.T) {
+	tests := []struct {
+		name     string
+		mtype    openrtb2.MarkupType
+		expected openrtb_ext.BidType
+	}{
+		{
+			name:     "MarkupBanner",
+			mtype:    openrtb2.MarkupBanner,
+			expected: openrtb_ext.BidTypeBanner,
+		},
+		{
+			name:     "MarkupVideo",
+			mtype:    openrtb2.MarkupVideo,
+			expected: openrtb_ext.BidTypeVideo,
+		},
+		{
+			name:     "MarkupAudio",
+			mtype:    openrtb2.MarkupAudio,
+			expected: openrtb_ext.BidTypeAudio,
+		},
+		{
+			name:     "MarkupNative",
+			mtype:    openrtb2.MarkupNative,
+			expected: openrtb_ext.BidTypeNative,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetMediaType(tt.mtype)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestIsORTBBidder(t *testing.T) {
+	tests := []struct {
+		name     string
+		bidder   string
+		expected bool
+	}{
+		{
+			name:     "ORTB bidder",
+			bidder:   "owortb_test",
+			expected: true,
+		},
+		{
+			name:     "Non-ORTB bidder",
+			bidder:   "test",
+			expected: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsORTBBidder(tt.bidder)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

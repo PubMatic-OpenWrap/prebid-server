@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	impKey       = "imp"
-	extKey       = "ext"
-	bidderKey    = "bidder"
-	appsiteKey   = "appsite"
-	siteKey      = "site"
-	appKey       = "app"
-	owOrtbPrefix = "owortb_"
+	impKey        = "imp"
+	extKey        = "ext"
+	bidderKey     = "bidder"
+	appsiteKey    = "appsite"
+	siteKey       = "site"
+	appKey        = "app"
+	owOrtbPrefix  = "owortb_"
+	locationMacro = "#"
 )
 
 /*
@@ -139,11 +140,11 @@ func GetValueFromLocation(val interface{}, path string) (interface{}, bool) {
 	return next, true
 }
 
-func GetPath(path string, array []int) string {
+func ReplaceLocationMacro(path string, array []int) string {
 	parts := strings.Split(path, ".")
 	j := 0
 	for i, part := range parts {
-		if part == "#" {
+		if part == locationMacro {
 			if j >= len(array) {
 				break
 			}

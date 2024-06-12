@@ -11,7 +11,7 @@ type mtypeResolver struct {
 }
 
 func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
-	mtype, ok := bid["mtype"].(float64)
+	mtype, ok := bid[mtypeKey].(float64)
 	if !ok && mtype == 0 {
 		return nil, false
 	}
@@ -23,5 +23,5 @@ func (r *mtypeResolver) autoDetect(bid map[string]any) (any, bool) {
 }
 
 func (r *mtypeResolver) setValue(adapterBid map[string]any, value any) {
-	adapterBid["BidType"] = value
+	adapterBid[bidTypeKey] = value
 }
