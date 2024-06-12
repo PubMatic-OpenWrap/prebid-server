@@ -19,7 +19,7 @@ func LoadBidderConfig(dirPath string, isBidderAllowed func(string) bool) (*Bidde
 	if err != nil {
 		return nil, fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), dirPath)
 	}
-	bidderConfigMap := &BidderConfig{bidderConfigMap: make(map[string]*config)}
+	bidderConfigMap := NewBidderConfig()
 	for _, file := range files {
 		bidderName, ok := strings.CutSuffix(file.Name(), ".json")
 		if !ok {
@@ -36,7 +36,7 @@ func LoadBidderConfig(dirPath string, isBidderAllowed func(string) bool) (*Bidde
 		if err != nil {
 			return nil, err
 		}
-		bidderConfigMap.setRequestParams(bidderName, requestParams)
+		bidderConfigMap.SetRequestParams(bidderName, requestParams)
 	}
 	return bidderConfigMap, nil
 }
@@ -78,7 +78,7 @@ func prepareRequestParams(bidderName string, requestParamsConfig map[string]any)
 			return nil, fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[%s] bidderParam:[%s]", bidderName, paramName)
 		}
 		requestParams[paramName] = BidderParamMapper{
-			location: strings.Split(locationStr, "."),
+			Location: locationStr,
 		}
 	}
 	return requestParams, nil
