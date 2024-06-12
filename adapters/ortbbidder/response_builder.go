@@ -26,9 +26,6 @@ type responseBuilder struct {
 }
 
 func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper) *responseBuilder {
-	if responseParams == nil {
-		responseParams = make(map[string]bidderparams.BidderParamMapper)
-	}
 	return &responseBuilder{
 		responseParams: responseParams,
 	}
@@ -56,7 +53,7 @@ func (rb *responseBuilder) buildResponse() error {
 	// If the parameter exists in the response parameters, resolve it.
 	for _, paramName := range resolver.AdapterResponseFields {
 		if paramMapper, ok := rb.responseParams[paramName]; ok {
-			paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.GetPath(), paramName)
+			paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.Location, paramName)
 		}
 	}
 	// Extract the seat bids from the bidder response.
@@ -88,7 +85,7 @@ func (rb *responseBuilder) buildResponse() error {
 			// If the parameter exists in the response parameters, resolve it.
 			for _, paramName := range resolver.TypeBidFields {
 				if paramMapper, ok := rb.responseParams[paramName]; ok {
-					path := util.GetPath(paramMapper.GetPath(), []int{seatIndex, bidIndex})
+					path := util.GetPath(paramMapper.Location, []int{seatIndex, bidIndex})
 					paramResolver.Resolve(bid, typeBid, path, paramName)
 				}
 			}

@@ -172,7 +172,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
-					Path: "cur",
+					Location: "cur",
 				},
 			},
 			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[map[]]"},
@@ -187,7 +187,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
-					Path: "cur",
+					Location: "cur",
 				},
 			},
 			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[[invalid]]"},
@@ -204,7 +204,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
-					Path: "cur",
+					Location: "cur",
 				},
 			},
 			expectedError: &errortypes.BadServerResponse{Message: "invalid bid array found in seatbid, bids:[invalid]"},
@@ -223,7 +223,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
-					Path: "cur",
+					Location: "cur",
 				},
 			},
 			expectedError: &errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[[invalid]]"},
@@ -276,10 +276,10 @@ func TestBuildResponse(t *testing.T) {
 			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"currency": {
-					Path: "cur",
+					Location: "cur",
 				},
 				"mtype": {
-					Path: "seatbid.#.bid.#.ext.mtype",
+					Location: "seatbid.#.bid.#.ext.mtype",
 				},
 			},
 			expectedError: nil,
