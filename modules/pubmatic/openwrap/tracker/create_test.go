@@ -110,6 +110,8 @@ func Test_createTrackers(t *testing.T) {
 				rctx: func() models.RequestCtx {
 					testRctx := rctx
 					testRctx.StartTime = startTime
+					pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
+					testRctx.PriceGranularity = &pg
 					testRctx.DeviceCtx.Ext = func() *models.ExtDevice {
 						extDevice := models.ExtDevice{}
 						extDevice.UnmarshalJSON([]byte(`{"atts":1}`))
@@ -165,6 +167,7 @@ func Test_createTrackers(t *testing.T) {
 							FloorValue:     6.4,
 							FloorRuleValue: 4.4,
 							DealID:         "deal-id-1",
+							PriceBucket:    "8.60",
 						},
 						Platform:  5,
 						SSAI:      "mediatailor",
@@ -178,7 +181,7 @@ func Test_createTrackers(t *testing.T) {
 						CustomDimensions: "author=henry",
 						ATTS:             ptrutil.ToPtr(float64(openrtb_ext.IOSAppTrackingStatusRestricted)),
 					},
-					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&atts=1&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&atts=1&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.4&ft=0&fv=6.4&iid=loggerIID&kgpv=adunit-1%40250x300&orig=publisher.com&origbidid=bidID-1&pb=8.60&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
 					Price:         8.7,
 					PriceModel:    "CPM",
 					PriceCurrency: "USD",
@@ -477,10 +480,11 @@ func TestConstructTrackerURL(t *testing.T) {
 						DealID:         "420",
 						FloorValue:     4.4,
 						FloorRuleValue: 2,
+						PriceBucket:    "2.50",
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pb=2.50&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "all_floors_details_in_tracker",
@@ -522,10 +526,11 @@ func TestConstructTrackerURL(t *testing.T) {
 						DealID:         "420",
 						FloorValue:     4.4,
 						FloorRuleValue: 2,
+						PriceBucket:    "2.50",
 					},
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pb=2.50&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 		{
 			name: "profileMetadata_details_updated_in_tracker",
