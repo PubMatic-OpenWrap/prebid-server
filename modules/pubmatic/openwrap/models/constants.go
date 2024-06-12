@@ -378,6 +378,12 @@ const (
 	CreativeID         = "unwrap-ucrid"
 	PubID              = "pub_id"
 	ImpressionID       = "imr_id"
+
+	//Constants for new SDK reporting
+	ProfileTypeKey        = "type"
+	AppPlatformKey        = "appPlatform"
+	IntegrationPathKey    = "integrationPath"
+	SubIntegrationPathKey = "subIntegrationPath"
 )
 
 const (
