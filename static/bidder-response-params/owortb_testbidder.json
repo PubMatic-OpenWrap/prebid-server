@@ -9,6 +9,5 @@
         "description": "mtype",
         "location": "seat.#.bid.#.ext.type"
       }
-    },
-    "required": ["adunitID"]
+    }
   }
