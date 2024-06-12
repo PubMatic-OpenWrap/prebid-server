@@ -1,0 +1,689 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>ortbbidder: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/errors.go (100.0%)</option>
+				
+				<option value="file1">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/multiRequestBuilder.go (79.3%)</option>
+				
+				<option value="file2">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/ortbbidder.go (100.0%)</option>
+				
+				<option value="file3">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/requestBuilder.go (90.5%)</option>
+				
+				<option value="file4">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/requestParamMapper.go (100.0%)</option>
+				
+				<option value="file5">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/response_builder.go (100.0%)</option>
+				
+				<option value="file6">github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder/singleRequestBuilder.go (85.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package ortbbidder
+
+import (
+        "errors"
+        "fmt"
+
+        "github.com/prebid/prebid-server/v2/errortypes"
+)
+
+// list of constant errors
+var (
+        errImpMissing        error = errors.New("imp object not found in request")
+        errNilBidderParamCfg error = errors.New("found nil bidderParamsConfig")
+)
+
+// newBadInputError returns the error of type bad-input
+func newBadInputError(message string, args ...any) error <span class="cov8" title="1">{
+        return &amp;errortypes.BadServerResponse{
+                Message: fmt.Sprintf(message, args...),
+        }
+}</span>
+
+func newBadServerResponseError(message string, args ...any) error <span class="cov8" title="1">{
+        return &amp;errortypes.BadServerResponse{
+                Message: fmt.Sprintf(message, args...),
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package ortbbidder
+
+import (
+        "github.com/prebid/openrtb/v20/openrtb2"
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+// struct to build the multi requests each containing sinlge impression when requestMode="single"
+type multiRequestBuilder struct {
+        requestBuilderImpl
+        imps []map[string]any
+}
+
+// parseRequest parse the incoming request and populates intermediate fields required for building requestData object
+func (rb *multiRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err error) <span class="cov8" title="1">{
+        if len(request.Imp) == 0 </span><span class="cov8" title="1">{
+                return errImpMissing
+        }</span>
+
+        //get rawrequests without impression objects
+        <span class="cov8" title="1">tmpImp := request.Imp[0:]
+        request.Imp = nil
+        if rb.rawRequest, err = jsonutil.Marshal(request); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        // request.Imp = tmpImp[0:] //resetting is not required
+
+        //cache impression from request
+        <span class="cov8" title="1">data, err := jsonutil.Marshal(tmpImp)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if err = jsonutil.Unmarshal(data, &amp;rb.imps); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// makeRequest constructs the endpoint URL and maps the bidder-parameters in request to create the RequestData objects.
+// it processes a request to generate 'N' RequestData objects, one for each of the 'N' impressions
+func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestData, errs []error) <span class="cov8" title="1">{
+        var (
+                endpoint             string
+                newRequest           map[string]any
+                err                  error
+                requestCloneRequired bool
+        )
+
+        requestCloneRequired = true
+
+        for index := range rb.imps </span><span class="cov8" title="1">{
+                //step 1: clone request
+                if requestCloneRequired </span><span class="cov8" title="1">{
+                        if newRequest, err = cloneRequest(rb.rawRequest); err != nil </span><span class="cov0" title="0">{
+                                errs = append(errs, newBadInputError(err.Error()))
+                                continue</span>
+                        }
+                }
+
+                //step 2: get impression extension
+                <span class="cov8" title="1">imp := rb.imps[index]
+                bidderParams := getImpExtBidderParams(imp)
+
+                //step 3: get endpoint
+                if endpoint, err = rb.getEndpoint(bidderParams); err != nil </span><span class="cov8" title="1">{
+                        errs = append(errs, newBadInputError(err.Error()))
+                        continue</span>
+                }
+
+                //step 4: update the request object by mapping bidderParams at expected location.
+                <span class="cov8" title="1">newRequest[impKey] = []any{imp}
+                requestCloneRequired = setRequestParams(newRequest, bidderParams, rb.requestParams, []int{0})
+
+                //step 5: append new request data
+                if requestData, err = appendRequestData(requestData, newRequest, endpoint); err != nil </span><span class="cov0" title="0">{
+                        errs = append(errs, newBadInputError(err.Error()))
+                }</span>
+        }
+        <span class="cov8" title="1">return requestData, errs</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package ortbbidder
+
+import (
+        "encoding/json"
+        "fmt"
+        "text/template"
+
+        "github.com/prebid/openrtb/v20/openrtb2"
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+        "github.com/prebid/prebid-server/v2/config"
+        "github.com/prebid/prebid-server/v2/openrtb_ext"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+// adapter implements adapters.Bidder interface
+type adapter struct {
+        adapterInfo
+        bidderParamsConfig *bidderparams.BidderConfig
+}
+
+// adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
+type adapterInfo struct {
+        config.Adapter
+        extraInfo        extraAdapterInfo
+        bidderName       openrtb_ext.BidderName
+        endpointTemplate *template.Template
+}
+type extraAdapterInfo struct {
+        RequestMode string `json:"requestMode"`
+}
+
+// global instance to hold bidderParamsConfig
+var g_bidderParamsConfig *bidderparams.BidderConfig
+
+// InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
+func InitBidderParamsConfig(requestParamsDirPath, responseParamsDirPath string) (err error) <span class="cov8" title="1">{
+        g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, util.IsORTBBidder)
+        return err
+}</span>
+
+// Builder returns an instance of oRTB adapter
+func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) <span class="cov8" title="1">{
+        extraAdapterInfo := extraAdapterInfo{}
+        if len(config.ExtraAdapterInfo) &gt; 0 </span><span class="cov8" title="1">{
+                err := jsonutil.Unmarshal([]byte(config.ExtraAdapterInfo), &amp;extraAdapterInfo)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("failed to parse extra_info: %s", err.Error())
+                }</span>
+        }
+        <span class="cov8" title="1">template, err := template.New(endpointTemplate).Option(templateOption).Parse(config.Endpoint)
+        if err != nil || template == nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to parse endpoint url template: %v", err)
+        }</span>
+        <span class="cov8" title="1">return &amp;adapter{
+                adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName, template},
+                bidderParamsConfig: g_bidderParamsConfig,
+        }, nil</span>
+}
+
+// MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
+func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) <span class="cov8" title="1">{
+        if o.bidderParamsConfig == nil </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError(errNilBidderParamCfg.Error())}
+        }</span>
+
+        <span class="cov8" title="1">requestBuilder := newRequestBuilder(
+                o.adapterInfo.extraInfo.RequestMode,
+                o.Endpoint,
+                o.endpointTemplate,
+                o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
+
+        if err := requestBuilder.parseRequest(request); err != nil </span><span class="cov8" title="1">{
+                return nil, []error{newBadInputError(err.Error())}
+        }</span>
+
+        <span class="cov8" title="1">return requestBuilder.makeRequest()</span>
+}
+
+// MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
+func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) <span class="cov8" title="1">{
+        if responseData == nil || adapters.IsResponseStatusCodeNoContent(responseData) </span><span class="cov8" title="1">{
+                return nil, nil
+        }</span>
+
+        <span class="cov8" title="1">if err := adapters.CheckResponseStatusCodeForErrors(responseData); err != nil </span><span class="cov8" title="1">{
+                return nil, []error{err}
+        }</span>
+
+        <span class="cov8" title="1">bidResponse, err := o.makeBids(responseData.Body)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, []error{err}
+        }</span>
+
+        <span class="cov8" title="1">return bidResponse, nil</span>
+}
+
+// MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
+func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) <span class="cov8" title="1">{
+        responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
+        rb := newResponseBuilder(responseParmas)
+
+        err := rb.parseResponse(bidderResponseBytes)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">err = rb.buildResponse()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return rb.convertToAdapterResponse()</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package ortbbidder
+
+import (
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "strings"
+        "text/template"
+
+        "github.com/prebid/openrtb/v20/openrtb2"
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+        "github.com/prebid/prebid-server/v2/macros"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+// requestBuilder is an interface containing parseRequest, makeRequest functions
+type requestBuilder interface {
+        parseRequest(*openrtb2.BidRequest) error
+        makeRequest() ([]*adapters.RequestData, []error)
+}
+
+type requestBuilderImpl struct {
+        endpoint            string
+        endpointTemplate    *template.Template
+        requestParams       map[string]bidderparams.BidderParamMapper
+        hasMacrosInEndpoint bool
+        rawRequest          json.RawMessage
+}
+
+// newRequestBuilder returns the request-builder based on requestMode argument
+func newRequestBuilder(requestMode, endpoint string, endpointTemplate *template.Template, requestParams map[string]bidderparams.BidderParamMapper) requestBuilder <span class="cov8" title="1">{
+        requestBuilder := requestBuilderImpl{
+                endpoint:            endpoint,
+                endpointTemplate:    endpointTemplate,
+                requestParams:       requestParams,
+                hasMacrosInEndpoint: strings.Contains(endpoint, urlMacroPrefix),
+        }
+        if requestMode == requestModeSingle </span><span class="cov8" title="1">{
+                return &amp;multiRequestBuilder{
+                        requestBuilderImpl: requestBuilder,
+                }
+        }</span>
+        <span class="cov8" title="1">return &amp;singleRequestBuilder{
+                requestBuilderImpl: requestBuilder,
+        }</span>
+}
+
+// getEndpoint returns the endpoint-url, if required replaces macros
+func (rb *requestBuilderImpl) getEndpoint(values map[string]any) (string, error) <span class="cov8" title="1">{
+        if !rb.hasMacrosInEndpoint </span><span class="cov8" title="1">{
+                return rb.endpoint, nil
+        }</span>
+        <span class="cov8" title="1">uri, err := macros.ResolveMacros(rb.endpointTemplate, values)
+        if err != nil </span><span class="cov8" title="1">{
+                return uri, fmt.Errorf("failed to replace macros in endpoint, err:%s", err.Error())
+        }</span>
+        <span class="cov8" title="1">uri = strings.ReplaceAll(uri, urlMacroNoValue, "")
+        return uri, err</span>
+}
+
+func cloneRequest(request json.RawMessage) (map[string]any, error) <span class="cov8" title="1">{
+        req := map[string]any{}
+        err := jsonutil.Unmarshal(request, &amp;req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return req, nil</span>
+}
+
+// appendRequestData creates new RequestData using request and uri then appends it to requestData passed as argument
+func appendRequestData(requestData []*adapters.RequestData, request map[string]any, uri string) ([]*adapters.RequestData, error) <span class="cov8" title="1">{
+        rawRequest, err := jsonutil.Marshal(request)
+        if err != nil </span><span class="cov0" title="0">{
+                return requestData, err
+        }</span>
+        <span class="cov8" title="1">requestData = append(requestData, &amp;adapters.RequestData{
+                Method: http.MethodPost,
+                Uri:    uri,
+                Body:   rawRequest,
+                Headers: http.Header{
+                        "Content-Type": {"application/json;charset=utf-8"},
+                        "Accept":       {"application/json"},
+                },
+        })
+        return requestData, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package ortbbidder
+
+import (
+        "strconv"
+        "strings"
+
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+)
+
+// setRequestParams updates the request object by mapping bidderParams at expected location.
+func setRequestParams(request, params map[string]any, paramsMapper map[string]bidderparams.BidderParamMapper, paramIndices []int) bool <span class="cov8" title="1">{
+        updatedRequest := false
+        for paramName, paramValue := range params </span><span class="cov8" title="1">{
+                paramMapper, ok := paramsMapper[paramName]
+                if !ok </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+                // add index in path by replacing # macro
+                <span class="cov8" title="1">location := addIndicesInPath(paramMapper.Location, paramIndices)
+                // set the value in the request according to the mapping details
+                // remove the parameter from bidderParams after successful mapping
+                if util.SetValue(request, location, paramValue) </span><span class="cov8" title="1">{
+                        delete(params, paramName)
+                        updatedRequest = true
+                }</span>
+        }
+        <span class="cov8" title="1">return updatedRequest</span>
+}
+
+// addIndicesInPath updates the path by replacing # by arrayIndices
+func addIndicesInPath(path string, indices []int) []string <span class="cov8" title="1">{
+        parts := strings.Split(path, ".")
+        j := 0
+        for i, part := range parts </span><span class="cov8" title="1">{
+                if part == locationIndexMacro </span><span class="cov8" title="1">{
+                        if j &gt;= len(indices) </span><span class="cov8" title="1">{
+                                break</span>
+                        }
+                        <span class="cov8" title="1">parts[i] = strconv.Itoa(indices[j])
+                        j++</span>
+                }
+        }
+        <span class="cov8" title="1">return parts</span>
+}
+
+// getImpExtBidderParams returns imp.ext.bidder parameters
+func getImpExtBidderParams(imp map[string]any) map[string]any <span class="cov8" title="1">{
+        ext, ok := imp[extKey].(map[string]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">bidderParams, ok := ext[bidderKey].(map[string]any)
+        if !ok </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">return bidderParams</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package ortbbidder
+
+import (
+        "encoding/json"
+
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
+        "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+const (
+        currencyKey    = "Currency"
+        seatBidKey     = "seatbid"
+        typeBidKey     = "Bid"
+        bidKey         = "bid"
+        bidsKey        = "Bids"
+        ortbCurrenyKey = "cur"
+)
+
+type responseBuilder struct {
+        bidderResponse map[string]any
+        adapterRespone map[string]any
+        responseParams map[string]bidderparams.BidderParamMapper
+}
+
+func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper) *responseBuilder <span class="cov8" title="1">{
+
+        return &amp;responseBuilder{
+                responseParams: responseParams,
+        }
+}</span>
+
+// parseResponse parses the bidder response from the given JSON raw message.
+// It unmarshals the JSON into the rb.bidderResponse struct.
+func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) (err error) <span class="cov8" title="1">{
+        err = jsonutil.UnmarshalValid(bidderResponseBytes, &amp;rb.bidderResponse)
+        return
+}</span>
+
+// buildResponse builds the adapter response based on the given response parameters.
+// It resolves the response level and bid level parameters using the provided responseParams map.
+// The resolved response is stored in the adapterResponse map.
+// If any invalid seatbid or bid is found in the response, an error is returned.
+func (rb *responseBuilder) buildResponse() error <span class="cov8" title="1">{
+        // Create a new ParamResolver with the bidder response.
+        paramResolver := resolver.New(rb.bidderResponse)
+        // Initialize the adapter response with the currency from the bidder response.
+        adapterResponse := map[string]any{
+                currencyKey: rb.bidderResponse[ortbCurrenyKey],
+        }
+        // Loop over the response level parameters.
+        // If the parameter exists in the response parameters, resolve it.
+        for _, paramName := range resolver.AdapterResponseFields </span><span class="cov8" title="1">{
+                if paramMapper, ok := rb.responseParams[paramName]; ok </span><span class="cov8" title="1">{
+                        paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.Location, paramName)
+                }</span>
+        }
+        // Extract the seat bids from the bidder response.
+        <span class="cov8" title="1">seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
+        if !ok </span><span class="cov8" title="1">{
+                return newBadServerResponseError("invalid seatbid array found in response, seatbids:[%v]", rb.bidderResponse[seatBidKey])
+        }</span>
+        // Initialize the list of type bids.
+        <span class="cov8" title="1">typeBids := make([]any, 0)
+        for seatIndex, seatBid := range seatBids </span><span class="cov8" title="1">{
+                seatBid, ok := seatBid.(map[string]any)
+                if !ok </span><span class="cov8" title="1">{
+                        return newBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids)
+                }</span>
+                <span class="cov8" title="1">bids, ok := seatBid[bidKey].([]any)
+                if !ok </span><span class="cov8" title="1">{
+                        return newBadServerResponseError("invalid bid array found in seatbid, bids:[%v]", seatBid[bidKey])
+                }</span>
+                <span class="cov8" title="1">for bidIndex, bid := range bids </span><span class="cov8" title="1">{
+                        bid, ok := bid.(map[string]any)
+                        if !ok </span><span class="cov8" title="1">{
+                                return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", seatBid[bidKey])
+                        }</span>
+                        // Initialize the type bid with the bid.
+                        <span class="cov8" title="1">typeBid := map[string]any{
+                                typeBidKey: bid,
+                        }
+                        // Loop over the bid level parameters.
+                        // If the parameter exists in the response parameters, resolve it.
+                        for _, paramName := range resolver.TypeBidFields </span><span class="cov8" title="1">{
+                                if paramMapper, ok := rb.responseParams[paramName]; ok </span><span class="cov8" title="1">{
+                                        path := util.GetPath(paramMapper.Location, []int{seatIndex, bidIndex})
+                                        paramResolver.Resolve(bid, typeBid, path, paramName)
+                                }</span>
+                        }
+                        // Add the type bid to the list of type bids.
+                        <span class="cov8" title="1">typeBids = append(typeBids, typeBid)</span>
+                }
+        }
+        // Add the type bids to the adapter response.
+        <span class="cov8" title="1">adapterResponse[bidsKey] = typeBids
+        // Set the adapter response in the response builder.
+        rb.adapterRespone = adapterResponse
+        return nil</span>
+}
+
+// convertToAdapterResponse converts the responseBuilder's adapter response to a prebid format.
+// Returns the BidderResponse and any error encountered during the conversion.
+func (rb *responseBuilder) convertToAdapterResponse() (resp *adapters.BidderResponse, err error) <span class="cov8" title="1">{
+        var adapterResponeBytes json.RawMessage
+        adapterResponeBytes, err = jsonutil.Marshal(rb.adapterRespone)
+        if err != nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">err = jsonutil.UnmarshalValid(adapterResponeBytes, &amp;resp)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package ortbbidder
+
+import (
+        "fmt"
+
+        "github.com/prebid/openrtb/v20/openrtb2"
+        "github.com/prebid/prebid-server/v2/adapters"
+        "github.com/prebid/prebid-server/v2/util/jsonutil"
+)
+
+// struct to build the single request containing multi impressions when requestMode="multi"
+type singleRequestBuilder struct {
+        requestBuilderImpl
+        newRequest map[string]any
+        imps       []map[string]any
+}
+
+// parseRequest parse the incoming request and populates intermediate fields required for building requestData object
+func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err error) <span class="cov8" title="1">{
+        rb.rawRequest, err = jsonutil.Marshal(request)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rb.newRequest, err = cloneRequest(rb.rawRequest)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">imps, ok := rb.newRequest[impKey].([]any)
+        if !ok </span><span class="cov8" title="1">{
+                return errImpMissing
+        }</span>
+        <span class="cov8" title="1">for index, imp := range imps </span><span class="cov8" title="1">{
+                imp, ok := imp.(map[string]any)
+                if !ok </span><span class="cov0" title="0">{
+                        return fmt.Errorf("invalid imp found at index:%d", index)
+                }</span>
+                <span class="cov8" title="1">rb.imps = append(rb.imps, imp)</span>
+        }
+        <span class="cov8" title="1">return</span>
+}
+
+// makeRequest constructs the endpoint URL and maps the bidder-parameters in request to create the RequestData objects.
+// it create single RequestData object for all impressions.
+func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestData, errs []error) <span class="cov8" title="1">{
+        if len(rb.imps) == 0 </span><span class="cov8" title="1">{
+                errs = append(errs, newBadInputError(errImpMissing.Error()))
+                return
+        }</span>
+
+        <span class="cov8" title="1">var (
+                endpoint string
+                err      error
+        )
+
+        //step 1: get endpoint
+        if endpoint, err = rb.getEndpoint(getImpExtBidderParams(rb.imps[0])); err != nil </span><span class="cov8" title="1">{
+                errs = append(errs, newBadInputError(err.Error()))
+                return nil, errs
+        }</span>
+
+        //step 2: replace parameters
+        // iterate through imps in reverse order to ensure setRequestParams prioritizes
+        // the parameters from imp[0].ext.bidder over those from imp[1..N].ext.bidder.
+        <span class="cov8" title="1">for index := len(rb.imps) - 1; index &gt;= 0; index-- </span><span class="cov8" title="1">{
+                setRequestParams(rb.newRequest, getImpExtBidderParams(rb.imps[index]), rb.requestParams, []int{index})
+        }</span>
+
+        //step 3: append new request data
+        <span class="cov8" title="1">if requestData, err = appendRequestData(requestData, rb.newRequest, endpoint); err != nil </span><span class="cov0" title="0">{
+                errs = append(errs, newBadInputError(err.Error()))
+        }</span>
+        <span class="cov8" title="1">return requestData, errs</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
