@@ -94,6 +94,34 @@ func TestComputePriceGranularity(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "med_price_granularity",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey: "med",
+						},
+					},
+				},
+			},
+			want:    priceGranularityMed,
+			wantErr: false,
+		},
+		{
+			name: "medium_price_granularity",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey: "medium",
+						},
+					},
+				},
+			},
+			want:    priceGranularityMed,
+			wantErr: false,
+		},
+		{
 			name: "no_pricegranularity_in_db_defaults_to_auto",
 			args: args{
 				rctx: models.RequestCtx{
