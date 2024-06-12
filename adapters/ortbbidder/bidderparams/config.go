@@ -31,7 +31,7 @@ func (bcfg *BidderConfig) SetRequestParams(bidderName string, requestParams map[
 	bcfg.bidderConfigMap[bidderName].requestParams = requestParams
 }
 
-// SetRequestParams sets the bidder specific requestParams
+// SetResponseParams sets the bidder specific responseParams
 func (bcfg *BidderConfig) SetResponseParams(bidderName string, responseParams map[string]BidderParamMapper) {
 	if _, found := bcfg.bidderConfigMap[bidderName]; !found {
 		bcfg.bidderConfigMap[bidderName] = &config{}

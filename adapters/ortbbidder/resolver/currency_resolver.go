@@ -6,7 +6,10 @@ type currencyResolver struct {
 }
 
 func (r *currencyResolver) getFromORTBObject(ortbResponse map[string]any) (any, bool) {
-	return ortbResponse["cur"], true
+	if curr, ok := ortbResponse["cur"]; !ok && curr != "" {
+		return curr, true
+	}
+	return nil, false
 }
 
 func (r *currencyResolver) autoDetect(bid map[string]any) (any, bool) {

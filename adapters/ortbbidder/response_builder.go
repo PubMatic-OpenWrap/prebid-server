@@ -26,7 +26,6 @@ type responseBuilder struct {
 }
 
 func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper) *responseBuilder {
-
 	return &responseBuilder{
 		responseParams: responseParams,
 	}

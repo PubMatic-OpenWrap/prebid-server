@@ -206,12 +206,16 @@ func TestSetResponseParams(t *testing.T) {
 			name:       "Set response params for new bidder",
 			bidderName: "testBidder",
 			responseParams: map[string]BidderParamMapper{
-				"param1": {},
+				"param1": {
+					Location: "location",
+				},
 			},
 			expected: map[string]*config{
 				"testBidder": {
 					responseParams: map[string]BidderParamMapper{
-						"param1": {},
+						"param1": {
+							Location: "location",
+						},
 					},
 				},
 			},
@@ -220,12 +224,16 @@ func TestSetResponseParams(t *testing.T) {
 			name:       "Set response params for existing bidder",
 			bidderName: "existingBidder",
 			responseParams: map[string]BidderParamMapper{
-				"param2": {},
+				"param2": {
+					Location: "location",
+				},
 			},
 			expected: map[string]*config{
 				"existingBidder": {
 					responseParams: map[string]BidderParamMapper{
-						"param2": {},
+						"param2": {
+							Location: "location",
+						},
 					},
 				},
 			},
@@ -255,12 +263,16 @@ func TestGetResponseParams(t *testing.T) {
 			bidderConfigMap: map[string]*config{
 				"existingBidder": {
 					responseParams: map[string]BidderParamMapper{
-						"param1": {},
+						"param1": {
+							Location: "location",
+						},
 					},
 				},
 			},
 			expected: map[string]BidderParamMapper{
-				"param1": {},
+				"param1": {
+					Location: "location",
+				},
 			},
 		},
 		{
@@ -269,7 +281,9 @@ func TestGetResponseParams(t *testing.T) {
 			bidderConfigMap: map[string]*config{
 				"existingBidder": {
 					responseParams: map[string]BidderParamMapper{
-						"param1": {},
+						"param1": {
+							Location: "location",
+						},
 					},
 				},
 			},
@@ -282,7 +296,6 @@ func TestGetResponseParams(t *testing.T) {
 			expected:        nil,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bcfg := &BidderConfig{

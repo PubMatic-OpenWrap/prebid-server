@@ -18,6 +18,9 @@ import (
 
 func TestBuilder(t *testing.T) {
 	InitBidderParamsConfig("../../static/bidder-params", "../../static/bidder-params")
+	t.Cleanup(func() {
+		g_bidderParamsConfig = nil
+	})
 	type args struct {
 		bidderName openrtb_ext.BidderName
 		config     config.Adapter
@@ -393,15 +396,8 @@ func TestMakeRequests(t *testing.T) {
 		})
 	}
 }
-func TestMakeBids(t *testing.T) {
-	err := InitBidderParamsConfig("./ortbbiddertest/bidder-params", "./ortbbiddertest/bidder-response-params")
-	if err != nil {
-		t.Fatalf("Failed to initalise bidder config")
-	}
 
-	t.Cleanup(func() {
-		g_bidderParamsConfig = nil
-	})
+func TestMakeBids(t *testing.T) {
 	tests := []struct {
 		name             string
 		responseData     *adapters.ResponseData
@@ -579,15 +575,20 @@ func TestMakeBids(t *testing.T) {
 			},
 			expectedErrors: nil,
 			setup: func() adapter {
+				bc := bidderparams.NewBidderConfig()
+				bc.SetResponseParams("owortb_testbidder", map[string]bidderparams.BidderParamMapper{})
 				return adapter{
-					bidderParamsConfig: &bidderparams.BidderConfig{},
+					bidderParamsConfig: bc,
+					adapterInfo: adapterInfo{
+						bidderName: "owortb_testbidder",
+					},
 				}
 			},
 		},
 		{
 			name: "valid response - bidder params present",
 			responseData: &adapters.ResponseData{
-				Body:       []byte(`{"id":"1","cur":"USD","seatbid":[{"bid":[{"id":"1","ext":{"mtype":"video"}}]}]}`),
+				Body:       []byte(`{"id":"1","cur":"","seatbid":[{"bid":[{"id":"1","ext":{"mtype":"video"}}]}],"ext":{"currency":"USD"}}`),
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: &adapters.BidderResponse{
@@ -604,11 +605,16 @@ func TestMakeBids(t *testing.T) {
 			},
 			expectedErrors: nil,
 			setup: func() adapter {
+				bc := bidderparams.NewBidderConfig()
+				bc.SetResponseParams("owortb_testbidder", map[string]bidderparams.BidderParamMapper{
+					"mtype":    {Location: "seatbid.#.bid.#.ext.mtype"},
+					"currency": {Location: "ext.currency"},
+				})
 				return adapter{
 					adapterInfo: adapterInfo{
 						bidderName: "owortb_testbidder",
 					},
-					bidderParamsConfig: g_bidderParamsConfig,
+					bidderParamsConfig: bc,
 				}
 			},
 		},

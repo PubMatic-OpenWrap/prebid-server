@@ -69,7 +69,7 @@ func readFile(dirPath, file string) (map[string]any, error) {
 	return contentMap, err
 }
 
-// prepareParams parse the paramsConfig and returns the requestParams
+// prepareParams parse the paramsConfig and returns the request/response params
 func prepareParams(bidderName string, paramsConfig map[string]any) (map[string]BidderParamMapper, error) {
 	paramsProperties, found := paramsConfig[propertiesKey]
 	if !found {

@@ -88,12 +88,12 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	bidResponse, err := o.makeBids(responseData.Body)
+	response, err := o.makeBids(responseData.Body)
 	if err != nil {
 		return nil, []error{err}
 	}
 
-	return bidResponse, nil
+	return response, nil
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
