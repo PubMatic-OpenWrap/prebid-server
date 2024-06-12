@@ -12,7 +12,7 @@ type mtypeResolver struct {
 
 func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	mtype, ok := bid["mtype"].(float64)
-	if !ok {
+	if !ok && mtype == 0 {
 		return nil, false
 	}
 	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
