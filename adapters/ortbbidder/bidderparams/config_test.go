@@ -194,3 +194,102 @@ func TestGetBidderRequestProperties(t *testing.T) {
 		})
 	}
 }
+
+func TestSetResponseParams(t *testing.T) {
+	tests := []struct {
+		name           string
+		bidderName     string
+		responseParams map[string]BidderParamMapper
+		expected       map[string]*config
+	}{
+		{
+			name:       "Set response params for new bidder",
+			bidderName: "testBidder",
+			responseParams: map[string]BidderParamMapper{
+				"param1": {},
+			},
+			expected: map[string]*config{
+				"testBidder": {
+					responseParams: map[string]BidderParamMapper{
+						"param1": {},
+					},
+				},
+			},
+		},
+		{
+			name:       "Set response params for existing bidder",
+			bidderName: "existingBidder",
+			responseParams: map[string]BidderParamMapper{
+				"param2": {},
+			},
+			expected: map[string]*config{
+				"existingBidder": {
+					responseParams: map[string]BidderParamMapper{
+						"param2": {},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bcfg := &BidderConfig{
+				bidderConfigMap: make(map[string]*config),
+			}
+			bcfg.SetResponseParams(tt.bidderName, tt.responseParams)
+			assert.Equal(t, tt.expected, bcfg.bidderConfigMap)
+		})
+	}
+}
+
+func TestGetResponseParams(t *testing.T) {
+	tests := []struct {
+		name            string
+		bidderName      string
+		bidderConfigMap map[string]*config
+		expected        map[string]BidderParamMapper
+	}{
+		{
+			name:       "Get response params for existing bidder",
+			bidderName: "existingBidder",
+			bidderConfigMap: map[string]*config{
+				"existingBidder": {
+					responseParams: map[string]BidderParamMapper{
+						"param1": {},
+					},
+				},
+			},
+			expected: map[string]BidderParamMapper{
+				"param1": {},
+			},
+		},
+		{
+			name:       "Get response params for non-existing bidder",
+			bidderName: "nonExistingBidder",
+			bidderConfigMap: map[string]*config{
+				"existingBidder": {
+					responseParams: map[string]BidderParamMapper{
+						"param1": {},
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			name:            "Get response params for empty bidder config map",
+			bidderName:      "anyBidder",
+			bidderConfigMap: map[string]*config{},
+			expected:        nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bcfg := &BidderConfig{
+				bidderConfigMap: tt.bidderConfigMap,
+			}
+			got := bcfg.GetResponseParams(tt.bidderName)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}

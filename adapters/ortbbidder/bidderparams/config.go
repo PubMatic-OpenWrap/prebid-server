@@ -39,7 +39,7 @@ func (bcfg *BidderConfig) SetResponseParams(bidderName string, responseParams ma
 	bcfg.bidderConfigMap[bidderName].responseParams = responseParams
 }
 
-// GetRequestParams returns bidder specific requestParams
+// GetRequestParams returns bidder specific responseParams
 func (bcfg *BidderConfig) GetRequestParams(bidderName string) map[string]BidderParamMapper {
 	if len(bcfg.bidderConfigMap) == 0 {
 		return nil
@@ -51,7 +51,7 @@ func (bcfg *BidderConfig) GetRequestParams(bidderName string) map[string]BidderP
 	return bidderConfig.requestParams
 }
 
-// GetResponseParams returns bidder specific requestParams
+// GetResponseParams returns bidder specific responseParams
 func (bcfg *BidderConfig) GetResponseParams(bidderName string) map[string]BidderParamMapper {
 	if len(bcfg.bidderConfigMap) == 0 {
 		return nil
