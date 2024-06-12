@@ -131,6 +131,7 @@ func (m OpenWrap) handleEntrypointHook(
 		Method:         payload.Request.Method,
 		ResponseFormat: strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
 		RedirectURL:    queryParams.Get(models.OWRedirectURLKey),
+		AdruleFlag:     requestExtWrapper.Video.Adrule,
 	}
 
 	// SSAuction will be always 1 for CTV request

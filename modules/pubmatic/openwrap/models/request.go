@@ -111,6 +111,12 @@ type RequestExtWrapper struct {
 	SSAI                 string                 `json:"ssai,omitempty"`
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
 	PubId                int                    `json:"-"`
+	Video                ExtRequestWrapperVideo `json:"video,omitempty"`
+	AdServerURL          string                 `json:"adserverurl,omitempty"`
+}
+
+type ExtRequestWrapperVideo struct {
+	Adrule bool `json:"adrule,omitempty"`
 }
 
 type BidderWrapper struct {

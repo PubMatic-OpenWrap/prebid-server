@@ -9,7 +9,6 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
@@ -38,16 +37,6 @@ func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequ
 		return nil, err
 	}
 
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	if len(videoAdDuration) > 0 {
-		adpodConfigs.VideoAdDuration = utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator)
-	}
-
-	videoAdDurationMatchingPolicy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDurationMatchingPolicy) > 0 {
-		adpodConfigs.VideoAdDurationMatching = videoAdDurationMatchingPolicy
-	}
-
 	// Set default value if adpod object does not exists
 	setDefaultValues(adpodConfigs)
 
@@ -60,7 +49,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
+		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.AdpodKey)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithReqConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
@@ -70,7 +59,7 @@ func resolveAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.Ext
 
 	// Check in adunit config
 	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
+		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.AdpodKey)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithDbConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
@@ -129,7 +118,7 @@ func Validate(config *models.AdPod) error {
 		}
 
 		if !validDurations {
-			return errors.New("videoAdDuration values should be between adpod.adminduration and dpod.adminduration")
+			return errors.New("videoAdDuration values should be between adpod.adminduration and adpod.adminduration")
 		}
 	}
 

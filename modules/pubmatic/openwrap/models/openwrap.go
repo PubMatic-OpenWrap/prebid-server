@@ -114,6 +114,13 @@ type RequestCtx struct {
 	Errors                 []error
 	RedirectURL            string
 	ResponseFormat         string
+
+	// Adpod
+	AdpodCtx                       map[string]Adpod
+	AdruleFlag                     bool
+	VideoConfigs                   []*openrtb2.Video
+	CreativeDurations              []int
+	CreativeDurationMatchingPolicy string
 }
 
 type OwBid struct {
