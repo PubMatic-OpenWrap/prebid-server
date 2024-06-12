@@ -1,5 +1,6 @@
 package resolver
 
+// currencyResolver resolves the currency of the adapter response
 type currencyResolver struct {
 	valueResolver
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
+// mtypeResolver resolves the media type of the type bid
 type mtypeResolver struct {
 	valueResolver
 }
