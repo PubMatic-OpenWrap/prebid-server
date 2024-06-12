@@ -170,6 +170,41 @@ func TestResolve(t *testing.T) {
 				"BidType": openrtb_ext.BidType("video"),
 			},
 		},
+		{
+			name: "Auto detect",
+			sourceNode: map[string]any{
+				"id":  "123",
+				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+			},
+			targetNode: map[string]any{
+				"Bid": map[string]any{
+					"id":  "123",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				},
+			},
+			bidderResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id":  "123",
+								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+							},
+						},
+					},
+				},
+			},
+			location: "seatbid.0.bid.0.ext.mtype",
+			param:    "mtype",
+			expectedNode: map[string]any{
+				"Bid": map[string]any{
+					"id":  "123",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				},
+				"BidType": openrtb_ext.BidType("video"),
+			},
+		},
 		// Todo add auto detec logic test case when it is implemented
 	}
 	for _, tc := range testCases {

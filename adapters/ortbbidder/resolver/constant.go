@@ -5,4 +5,5 @@ const (
 	bidTypeKey  = "BidType"
 	currencyKey = "Currency"
 	curKey      = "cur"
+	admKey      = "adm"
 )
