@@ -92,7 +92,7 @@ func TestSetRequestParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.fields.bidderConfig.setRequestParams(tt.args.bidderName, tt.args.requestParams)
+			tt.fields.bidderConfig.SetRequestParams(tt.args.bidderName, tt.args.requestParams)
 			assert.Equal(t, tt.want.bidderCfg, tt.fields.bidderConfig, "mismatched bidderConfig")
 		})
 	}

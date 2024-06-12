@@ -36,7 +36,7 @@ func TestMakeRequests(t *testing.T) {
 		{
 			name: "request_is_nil",
 			args: args{
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				errors: []error{newBadInputError(errImpMissing.Error())},
@@ -68,7 +68,7 @@ func TestMakeRequests(t *testing.T) {
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
 					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
 				}(),
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -100,7 +100,7 @@ func TestMakeRequests(t *testing.T) {
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
 					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
 				}(),
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -140,7 +140,7 @@ func TestMakeRequests(t *testing.T) {
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
 					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
 				}(),
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -180,7 +180,7 @@ func TestMakeRequests(t *testing.T) {
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
 					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: ""}, "testbidder", template}
 				}(),
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -211,7 +211,7 @@ func TestMakeRequests(t *testing.T) {
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
 					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: ""}, "testbidder", template}
 				}(),
-				bidderCfg: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -219,6 +219,53 @@ func TestMakeRequests(t *testing.T) {
 						Method: http.MethodPost,
 						Uri:    "http://localhost.com",
 						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp1","tagid":"tag1"},{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "single_requestmode_add_request_params_in_request",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder": {"host": "localhost.com"}}`)},
+						{ID: "imp2", TagID: "tag2", Ext: json.RawMessage(`{"bidder": {"zone": "testZone"}}`)},
+					},
+				},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://{{.host}}"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+				}(),
+				bidderCfg: func() *bidderparams.BidderConfig {
+					cfg := bidderparams.NewBidderConfig()
+					cfg.SetRequestParams("testbidder", map[string]bidderparams.BidderParamMapper{
+						"host": {Location: "server.host"},
+						"zone": {Location: "ext.zone"},
+					})
+					return cfg
+				}(),
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://localhost.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{}},"id":"imp1","tagid":"tag1"}],"server":{"host":"localhost.com"}}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+					},
+					{
+						Method: http.MethodPost,
+						Uri:    "http://",
+						Body:   []byte(`{"ext":{"zone":"testZone"},"id":"reqid","imp":[{"ext":{"bidder":{}},"id":"imp2","tagid":"tag2"}]}`),
 						Headers: http.Header{
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},

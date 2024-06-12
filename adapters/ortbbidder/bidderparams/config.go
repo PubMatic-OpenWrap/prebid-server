@@ -16,8 +16,15 @@ type BidderConfig struct {
 	bidderConfigMap map[string]*config
 }
 
-// setRequestParams sets the bidder specific requestParams
-func (bcfg *BidderConfig) setRequestParams(bidderName string, requestParams map[string]BidderParamMapper) {
+// NewBidderConfig initializes and returns the object of BidderConfig
+func NewBidderConfig() *BidderConfig {
+	return &BidderConfig{
+		bidderConfigMap: make(map[string]*config),
+	}
+}
+
+// SetRequestParams sets the bidder specific requestParams
+func (bcfg *BidderConfig) SetRequestParams(bidderName string, requestParams map[string]BidderParamMapper) {
 	if _, found := bcfg.bidderConfigMap[bidderName]; !found {
 		bcfg.bidderConfigMap[bidderName] = &config{}
 	}

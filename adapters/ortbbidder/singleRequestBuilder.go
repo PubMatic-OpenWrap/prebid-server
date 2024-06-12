@@ -12,7 +12,7 @@ import (
 type singleRequestBuilder struct {
 	requestBuilderImpl
 	newRequest map[string]any
-	imps       []any
+	imps       []map[string]any
 }
 
 // parseRequest parse the incoming request and populates intermediate fields required for building requestData object
@@ -27,10 +27,16 @@ func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err 
 		return err
 	}
 
-	var ok bool
-	rb.imps, ok = rb.newRequest[impKey].([]any)
-	if !ok || len(rb.imps) == 0 {
+	imps, ok := rb.newRequest[impKey].([]any)
+	if !ok {
 		return errImpMissing
+	}
+	for index, imp := range imps {
+		imp, ok := imp.(map[string]any)
+		if !ok {
+			return fmt.Errorf("invalid imp found at index:%d", index)
+		}
+		rb.imps = append(rb.imps, imp)
 	}
 	return
 }
@@ -49,12 +55,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 	)
 
 	//step 1: get endpoint
-	imp, ok := rb.imps[0].(map[string]any)
-	if !ok {
-		errs = append(errs, newBadInputError("invalid imp found at index:0"))
-		return nil, errs
-	}
-	if endpoint, err = rb.getEndpoint(getImpExtBidderParams(imp)); err != nil {
+	if endpoint, err = rb.getEndpoint(getImpExtBidderParams(rb.imps[0])); err != nil {
 		errs = append(errs, newBadInputError(err.Error()))
 		return nil, errs
 	}
@@ -63,12 +64,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 	// iterate through imps in reverse order to ensure setRequestParams prioritizes
 	// the parameters from imp[0].ext.bidder over those from imp[1..N].ext.bidder.
 	for index := len(rb.imps) - 1; index >= 0; index-- {
-		imp, ok := rb.imps[index].(map[string]any)
-		if !ok {
-			errs = append(errs, newBadInputError(fmt.Sprintf("invalid imp found at index:%d", index)))
-			continue // ignore particular impression
-		}
-		setRequestParams(rb.newRequest, getImpExtBidderParams(imp), rb.requestParams, []int{index})
+		setRequestParams(rb.newRequest, getImpExtBidderParams(rb.imps[index]), rb.requestParams, []int{index})
 	}
 
 	//step 3: append new request data

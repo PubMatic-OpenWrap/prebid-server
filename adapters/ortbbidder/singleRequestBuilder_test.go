@@ -21,7 +21,7 @@ func TestSingleRequestBuilderParseRequest(t *testing.T) {
 		err        error
 		rawRequest json.RawMessage
 		newRequest map[string]any
-		imps       []any
+		imps       []map[string]any
 	}
 	tests := []struct {
 		name string
@@ -66,8 +66,8 @@ func TestSingleRequestBuilderParseRequest(t *testing.T) {
 						"id": "imp_1",
 					}},
 				},
-				imps: []any{
-					map[string]any{
+				imps: []map[string]any{
+					{
 						"id": "imp_1",
 					},
 				},
@@ -115,23 +115,6 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid_imp_object",
-			fields: fields{
-				requestBuilder: singleRequestBuilder{
-					requestBuilderImpl: requestBuilderImpl{
-						rawRequest: nil,
-					},
-					imps: []any{
-						"invalid",
-					},
-				},
-			},
-			want: want{
-				requestData: nil,
-				errs:        []error{newBadInputError("invalid imp found at index:0")},
-			},
-		},
-		{
 			name: "replace_macros_to_form_endpoint_url",
 			fields: fields{
 				requestBuilder: singleRequestBuilder{
@@ -141,8 +124,8 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 						endpointTemplate:    template.Must(template.New("endpointTemplate").Parse(`http://{{.host}}/publisher/{{.ext.pubid}}`)),
 					},
 					newRequest: make(map[string]any),
-					imps: []any{
-						map[string]any{
+					imps: []map[string]any{
+						{
 							"ext": map[string]any{
 								"bidder": map[string]any{
 									"ext":  map[string]any{"pubid": 5890},
@@ -179,8 +162,8 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 						endpointTemplate:    template.Must(template.New("endpointTemplate").Option("missingkey=default").Parse(`http://{{.host}}/publisher/{{.pubid}}`)),
 					},
 					newRequest: make(map[string]any),
-					imps: []any{
-						map[string]any{
+					imps: []map[string]any{
+						{
 							"ext": map[string]any{},
 							"id":  "imp_1",
 						},
@@ -220,8 +203,8 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 						}(),
 					},
 					newRequest: make(map[string]any),
-					imps: []any{
-						map[string]any{
+					imps: []map[string]any{
+						{
 							"ext": map[string]any{},
 							"id":  "imp_1",
 						},
@@ -252,8 +235,8 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 						}(),
 					},
 					newRequest: make(map[string]any),
-					imps: []any{
-						map[string]any{
+					imps: []map[string]any{
+						{
 							"ext": map[string]any{
 								"bidder": map[string]any{
 									"ext": map[string]any{
@@ -264,7 +247,7 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 							},
 							"id": "imp_1",
 						},
-						map[string]any{
+						{
 							"ext": map[string]any{
 								"bidder": map[string]any{
 									"ext": map[string]any{
@@ -293,45 +276,12 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 				errs: nil,
 			},
 		},
-		{
-			name: "multi_imps_request_with_one_invalid_imp_object",
-			fields: fields{
-				requestBuilder: singleRequestBuilder{
-					requestBuilderImpl: requestBuilderImpl{
-						rawRequest: nil,
-					},
-					newRequest: make(map[string]any),
-					imps: []any{
-						map[string]any{
-							"id": "imp_1",
-						},
-						"invalid",
-					},
-				},
-			},
-			want: want{
-				requestData: []*adapters.RequestData{
-					{
-						Method: http.MethodPost,
-						Uri:    "",
-						Body:   json.RawMessage(`{"imp":[{"id":"imp_1"},"invalid"]}`),
-						Headers: http.Header{
-							"Content-Type": {"application/json;charset=utf-8"},
-							"Accept":       {"application/json"},
-						},
-					},
-				},
-				errs: []error{newBadInputError("invalid imp found at index:1")},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if tt.fields.requestBuilder.newRequest != nil {
 				tt.fields.requestBuilder.newRequest[impKey] = tt.fields.requestBuilder.imps
 			}
-
 			requestData, errs := tt.fields.requestBuilder.makeRequest()
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errs, errs, "mismatched errs")

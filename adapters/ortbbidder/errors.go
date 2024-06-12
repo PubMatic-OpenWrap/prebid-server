@@ -2,6 +2,7 @@ package ortbbidder
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/prebid/prebid-server/v2/errortypes"
 )
@@ -13,8 +14,8 @@ var (
 )
 
 // newBadInputError returns the error of type bad-input
-func newBadInputError(message string) error {
-	return &errortypes.BadInput{
-		Message: message,
+func newBadInputError(message string, args ...any) error {
+	return &errortypes.BadServerResponse{
+		Message: fmt.Sprintf(message, args...),
 	}
 }
