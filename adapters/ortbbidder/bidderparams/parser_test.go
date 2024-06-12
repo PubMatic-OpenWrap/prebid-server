@@ -3,9 +3,9 @@ package bidderparams
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -349,9 +349,7 @@ func TestLoadBidderConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			requestParamsDirPath, responseParamsDirPath, err := tt.setup()
 			assert.NoError(t, err, "setup returned unexpected error")
-			got, err := LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, func(bidderName string) bool {
-				return strings.HasPrefix(bidderName, "owortb_")
-			})
+			got, err := LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, util.IsORTBBidder)
 			assert.Equal(t, tt.want.biddersConfigMap, got, "found incorrect mapper")
 			assert.Equal(t, len(tt.want.err) == 0, err == nil, "mismatched error")
 			if err != nil {

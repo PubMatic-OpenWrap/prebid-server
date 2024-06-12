@@ -96,7 +96,9 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	return response, nil
 }
 
-// MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
+// makeBids converts the bidderResponseBytes to a BidderResponse
+// It retrieves response parameters, creates a response builder, parses the response, and builds the response.
+// Finally, it converts the response builder's internal representation to an AdapterResponse and returns it.
 func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
 	responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
 	rb := newResponseBuilder(responseParmas)

@@ -28,7 +28,7 @@ func TestCurrencyResolver(t *testing.T) {
 				name:          "Currency not found in ORTB response",
 				ortbResponse:  map[string]any{},
 				expectedValue: nil,
-				expectedFound: true, // The function always returns true
+				expectedFound: true,
 			},
 		}
 
@@ -54,7 +54,7 @@ func TestCurrencyResolver(t *testing.T) {
 					"id": "123",
 				},
 				expectedValue: nil,
-				expectedFound: false, // The function always returns false
+				expectedFound: false,
 			},
 		}
 

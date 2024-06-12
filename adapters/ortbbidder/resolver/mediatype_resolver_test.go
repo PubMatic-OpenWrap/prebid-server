@@ -55,7 +55,7 @@ func TestMtypeResolver(t *testing.T) {
 					"id": "123",
 				},
 				expectedValue: nil,
-				expectedFound: false, // The function always returns false
+				expectedFound: false,
 			},
 		}
 

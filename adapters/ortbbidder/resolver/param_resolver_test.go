@@ -93,7 +93,7 @@ func TestResolve(t *testing.T) {
 			},
 		},
 		{
-			name: "Get mytype from the ortb bid object",
+			name: "Get param from the ortb bid object",
 			sourceNode: map[string]any{
 				"id":    "123",
 				"mtype": float64(2),
@@ -128,7 +128,7 @@ func TestResolve(t *testing.T) {
 			},
 		},
 		{
-			name: "Get mytype from the bidder param location",
+			name: "Get param from the bidder param location",
 			sourceNode: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
