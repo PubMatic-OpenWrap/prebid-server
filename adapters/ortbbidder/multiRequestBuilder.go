@@ -6,7 +6,7 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
-// struct to build the multi requests each containing sinlge impression when requestMode="single"
+// struct to build the multi requests each containing sinlge impression when requestType="single"
 type multiRequestBuilder struct {
 	requestBuilderImpl
 	imps []map[string]any

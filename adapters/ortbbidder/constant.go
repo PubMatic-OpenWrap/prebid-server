@@ -11,10 +11,11 @@ const (
 )
 
 const (
-	urlMacroPrefix     = "{{."
-	urlMacroNoValue    = "<no value>"
-	requestModeSingle  = "single"
-	locationIndexMacro = "#"
-	endpointTemplate   = "endpointTemplate"
-	templateOption     = "missingkey=zero"
+	urlMacroPrefix          = "{{."
+	urlMacroNoValue         = "<no value>"
+	multiRequestBuilderType = "multi"
+	locationIndexMacro      = "#"
+	endpointTemplate        = "endpointTemplate"
+	templateOption          = "missingkey=zero"
+	oRTBPrefix              = "owortb_"
 )

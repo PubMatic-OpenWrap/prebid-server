@@ -28,7 +28,7 @@ type adapterInfo struct {
 	endpointTemplate *template.Template
 }
 type extraAdapterInfo struct {
-	RequestMode string `json:"requestMode"`
+	RequestType string `json:"requestType"`
 }
 
 // global instance to hold bidderParamsConfig
@@ -36,7 +36,7 @@ var g_bidderParamsConfig *bidderparams.BidderConfig
 
 // InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
 func InitBidderParamsConfig(dirPath string) (err error) {
-	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, IsORTBBidder)
 	return err
 }
 
@@ -66,7 +66,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	}
 
 	requestBuilder := newRequestBuilder(
-		o.adapterInfo.extraInfo.RequestMode,
+		o.adapterInfo.extraInfo.RequestType,
 		o.Endpoint,
 		o.endpointTemplate,
 		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
@@ -144,7 +144,7 @@ func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType 
 	return bidType
 }
 
-// isORTBBidder returns true if the bidder is an oRTB bidder
-func isORTBBidder(bidderName string) bool {
-	return strings.HasPrefix(bidderName, "owortb_")
+// IsORTBBidder returns true if the bidder is an oRTB bidder
+func IsORTBBidder(bidderName string) bool {
+	return strings.HasPrefix(bidderName, oRTBPrefix)
 }

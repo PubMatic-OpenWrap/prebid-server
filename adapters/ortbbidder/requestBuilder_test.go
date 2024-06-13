@@ -15,7 +15,7 @@ import (
 
 func TestNewRequestBuilder(t *testing.T) {
 	type args struct {
-		requestMode      string
+		requestType      string
 		endpoint         string
 		endpointTemplate *template.Template
 		requestParams    map[string]bidderparams.BidderParamMapper
@@ -26,22 +26,33 @@ func TestNewRequestBuilder(t *testing.T) {
 		want requestBuilder
 	}{
 		{
-			name: "singleRequestMode",
+			name: "singlerequestType",
 			args: args{
-				requestMode: requestModeSingle,
+				requestType: "single",
 				endpoint:    "http://localhost/publisher",
 			},
-			want: &multiRequestBuilder{
+			want: &singleRequestBuilder{
 				requestBuilderImpl: requestBuilderImpl{
 					endpoint: "http://localhost/publisher",
 				},
 			},
 		},
-
 		{
-			name: "multiRequestMode",
+			name: "defaultrequestType",
 			args: args{
-				requestMode: requestModeSingle,
+				requestType: "",
+				endpoint:    "http://localhost/publisher",
+			},
+			want: &singleRequestBuilder{
+				requestBuilderImpl: requestBuilderImpl{
+					endpoint: "http://localhost/publisher",
+				},
+			},
+		},
+		{
+			name: "multirequestType",
+			args: args{
+				requestType: "multi",
 				endpoint:    "http://{{.host}}/publisher",
 			},
 			want: &multiRequestBuilder{
@@ -53,8 +64,8 @@ func TestNewRequestBuilder(t *testing.T) {
 		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := newRequestBuilder(tt.args.requestMode, tt.args.endpoint, tt.args.endpointTemplate, tt.args.requestParams)
-			assert.Equalf(t, tt.want, got, "mismacthed requestbuilder")
+			got := newRequestBuilder(tt.args.requestType, tt.args.endpoint, tt.args.endpointTemplate, tt.args.requestParams)
+			assert.Equalf(t, tt.want, got, "mismathed requestbuilder")
 		})
 	}
 }
