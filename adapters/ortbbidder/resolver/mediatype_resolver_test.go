@@ -1,8 +1,10 @@
 package resolver
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,9 +48,79 @@ func TestMtypeResolver(t *testing.T) {
 		testCases := []struct {
 			name          string
 			bid           map[string]any
+			request       *openrtb2.BidRequest
 			expectedValue any
 			expectedFound bool
 		}{
+			{
+				name: "Auto detect from imp - Video",
+				bid: map[string]any{
+					"adm":   "",
+					"impid": "123",
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:    "123",
+							Video: &openrtb2.Video{},
+						},
+					},
+				},
+				expectedValue: openrtb_ext.BidTypeVideo,
+				expectedFound: true,
+			},
+			{
+				name: "Auto detect from imp - banner",
+				bid: map[string]any{
+					"adm":   "",
+					"impid": "123",
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:     "123",
+							Banner: &openrtb2.Banner{},
+						},
+					},
+				},
+				expectedValue: openrtb_ext.BidTypeBanner,
+				expectedFound: true,
+			},
+			{
+				name: "Auto detect from imp - native",
+				bid: map[string]any{
+					"adm":   "",
+					"impid": "123",
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:     "123",
+							Native: &openrtb2.Native{},
+						},
+					},
+				},
+				expectedValue: openrtb_ext.BidTypeNative,
+				expectedFound: true,
+			},
+			{
+				name: "Auto detect from imp - multi format",
+				bid: map[string]any{
+					"adm":   "",
+					"impid": "123",
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:     "123",
+							Banner: &openrtb2.Banner{},
+							Video:  &openrtb2.Video{},
+						},
+					},
+				},
+				expectedValue: openrtb_ext.BidType(""),
+				expectedFound: true,
+			},
 			{
 				name: "Auto detect with Video Adm",
 				bid: map[string]any{
@@ -90,7 +162,7 @@ func TestMtypeResolver(t *testing.T) {
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				value, found := resolver.autoDetect(tc.bid)
+				value, found := resolver.autoDetect(tc.request, tc.bid)
 				assert.Equal(t, tc.expectedValue, value)
 				assert.Equal(t, tc.expectedFound, found)
 			})
@@ -153,6 +225,39 @@ func TestGetMediaTypeFromAdm(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getMediaTypeFromAdm(tt.adm)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func Test_mtypeResolver_autoDetect(t *testing.T) {
+	type fields struct {
+		valueResolver valueResolver
+	}
+	type args struct {
+		request *openrtb2.BidRequest
+		bid     map[string]any
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   any
+		want1  bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &mtypeResolver{
+				valueResolver: tt.fields.valueResolver,
+			}
+			got, got1 := r.autoDetect(tt.args.request, tt.args.bid)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("mtypeResolver.autoDetect() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("mtypeResolver.autoDetect() got1 = %v, want %v", got1, tt.want1)
+			}
 		})
 	}
 }

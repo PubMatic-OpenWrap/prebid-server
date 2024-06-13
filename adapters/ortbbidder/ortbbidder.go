@@ -88,7 +88,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	response, err := o.makeBids(responseData.Body)
+	response, err := o.makeBids(request, responseData.Body)
 	if err != nil {
 		return nil, []error{err}
 	}
@@ -99,9 +99,9 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 // makeBids converts the bidderResponseBytes to a BidderResponse
 // It retrieves response parameters, creates a response builder, parses the response, and builds the response.
 // Finally, it converts the response builder's internal representation to an AdapterResponse and returns it.
-func (o *adapter) makeBids(bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
+func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
 	responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
-	rb := newResponseBuilder(responseParmas)
+	rb := newResponseBuilder(responseParmas, request)
 
 	err := rb.parseResponse(bidderResponseBytes)
 	if err != nil {

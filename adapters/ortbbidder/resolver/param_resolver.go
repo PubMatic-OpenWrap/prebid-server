@@ -1,5 +1,7 @@
 package resolver
 
+import "github.com/prebid/openrtb/v20/openrtb2"
+
 var (
 	// TypeBidFields is a list of typebid fields that are populated using resolver framework
 	TypeBidFields = [...]string{"mtype", "duration", "meta"}
@@ -15,9 +17,9 @@ var (
 )
 
 type resolver interface {
-	getFromORTBObject(node map[string]any) (any, bool)
+	getFromORTBObject(sourceNode map[string]any) (any, bool)
 	getUsingBidderParamLocation(responseNode map[string]any, path string) (any, bool)
-	autoDetect(node map[string]any) (any, bool)
+	autoDetect(request *openrtb2.BidRequest, sourceNode map[string]any) (any, bool)
 	setValue(targetNode map[string]any, value any)
 }
 
@@ -25,12 +27,14 @@ type resolverMap map[string]resolver
 
 type paramResolver struct {
 	bidderResponse map[string]any
+	request        *openrtb2.BidRequest
 }
 
 // New returns a new instance of paramResolver.
-func New(bidderResponse map[string]any) *paramResolver {
+func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramResolver {
 	return &paramResolver{
 		bidderResponse: bidderResponse,
+		request:        request,
 	}
 }
 
@@ -52,7 +56,7 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location
 		value, found = resolver.getUsingBidderParamLocation(pr.bidderResponse, location)
 		if !found {
 			// auto detect value
-			value, found = resolver.autoDetect(sourceNode)
+			value, found = resolver.autoDetect(pr.request, sourceNode)
 			if !found {
 				return
 			}

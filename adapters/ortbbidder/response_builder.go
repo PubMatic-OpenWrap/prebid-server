@@ -3,6 +3,7 @@ package ortbbidder
 import (
 	"encoding/json"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
@@ -23,11 +24,13 @@ type responseBuilder struct {
 	bidderResponse map[string]any
 	adapterRespone map[string]any
 	responseParams map[string]bidderparams.BidderParamMapper
+	request        *openrtb2.BidRequest
 }
 
-func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper) *responseBuilder {
+func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper, request *openrtb2.BidRequest) *responseBuilder {
 	return &responseBuilder{
 		responseParams: responseParams,
+		request:        request,
 	}
 }
 
@@ -44,7 +47,7 @@ func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) (e
 // If any invalid seatbid or bid is found in the response, an error is returned.
 func (rb *responseBuilder) buildResponse() error {
 	// Create a new ParamResolver with the bidder response.
-	paramResolver := resolver.New(rb.bidderResponse)
+	paramResolver := resolver.New(rb.request, rb.bidderResponse)
 	// Initialize the adapter response with the currency from the bidder response.
 	adapterResponse := map[string]any{
 		currencyKey: rb.bidderResponse[ortbCurrenyKey],

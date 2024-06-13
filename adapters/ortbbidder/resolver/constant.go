@@ -6,4 +6,5 @@ const (
 	currencyKey = "Currency"
 	curKey      = "cur"
 	admKey      = "adm"
+	impIdKey    = "impid"
 )

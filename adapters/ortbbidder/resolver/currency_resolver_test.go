@@ -3,6 +3,7 @@ package resolver
 import (
 	"testing"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,6 +46,7 @@ func TestCurrencyResolver(t *testing.T) {
 		testCases := []struct {
 			name          string
 			bid           map[string]any
+			request       *openrtb2.BidRequest
 			expectedValue any
 			expectedFound bool
 		}{
@@ -60,7 +62,7 @@ func TestCurrencyResolver(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				value, found := resolver.autoDetect(tc.bid)
+				value, found := resolver.autoDetect(tc.request, tc.bid)
 				assert.Equal(t, tc.expectedValue, value)
 				assert.Equal(t, tc.expectedFound, found)
 			})

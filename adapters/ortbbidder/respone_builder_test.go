@@ -15,6 +15,7 @@ import (
 func TestNewResponseBuilder(t *testing.T) {
 	testCases := []struct {
 		name           string
+		request        *openrtb2.BidRequest
 		responseParams map[string]bidderparams.BidderParamMapper
 		expected       *responseBuilder
 	}{
@@ -23,17 +24,19 @@ func TestNewResponseBuilder(t *testing.T) {
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"test": {},
 			},
+			request: &openrtb2.BidRequest{},
 			expected: &responseBuilder{
 				responseParams: map[string]bidderparams.BidderParamMapper{
 					"test": {},
 				},
+				request: &openrtb2.BidRequest{},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := newResponseBuilder(tc.responseParams)
+			result := newResponseBuilder(tc.responseParams, tc.request)
 			assert.Equal(t, tc.expected, result)
 		})
 	}

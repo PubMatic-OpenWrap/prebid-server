@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	videoRegex, _ = regexp.Compile("<VAST\\s+")
+	videoRegex, _ = regexp.Compile(`<VAST\s+`)
 }
 
 // mtypeResolver resolves the media type of the type bid
@@ -29,12 +29,17 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	}
 	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
 }
-
-func (r *mtypeResolver) autoDetect(bid map[string]any) (any, bool) {
+func (r *mtypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
 	adm, ok := bid[admKey].(string)
 	if !ok || adm == "" {
-		return nil, false
+		impId, ok := bid[impIdKey].(string)
+		if !ok {
+			return nil, false
+		}
+		// Adm is not present, get media type from imp
+		return getMediaTypeFromImp(request.Imp, impId), true
 	}
+	// Adm is present, get media type from adm
 	return getMediaTypeFromAdm(adm), true
 }
 
@@ -55,4 +60,41 @@ func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {
 	}
 
 	return openrtb_ext.BidTypeBanner
+}
+
+func getMediaTypeFromImp(imps []openrtb2.Imp, impID string) openrtb_ext.BidType {
+	for _, imp := range imps {
+		if imp.ID != impID {
+			continue
+		}
+		return getMediaTypes(imp)
+	}
+
+	return openrtb_ext.BidType("")
+}
+
+func getMediaTypes(imp openrtb2.Imp) openrtb_ext.BidType {
+	var (
+		multiFormatCount int
+		mediaType        openrtb_ext.BidType
+	)
+
+	if imp.Banner != nil {
+		multiFormatCount++
+		mediaType = openrtb_ext.BidTypeBanner
+	}
+	if imp.Video != nil {
+		multiFormatCount++
+		mediaType = openrtb_ext.BidTypeVideo
+	}
+	if imp.Native != nil {
+		multiFormatCount++
+		mediaType = openrtb_ext.BidTypeNative
+	}
+	// imp has multiple format, set mediaType to empty
+	if multiFormatCount > 1 {
+		return openrtb_ext.BidType("")
+	}
+
+	return mediaType
 }

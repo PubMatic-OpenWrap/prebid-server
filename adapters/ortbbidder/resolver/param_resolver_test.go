@@ -3,6 +3,7 @@ package resolver
 import (
 	"testing"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +17,7 @@ func TestResolve(t *testing.T) {
 		location       string
 		param          string
 		expectedNode   map[string]any
+		request        *openrtb2.BidRequest
 	}{
 		{
 			name:           "SourceNode is nil, TargetNode is nil, Response is nil",
@@ -209,7 +211,7 @@ func TestResolve(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			pr := New(tc.bidderResponse)
+			pr := New(tc.request, tc.bidderResponse)
 			pr.Resolve(tc.sourceNode, tc.targetNode, tc.location, tc.param)
 			assert.Equal(t, tc.expectedNode, tc.targetNode)
 		})
