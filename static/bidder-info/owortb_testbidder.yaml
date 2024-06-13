@@ -2,7 +2,7 @@
 maintainer:
   email: "header-bidding@pubmatic.com"
 endpoint: "http://{{.host}}.endpoint.com/zone={{.zone}}"
-extra_info: "{\"requestMode\":\"single\"}" # prepares single request containing all imps
+extra_info: "{\"requestType\":\"single\"}" # prepares single request containing all imps
 capabilities:
   app:
     mediaTypes:

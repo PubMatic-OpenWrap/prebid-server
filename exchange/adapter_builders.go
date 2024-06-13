@@ -342,8 +342,8 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderOpenx:               openx.Builder,
 		openrtb_ext.BidderOperaads:            operaads.Builder,
 		openrtb_ext.BidderOrbidder:            orbidder.Builder,
-		openrtb_ext.BidderORTBTestBidder:      ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestMode=single
-		openrtb_ext.BidderORTBTestBidderMulti: ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestMode=multi
+		openrtb_ext.BidderORTBTestBidder:      ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestType=single
+		openrtb_ext.BidderORTBTestBidderMulti: ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestType=multi
 		openrtb_ext.BidderOutbrain:            outbrain.Builder,
 		openrtb_ext.BidderOwnAdx:              ownadx.Builder,
 		openrtb_ext.BidderPangle:              pangle.Builder,

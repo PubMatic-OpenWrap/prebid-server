@@ -28,15 +28,15 @@ type requestBuilderImpl struct {
 	rawRequest          json.RawMessage
 }
 
-// newRequestBuilder returns the request-builder based on requestMode argument
-func newRequestBuilder(requestMode, endpoint string, endpointTemplate *template.Template, requestParams map[string]bidderparams.BidderParamMapper) requestBuilder {
+// newRequestBuilder returns the request-builder based on requestType argument
+func newRequestBuilder(requestType, endpoint string, endpointTemplate *template.Template, requestParams map[string]bidderparams.BidderParamMapper) requestBuilder {
 	requestBuilder := requestBuilderImpl{
 		endpoint:            endpoint,
 		endpointTemplate:    endpointTemplate,
 		requestParams:       requestParams,
 		hasMacrosInEndpoint: strings.Contains(endpoint, urlMacroPrefix),
 	}
-	if requestMode == requestModeMulti {
+	if requestType == multiRequestBuilderType {
 		return &multiRequestBuilder{
 			requestBuilderImpl: requestBuilder,
 		}
