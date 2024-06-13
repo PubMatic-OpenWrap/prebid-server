@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	videoRegex, _ = regexp.Compile(`<VAST\s+`)
+	videoRegex = regexp.MustCompile(`<VAST\s+`)
 )
 
 // mtypeResolver resolves the media type of the type bid
