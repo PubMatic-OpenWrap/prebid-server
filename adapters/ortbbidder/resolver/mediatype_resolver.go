@@ -10,12 +10,8 @@ import (
 )
 
 var (
-	videoRegex *regexp.Regexp
-)
-
-func init() {
 	videoRegex, _ = regexp.Compile(`<VAST\s+`)
-}
+)
 
 // mtypeResolver resolves the media type of the type bid
 type mtypeResolver struct {
