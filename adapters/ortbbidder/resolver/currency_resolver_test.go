@@ -71,18 +71,18 @@ func TestCurrencyResolver(t *testing.T) {
 
 	t.Run("setValue", func(t *testing.T) {
 		testCases := []struct {
-			name        string
-			adapterBid  map[string]any
-			value       any
-			expectedBid map[string]any
+			name                    string
+			adapterResponse         map[string]any
+			value                   any
+			expectedAdapterResponse map[string]any
 		}{
 			{
 				name: "Set value in adapter bid",
-				adapterBid: map[string]any{
+				adapterResponse: map[string]any{
 					"id": "123",
 				},
 				value: "USD",
-				expectedBid: map[string]any{
+				expectedAdapterResponse: map[string]any{
 					"id":       "123",
 					"Currency": "USD",
 				},
@@ -91,8 +91,8 @@ func TestCurrencyResolver(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				resolver.setValue(tc.adapterBid, tc.value)
-				assert.Equal(t, tc.expectedBid, tc.adapterBid)
+				resolver.setValue(tc.adapterResponse, tc.value)
+				assert.Equal(t, tc.expectedAdapterResponse, tc.adapterResponse)
 			})
 		}
 	})
