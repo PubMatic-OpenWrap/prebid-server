@@ -71,6 +71,7 @@ const (
 	ERRSUrl           = "sURL" // key represents either domain or bundle from request
 	ERRPlatform       = "pfi"
 	ERRAdvertiser     = "adv"
+	ERRTestGroup      = "tgid"
 	ERRSSAI           = "ssai"
 )
 
