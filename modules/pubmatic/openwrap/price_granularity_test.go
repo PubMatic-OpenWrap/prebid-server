@@ -130,7 +130,8 @@ func TestComputePriceGranularity(t *testing.T) {
 			},
 			want:    priceGranularityAuto, // auto PG Object
 			wantErr: false,
-		}, {
+		},
+		{
 			name: "custompg_OpenRTB_V25_API",
 			args: args{
 				rctx: models.RequestCtx{
@@ -152,7 +153,8 @@ func TestComputePriceGranularity(t *testing.T) {
 				},
 			},
 			wantErr: false,
-		}, {
+		},
+		{
 			name: "testreq_ctv_expect_testpg",
 			args: args{
 				rctx: models.RequestCtx{
@@ -161,7 +163,8 @@ func TestComputePriceGranularity(t *testing.T) {
 			},
 			want:    priceGranularityTestPG,
 			wantErr: false,
-		}, {
+		},
+		{
 			name: "custompg_ctvapi",
 			args: args{
 				rctx: models.RequestCtx{
@@ -169,6 +172,77 @@ func TestComputePriceGranularity(t *testing.T) {
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
 							models.PriceGranularityKey:          "custom",
+							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
+						},
+					},
+				},
+			},
+			want: openrtb_ext.PriceGranularity{
+				Test:      false,
+				Precision: ptrutil.ToPtr(2),
+				Ranges: []openrtb_ext.GranularityRange{
+					{
+						Min: 0, Max: 2, Increment: 1,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "custom1 pg",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey:          "custom1",
+							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
+						},
+					},
+				},
+			},
+			want: openrtb_ext.PriceGranularity{
+				Test:      false,
+				Precision: ptrutil.ToPtr(2),
+				Ranges: []openrtb_ext.GranularityRange{
+					{
+						Min: 0, Max: 2, Increment: 1,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "custom2 pg",
+			args: args{
+				rctx: models.RequestCtx{
+					IsCTVRequest: true,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey:          "custom2",
+							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
+						},
+					},
+				},
+			},
+			want: openrtb_ext.PriceGranularity{
+				Test:      false,
+				Precision: ptrutil.ToPtr(2),
+				Ranges: []openrtb_ext.GranularityRange{
+					{
+						Min: 0, Max: 2, Increment: 1,
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "custom3 pg",
+			args: args{
+				rctx: models.RequestCtx{
+					IsCTVRequest: true,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey:          "custom3",
 							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
 						},
 					},

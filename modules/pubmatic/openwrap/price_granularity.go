@@ -8,6 +8,12 @@ import (
 
 func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranularity, error) {
 	var priceGranularity string
+	customPGs := map[string]bool{
+		"custom":  true,
+		"custom1": true,
+		"custom2": true,
+		"custom3": true,
+	}
 
 	//Get the value of priceGranularity from config otherwise set "auto"
 	if priceGranularity = models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityKey); priceGranularity == "" {
@@ -20,7 +26,7 @@ func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranulari
 	}
 
 	//Get custom price granularity object
-	if priceGranularity == models.PriceGranularityCustom {
+	if customPGs[priceGranularity] {
 		customPriceGranularityValue := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityCustomConfig)
 		pgObject, err := newCustomPriceGranuality(customPriceGranularityValue)
 		return pgObject, err
