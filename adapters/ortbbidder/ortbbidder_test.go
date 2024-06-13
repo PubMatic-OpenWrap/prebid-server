@@ -17,10 +17,7 @@ import (
 )
 
 func TestBuilder(t *testing.T) {
-	InitBidderParamsConfig("../../static/bidder-params", "../../static/bidder-params")
-	t.Cleanup(func() {
-		g_bidderParamsConfig = nil
-	})
+	InitBidderParamsConfig("../../static/bidder-params", "../../static/bidder-response-params")
 	type args struct {
 		bidderName openrtb_ext.BidderName
 		config     config.Adapter
@@ -65,11 +62,11 @@ func TestBuilder(t *testing.T) {
 			},
 		},
 		{
-			name: "bidder_with_requestMode",
+			name: "bidder_with_requestType",
 			args: args{
 				bidderName: "ortbbidder",
 				config: config.Adapter{
-					ExtraAdapterInfo: `{"requestMode":"single"}`,
+					ExtraAdapterInfo: `{"requestType":"single"}`,
 				},
 				server: config.Server{},
 			},
@@ -77,10 +74,10 @@ func TestBuilder(t *testing.T) {
 				bidder: &adapter{
 					adapterInfo: adapterInfo{
 						extraInfo: extraAdapterInfo{
-							RequestMode: "single",
+							RequestType: "single",
 						},
 						Adapter: config.Adapter{
-							ExtraAdapterInfo: `{"requestMode":"single"}`,
+							ExtraAdapterInfo: `{"requestType":"single"}`,
 						},
 						bidderName: "ortbbidder",
 						endpointTemplate: func() *template.Template {
@@ -94,7 +91,7 @@ func TestBuilder(t *testing.T) {
 			},
 		},
 		{
-			name: "bidder_without_requestMode",
+			name: "bidder_without_requestType",
 			args: args{
 				bidderName: "ortbbidder",
 				config: config.Adapter{
@@ -161,7 +158,7 @@ func TestMakeRequests(t *testing.T) {
 					ID:  "reqid",
 					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
 				},
-				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder", nil},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestType: "single"}, "testbidder", nil},
 				bidderCfg:   nil,
 			},
 			want: want{
@@ -178,7 +175,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://test_bidder.com"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "single"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -198,7 +195,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_to_form_requestdata",
+			name: "multi_requestType_to_form_requestdata",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -210,7 +207,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://test_bidder.com"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -238,7 +235,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_validate_endpoint_macro",
+			name: "multi_requestType_validate_endpoint_macro",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -250,7 +247,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://{{.host}}"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -278,7 +275,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "multi_requestmode_to_form_requestdata",
+			name: "single_requestType_to_form_requestdata",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -290,7 +287,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://test_bidder.com"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: ""}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "single"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -309,7 +306,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "multi_requestmode_validate_endpoint_macros",
+			name: "single_requestType_validate_endpoint_macros",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -321,7 +318,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://{{.host}}"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: ""}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: ""}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -340,7 +337,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_add_request_params_in_request",
+			name: "multi_requestType_add_request_params_in_request",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -352,7 +349,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://{{.host}}"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: func() *bidderparams.BidderConfig {
 					cfg := bidderparams.NewBidderConfig()

@@ -28,7 +28,7 @@ type adapterInfo struct {
 	endpointTemplate *template.Template
 }
 type extraAdapterInfo struct {
-	RequestMode string `json:"requestMode"`
+	RequestType string `json:"requestType"`
 }
 
 // global instance to hold bidderParamsConfig
@@ -66,7 +66,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 	}
 
 	requestBuilder := newRequestBuilder(
-		o.adapterInfo.extraInfo.RequestMode,
+		o.adapterInfo.extraInfo.RequestType,
 		o.Endpoint,
 		o.endpointTemplate,
 		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))

@@ -205,6 +205,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 
+	rCtx.PriceGranularity = &priceGranularity
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
 	requestExt.Prebid.Debug = rCtx.Debug
