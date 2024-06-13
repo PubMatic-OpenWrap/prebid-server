@@ -149,6 +149,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderMotorik,
 	BidderNextMillennium,
 	BidderNoBid,
+	BidderORTBTestBidder, // maintained by OW
 	BidderOms,
 	BidderOneTag,
 	BidderOpenWeb,
@@ -190,6 +191,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderSovrn,
 	BidderSovrnXsp,
 	BidderSspBC,
+	BidderSpotX,
 	BidderStroeerCore,
 	BidderTaboola,
 	BidderTappx,
@@ -205,6 +207,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderUndertone,
 	BidderUnicorn,
 	BidderUnruly,
+	BidderVASTBidder,
 	BidderVideoByte,
 	BidderVideoHeroes,
 	BidderVidoomy,
@@ -478,6 +481,7 @@ const (
 	BidderSovrn             BidderName = "sovrn"
 	BidderSovrnXsp          BidderName = "sovrnXsp"
 	BidderSspBC             BidderName = "sspBC"
+	BidderStreamkey         BidderName = "streamkey"
 	BidderStroeerCore       BidderName = "stroeerCore"
 	BidderTaboola           BidderName = "taboola"
 	BidderTappx             BidderName = "tappx"
@@ -493,6 +497,7 @@ const (
 	BidderUndertone         BidderName = "undertone"
 	BidderUnicorn           BidderName = "unicorn"
 	BidderUnruly            BidderName = "unruly"
+	BidderValueImpression   BidderName = "valueimpression"
 	BidderVideoByte         BidderName = "videobyte"
 	BidderVideoHeroes       BidderName = "videoheroes"
 	BidderVidoomy           BidderName = "vidoomy"

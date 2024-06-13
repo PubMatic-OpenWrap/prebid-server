@@ -5,7 +5,10 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 )
+
+type NonBidStatusCode openrtb3.LossReason
 
 // ExtBidResponse defines the contract for bidresponse.ext
 type ExtBidResponse struct {
@@ -23,6 +26,11 @@ type ExtBidResponse struct {
 	Usersync map[BidderName]*ExtResponseSyncData `json:"usersync,omitempty"`
 	// Prebid defines the contract for bidresponse.ext.prebid
 	Prebid *ExtResponsePrebid `json:"prebid,omitempty"`
+
+	OwMatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
+	OwSendAllBids       int             `json:"sendallbids,omitempty"`
+	OwLogInfo           *OwLogInfo      `json:"loginfo,omitempty"`
+	OwLogger            string          `json:"owlogger,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug
@@ -48,7 +56,8 @@ type ExtResponsePrebid struct {
 	Fledge           *Fledge           `json:"fledge,omitempty"`
 	Targeting        map[string]string `json:"targeting,omitempty"`
 	// SeatNonBid holds the array of Bids which are either rejected, no bids inside bidresponse.ext.prebid.seatnonbid
-	SeatNonBid []SeatNonBid `json:"seatnonbid,omitempty"`
+	SeatNonBid []SeatNonBid     `json:"seatnonbid,omitempty"`
+	Floors     *PriceFloorRules `json:"floors,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
@@ -83,6 +92,7 @@ type ExtHttpCall struct {
 	RequestHeaders map[string][]string `json:"requestheaders"`
 	ResponseBody   string              `json:"responsebody"`
 	Status         int                 `json:"status"`
+	Params         map[string]int      `json:"params,omitempty"`
 }
 
 // CookieStatus describes the allowed values for bidresponse.ext.usersync.{bidder}.status
@@ -102,10 +112,10 @@ const (
 	UserSyncPixel  UserSyncType = "pixel"
 )
 
-// NonBidObject is subset of Bid object with exact json signature
+// ExtNonBidPrebidBid is subset of Bid object with exact json signature
+// defined at https://github.com/prebid/openrtb/blob/v19.0.0/openrtb2/bid.go
 // It also contains the custom fields
-type NonBidObject struct {
-	// SubSet
+type ExtNonBidPrebidBid struct {
 	Price   float64                 `json:"price,omitempty"`
 	ADomain []string                `json:"adomain,omitempty"`
 	CatTax  adcom1.CategoryTaxonomy `json:"cattax,omitempty"`
@@ -119,22 +129,35 @@ type NonBidObject struct {
 	// Custom Fields
 	OriginalBidCPM float64 `json:"origbidcpm,omitempty"`
 	OriginalBidCur string  `json:"origbidcur,omitempty"`
+
+	//OW specific fields
+	ID                string              `json:"id,omitempty"` // need to check
+	DealPriority      int                 `json:"dealpriority,omitempty"`
+	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
+	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
+	Targeting         map[string]string   `json:"targeting,omitempty"`
+	Type              BidType             `json:"type,omitempty"`
+	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
+	BidId             string              `json:"bidid,omitempty"`
+	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
+	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
 }
 
-// ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
-type ExtResponseNonBidPrebid struct {
-	Bid NonBidObject `json:"bid"`
+// ExtNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
+type ExtNonBidPrebid struct {
+	Bid ExtNonBidPrebidBid `json:"bid"`
 }
 
-type NonBidExt struct {
-	Prebid ExtResponseNonBidPrebid `json:"prebid"`
+type ExtNonBid struct {
+	Prebid  ExtNonBidPrebid `json:"prebid"`
+	IsAdPod *bool           `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
 }
 
 // NonBid represnts the Non Bid Reason (statusCode) for given impression ID
 type NonBid struct {
 	ImpId      string    `json:"impid"`
 	StatusCode int       `json:"statuscode"`
-	Ext        NonBidExt `json:"ext"`
+	Ext        ExtNonBid `json:"ext"`
 }
 
 // SeatNonBid is collection of NonBid objects with seat information

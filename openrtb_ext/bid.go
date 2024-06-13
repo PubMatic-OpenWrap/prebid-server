@@ -34,7 +34,8 @@ type ExtBidPrebidFloors struct {
 	FloorRule      string  `json:"floorRule,omitempty"`
 	FloorRuleValue float64 `json:"floorRuleValue,omitempty"`
 	FloorValue     float64 `json:"floorValue,omitempty"`
-	FloorCurrency  string  `json:"floorCurrency,omitempty"`
+	// FloorValueUSD  float64 `json:"floorvalueusd,omitempty"`
+	FloorCurrency string `json:"floorCurrency,omitempty"`
 }
 
 // ExtBidPrebidCache defines the contract for  bidresponse.seatbid.bid[i].ext.prebid.cache
@@ -76,6 +77,7 @@ type ExtBidPrebidMeta struct {
 type ExtBidPrebidVideo struct {
 	Duration        int    `json:"duration"`
 	PrimaryCategory string `json:"primary_category"`
+	VASTTagID       string `json:"vasttagid"`
 }
 
 // ExtBidPrebidEvents defines the contract for bidresponse.seatbid.bid[i].ext.prebid.events
@@ -197,4 +199,5 @@ const (
 	OriginalBidCpmKey       = "origbidcpm"
 	OriginalBidCurKey       = "origbidcur"
 	Passthrough             = "passthrough"
+	OriginalBidCpmUsdKey    = "origbidcpmusd"
 )

@@ -56,7 +56,7 @@ func TestValidateFloorParams(t *testing.T) {
 			Err:      errors.New("Invalid FloorMin = '-10', value should be >= 0"),
 		},
 		{
-			name: "Invalid FloorSchemaVersion 2",
+			name: "Invalid FloorSchemaVersion",
 			floorExt: &openrtb_ext.PriceFloorRules{Data: &openrtb_ext.PriceFloorData{
 				FloorsSchemaVersion: 1,
 				ModelGroups: []openrtb_ext.PriceFloorModelGroup{{
