@@ -347,6 +347,9 @@ func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRSUrl, tracker.SURL)                                  // sURL
 	v.Set(models.ERRPlatform, strconv.Itoa(tracker.Platform))            // pfi
 	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
+	if tracker.TestGroup != 0 {
+		v.Set(models.ERRTestGroup, fmt.Sprintf("%d", tracker.TestGroup)) // tgid
+	}
 
 	if tracker.SSAI != "" {
 		v.Set(models.ERRSSAI, tracker.SSAI) // ssai for video/json endpoint
