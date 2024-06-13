@@ -13,8 +13,9 @@ const (
 const (
 	urlMacroPrefix     = "{{."
 	urlMacroNoValue    = "<no value>"
-	requestModeSingle  = "single"
+	requestModeMulti   = "multi"
 	locationIndexMacro = "#"
 	endpointTemplate   = "endpointTemplate"
 	templateOption     = "missingkey=zero"
+	oRTBPrefix         = "owortb_"
 )

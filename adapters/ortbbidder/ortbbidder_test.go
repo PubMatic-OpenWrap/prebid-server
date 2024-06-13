@@ -86,7 +86,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_to_form_requestdata",
+			name: "multi_requestmode_to_form_requestdata",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -98,7 +98,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://test_bidder.com"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -126,7 +126,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_validate_endpoint_macro",
+			name: "multi_requestmode_validate_endpoint_macro",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -138,7 +138,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://{{.host}}"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -166,7 +166,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "multi_requestmode_to_form_requestdata",
+			name: "single_requestmode_to_form_requestdata",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -178,7 +178,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://test_bidder.com"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: ""}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
 				}(),
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
@@ -197,7 +197,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "multi_requestmode_validate_endpoint_macros",
+			name: "single_requestmode_validate_endpoint_macros",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -228,7 +228,7 @@ func TestMakeRequests(t *testing.T) {
 			},
 		},
 		{
-			name: "single_requestmode_add_request_params_in_request",
+			name: "multi_requestmode_add_request_params_in_request",
 			args: args{
 				request: &openrtb2.BidRequest{
 					ID: "reqid",
@@ -240,7 +240,7 @@ func TestMakeRequests(t *testing.T) {
 				adapterInfo: func() adapterInfo {
 					endpoint := "http://{{.host}}"
 					template, _ := template.New("endpointTemplate").Parse(endpoint)
-					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "single"}, "testbidder", template}
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestMode: "multi"}, "testbidder", template}
 				}(),
 				bidderCfg: func() *bidderparams.BidderConfig {
 					cfg := bidderparams.NewBidderConfig()
@@ -492,7 +492,7 @@ func TestJsonSamplesForMultiRequestMode(t *testing.T) {
 	bidder, buildErr := Builder("owgeneric_multi_requestmode",
 		config.Adapter{
 			Endpoint:         "http://test_bidder.com",
-			ExtraAdapterInfo: ``,
+			ExtraAdapterInfo: `{"requestMode":"multi"}`,
 		}, config.Server{})
 	if buildErr != nil {
 		t.Fatalf("Builder returned unexpected error %v", buildErr)
@@ -661,8 +661,8 @@ func TestIsORTBBidder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isORTBBidder(tt.args.bidderName)
-			assert.Equal(t, tt.want, got, "mismatched output of isORTBBidder")
+			got := IsORTBBidder(tt.args.bidderName)
+			assert.Equal(t, tt.want, got, "mismatched output of IsORTBBidder")
 		})
 	}
 }

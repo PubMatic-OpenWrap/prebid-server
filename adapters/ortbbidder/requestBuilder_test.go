@@ -28,20 +28,31 @@ func TestNewRequestBuilder(t *testing.T) {
 		{
 			name: "singleRequestMode",
 			args: args{
-				requestMode: requestModeSingle,
+				requestMode: "single",
 				endpoint:    "http://localhost/publisher",
 			},
-			want: &multiRequestBuilder{
+			want: &singleRequestBuilder{
 				requestBuilderImpl: requestBuilderImpl{
 					endpoint: "http://localhost/publisher",
 				},
 			},
 		},
-
+		{
+			name: "defaultRequestMode",
+			args: args{
+				requestMode: "",
+				endpoint:    "http://localhost/publisher",
+			},
+			want: &singleRequestBuilder{
+				requestBuilderImpl: requestBuilderImpl{
+					endpoint: "http://localhost/publisher",
+				},
+			},
+		},
 		{
 			name: "multiRequestMode",
 			args: args{
-				requestMode: requestModeSingle,
+				requestMode: "multi",
 				endpoint:    "http://{{.host}}/publisher",
 			},
 			want: &multiRequestBuilder{
@@ -54,7 +65,7 @@ func TestNewRequestBuilder(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := newRequestBuilder(tt.args.requestMode, tt.args.endpoint, tt.args.endpointTemplate, tt.args.requestParams)
-			assert.Equalf(t, tt.want, got, "mismacthed requestbuilder")
+			assert.Equalf(t, tt.want, got, "mismathed requestbuilder")
 		})
 	}
 }

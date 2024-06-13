@@ -36,7 +36,7 @@ func newRequestBuilder(requestMode, endpoint string, endpointTemplate *template.
 		requestParams:       requestParams,
 		hasMacrosInEndpoint: strings.Contains(endpoint, urlMacroPrefix),
 	}
-	if requestMode == requestModeSingle {
+	if requestMode == requestModeMulti {
 		return &multiRequestBuilder{
 			requestBuilderImpl: requestBuilder,
 		}
