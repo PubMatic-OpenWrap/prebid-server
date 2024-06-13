@@ -4,10 +4,10 @@
     "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
     "type": "object",
     "properties": {
-      "mtype": {
+      "bidtype": {
         "type": "string",
-        "description": "mtype",
-        "location": "seat.#.bid.#.ext.type"
+        "description": "bidtype",
+        "location": "seat.#.bid.#.ext.bidtype"
       }
     }
   }

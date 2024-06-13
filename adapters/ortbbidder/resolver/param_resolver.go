@@ -4,14 +4,14 @@ import "github.com/prebid/openrtb/v20/openrtb2"
 
 var (
 	// TypeBidFields is a list of typebid fields that are populated using resolver framework
-	TypeBidFields = [...]string{"mtype", "duration", "meta"}
+	TypeBidFields = [...]string{"bidtype", "duration", "bidmeta"}
 	// AdapterResponseFields is a list of adapter response fields that are populated using resolver framework
 	AdapterResponseFields = [...]string{"currency", "fledge"}
 )
 
 var (
 	resolvers = resolverMap{
-		"mtype":    &mtypeResolver{},
+		"bidtype":  &mtypeResolver{},
 		"currency": &currencyResolver{},
 	}
 )
@@ -38,8 +38,12 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 	}
 }
 
-// Resolve fetches a parameter value from sourceNode or bidderResponse based on location and param, and sets it in targetNode.
-// If the value isn't found in sourceNode, it attempts auto-detection.
+// Resolve fetches a parameter value from sourceNode or bidderResponse and sets it in targetNode.
+// The order of lookup is as follows:
+// 1) ORTB standard field
+// 2) Location from JSON file (bidder params)
+// 3) Auto-detection
+// If the value is found, it is set in the targetNode.
 func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location, param string) {
 	if sourceNode == nil || targetNode == nil || pr.bidderResponse == nil {
 		return

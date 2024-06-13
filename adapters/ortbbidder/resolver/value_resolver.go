@@ -7,6 +7,6 @@ import (
 // valueResolver is a generic resolver to get values from the response node using location
 type valueResolver struct{}
 
-func (r *valueResolver) getUsingBidderParamLocation(responseNode map[string]interface{}, path string) (interface{}, bool) {
+func (r *valueResolver) getUsingBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
 	return util.GetValueFromLocation(responseNode, path)
 }

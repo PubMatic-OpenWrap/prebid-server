@@ -11,15 +11,6 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
-const (
-	currencyKey    = "Currency"
-	seatBidKey     = "seatbid"
-	typeBidKey     = "Bid"
-	bidKey         = "bid"
-	bidsKey        = "Bids"
-	ortbCurrenyKey = "cur"
-)
-
 type responseBuilder struct {
 	bidderResponse map[string]any
 	adapterRespone map[string]any
@@ -36,9 +27,8 @@ func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper
 
 // parseResponse parses the bidder response from the given JSON raw message.
 // It unmarshals the JSON into the rb.bidderResponse struct.
-func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) (err error) {
-	err = jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
-	return
+func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) error {
+	return jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
 }
 
 // buildResponse builds the adapter response based on the given response parameters.
@@ -50,7 +40,7 @@ func (rb *responseBuilder) buildResponse() error {
 	paramResolver := resolver.New(rb.request, rb.bidderResponse)
 	// Initialize the adapter response with the currency from the bidder response.
 	adapterResponse := map[string]any{
-		currencyKey: rb.bidderResponse[ortbCurrenyKey],
+		currencyKey: rb.bidderResponse[ortbCurrencyKey],
 	}
 	// Loop over the response level parameters.
 	// If the parameter exists in the response parameters, resolve it.

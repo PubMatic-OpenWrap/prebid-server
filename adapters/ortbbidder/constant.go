@@ -18,3 +18,12 @@ const (
 	endpointTemplate   = "endpointTemplate"
 	templateOption     = "missingkey=zero"
 )
+
+const (
+	currencyKey     = "Currency"
+	seatBidKey      = "seatbid"
+	typeBidKey      = "Bid"
+	bidKey          = "bid"
+	bidsKey         = "Bids"
+	ortbCurrencyKey = "cur"
+)

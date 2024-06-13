@@ -263,7 +263,7 @@ func TestBuildResponse(t *testing.T) {
 							map[string]any{
 								"id": "123",
 								"ext": map[string]any{
-									"mtype": "video",
+									"bidtype": "video",
 								},
 							},
 						},
@@ -274,8 +274,8 @@ func TestBuildResponse(t *testing.T) {
 				"currency": {
 					Location: "cur",
 				},
-				"mtype": {
-					Location: "seatbid.#.bid.#.ext.mtype",
+				"bidtype": {
+					Location: "seatbid.#.bid.#.ext.bidtype",
 				},
 			},
 			expectedError: nil,
@@ -286,7 +286,7 @@ func TestBuildResponse(t *testing.T) {
 						"Bid": map[string]any{
 							"id": "123",
 							"ext": map[string]any{
-								"mtype": "video",
+								"bidtype": "video",
 							},
 						},
 						"BidType": "video",

@@ -460,7 +460,7 @@ func TestMakeBids(t *testing.T) {
 
 			responseData: &adapters.ResponseData{
 				StatusCode: http.StatusOK,
-				Body:       []byte(`{"id":1,"seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1","mtype":2}]}]`),
+				Body:       []byte(`{"id":1,"seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1","bidtype":2}]}]`),
 			},
 			setup: func() adapter {
 				return adapter{
@@ -588,7 +588,7 @@ func TestMakeBids(t *testing.T) {
 		{
 			name: "valid response - bidder params present",
 			responseData: &adapters.ResponseData{
-				Body:       []byte(`{"id":"1","cur":"","seatbid":[{"bid":[{"id":"1","ext":{"mtype":"video"}}]}],"ext":{"currency":"USD"}}`),
+				Body:       []byte(`{"id":"1","cur":"","seatbid":[{"bid":[{"id":"1","ext":{"bidtype":"video"}}]}],"ext":{"currency":"USD"}}`),
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: &adapters.BidderResponse{
@@ -597,7 +597,7 @@ func TestMakeBids(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{
 							ID:  "1",
-							Ext: json.RawMessage(`{"mtype":"video"}`),
+							Ext: json.RawMessage(`{"bidtype":"video"}`),
 						},
 						BidType: "video",
 					},
@@ -607,7 +607,7 @@ func TestMakeBids(t *testing.T) {
 			setup: func() adapter {
 				bc := bidderparams.NewBidderConfig()
 				bc.SetResponseParams("owortb_testbidder", map[string]bidderparams.BidderParamMapper{
-					"mtype":    {Location: "seatbid.#.bid.#.ext.mtype"},
+					"bidtype":  {Location: "seatbid.#.bid.#.ext.bidtype"},
 					"currency": {Location: "ext.currency"},
 				})
 				return adapter{

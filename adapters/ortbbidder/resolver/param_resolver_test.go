@@ -33,7 +33,7 @@ func TestResolve(t *testing.T) {
 			sourceNode: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
-					"mtype": openrtb_ext.BidType("video"),
+					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
 			targetNode: nil,
@@ -45,15 +45,15 @@ func TestResolve(t *testing.T) {
 							map[string]any{
 								"id": "123",
 								"ext": map[string]any{
-									"mtype": openrtb_ext.BidType("video"),
+									"bidtype": openrtb_ext.BidType("video"),
 								},
 							},
 						},
 					},
 				},
 			},
-			location:     "seatbid.0.bid.0.ext.mtype",
-			param:        "mtype",
+			location:     "seatbid.0.bid.0.ext.bidtype",
+			param:        "bidtype",
 			expectedNode: nil,
 		},
 		{
@@ -61,7 +61,7 @@ func TestResolve(t *testing.T) {
 			sourceNode: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
-					"mtype": openrtb_ext.BidType("video"),
+					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
 			targetNode: map[string]any{
@@ -78,14 +78,14 @@ func TestResolve(t *testing.T) {
 							map[string]any{
 								"id": "123",
 								"ext": map[string]any{
-									"mtype": openrtb_ext.BidType("video"),
+									"bidtype": openrtb_ext.BidType("video"),
 								},
 							},
 						},
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.mtype",
+			location: "seatbid.0.bid.0.ext.bidtype",
 			param:    "param1",
 			expectedNode: map[string]any{
 				"Bid": map[string]any{
@@ -119,8 +119,8 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.mtype",
-			param:    "mtype",
+			location: "seatbid.0.bid.0.ext.bidtype",
+			param:    "bidtype",
 			expectedNode: map[string]any{
 				"Bid": map[string]any{
 					"id":    "123",
@@ -134,14 +134,14 @@ func TestResolve(t *testing.T) {
 			sourceNode: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
-					"mtype": openrtb_ext.BidType("video"),
+					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
 			targetNode: map[string]any{
 				"Bid": map[string]any{
 					"id": "123",
 					"ext": map[string]any{
-						"mtype": openrtb_ext.BidType("video"),
+						"bidtype": openrtb_ext.BidType("video"),
 					},
 				},
 			},
@@ -153,20 +153,20 @@ func TestResolve(t *testing.T) {
 							map[string]any{
 								"id": "123",
 								"ext": map[string]any{
-									"mtype": openrtb_ext.BidType("video"),
+									"bidtype": openrtb_ext.BidType("video"),
 								},
 							},
 						},
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.mtype",
-			param:    "mtype",
+			location: "seatbid.0.bid.0.ext.bidtype",
+			param:    "bidtype",
 			expectedNode: map[string]any{
 				"Bid": map[string]any{
 					"id": "123",
 					"ext": map[string]any{
-						"mtype": openrtb_ext.BidType("video"),
+						"bidtype": openrtb_ext.BidType("video"),
 					},
 				},
 				"BidType": openrtb_ext.BidType("video"),
@@ -197,8 +197,8 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.mtype",
-			param:    "mtype",
+			location: "seatbid.0.bid.0.ext.bidtype",
+			param:    "bidtype",
 			expectedNode: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
