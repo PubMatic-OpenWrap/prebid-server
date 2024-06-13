@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "testbidder (oRTB Integration) Adapter Params (single-request-type)",
+  "title": "testbidder (oRTB Integration) Adapter Params (multi-request-type)",
   "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
   "type": "object",
   "properties": {

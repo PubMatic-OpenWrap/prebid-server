@@ -14,55 +14,15 @@ func TestSetRequestParams(t *testing.T) {
 		bidderName    string
 		requestParams map[string]BidderParamMapper
 	}
-
+	type want struct {
+		bidderCfg *BidderConfig
+	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
-		want   *BidderConfig
+		want   want
 	}{
-		{
-			name: "bidderConfig_is_nil",
-			fields: fields{
-				bidderConfig: nil,
-			},
-			args: args{
-				bidderName: "test",
-				requestParams: map[string]BidderParamMapper{
-					"adunit": {
-						location: []string{"ext", "adunit"},
-					},
-				},
-			},
-			want: nil,
-		},
-		{
-			name: "bidderConfigMap_is_nil",
-			fields: fields{
-				bidderConfig: &BidderConfig{
-					bidderConfigMap: nil,
-				},
-			},
-			args: args{
-				bidderName: "test",
-				requestParams: map[string]BidderParamMapper{
-					"adunit": {
-						location: []string{"ext", "adunit"},
-					},
-				},
-			},
-			want: &BidderConfig{
-				bidderConfigMap: map[string]*config{
-					"test": {
-						requestParams: map[string]BidderParamMapper{
-							"adunit": {
-								location: []string{"ext", "adunit"},
-							},
-						},
-					},
-				},
-			},
-		},
 		{
 			name: "bidderName_not_found",
 			fields: fields{
@@ -74,16 +34,18 @@ func TestSetRequestParams(t *testing.T) {
 				bidderName: "test",
 				requestParams: map[string]BidderParamMapper{
 					"param-1": {
-						location: []string{"path"},
+						Location: "path",
 					},
 				},
 			},
-			want: &BidderConfig{
-				bidderConfigMap: map[string]*config{
-					"test": {
-						requestParams: map[string]BidderParamMapper{
-							"param-1": {
-								location: []string{"path"},
+			want: want{
+				bidderCfg: &BidderConfig{
+					bidderConfigMap: map[string]*config{
+						"test": {
+							requestParams: map[string]BidderParamMapper{
+								"param-1": {
+									Location: "path",
+								},
 							},
 						},
 					},
@@ -98,7 +60,7 @@ func TestSetRequestParams(t *testing.T) {
 						"test": {
 							requestParams: map[string]BidderParamMapper{
 								"param-1": {
-									location: []string{"path-1"},
+									Location: "path-1",
 								},
 							},
 						},
@@ -109,16 +71,18 @@ func TestSetRequestParams(t *testing.T) {
 				bidderName: "test",
 				requestParams: map[string]BidderParamMapper{
 					"param-2": {
-						location: []string{"path-2"},
+						Location: "path-2",
 					},
 				},
 			},
-			want: &BidderConfig{
-				bidderConfigMap: map[string]*config{
-					"test": {
-						requestParams: map[string]BidderParamMapper{
-							"param-2": {
-								location: []string{"path-2"},
+			want: want{
+				bidderCfg: &BidderConfig{
+					bidderConfigMap: map[string]*config{
+						"test": {
+							requestParams: map[string]BidderParamMapper{
+								"param-2": {
+									Location: "path-2",
+								},
 							},
 						},
 					},
@@ -128,8 +92,8 @@ func TestSetRequestParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.fields.bidderConfig.setRequestParams(tt.args.bidderName, tt.args.requestParams)
-			assert.Equal(t, tt.want, tt.fields.bidderConfig, "mismatched bidderConfig")
+			tt.fields.bidderConfig.SetRequestParams(tt.args.bidderName, tt.args.requestParams)
+			assert.Equal(t, tt.want.bidderCfg, tt.fields.bidderConfig, "mismatched bidderConfig")
 		})
 	}
 }
@@ -143,7 +107,6 @@ func TestGetBidderRequestProperties(t *testing.T) {
 	}
 	type want struct {
 		requestParams map[string]BidderParamMapper
-		found         bool
 	}
 	tests := []struct {
 		name   string
@@ -151,19 +114,6 @@ func TestGetBidderRequestProperties(t *testing.T) {
 		args   args
 		want   want
 	}{
-		{
-			name: "BidderConfig_is_nil",
-			fields: fields{
-				biddersConfig: nil,
-			},
-			args: args{
-				bidderName: "test",
-			},
-			want: want{
-				requestParams: nil,
-				found:         false,
-			},
-		},
 		{
 			name: "BidderConfigMap_is_nil",
 			fields: fields{
@@ -176,7 +126,6 @@ func TestGetBidderRequestProperties(t *testing.T) {
 			},
 			want: want{
 				requestParams: nil,
-				found:         false,
 			},
 		},
 		{
@@ -193,7 +142,6 @@ func TestGetBidderRequestProperties(t *testing.T) {
 			},
 			want: want{
 				requestParams: nil,
-				found:         false,
 			},
 		},
 		{
@@ -210,7 +158,6 @@ func TestGetBidderRequestProperties(t *testing.T) {
 			},
 			want: want{
 				requestParams: nil,
-				found:         false,
 			},
 		},
 		{
@@ -221,7 +168,7 @@ func TestGetBidderRequestProperties(t *testing.T) {
 						"test": {
 							requestParams: map[string]BidderParamMapper{
 								"param-1": {
-									location: []string{"value-1"},
+									Location: "value-1",
 								},
 							},
 						},
@@ -234,88 +181,16 @@ func TestGetBidderRequestProperties(t *testing.T) {
 			want: want{
 				requestParams: map[string]BidderParamMapper{
 					"param-1": {
-						location: []string{"value-1"},
+						Location: "value-1",
 					},
 				},
-				found: true,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			params, found := tt.fields.biddersConfig.GetRequestParams(tt.args.bidderName)
+			params := tt.fields.biddersConfig.GetRequestParams(tt.args.bidderName)
 			assert.Equal(t, tt.want.requestParams, params, "mismatched requestParams")
-			assert.Equal(t, tt.want.found, found, "mismatched found value")
-		})
-	}
-}
-
-func TestBidderParamMapperGetLocation(t *testing.T) {
-	tests := []struct {
-		name string
-		bpm  BidderParamMapper
-		want []string
-	}{
-		{
-			name: "location_is_nil",
-			bpm: BidderParamMapper{
-				location: nil,
-			},
-			want: nil,
-		},
-		{
-			name: "location_is_non_empty",
-			bpm: BidderParamMapper{
-				location: []string{"req", "ext"},
-			},
-			want: []string{"req", "ext"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.bpm.GetLocation()
-			assert.Equal(t, tt.want, got, "mismatched location")
-		})
-	}
-}
-
-func TestBidderParamMapperSetLocation(t *testing.T) {
-	type args struct {
-		location []string
-	}
-	tests := []struct {
-		name string
-		bpm  BidderParamMapper
-		args args
-		want BidderParamMapper
-	}{
-		{
-			name: "set_location",
-			bpm:  BidderParamMapper{},
-			args: args{
-				location: []string{"req", "ext"},
-			},
-			want: BidderParamMapper{
-				location: []string{"req", "ext"},
-			},
-		},
-		{
-			name: "override_location",
-			bpm: BidderParamMapper{
-				location: []string{"imp", "ext"},
-			},
-			args: args{
-				location: []string{"req", "ext"},
-			},
-			want: BidderParamMapper{
-				location: []string{"req", "ext"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.bpm.SetLocation(tt.args.location)
-			assert.Equal(t, tt.want, tt.bpm, "mismatched location")
 		})
 	}
 }
