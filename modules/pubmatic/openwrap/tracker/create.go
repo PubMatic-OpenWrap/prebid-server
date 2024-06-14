@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
@@ -173,6 +174,9 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue: floorRuleValue,
 				DealID:         "-1",
 			}
+			if rctx.PriceGranularity != nil {
+				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
+			}
 			if len(bidId) > 0 {
 				tracker.PartnerInfo.BidID = bidId
 			}
@@ -274,6 +278,27 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.ATTS != nil {
 		v.Set(models.TRKATTS, strconv.Itoa(int(*tracker.ATTS)))
 	}
+	if tracker.PartnerInfo.PriceBucket != "" {
+		v.Set(models.TRKPriceBucket, tracker.PartnerInfo.PriceBucket)
+	}
+
+	//ProfileMetadata parameters
+	if rctx.ProfileType > 0 {
+		v.Set(models.TRKProfileType, strconv.Itoa(rctx.ProfileType))
+	}
+	if rctx.ProfileTypePlatform > 0 {
+		v.Set(models.TRKProfileTypePlatform, strconv.Itoa(rctx.ProfileTypePlatform))
+	}
+	if rctx.AppPlatform > 0 {
+		v.Set(models.TRKAppPlatform, strconv.Itoa(rctx.AppPlatform))
+	}
+	if rctx.AppIntegrationPath != nil && *rctx.AppIntegrationPath >= 0 {
+		v.Set(models.TRKAppIntegrationPath, strconv.Itoa(*rctx.AppIntegrationPath))
+	}
+	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
+		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(*rctx.AppSubIntegrationPath))
+	}
+
 	queryString := v.Encode()
 
 	//Code for making tracker call http/https based on secure flag for in-app platform
@@ -322,6 +347,9 @@ func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRSUrl, tracker.SURL)                                  // sURL
 	v.Set(models.ERRPlatform, strconv.Itoa(tracker.Platform))            // pfi
 	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
+	if tracker.TestGroup != 0 {
+		v.Set(models.ERRTestGroup, fmt.Sprintf("%d", tracker.TestGroup)) // tgid
+	}
 
 	if tracker.SSAI != "" {
 		v.Set(models.ERRSSAI, tracker.SSAI) // ssai for video/json endpoint

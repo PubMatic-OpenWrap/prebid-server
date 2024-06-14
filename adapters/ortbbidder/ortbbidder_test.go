@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"text/template"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/adapterstest"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/errortypes"
@@ -17,10 +19,10 @@ import (
 
 func TestMakeRequests(t *testing.T) {
 	type args struct {
-		request      *openrtb2.BidRequest
-		requestInfo  *adapters.ExtraRequestInfo
-		adapterInfo  adapterInfo
-		bidderCfgMap *bidderparams.BidderConfig
+		request     *openrtb2.BidRequest
+		requestInfo *adapters.ExtraRequestInfo
+		adapterInfo adapterInfo
+		bidderCfg   *bidderparams.BidderConfig
 	}
 	type want struct {
 		requestData []*adapters.RequestData
@@ -34,66 +36,39 @@ func TestMakeRequests(t *testing.T) {
 		{
 			name: "request_is_nil",
 			args: args{
-				bidderCfgMap: &bidderparams.BidderConfig{},
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
-				errors: []error{fmt.Errorf("Found either nil request or nil requestInfo")},
+				errors: []error{newBadInputError(errImpMissing.Error())},
 			},
 		},
 		{
-			name: "requestInfo_is_nil",
-			args: args{
-				bidderCfgMap: &bidderparams.BidderConfig{},
-			},
-			want: want{
-				errors: []error{fmt.Errorf("Found either nil request or nil requestInfo")},
-			},
-		},
-		{
-			name: "multi_requestmode_to_form_requestdata",
+			name: "bidderParamsConfig_is_nil",
 			args: args{
 				request: &openrtb2.BidRequest{
-					ID: "reqid",
-					Imp: []openrtb2.Imp{
-						{ID: "imp1", TagID: "tag1"},
-						{ID: "imp2", TagID: "tag2"},
-					},
+					ID:  "reqid",
+					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
 				},
-				requestInfo: &adapters.ExtraRequestInfo{
-					BidderCoreName: openrtb_ext.BidderName("ortb_test_multi_requestmode"),
-				},
-				adapterInfo:  adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: ""}, "testbidder"},
-				bidderCfgMap: &bidderparams.BidderConfig{},
+				adapterInfo: adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestType: "single"}, "testbidder", nil},
+				bidderCfg:   nil,
 			},
 			want: want{
-				requestData: []*adapters.RequestData{
-					{
-						Method: http.MethodPost,
-						Uri:    "http://test_bidder.com",
-						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"},{"id":"imp2","tagid":"tag2"}]}`),
-						Headers: http.Header{
-							"Content-Type": {"application/json;charset=utf-8"},
-							"Accept":       {"application/json"},
-						},
-					},
-				},
+				errors: []error{newBadInputError("found nil bidderParamsConfig")},
 			},
 		},
 		{
-			name: "single_requestmode_to_form_requestdata",
+			name: "bidderParamsConfig_not_contains_bidder_param_data",
 			args: args{
 				request: &openrtb2.BidRequest{
-					ID: "reqid",
-					Imp: []openrtb2.Imp{
-						{ID: "imp1", TagID: "tag1"},
-						{ID: "imp2", TagID: "tag2"},
-					},
+					ID:  "reqid",
+					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
 				},
-				requestInfo: &adapters.ExtraRequestInfo{
-					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
-				},
-				adapterInfo:  adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
-				bidderCfgMap: &bidderparams.BidderConfig{},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://test_bidder.com"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "single"}, "testbidder", template}
+				}(),
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
 				requestData: []*adapters.RequestData{
@@ -105,6 +80,40 @@ func TestMakeRequests(t *testing.T) {
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
 						},
+						ImpIDs: []string{"imp1"},
+					},
+				},
+				errors: nil,
+			},
+		},
+		{
+			name: "multi_requestType_to_form_requestdata",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1"},
+						{ID: "imp2", TagID: "tag2"},
+					},
+				},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://test_bidder.com"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
+				}(),
+				bidderCfg: bidderparams.NewBidderConfig(),
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://test_bidder.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp1"},
 					},
 					{
 						Method: http.MethodPost,
@@ -114,38 +123,175 @@ func TestMakeRequests(t *testing.T) {
 							"Content-Type": {"application/json;charset=utf-8"},
 							"Accept":       {"application/json"},
 						},
+						ImpIDs: []string{"imp2"},
 					},
 				},
 			},
 		},
 		{
-			name: "biddersConfigMap_is_nil",
+			name: "multi_requestType_validate_endpoint_macro",
 			args: args{
 				request: &openrtb2.BidRequest{
-					ID:  "reqid",
-					Imp: []openrtb2.Imp{{ID: "imp1", TagID: "tag1"}},
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder": {"host": "localhost.com"}}`)},
+						{ID: "imp2", TagID: "tag2"},
+					},
 				},
-				requestInfo: &adapters.ExtraRequestInfo{
-					BidderCoreName: openrtb_ext.BidderName("ortb_test_single_requestmode"),
-				},
-				adapterInfo:  adapterInfo{config.Adapter{Endpoint: "http://test_bidder.com"}, extraAdapterInfo{RequestMode: "single"}, "testbidder"},
-				bidderCfgMap: nil,
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://{{.host}}"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
+				}(),
+				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
-				errors: []error{fmt.Errorf("Found nil bidderParamsConfig")},
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://localhost.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp1","tagid":"tag1"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp1"},
+					},
+					{
+						Method: http.MethodPost,
+						Uri:    "http://",
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp2"},
+					},
+				},
+			},
+		},
+		{
+			name: "single_requestType_to_form_requestdata",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1"},
+						{ID: "imp2", TagID: "tag2"},
+					},
+				},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://test_bidder.com"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "single"}, "testbidder", template}
+				}(),
+				bidderCfg: bidderparams.NewBidderConfig(),
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://test_bidder.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"id":"imp1","tagid":"tag1"},{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp1", "imp2"},
+					},
+				},
+			},
+		},
+		{
+			name: "single_requestType_validate_endpoint_macros",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder": {"host": "localhost.com"}}`)},
+						{ID: "imp2", TagID: "tag2"},
+					},
+				},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://{{.host}}"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: ""}, "testbidder", template}
+				}(),
+				bidderCfg: bidderparams.NewBidderConfig(),
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://localhost.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{"host":"localhost.com"}},"id":"imp1","tagid":"tag1"},{"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp1", "imp2"},
+					},
+				},
+			},
+		},
+		{
+			name: "multi_requestType_add_request_params_in_request",
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "reqid",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "tag1", Ext: json.RawMessage(`{"bidder": {"host": "localhost.com"}}`)},
+						{ID: "imp2", TagID: "tag2", Ext: json.RawMessage(`{"bidder": {"zone": "testZone"}}`)},
+					},
+				},
+				adapterInfo: func() adapterInfo {
+					endpoint := "http://{{.host}}"
+					template, _ := template.New("endpointTemplate").Parse(endpoint)
+					return adapterInfo{config.Adapter{Endpoint: endpoint}, extraAdapterInfo{RequestType: "multi"}, "testbidder", template}
+				}(),
+				bidderCfg: func() *bidderparams.BidderConfig {
+					cfg := bidderparams.NewBidderConfig()
+					cfg.SetRequestParams("testbidder", map[string]bidderparams.BidderParamMapper{
+						"host": {Location: "server.host"},
+						"zone": {Location: "ext.zone"},
+					})
+					return cfg
+				}(),
+			},
+			want: want{
+				requestData: []*adapters.RequestData{
+					{
+						Method: http.MethodPost,
+						Uri:    "http://localhost.com",
+						Body:   []byte(`{"id":"reqid","imp":[{"ext":{"bidder":{}},"id":"imp1","tagid":"tag1"}],"server":{"host":"localhost.com"}}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						}, ImpIDs: []string{"imp1"},
+					},
+					{
+						Method: http.MethodPost,
+						Uri:    "http://",
+						Body:   []byte(`{"ext":{"zone":"testZone"},"id":"reqid","imp":[{"ext":{"bidder":{}},"id":"imp2","tagid":"tag2"}]}`),
+						Headers: http.Header{
+							"Content-Type": {"application/json;charset=utf-8"},
+							"Accept":       {"application/json"},
+						},
+						ImpIDs: []string{"imp2"},
+					},
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapter := &adapter{adapterInfo: tt.args.adapterInfo, bidderParamsConfig: tt.args.bidderCfgMap}
+			adapter := &adapter{adapterInfo: tt.args.adapterInfo, bidderParamsConfig: tt.args.bidderCfg}
 			requestData, errors := adapter.MakeRequests(tt.args.request, tt.args.requestInfo)
 			assert.Equalf(t, tt.want.requestData, requestData, "mismatched requestData")
 			assert.Equalf(t, tt.want.errors, errors, "mismatched errors")
 		})
 	}
 }
-
 func TestMakeBids(t *testing.T) {
 	type args struct {
 		request      *openrtb2.BidRequest
@@ -328,108 +474,38 @@ func TestGetMediaTypeForBid(t *testing.T) {
 	}
 }
 
-// func TestJsonSamplesForSingleRequestMode(t *testing.T) {
-// 	oldMapper := g_bidderParamsConfig
-// 	defer func() {
-// 		g_bidderParamsConfig = oldMapper
-// 	}()
-// 	g_bidderParamsConfig = &bidderparams.BidderConfig{}
-// 	bidder, buildErr := Builder("owgeneric_single_requestmode",
-// 		config.Adapter{
-// 			Endpoint:         "http://test_bidder.com",
-// 			ExtraAdapterInfo: `{"requestMode":"single"}`,
-// 		}, config.Server{})
-// 	if buildErr != nil {
-// 		t.Fatalf("Builder returned unexpected error %v", buildErr)
-// 	}
-// 	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_single_requestmode", bidder)
-// }
+func TestJsonSamplesForSinglerequestType(t *testing.T) {
+	oldMapper := g_bidderParamsConfig
+	defer func() {
+		g_bidderParamsConfig = oldMapper
+	}()
+	g_bidderParamsConfig = &bidderparams.BidderConfig{}
+	bidder, buildErr := Builder("single_request",
+		config.Adapter{
+			Endpoint:         "http://test_bidder.com",
+			ExtraAdapterInfo: `{"requestType":"single"}`,
+		}, config.Server{})
+	if buildErr != nil {
+		t.Fatalf("Builder returned unexpected error %v", buildErr)
+	}
+	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/single_request", bidder)
+}
 
-// func TestJsonSamplesForMultiRequestMode(t *testing.T) {
-// 	oldMapper := g_bidderParamsConfig
-// 	defer func() {
-// 		g_bidderParamsConfig = oldMapper
-// 	}()
-// 	g_bidderParamsConfig = &bidderparams.BidderConfig{}
-// 	bidder, buildErr := Builder("owgeneric_multi_requestmode",
-// 		config.Adapter{
-// 			Endpoint:         "http://test_bidder.com",
-// 			ExtraAdapterInfo: ``,
-// 		}, config.Server{})
-// 	if buildErr != nil {
-// 		t.Fatalf("Builder returned unexpected error %v", buildErr)
-// 	}
-// 	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/owortb_generic_multi_requestmode", bidder)
-// }
-
-func Test_makeRequest(t *testing.T) {
-	type fields struct {
-		Adapter config.Adapter
+func TestJsonSamplesForMultirequestType(t *testing.T) {
+	oldMapper := g_bidderParamsConfig
+	defer func() {
+		g_bidderParamsConfig = oldMapper
+	}()
+	g_bidderParamsConfig = &bidderparams.BidderConfig{}
+	bidder, buildErr := Builder("multi_request",
+		config.Adapter{
+			Endpoint:         "http://test_bidder.com",
+			ExtraAdapterInfo: `{"requestType":"multi"}`,
+		}, config.Server{})
+	if buildErr != nil {
+		t.Fatalf("Builder returned unexpected error %v", buildErr)
 	}
-	type args struct {
-		request       *openrtb2.BidRequest
-		requestParams map[string]bidderparams.BidderParamMapper
-	}
-	type want struct {
-		requestData *adapters.RequestData
-		err         error
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   want
-	}{
-		{
-			name: "valid_request",
-			fields: fields{
-				Adapter: config.Adapter{Endpoint: "https://example.com"},
-			},
-			args: args{
-				request: &openrtb2.BidRequest{
-					ID:  "123",
-					Imp: []openrtb2.Imp{{ID: "imp1"}},
-				},
-				requestParams: make(map[string]bidderparams.BidderParamMapper),
-			},
-			want: want{
-				requestData: &adapters.RequestData{
-					Method: http.MethodPost,
-					Uri:    "https://example.com",
-					Body:   []byte(`{"id":"123","imp":[{"id":"imp1"}]}`),
-					Headers: http.Header{
-						"Content-Type": {"application/json;charset=utf-8"},
-						"Accept":       {"application/json"},
-					},
-				},
-				err: nil,
-			},
-		},
-		{
-			name: "nil_request",
-			fields: fields{
-				Adapter: config.Adapter{Endpoint: "https://example.com"},
-			},
-			args: args{
-				request:       nil,
-				requestParams: make(map[string]bidderparams.BidderParamMapper),
-			},
-			want: want{
-				requestData: nil,
-				err:         fmt.Errorf("found nil request"),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := adapterInfo{
-				Adapter: tt.fields.Adapter,
-			}
-			got, err := o.makeRequest(tt.args.request, tt.args.requestParams)
-			assert.Equal(t, tt.want.requestData, got, "mismatched requestData")
-			assert.Equal(t, tt.want.err, err, "mismatched error")
-		})
-	}
+	adapterstest.RunJSONBidderTest(t, "ortbbiddertest/multi_request", bidder)
 }
 
 func TestBuilder(t *testing.T) {
@@ -459,15 +535,30 @@ func TestBuilder(t *testing.T) {
 			},
 			want: want{
 				bidder: nil,
-				err:    fmt.Errorf("Failed to parse extra_info for bidder:[ortbbidder] err:[invalid character 'i' looking for beginning of value]"),
+				err:    fmt.Errorf("failed to parse extra_info: expect { or n, but found i"),
 			},
 		},
 		{
-			name: "bidder_with_requestMode",
+			name: "fails_to_parse_template_endpoint",
 			args: args{
 				bidderName: "ortbbidder",
 				config: config.Adapter{
-					ExtraAdapterInfo: `{"requestMode":"single"}`,
+					ExtraAdapterInfo: "{}",
+					Endpoint:         "http://{{.Host}",
+				},
+				server: config.Server{},
+			},
+			want: want{
+				bidder: nil,
+				err:    fmt.Errorf("failed to parse endpoint url template: template: endpointTemplate:1: bad character U+007D '}'"),
+			},
+		},
+		{
+			name: "bidder_with_requestType",
+			args: args{
+				bidderName: "ortbbidder",
+				config: config.Adapter{
+					ExtraAdapterInfo: `{"requestType":"single"}`,
 				},
 				server: config.Server{},
 			},
@@ -475,12 +566,16 @@ func TestBuilder(t *testing.T) {
 				bidder: &adapter{
 					adapterInfo: adapterInfo{
 						extraInfo: extraAdapterInfo{
-							RequestMode: "single",
+							RequestType: "single",
 						},
 						Adapter: config.Adapter{
-							ExtraAdapterInfo: `{"requestMode":"single"}`,
+							ExtraAdapterInfo: `{"requestType":"single"}`,
 						},
 						bidderName: "ortbbidder",
+						endpointTemplate: func() *template.Template {
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
+							return template
+						}(),
 					},
 					bidderParamsConfig: g_bidderParamsConfig,
 				},
@@ -488,7 +583,7 @@ func TestBuilder(t *testing.T) {
 			},
 		},
 		{
-			name: "bidder_without_requestMode",
+			name: "bidder_without_requestType",
 			args: args{
 				bidderName: "ortbbidder",
 				config: config.Adapter{
@@ -503,6 +598,10 @@ func TestBuilder(t *testing.T) {
 							ExtraAdapterInfo: ``,
 						},
 						bidderName: "ortbbidder",
+						endpointTemplate: func() *template.Template {
+							template, _ := template.New("endpointTemplate").Option("missingkey=zero").Parse("")
+							return template
+						}(),
 					},
 					bidderParamsConfig: g_bidderParamsConfig,
 				},
@@ -570,8 +669,8 @@ func TestIsORTBBidder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isORTBBidder(tt.args.bidderName)
-			assert.Equal(t, tt.want, got, "mismatched output of isORTBBidder")
+			got := IsORTBBidder(tt.args.bidderName)
+			assert.Equal(t, tt.want, got, "mismatched output of IsORTBBidder")
 		})
 	}
 }

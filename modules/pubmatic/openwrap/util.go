@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -277,6 +278,9 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 
 	case nbr.InternalError:
 		return 17 // ErrInvalidImpression
+
+	case nbr.AllPartnersFiltered:
+		return 26
 	}
 
 	return -1
@@ -297,10 +301,24 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 
 func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
 	ip := defaultIP
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
-		ip = bidRequest.Device.IP
+	if bidRequest != nil && bidRequest.Device != nil {
+		if len(bidRequest.Device.IP) > 0 {
+			ip = bidRequest.Device.IP
+		} else if len(bidRequest.Device.IPv6) > 0 {
+			ip = bidRequest.Device.IPv6
+		}
 	}
 	return ip
+}
+
+func getCountry(bidRequest *openrtb2.BidRequest) string {
+	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
+		return bidRequest.Device.Geo.Country
+	}
+	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
+		return bidRequest.User.Geo.Country
+	}
+	return ""
 }
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
@@ -340,4 +358,52 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 		return string(uaBytes)
 	}
 	return request.Header.Get("User-Agent")
+}
+
+func getProfileType(partnerConfigMap map[int]map[string]string) int {
+	if profileTypeStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
+		ProfileType, _ := strconv.Atoi(profileTypeStr)
+		return ProfileType
+	}
+	return 0
+}
+
+func getProfileTypePlatform(partnerConfigMap map[int]map[string]string) int {
+	if profileTypePlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
+		if ProfileTypePlatform, ok := models.ProfileTypePlatform[profileTypePlatformStr]; ok {
+			return ProfileTypePlatform
+		}
+	}
+	return 0
+}
+
+func getAppPlatform(partnerConfigMap map[int]map[string]string) int {
+	if appPlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		AppPlatform, _ := strconv.Atoi(appPlatformStr)
+		return AppPlatform
+	}
+	return 0
+}
+
+func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
+	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
+		if appIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
+			return appIntegrationPath
+		}
+	}
+	return -1
+}
+
+func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
+	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
+		if appSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
+			return appSubIntegrationPath
+		}
+	}
+	if adserverStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		if adserver, ok := models.AppSubIntegrationPath[adserverStr]; ok {
+			return adserver
+		}
+	}
+	return -1
 }

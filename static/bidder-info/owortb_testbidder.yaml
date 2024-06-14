@@ -1,7 +1,8 @@
 # sample bidder-info yaml for testbidder (oRTB Integration)
 maintainer:
   email: "header-bidding@pubmatic.com"
-endpoint: "http://test.endpoint.com"
+endpoint: "http://{{.host}}.endpoint.com/zone={{.zone}}"
+extra_info: "{\"requestType\":\"single\"}" # prepares single request containing all imps
 capabilities:
   app:
     mediaTypes:

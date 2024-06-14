@@ -1,71 +1,57 @@
 package ortbbidder
 
 import (
-	"encoding/json"
-	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 )
 
-const (
-	impKey     = "imp"
-	extKey     = "ext"
-	bidderKey  = "bidder"
-	appsiteKey = "appsite"
-	siteKey    = "site"
-	appKey     = "app"
-)
-
-// setRequestParams updates the requestBody based on the requestParams mapping details.
-func setRequestParams(requestBody []byte, requestParams map[string]bidderparams.BidderParamMapper) ([]byte, error) {
-	if len(requestParams) == 0 {
-		return requestBody, nil
-	}
-	request := map[string]any{}
-	err := json.Unmarshal(requestBody, &request)
-	if err != nil {
-		return nil, err
-	}
-	imps, ok := request[impKey].([]any)
-	if !ok {
-		return nil, fmt.Errorf("error:[invalid_imp_found_in_requestbody], imp:[%v]", request[impKey])
-	}
+// setRequestParams updates the request object by mapping bidderParams at expected location.
+func setRequestParams(request, params map[string]any, paramsMapper map[string]bidderparams.BidderParamMapper, paramIndices []int) bool {
 	updatedRequest := false
-	for ind, imp := range imps {
-		request[impKey] = imp
-		imp, ok := imp.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("error:[invalid_imp_found_in_implist], imp:[%v]", request[impKey])
-		}
-		ext, ok := imp[extKey].(map[string]any)
+	for paramName, paramValue := range params {
+		paramMapper, ok := paramsMapper[paramName]
 		if !ok {
 			continue
 		}
-		bidderParams, ok := ext[bidderKey].(map[string]any)
-		if !ok {
-			continue
-		}
-		for paramName, paramValue := range bidderParams {
-			paramMapper, ok := requestParams[paramName]
-			if !ok {
-				continue
-			}
-			// set the value in the request according to the mapping details and remove the parameter.
-			if setValue(request, paramMapper.GetLocation(), paramValue) {
-				delete(bidderParams, paramName)
-				updatedRequest = true
-			}
-		}
-		imps[ind] = request[impKey]
-	}
-	// update the impression list in the request
-	request[impKey] = imps
-	// if the request was modified, marshal it back to JSON.
-	if updatedRequest {
-		requestBody, err = json.Marshal(request)
-		if err != nil {
-			return nil, fmt.Errorf("error:[fail_to_update_request_body] msg:[%s]", err.Error())
+		// add index in path by replacing # macro
+		location := addIndicesInPath(paramMapper.Location, paramIndices)
+		// set the value in the request according to the mapping details
+		// remove the parameter from bidderParams after successful mapping
+		if setValue(request, location, paramValue) {
+			delete(params, paramName)
+			updatedRequest = true
 		}
 	}
-	return requestBody, nil
+	return updatedRequest
+}
+
+// addIndicesInPath updates the path by replacing # by arrayIndices
+func addIndicesInPath(path string, indices []int) []string {
+	parts := strings.Split(path, ".")
+	j := 0
+	for i, part := range parts {
+		if part == locationIndexMacro {
+			if j >= len(indices) {
+				break
+			}
+			parts[i] = strconv.Itoa(indices[j])
+			j++
+		}
+	}
+	return parts
+}
+
+// getImpExtBidderParams returns imp.ext.bidder parameters
+func getImpExtBidderParams(imp map[string]any) map[string]any {
+	ext, ok := imp[extKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	bidderParams, ok := ext[bidderKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	return bidderParams
 }

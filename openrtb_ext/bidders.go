@@ -149,7 +149,8 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderMotorik,
 	BidderNextMillennium,
 	BidderNoBid,
-	BidderORTBTestBidder, // maintained by OW
+	BidderORTBTestBidder,      // maintained by OW
+	BidderORTBTestBidderMulti, // maintained by OW
 	BidderOms,
 	BidderOneTag,
 	BidderOpenWeb,
