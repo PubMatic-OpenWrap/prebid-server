@@ -2,9 +2,9 @@ package openrtb_ext
 
 import (
 	"os"
+	"strings"
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -51,7 +51,7 @@ func TestBidderUniquenessGatekeeping(t *testing.T) {
 	// - Exclude duplicates of adapters for the same bidder, as it's unlikely a publisher will use both.
 	var bidders []string
 	for _, bidder := range CoreBidderNames() {
-		if bidder != BidderSilverPush && bidder != BidderTripleliftNative && bidder != BidderAdkernelAdn && bidder != "freewheel-ssp" && bidder != "yahooAdvertising" && !util.IsORTBBidder(string(bidder.String())) {
+		if bidder != BidderSilverPush && bidder != BidderTripleliftNative && bidder != BidderAdkernelAdn && bidder != "freewheel-ssp" && bidder != "yahooAdvertising" && strings.HasPrefix(bidder.String(), "owortb_") {
 			bidders = append(bidders, string(bidder))
 		}
 	}
