@@ -3,8 +3,7 @@ package util
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -450,19 +449,13 @@ func TestReplaceLocationMacro(t *testing.T) {
 }
 
 func TestGetValueFromLocation(t *testing.T) {
-	node := map[string]interface{}{
-		"seatbid": []interface{}{
-			map[string]interface{}{
-				"bid": []interface{}{
-					map[string]interface{}{
-						"ext": map[string]interface{}{
-							"mtype": "video",
-						},
-					},
-				},
-			},
-		},
+
+	jsonToMap := func(jsonStr string) (result map[string]any) {
+		jsonutil.Unmarshal([]byte(jsonStr), &result)
+		return
 	}
+
+	node := jsonToMap(`{"seatbid":[{"bid":[{"ext":{"mtype":"video"}}]}]}`)
 
 	tests := []struct {
 		name          string
@@ -506,41 +499,6 @@ func TestGetValueFromLocation(t *testing.T) {
 			result, ok := GetValueFromLocation(tt.node, tt.path)
 			assert.Equal(t, tt.ok, ok)
 			assert.Equal(t, tt.expectedValue, result)
-		})
-	}
-}
-
-func TestGetMediaType(t *testing.T) {
-	tests := []struct {
-		name     string
-		mtype    openrtb2.MarkupType
-		expected openrtb_ext.BidType
-	}{
-		{
-			name:     "MarkupBanner",
-			mtype:    openrtb2.MarkupBanner,
-			expected: openrtb_ext.BidTypeBanner,
-		},
-		{
-			name:     "MarkupVideo",
-			mtype:    openrtb2.MarkupVideo,
-			expected: openrtb_ext.BidTypeVideo,
-		},
-		{
-			name:     "MarkupAudio",
-			mtype:    openrtb2.MarkupAudio,
-			expected: openrtb_ext.BidTypeAudio,
-		},
-		{
-			name:     "MarkupNative",
-			mtype:    openrtb2.MarkupNative,
-			expected: openrtb_ext.BidTypeNative,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetMediaType(tt.mtype)
-			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

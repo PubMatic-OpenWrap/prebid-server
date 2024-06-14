@@ -12,10 +12,10 @@ import (
 )
 
 type responseBuilder struct {
-	bidderResponse map[string]any
-	adapterRespone map[string]any
-	responseParams map[string]bidderparams.BidderParamMapper
-	request        *openrtb2.BidRequest
+	bidderResponse map[string]any                            // Raw response from the bidder.
+	adapterRespone map[string]any                            // Response in the prebid format.
+	responseParams map[string]bidderparams.BidderParamMapper // Bidder response parameters.
+	request        *openrtb2.BidRequest                      // Bid request.
 }
 
 func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper, request *openrtb2.BidRequest) *responseBuilder {
@@ -31,24 +31,22 @@ func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) er
 	return jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
 }
 
-// buildResponse builds the adapter response based on the given response parameters.
+// setPrebidBidderResponse builds the adapter response based on the given response parameters.
 // It resolves the response level and bid level parameters using the provided responseParams map.
 // The resolved response is stored in the adapterResponse map.
 // If any invalid seatbid or bid is found in the response, an error is returned.
-func (rb *responseBuilder) buildResponse() error {
+func (rb *responseBuilder) setPrebidBidderResponse() error {
 	// Create a new ParamResolver with the bidder response.
 	paramResolver := resolver.New(rb.request, rb.bidderResponse)
 	// Initialize the adapter response with the currency from the bidder response.
 	adapterResponse := map[string]any{
 		currencyKey: rb.bidderResponse[ortbCurrencyKey],
 	}
-	// Loop over the response level parameters.
-	// If the parameter exists in the response parameters, resolve it.
-	for _, paramName := range resolver.AdapterResponseFields {
-		if paramMapper, ok := rb.responseParams[paramName]; ok {
-			paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.Location, paramName)
-		}
-	}
+
+	// Resolve the  adapter response level parameters.
+	paramMapper := rb.responseParams[resolver.Fledge.String()]
+	paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.Location, resolver.Fledge)
+
 	// Extract the seat bids from the bidder response.
 	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
 	if !ok {
@@ -74,14 +72,11 @@ func (rb *responseBuilder) buildResponse() error {
 			typeBid := map[string]any{
 				typeBidKey: bid,
 			}
-			// Loop over the bid level parameters.
-			// If the parameter exists in the response parameters, resolve it.
-			for _, paramName := range resolver.TypeBidFields {
-				if paramMapper, ok := rb.responseParams[paramName]; ok {
-					path := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
-					paramResolver.Resolve(bid, typeBid, path, paramName)
-				}
-			}
+			// Resolve the type bid level parameters.
+			paramMapper := rb.responseParams[resolver.BidType.String()]
+			path := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
+			paramResolver.Resolve(bid, typeBid, path, resolver.BidType)
+
 			// Add the type bid to the list of type bids.
 			typeBids = append(typeBids, typeBid)
 		}
@@ -93,9 +88,9 @@ func (rb *responseBuilder) buildResponse() error {
 	return nil
 }
 
-// convertToAdapterResponse converts the responseBuilder's adapter response to a prebid format.
+// buildAdapterResponse converts the responseBuilder's adapter response to a prebid format.
 // Returns the BidderResponse and any error encountered during the conversion.
-func (rb *responseBuilder) convertToAdapterResponse() (resp *adapters.BidderResponse, err error) {
+func (rb *responseBuilder) buildAdapterResponse() (resp *adapters.BidderResponse, err error) {
 	var adapterResponeBytes json.RawMessage
 	adapterResponeBytes, err = jsonutil.Marshal(rb.adapterRespone)
 	if err != nil {

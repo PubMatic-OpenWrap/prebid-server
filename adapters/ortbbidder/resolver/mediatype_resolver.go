@@ -5,7 +5,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -23,20 +22,25 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	if !ok || mtype == 0 {
 		return nil, false
 	}
-	return util.GetMediaType(openrtb2.MarkupType(mtype)), true
+
+	if bidType := convertToBidType(openrtb2.MarkupType(mtype)); bidType != openrtb_ext.BidType("") {
+		return bidType, true
+	}
+	return nil, false
 }
+
 func (r *mtypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
 	adm, ok := bid[admKey].(string)
-	if !ok || adm == "" {
-		impId, ok := bid[impIdKey].(string)
-		if !ok {
-			return nil, false
-		}
-		// Adm is not present, get media type from imp
-		return getMediaTypeFromImp(request.Imp, impId), true
+	if ok && adm != "" {
+		return getMediaTypeFromAdm(adm), true // Adm is present, get media type from adm
 	}
-	// Adm is present, get media type from adm
-	return getMediaTypeFromAdm(adm), true
+	impId, ok := bid[impIdKey].(string)
+	if !ok {
+		return nil, false
+	}
+	// Adm is not present, get media type from imp
+	return getMediaTypeFromImp(request.Imp, impId), true
+
 }
 
 func (r *mtypeResolver) setValue(adapterBid map[string]any, value any) {
@@ -93,4 +97,19 @@ func getMediaTypes(imp openrtb2.Imp) openrtb_ext.BidType {
 	}
 
 	return mediaType
+}
+
+func convertToBidType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name
+	var bidType openrtb_ext.BidType
+	switch mtype {
+	case openrtb2.MarkupBanner:
+		bidType = openrtb_ext.BidTypeBanner
+	case openrtb2.MarkupVideo:
+		bidType = openrtb_ext.BidTypeVideo
+	case openrtb2.MarkupAudio:
+		bidType = openrtb_ext.BidTypeAudio
+	case openrtb2.MarkupNative:
+		bidType = openrtb_ext.BidTypeNative
+	}
+	return bidType
 }

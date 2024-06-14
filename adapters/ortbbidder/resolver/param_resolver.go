@@ -1,6 +1,9 @@
 package resolver
 
-import "github.com/prebid/openrtb/v20/openrtb2"
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+)
 
 var (
 	// TypeBidFields is a list of typebid fields that are populated using resolver framework
@@ -9,10 +12,22 @@ var (
 	AdapterResponseFields = [...]string{"currency", "fledge"}
 )
 
+type resolveType string
+
+func (s resolveType) String() string {
+	return string(s)
+}
+
+const (
+	BidType  resolveType = "bidtype"
+	Duration resolveType = "duration"
+	BidMeta  resolveType = "bidmeta"
+	Fledge   resolveType = "fledge"
+)
+
 var (
 	resolvers = resolverMap{
-		"bidtype":  &mtypeResolver{},
-		"currency": &currencyResolver{},
+		BidType: &mtypeResolver{},
 	}
 )
 
@@ -23,7 +38,7 @@ type resolver interface {
 	setValue(targetNode map[string]any, value any)
 }
 
-type resolverMap map[string]resolver
+type resolverMap map[resolveType]resolver
 
 type paramResolver struct {
 	bidderResponse map[string]any
@@ -44,7 +59,7 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 // 2) Location from JSON file (bidder params)
 // 3) Auto-detection
 // If the value is found, it is set in the targetNode.
-func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location, param string) {
+func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location string, param resolveType) {
 	if sourceNode == nil || targetNode == nil || pr.bidderResponse == nil {
 		return
 	}
@@ -68,4 +83,11 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location
 	}
 
 	resolver.setValue(targetNode, value)
+}
+
+// valueResolver is a generic resolver to get values from the response node using location
+type valueResolver struct{}
+
+func (r *valueResolver) getUsingBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+	return util.GetValueFromLocation(responseNode, path)
 }

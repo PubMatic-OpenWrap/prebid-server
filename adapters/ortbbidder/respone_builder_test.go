@@ -73,7 +73,7 @@ func TestParseResponse(t *testing.T) {
 	}
 }
 
-func TestConvertToAdapterResponse(t *testing.T) {
+func TestBuildAdapterResponse(t *testing.T) {
 	testCases := []struct {
 		name             string
 		adapterResponse  map[string]any
@@ -145,14 +145,14 @@ func TestConvertToAdapterResponse(t *testing.T) {
 			rb := &responseBuilder{
 				adapterRespone: tc.adapterResponse,
 			}
-			actualResponse, err := rb.convertToAdapterResponse()
+			actualResponse, err := rb.buildAdapterResponse()
 			assert.Equal(t, tc.expectedError, err, "error mismatch")
 			assert.Equal(t, tc.expectedResponse, actualResponse, "response mismatch")
 		})
 	}
 }
 
-func TestBuildResponse(t *testing.T) {
+func TestSetPrebidBidderResponse(t *testing.T) {
 	testCases := []struct {
 		name             string
 		bidderResponse   map[string]any
@@ -302,7 +302,7 @@ func TestBuildResponse(t *testing.T) {
 				bidderResponse: tc.bidderResponse,
 				responseParams: tc.responseParams,
 			}
-			err := rb.buildResponse()
+			err := rb.setPrebidBidderResponse()
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectedResponse, rb.adapterRespone)
 		})

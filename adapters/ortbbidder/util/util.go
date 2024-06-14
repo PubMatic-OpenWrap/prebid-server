@@ -3,9 +3,6 @@ package util
 import (
 	"strconv"
 	"strings"
-
-	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 const (
@@ -111,11 +108,11 @@ func getNode(requestNode map[string]any, key string) any {
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
 // getValueFromLocation retrieves a value from a map based on a specified location.
-func GetValueFromLocation(val interface{}, path string) (interface{}, bool) {
+func GetValueFromLocation(souce interface{}, path string) (interface{}, bool) {
 	location := strings.Split(path, ".")
 	var (
 		ok   bool
-		next interface{} = val
+		next interface{} = souce
 	)
 	for _, loc := range location {
 		switch nxt := next.(type) {
@@ -153,22 +150,6 @@ func ReplaceLocationMacro(path string, array []int) string {
 		}
 	}
 	return strings.Join(parts, ".")
-}
-
-// GetMediaType returns the bidType from the MarkupType field
-func GetMediaType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name
-	var bidType openrtb_ext.BidType
-	switch mtype {
-	case openrtb2.MarkupBanner:
-		bidType = openrtb_ext.BidTypeBanner
-	case openrtb2.MarkupVideo:
-		bidType = openrtb_ext.BidTypeVideo
-	case openrtb2.MarkupAudio:
-		bidType = openrtb_ext.BidTypeAudio
-	case openrtb2.MarkupNative:
-		bidType = openrtb_ext.BidTypeNative
-	}
-	return bidType
 }
 
 // IsORTBBidder returns true if the bidder is an oRTB bidder

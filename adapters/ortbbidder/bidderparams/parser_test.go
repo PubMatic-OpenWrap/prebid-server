@@ -15,7 +15,7 @@ func TestPrepareRequestParams(t *testing.T) {
 		bidderName      string
 	}
 	type want struct {
-		requestParams map[string]BidderParamMapper
+		RequestParams map[string]BidderParamMapper
 		err           error
 	}
 	tests := []struct {
@@ -32,7 +32,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: nil,
+				RequestParams: nil,
 				err:           nil,
 			},
 		},
@@ -46,7 +46,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: nil,
+				RequestParams: nil,
 				err:           fmt.Errorf("error:[invalid_json_file_content_malformed_properties] bidderName:[testbidder]"),
 			},
 		},
@@ -62,7 +62,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: nil,
+				RequestParams: nil,
 				err:           fmt.Errorf("error:[invalid_json_file_content] bidder:[testbidder] bidderParam:[adunitid]"),
 			},
 		},
@@ -80,7 +80,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: map[string]BidderParamMapper{},
+				RequestParams: map[string]BidderParamMapper{},
 				err:           nil,
 			},
 		},
@@ -99,7 +99,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: nil,
+				RequestParams: nil,
 				err:           fmt.Errorf("error:[incorrect_location_in_bidderparam] bidder:[testbidder] bidderParam:[adunitid]"),
 			},
 		},
@@ -118,7 +118,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: map[string]BidderParamMapper{
+				RequestParams: map[string]BidderParamMapper{
 					"adunitid": {Location: "app.adunitid"},
 				},
 				err: nil,
@@ -143,7 +143,7 @@ func TestPrepareRequestParams(t *testing.T) {
 				bidderName: "testbidder",
 			},
 			want: want{
-				requestParams: map[string]BidderParamMapper{
+				RequestParams: map[string]BidderParamMapper{
 					"adunitid": {Location: "app.adunitid"},
 					"slotname": {Location: "ext.slot"},
 				},
@@ -153,9 +153,9 @@ func TestPrepareRequestParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			requestParams, err := prepareParams(tt.args.bidderName, tt.args.requestParamCfg)
+			RequestParams, err := prepareParams(tt.args.bidderName, tt.args.requestParamCfg)
 			assert.Equalf(t, tt.want.err, err, "updateBidderParamsMapper returned unexpected error")
-			assert.Equalf(t, tt.want.requestParams, requestParams, "updateBidderParamsMapper returned unexpected mapper")
+			assert.Equalf(t, tt.want.RequestParams, RequestParams, "updateBidderParamsMapper returned unexpected mapper")
 
 		})
 	}
@@ -225,7 +225,7 @@ func TestLoadBidderConfig(t *testing.T) {
 		{
 			name: "oRTB_bidder_not_found",
 			want: want{
-				biddersConfigMap: &BidderConfig{bidderConfigMap: make(map[string]*config)},
+				biddersConfigMap: &BidderConfig{BidderConfigMap: make(map[string]*Config)},
 				err:              "",
 			},
 			setup: func() (string, string, error) {
@@ -259,9 +259,9 @@ func TestLoadBidderConfig(t *testing.T) {
 		{
 			name: "oRTB_bidder_found_but_bidder-params_are_absent",
 			want: want{
-				biddersConfigMap: &BidderConfig{bidderConfigMap: map[string]*config{
+				biddersConfigMap: &BidderConfig{BidderConfigMap: map[string]*Config{
 					"owortb_test": {
-						requestParams: nil,
+						RequestParams: nil,
 					},
 				}},
 				err: "",
@@ -298,13 +298,13 @@ func TestLoadBidderConfig(t *testing.T) {
 			name: "oRTB_bidder_found_and_valid_json_contents_present",
 			want: want{
 				biddersConfigMap: &BidderConfig{
-					bidderConfigMap: map[string]*config{
+					BidderConfigMap: map[string]*Config{
 						"owortb_test": {
-							requestParams: map[string]BidderParamMapper{
+							RequestParams: map[string]BidderParamMapper{
 								"adunitid": {Location: "app.adunit.id"},
 								"slotname": {Location: "ext.slotname"},
 							},
-							responseParams: map[string]BidderParamMapper{
+							ResponseParams: map[string]BidderParamMapper{
 								"mtype": {Location: "seatbid.#.bid.#.ext.mtype"},
 							},
 						},
@@ -347,9 +347,9 @@ func TestLoadBidderConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			requestParamsDirPath, responseParamsDirPath, err := tt.setup()
+			RequestParamsDirPath, ResponseParamsDirPath, err := tt.setup()
 			assert.NoError(t, err, "setup returned unexpected error")
-			got, err := LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, util.IsORTBBidder)
+			got, err := LoadBidderConfig(RequestParamsDirPath, ResponseParamsDirPath, util.IsORTBBidder)
 			assert.Equal(t, tt.want.biddersConfigMap, got, "found incorrect mapper")
 			assert.Equal(t, len(tt.want.err) == 0, err == nil, "mismatched error")
 			if err != nil {

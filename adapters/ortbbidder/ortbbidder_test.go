@@ -353,10 +353,13 @@ func TestMakeRequests(t *testing.T) {
 				}(),
 				bidderCfg: func() *bidderparams.BidderConfig {
 					cfg := bidderparams.NewBidderConfig()
-					cfg.SetRequestParams("testbidder", map[string]bidderparams.BidderParamMapper{
-						"host": {Location: "server.host"},
-						"zone": {Location: "ext.zone"},
-					})
+					cfg.BidderConfigMap["testbidder"] = &bidderparams.Config{
+						RequestParams: map[string]bidderparams.BidderParamMapper{
+							"host": {Location: "server.host"},
+							"zone": {Location: "ext.zone"},
+						},
+					}
+
 					return cfg
 				}(),
 			},
@@ -567,13 +570,16 @@ func TestMakeBids(t *testing.T) {
 							ID:    "1",
 							MType: 2,
 						},
+						BidType: "video",
 					},
 				},
 			},
 			expectedErrors: nil,
 			setup: func() adapter {
 				bc := bidderparams.NewBidderConfig()
-				bc.SetResponseParams("owortb_testbidder", map[string]bidderparams.BidderParamMapper{})
+				bc.BidderConfigMap["owortb_testbidder"] = &bidderparams.Config{
+					ResponseParams: map[string]bidderparams.BidderParamMapper{},
+				}
 				return adapter{
 					bidderParamsConfig: bc,
 					adapterInfo: adapterInfo{
@@ -589,7 +595,7 @@ func TestMakeBids(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: &adapters.BidderResponse{
-				Currency: "USD",
+				Currency: "",
 				Bids: []*adapters.TypedBid{
 					{
 						Bid: &openrtb2.Bid{
@@ -603,10 +609,12 @@ func TestMakeBids(t *testing.T) {
 			expectedErrors: nil,
 			setup: func() adapter {
 				bc := bidderparams.NewBidderConfig()
-				bc.SetResponseParams("owortb_testbidder", map[string]bidderparams.BidderParamMapper{
-					"bidtype":  {Location: "seatbid.#.bid.#.ext.bidtype"},
-					"currency": {Location: "ext.currency"},
-				})
+				bc.BidderConfigMap["owortb_testbidder"] = &bidderparams.Config{
+					ResponseParams: map[string]bidderparams.BidderParamMapper{
+						"bidtype":  {Location: "seatbid.#.bid.#.ext.bidtype"},
+						"currency": {Location: "ext.currency"},
+					},
+				}
 				return adapter{
 					adapterInfo: adapterInfo{
 						bidderName: "owortb_testbidder",

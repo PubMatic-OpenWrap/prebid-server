@@ -108,10 +108,10 @@ func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes jso
 		return nil, err
 	}
 
-	err = rb.buildResponse()
+	err = rb.setPrebidBidderResponse()
 	if err != nil {
 		return nil, err
 	}
 
-	return rb.convertToAdapterResponse()
+	return rb.buildAdapterResponse()
 }

@@ -1,7 +1,6 @@
 package resolver
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -26,6 +25,22 @@ func TestMtypeResolver(t *testing.T) {
 				},
 				expectedValue: openrtb_ext.BidTypeVideo,
 				expectedFound: true,
+			},
+			{
+				name: "mtype found in bid - invalid type",
+				bid: map[string]any{
+					"mtype": "vide0",
+				},
+				expectedValue: nil,
+				expectedFound: false,
+			},
+			{
+				name: "mtype found in bid - invalid value",
+				bid: map[string]any{
+					"mtype": 11,
+				},
+				expectedValue: nil,
+				expectedFound: false,
 			},
 			{
 				name:          "mtype not found in bid",
@@ -171,18 +186,18 @@ func TestMtypeResolver(t *testing.T) {
 
 	t.Run("setValue", func(t *testing.T) {
 		testCases := []struct {
-			name        string
-			adapterBid  map[string]any
-			value       any
-			expectedBid map[string]any
+			name            string
+			typeBid         map[string]any
+			value           any
+			expectedTypeBid map[string]any
 		}{
 			{
 				name: "Set value in adapter bid",
-				adapterBid: map[string]any{
+				typeBid: map[string]any{
 					"id": "123",
 				},
 				value: openrtb_ext.BidTypeVideo,
-				expectedBid: map[string]any{
+				expectedTypeBid: map[string]any{
 					"id":      "123",
 					"BidType": openrtb_ext.BidTypeVideo,
 				},
@@ -191,8 +206,8 @@ func TestMtypeResolver(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				resolver.setValue(tc.adapterBid, tc.value)
-				assert.Equal(t, tc.expectedBid, tc.adapterBid)
+				resolver.setValue(tc.typeBid, tc.value)
+				assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
 			})
 		}
 	})
@@ -229,35 +244,37 @@ func TestGetMediaTypeFromAdm(t *testing.T) {
 	}
 }
 
-func Test_mtypeResolver_autoDetect(t *testing.T) {
-	type fields struct {
-		valueResolver valueResolver
-	}
-	type args struct {
-		request *openrtb2.BidRequest
-		bid     map[string]any
-	}
+func TestGetMediaType(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   any
-		want1  bool
+		name            string
+		mtype           openrtb2.MarkupType
+		expectedBidType openrtb_ext.BidType
 	}{
-		// TODO: Add test cases.
+		{
+			name:            "MarkupBanner",
+			mtype:           openrtb2.MarkupBanner,
+			expectedBidType: openrtb_ext.BidTypeBanner,
+		},
+		{
+			name:            "MarkupVideo",
+			mtype:           openrtb2.MarkupVideo,
+			expectedBidType: openrtb_ext.BidTypeVideo,
+		},
+		{
+			name:            "MarkupAudio",
+			mtype:           openrtb2.MarkupAudio,
+			expectedBidType: openrtb_ext.BidTypeAudio,
+		},
+		{
+			name:            "MarkupNative",
+			mtype:           openrtb2.MarkupNative,
+			expectedBidType: openrtb_ext.BidTypeNative,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &mtypeResolver{
-				valueResolver: tt.fields.valueResolver,
-			}
-			got, got1 := r.autoDetect(tt.args.request, tt.args.bid)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("mtypeResolver.autoDetect() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("mtypeResolver.autoDetect() got1 = %v, want %v", got1, tt.want1)
-			}
+			result := convertToBidType(tt.mtype)
+			assert.Equal(t, tt.expectedBidType, result)
 		})
 	}
 }

@@ -8,35 +8,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolve(t *testing.T) {
+func TestResolveTypeBid(t *testing.T) {
 	testCases := []struct {
-		name           string
-		sourceNode     map[string]any
-		targetNode     map[string]any
-		bidderResponse map[string]any
-		location       string
-		param          string
-		expectedNode   map[string]any
-		request        *openrtb2.BidRequest
+		name            string
+		bid             map[string]any
+		typeBid         map[string]any
+		bidderResponse  map[string]any
+		location        string
+		paramName       resolveType
+		expectedTypeBid map[string]any
+		request         *openrtb2.BidRequest
 	}{
 		{
-			name:           "SourceNode is nil, TargetNode is nil, Response is nil",
-			sourceNode:     nil,
-			targetNode:     nil,
-			bidderResponse: nil,
-			location:       "",
-			param:          "",
-			expectedNode:   nil,
+			name:            "bid is nil, typeBid is nil, Response is nil",
+			bid:             nil,
+			typeBid:         nil,
+			bidderResponse:  nil,
+			location:        "",
+			paramName:       "",
+			expectedTypeBid: nil,
 		},
 		{
-			name: "SourceNode is present, TargetNode is nil, Response is present",
-			sourceNode: map[string]any{
+			name: "bid is present, typeBid is nil, Response is present",
+			bid: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
 					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
-			targetNode: nil,
+			typeBid: nil,
 			bidderResponse: map[string]any{
 				"cur": "USD",
 				"seatbid": []any{
@@ -52,19 +52,19 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location:     "seatbid.0.bid.0.ext.bidtype",
-			param:        "bidtype",
-			expectedNode: nil,
+			location:        "seatbid.0.bid.0.ext.bidtype",
+			paramName:       "bidtype",
+			expectedTypeBid: nil,
 		},
 		{
-			name: "Invalid param",
-			sourceNode: map[string]any{
+			name: "Invalid paramName",
+			bid: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
 					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
-			targetNode: map[string]any{
+			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":    "123",
 					"mtype": float64(2),
@@ -85,9 +85,9 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.bidtype",
-			param:    "param1",
-			expectedNode: map[string]any{
+			location:  "seatbid.0.bid.0.ext.bidtype",
+			paramName: "paramName1",
+			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":    "123",
 					"mtype": float64(2),
@@ -95,12 +95,12 @@ func TestResolve(t *testing.T) {
 			},
 		},
 		{
-			name: "Get param from the ortb bid object",
-			sourceNode: map[string]any{
+			name: "Get paramName from the ortb bid object",
+			bid: map[string]any{
 				"id":    "123",
 				"mtype": float64(2),
 			},
-			targetNode: map[string]any{
+			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":    "123",
 					"mtype": float64(2),
@@ -119,9 +119,9 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.bidtype",
-			param:    "bidtype",
-			expectedNode: map[string]any{
+			location:  "seatbid.0.bid.0.ext.bidtype",
+			paramName: "bidtype",
+			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":    "123",
 					"mtype": float64(2),
@@ -130,14 +130,14 @@ func TestResolve(t *testing.T) {
 			},
 		},
 		{
-			name: "Get param from the bidder param location",
-			sourceNode: map[string]any{
+			name: "Get paramName from the bidder paramName location",
+			bid: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
 					"bidtype": openrtb_ext.BidType("video"),
 				},
 			},
-			targetNode: map[string]any{
+			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id": "123",
 					"ext": map[string]any{
@@ -160,9 +160,9 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.bidtype",
-			param:    "bidtype",
-			expectedNode: map[string]any{
+			location:  "seatbid.0.bid.0.ext.bidtype",
+			paramName: "bidtype",
+			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id": "123",
 					"ext": map[string]any{
@@ -174,11 +174,11 @@ func TestResolve(t *testing.T) {
 		},
 		{
 			name: "Auto detect",
-			sourceNode: map[string]any{
+			bid: map[string]any{
 				"id":  "123",
 				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
 			},
-			targetNode: map[string]any{
+			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
 					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
@@ -197,9 +197,9 @@ func TestResolve(t *testing.T) {
 					},
 				},
 			},
-			location: "seatbid.0.bid.0.ext.bidtype",
-			param:    "bidtype",
-			expectedNode: map[string]any{
+			location:  "seatbid.0.bid.0.ext.bidtype",
+			paramName: "bidtype",
+			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
 					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
@@ -212,8 +212,69 @@ func TestResolve(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			pr := New(tc.request, tc.bidderResponse)
-			pr.Resolve(tc.sourceNode, tc.targetNode, tc.location, tc.param)
-			assert.Equal(t, tc.expectedNode, tc.targetNode)
+			pr.Resolve(tc.bid, tc.typeBid, tc.location, tc.paramName)
+			assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
+		})
+	}
+}
+
+func TestGetUsingBidderparamNameLocation(t *testing.T) {
+	testCases := []struct {
+		name          string
+		ortbResponse  map[string]any
+		path          string
+		expectedValue any
+		expectedFound bool
+	}{
+		{
+			name: "Found in location",
+			ortbResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id": "123",
+								"ext": map[string]any{
+									"mtype": openrtb_ext.BidType("video"),
+								},
+							},
+						},
+					},
+				},
+			},
+			path:          "seatbid.0.bid.0.ext.mtype",
+			expectedValue: openrtb_ext.BidType("video"),
+			expectedFound: true,
+		},
+		{
+			name: "Not found in location",
+			ortbResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id": "123",
+								"ext": map[string]any{
+									"mtype": openrtb_ext.BidType("video"),
+								},
+							},
+						},
+					},
+				},
+			},
+			path:          "seatbid.0.bid.0.ext.nonexistent",
+			expectedValue: nil,
+			expectedFound: false,
+		},
+	}
+	resolver := &valueResolver{}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			value, found := resolver.getUsingBidderParamLocation(tc.ortbResponse, tc.path)
+			assert.Equal(t, tc.expectedValue, value)
+			assert.Equal(t, tc.expectedFound, found)
 		})
 	}
 }

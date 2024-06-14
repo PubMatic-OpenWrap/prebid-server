@@ -9,6 +9,13 @@ import (
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
+type ParamType int
+
+const (
+	requestParams ParamType = iota
+	responseParams
+)
+
 const (
 	propertiesKey = "properties"
 	locationKey   = "location"
@@ -16,22 +23,22 @@ const (
 
 // LoadBidderConfig creates a bidderConfig from JSON files specified in dirPath directory.
 func LoadBidderConfig(requestParamsDirPath, responseParamsDirPath string, isBidderAllowed func(string) bool) (*BidderConfig, error) {
-	bidderConfigMap := NewBidderConfig()
+	cfg := NewBidderConfig()
 
-	err := handleParams(requestParamsDirPath, isBidderAllowed, bidderConfigMap.SetRequestParams)
+	err := loadFile(requestParamsDirPath, isBidderAllowed, cfg.BidderConfigMap, requestParams)
 	if err != nil {
 		return nil, fmt.Errorf("error handling request params: %w", err)
 	}
 
-	err = handleParams(responseParamsDirPath, isBidderAllowed, bidderConfigMap.SetResponseParams)
+	err = loadFile(responseParamsDirPath, isBidderAllowed, cfg.BidderConfigMap, responseParams)
 	if err != nil {
 		return nil, fmt.Errorf("error handling response params: %w", err)
 	}
 
-	return bidderConfigMap, nil
+	return cfg, nil
 }
 
-func handleParams(dirPath string, isBidderAllowed func(string) bool, setParams func(string, map[string]BidderParamMapper)) error {
+func loadFile(dirPath string, isBidderAllowed func(string) bool, bidderConfigMap map[string]*Config, paramType ParamType) error {
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("error:[%s] dirPath:[%s]", err.Error(), dirPath)
@@ -52,7 +59,19 @@ func handleParams(dirPath string, isBidderAllowed func(string) bool, setParams f
 		if err != nil {
 			return err
 		}
-		setParams(bidderName, params)
+		// setParams(bidderName, params)
+		if _, found := bidderConfigMap[bidderName]; !found {
+			bidderConfigMap[bidderName] = &Config{}
+		}
+
+		switch paramType {
+		case requestParams:
+			bidderConfigMap[bidderName].RequestParams = params
+		case responseParams:
+			bidderConfigMap[bidderName].ResponseParams = params
+		default:
+			return fmt.Errorf("error:[invalid_param_type] paramType:[%d]", paramType)
+		}
 	}
 	return nil
 }
