@@ -114,6 +114,7 @@ type RequestCtx struct {
 	Errors                 []error
 	RedirectURL            string
 	ResponseFormat         string
+	PriceGranularity       *openrtb_ext.PriceGranularity
 }
 
 type OwBid struct {

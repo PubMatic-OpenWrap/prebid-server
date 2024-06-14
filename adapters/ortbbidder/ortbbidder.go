@@ -3,14 +3,15 @@ package ortbbidder
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // adapter implements adapters.Bidder interface
@@ -19,18 +20,15 @@ type adapter struct {
 	bidderParamsConfig *bidderparams.BidderConfig
 }
 
-const (
-	RequestModeSingle string = "single"
-)
-
 // adapterInfo contains oRTB bidder specific info required in MakeRequests/MakeBids functions
 type adapterInfo struct {
 	config.Adapter
-	extraInfo  extraAdapterInfo
-	bidderName openrtb_ext.BidderName
+	extraInfo        extraAdapterInfo
+	bidderName       openrtb_ext.BidderName
+	endpointTemplate *template.Template
 }
 type extraAdapterInfo struct {
-	RequestMode string `json:"requestMode"`
+	RequestType string `json:"requestType"`
 }
 
 // global instance to hold bidderParamsConfig
@@ -38,82 +36,46 @@ var g_bidderParamsConfig *bidderparams.BidderConfig
 
 // InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
 func InitBidderParamsConfig(dirPath string) (err error) {
-	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, isORTBBidder)
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, IsORTBBidder)
 	return err
-}
-
-// makeRequest converts openrtb2.BidRequest to adapters.RequestData, sets requestParams in request if required
-func (o adapterInfo) makeRequest(request *openrtb2.BidRequest, requestParams map[string]bidderparams.BidderParamMapper) (*adapters.RequestData, error) {
-	if request == nil {
-		return nil, fmt.Errorf("found nil request")
-	}
-	requestBody, err := json.Marshal(request)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request %s", err.Error())
-	}
-	requestBody, err = setRequestParams(requestBody, requestParams)
-	if err != nil {
-		return nil, err
-	}
-	return &adapters.RequestData{
-		Method: http.MethodPost,
-		Uri:    o.Endpoint,
-		Body:   requestBody,
-		Headers: http.Header{
-			"Content-Type": {"application/json;charset=utf-8"},
-			"Accept":       {"application/json"},
-		},
-	}, nil
 }
 
 // Builder returns an instance of oRTB adapter
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
 	extraAdapterInfo := extraAdapterInfo{}
 	if len(config.ExtraAdapterInfo) > 0 {
-		err := json.Unmarshal([]byte(config.ExtraAdapterInfo), &extraAdapterInfo)
+		err := jsonutil.Unmarshal([]byte(config.ExtraAdapterInfo), &extraAdapterInfo)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse extra_info for bidder:[%s] err:[%s]", bidderName, err.Error())
+			return nil, fmt.Errorf("failed to parse extra_info: %s", err.Error())
 		}
 	}
+	template, err := template.New(endpointTemplate).Option(templateOption).Parse(config.Endpoint)
+	if err != nil || template == nil {
+		return nil, fmt.Errorf("failed to parse endpoint url template: %v", err)
+	}
 	return &adapter{
-		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName},
+		adapterInfo:        adapterInfo{config, extraAdapterInfo, bidderName, template},
 		bidderParamsConfig: g_bidderParamsConfig,
 	}, nil
 }
 
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
 func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	if request == nil || requestInfo == nil {
-		return nil, []error{fmt.Errorf("Found either nil request or nil requestInfo")}
-	}
 	if o.bidderParamsConfig == nil {
-		return nil, []error{fmt.Errorf("Found nil bidderParamsConfig")}
+		return nil, []error{newBadInputError(errNilBidderParamCfg.Error())}
 	}
-	var errs []error
-	adapterInfo := o.adapterInfo
-	requestParams, _ := o.bidderParamsConfig.GetRequestParams(o.bidderName.String())
 
-	// bidder request supports single impression in single HTTP call.
-	if adapterInfo.extraInfo.RequestMode == RequestModeSingle {
-		requestData := make([]*adapters.RequestData, 0, len(request.Imp))
-		requestCopy := *request
-		for _, imp := range request.Imp {
-			requestCopy.Imp = []openrtb2.Imp{imp} // requestCopy contains single impression
-			reqData, err := adapterInfo.makeRequest(&requestCopy, requestParams)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-			requestData = append(requestData, reqData)
-		}
-		return requestData, errs
+	requestBuilder := newRequestBuilder(
+		o.adapterInfo.extraInfo.RequestType,
+		o.Endpoint,
+		o.endpointTemplate,
+		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
+
+	if err := requestBuilder.parseRequest(request); err != nil {
+		return nil, []error{newBadInputError(err.Error())}
 	}
-	// bidder request supports multi impressions in single HTTP call.
-	requestData, err := adapterInfo.makeRequest(request, requestParams)
-	if err != nil {
-		return nil, []error{err}
-	}
-	return []*adapters.RequestData{requestData}, nil
+
+	return requestBuilder.makeRequest()
 }
 
 // MakeBids prepares bidderResponse from the oRTB bidder server's http.Response
@@ -127,7 +89,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 	}
 
 	var response openrtb2.BidResponse
-	if err := json.Unmarshal(responseData.Body, &response); err != nil {
+	if err := jsonutil.Unmarshal(responseData.Body, &response); err != nil {
 		return nil, []error{err}
 	}
 
@@ -182,7 +144,7 @@ func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType 
 	return bidType
 }
 
-// isORTBBidder returns true if the bidder is an oRTB bidder
-func isORTBBidder(bidderName string) bool {
-	return strings.HasPrefix(bidderName, "owortb_")
+// IsORTBBidder returns true if the bidder is an oRTB bidder
+func IsORTBBidder(bidderName string) bool {
+	return strings.HasPrefix(bidderName, oRTBPrefix)
 }

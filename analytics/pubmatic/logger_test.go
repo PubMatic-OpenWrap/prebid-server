@@ -654,6 +654,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 	}
 }
 func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
+	pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
 	type args struct {
 		ao   analytics.AuctionObject
 		rCtx *models.RequestCtx
@@ -695,6 +696,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 									FloorValue:     1,
 									FloorRuleValue: 2,
 									Advertiser:     "sony.com",
+									PriceBucket:    "10.00",
 								},
 								LoggerData: models.LoggerData{
 									KGPSV: "kgpsv",
@@ -734,6 +736,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 						ADomain:        "sony.com",
 						KGPV:           "kgpv",
 						KGPSV:          "kgpsv",
+						PriceBucket:    "10.00",
 					},
 				},
 			},
@@ -761,7 +764,8 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
-					Trackers: map[string]models.OWTracker{},
+					Trackers:         map[string]models.OWTracker{},
+					PriceGranularity: &pg,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp1": {
 							BidCtx: map[string]models.BidCtx{
@@ -811,6 +815,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 						ADomain:        "sony.com",
 						KGPV:           "kgpv",
 						KGPSV:          "kgpv",
+						PriceBucket:    "12.00",
 					},
 				},
 			},

@@ -507,6 +507,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.NoBidReason = &aprc
 			}
 
+			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
+			if pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
+				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
+			}
+
 			ipr[impId] = append(ipr[impId], pr)
 		}
 	}

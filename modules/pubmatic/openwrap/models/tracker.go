@@ -61,6 +61,7 @@ type Partner struct {
 	FloorValue     float64
 	FloorRuleValue float64
 	DealID         string
+	PriceBucket    string
 }
 
 // LoggerData: this data to be needed in logger

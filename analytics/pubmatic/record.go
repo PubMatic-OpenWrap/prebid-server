@@ -145,7 +145,7 @@ type PartnerRecord struct {
 	FloorValue     float64               `json:"fv,omitempty"`
 	FloorRuleValue float64               `json:"frv,omitempty"`
 	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
-
+	PriceBucket    string                `json:"pb,omitempty"`
 }
 
 type MetaData struct {
