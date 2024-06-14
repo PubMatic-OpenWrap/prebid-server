@@ -53,10 +53,10 @@ func Test_profileMetaData_GetAppIntegrationPath(t *testing.T) {
 			want1: false,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			pmd := &profileMetaData{
-				RWMutex:            tt.fields.RWMutex,
 				appIntegrationPath: tt.fields.appIntegrationPath,
 			}
 			got, got1 := pmd.GetAppIntegrationPath(tt.args.appIntegrationPathStr)

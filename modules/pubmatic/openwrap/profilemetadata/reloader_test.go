@@ -183,13 +183,13 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			pmd := &profileMetaData{
 				cache:                 tt.fields.cache,
 				serviceStop:           tt.fields.serviceStop,
-				RWMutex:               tt.fields.RWMutex,
 				defaultExpiry:         tt.fields.defaultExpiry,
 				profileTypePlatform:   tt.fields.profileTypePlatform,
 				appIntegrationPath:    tt.fields.appIntegrationPath,

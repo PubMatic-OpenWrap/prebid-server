@@ -53,11 +53,11 @@ func Test_profileMetaData_GetProfileTypePlatform(t *testing.T) {
 			want1: false,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			pmd := &profileMetaData{
 				profileTypePlatform: tt.fields.profileTypePlatform,
-				RWMutex:             tt.fields.RWMutex,
 			}
 			got, got1 := pmd.GetProfileTypePlatform(tt.args.profileTypePlatformStr)
 			assert.Equal(t, tt.want, got)

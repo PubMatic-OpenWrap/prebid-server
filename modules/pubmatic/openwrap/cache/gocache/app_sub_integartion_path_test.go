@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
 	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
@@ -24,11 +23,10 @@ func Test_cache_GetAppSubIntegrationPath(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type fields struct {
-		Map          sync.Map
-		cache        *gocache.Cache
-		cfg          config.Cache
-		db           database.Database
-		metricEngine metrics.MetricsEngine
+		Map   sync.Map
+		cache *gocache.Cache
+		cfg   config.Cache
+		db    database.Database
 	}
 	tests := []struct {
 		name    string
@@ -75,11 +73,11 @@ func Test_cache_GetAppSubIntegrationPath(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			c := &cache{
-				Map:          tt.fields.Map,
 				cache:        tt.fields.cache,
 				cfg:          tt.fields.cfg,
 				db:           tt.fields.db,
