@@ -37,7 +37,7 @@ var g_bidderParamsConfig *bidderparams.BidderConfig
 // InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
 func InitBidderParamsConfig(requestParamsDirPath, responseParamsDirPath string) (err error) {
 	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, util.IsORTBBidder)
-	return err
+	return
 }
 
 // Builder returns an instance of oRTB adapter
@@ -90,7 +90,7 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 
 	response, err := o.makeBids(request, responseData.Body)
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{newBadServerResponseError(err.Error())}
 	}
 
 	return response, nil

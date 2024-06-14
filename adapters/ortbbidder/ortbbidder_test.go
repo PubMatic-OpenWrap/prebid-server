@@ -465,7 +465,7 @@ func TestMakeBids(t *testing.T) {
 				}
 			},
 			expectedResponse: nil,
-			expectedErrors: []error{&errortypes.FailedToUnmarshal{
+			expectedErrors: []error{&errortypes.BadServerResponse{
 				Message: "expect }, but found \x00",
 			}},
 		},
@@ -476,7 +476,7 @@ func TestMakeBids(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: nil,
-			expectedErrors:   []error{&errortypes.FailedToUnmarshal{Message: "unexpected value type: 0"}},
+			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "unexpected value type: 0"}},
 			setup: func() adapter {
 				return adapter{
 					bidderParamsConfig: &bidderparams.BidderConfig{},
@@ -504,7 +504,7 @@ func TestMakeBids(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: nil,
-			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[[invalid]]"}},
+			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[invalid]"}},
 			setup: func() adapter {
 				return adapter{
 					bidderParamsConfig: &bidderparams.BidderConfig{},
@@ -512,7 +512,7 @@ func TestMakeBids(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid bid arrays in seatbid array",
+			name: "invalid bid arrays in seatbid",
 			responseData: &adapters.ResponseData{
 				Body:       []byte(`{"id":1,"seatbid":[{"bid":"invalid"}]}`),
 				StatusCode: http.StatusOK,
@@ -532,7 +532,7 @@ func TestMakeBids(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: nil,
-			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[[invalid]]"}},
+			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"}},
 			setup: func() adapter {
 				return adapter{
 					bidderParamsConfig: &bidderparams.BidderConfig{},
@@ -546,7 +546,7 @@ func TestMakeBids(t *testing.T) {
 				StatusCode: http.StatusOK,
 			},
 			expectedResponse: nil,
-			expectedErrors:   []error{&errortypes.FailedToUnmarshal{Message: "cannot unmarshal ID: expects \" or n, but found 1"}},
+			expectedErrors:   []error{&errortypes.BadServerResponse{Message: "cannot unmarshal ID: expects \" or n, but found 1"}},
 			setup: func() adapter {
 				return adapter{
 					bidderParamsConfig: &bidderparams.BidderConfig{},

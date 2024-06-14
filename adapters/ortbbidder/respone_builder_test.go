@@ -161,7 +161,7 @@ func TestBuildResponse(t *testing.T) {
 		expectedResponse map[string]any
 	}{
 		{
-			name: "Invalid seatbid object",
+			name: "Invalid seatbid object in response",
 			bidderResponse: map[string]any{
 				"cur":      "USD",
 				seatBidKey: map[string]any{},
@@ -174,7 +174,7 @@ func TestBuildResponse(t *testing.T) {
 			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[map[]]"},
 		},
 		{
-			name: "Invalid seatbid object",
+			name: "Invalid seatbid is seatbid arrays",
 			bidderResponse: map[string]any{
 				"cur": "USD",
 				seatBidKey: []any{
@@ -186,10 +186,10 @@ func TestBuildResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[[invalid]]"},
+			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[invalid]"},
 		},
 		{
-			name: "Invalid bid object in seatbid",
+			name: "Invalid bid in seatbid",
 			bidderResponse: map[string]any{
 				"cur": "USD",
 				seatBidKey: []any{
@@ -206,7 +206,7 @@ func TestBuildResponse(t *testing.T) {
 			expectedError: &errortypes.BadServerResponse{Message: "invalid bid array found in seatbid, bids:[invalid]"},
 		},
 		{
-			name: "Invalid bid object in bids",
+			name: "Invalid bid in bids array",
 			bidderResponse: map[string]any{
 				"cur": "USD",
 				seatBidKey: []any{
@@ -222,7 +222,7 @@ func TestBuildResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[[invalid]]"},
+			expectedError: &errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"},
 		},
 		{
 			name: "Valid bidder respone, no bidder params",

@@ -59,7 +59,7 @@ func (rb *responseBuilder) buildResponse() error {
 	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
-			return newBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids)
+			return newBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids[seatIndex])
 		}
 		bids, ok := seatBid[bidKey].([]any)
 		if !ok {
@@ -68,7 +68,7 @@ func (rb *responseBuilder) buildResponse() error {
 		for bidIndex, bid := range bids {
 			bid, ok := bid.(map[string]any)
 			if !ok {
-				return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", seatBid[bidKey])
+				return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", bids[bidIndex])
 			}
 			// Initialize the type bid with the bid.
 			typeBid := map[string]any{
