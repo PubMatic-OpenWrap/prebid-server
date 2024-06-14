@@ -259,6 +259,21 @@ func TestComputePriceGranularity(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "incorrect pg key custom9",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.PriceGranularityKey:          "custom9",
+							models.PriceGranularityCustomConfig: `{ "ranges": [{"min": 0, "max":2, "increment" : 1}]}`,
+						},
+					},
+				},
+			},
+			want:    openrtb_ext.PriceGranularity{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
