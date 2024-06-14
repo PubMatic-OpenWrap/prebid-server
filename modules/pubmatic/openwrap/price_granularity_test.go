@@ -189,7 +189,7 @@ func TestComputePriceGranularity(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "custom1 pg",
+			name: "custom1_pg",
 			args: args{
 				rctx: models.RequestCtx{
 					PartnerConfigMap: map[int]map[string]string{
@@ -212,7 +212,7 @@ func TestComputePriceGranularity(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "custom2 pg",
+			name: "custom2_pg",
 			args: args{
 				rctx: models.RequestCtx{
 					IsCTVRequest: true,
@@ -236,7 +236,7 @@ func TestComputePriceGranularity(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "custom3 pg",
+			name: "custom3_pg",
 			args: args{
 				rctx: models.RequestCtx{
 					IsCTVRequest: true,
@@ -260,7 +260,7 @@ func TestComputePriceGranularity(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "incorrect pg key custom9",
+			name: "incorrect_pg_key_custom9",
 			args: args{
 				rctx: models.RequestCtx{
 					PartnerConfigMap: map[int]map[string]string{
