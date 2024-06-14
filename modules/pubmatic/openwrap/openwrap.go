@@ -37,7 +37,7 @@ type OpenWrap struct {
 	cfg                config.Config
 	cache              cache.Cache
 	metricEngine       metrics.MetricsEngine
-	currencyConversion currency.Conversions
+	currencyConversion *currency.RateConverter
 	geoInfoFetcher     geodb.Geography
 	pubFeatures        publisherfeature.Feature
 	unwrap             unwrap.Unwrap
@@ -105,7 +105,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cfg:                cfg,
 			cache:              owCache,
 			metricEngine:       &metricEngine,
-			currencyConversion: moduleDeps.CurrencyConversion,
+			currencyConversion: moduleDeps.RateConvertor,
 			geoInfoFetcher:     geoDBClient,
 			pubFeatures:        pubFeatures,
 			unwrap:             uw,
