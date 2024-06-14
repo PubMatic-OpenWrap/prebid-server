@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -368,9 +369,9 @@ func getProfileType(partnerConfigMap map[int]map[string]string) int {
 	return 0
 }
 
-func getProfileTypePlatform(partnerConfigMap map[int]map[string]string) int {
+func getProfileTypePlatform(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
 	if profileTypePlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
-		if ProfileTypePlatform, ok := models.ProfileTypePlatform[profileTypePlatformStr]; ok {
+		if ProfileTypePlatform, ok := profileMetaData.GetProfileTypePlatform(profileTypePlatformStr); ok {
 			return ProfileTypePlatform
 		}
 	}
@@ -385,23 +386,23 @@ func getAppPlatform(partnerConfigMap map[int]map[string]string) int {
 	return 0
 }
 
-func getAppIntegrationPath(partnerConfigMap map[int]map[string]string) int {
+func getAppIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
 	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
-		if appIntegrationPath, ok := models.AppIntegrationPath[appIntegrationPathStr]; ok {
+		if appIntegrationPath, ok := profileMetaData.GetAppIntegrationPath(appIntegrationPathStr); ok {
 			return appIntegrationPath
 		}
 	}
 	return -1
 }
 
-func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string) int {
+func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
 	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
-		if appSubIntegrationPath, ok := models.AppSubIntegrationPath[appSubIntegrationPathStr]; ok {
+		if appSubIntegrationPath, ok := profileMetaData.GetAppSubIntegrationPath(appSubIntegrationPathStr); ok {
 			return appSubIntegrationPath
 		}
 	}
 	if adserverStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
-		if adserver, ok := models.AppSubIntegrationPath[adserverStr]; ok {
+		if adserver, ok := profileMetaData.GetAppSubIntegrationPath(adserverStr); ok {
 			return adserver
 		}
 	}
