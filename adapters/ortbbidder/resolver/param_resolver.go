@@ -5,13 +5,6 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
-var (
-	// TypeBidFields is a list of typebid fields that are populated using resolver framework
-	TypeBidFields = [...]string{"bidtype", "duration", "bidmeta"}
-	// AdapterResponseFields is a list of adapter response fields that are populated using resolver framework
-	AdapterResponseFields = [...]string{"currency", "fledge"}
-)
-
 type resolveType string
 
 func (s resolveType) String() string {
@@ -33,7 +26,7 @@ var (
 
 type resolver interface {
 	getFromORTBObject(sourceNode map[string]any) (any, bool)
-	getUsingBidderParamLocation(responseNode map[string]any, path string) (any, bool)
+	retrieveFromBidderParamPath(responseNode map[string]any, path string) (any, bool)
 	autoDetect(request *openrtb2.BidRequest, sourceNode map[string]any) (any, bool)
 	setValue(targetNode map[string]any, value any)
 }
@@ -59,7 +52,7 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 // 2) Location from JSON file (bidder params)
 // 3) Auto-detection
 // If the value is found, it is set in the targetNode.
-func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location string, param resolveType) {
+func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path string, param resolveType) {
 	if sourceNode == nil || targetNode == nil || pr.bidderResponse == nil {
 		return
 	}
@@ -72,7 +65,7 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location
 	value, found := resolver.getFromORTBObject(sourceNode)
 	if !found {
 		// get the value from the bidder response using the location
-		value, found = resolver.getUsingBidderParamLocation(pr.bidderResponse, location)
+		value, found = resolver.retrieveFromBidderParamPath(pr.bidderResponse, path)
 		if !found {
 			// auto detect value
 			value, found = resolver.autoDetect(pr.request, sourceNode)
@@ -88,6 +81,6 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, location
 // valueResolver is a generic resolver to get values from the response node using location
 type valueResolver struct{}
 
-func (r *valueResolver) getUsingBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (r *valueResolver) retrieveFromBidderParamPath(responseNode map[string]any, path string) (any, bool) {
 	return util.GetValueFromLocation(responseNode, path)
 }

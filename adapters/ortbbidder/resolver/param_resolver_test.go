@@ -272,7 +272,7 @@ func TestGetUsingBidderparamNameLocation(t *testing.T) {
 	resolver := &valueResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.getUsingBidderParamLocation(tc.ortbResponse, tc.path)
+			value, found := resolver.retrieveFromBidderParamPath(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
 			assert.Equal(t, tc.expectedFound, found)
 		})
