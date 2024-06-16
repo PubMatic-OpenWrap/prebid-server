@@ -26,7 +26,7 @@ var (
 
 type resolver interface {
 	getFromORTBObject(sourceNode map[string]any) (any, bool)
-	retrieveFromBidderParamPath(responseNode map[string]any, path string) (any, bool)
+	retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool)
 	autoDetect(request *openrtb2.BidRequest, sourceNode map[string]any) (any, bool)
 	setValue(targetNode map[string]any, value any)
 }
@@ -65,7 +65,7 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path str
 	value, found := resolver.getFromORTBObject(sourceNode)
 	if !found {
 		// get the value from the bidder response using the location
-		value, found = resolver.retrieveFromBidderParamPath(pr.bidderResponse, path)
+		value, found = resolver.retrieveFromBidderParamLocation(pr.bidderResponse, path)
 		if !found {
 			// auto detect value
 			value, found = resolver.autoDetect(pr.request, sourceNode)
@@ -81,6 +81,6 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path str
 // valueResolver is a generic resolver to get values from the response node using location
 type valueResolver struct{}
 
-func (r *valueResolver) retrieveFromBidderParamPath(responseNode map[string]any, path string) (any, bool) {
+func (r *valueResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
 	return util.GetValueFromLocation(responseNode, path)
 }

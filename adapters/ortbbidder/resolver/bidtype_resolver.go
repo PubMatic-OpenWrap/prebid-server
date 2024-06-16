@@ -57,7 +57,6 @@ func (r *mtypeResolver) setValue(adapterBid map[string]any, value any) {
 	adapterBid[bidTypeKey] = value
 }
 
-// TODO: check impression.Banner/Native/Video for detecting mtype ?
 func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {
 	if videoRegex.MatchString(adm) {
 		return openrtb_ext.BidTypeVideo

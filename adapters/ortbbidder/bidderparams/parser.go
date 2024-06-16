@@ -59,7 +59,7 @@ func loadFile(dirPath string, isBidderAllowed func(string) bool, bidderConfigMap
 		if err != nil {
 			return err
 		}
-		// setParams(bidderName, params)
+
 		if _, found := bidderConfigMap[bidderName]; !found {
 			bidderConfigMap[bidderName] = &Config{}
 		}

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMtypeResolver(t *testing.T) {
+func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 	resolver := &mtypeResolver{}
 
 	t.Run("getFromORTBObject", func(t *testing.T) {
@@ -58,6 +58,11 @@ func TestMtypeResolver(t *testing.T) {
 			})
 		}
 	})
+
+}
+
+func TestMtypeResolverAutoDetect(t *testing.T) {
+	resolver := &mtypeResolver{}
 
 	t.Run("autoDetect", func(t *testing.T) {
 		testCases := []struct {
@@ -183,6 +188,9 @@ func TestMtypeResolver(t *testing.T) {
 			})
 		}
 	})
+}
+func TestMtypeResolverSetValue(t *testing.T) {
+	resolver := &mtypeResolver{}
 
 	t.Run("setValue", func(t *testing.T) {
 		testCases := []struct {
@@ -212,7 +220,6 @@ func TestMtypeResolver(t *testing.T) {
 		}
 	})
 }
-
 func TestGetMediaTypeFromAdm(t *testing.T) {
 	tests := []struct {
 		name     string

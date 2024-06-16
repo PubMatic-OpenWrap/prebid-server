@@ -74,8 +74,8 @@ func (rb *responseBuilder) setPrebidBidderResponse() error {
 			}
 			// Resolve the type bid level parameters.
 			paramMapper := rb.responseParams[resolver.BidType.String()]
-			path := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
-			paramResolver.Resolve(bid, typeBid, path, resolver.BidType)
+			location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
+			paramResolver.Resolve(bid, typeBid, location, resolver.BidType)
 
 			// Add the type bid to the list of type bids.
 			typeBids = append(typeBids, typeBid)

@@ -2,7 +2,6 @@ package ortbbidder
 
 import (
 	"encoding/json"
-	"errors"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -56,7 +55,7 @@ func TestParseResponse(t *testing.T) {
 		{
 			name:          "Invalid response",
 			responseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}`), // missing closing bracket
-			expectedError: errors.New("expect ] in the end, but found \x00"),
+			expectedError: &errortypes.FailedToUnmarshal{Message: "expect ] in the end, but found \x00"},
 		},
 	}
 
@@ -64,11 +63,7 @@ func TestParseResponse(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rb := &responseBuilder{}
 			err := rb.parseResponse(tc.responseBytes)
-			if tc.expectedError != nil {
-				assert.EqualError(t, err, tc.expectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
+			assert.Equal(t, tc.expectedError, err)
 		})
 	}
 }
