@@ -22,11 +22,32 @@ func GetImpressionExtCMOnsite(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMOnsitePre
 
 func GetRequestExtCMOnsite(prebidExt *openrtb_ext.ExtOWRequest) (*openrtb_ext.ExtRequestPrebidOnsite, error) {
 	var requestExtCMOnsite *openrtb_ext.ExtRequestPrebidOnsite
+	var mapExt map[string]interface{}
+
 
 	if prebidExt.Prebid.BidderParams != nil {
-		if err := json.Unmarshal(prebidExt.Prebid.BidderParams, &requestExtCMOnsite); err != nil {
+		if err := json.Unmarshal(prebidExt.Prebid.BidderParams, &mapExt); err != nil {
 			return nil, &errortypes.BadInput{
 				Message: "Impression extension not provided or can't be unmarshalled",
+			}
+		}
+
+		if ext, ok := mapExt["ext"]; ok {
+			extBytes, err := json.Marshal(ext)
+			if err != nil {
+				return nil, &errortypes.BadInput{
+					Message: "Error marshalling impression extension",
+				}
+			}
+
+			if err := json.Unmarshal(extBytes, &requestExtCMOnsite); err != nil {
+				return nil, &errortypes.BadInput{
+					Message: "Error unmarshalling impression extension to ExtRequestPrebidOnsite",
+				}
+			}
+		} else {
+			return nil, &errortypes.BadInput{
+				Message: "Impression extension not provided",
 			}
 		}
 	}
@@ -64,6 +85,7 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 
 	return siteExt, requestExtCMOnsite, nil
 }
+
 
 
 
