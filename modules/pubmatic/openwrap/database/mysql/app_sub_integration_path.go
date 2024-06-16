@@ -22,7 +22,7 @@ func (db *mySqlDB) GetAppSubIntegrationPath() (map[string]int, error) {
 		var asipKey string
 		var asipValue int
 		if err := rows.Scan(&asipKey, &asipValue); err != nil {
-			glog.Error("Error in getting AppIntegrationPath details from DB:", err.Error())
+			glog.Error("Error in getting AppSubIntegrationPath details from DB:", err.Error())
 			continue
 		}
 		AppSubIntegrationPath[asipKey] = asipValue
