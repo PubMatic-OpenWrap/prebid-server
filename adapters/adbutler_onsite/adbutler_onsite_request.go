@@ -14,7 +14,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	for _, imp := range request.Imp {
 		// Parse each imp element here
-		impExt := adapters.GetImpressionExtCMOnsite(imp)
+		impExt,_ := adapters.GetImpressionExtCMOnsite(&imp)
 		if impExt == nil {
 			return nil, []error{&errortypes.BadInput{
 				Message: "Missing required ext fields",
@@ -31,5 +31,6 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	return nil,nil
 }
+
 
 

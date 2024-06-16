@@ -35,7 +35,7 @@ func GetRequestExtCMOnsite(prebidExt *openrtb_ext.ExtOWRequest) (*openrtb_ext.Ex
 }
 
 func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
-	*openrtb_ext.ExtSiteCommerce, map[string]interface{}, []error) {
+	*openrtb_ext.ExtSiteCommerce, *openrtb_ext.ExtRequestPrebidOnsite, []error) {
 	var siteExt *openrtb_ext.ExtSiteCommerce
 	var requestExt *openrtb_ext.ExtOWRequest
 	var requestExtCMOnsite *openrtb_ext.ExtRequestPrebidOnsite
@@ -64,6 +64,7 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 
 	return siteExt, requestExtCMOnsite, nil
 }
+
 
 
 
