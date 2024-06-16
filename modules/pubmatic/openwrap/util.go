@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -17,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 )
 
 var (
