@@ -492,6 +492,13 @@ func TestGetValueFromLocation(t *testing.T) {
 			expectedValue: nil,
 			ok:            false,
 		},
+		{
+			name:          "Value is not present in node due to invalid index",
+			node:          jsonToMap(`{"seatbid":[{"bid":[{"ext":{"mtype":"video"}}]}]}`),
+			path:          "seatbid.0.bid.1.ext.mtype1",
+			expectedValue: nil,
+			ok:            false,
+		},
 	}
 
 	for _, tt := range tests {

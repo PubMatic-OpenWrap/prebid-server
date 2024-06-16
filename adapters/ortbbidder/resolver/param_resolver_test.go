@@ -218,7 +218,7 @@ func TestResolveTypeBid(t *testing.T) {
 	}
 }
 
-func TestretrieveFromBidderParamLocation(t *testing.T) {
+func TestRetrieveFromBidderParamLocation(t *testing.T) {
 	testCases := []struct {
 		name          string
 		ortbResponse  map[string]any
