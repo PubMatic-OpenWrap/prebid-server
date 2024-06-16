@@ -37,13 +37,13 @@ func Test_cache_GetProfileTypePlatform(t *testing.T) {
 		{
 			name: "Valid Data present in DB, return same",
 			want: map[string]int{
-				"openwrap": 1,
-				"identity": 2,
+				"display": 1,
+				"in-app":  2,
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetProfileTypePlatform().Return(map[string]int{
-					"openwrap": 1,
-					"identity": 2,
+					"display": 1,
+					"in-app":  2,
 				}, nil)
 			},
 			fields: fields{

@@ -27,12 +27,12 @@ func Test_profileMetaData_GetProfileTypePlatform(t *testing.T) {
 			fields: fields{
 				RWMutex: sync.RWMutex{},
 				profileTypePlatform: map[string]int{
-					"openwrap": 1,
-					"identity": 2,
+					"display": 1,
+					"in-app":  2,
 				},
 			},
 			args: args{
-				profileTypePlatformStr: "openwrap",
+				profileTypePlatformStr: "display",
 			},
 			want:  1,
 			want1: true,
@@ -42,8 +42,8 @@ func Test_profileMetaData_GetProfileTypePlatform(t *testing.T) {
 			fields: fields{
 				RWMutex: sync.RWMutex{},
 				profileTypePlatform: map[string]int{
-					"openwrap": 1,
-					"identity": 2,
+					"display": 1,
+					"in-app":  2,
 				},
 			},
 			args: args{
