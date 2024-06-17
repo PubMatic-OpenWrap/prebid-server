@@ -44,6 +44,7 @@ class diffHelper {
     for (const { filename, patch } of files) {
       if (this.fileNameFilter(filename)) {
         if (!patch) {
+          print(`No patch found for file: ${filename}`)
           continue
         }
         const lines = patch.split("\n")
