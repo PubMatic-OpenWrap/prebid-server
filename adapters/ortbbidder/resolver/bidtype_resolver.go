@@ -22,12 +22,16 @@ var (
 	videoRegex = regexp.MustCompile(`<VAST\s+`)
 )
 
-// mtypeResolver resolves the media type of the type bid
-type mtypeResolver struct {
+// bidTypeResolver determines the bid type based on the following hierarchy:
+// 1. It first attempts to retrieve the bid type from the response.seat.bid.mtype location.
+// 2. If not found, it then tries to retrieve the bid type using the bidder param location.
+// 3. If still not found, it automatically detects the bid type using either the adm or impression.
+// The determined bid type is subsequently assigned to adapterresponse.typebid.bidtype
+type bidTypeResolver struct {
 	valueResolver
 }
 
-func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
+func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	mtype, ok := bid[mtypeKey].(float64)
 	if !ok || mtype == 0 {
 		return nil, false
@@ -39,7 +43,7 @@ func (r *mtypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	return nil, false
 }
 
-func (r *mtypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
+func (r *bidTypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
 	adm, ok := bid[admKey].(string)
 	if ok && adm != "" {
 		return getMediaTypeFromAdm(adm), true // Adm is present, get media type from adm
@@ -53,7 +57,7 @@ func (r *mtypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]
 
 }
 
-func (r *mtypeResolver) setValue(adapterBid map[string]any, value any) {
+func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) {
 	adapterBid[bidTypeKey] = value
 }
 

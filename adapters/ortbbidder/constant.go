@@ -20,11 +20,16 @@ const (
 	oRTBPrefix              = "owortb_"
 )
 
+// constants to retrieve values from oRTB request/response
 const (
-	currencyKey     = "Currency"
 	seatBidKey      = "seatbid"
-	typeBidKey      = "Bid"
 	bidKey          = "bid"
-	bidsKey         = "Bids"
 	ortbCurrencyKey = "cur"
+)
+
+// constants to set values in adapter response
+const (
+	currencyKey = "Currency"
+	typeBidKey  = "Bid"
+	bidsKey     = "Bids"
 )

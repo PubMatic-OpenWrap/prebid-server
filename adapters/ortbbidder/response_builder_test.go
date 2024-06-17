@@ -1,13 +1,13 @@
 package ortbbidder
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,33 +37,6 @@ func TestNewResponseBuilder(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := newResponseBuilder(tc.responseParams, tc.request)
 			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
-func TestParseResponse(t *testing.T) {
-	testCases := []struct {
-		name          string
-		responseBytes json.RawMessage
-		expectedError error
-	}{
-		{
-			name:          "Valid response",
-			responseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}]}`),
-			expectedError: nil,
-		},
-		{
-			name:          "Invalid response",
-			responseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}`), // missing closing bracket
-			expectedError: &errortypes.FailedToUnmarshal{Message: "expect ] in the end, but found \x00"},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			rb := &responseBuilder{}
-			err := rb.parseResponse(tc.responseBytes)
-			assert.Equal(t, tc.expectedError, err)
 		})
 	}
 }
@@ -149,33 +122,36 @@ func TestBuildAdapterResponse(t *testing.T) {
 
 func TestSetPrebidBidderResponse(t *testing.T) {
 	testCases := []struct {
-		name             string
-		bidderResponse   map[string]any
-		responseParams   map[string]bidderparams.BidderParamMapper
-		expectedError    error
-		expectedResponse map[string]any
+		name                string
+		bidderResponse      map[string]any
+		bidderResponseBytes []byte
+		responseParams      map[string]bidderparams.BidderParamMapper
+		expectedError       error
+		expectedResponse    map[string]any
 	}{
 		{
-			name: "Invalid seatbid object in response",
-			bidderResponse: map[string]any{
-				"cur":      "USD",
-				seatBidKey: map[string]any{},
-			},
+			name:                "Invalid bidder response, unmarshal failure",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"bid-1", "ext":{"mtype":"video"}}]}`),
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[map[]]"},
+			expectedError: &errortypes.FailedToUnmarshal{Message: "expect ] in the end, but found \x00"},
 		},
 		{
-			name: "Invalid seatbid is seatbid arrays",
-			bidderResponse: map[string]any{
-				"cur": "USD",
-				seatBidKey: []any{
-					"invalid",
+			name:                "Invalid seatbid object in response",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":"invalid"}`),
+			responseParams: map[string]bidderparams.BidderParamMapper{
+				"Currency": {
+					Location: "cur",
 				},
 			},
+			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[invalid]"},
+		},
+		{
+			name:                "Invalid seatbid is seatbid arrays",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":["invalid"]}`),
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
 					Location: "cur",
@@ -184,15 +160,8 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[invalid]"},
 		},
 		{
-			name: "Invalid bid in seatbid",
-			bidderResponse: map[string]any{
-				"cur": "USD",
-				seatBidKey: []any{
-					map[string]any{
-						"bid": "invalid",
-					},
-				},
-			},
+			name:                "Invalid bid in seatbid",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":"invalid"}]}`),
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
 					Location: "cur",
@@ -201,17 +170,8 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			expectedError: &errortypes.BadServerResponse{Message: "invalid bid array found in seatbid, bids:[invalid]"},
 		},
 		{
-			name: "Invalid bid in bids array",
-			bidderResponse: map[string]any{
-				"cur": "USD",
-				seatBidKey: []any{
-					map[string]any{
-						"bid": []any{
-							"invalid",
-						},
-					},
-				},
-			},
+			name:                "Invalid bid in bids array",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":["invalid"]}]}`),
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"Currency": {
 					Location: "cur",
@@ -220,36 +180,42 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			expectedError: &errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"},
 		},
 		{
-			name: "Valid bidder respone, no bidder params",
-			bidderResponse: map[string]any{
-				"cur": "USD",
-				seatBidKey: []any{
-					map[string]any{
-						"bid": []any{
-							map[string]any{
-								"id":    "123",
-								"mtype": 2,
-							},
-						},
-					},
-				},
-			},
-			responseParams: map[string]bidderparams.BidderParamMapper{},
-			expectedError:  nil,
+			name:                "Valid bidder respone, no bidder params",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
+			responseParams:      map[string]bidderparams.BidderParamMapper{},
+			expectedError:       nil,
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
 					map[string]any{
 						"Bid": map[string]any{
-							"id":    "123",
-							"mtype": 2,
+							"id": "123",
 						},
 					},
 				},
 			},
 		},
 		{
-			name: "Valid bidder respone, with bidder params",
+			name:                "Valid bidder respone, no bidder params - bidtype populated",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123","mtype": 2}]}]}`),
+			responseParams:      map[string]bidderparams.BidderParamMapper{},
+			expectedError:       nil,
+			expectedResponse: map[string]any{
+				"Currency": "USD",
+				"Bids": []any{
+					map[string]any{
+						"Bid": map[string]any{
+							"id":    "123",
+							"mtype": float64(2),
+						},
+						"BidType": openrtb_ext.BidType("video"),
+					},
+				},
+			},
+		},
+		{
+			name:                "Valid bidder respone, with bidder params",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123","ext": {"bidtype": "video"}}]}]}`),
 			bidderResponse: map[string]any{
 				"cur": "USD",
 				seatBidKey: []any{
@@ -297,7 +263,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 				bidderResponse: tc.bidderResponse,
 				responseParams: tc.responseParams,
 			}
-			err := rb.setPrebidBidderResponse()
+			err := rb.setPrebidBidderResponse(tc.bidderResponseBytes)
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectedResponse, rb.adapterRespone)
 		})

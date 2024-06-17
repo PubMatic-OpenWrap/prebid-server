@@ -15,7 +15,7 @@ func TestResolveTypeBid(t *testing.T) {
 		typeBid         map[string]any
 		bidderResponse  map[string]any
 		location        string
-		paramName       resolveType
+		paramName       parameter
 		expectedTypeBid map[string]any
 		request         *openrtb2.BidRequest
 	}{

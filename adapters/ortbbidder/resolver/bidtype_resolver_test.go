@@ -9,7 +9,7 @@ import (
 )
 
 func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
-	resolver := &mtypeResolver{}
+	resolver := &bidTypeResolver{}
 
 	t.Run("getFromORTBObject", func(t *testing.T) {
 		testCases := []struct {
@@ -61,8 +61,8 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 
 }
 
-func TestMtypeResolverAutoDetect(t *testing.T) {
-	resolver := &mtypeResolver{}
+func TestBidTypeResolverAutoDetect(t *testing.T) {
+	resolver := &bidTypeResolver{}
 
 	t.Run("autoDetect", func(t *testing.T) {
 		testCases := []struct {
@@ -190,7 +190,7 @@ func TestMtypeResolverAutoDetect(t *testing.T) {
 	})
 }
 func TestMtypeResolverSetValue(t *testing.T) {
-	resolver := &mtypeResolver{}
+	resolver := &bidTypeResolver{}
 
 	t.Run("setValue", func(t *testing.T) {
 		testCases := []struct {

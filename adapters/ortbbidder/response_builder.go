@@ -25,17 +25,14 @@ func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper
 	}
 }
 
-// parseResponse parses the bidder response from the given JSON raw message.
-// It unmarshals the JSON into the rb.bidderResponse struct.
-func (rb *responseBuilder) parseResponse(bidderResponseBytes json.RawMessage) error {
-	return jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
-}
+// setPrebidBidderResponse determines and construct adapters.BidderResponse and adapters.TypedBid object with the help
+// of response parameter mappings defined in static/bidder-response-params
+func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawMessage) error {
 
-// setPrebidBidderResponse builds the adapter response based on the given response parameters.
-// It resolves the response level and bid level parameters using the provided responseParams map.
-// The resolved response is stored in the adapterResponse map.
-// If any invalid seatbid or bid is found in the response, an error is returned.
-func (rb *responseBuilder) setPrebidBidderResponse() error {
+	err := jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
+	if err != nil {
+		return err
+	}
 	// Create a new ParamResolver with the bidder response.
 	paramResolver := resolver.New(rb.request, rb.bidderResponse)
 	// Initialize the adapter response with the currency from the bidder response.

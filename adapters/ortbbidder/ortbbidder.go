@@ -103,12 +103,7 @@ func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes jso
 	responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
 	rb := newResponseBuilder(responseParmas, request)
 
-	err := rb.parseResponse(bidderResponseBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	err = rb.setPrebidBidderResponse()
+	err := rb.setPrebidBidderResponse(bidderResponseBytes)
 	if err != nil {
 		return nil, err
 	}

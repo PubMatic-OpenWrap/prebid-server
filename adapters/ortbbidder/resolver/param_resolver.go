@@ -5,22 +5,22 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
-type resolveType string
+type parameter string
 
-func (s resolveType) String() string {
+func (s parameter) String() string {
 	return string(s)
 }
 
 const (
-	BidType  resolveType = "bidtype"
-	Duration resolveType = "duration"
-	BidMeta  resolveType = "bidmeta"
-	Fledge   resolveType = "fledge"
+	BidType  parameter = "bidtype"
+	Duration parameter = "duration"
+	BidMeta  parameter = "bidmeta"
+	Fledge   parameter = "fledge"
 )
 
 var (
 	resolvers = resolverMap{
-		BidType: &mtypeResolver{},
+		BidType: &bidTypeResolver{},
 	}
 )
 
@@ -31,7 +31,7 @@ type resolver interface {
 	setValue(targetNode map[string]any, value any)
 }
 
-type resolverMap map[resolveType]resolver
+type resolverMap map[parameter]resolver
 
 type paramResolver struct {
 	bidderResponse map[string]any
@@ -52,7 +52,7 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 // 2) Location from JSON file (bidder params)
 // 3) Auto-detection
 // If the value is found, it is set in the targetNode.
-func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path string, param resolveType) {
+func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path string, param parameter) {
 	if sourceNode == nil || targetNode == nil || pr.bidderResponse == nil {
 		return
 	}
