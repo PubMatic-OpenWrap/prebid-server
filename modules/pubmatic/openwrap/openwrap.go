@@ -85,7 +85,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	// Init Feature reloader service
 	pubFeatures := publisherfeature.New(publisherfeature.Config{
 		Cache:                 owCache,
-		DefaultExpiry:         cfg.Cache.ProfileMetaDataCacheExpiry,
+		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
 		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
 	})
 	pubFeatures.Start()
