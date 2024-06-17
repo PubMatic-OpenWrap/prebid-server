@@ -7,7 +7,7 @@ import (
 
 const (
 	requestParamsDirectory   = "./static/bidder-params"
-	resposnseParamsDirectory = "./static/bidder-response-params/"
+	resposnseParamsDirectory = "./static/bidder-response-params"
 )
 
 // main_ow will perform the openwrap specific initialisation tasks
