@@ -3,12 +3,12 @@ package ortbbidder
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
@@ -35,9 +35,9 @@ type extraAdapterInfo struct {
 var g_bidderParamsConfig *bidderparams.BidderConfig
 
 // InitBidderParamsConfig initializes a g_bidderParamsConfig instance from the files provided in dirPath.
-func InitBidderParamsConfig(dirPath string) (err error) {
-	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(dirPath, IsORTBBidder)
-	return err
+func InitBidderParamsConfig(requestParamsDirPath, responseParamsDirPath string) (err error) {
+	g_bidderParamsConfig, err = bidderparams.LoadBidderConfig(requestParamsDirPath, responseParamsDirPath, util.IsORTBBidder)
+	return
 }
 
 // Builder returns an instance of oRTB adapter
@@ -88,63 +88,25 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	var response openrtb2.BidResponse
-	if err := jsonutil.Unmarshal(responseData.Body, &response); err != nil {
-		return nil, []error{err}
+	response, err := o.makeBids(request, responseData.Body)
+	if err != nil {
+		return nil, []error{newBadServerResponseError(err.Error())}
 	}
 
-	bidResponse := adapters.BidderResponse{
-		Bids: make([]*adapters.TypedBid, 0),
-	}
-	for _, seatBid := range response.SeatBid {
-		for bidInd, bid := range seatBid.Bid {
-			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:     &seatBid.Bid[bidInd],
-				BidType: getMediaTypeForBid(bid),
-			})
-		}
-	}
-	return &bidResponse, nil
+	return response, nil
 }
 
-// getMediaTypeForBid returns the BidType as per the bid.MType field
-// bid.MType has high priority over bidExt.Prebid.Type
-func getMediaTypeForBid(bid openrtb2.Bid) openrtb_ext.BidType {
-	var bidType openrtb_ext.BidType
-	if bid.MType > 0 {
-		bidType = getMediaTypeForBidFromMType(bid.MType)
-	} else {
-		if bid.Ext != nil {
-			var bidExt openrtb_ext.ExtBid
-			err := json.Unmarshal(bid.Ext, &bidExt)
-			if err == nil && bidExt.Prebid != nil {
-				bidType, _ = openrtb_ext.ParseBidType(string(bidExt.Prebid.Type))
-			}
-		}
-	}
-	if bidType == "" {
-		// TODO : detect mediatype from bid.AdM and request.imp parameter
-	}
-	return bidType
-}
+// makeBids converts the bidderResponseBytes to a BidderResponse
+// It retrieves response parameters, creates a response builder, parses the response, and builds the response.
+// Finally, it converts the response builder's internal representation to an AdapterResponse and returns it.
+func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
+	responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
+	rb := newResponseBuilder(responseParmas, request)
 
-// getMediaTypeForBidFromMType returns the bidType from the MarkupType field
-func getMediaTypeForBidFromMType(mtype openrtb2.MarkupType) openrtb_ext.BidType {
-	var bidType openrtb_ext.BidType
-	switch mtype {
-	case openrtb2.MarkupBanner:
-		bidType = openrtb_ext.BidTypeBanner
-	case openrtb2.MarkupVideo:
-		bidType = openrtb_ext.BidTypeVideo
-	case openrtb2.MarkupAudio:
-		bidType = openrtb_ext.BidTypeAudio
-	case openrtb2.MarkupNative:
-		bidType = openrtb_ext.BidTypeNative
+	err := rb.setPrebidBidderResponse(bidderResponseBytes)
+	if err != nil {
+		return nil, err
 	}
-	return bidType
-}
 
-// IsORTBBidder returns true if the bidder is an oRTB bidder
-func IsORTBBidder(bidderName string) bool {
-	return strings.HasPrefix(bidderName, oRTBPrefix)
+	return rb.buildAdapterResponse()
 }
