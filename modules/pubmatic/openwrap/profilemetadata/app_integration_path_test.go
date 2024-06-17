@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_profileMetaData_GetAppIntegrationPath(t *testing.T) {

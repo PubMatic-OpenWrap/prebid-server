@@ -85,15 +85,15 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	// Init Feature reloader service
 	pubFeatures := publisherfeature.New(publisherfeature.Config{
 		Cache:                 owCache,
-		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
+		DefaultExpiry:         cfg.Cache.ProfileMetaDataCacheExpiry,
 		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
 	})
 	pubFeatures.Start()
 
 	// Init ProfileMetaData reloader service
 	profileMetaData := profilemetadata.New(profilemetadata.Config{
-		Cache:         owCache,
-		DefaultExpiry: cfg.Cache.CacheDefaultExpiry,
+		Cache:                 owCache,
+		ProfileMetaDataExpiry: cfg.Cache.ProfileMetaDataCacheExpiry,
 	})
 	profileMetaData.Start()
 

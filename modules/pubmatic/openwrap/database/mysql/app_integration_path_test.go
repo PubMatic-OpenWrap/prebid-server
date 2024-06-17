@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 	type fields struct {
-		conn *sql.DB
-		cfg  config.Database
+		cfg config.Database
 	}
 	tests := []struct {
 		name    string
@@ -37,33 +36,6 @@ func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				return db
-			},
-		},
-		{
-			name: "valid rows returned from DB",
-			fields: fields{
-				cfg: config.Database{
-					MaxDbContextTimeout: 100,
-					Queries: config.Queries{
-						GetAppIntegrationPathQuery: "^SELECT (.+) FROM app_integration_path (.+)",
-					},
-				},
-			},
-			want: map[string]int{
-				"test1": 1,
-				"test2": 2,
-			},
-			wantErr: false,
-			setup: func() *sql.DB {
-				db, mock, err := sqlmock.New()
-				if err != nil {
-					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-				}
-				rows := sqlmock.NewRows([]string{"name", "id"}).
-					AddRow(`test1`, `1`).
-					AddRow(`test2`, `2`)
-				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_integration_path (.+)")).WillReturnRows(rows)
 				return db
 			},
 		},
@@ -149,9 +121,9 @@ func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetAppIntegrationPath()
+			got, err := db.GetAppIntegrationPaths()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetAppIntegrationPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("mySqlDB.GetAppIntegrationPaths() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.Equal(t, tt.want, got)

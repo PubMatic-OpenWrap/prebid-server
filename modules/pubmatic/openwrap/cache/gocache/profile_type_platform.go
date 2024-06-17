@@ -9,8 +9,8 @@ import (
 var errorProfileTypePlatformUpdate = "[ErrorProfileTypePlatformUpdate]:%w"
 
 // We are not saving data in cache here
-func (c *cache) GetProfileTypePlatform() (map[string]int, error) {
-	profileTypePlatformMap, err := c.db.GetProfileTypePlatform()
+func (c *cache) GetProfileTypePlatforms() (map[string]int, error) {
+	profileTypePlatformMap, err := c.db.GetProfileTypePlatforms()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.ProfileTypePlatformQuery, "", "")
 		return profileTypePlatformMap, fmt.Errorf(errorProfileTypePlatformUpdate, err)

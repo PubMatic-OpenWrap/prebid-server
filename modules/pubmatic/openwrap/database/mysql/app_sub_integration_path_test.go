@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
@@ -94,9 +94,9 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetAppSubIntegrationPath()
+			got, err := db.GetAppSubIntegrationPaths()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetAppSubIntegrationPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("mySqlDB.GetAppSubIntegrationPaths() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.Equal(t, tt.want, got, tt.name)

@@ -41,7 +41,7 @@ func Test_cache_GetProfileTypePlatform(t *testing.T) {
 				"in-app":  2,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetProfileTypePlatform().Return(map[string]int{
+				mockDatabase.EXPECT().GetProfileTypePlatforms().Return(map[string]int{
 					"display": 1,
 					"in-app":  2,
 				}, nil)
@@ -59,7 +59,7 @@ func Test_cache_GetProfileTypePlatform(t *testing.T) {
 			name: "Error In DB, Set Empty",
 			want: map[string]int{},
 			setup: func() {
-				mockDatabase.EXPECT().GetProfileTypePlatform().Return(map[string]int{}, errors.New("QUERY FAILD"))
+				mockDatabase.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, errors.New("QUERY FAILD"))
 				mockEngine.EXPECT().RecordDBQueryFailure(models.ProfileTypePlatformQuery, "", "").Return()
 			},
 			fields: fields{
@@ -82,9 +82,9 @@ func Test_cache_GetProfileTypePlatform(t *testing.T) {
 				db:           tt.fields.db,
 				metricEngine: mockEngine,
 			}
-			got, err := c.GetProfileTypePlatform()
+			got, err := c.GetProfileTypePlatforms()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("cache.GetProfileTypePlatform() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("cache.GetProfileTypePlatforms() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.Equal(t, tt.want, got)

@@ -1,8 +1,8 @@
 package profilemetadata
 
-func (pmd *profileMetaData) GetAppSubIntegrationPath(appSubIntegrationPathStr string) (int, bool) {
+func (pmd *profileMetaData) GetAppSubIntegrationPath(appSubIntegrationPath string) (int, bool) {
 	pmd.RLock()
-	defer pmd.RUnlock()
-	val, ok := pmd.appSubIntegrationPath[appSubIntegrationPathStr]
+	val, ok := pmd.appSubIntegrationPath[appSubIntegrationPath]
+	pmd.RUnlock()
 	return val, ok
 }

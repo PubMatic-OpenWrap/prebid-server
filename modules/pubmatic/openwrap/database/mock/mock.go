@@ -80,34 +80,34 @@ func (mr *MockDatabaseMockRecorder) GetAdunitConfig(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdunitConfig", reflect.TypeOf((*MockDatabase)(nil).GetAdunitConfig), arg0, arg1)
 }
 
-// GetAppIntegrationPath mocks base method
-func (m *MockDatabase) GetAppIntegrationPath() (map[string]int, error) {
+// GetAppIntegrationPaths mocks base method
+func (m *MockDatabase) GetAppIntegrationPaths() (map[string]int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppIntegrationPath")
+	ret := m.ctrl.Call(m, "GetAppIntegrationPaths")
 	ret0, _ := ret[0].(map[string]int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAppIntegrationPath indicates an expected call of GetAppIntegrationPath
-func (mr *MockDatabaseMockRecorder) GetAppIntegrationPath() *gomock.Call {
+// GetAppIntegrationPaths indicates an expected call of GetAppIntegrationPaths
+func (mr *MockDatabaseMockRecorder) GetAppIntegrationPaths() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIntegrationPath", reflect.TypeOf((*MockDatabase)(nil).GetAppIntegrationPath))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIntegrationPaths", reflect.TypeOf((*MockDatabase)(nil).GetAppIntegrationPaths))
 }
 
-// GetAppSubIntegrationPath mocks base method
-func (m *MockDatabase) GetAppSubIntegrationPath() (map[string]int, error) {
+// GetAppSubIntegrationPaths mocks base method
+func (m *MockDatabase) GetAppSubIntegrationPaths() (map[string]int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppSubIntegrationPath")
+	ret := m.ctrl.Call(m, "GetAppSubIntegrationPaths")
 	ret0, _ := ret[0].(map[string]int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAppSubIntegrationPath indicates an expected call of GetAppSubIntegrationPath
-func (mr *MockDatabaseMockRecorder) GetAppSubIntegrationPath() *gomock.Call {
+// GetAppSubIntegrationPaths indicates an expected call of GetAppSubIntegrationPaths
+func (mr *MockDatabaseMockRecorder) GetAppSubIntegrationPaths() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSubIntegrationPath", reflect.TypeOf((*MockDatabase)(nil).GetAppSubIntegrationPath))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSubIntegrationPaths", reflect.TypeOf((*MockDatabase)(nil).GetAppSubIntegrationPaths))
 }
 
 // GetFSCThresholdPerDSP mocks base method
@@ -140,19 +140,19 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
 }
 
-// GetProfileTypePlatform mocks base method
-func (m *MockDatabase) GetProfileTypePlatform() (map[string]int, error) {
+// GetProfileTypePlatforms mocks base method
+func (m *MockDatabase) GetProfileTypePlatforms() (map[string]int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProfileTypePlatform")
+	ret := m.ctrl.Call(m, "GetProfileTypePlatforms")
 	ret0, _ := ret[0].(map[string]int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetProfileTypePlatform indicates an expected call of GetProfileTypePlatform
-func (mr *MockDatabaseMockRecorder) GetProfileTypePlatform() *gomock.Call {
+// GetProfileTypePlatforms indicates an expected call of GetProfileTypePlatforms
+func (mr *MockDatabaseMockRecorder) GetProfileTypePlatforms() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileTypePlatform", reflect.TypeOf((*MockDatabase)(nil).GetProfileTypePlatform))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileTypePlatforms", reflect.TypeOf((*MockDatabase)(nil).GetProfileTypePlatforms))
 }
 
 // GetPublisherFeatureMap mocks base method

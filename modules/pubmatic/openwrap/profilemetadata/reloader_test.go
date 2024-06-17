@@ -1,13 +1,14 @@
 package profilemetadata
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -22,8 +23,8 @@ func TestNew(t *testing.T) {
 			name: "test",
 			args: args{
 				config: Config{
-					Cache:         nil,
-					DefaultExpiry: 0,
+					Cache:                 nil,
+					ProfileMetaDataExpiry: 0,
 				},
 			},
 		},
@@ -70,8 +71,8 @@ func TestInitiateReloader(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type args struct {
-		defaultExpiry int
-		cache         cache.Cache
+		profileMetaDataExpiry int
+		cache                 cache.Cache
 	}
 
 	tests := []struct {
@@ -82,30 +83,30 @@ func TestInitiateReloader(t *testing.T) {
 		{
 			name: "test InitateReloader with valid cache and invalid time, exit",
 			args: args{
-				defaultExpiry: 0,
-				cache:         mockCache,
+				profileMetaDataExpiry: 0,
+				cache:                 mockCache,
 			},
 			setup: func() {},
 		},
 		{
 			name: "test InitateReloader with valid cache and time, call once and exit",
 			args: args{
-				defaultExpiry: 1000,
-				cache:         mockCache,
+				profileMetaDataExpiry: 1000,
+				cache:                 mockCache,
 			},
 			setup: func() {
-				mockCache.EXPECT().GetAppIntegrationPath().Return(map[string]int{}, nil)
-				mockCache.EXPECT().GetAppSubIntegrationPath().Return(map[string]int{}, nil)
-				mockCache.EXPECT().GetProfileTypePlatform().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetAppIntegrationPaths().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, nil)
 			},
 		},
 	}
 	for _, tt := range tests {
 		tt.setup()
 		profileMetaData := &profileMetaData{
-			cache:         tt.args.cache,
-			defaultExpiry: tt.args.defaultExpiry,
-			serviceStop:   make(chan struct{}),
+			cache:                 tt.args.cache,
+			profileMetaDataExpiry: tt.args.profileMetaDataExpiry,
+			serviceStop:           make(chan struct{}),
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -129,7 +130,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 		cache                 cache.Cache
 		serviceStop           chan struct{}
 		RWMutex               sync.RWMutex
-		defaultExpiry         int
+		profileMetaDataExpiry int
 		profileTypePlatform   map[string]int
 		appIntegrationPath    map[string]int
 		appSubIntegrationPath map[string]int
@@ -154,23 +155,23 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				appSubIntegrationPath: map[string]int{},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetProfileTypePlatform().Return(map[string]int{
-					"openwrap": 1,
-					"identity": 2,
+				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{
+					"display": 1,
+					"in-app":  2,
 				}, nil)
-				mockCache.EXPECT().GetAppIntegrationPath().Return(map[string]int{
+				mockCache.EXPECT().GetAppIntegrationPaths().Return(map[string]int{
 					"iOS":     1,
 					"Android": 2,
 				}, nil)
-				mockCache.EXPECT().GetAppSubIntegrationPath().Return(map[string]int{
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{
 					"DFP":   1,
 					"MoPub": 3,
 				}, nil)
 			},
 			want: want{
 				profileTypePlatform: map[string]int{
-					"openwrap": 1,
-					"identity": 2,
+					"display": 1,
+					"in-app":  2,
 				},
 				appIntegrationPath: map[string]int{
 					"iOS":     1,
@@ -182,6 +183,26 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "profileTypePlatform, appIntegrationPath and appSubIntegrationPath not updated from cache",
+			fields: fields{
+				cache:                 mockCache,
+				profileTypePlatform:   map[string]int{},
+				appIntegrationPath:    map[string]int{},
+				appSubIntegrationPath: map[string]int{},
+			},
+			setup: func() {
+				mockCache.EXPECT().GetProfileTypePlatforms().Return(nil, fmt.Errorf("error"))
+				mockCache.EXPECT().GetAppIntegrationPaths().Return(nil, fmt.Errorf("error"))
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(nil, fmt.Errorf("error"))
+
+			},
+			want: want{
+				profileTypePlatform:   map[string]int{},
+				appIntegrationPath:    map[string]int{},
+				appSubIntegrationPath: map[string]int{},
+			},
+		},
 	}
 	for ind := range tests {
 		tt := &tests[ind]
@@ -190,12 +211,12 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 			pmd := &profileMetaData{
 				cache:                 tt.fields.cache,
 				serviceStop:           tt.fields.serviceStop,
-				defaultExpiry:         tt.fields.defaultExpiry,
+				profileMetaDataExpiry: tt.fields.profileMetaDataExpiry,
 				profileTypePlatform:   tt.fields.profileTypePlatform,
 				appIntegrationPath:    tt.fields.appIntegrationPath,
 				appSubIntegrationPath: tt.fields.appSubIntegrationPath,
 			}
-			pmd.updateProfileMetadaMaps()
+			pmd.updateProfileMetaDataMaps()
 			assert.Equal(t, tt.want.profileTypePlatform, pmd.profileTypePlatform)
 			assert.Equal(t, tt.want.appIntegrationPath, pmd.appIntegrationPath)
 			assert.Equal(t, tt.want.appSubIntegrationPath, pmd.appSubIntegrationPath)

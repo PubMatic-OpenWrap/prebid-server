@@ -41,7 +41,7 @@ func Test_cache_GetAppIntegrationPath(t *testing.T) {
 				"app_int_2": 2,
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetAppIntegrationPath().Return(map[string]int{
+				mockDatabase.EXPECT().GetAppIntegrationPaths().Return(map[string]int{
 					"app_int_1": 1,
 					"app_int_2": 2,
 				}, nil)
@@ -59,7 +59,7 @@ func Test_cache_GetAppIntegrationPath(t *testing.T) {
 			name: "Error In DB, Set Empty",
 			want: map[string]int{},
 			setup: func() {
-				mockDatabase.EXPECT().GetAppIntegrationPath().Return(map[string]int{}, errors.New("QUERY FAILD"))
+				mockDatabase.EXPECT().GetAppIntegrationPaths().Return(map[string]int{}, errors.New("QUERY FAILD"))
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AppIntegrationPathQuery, "", "").Return()
 			},
 			fields: fields{
@@ -82,9 +82,9 @@ func Test_cache_GetAppIntegrationPath(t *testing.T) {
 				db:           tt.fields.db,
 				metricEngine: mockEngine,
 			}
-			got, err := c.GetAppIntegrationPath()
+			got, err := c.GetAppIntegrationPaths()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("cache.GetAppIntegrationPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("cache.GetAppIntegrationPaths() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.Equal(t, tt.want, got)

@@ -1,8 +1,8 @@
 package profilemetadata
 
-func (pmd *profileMetaData) GetProfileTypePlatform(profileTypePlatformStr string) (int, bool) {
+func (pmd *profileMetaData) GetProfileTypePlatform(profileTypePlatform string) (int, bool) {
 	pmd.RLock()
-	defer pmd.RUnlock()
-	val, ok := pmd.profileTypePlatform[profileTypePlatformStr]
+	val, ok := pmd.profileTypePlatform[profileTypePlatform]
+	pmd.RUnlock()
 	return val, ok
 }

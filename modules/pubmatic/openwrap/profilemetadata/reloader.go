@@ -6,18 +6,19 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 type Config struct {
-	Cache         cache.Cache
-	DefaultExpiry int
+	Cache                 cache.Cache
+	ProfileMetaDataExpiry int
 }
 
 type profileMetaData struct {
-	cache       cache.Cache
-	serviceStop chan struct{}
 	sync.RWMutex
-	defaultExpiry         int
+	cache                 cache.Cache
+	serviceStop           chan struct{}
+	profileMetaDataExpiry int
 	profileTypePlatform   map[string]int
 	appIntegrationPath    map[string]int
 	appSubIntegrationPath map[string]int
@@ -31,7 +32,7 @@ func New(config Config) *profileMetaData {
 		pmd = &profileMetaData{
 			cache:                 config.Cache,
 			serviceStop:           make(chan struct{}),
-			defaultExpiry:         config.DefaultExpiry,
+			profileMetaDataExpiry: config.ProfileMetaDataExpiry,
 			profileTypePlatform:   make(map[string]int),
 			appIntegrationPath:    make(map[string]int),
 			appSubIntegrationPath: make(map[string]int),
@@ -50,16 +51,16 @@ func (pmd *profileMetaData) Stop() {
 	close(pmd.serviceStop)
 }
 
-// Initializing reloader with cache-refresh default-expiry + 23 Hrs (to avoid DB load post cache refresh)
+// Initializing reloader with cache-refresh (to avoid DB load post cache refresh)
 var initReloader = func(pmd *profileMetaData) {
-	if pmd.defaultExpiry <= 0 {
+	if pmd.profileMetaDataExpiry <= 0 {
 		return
 	}
 	glog.Info("profileMetaData reloader start")
-	ticker := time.NewTicker(time.Duration(pmd.defaultExpiry+(23*60*60)) * time.Second)
+	ticker := time.NewTicker(time.Duration(pmd.profileMetaDataExpiry) * time.Second)
 	for {
 		//Populating pmdature config maps from cache
-		pmd.updateProfileMetadaMaps()
+		pmd.updateProfileMetaDataMaps()
 		select {
 		case t := <-ticker.C:
 			glog.Info("profileMetaData Reloader loads cache @", t)
@@ -69,22 +70,36 @@ var initReloader = func(pmd *profileMetaData) {
 	}
 }
 
-func (pmd *profileMetaData) updateProfileMetadaMaps() {
-	if profileTypePlatfrom, err := pmd.cache.GetProfileTypePlatform(); err == nil {
+func (pmd *profileMetaData) updateProfileMetaDataMaps() {
+	var err error
+	profileTypePlatfrom, errProfileTypePlatforms := pmd.cache.GetProfileTypePlatforms()
+	if errProfileTypePlatforms != nil {
+		err = models.ErrorWrap(err, errProfileTypePlatforms)
+	} else {
 		pmd.Lock()
 		pmd.profileTypePlatform = profileTypePlatfrom
 		pmd.Unlock()
 	}
 
-	if appIntegrationPath, err := pmd.cache.GetAppIntegrationPath(); err == nil {
+	appIntegrationPath, errAppIntegrationPath := pmd.cache.GetAppIntegrationPaths()
+	if errAppIntegrationPath != nil {
+		err = models.ErrorWrap(err, errAppIntegrationPath)
+	} else {
 		pmd.Lock()
 		pmd.appIntegrationPath = appIntegrationPath
 		pmd.Unlock()
 	}
 
-	if AppSubIntegrationPath, err := pmd.cache.GetAppSubIntegrationPath(); err == nil {
+	AppSubIntegrationPath, errAppSubIntegrationPath := pmd.cache.GetAppSubIntegrationPaths()
+	if errAppSubIntegrationPath != nil {
+		err = models.ErrorWrap(err, errAppSubIntegrationPath)
+	} else {
 		pmd.Lock()
 		pmd.appSubIntegrationPath = AppSubIntegrationPath
 		pmd.Unlock()
+	}
+
+	if err != nil {
+		glog.Error(err.Error())
 	}
 }

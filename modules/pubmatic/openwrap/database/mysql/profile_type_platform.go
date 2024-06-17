@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func (db *mySqlDB) GetProfileTypePlatform() (map[string]int, error) {
+func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
@@ -17,7 +17,7 @@ func (db *mySqlDB) GetProfileTypePlatform() (map[string]int, error) {
 	}
 	defer rows.Close()
 
-	profileTypePlatform := make(map[string]int)
+	profileTypePlatformMap := make(map[string]int)
 	for rows.Next() {
 		var ptpKey string
 		var ptpValue int
@@ -25,7 +25,7 @@ func (db *mySqlDB) GetProfileTypePlatform() (map[string]int, error) {
 			glog.Error("Error in getting profileTypePlatform details from DB:", err.Error())
 			continue
 		}
-		profileTypePlatform[ptpKey] = ptpValue
+		profileTypePlatformMap[ptpKey] = ptpValue
 	}
-	return profileTypePlatform, nil
+	return profileTypePlatformMap, nil
 }

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
@@ -121,9 +121,9 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				conn: tt.setup(),
 				cfg:  tt.fields.cfg,
 			}
-			got, err := db.GetProfileTypePlatform()
+			got, err := db.GetProfileTypePlatforms()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetProfileTypePlatform() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("mySqlDB.GetProfileTypePlatforms() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			assert.Equal(t, tt.want, got)

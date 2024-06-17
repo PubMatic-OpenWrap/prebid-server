@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func (db *mySqlDB) GetAppIntegrationPath() (map[string]int, error) {
+func (db *mySqlDB) GetAppIntegrationPaths() (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
@@ -17,7 +17,7 @@ func (db *mySqlDB) GetAppIntegrationPath() (map[string]int, error) {
 	}
 	defer rows.Close()
 
-	AppIntegrationPath := make(map[string]int)
+	appIntegrationPathMap := make(map[string]int)
 	for rows.Next() {
 		var aipKey string
 		var aipValue int
@@ -25,7 +25,7 @@ func (db *mySqlDB) GetAppIntegrationPath() (map[string]int, error) {
 			glog.Error("Error in getting AppIntegrationPath details from DB:", err.Error())
 			continue
 		}
-		AppIntegrationPath[aipKey] = aipValue
+		appIntegrationPathMap[aipKey] = aipValue
 	}
-	return AppIntegrationPath, nil
+	return appIntegrationPathMap, nil
 }
