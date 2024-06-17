@@ -45,7 +45,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetProfileTypePlatformQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
+						GetProfileTypePlatformMapQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
 					},
 				},
 			},
@@ -72,7 +72,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetProfileTypePlatformQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
+						GetProfileTypePlatformMapQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
 					},
 				},
 			},
@@ -98,7 +98,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetProfileTypePlatformQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
+						GetProfileTypePlatformMapQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
 					},
 				},
 			},

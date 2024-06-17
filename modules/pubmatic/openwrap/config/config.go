@@ -60,9 +60,9 @@ type Queries struct {
 	GetPublisherFeatureMapQuery       string
 	GetAnalyticsThrottlingQuery       string
 	GetAdpodConfig                    string
-	GetProfileTypePlatformQuery       string
-	GetAppIntegrationPathQuery        string
-	GetAppSubIntegrationPathQuery     string
+	GetProfileTypePlatformMapQuery    string
+	GetAppIntegrationPathMapQuery     string
+	GetAppSubIntegrationPathMapQuery  string
 }
 
 type Cache struct {

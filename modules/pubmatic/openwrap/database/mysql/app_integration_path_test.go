@@ -45,7 +45,7 @@ func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetAppIntegrationPathQuery: "^SELECT (.+) FROM app_integration_path (.+)",
+						GetAppIntegrationPathMapQuery: "^SELECT (.+) FROM app_integration_path (.+)",
 					},
 				},
 			},
@@ -72,7 +72,7 @@ func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetAppIntegrationPathQuery: "^SELECT (.+) FROM app_integration_path (.+)",
+						GetAppIntegrationPathMapQuery: "^SELECT (.+) FROM app_integration_path (.+)",
 					},
 				},
 			},
@@ -98,7 +98,7 @@ func Test_mySqlDB_GetAppIntegrationPath(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 100,
 					Queries: config.Queries{
-						GetAppIntegrationPathQuery: "^SELECT (.+) FROM app_integration_path (.+)",
+						GetAppIntegrationPathMapQuery: "^SELECT (.+) FROM app_integration_path (.+)",
 					},
 				},
 			},
