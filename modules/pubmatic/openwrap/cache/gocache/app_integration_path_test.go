@@ -60,7 +60,7 @@ func Test_cache_GetAppIntegrationPath(t *testing.T) {
 			want: map[string]int{},
 			setup: func() {
 				mockDatabase.EXPECT().GetAppIntegrationPaths().Return(map[string]int{}, errors.New("QUERY FAILD"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.AppIntegrationPathQuery, "", "").Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AppIntegrationPathMapQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),

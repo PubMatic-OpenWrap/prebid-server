@@ -60,7 +60,7 @@ func Test_cache_GetProfileTypePlatform(t *testing.T) {
 			want: map[string]int{},
 			setup: func() {
 				mockDatabase.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, errors.New("QUERY FAILD"))
-				mockEngine.EXPECT().RecordDBQueryFailure(models.ProfileTypePlatformQuery, "", "").Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.ProfileTypePlatformMapQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),
