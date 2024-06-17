@@ -10,10 +10,10 @@ var errorAppIntegrationPathUpdate = "[ErrorAppIntegrationPathUpdate]:%w"
 
 // We are not saving data in cache here
 func (c *cache) GetAppIntegrationPaths() (map[string]int, error) {
-	AppIntegrationPathMap, err := c.db.GetAppIntegrationPaths()
+	appIntegrationPathMap, err := c.db.GetAppIntegrationPaths()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.AppIntegrationPathQuery, "", "")
-		return AppIntegrationPathMap, fmt.Errorf(errorAppIntegrationPathUpdate, err)
+		return appIntegrationPathMap, fmt.Errorf(errorAppIntegrationPathUpdate, err)
 	}
-	return AppIntegrationPathMap, nil
+	return appIntegrationPathMap, nil
 }
