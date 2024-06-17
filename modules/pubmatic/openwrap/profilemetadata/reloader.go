@@ -90,12 +90,12 @@ func (pmd *profileMetaData) updateProfileMetaDataMaps() {
 		pmd.Unlock()
 	}
 
-	AppSubIntegrationPath, errAppSubIntegrationPath := pmd.cache.GetAppSubIntegrationPaths()
+	appSubIntegrationPath, errAppSubIntegrationPath := pmd.cache.GetAppSubIntegrationPaths()
 	if errAppSubIntegrationPath != nil {
 		err = models.ErrorWrap(err, errAppSubIntegrationPath)
 	} else {
 		pmd.Lock()
-		pmd.appSubIntegrationPath = AppSubIntegrationPath
+		pmd.appSubIntegrationPath = appSubIntegrationPath
 		pmd.Unlock()
 	}
 
