@@ -19,3 +19,9 @@ func newBadInputError(message string, args ...any) error {
 		Message: fmt.Sprintf(message, args...),
 	}
 }
+
+func newBadServerResponseError(message string, args ...any) error {
+	return &errortypes.BadServerResponse{
+		Message: fmt.Sprintf(message, args...),
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 )
 
 // setRequestParams updates the request object by mapping bidderParams at expected location.
@@ -19,7 +20,7 @@ func setRequestParams(request, params map[string]any, paramsMapper map[string]bi
 		location := addIndicesInPath(paramMapper.Location, paramIndices)
 		// set the value in the request according to the mapping details
 		// remove the parameter from bidderParams after successful mapping
-		if setValue(request, location, paramValue) {
+		if util.SetValue(request, location, paramValue) {
 			delete(params, paramName)
 			updatedRequest = true
 		}

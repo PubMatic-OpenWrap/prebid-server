@@ -43,6 +43,7 @@ class diffHelper {
     let diff = {}
     for (const { filename, patch } of files) {
       if (this.fileNameFilter(filename)) {
+        
         const lines = patch.split("\n")
         if (lines.length === 1) {
           continue
