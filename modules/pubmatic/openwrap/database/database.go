@@ -16,4 +16,7 @@ type Database interface {
 	GetFSCThresholdPerDSP() (map[int]int, error)
 	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
+	GetProfileTypePlatforms() (map[string]int, error)
+	GetAppIntegrationPaths() (map[string]int, error)
+	GetAppSubIntegrationPaths() (map[string]int, error)
 }
