@@ -90,5 +90,20 @@
                 "org": "1"
             }
         }
+    },
+    {
+        "name": "kargo_json_OneOf - placementId/adSlotID",
+        "args" : {
+            "adapterName": "kargo",
+            "requestJSON": {
+                "placementId": "sjdsdkh",
+                "adSlotID":"sjsdkj"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "sjdsdkh"
+            }
+        }
     }
 ]

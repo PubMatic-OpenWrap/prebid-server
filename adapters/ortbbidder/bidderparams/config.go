@@ -2,53 +2,47 @@ package bidderparams
 
 // BidderParamMapper contains property details like location
 type BidderParamMapper struct {
-	location []string
+	Location string // do not update this parameter for each request, its being shared across all requests
 }
 
-// GetLocation returns the location of bidderParam
-func (bpm *BidderParamMapper) GetLocation() []string {
-	return bpm.location
+// Config contains mappings RequestParams and ResponseParams
+type Config struct {
+	RequestParams  map[string]BidderParamMapper
+	ResponseParams map[string]BidderParamMapper
 }
 
-// SetLocation sets the location in BidderParamMapper
-// Do not modify the location of bidderParam unless you are writing unit test case
-func (bpm *BidderParamMapper) SetLocation(location []string) {
-	bpm.location = location
-}
-
-// config contains mappings requestParams and responseParams
-type config struct {
-	requestParams  map[string]BidderParamMapper
-	responseParams map[string]BidderParamMapper
-}
-
-// BidderConfig contains map of bidderName to its requestParams and responseParams
+// BidderConfig contains map of bidderName to its RequestParams and ResponseParams
 type BidderConfig struct {
-	bidderConfigMap map[string]*config
+	BidderConfigMap map[string]*Config
 }
 
-// setRequestParams sets the bidder specific requestParams
-func (bcfg *BidderConfig) setRequestParams(bidderName string, requestParams map[string]BidderParamMapper) {
-	if bcfg == nil {
-		return
+// NewBidderConfig initializes and returns the object of BidderConfig
+func NewBidderConfig() *BidderConfig {
+	return &BidderConfig{
+		BidderConfigMap: make(map[string]*Config),
 	}
-	if bcfg.bidderConfigMap == nil {
-		bcfg.bidderConfigMap = make(map[string]*config)
-	}
-	if _, found := bcfg.bidderConfigMap[bidderName]; !found {
-		bcfg.bidderConfigMap[bidderName] = &config{}
-	}
-	bcfg.bidderConfigMap[bidderName].requestParams = requestParams
 }
 
-// GetRequestParams returns bidder specific requestParams
-func (bcfg *BidderConfig) GetRequestParams(bidderName string) (map[string]BidderParamMapper, bool) {
-	if bcfg == nil || len(bcfg.bidderConfigMap) == 0 {
-		return nil, false
+// GetRequestParams returns bidder specific ResponseParams
+func (bcfg *BidderConfig) GetRequestParams(bidderName string) map[string]BidderParamMapper {
+	if len(bcfg.BidderConfigMap) == 0 {
+		return nil
 	}
-	bidderConfig, _ := bcfg.bidderConfigMap[bidderName]
+	bidderConfig := bcfg.BidderConfigMap[bidderName]
 	if bidderConfig == nil {
-		return nil, false
+		return nil
 	}
-	return bidderConfig.requestParams, true
+	return bidderConfig.RequestParams
+}
+
+// GetResponseParams returns bidder specific ResponseParams
+func (bcfg *BidderConfig) GetResponseParams(bidderName string) map[string]BidderParamMapper {
+	if len(bcfg.BidderConfigMap) == 0 {
+		return nil
+	}
+	bidderConfig := bcfg.BidderConfigMap[bidderName]
+	if bidderConfig == nil {
+		return map[string]BidderParamMapper{}
+	}
+	return bidderConfig.ResponseParams
 }
