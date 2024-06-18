@@ -223,9 +223,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
-	// Get currency rates conversions for the auction
-	conversions := currency.GetAuctionCurrencyRates(m.currencyConversion, requestExt.Prebid.CurrencyConversions)
-
+	// Get currency rates conversions and store in rctx for tracker/logger calculation
+	conversions := currency.GetAuctionCurrencyRates(m.rateConvertor, requestExt.Prebid.CurrencyConversions)
 	rCtx.CurrencyConversion = func(from, to string, value float64) (float64, error) {
 		rate, err := conversions.GetRate(from, to)
 		if err == nil {

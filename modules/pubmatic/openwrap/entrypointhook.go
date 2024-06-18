@@ -118,13 +118,6 @@ func (m OpenWrap) handleEntrypointHook(
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
 		TMax:                      m.cfg.Timeout.MaxTimeout,
-		// CurrencyConversion: func(from, to string, value float64) (float64, error) {
-		// 	rate := m.currencyConversion.Rates().GetRates()
-		// 	if err == nil {
-		// 		return value * rate, nil
-		// 	}
-		// 	return 0, err
-		// },
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

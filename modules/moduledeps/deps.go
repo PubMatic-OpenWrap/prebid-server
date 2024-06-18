@@ -15,5 +15,4 @@ type ModuleDeps struct {
 	RateConvertor   *currency.RateConverter
 	MetricsCfg      *config.Metrics
 	MetricsRegistry metricsCfg.MetricsRegistry
-	// CurrencyConversion currency.Conversions
 }
