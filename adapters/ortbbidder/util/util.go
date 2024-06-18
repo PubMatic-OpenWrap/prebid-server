@@ -1,9 +1,35 @@
-package ortbbidder
+package util
 
 import (
 	"strconv"
+	"strings"
 )
 
+const (
+	impKey        = "imp"
+	extKey        = "ext"
+	bidderKey     = "bidder"
+	appsiteKey    = "appsite"
+	siteKey       = "site"
+	appKey        = "app"
+	owOrtbPrefix  = "owortb_"
+	locationMacro = "#"
+)
+
+/*
+setValue updates or creates a value in a node based on a specified location.
+The location is a string that specifies a path through the node hierarchy,
+separated by dots ('.'). The value can be any type, and the function will
+create intermediate nodes as necessary if they do not exist.
+
+Arguments:
+- node: the root of the map in which to set the value
+- locations: slice of strings indicating the path to set the value.
+- value: The value to set at the specified location. Can be of any type.
+
+Example:
+  - location = imp.ext.adunitid; value = 123  ==> {"imp": {"ext" : {"adunitid":123}}}
+*/
 /*
 setValue updates or creates a value in a node based on a specified location.
 The location is a string that specifies a path through the node hierarchy,
@@ -18,7 +44,7 @@ Arguments:
 Example:
   - location = imp.0.ext.adunitid; value = 123  ==> {"imp": {"ext" : {"adunitid":123}}}
 */
-func setValue(node map[string]any, location []string, value any) bool {
+func SetValue(node map[string]any, location []string, value any) bool {
 	if node == nil || value == nil {
 		return false
 	}
@@ -78,4 +104,55 @@ func getNode(requestNode map[string]any, key string) any {
 		return requestNode[appKey]
 	}
 	return requestNode[key]
+}
+
+// getValueFromLocation retrieves a value from a map based on a specified location.
+// getValueFromLocation retrieves a value from a map based on a specified location.
+func GetValueFromLocation(souce interface{}, path string) (interface{}, bool) {
+	location := strings.Split(path, ".")
+	var (
+		ok   bool
+		next interface{} = souce
+	)
+	for _, loc := range location {
+		switch nxt := next.(type) {
+		case map[string]interface{}:
+			next, ok = nxt[loc]
+			if !ok {
+				return nil, false
+			}
+		case []interface{}:
+			index, err := strconv.Atoi(loc)
+			if err != nil {
+				return nil, false
+			}
+			if index < 0 || index >= len(nxt) {
+				return nil, false
+			}
+			next = nxt[index]
+		default:
+			return nil, false
+		}
+	}
+	return next, true
+}
+
+func ReplaceLocationMacro(path string, array []int) string {
+	parts := strings.Split(path, ".")
+	j := 0
+	for i, part := range parts {
+		if part == locationMacro {
+			if j >= len(array) {
+				break
+			}
+			parts[i] = strconv.Itoa(array[j])
+			j++
+		}
+	}
+	return strings.Join(parts, ".")
+}
+
+// IsORTBBidder returns true if the bidder is an oRTB bidder
+func IsORTBBidder(bidderName string) bool {
+	return strings.HasPrefix(bidderName, "owortb_")
 }

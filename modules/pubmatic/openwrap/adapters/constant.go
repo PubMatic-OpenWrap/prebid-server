@@ -35,4 +35,6 @@ const (
 	BidderNextmillenniumgroupID     = "group_id"
 	BidderParamRiseOrg              = "org"
 	BidderParamRisePublisherID      = "publisher_id"
+	BidderKaroPlacementID           = "placementId"
+	BidderKargoAdSlotID             = "adSlotID"
 )

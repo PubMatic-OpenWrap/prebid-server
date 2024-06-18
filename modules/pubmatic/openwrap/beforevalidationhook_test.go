@@ -24,6 +24,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	mock_profilemetadata "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata/mock"
 	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -2125,6 +2126,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
 
 	type fields struct {
@@ -2470,6 +2472,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2531,6 +2534,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2581,6 +2585,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2631,6 +2636,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2684,6 +2690,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2733,6 +2740,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2826,6 +2834,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -2933,6 +2942,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -3014,6 +3024,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -3128,6 +3139,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "dm-alias")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -3223,6 +3235,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -3393,6 +3406,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -3415,11 +3429,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				tt.setup()
 			}
 			m := OpenWrap{
-				cfg:           tt.fields.cfg,
-				cache:         tt.fields.cache,
-				metricEngine:  tt.fields.metricEngine,
-				pubFeatures:   mockFeature,
-				rateConvertor: &currency.RateConverter{},
+				cfg:             tt.fields.cfg,
+				cache:           tt.fields.cache,
+				metricEngine:    tt.fields.metricEngine,
+				pubFeatures:     mockFeature,
+				rateConvertor:   &currency.RateConverter{},
+				profileMetaData: mockProfileMetaData,
 			}
 
 			bidrequest := &openrtb2.BidRequest{}
@@ -3467,6 +3482,8 @@ func TestCurrencyConverion(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -3529,6 +3546,8 @@ func TestCurrencyConverion(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), 5890, 1234, 1).Return(nil)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(models.TypeAmp).Return(0, false)
+
 			},
 			want: want{
 				convertedValue: 0,
@@ -3576,6 +3595,7 @@ func TestCurrencyConverion(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), 5890, 1234, 1).Return(nil)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(models.TypeAmp).Return(0, false)
 			},
 			want: want{
 				convertedValue: 100,
@@ -3584,28 +3604,27 @@ func TestCurrencyConverion(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
-			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
-				pubFeatures:  mockFeature,
-			}
-			payload := &openrtb2.BidRequest{}
-			err := json.Unmarshal(tt.args.bidrequest, payload)
-			assert.Nil(t, err, "error should be nil")
-			m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, hookstage.BeforeValidationRequestPayload{BidRequest: payload})
-			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
-			assert.NotNil(t, iRctx, "rctx should not be nil")
-			rctx := iRctx.(models.RequestCtx)
-			// verify currency-conversion logic
-			convertedValue, err := rctx.CurrencyConversion(tt.args.fromCur, tt.args.toCur, tt.args.value)
-			assert.Equal(t, tt.want.convertedValue, convertedValue, "mismatched convertedValue")
-			assert.Equal(t, tt.want.error, err, "mismatched error")
-		})
+		if tt.setup != nil {
+			tt.setup()
+		}
+		m := OpenWrap{
+			cfg:             tt.fields.cfg,
+			cache:           tt.fields.cache,
+			metricEngine:    tt.fields.metricEngine,
+			pubFeatures:     mockFeature,
+			profileMetaData: mockProfileMetaData,
+		}
+		payload := &openrtb2.BidRequest{}
+		err := json.Unmarshal(tt.args.bidrequest, payload)
+		assert.Nil(t, err, "error should be nil")
+		m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, hookstage.BeforeValidationRequestPayload{BidRequest: payload})
+		iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+		assert.NotNil(t, iRctx, "rctx should not be nil")
+		rctx := iRctx.(models.RequestCtx)
+		// verify currency-conversion logic
+		convertedValue, err := rctx.CurrencyConversion(tt.args.fromCur, tt.args.toCur, tt.args.value)
+		assert.Equal(t, tt.want.convertedValue, convertedValue, "mismatched convertedValue")
+		assert.Equal(t, tt.want.error, err, "mismatched error")
 	}
 }
 
@@ -3728,6 +3747,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 
 	type fields struct {
 		cfg          config.Config
@@ -3809,6 +3829,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3870,6 +3891,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -3936,6 +3958,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -4003,6 +4026,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -4065,6 +4089,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -4085,10 +4110,11 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
-				pubFeatures:  mockFeature,
+				cfg:             tt.fields.cfg,
+				cache:           tt.fields.cache,
+				metricEngine:    tt.fields.metricEngine,
+				pubFeatures:     mockFeature,
+				profileMetaData: mockProfileMetaData,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)
@@ -4108,6 +4134,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -4167,6 +4194,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -4220,6 +4248,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -4274,6 +4303,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				error: false,
@@ -4390,10 +4420,11 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			}
 			adapters.InitBidders("./static/bidder-params/")
 			m := OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
-				pubFeatures:  mockFeature,
+				cfg:             tt.fields.cfg,
+				cache:           tt.fields.cache,
+				metricEngine:    tt.fields.metricEngine,
+				pubFeatures:     mockFeature,
+				profileMetaData: mockProfileMetaData,
 			}
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
 			json.Unmarshal(tt.args.bidrequest, tt.args.payload.BidRequest)

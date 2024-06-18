@@ -2966,3 +2966,50 @@ func TestBuilderRise(t *testing.T) {
 		})
 	}
 }
+
+func Test_builderKargo(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (oneOf placementId or adSlotID) is present-placementId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "dbdsfh"}}},
+			want:    json.RawMessage(`{"placementId": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placementId or adSlotID) is present-adSlotID",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"adSlotID": "dbdsfh"}}},
+			want:    json.RawMessage(`{"adSlotID": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placementId or adSlotID), Both are present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "sdhks", "adSlotID": "sdjksd"}}},
+			want:    json.RawMessage(`{"placementId": "sdhks"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of placementId or adSlotID) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderKargo(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderKargo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
