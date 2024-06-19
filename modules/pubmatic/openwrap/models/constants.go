@@ -505,7 +505,7 @@ const (
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
-	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationMapPathQuery"
+	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
 )
 
 // constants for owlogger Integration Type

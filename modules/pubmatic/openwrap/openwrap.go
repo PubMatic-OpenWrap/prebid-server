@@ -95,7 +95,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		Cache:                 owCache,
 		ProfileMetaDataExpiry: cfg.Cache.ProfileMetaDataCacheExpiry,
 	})
-	profileMetaData.Start()
+	if err = profileMetaData.Start(); err != nil {
+		return OpenWrap{}, fmt.Errorf("error while initializing profile-metadata: %v", err)
+	}
 
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
