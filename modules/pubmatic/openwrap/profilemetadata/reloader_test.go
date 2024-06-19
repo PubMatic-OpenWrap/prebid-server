@@ -57,7 +57,7 @@ func Test_profileMetaData_Start(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "successfull start data loaded from db",
+			name: "failed to load data from db do not start service",
 			setup: func() {
 				initReloader = func(pmd *profileMetaData) {
 					pmd.failToLoadDBData <- true

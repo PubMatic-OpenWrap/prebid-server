@@ -72,9 +72,8 @@ var initReloader = func(pmd *profileMetaData) {
 			if firstdbLoad {
 				pmd.failToLoadDBData <- true
 				return
-			} else {
-				glog.Error("Failed to load profileMetaData from DB", err.Error())
 			}
+			glog.Error("Failed to load profileMetaData from DB", err.Error())
 		} else {
 			firstdbLoad = false
 			pmd.failToLoadDBData <- false
