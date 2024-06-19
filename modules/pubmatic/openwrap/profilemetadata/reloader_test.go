@@ -43,24 +43,38 @@ func Test_profileMetaData_Start(t *testing.T) {
 		initReloader = oldInitReloader
 	}()
 	tests := []struct {
-		name  string
-		setup func()
+		name    string
+		setup   func()
+		wantErr bool
 	}{
 		{
-			name: "test",
+			name: "successfull start data loaded from db",
 			setup: func() {
-				initReloader = func(pmd *profileMetaData) {}
+				initReloader = func(pmd *profileMetaData) {
+					pmd.failToLoadDBData <- false
+				}
 			},
+			wantErr: false,
+		},
+		{
+			name: "failed to load data from db do not start service",
+			setup: func() {
+				initReloader = func(pmd *profileMetaData) {
+					pmd.failToLoadDBData <- true
+				}
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			pmd := &profileMetaData{
-				serviceStop: make(chan struct{}),
+				serviceStop:      make(chan struct{}),
+				failToLoadDBData: make(chan bool),
 			}
-			pmd.Start()
-			pmd.Stop()
+			err := pmd.Start()
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -78,6 +92,7 @@ func TestInitiateReloader(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
+		want  bool
 		setup func()
 	}{
 		{
@@ -86,7 +101,7 @@ func TestInitiateReloader(t *testing.T) {
 				profileMetaDataExpiry: 0,
 				cache:                 mockCache,
 			},
-			setup: func() {},
+			setup: nil,
 		},
 		{
 			name: "test InitateReloader with valid cache and time, call once and exit",
@@ -99,13 +114,30 @@ func TestInitiateReloader(t *testing.T) {
 				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, nil)
 				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, nil)
 			},
+			want: false,
+		},
+		{
+			name: "test InitateReloader with valid cache and time, failed to load data from cache",
+			args: args{
+				profileMetaDataExpiry: 1000,
+				cache:                 mockCache,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetAppIntegrationPaths().Return(nil, fmt.Errorf("error"))
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, nil)
+			},
+			want: true,
 		},
 	}
 	for _, tt := range tests {
-		tt.setup()
+		if tt.setup != nil {
+			tt.setup()
+		}
 		profileMetaData := &profileMetaData{
 			cache:                 tt.args.cache,
 			profileMetaDataExpiry: tt.args.profileMetaDataExpiry,
+			failToLoadDBData:      make(chan bool),
 			serviceStop:           make(chan struct{}),
 		}
 		var wg sync.WaitGroup
@@ -114,6 +146,10 @@ func TestInitiateReloader(t *testing.T) {
 			initReloader(profileMetaData)
 			wg.Done()
 		}()
+		if tt.setup != nil {
+			got := <-profileMetaData.failToLoadDBData
+			assert.Equal(t, tt.want, got)
+		}
 		//closing channel to avoid infinite loop
 		profileMetaData.Stop()
 		wg.Wait() // wait for initReloader to finish
@@ -141,10 +177,11 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 		appSubIntegrationPath map[string]int
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		setup  func()
-		want   want
+		name    string
+		fields  fields
+		setup   func()
+		want    want
+		wantErr bool
 	}{
 		{
 			name: "all profile metadata updated from cache",
@@ -182,6 +219,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 					"MoPub": 3,
 				},
 			},
+			wantErr: false,
 		},
 		{
 			name: "profileTypePlatform, appIntegrationPath and appSubIntegrationPath not updated from cache",
@@ -202,6 +240,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				appIntegrationPath:    map[string]int{},
 				appSubIntegrationPath: map[string]int{},
 			},
+			wantErr: true,
 		},
 	}
 	for ind := range tests {
@@ -216,10 +255,11 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				appIntegrationPath:    tt.fields.appIntegrationPath,
 				appSubIntegrationPath: tt.fields.appSubIntegrationPath,
 			}
-			pmd.updateProfileMetaDataMaps()
+			err := pmd.updateProfileMetaDataMaps()
 			assert.Equal(t, tt.want.profileTypePlatform, pmd.profileTypePlatform)
 			assert.Equal(t, tt.want.appIntegrationPath, pmd.appIntegrationPath)
 			assert.Equal(t, tt.want.appSubIntegrationPath, pmd.appSubIntegrationPath)
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
