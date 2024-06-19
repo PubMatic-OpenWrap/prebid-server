@@ -46,7 +46,7 @@ func New(config Config) *profileMetaData {
 
 func (pmd *profileMetaData) Start() error {
 	go initReloader(pmd)
-	//Waiting for the service to start
+	//Waiting for the  profileMetaData to load from DB
 	if <-pmd.failToLoadDBData {
 		glog.Error("Failed to load profileMetaData")
 		return fmt.Errorf("failed to load profileMetaData")
