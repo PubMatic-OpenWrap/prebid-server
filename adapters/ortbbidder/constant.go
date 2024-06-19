@@ -20,3 +20,17 @@ const (
 	templateOption          = "missingkey=zero"
 	oRTBPrefix              = "owortb_"
 )
+
+// constants to retrieve values from oRTB request/response
+const (
+	seatBidKey      = "seatbid"
+	bidKey          = "bid"
+	ortbCurrencyKey = "cur"
+)
+
+// constants to set values in adapter response
+const (
+	currencyKey = "Currency"
+	typeBidKey  = "Bid"
+	bidsKey     = "Bids"
+)
