@@ -343,7 +343,6 @@ func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 			ExtHttpCall: httpCalls,
 		})
 		glog.Error("owbidrejected due to price threshold:", string(jsonBytes), err)
-		fmt.Println("owbidrejected due to price threshold:", string(jsonBytes), err)
 	}
 }
 

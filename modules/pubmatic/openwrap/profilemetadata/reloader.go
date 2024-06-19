@@ -48,10 +48,8 @@ func (pmd *profileMetaData) Start() error {
 	go initReloader(pmd)
 	//Waiting for the  profileMetaData to load from DB
 	if <-pmd.failToLoadDBData {
-		glog.Error("Failed to load profileMetaData")
 		return fmt.Errorf("failed to load profileMetaData")
 	}
-	glog.Info("Initialized profileMetaData reloader")
 	return nil
 }
 
@@ -70,9 +68,13 @@ var initReloader = func(pmd *profileMetaData) {
 	ticker := time.NewTicker(time.Duration(pmd.profileMetaDataExpiry) * time.Second)
 	for {
 		//Populating pmdata config maps from cache (if data is not loaded from DB for first instance then do not start the service)
-		if err := pmd.updateProfileMetaDataMaps(); err != nil && firstdbLoad {
-			pmd.failToLoadDBData <- true
-			return
+		if err := pmd.updateProfileMetaDataMaps(); err != nil {
+			if firstdbLoad {
+				pmd.failToLoadDBData <- true
+				return
+			} else {
+				glog.Error("Failed to load profileMetaData from DB", err.Error())
+			}
 		} else {
 			firstdbLoad = false
 			pmd.failToLoadDBData <- false

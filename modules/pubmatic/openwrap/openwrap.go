@@ -96,7 +96,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		ProfileMetaDataExpiry: cfg.Cache.ProfileMetaDataCacheExpiry,
 	})
 	if err = profileMetaData.Start(); err != nil {
+		glog.Error("Failed to load profileMetaData from DB")
 		return OpenWrap{}, fmt.Errorf("error while initializing profile-metadata: %v", err)
+	} else {
+		glog.Info("Initialized profileMetaData reloader")
 	}
 
 	// Init VAST Unwrap
