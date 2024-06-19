@@ -75,7 +75,6 @@ func Test_profileMetaData_Start(t *testing.T) {
 			}
 			err := pmd.Start()
 			assert.Equal(t, tt.wantErr, err != nil)
-			pmd.Stop()
 		})
 	}
 }
