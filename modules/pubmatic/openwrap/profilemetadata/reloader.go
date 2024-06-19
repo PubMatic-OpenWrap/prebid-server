@@ -1,6 +1,7 @@
 package profilemetadata
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ type profileMetaData struct {
 	sync.RWMutex
 	cache                 cache.Cache
 	serviceStop           chan struct{}
+	failToLoadDBData      chan bool
 	profileMetaDataExpiry int
 	profileTypePlatform   map[string]int
 	appIntegrationPath    map[string]int
@@ -32,6 +34,7 @@ func New(config Config) *profileMetaData {
 		pmd = &profileMetaData{
 			cache:                 config.Cache,
 			serviceStop:           make(chan struct{}),
+			failToLoadDBData:      make(chan bool),
 			profileMetaDataExpiry: config.ProfileMetaDataExpiry,
 			profileTypePlatform:   make(map[string]int),
 			appIntegrationPath:    make(map[string]int),
@@ -41,9 +44,13 @@ func New(config Config) *profileMetaData {
 	return pmd
 }
 
-func (pmd *profileMetaData) Start() {
+func (pmd *profileMetaData) Start() error {
 	go initReloader(pmd)
-	glog.Info("Initialized profileMetaData reloader")
+	//Waiting for the  profileMetaData to load from DB
+	if <-pmd.failToLoadDBData {
+		return fmt.Errorf("failed to load profileMetaData")
+	}
+	return nil
 }
 
 func (pmd *profileMetaData) Stop() {
@@ -53,14 +60,24 @@ func (pmd *profileMetaData) Stop() {
 
 // Initializing reloader with cache-refresh (to avoid DB load post cache refresh)
 var initReloader = func(pmd *profileMetaData) {
+	firstdbLoad := true
 	if pmd.profileMetaDataExpiry <= 0 {
 		return
 	}
 	glog.Info("profileMetaData reloader start")
 	ticker := time.NewTicker(time.Duration(pmd.profileMetaDataExpiry) * time.Second)
 	for {
-		//Populating pmdature config maps from cache
-		pmd.updateProfileMetaDataMaps()
+		//Populating pmdata config maps from cache (if data is not loaded from DB for first instance then do not start the service)
+		if err := pmd.updateProfileMetaDataMaps(); err != nil {
+			if firstdbLoad {
+				pmd.failToLoadDBData <- true
+				return
+			}
+			glog.Error("Failed to load profileMetaData from DB", err.Error())
+		} else {
+			firstdbLoad = false
+			pmd.failToLoadDBData <- false
+		}
 		select {
 		case t := <-ticker.C:
 			glog.Info("profileMetaData Reloader loads cache @", t)
@@ -70,7 +87,7 @@ var initReloader = func(pmd *profileMetaData) {
 	}
 }
 
-func (pmd *profileMetaData) updateProfileMetaDataMaps() {
+func (pmd *profileMetaData) updateProfileMetaDataMaps() error {
 	var err error
 	profileTypePlatfrom, errProfileTypePlatforms := pmd.cache.GetProfileTypePlatforms()
 	if errProfileTypePlatforms != nil {
@@ -102,4 +119,5 @@ func (pmd *profileMetaData) updateProfileMetaDataMaps() {
 	if err != nil {
 		glog.Error(err.Error())
 	}
+	return err
 }
