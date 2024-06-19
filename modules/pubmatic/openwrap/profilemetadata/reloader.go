@@ -76,7 +76,6 @@ var initReloader = func(pmd *profileMetaData) {
 			glog.Error("Failed to load profileMetaData from DB", err.Error())
 		} else {
 			firstdbLoad = false
-			pmd.failToLoadDBData <- false
 		}
 		select {
 		case t := <-ticker.C:
