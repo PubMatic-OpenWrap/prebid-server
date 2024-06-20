@@ -63,7 +63,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		},
 	}
 
-	if payload.BidResponse.NBR != nil {
+	if rctx.IsCTVRequest && payload.BidResponse.NBR != nil {
 		return result, nil
 	}
 
