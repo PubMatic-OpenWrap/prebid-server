@@ -2,6 +2,8 @@ package adbutler_onsite
 
 const (
 
-	SEAT_ADBUTLER  = "adbutler_onsite"
+	Seat_AdbutlerOnsite				    = "adbutler_onsite"
+	InventoryIDOnsite_Prefix            = "InventoryID_"
 )
+
 

@@ -22,8 +22,15 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		}
 	
 	}
-
 	if siteExt == nil || requestExt == nil {
+		return nil, []error{&errortypes.BadInput{
+			Message: "Missing required ext fields",
+		}}
+	}
+
+	inventoryDetails, accountID, _:= adapters.GetInventoryAndAccountDetailsCMOnsite(requestExt)
+	
+	if inventoryDetails == nil || accountID == "" {
 		return nil, []error{&errortypes.BadInput{
 			Message: "Missing required ext fields",
 		}}
@@ -31,6 +38,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	return nil,nil
 }
+
 
 
 

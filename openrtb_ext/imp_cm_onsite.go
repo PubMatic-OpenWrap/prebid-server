@@ -1,6 +1,5 @@
 package openrtb_ext
 
-
 // ImpExtensionCommerce - Impression Commerce Extension
 type ExtImpCMOnsiteParams struct {
 	SlotsRequested int                `json:"slots_requested,omitempty"`
@@ -15,6 +14,11 @@ type CMOnsiteImpExtPrebidParams struct {
 	ExtImpCMOnsiteParams
 }
 
+type CMOnsiteInventoryDetails struct {
+	AdbulterZoneID int          
+	Adtype     string
+}
+
 type ExtRequestOnsiteParams struct {
 	Sequence int               		   `json:"seq,omitempty"`
 	Targeting      []*ExtImpTargeting `json:"targeting,omitempty"`
@@ -22,10 +26,11 @@ type ExtRequestOnsiteParams struct {
 
 type ExtRequestPrebidOnsite struct {
 	ExtRequestOnsiteParams
-	ZoneMapping     map[string]string    `json:"mapping,omitempty"`
+	ZoneMapping     map[string]interface{}    `json:"mapping,omitempty"`
 }
 
 type ExtBidderCMOnsite struct {
 	PrebidBidderName string              `json:"prebidname,omitempty"`
 	BidderCode       string              `json:"biddercode,omitempty"`
 }
+
