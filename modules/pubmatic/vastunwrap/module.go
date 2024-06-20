@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/hooks/hookstage"
 	"github.com/prebid/prebid-server/modules/moduledeps"
 	openwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/models"
 	metrics "github.com/prebid/prebid-server/modules/pubmatic/vastunwrap/stats"
 )
+
+var UnwrapURL = "http://localhost:8003/unwrap"
 
 type VastUnwrapModule struct {
 	Cfg                   unWrapCfg.VastUnWrapCfg `mapstructure:"vastunwrap_cfg" json:"vastunwrap_cfg"`
@@ -33,8 +33,6 @@ func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, e
 }
 
 func initVastUnwrap(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (VastUnwrapModule, error) {
-	t := time.Now()
-	defer glog.Infof("Time taken by initVastUnwrap---%v", time.Since(t).Milliseconds())
 	vastUnwrapModuleCfg := VastUnwrapModule{}
 	err := json.Unmarshal(rawCfg, &vastUnwrapModuleCfg)
 	if err != nil {
@@ -67,6 +65,7 @@ func (m VastUnwrapModule) HandleRawBidderResponseHook(
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
 	if m.Enabled {
+		UnwrapURL = UnwrapURL + "?pub_id=" + miCtx.AccountID
 		return m.handleRawBidderResponseHook(miCtx, payload, UnwrapURL)
 	}
 	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, nil
