@@ -5,12 +5,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/benbjohnson/clock"
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubstack/eventchannel"
@@ -115,12 +119,36 @@ func (p *PubstackModule) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	// serialize event
-	payload, err := helpers.JsonifyAuctionObject(ao, p.scope)
-	if err != nil {
-		glog.Warning("[pubstack] Cannot serialize auction")
+	var rCtx *models.RequestCtx
+	defer func() {
+		if r := recover(); r != nil {
+			if rCtx != nil {
+				glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%d], profid:[%d], ver:[%d]", string(debug.Stack()), r, rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
+				return
+			}
+			glog.Errorf("stacktrace:[%s], error:[%v]", string(debug.Stack()), r)
+		}
+	}()
+
+	rCtx = pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil {
+		// glog.Errorf("Failed to get the request context for AuctionObject - [%v]", ao)
+		// add this log once complete header-bidding code is migrated to modules
 		return
 	}
+
+	url, _ := pubmatic.GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
+	if url == "" {
+		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
+			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
+		return
+	}
+
+	url = strings.TrimPrefix(url, "http://10.172.141.11/wl?")
+
+	payload := []byte(url)
+
+	payload = append(payload, byte('\n'))
 
 	p.eventChannels[auction].Push(payload)
 }
