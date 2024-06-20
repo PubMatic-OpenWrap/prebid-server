@@ -291,8 +291,15 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
-					"test": {
+					"/test_adunit1234@div1@200x300": {
 						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@Div1@200x300",
+						SlotMappings: map[string]interface{}{
+							"site":     "12313",
+							"adtag":    "45343",
+							"slotName": "/Test_Adunit1234@DIV1@200x300",
+						},
 					},
 				})
 				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
@@ -891,7 +898,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						},
 					},
 				})
-
 				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
 					OrderedSlotList: []string{"random"},
 					HashValueMap: map[string]string{
@@ -958,7 +964,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						},
 					},
 				})
-
 				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
 					OrderedSlotList: []string{"random"},
 					HashValueMap: map[string]string{
@@ -1025,7 +1030,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						},
 					},
 				})
-
 				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
 					OrderedSlotList: []string{"random"},
 					HashValueMap: map[string]string{
@@ -1069,5 +1073,87 @@ func createSlotMapping(slotName string, mappings map[string]interface{}) models.
 		SlotMappings: mappings,
 		Hash:         "",
 		OrderID:      0,
+	}
+}
+
+func TestGetMatchingSlotForTestValue(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+
+	type args struct {
+		rctx            models.RequestCtx
+		cache           cache.Cache
+		slots           []string
+		slotMap         map[string]models.SlotMapping
+		slotMappingInfo models.SlotMappingInfo
+		isRegexKGP      bool
+		isRegexSlot     bool
+		partnerID       int
+		extImpPubMatic  *openrtb_ext.ExtImpPubmatic
+		imp             openrtb2.Imp
+	}
+	type want struct {
+		matchedSlot    string
+		matchedPattern string
+		isRegexSlot    bool
+	}
+	tests := []struct {
+		name  string
+		args  args
+		setup func()
+		want  want
+	}{
+		{
+			name: "found_matced_regex_slot",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slots:     []string{"AU123@Div1@728x90"},
+				slotMappingInfo: models.SlotMappingInfo{
+					OrderedSlotList: []string{"*", ".*@.*@.*"},
+					HashValueMap: map[string]string{
+						".*@.*@.*": "2aa34b52a9e941c1594af7565e599c8d", // Code should match the given slot name with this regex
+					},
+				},
+				slotMap: map[string]models.SlotMapping{
+					"AU123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+				cache:          mockCache,
+				isRegexKGP:     true,
+				isRegexSlot:    false,
+				extImpPubMatic: &openrtb_ext.ExtImpPubmatic{},
+				imp:            openrtb2.Imp{},
+			},
+			setup: func() {
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_AU123@Div1@728x90").Return(nil, false)
+				mockCache.EXPECT().Set("psregex_5890_123_1_1_AU123@Div1@728x90", regexSlotEntry{SlotName: "AU123@Div1@728x90", RegexPattern: ".*@.*@.*"}).Times(1)
+			},
+			want: want{
+				matchedSlot:    "AU123@Div1@728x90",
+				matchedPattern: ".*@.*@.*",
+				isRegexSlot:    true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			matchedSlot, matchedPattern, isRegexSlot := getMatchingSlotForTestValue(tt.args.rctx, tt.args.cache, tt.args.slots, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.isRegexKGP, tt.args.isRegexSlot, tt.args.partnerID, tt.args.extImpPubMatic, tt.args.imp)
+			assert.Equal(t, tt.want.matchedSlot, matchedSlot)
+			assert.Equal(t, tt.want.matchedPattern, matchedPattern)
+			assert.Equal(t, tt.want.isRegexSlot, isRegexSlot)
+		})
 	}
 }
