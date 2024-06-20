@@ -207,7 +207,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			revShare := 0.0
 			partnerID := seat
 			var isRegex bool
-			var kgp, kgpv, kgpsv string
+			var kgp, kgpv, kgpsv, adFormat string
 
 			if bidderMeta, ok := impCtx.Bidders[seat]; ok {
 				revShare, _ = strconv.ParseFloat(rCtx.PartnerConfigMap[bidderMeta.PartnerID][models.REVSHARE], 64)
@@ -216,6 +216,17 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				kgpv = bidderMeta.KGPV         // ^/43743431/DMDemo[0-9]*@Div[12]@^728x90$
 				kgpsv = bidderMeta.MatchedSlot // /43743431/DMDemo1@@728x90
 				isRegex = bidderMeta.IsRegex
+			}
+			var bidExt models.BidExt
+			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
+				bidExt = bidCtx.BidExt
+			}
+
+			//adformat to be derived from Prebid.Type or bid.AdM
+			if bidExt.Prebid != nil && bidExt.Prebid.Type != "" {
+				adFormat = string(bidExt.Prebid.Type)
+			} else if bid.AdM != "" {
+				adFormat = models.GetAdFormat(bid.AdM)
 			}
 
 			// 1. nobid
@@ -229,8 +240,14 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			} else if !isRegex {
 				if kgpv != "" { // unmapped pubmatic's slot
 					kgpsv = kgpv // /43743431/DMDemo1234@300x250 -->
+				} else if adFormat == models.Video { // Check when adformat is video, bid.W and bid.H has to be zero with Price !=0. Ex: UOE-9222(0x0 default kgpv and kgpsv for video bid)
+					// 2. valid video bid
+					// kgpv has regex, do not generate slotName again
+					// kgpsv could be unmapped or mapped slot, generate slotName with bid.W = bid.H = 0
+					kgpsv = GenerateSlotName(0, 0, kgp, impCtx.TagID, impCtx.Div, rCtx.Source)
+					kgpv = kgpsv // original /43743431/DMDemo1234@300x250 but new could be /43743431/DMDemo1234@0x0
 				} else if bid.H != 0 && bid.W != 0 { // Check when bid.H and bid.W will be zero with Price !=0. Ex: MobileInApp-MultiFormat-OnlyBannerMapping_Criteo_Partner_Validaton
-					// 2. valid bid
+					// 3. valid bid
 					// kgpv has regex, do not generate slotName again
 					// kgpsv could be unmapped or mapped slot, generate slotName again based on bid.H and bid.W
 					kgpsv = GenerateSlotName(bid.H, bid.W, kgp, impCtx.TagID, impCtx.Div, rCtx.Source)
@@ -240,11 +257,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			if kgpv == "" {
 				kgpv = kgpsv
-			}
-
-			var bidExt models.BidExt
-			if bidCtx, ok := impCtx.BidCtx[bid.ID]; ok {
-				bidExt = bidCtx.BidExt
 			}
 
 			price := bid.Price
@@ -298,12 +310,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.DealChannel = models.DEFAULT_DEALCHANNEL
 			}
 
+			if adFormat != "" {
+				pr.Adformat = adFormat
+			}
+
 			if bidExt.Prebid != nil {
 				// don't want default banner for nobid in wl
-				if bidExt.Prebid.Type != "" {
-					pr.Adformat = string(bidExt.Prebid.Type)
-				}
-
 				if bidExt.Prebid.DealTierSatisfied && bidExt.Prebid.DealPriority > 0 {
 					pr.DealPriority = bidExt.Prebid.DealPriority
 				}
