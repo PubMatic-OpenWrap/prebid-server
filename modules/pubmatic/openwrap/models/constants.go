@@ -60,6 +60,7 @@ const (
 	KEY_OW_SLOT_NAME           = "owSlotName"
 	VENDORID                   = "vendorId"
 	BidderPubMatic             = "pubmatic"
+	CustomDimensions           = "cds"
 	//ADSERVER_URL used by S2S to redirect the OW bids if owredirect parameter is not found in video/json
 	ADSERVER_URL = "adServerUrl"
 
