@@ -8,19 +8,7 @@ const (
 	SEARCHTYPE_BROAD       = "broad"
 	SEARCHTYPE             = "search_type"
 	PAGE_SOURCE            = "page_source"
-	USER_AGE               = "target_age"
-	GENDER_MALE            = "Male"
-	GENDER_FEMALE          = "Female"
-	GENDER_OTHER           = "Others"
-	DEVICE_COMPUTER        = "Personal Computer"
-	DEVICE_PHONE           = "Phone"
-	DEVICE_TABLET          = "Tablet"
-	DEVICE_CONNECTEDDEVICE = "Connected Devices"
-	USER_GENDER            = "target_gender"
-	COUNTRY                = "target_country"
-	REGION                 = "target_region"
-	CITY                   = "target_city"
-	DEVICE                 = "target_device"
+	
 	//DEFAULT_CATEGORY              = "Category"
 	//DEFAULT_BRAND                 = "Brand Name"
 	DEFAULT_PRODUCTID = "Product Id"
@@ -56,4 +44,5 @@ const (
 	ADBUTLER_RESPONSE_CODE_INVALID_CATALOG = 1015
 	ADBUTLER_RESPONSE_CODE_UNKNOWN_ERROR   = 1210
 )
+
 

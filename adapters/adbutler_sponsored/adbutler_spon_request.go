@@ -83,16 +83,16 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 		if request.User.Yob > 0 {
 			now := time.Now()
 			age := int64(now.Year()) - request.User.Yob
-			adButlerReq.Target[USER_AGE] = age
+			adButlerReq.Target[adapters.USER_AGE] = age
 		}
 
 		if request.User.Gender != "" {
 			if strings.EqualFold(request.User.Gender, "M") {
-				adButlerReq.Target[USER_GENDER] = GENDER_MALE
+				adButlerReq.Target[adapters.USER_GENDER] = adapters.GENDER_MALE
 			} else if strings.EqualFold(request.User.Gender, "F") {
-				adButlerReq.Target[USER_GENDER] = GENDER_FEMALE
+				adButlerReq.Target[adapters.USER_GENDER] = adapters.GENDER_FEMALE
 			} else if strings.EqualFold(request.User.Gender, "O") {
-				adButlerReq.Target[USER_GENDER] = GENDER_OTHER
+				adButlerReq.Target[adapters.USER_GENDER] = adapters.GENDER_OTHER
 			}
 		}
 	}
@@ -100,26 +100,26 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 	//Add Geo Targeting
 	if request.Device != nil && request.Device.Geo != nil {
 		if request.Device.Geo.Country != "" {
-			adButlerReq.Target[COUNTRY] = request.Device.Geo.Country
+			adButlerReq.Target[adapters.COUNTRY] = request.Device.Geo.Country
 		}
 		if request.Device.Geo.Region != "" {
-			adButlerReq.Target[REGION] = request.Device.Geo.Region
+			adButlerReq.Target[adapters.REGION] = request.Device.Geo.Region
 		}
 		if request.Device.Geo.City != "" {
-			adButlerReq.Target[CITY] = request.Device.Geo.City
+			adButlerReq.Target[adapters.CITY] = request.Device.Geo.City
 		}
 	}
 	//Add Geo Targeting
 	if request.Device != nil {
 		switch request.Device.DeviceType {
 		case 1:
-			adButlerReq.Target[DEVICE] = DEVICE_COMPUTER
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 2:
-			adButlerReq.Target[DEVICE] = DEVICE_PHONE
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
 		case 3:
-			adButlerReq.Target[DEVICE] = DEVICE_TABLET
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
 		case 4:
-			adButlerReq.Target[DEVICE] = DEVICE_CONNECTEDDEVICE
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_CONNECTEDDEVICE
 		}
 	}
 
@@ -232,3 +232,4 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 	}}, nil
 
 }
+
