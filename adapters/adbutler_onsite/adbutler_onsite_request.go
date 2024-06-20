@@ -1,6 +1,7 @@
 package adbutler_onsite
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -125,14 +126,20 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 	adButlerReq.Limit = limitMap
 	
-	//Temporarily for Debugging
-	u, _ := json.Marshal(adButlerReq)
-	fmt.Println(string(u))
-
 	reqJSON, err := json.Marshal(adButlerReq)
 	if err != nil {
 		return nil, []error{err}
 	}
+
+	// Pretty-print the JSON request body for debugging
+	var prettyReqJSON bytes.Buffer
+	err = json.Indent(&prettyReqJSON, reqJSON, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to parse JSON:", err)
+		return nil, []error{err}
+	}
+	fmt.Println("Request Body:")
+	fmt.Println(prettyReqJSON.String())
 
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json")
@@ -145,6 +152,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}}, nil
 
 }
+
 
 
 
