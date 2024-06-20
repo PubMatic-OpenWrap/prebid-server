@@ -35,14 +35,14 @@ const (
 )
 
 type OpenWrap struct {
-	cfg                config.Config
-	cache              cache.Cache
-	metricEngine       metrics.MetricsEngine
-	currencyConversion currency.Conversions
-	geoInfoFetcher     geodb.Geography
-	pubFeatures        publisherfeature.Feature
-	unwrap             unwrap.Unwrap
-	profileMetaData    profilemetadata.ProfileMetaData
+	cfg             config.Config
+	cache           cache.Cache
+	metricEngine    metrics.MetricsEngine
+	rateConvertor   *currency.RateConverter
+	geoInfoFetcher  geodb.Geography
+	pubFeatures     publisherfeature.Feature
+	unwrap          unwrap.Unwrap
+	profileMetaData profilemetadata.ProfileMetaData
 }
 
 var ow *OpenWrap
@@ -115,14 +115,14 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 
 	once.Do(func() {
 		ow = &OpenWrap{
-			cfg:                cfg,
-			cache:              owCache,
-			metricEngine:       &metricEngine,
-			currencyConversion: moduleDeps.CurrencyConversion,
-			geoInfoFetcher:     geoDBClient,
-			pubFeatures:        pubFeatures,
-			unwrap:             uw,
-			profileMetaData:    profileMetaData,
+			cfg:             cfg,
+			cache:           owCache,
+			metricEngine:    &metricEngine,
+			rateConvertor:   moduleDeps.RateConvertor,
+			geoInfoFetcher:  geoDBClient,
+			pubFeatures:     pubFeatures,
+			unwrap:          uw,
+			profileMetaData: profileMetaData,
 		}
 	})
 	return *ow, nil
