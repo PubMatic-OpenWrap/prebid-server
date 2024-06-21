@@ -6,6 +6,13 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
+var customPGs = map[string]struct{}{
+	"custom":  {},
+	"custom1": {},
+	"custom2": {},
+	"custom3": {},
+}
+
 func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranularity, error) {
 	var priceGranularity string
 
@@ -20,7 +27,7 @@ func computePriceGranularity(rctx models.RequestCtx) (openrtb_ext.PriceGranulari
 	}
 
 	//Get custom price granularity object
-	if priceGranularity == models.PriceGranularityCustom {
+	if _, ok := customPGs[priceGranularity]; ok {
 		customPriceGranularityValue := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.PriceGranularityCustomConfig)
 		pgObject, err := newCustomPriceGranuality(customPriceGranularityValue)
 		return pgObject, err
