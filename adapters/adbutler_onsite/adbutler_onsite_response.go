@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"bytes"
+
 	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -70,6 +72,17 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 		}
 		return nil, []error{err}
 	}
+
+	//Temporarily for Debugging
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, response.Body, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to parse JSON:", err)
+		return nil, []error{err}
+	}
+	fmt.Println(prettyJSON.String())
+
+	//return nil, nil
 
 	var adButlerResp AdButlerOnsiteResponse
 	if err := json.Unmarshal(response.Body, &adButlerResp); err != nil {
@@ -147,7 +160,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 
 			typedbid := &adapters.TypedBid{
 				Bid:  bid,
-				Seat: openrtb_ext.BidderName(SEAT_ADBUTLER),
+				Seat: openrtb_ext.BidderName(Seat_AdbutlerOnsite),
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, typedbid)
