@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
@@ -222,6 +223,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
+	// Get currency rates conversions and store in rctx for tracker/logger calculation
+	conversions := currency.GetAuctionCurrencyRates(m.rateConvertor, requestExt.Prebid.CurrencyConversions)
+	rCtx.CurrencyConversion = func(from, to string, value float64) (float64, error) {
+		rate, err := conversions.GetRate(from, to)
+		if err == nil {
+			return value * rate, nil
+		}
+		return 0, err
+	}
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
