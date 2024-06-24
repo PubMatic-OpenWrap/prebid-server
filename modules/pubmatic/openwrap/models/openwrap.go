@@ -115,6 +115,13 @@ type RequestCtx struct {
 	RedirectURL            string
 	ResponseFormat         string
 	PriceGranularity       *openrtb_ext.PriceGranularity
+	AdpodProfileConfig     *AdpodProfileConfig
+	AdruleFlag             bool
+}
+
+type AdpodProfileConfig struct {
+	AdserverCreativeDurations              []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
+	AdserverCreativeDurationMatchingPolicy string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 type OwBid struct {

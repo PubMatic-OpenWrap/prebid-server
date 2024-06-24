@@ -25,6 +25,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
@@ -383,12 +384,26 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, nil
 			}
 
-			//Adding default durations for CTV Test requests
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
-				adpodConfig.VideoAdDuration = []int{5, 10}
+			videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+			policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
+			if len(videoAdDuration) > 0 {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+					AdserverCreativeDurationMatchingPolicy: policy,
+				}
 			}
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
-				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+
+			//Adding default durations for CTV Test requests
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              []int{5, 10},
+					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+				}
+			}
+
+			if adpodConfig != nil && rCtx.AdpodProfileConfig != nil {
+				adpodConfig.VideoAdDuration = rCtx.AdpodProfileConfig.AdserverCreativeDurations
+				adpodConfig.VideoAdDurationMatching = rCtx.AdpodProfileConfig.AdserverCreativeDurationMatchingPolicy
 			}
 
 			if err := adpod.Validate(adpodConfig); err != nil {
@@ -544,10 +559,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 				Bidders:           make(map[string]models.PartnerData),
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
-				AdpodConfig:       adpodConfig,
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 				AdserverURL:       adserverURL,
+				AdpodConfig:       adpodConfig,
 			}
 		}
 
@@ -639,6 +654,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
 			if err != nil {
 				result.Errors = append(result.Errors, err.Error())
+			}
+
+			if rctx.AdruleFlag {
+				ep.BidRequest, err = ctv.ApplyAdruleConfigs(rctx, ep.BidRequest)
+				if err != nil {
+					result.Errors = append(result.Errors, "failed to apply adrules:"+err.Error())
+				}
 			}
 		}
 		return ep, err

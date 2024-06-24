@@ -9,7 +9,6 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
@@ -36,16 +35,6 @@ func GetAdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequ
 	adpodConfigs, ok, err := resolveAdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
 	if !ok || err != nil {
 		return nil, err
-	}
-
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	if len(videoAdDuration) > 0 {
-		adpodConfigs.VideoAdDuration = utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator)
-	}
-
-	videoAdDurationMatchingPolicy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDurationMatchingPolicy) > 0 {
-		adpodConfigs.VideoAdDurationMatching = videoAdDurationMatchingPolicy
 	}
 
 	// Set default value if adpod object does not exists
@@ -117,20 +106,6 @@ func Validate(config *models.AdPod) error {
 
 	if config.MinDuration > config.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
-	}
-
-	if len(config.VideoAdDuration) > 0 {
-		validDurations := false
-		for _, videoDuration := range config.VideoAdDuration {
-			if videoDuration >= config.MinDuration && videoDuration <= config.MaxDuration {
-				validDurations = true
-				break
-			}
-		}
-
-		if !validDurations {
-			return errors.New("videoAdDuration values should be between adpod.adminduration and dpod.adminduration")
-		}
 	}
 
 	return nil
