@@ -8,6 +8,10 @@ import (
 	"testing"
 
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
@@ -16,14 +20,10 @@ import (
 	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/hooks"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -362,7 +362,7 @@ func TestUpdateResponseExtOW(t *testing.T) {
 						},
 					},
 				},
-				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50},"owlogger":"?json=%7B%22pubid%22%3A5890%2C%22pid%22%3A%220%22%2C%22pdvid%22%3A%220%22%2C%22sl%22%3A1%2C%22s%22%3A%5B%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_1_tagid_1%22%2C%22sz%22%3A%5B%220x0%22%2C%22100x200%22%5D%2C%22au%22%3A%22tagid_1%22%2C%22ps%22%3A%5B%7B%22pn%22%3A%22pubmatic%22%2C%22bc%22%3A%22pubmatic%22%2C%22kgpv%22%3A%22%22%2C%22kgpsv%22%3A%22%22%2C%22psz%22%3A%220x0%22%2C%22af%22%3A%22%22%2C%22eg%22%3A0%2C%22en%22%3A0%2C%22l1%22%3A0%2C%22l2%22%3A0%2C%22t%22%3A0%2C%22wb%22%3A0%2C%22bidid%22%3A%22bid-id-1%22%2C%22origbidid%22%3A%22bid-id-1%22%2C%22di%22%3A%22-1%22%2C%22dc%22%3A%22%22%2C%22db%22%3A0%2C%22ss%22%3A1%2C%22mi%22%3A0%2C%22ocpm%22%3A0%2C%22ocry%22%3A%22USD%22%7D%5D%2C%22rwrd%22%3A1%7D%2C%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_2_tagid_2%22%2C%22au%22%3A%22tagid_2%22%2C%22ps%22%3A%5B%5D%7D%5D%2C%22dvc%22%3A%7B%7D%2C%22ft%22%3A0%2C%22it%22%3A%22sdk%22%7D&pubid=5890"}`),
+				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50},"owlogger":"?json=%7B%22pubid%22%3A5890%2C%22pid%22%3A%220%22%2C%22pdvid%22%3A%220%22%2C%22sl%22%3A1%2C%22s%22%3A%5B%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_2_tagid_2%22%2C%22au%22%3A%22tagid_2%22%2C%22ps%22%3A%5B%5D%7D%2C%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_1_tagid_1%22%2C%22sz%22%3A%5B%220x0%22%2C%22100x200%22%5D%2C%22au%22%3A%22tagid_1%22%2C%22ps%22%3A%5B%7B%22pn%22%3A%22pubmatic%22%2C%22bc%22%3A%22pubmatic%22%2C%22kgpv%22%3A%22%22%2C%22kgpsv%22%3A%22%22%2C%22psz%22%3A%220x0%22%2C%22af%22%3A%22%22%2C%22eg%22%3A0%2C%22en%22%3A0%2C%22l1%22%3A0%2C%22l2%22%3A0%2C%22t%22%3A0%2C%22wb%22%3A0%2C%22bidid%22%3A%22bid-id-1%22%2C%22origbidid%22%3A%22bid-id-1%22%2C%22di%22%3A%22-1%22%2C%22dc%22%3A%22%22%2C%22db%22%3A0%2C%22ss%22%3A1%2C%22mi%22%3A0%2C%22ocpm%22%3A0%2C%22ocry%22%3A%22USD%22%7D%5D%2C%22rwrd%22%3A1%7D%5D%2C%22dvc%22%3A%7B%7D%2C%22ft%22%3A0%2C%22it%22%3A%22sdk%22%7D&pubid=5890"}`),
 			},
 			RestoredResponse: &openrtb2.BidResponse{
 				ID:    "123",
@@ -493,7 +493,7 @@ func TestUpdateResponseExtOW(t *testing.T) {
 						},
 					},
 				},
-				Ext: json.RawMessage(`{"owlogger":"?json=%7B%22pubid%22%3A5890%2C%22pid%22%3A%220%22%2C%22pdvid%22%3A%220%22%2C%22sl%22%3A1%2C%22s%22%3A%5B%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_1_tagid_1%22%2C%22sz%22%3A%5B%220x0%22%2C%22100x200%22%5D%2C%22au%22%3A%22tagid_1%22%2C%22ps%22%3A%5B%7B%22pn%22%3A%22pubmatic%22%2C%22bc%22%3A%22pubmatic%22%2C%22kgpv%22%3A%22%22%2C%22kgpsv%22%3A%22%22%2C%22psz%22%3A%220x0%22%2C%22af%22%3A%22%22%2C%22eg%22%3A0%2C%22en%22%3A0%2C%22l1%22%3A0%2C%22l2%22%3A0%2C%22t%22%3A0%2C%22wb%22%3A0%2C%22bidid%22%3A%22bid-id-1%22%2C%22origbidid%22%3A%22bid-id-1%22%2C%22di%22%3A%22-1%22%2C%22dc%22%3A%22%22%2C%22db%22%3A0%2C%22ss%22%3A1%2C%22mi%22%3A0%2C%22ocpm%22%3A0%2C%22ocry%22%3A%22USD%22%7D%5D%2C%22rwrd%22%3A1%7D%2C%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_2_tagid_2%22%2C%22au%22%3A%22tagid_2%22%2C%22ps%22%3A%5B%5D%7D%5D%2C%22dvc%22%3A%7B%7D%2C%22ft%22%3A0%2C%22it%22%3A%22sdk%22%7D&pubid=5890"}`),
+				Ext: json.RawMessage(`{"owlogger":"?json=%7B%22pubid%22%3A5890%2C%22pid%22%3A%220%22%2C%22pdvid%22%3A%220%22%2C%22sl%22%3A1%2C%22s%22%3A%5B%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_2_tagid_2%22%2C%22au%22%3A%22tagid_2%22%2C%22ps%22%3A%5B%5D%7D%2C%7B%22sid%22%3A%22uuid%22%2C%22sn%22%3A%22imp_1_tagid_1%22%2C%22sz%22%3A%5B%220x0%22%2C%22100x200%22%5D%2C%22au%22%3A%22tagid_1%22%2C%22ps%22%3A%5B%7B%22pn%22%3A%22pubmatic%22%2C%22bc%22%3A%22pubmatic%22%2C%22kgpv%22%3A%22%22%2C%22kgpsv%22%3A%22%22%2C%22psz%22%3A%220x0%22%2C%22af%22%3A%22%22%2C%22eg%22%3A0%2C%22en%22%3A0%2C%22l1%22%3A0%2C%22l2%22%3A0%2C%22t%22%3A0%2C%22wb%22%3A0%2C%22bidid%22%3A%22bid-id-1%22%2C%22origbidid%22%3A%22bid-id-1%22%2C%22di%22%3A%22-1%22%2C%22dc%22%3A%22%22%2C%22db%22%3A0%2C%22ss%22%3A1%2C%22mi%22%3A0%2C%22ocpm%22%3A0%2C%22ocry%22%3A%22USD%22%7D%5D%2C%22rwrd%22%3A1%7D%5D%2C%22dvc%22%3A%7B%7D%2C%22ft%22%3A0%2C%22it%22%3A%22sdk%22%7D&pubid=5890"}`),
 			},
 			RestoredResponse: &openrtb2.BidResponse{
 				ID:    "123",

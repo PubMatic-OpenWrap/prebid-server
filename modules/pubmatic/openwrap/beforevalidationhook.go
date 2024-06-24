@@ -52,10 +52,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
+			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
-			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 		}
 	}()
 
