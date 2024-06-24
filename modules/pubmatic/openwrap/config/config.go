@@ -68,13 +68,17 @@ type Queries struct {
 	GetPublisherFeatureMapQuery       string
 	GetAnalyticsThrottlingQuery       string
 	GetAdpodConfig                    string
+	GetProfileTypePlatformMapQuery    string
+	GetAppIntegrationPathMapQuery     string
+	GetAppSubIntegrationPathMapQuery  string
 }
 
 type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
-	CacheDefaultExpiry int // in seconds
-	VASTTagCacheExpiry int // in seconds
+	CacheDefaultExpiry         int // in seconds
+	VASTTagCacheExpiry         int // in seconds
+	ProfileMetaDataCacheExpiry int // in seconds
 }
 
 type Timeout struct {

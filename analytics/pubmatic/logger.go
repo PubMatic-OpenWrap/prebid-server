@@ -508,7 +508,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
-			if pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
+			if !models.IsDefaultBid(bid.Bid) && pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
 				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
 			}
 
