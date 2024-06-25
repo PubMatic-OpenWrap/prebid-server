@@ -762,6 +762,8 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	//check if video is disabled, if yes then remove video from imp object
 	if adUnitCfg.Video.Enabled != nil && !*adUnitCfg.Video.Enabled {
 		imp.Video = nil
+		impBidCtx.Video = nil
+		rCtx.ImpBidCtx[imp.ID] = impBidCtx
 		return
 	}
 
