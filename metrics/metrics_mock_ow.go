@@ -59,3 +59,13 @@ func (me *MetricsEngineMock) RecordPanic(hostname, method string) {
 func (me *MetricsEngineMock) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 	me.Called(endpoint, pubId, nbr)
 }
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	me.Called(parser, method, bidder, respTime)
+}
+
+// RecordXMLParserResponseMismatch mock
+func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+	me.Called(method, bidder, isMismatch)
+}

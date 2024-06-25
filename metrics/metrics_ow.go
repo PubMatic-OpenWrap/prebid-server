@@ -1,6 +1,15 @@
 package metrics
 
-import "github.com/prebid/openrtb/v20/openrtb3"
+import (
+	"time"
+
+	"github.com/prebid/openrtb/v20/openrtb3"
+)
+
+const (
+	XMLParserLabelFastXML = "fastxml"
+	XMLParserLabelETree   = "etree"
+)
 
 type OWMetricsEngine interface {
 	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
@@ -12,4 +21,8 @@ type OWMetricsEngine interface {
 
 	RecordPanic(hostname, method string)
 	RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason)
+	//RecordXMLParserResponseTime records execution time for multiple parsers
+	RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration)
+	//RecordXMLParserResponseMismatch records number of response mismatch
+	RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool)
 }

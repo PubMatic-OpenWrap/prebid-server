@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,6 +22,19 @@ func NewMetricsRegistry() MetricsRegistry {
 	return MetricsRegistry{
 		PrometheusRegistry: prometheus.NewRegistry(),
 		InfluxRegistry:     gometrics.NewPrefixedRegistry("prebidserver."),
+	}
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserResponseTime(parser, method, bidder, respTime)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserResponseMismatch(method, bidder, isMismatch)
 	}
 }
 
@@ -73,6 +88,14 @@ func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nb
 	for _, thisME := range *me {
 		thisME.RecordBadRequest(endpoint, pubId, nbr)
 	}
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+}
+
+// RecordXMLParserResponseMismatch as a noop
+func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
 }
 
 // RecordVASTTagType as a noop

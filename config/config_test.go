@@ -629,8 +629,6 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "account_defaults.price_floors.fetch.max_schema_dims", 10, cfg.AccountDefaults.PriceFloors.Fetcher.MaxSchemaDims)
 
 	cmpBools(t, "account_defaults.events.enabled", true, cfg.AccountDefaults.Events.Enabled)
-	cmpInts(t, "price_floor_fetcher.worker", 10, cfg.PriceFloorFetcher.Worker)
-	cmpInts(t, "price_floor_fetcher.capacity", 20, cfg.PriceFloorFetcher.Capacity)
 
 	cmpInts(t, "account_defaults.privacy.ipv6.anon_keep_bits", 50, cfg.AccountDefaults.Privacy.IPv6Config.AnonKeepBits)
 	cmpInts(t, "account_defaults.privacy.ipv4.anon_keep_bits", 20, cfg.AccountDefaults.Privacy.IPv4Config.AnonKeepBits)
@@ -803,6 +801,8 @@ func TestFullConfig(t *testing.T) {
 	cmpInts(t, "experiment.adscert.remote.signing_timeout_ms", 10, cfg.Experiment.AdCerts.Remote.SigningTimeoutMs)
 	cmpBools(t, "hooks.enabled", true, cfg.Hooks.Enabled)
 	cmpBools(t, "account_modules_metrics", true, cfg.Metrics.Disabled.AccountModulesMetrics)
+
+	testFullConfigOW(t, cfg)
 }
 
 func TestValidateConfig(t *testing.T) {
