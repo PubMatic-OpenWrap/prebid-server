@@ -45,3 +45,13 @@ func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
 func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
 	me.Called(bidder, vastTagType)
 }
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	me.Called(parser, method, bidder, respTime)
+}
+
+// RecordXMLParserResponseMismatch mock
+func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+	me.Called(method, bidder, isMismatch)
+}

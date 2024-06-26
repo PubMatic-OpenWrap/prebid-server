@@ -110,6 +110,7 @@ type RequestCtx struct {
 	AppPlatform            int
 	AppIntegrationPath     *int
 	AppSubIntegrationPath  *int
+	PriceGranularity       *openrtb_ext.PriceGranularity
 }
 
 type OwBid struct {

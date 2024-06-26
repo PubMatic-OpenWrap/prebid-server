@@ -63,6 +63,7 @@ type BidderResponse struct {
 	Currency             string
 	Bids                 []*TypedBid
 	FledgeAuctionConfigs []*openrtb_ext.FledgeAuctionConfig
+	FastXMLMetrics       *openrtb_ext.FastXMLMetrics
 }
 
 // NewBidderResponseWithBidsCapacity create a new BidderResponse initialising the bids array capacity and the default currency value
@@ -156,8 +157,6 @@ type ExtraRequestInfo struct {
 	PbsEntryPoint              metrics.RequestType
 	GlobalPrivacyControlHeader string
 	CurrencyConversions        currency.Conversions
-
-	BidderCoreName openrtb_ext.BidderName // OW specific: required for oRTB bidder
 }
 
 func NewExtraRequestInfo(c currency.Conversions) ExtraRequestInfo {

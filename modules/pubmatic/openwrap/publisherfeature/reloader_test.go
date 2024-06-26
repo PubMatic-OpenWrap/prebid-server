@@ -89,7 +89,6 @@ func TestInitiateReloader(t *testing.T) {
 }
 
 func Test_feature_Start(t *testing.T) {
-
 	tests := []struct {
 		name  string
 		setup func()
@@ -105,8 +104,11 @@ func Test_feature_Start(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			fe := &feature{}
+			fe := &feature{
+				serviceStop: make(chan struct{}),
+			}
 			fe.Start()
+			fe.Stop()
 		})
 	}
 }
