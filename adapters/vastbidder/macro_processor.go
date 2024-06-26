@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"net/url"
 	"strings"
-
-	"github.com/golang/glog"
 )
 
 const (
@@ -87,6 +85,7 @@ func (mp *MacroProcessor) processKey(key string) (string, bool) {
 			//escaping macro found
 			tmpKey = tmpKey[0 : len(tmpKey)-macroEscapeSuffixLen]
 			nEscaping++
+
 			continue
 		} else {
 			value, found = mp.bidderMacro.GetValue(tmpKey)
@@ -117,7 +116,7 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 
 	for pos < size {
 		//find macro prefix index
-		if start = strings.Index(in[pos:], macroPrefix); -1 == start {
+		if start = strings.Index(in[pos:], macroPrefix); start == -1 {
 			//[prefix_not_found] append remaining string to response
 			out.WriteString(in[pos:])
 
@@ -134,7 +133,7 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 		if (end - macroSuffixLen) <= (start + macroPrefixLen) {
 			//string contains {{TEXT_{{MACRO}} -> it should replace it with{{TEXT_MACROVALUE
 			//find macro suffix index
-			if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); -1 == end {
+			if end = strings.Index(in[start+macroPrefixLen:], macroSuffix); end == -1 {
 				//[suffix_not_found] append remaining string to response
 				out.WriteString(in[start:])
 
@@ -157,10 +156,10 @@ func (mp *MacroProcessor) Process(in string) (response string) {
 			out.WriteByte(macroPrefix[0])
 			pos = start + 1
 		}
-		//glog.Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
+		//glog.V(3).Infof("\nSearch[%d] <start,end,key>: [%d,%d,%s]", count, start, end, key)
 	}
 	response = out.String()
-	glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", in, response)
+	//	glog.V(3).Infof("[MACRO]:in:[%s] replaced:[%s]", in, response)
 	return
 }
 

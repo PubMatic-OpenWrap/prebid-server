@@ -112,6 +112,7 @@ type RequestCtx struct {
 	AppIntegrationPath     *int
 	AppSubIntegrationPath  *int
 	WakandaDebug           wakanda.WakandaDebug
+	PriceGranularity       *openrtb_ext.PriceGranularity
 }
 
 type OwBid struct {

@@ -17,6 +17,8 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
+	mock_profilemetadata "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata/mock"
 	"github.com/prebid/prebid-server/v2/usersync"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1302,7 +1304,7 @@ func TestGetRequestUserAgent(t *testing.T) {
 	}
 }
 
-func Test_getProfileType(t *testing.T) {
+func TestGetProfileType(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1349,19 +1351,26 @@ func Test_getProfileType(t *testing.T) {
 	}
 }
 
-func Test_getProfileTypePlatform(t *testing.T) {
+func TestGetProfileTypePlatform(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
 	type args struct {
 		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
 	}
 	tests := []struct {
-		name string
-		args args
-		want int
+		name  string
+		args  args
+		want  int
+		setup func()
 	}{
 		{
 			name: "Empty partnerConfigMap",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
 			},
 			want: 0,
 		},
@@ -1373,6 +1382,10 @@ func Test_getProfileTypePlatform(t *testing.T) {
 						models.PLATFORM_KEY: "in-app",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform("in-app").Return(4, true)
 			},
 			want: 4,
 		},
@@ -1380,23 +1393,30 @@ func Test_getProfileTypePlatform(t *testing.T) {
 			name: "partnerConfigMap with invalid platform",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
-					-11: {
+					-1: {
 						models.PLATFORM_KEY: "invalid",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform("invalid").Return(0, false)
 			},
 			want: 0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getProfileTypePlatform(tt.args.partnerConfigMap)
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getProfileTypePlatform(tt.args.partnerConfigMap, tt.args.profileMetaData)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getAppPlatform(t *testing.T) {
+func TestGetAppPlatform(t *testing.T) {
 	type args struct {
 		partnerConfigMap map[int]map[string]string
 	}
@@ -1443,19 +1463,26 @@ func Test_getAppPlatform(t *testing.T) {
 	}
 }
 
-func Test_getAppIntegrationPath(t *testing.T) {
+func TestGetAppIntegrationPath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
 	type args struct {
 		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
 	}
 	tests := []struct {
-		name string
-		args args
-		want int
+		name  string
+		args  args
+		want  int
+		setup func()
 	}{
 		{
 			name: "Empty partnerConfigMap",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
 			},
 			want: -1,
 		},
@@ -1467,6 +1494,11 @@ func Test_getAppIntegrationPath(t *testing.T) {
 						models.IntegrationPathKey: "React Native Plugin",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppIntegrationPath("React Native Plugin").Return(3, true)
+
 			},
 			want: 3,
 		},
@@ -1478,31 +1510,46 @@ func Test_getAppIntegrationPath(t *testing.T) {
 						models.IntegrationPathKey: "invalid",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppIntegrationPath("invalid").Return(0, false)
+
 			},
 			want: -1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAppIntegrationPath(tt.args.partnerConfigMap)
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getAppIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
 
-func Test_getAppSubIntegrationPath(t *testing.T) {
+func TestGetAppSubIntegrationPath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
 	type args struct {
 		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
 	}
 	tests := []struct {
-		name string
-		args args
-		want int
+		name  string
+		args  args
+		want  int
+		setup func()
 	}{
 		{
 			name: "Empty partnerConfigMap",
 			args: args{
 				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
 			},
 			want: -1,
 		},
@@ -1514,6 +1561,10 @@ func Test_getAppSubIntegrationPath(t *testing.T) {
 						models.SubIntegrationPathKey: "AppLovin Max SDK Bidding",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(8, true)
 			},
 			want: 8,
 		},
@@ -1525,6 +1576,10 @@ func Test_getAppSubIntegrationPath(t *testing.T) {
 						models.SubIntegrationPathKey: "invalid",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
 			},
 			want: -1,
 		},
@@ -1537,13 +1592,21 @@ func Test_getAppSubIntegrationPath(t *testing.T) {
 						models.AdserverKey:           "DFP",
 					},
 				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(1, true)
 			},
 			want: 1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAppSubIntegrationPath(tt.args.partnerConfigMap)
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getAppSubIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

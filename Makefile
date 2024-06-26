@@ -40,6 +40,8 @@ formatcheck:
 
 mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature mockgenwakanda
 
+mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature mockgenprofilemetadata
+
 # export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN
 mockgeninstall:
 	go install github.com/golang/mock/mockgen@v1.6.0
@@ -72,3 +74,7 @@ mockgenpublisherfeature:
 mockgenwakanda: 
 	mkdir -p modules/pubmatic/openwrap/wakanda/mock
 	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda Commands,DebugInterface > modules/pubmatic/openwrap/wakanda/mock/mock.go
+
+mockgenprofilemetadata:
+	mkdir -p modules/pubmatic/openwrap/profilemetadata/mock
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata ProfileMetaData > modules/pubmatic/openwrap/profilemetadata/mock/mock.go
