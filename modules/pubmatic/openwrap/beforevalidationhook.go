@@ -257,7 +257,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		IncludeWinners:    ptrutil.ToPtr(true),
 	}
 	// TODO: Check if we can directly accept keyVal in prebid ext
-	requestExt.Prebid.KeyVal = requestExt.Wrapper.KeyValues
+	if requestExt.Wrapper != nil && requestExt.Wrapper.KeyValues != nil {
+		requestExt.Prebid.KeyVal = requestExt.Wrapper.KeyValues
+	}
 	setIncludeBrandCategory(requestExt.Wrapper, &requestExt.Prebid, partnerConfigMap, rCtx.IsCTVRequest)
 
 	disabledSlots := 0
