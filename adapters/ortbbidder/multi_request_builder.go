@@ -1,6 +1,8 @@
 package ortbbidder
 
 import (
+	"fmt"
+
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
@@ -73,8 +75,12 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		newRequest[impKey] = []any{imp}
 		requestCloneRequired = setRequestParams(newRequest, bidderParams, rb.requestParams, []int{0})
 
+		if _, ok := imp[idKey].(string); !ok {
+			errs = append(errs, fmt.Errorf("invalid imp found error while paring imp id at index :%d", index))
+			continue
+		}
 		//step 5: append new request data
-		if requestData, err = appendRequestData(requestData, newRequest, endpoint); err != nil {
+		if requestData, err = appendRequestData(requestData, newRequest, endpoint, []string{imp[idKey].(string)}); err != nil {
 			errs = append(errs, newBadInputError(err.Error()))
 		}
 	}

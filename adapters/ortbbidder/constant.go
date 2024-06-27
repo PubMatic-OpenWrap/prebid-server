@@ -8,6 +8,7 @@ const (
 	appsiteKey = "appsite"
 	siteKey    = "site"
 	appKey     = "app"
+	idKey      = "id"
 )
 
 const (

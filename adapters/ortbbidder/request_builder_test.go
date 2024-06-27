@@ -290,7 +290,7 @@ func TestAppendRequestData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := appendRequestData(tt.args.requestData, tt.args.request, tt.args.uri)
+			got, err := appendRequestData(tt.args.requestData, tt.args.request, tt.args.uri, nil)
 			assert.Equal(t, tt.want.reqData, got, "mismatched request-data")
 			assert.Equal(t, tt.want.err, err, "mismatched error")
 		})

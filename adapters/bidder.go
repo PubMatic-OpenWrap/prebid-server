@@ -124,12 +124,12 @@ type BidRequestParams struct {
 
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
-	Params  *BidRequestParams
-	Method  string
-	Uri     string
-	Body    []byte
-	Headers http.Header
-
+	Params     *BidRequestParams
+	Method     string
+	Uri        string
+	Body       []byte
+	Headers    http.Header
+	ImpIDs     []string
 	BidderName openrtb_ext.BidderName `json:"-"`
 }
 

@@ -420,6 +420,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							DealPriority:        bidResponse.Bids[i].DealPriority,
 							OriginalBidCPM:      originalBidCpm,
 							OriginalBidCur:      bidResponse.Currency,
+							AdapterCode:         bidderRequest.BidderCoreName,
 							BidTargets:          bidResponse.Bids[i].BidTargets,
 							OriginalBidCPMUSD:   originalBidCPMUSD,
 							AlternateBidderCode: alternateBidderCode,
@@ -714,7 +715,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		},
 		// GotConn is called after a successful connection is obtained
 		GotConn: func(info httptrace.GotConnInfo) {
-			connWaitTime := time.Now().Sub(connStart)
+			connWaitTime := time.Since(connStart)
 
 			bidder.me.RecordAdapterConnections(bidder.BidderName, info.Reused, connWaitTime)
 		},
@@ -724,7 +725,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		},
 		// DNSDone is called when a DNS lookup ends.
 		DNSDone: func(info httptrace.DNSDoneInfo) {
-			dnsLookupTime := time.Now().Sub(dnsStart)
+			dnsLookupTime := time.Since(dnsStart)
 
 			bidder.me.RecordDNSTime(dnsLookupTime)
 		},
@@ -734,7 +735,7 @@ func (bidder *bidderAdapter) addClientTrace(ctx context.Context) context.Context
 		},
 
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
-			tlsHandshakeTime := time.Now().Sub(tlsStart)
+			tlsHandshakeTime := time.Since(tlsStart)
 
 			bidder.me.RecordTLSHandshakeTime(bidder.BidderName, tlsHandshakeTime)
 		},

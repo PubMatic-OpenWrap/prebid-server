@@ -980,6 +980,7 @@ func TestFloorsSignalling(t *testing.T) {
 			Account:           config.Account{DebugAllow: true, PriceFloors: config.AccountPriceFloors{Enabled: test.floorsEnable, MaxRule: 100, MaxSchemaDims: 5}},
 			UserSyncs:         &emptyUsersync{},
 			HookExecutor:      &hookexecution.EmptyHookExecutor{},
+			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
 		}
 		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 
@@ -1640,7 +1641,7 @@ func TestBidResponseCurrency(t *testing.T) {
 					Price: 9.517803,
 					W:     300,
 					H:     250,
-					Ext:   json.RawMessage(`{"origbidcpm":9.517803,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"banner"}}`),
+					Ext:   json.RawMessage(`{"origbidcpm":9.517803,"prebid":{"meta":{},"type":"banner"}}`),
 				},
 			},
 		},
@@ -1770,7 +1771,7 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 		H:     250,
 		Ext:   nil,
 	}
-	aPbsOrtbBidArr := []*entities.PbsOrtbBid{{Bid: sampleBid, BidType: openrtb_ext.BidTypeVideo}}
+	aPbsOrtbBidArr := []*entities.PbsOrtbBid{{Bid: sampleBid, BidType: openrtb_ext.BidTypeVideo, AdapterCode: openrtb_ext.BidderAppnexus}}
 
 	adapterBids := map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 		openrtb_ext.BidderName("appnexus"): {
@@ -2108,8 +2109,8 @@ func loadFile(filename string) (*exchangeSpec, error) {
 }
 
 func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
-	aliases, errs := parseAliases(&spec.IncomingRequest.OrtbRequest)
-	if len(errs) != 0 {
+	aliases, err := parseRequestAliases(spec.IncomingRequest.OrtbRequest)
+	if err != nil {
 		t.Fatalf("%s: Failed to parse aliases", filename)
 	}
 
@@ -2173,7 +2174,13 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 		impExtInfoMap[impID] = ImpExtInfo{}
 	}
 
-	activityControl := privacy.NewActivityControl(spec.AccountPrivacy)
+	if spec.AccountPrivacy.DSA != nil && len(spec.AccountPrivacy.DSA.Default) > 0 {
+		if err := jsonutil.Unmarshal([]byte(spec.AccountPrivacy.DSA.Default), &spec.AccountPrivacy.DSA.DefaultUnpacked); err != nil {
+			t.Errorf("%s: Exchange returned an unexpected error. Got %s", filename, err.Error())
+		}
+	}
+
+	activityControl := privacy.NewActivityControl(&spec.AccountPrivacy)
 
 	auctionRequest := &AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: &spec.IncomingRequest.OrtbRequest},
@@ -2183,7 +2190,8 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 				Enabled: spec.EventsEnabled,
 			},
 			DebugAllow:  true,
-			PriceFloors: config.AccountPriceFloors{Enabled: spec.AccountFloorsEnabled},
+			PriceFloors: config.AccountPriceFloors{Enabled: spec.AccountFloorsEnabled, EnforceDealFloors: spec.AccountEnforceDealFloors},
+			Privacy:     spec.AccountPrivacy,
 			Validations: spec.AccountConfigBidValidation,
 		},
 		UserSyncs:     mockIdFetcher(spec.IncomingRequest.Usersyncs),
@@ -4328,7 +4336,7 @@ func TestStoredAuctionResponses(t *testing.T) {
 		SeatBid: []openrtb2.SeatBid{
 			{
 				Bid: []openrtb2.Bid{
-					{ID: "bid_id", ImpID: "impression-id", Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"video"}}`)},
+					{ID: "bid_id", ImpID: "impression-id", Ext: json.RawMessage(`{"origbidcpm":0,"prebid":{"meta":{},"type":"video"}}`)},
 				},
 				Seat: "appnexus",
 			},
@@ -5417,6 +5425,7 @@ func TestGetAllBids(t *testing.T) {
 									ID: "1",
 								},
 								OriginalBidCur: "USD",
+								AdapterCode:    openrtb_ext.BidderPubmatic,
 							},
 						},
 						Currency:       "USD",
@@ -5486,6 +5495,7 @@ func TestGetAllBids(t *testing.T) {
 									ID: "1",
 								},
 								OriginalBidCur: "USD",
+								AdapterCode:    openrtb_ext.BidderPubmatic,
 							},
 						},
 						Currency:       "USD",
@@ -5500,6 +5510,7 @@ func TestGetAllBids(t *testing.T) {
 									ID: "2",
 								},
 								OriginalBidCur:      "USD",
+								AdapterCode:         openrtb_ext.BidderPubmatic,
 								AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 							},
 						},
@@ -5569,6 +5580,7 @@ func TestGetAllBids(t *testing.T) {
 									ID: "2",
 								},
 								OriginalBidCur:      "USD",
+								AdapterCode:         openrtb_ext.BidderPubmatic,
 								AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 							},
 						},
@@ -5685,10 +5697,11 @@ type exchangeSpec struct {
 	HostConfigBidValidation    config.Validations     `json:"host_bid_validations"`
 	AccountConfigBidValidation config.Validations     `json:"account_bid_validations"`
 	AccountFloorsEnabled       bool                   `json:"account_floors_enabled"`
+	AccountEnforceDealFloors   bool                   `json:"account_enforce_deal_floors"`
 	FledgeEnabled              bool                   `json:"fledge_enabled,omitempty"`
 	MultiBid                   *multiBidSpec          `json:"multiBid,omitempty"`
 	Server                     exchangeServer         `json:"server,omitempty"`
-	AccountPrivacy             *config.AccountPrivacy `json:"accountPrivacy,omitempty"`
+	AccountPrivacy             config.AccountPrivacy  `json:"accountPrivacy,omitempty"`
 }
 
 type multiBidSpec struct {
@@ -5973,6 +5986,24 @@ func (m *mockBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapter
 func (m *mockBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	args := m.Called(internalRequest, externalRequest, response)
 	return args.Get(0).(*adapters.BidderResponse), args.Get(1).([]error)
+}
+
+func parseRequestAliases(r openrtb2.BidRequest) (map[string]string, error) {
+	if len(r.Ext) == 0 {
+		return nil, nil
+	}
+
+	ext := struct {
+		Prebid struct {
+			Aliases map[string]string `json:"aliases"`
+		} `json:"prebid"`
+	}{}
+
+	if err := jsonutil.Unmarshal(r.Ext, &ext); err != nil {
+		return nil, err
+	}
+
+	return ext.Prebid.Aliases, nil
 }
 
 func getInfoFromImp(req *openrtb_ext.RequestWrapper) (json.RawMessage, string, error) {

@@ -39,6 +39,7 @@ const (
 	FloorBidRejectionWarningCode
 	InvalidBidResponseDSAWarningCode
 	SecCookieDeprecationLenWarningCode
+	SecBrowsingTopicsWarningCode
 	AdpodPostFilteringWarningCode
 )
 

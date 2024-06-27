@@ -69,7 +69,7 @@ func cloneRequest(request json.RawMessage) (map[string]any, error) {
 }
 
 // appendRequestData creates new RequestData using request and uri then appends it to requestData passed as argument
-func appendRequestData(requestData []*adapters.RequestData, request map[string]any, uri string) ([]*adapters.RequestData, error) {
+func appendRequestData(requestData []*adapters.RequestData, request map[string]any, uri string, impIDs []string) ([]*adapters.RequestData, error) {
 	rawRequest, err := jsonutil.Marshal(request)
 	if err != nil {
 		return requestData, err
@@ -82,6 +82,7 @@ func appendRequestData(requestData []*adapters.RequestData, request map[string]a
 			"Content-Type": {"application/json;charset=utf-8"},
 			"Accept":       {"application/json"},
 		},
+		ImpIDs: impIDs,
 	})
 	return requestData, nil
 }
