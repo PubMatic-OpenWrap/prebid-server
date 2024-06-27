@@ -19,6 +19,7 @@ import (
 	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/ortb"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"golang.org/x/net/publicsuffix"
 )
@@ -193,6 +194,28 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 			metricsEngine.RecordVastVersion(string(seatBid.BidderCoreName), vastVersion)
 		}
 	}
+}
+
+func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapters.BidderResponse) {
+	if bidResponse == nil {
+		return
+	}
+
+	if bidResponse.FastXMLMetrics != nil {
+		recordFastXMLMetrics(bidder.me, "vastbidder", string(bidder.BidderName), bidResponse.FastXMLMetrics)
+		if bidResponse.FastXMLMetrics.IsRespMismatch {
+			resp, _ := jsonutil.Marshal(bidResponse)
+			glog.V(2).Infof("\n[VAST_BIDDER] Response Mismatch for Creative : %s", string(resp))
+		}
+	}
+
+	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
+}
+
+func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, bidder string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, bidder, vastBidderInfo.XMLParserTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, bidder, vastBidderInfo.EtreeParserTime)
+	metricsEngine.RecordXMLParserResponseMismatch(method, bidder, vastBidderInfo.IsRespMismatch)
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {

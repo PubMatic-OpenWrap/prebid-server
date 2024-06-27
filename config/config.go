@@ -20,6 +20,7 @@ import (
 
 // Configuration specifies the static application config.
 type Configuration struct {
+	OpenWrapConfig   `mapstructure:",squash"`
 	ExternalURL      string      `mapstructure:"external_url"`
 	Host             string      `mapstructure:"host"`
 	Port             int         `mapstructure:"port"`
@@ -103,10 +104,6 @@ type Configuration struct {
 	Hooks       Hooks       `mapstructure:"hooks"`
 	Validations Validations `mapstructure:"validations"`
 	PriceFloors PriceFloors `mapstructure:"price_floors"`
-
-	TrackerURL          string              `mapstructure:"tracker_url"`
-	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
-	PriceFloorFetcher   PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
 }
 
 type Admin struct {
@@ -115,20 +112,6 @@ type Admin struct {
 type PriceFloors struct {
 	Enabled bool              `mapstructure:"enabled"`
 	Fetcher PriceFloorFetcher `mapstructure:"fetcher"`
-}
-
-type PriceFloorFetcher struct {
-	HttpClient HTTPClient `mapstructure:"http_client"`
-	CacheSize  int        `mapstructure:"cache_size_mb"`
-	Worker     int        `mapstructure:"worker"`
-	Capacity   int        `mapstructure:"capacity"`
-	MaxRetries int        `mapstructure:"max_retries"`
-}
-
-type VendorListScheduler struct {
-	Enabled  bool   `mapstructure:"enabled"`
-	Interval string `mapstructure:"interval"`
-	Timeout  string `mapstructure:"timeout"`
 }
 
 const MIN_COOKIE_SIZE_BYTES = 500
@@ -692,9 +675,10 @@ type Debug struct {
 }
 
 type Server struct {
-	ExternalUrl string
-	GvlID       int
-	DataCenter  string
+	ExternalUrl   string
+	GvlID         int
+	DataCenter    string
+	EnableFastXML bool
 }
 
 func (server *Server) Empty() bool {

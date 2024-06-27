@@ -1024,7 +1024,6 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 			impWrapper.RebuildImp()
 		}
 	}
-
 	return nil
 }
 
