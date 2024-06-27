@@ -53,9 +53,18 @@ func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
 	return floorCur
 }
 
-// getMaxFloorValue returns maximum floor value from imp.bidfloor and floor rule value
-func getMaxFloorValue(impFloor float64, impFloorCur string, floorRuleValue float64, floorRuleCur string, conversions currency.Conversions) (float64, string, string) {
-	if floorRuleCur != "" && impFloorCur != floorRuleCur {
+// GetMaxFloorValue returns maximum floor value from imp.bidfloor and floor rule value
+func GetMaxFloorValue(impFloor float64, impFloorCur string, floorRuleValue float64, floorRuleCur string, conversions currency.Conversions) (float64, string, string) {
+
+	if impFloorCur == "" {
+		impFloorCur = defaultCurrency
+	}
+
+	if floorRuleCur == "" {
+		floorRuleCur = defaultCurrency
+	}
+
+	if impFloorCur != floorRuleCur {
 		rate, err := conversions.GetRate(impFloorCur, floorRuleCur)
 		if err == nil {
 			floorVal := rate * impFloor

@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
-func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string) {
+func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string, setMaxFloor bool) {
 	if configMap == nil || configMap[models.VersionLevelConfigID] == nil {
 		return
 	}
@@ -49,5 +49,8 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 			}
 			requestExt.Prebid.Floors.Location.URL = url
 		}
+	}
+	if setMaxFloor {
+		requestExt.Prebid.Floors.SetMaxFloor = ptrutil.ToPtr(setMaxFloor)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/floors"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -510,7 +511,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap)
+	setMaxFloor := rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
+	setFloorsExt(requestExt, rCtx.PartnerConfigMap, setMaxFloor)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -642,15 +644,22 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
-		imp.BidFloor = *adUnitCfg.BidFloor
+	if rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID) && adUnitCfg.BidFloor != nil {
+		imp.BidFloor, imp.BidFloorCur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, m.rateConvertor.Rates())
 		impBidCtx.BidFloor = imp.BidFloor
-	}
+		impBidCtx.BidFloorCur = imp.BidFloorCur
+	} else {
+		if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
+			imp.BidFloor = *adUnitCfg.BidFloor
+		}
 
-	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
-		imp.BidFloorCur = *adUnitCfg.BidFloorCur
+		if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
+			imp.BidFloorCur = *adUnitCfg.BidFloorCur
+		}
+		impBidCtx.BidFloor = imp.BidFloor
 		impBidCtx.BidFloorCur = imp.BidFloorCur
 	}
+
 	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
 	if adUnitCfg.Exp != nil {
@@ -692,14 +701,21 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
-		imp.BidFloor = *adUnitCfg.BidFloor
-		impBidCtx.BidFloor = imp.BidFloor
-	}
 
-	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
-		imp.BidFloorCur = *adUnitCfg.BidFloorCur
+	if rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID) && adUnitCfg.BidFloor != nil {
+		imp.BidFloor, imp.BidFloorCur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, m.rateConvertor.Rates())
+		impBidCtx.BidFloor = imp.BidFloor
 		impBidCtx.BidFloorCur = imp.BidFloorCur
+	} else {
+		if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
+			imp.BidFloor = *adUnitCfg.BidFloor
+		}
+
+		if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
+			imp.BidFloorCur = *adUnitCfg.BidFloorCur
+		}
+		impBidCtx.BidFloorCur = imp.BidFloorCur
+		impBidCtx.BidFloor = imp.BidFloor
 	}
 	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
