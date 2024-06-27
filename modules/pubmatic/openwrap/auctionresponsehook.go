@@ -119,7 +119,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
-			if bid.MType == openrtb2.MarkupVideo && impCtx.Video != nil && bidExt.Prebid != nil && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 {
+			if impCtx.Video != nil && bidExt.Prebid != nil && bidExt.Prebid.Type == openrtb_ext.BidTypeVideo && bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration == 0 {
 				bidExt.Prebid.Video.Duration = int(impCtx.Video.MaxDuration)
 			}
 
