@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/golang/glog"
@@ -23,6 +24,8 @@ type OpenRTB struct {
 	values  URLValues
 	ortb    *openrtb2.BidRequest
 }
+
+var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
 // NewOpenRTB Returns New ORTB Object of Version 2.5
 func NewOpenRTB(request *http.Request) Parser {
@@ -4495,7 +4498,39 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBUserExtEIDS, "Failed to unmarshal user.ext.eids", eidsValue)
 	}
 
-	userExt[ORTBExtEIDS] = eids
+	// Filter EIDs and UIDs
+	validEIDs := []map[string]interface{}{}
+	for _, eid := range eids {
+		uids, ok := eid["uids"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		validUIDs := []map[string]interface{}{}
+		for _, uid := range uids {
+			uidMap, ok := uid.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			if id, ok := uidMap["id"].(string); ok && id != "" {
+				uidMap["id"] = uidRegexp.ReplaceAllString(id, "")
+				validUIDs = append(validUIDs, uidMap)
+			}
+		}
+
+		if len(validUIDs) > 0 {
+			eid["uids"] = validUIDs
+			validEIDs = append(validEIDs, eid)
+		}
+	}
+
+	if len(validEIDs) == 0 {
+		delete(userExt, ORTBExtEIDS)
+	} else {
+		userExt[ORTBExtEIDS] = validEIDs
+	}
+
 	data, err := json.Marshal(userExt)
 	if err != nil {
 		return
