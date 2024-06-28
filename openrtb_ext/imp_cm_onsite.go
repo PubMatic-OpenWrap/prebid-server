@@ -36,3 +36,4 @@ type ExtBidderCMOnsite struct {
 	BidderCode       string              `json:"biddercode,omitempty"`
 }
 
+
