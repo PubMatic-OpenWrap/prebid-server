@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
