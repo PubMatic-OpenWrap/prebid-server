@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
+	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
 type AdButlerOnsiteRequest struct {
@@ -93,7 +93,7 @@ func isInventorySizeMatch(inventory openrtb_ext.CMOnsiteInventoryDetails, banner
 	}
 
 	for _, format := range banner.Format {
-		if format.W == inventory.Width && format.H == inventory.Height {
+		if int(format.W) == inventory.Width && int(format.H) == inventory.Height {
 			return true
 		}
 	}
@@ -232,6 +232,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}}, nil
 
 }
+
 
 
 
