@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	AccountID_KeyOnsite              = "Bidder_AccountID"
+	AccountID_KeyOnsite = "Bidder_AccountID"
 )
 
 func GetImpressionExtCMOnsite(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMOnsitePrebid, error) {
@@ -27,7 +27,6 @@ func GetImpressionExtCMOnsite(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMOnsitePre
 func GetRequestExtCMOnsite(prebidExt *openrtb_ext.ExtOWRequest) (*openrtb_ext.ExtRequestPrebidOnsite, error) {
 	var requestExtCMOnsite *openrtb_ext.ExtRequestPrebidOnsite
 	var mapExt map[string]interface{}
-
 
 	if prebidExt.Prebid.BidderParams != nil {
 		if err := json.Unmarshal(prebidExt.Prebid.BidderParams, &mapExt); err != nil {
@@ -64,11 +63,11 @@ func GetInventoryAndAccountDetailsCMOnsite(requestExtCMOnsite *openrtb_ext.ExtRe
 	if requestExtCMOnsite == nil {
 		return nil, "", nil
 	}
-	
+
 	var errors []error
 	inventoryDetails := make(map[string]openrtb_ext.CMOnsiteInventoryDetails)
 	var accountId string
-	
+
 	if requestExtCMOnsite.ZoneMapping == nil {
 		errors = append(errors, &errortypes.BadInput{
 			Message: "ZoneMapping not provided",
@@ -86,9 +85,9 @@ func GetInventoryAndAccountDetailsCMOnsite(requestExtCMOnsite *openrtb_ext.ExtRe
 			}
 			if err := json.Unmarshal(detailBytes, &details); err == nil {
 				inventoryDetails[key] = details
-			} 
+			}
 		case string:
-			if( key == AccountID_KeyOnsite) {
+			if key == AccountID_KeyOnsite {
 				accountId = val
 			}
 		}
@@ -101,14 +100,14 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 	var siteExt *openrtb_ext.ExtSiteCommerce
 	var requestExt *openrtb_ext.ExtOWRequest
 	var requestExtCMOnsite *openrtb_ext.ExtRequestPrebidOnsite
-		
+
 	var err error
 	var errors []error
 
 	siteExt, err = GetSiteExtComm(request)
 	if err != nil {
 		errors = append(errors, err)
-	} 
+	}
 
 	requestExt, err = GetRequestExtComm(request)
 	if err != nil {
@@ -119,7 +118,7 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 	if err != nil {
 		errors = append(errors, err)
 	} else {
-		
+
 	}
 
 	if len(errors) > 0 {
@@ -129,3 +128,8 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 	return siteExt, requestExtCMOnsite, nil
 }
 
+func AddDefaultFieldsComm(bid *openrtb2.Bid) {
+	if bid != nil {
+		bid.CrID = "DefaultCRID"
+	}
+}

@@ -164,6 +164,8 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				AdM:   adm,
 			}
 
+			adapters.AddDefaultFieldsComm(bid)
+
 			bidExtJSON, err1 := json.Marshal(bidExt)
 			if nil == err1 {
 				bid.Ext = json.RawMessage(bidExtJSON)

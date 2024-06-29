@@ -1,5 +1,10 @@
 package adapters
 
+import (
+	"github.com/google/uuid"
+	"github.com/mxmCherry/openrtb/v16/openrtb2"
+)
+
 const (
 	USER_AGE               = "target_age"
 	GENDER_MALE            = "Male"
@@ -18,3 +23,13 @@ const (
 	STRING_FALSE           = "false"
 )
 
+func AddDefaultFieldsComm(bid *openrtb2.Bid) {
+	if bid != nil {
+		bid.CrID = "DefaultCRID"
+	}
+}
+
+func GenerateUniqueBidIDComm() string {
+	id := uuid.New()
+	return id.String()
+}
