@@ -47,6 +47,7 @@ type Placement struct {
 type AdSet struct {
 	Status     string       `json:"status,omitempty"`
 	Placements []*Placement `json:"placements,omitempty"`
+	//Placements []map[string]interface{} `json:"placements,omitempty"`
 }
 
 type AdButlerOnsiteResponse map[string]AdSet
@@ -82,8 +83,6 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 	fmt.Println(prettyJSON.String())
 
-	//return nil, nil
-
 	var adButlerResp AdButlerOnsiteResponse
 	if err := json.Unmarshal(response.Body, &adButlerResp); err != nil {
 		return nil, []error{&errortypes.BadServerResponse{
@@ -97,17 +96,15 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 		}}
 	}
 
-	noOfSuccess := 0
 	noOfPlacements := 0
 
 	for _, adSetObject := range adButlerResp {
 		if adSetObject.Status == RESPONSE_SUCCESS {
-			noOfSuccess++
 			noOfPlacements += len(adSetObject.Placements)
 		}
 	}
 
-	if noOfSuccess == 0 {
+	if noOfPlacements == 0 {
 		return nil, []error{&errortypes.NoValidBid{
 			Message: "No Valid Bid For the given Request",
 		}}
@@ -123,23 +120,37 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 
 }
 
-func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfPlacement int) *adapters.BidderResponse {
+func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfBids int) *adapters.BidderResponse {
 
-	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfPlacement)
+	impIDMap := getImpIDMap(request)
 
-	for _, adSetObject := range *adButlerResp {
+	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfBids)
 
-		for index, adButlerBid := range adSetObject.Placements {
+	for zoneID, adSetObject := range *adButlerResp {
 
-			requestImpID := strconv.Itoa(index)
+		for _, adButlerBid := range adSetObject.Placements {
+
+			var impID string
+			_, ok := impIDMap[zoneID]
+			if ok {
+				impID = impIDMap[zoneID][0]
+				impIDMap[zoneID] = impIDMap[zoneID][1:]
+			} else {
+				continue
+			}
+
 			bidID := adapters.GenerateUniqueBidIDComm()
-			impID := requestImpID + "_" + strconv.Itoa(index+1)
 			width, _ := strconv.Atoi(adButlerBid.Width)
 			height, _ := strconv.Atoi(adButlerBid.Height)
 
-			adm := getADM(adButlerBid)
+			adm, adType := getADM(adButlerBid)
+
+			if adType == INVALID_ADTYPE {
+				continue
+			}
 
 			bidExt := &openrtb_ext.ExtBidCMOnsite{
+				AdType:   adType,
 				ViewUrl:  adButlerBid.ViewableURL,
 				ClickUrl: adButlerBid.RedirectURL,
 			}
@@ -166,19 +177,53 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			bidResponse.Bids = append(bidResponse.Bids, typedbid)
 		}
 	}
-
 	return bidResponse
 }
 
-func getADM(adButlerBid *Placement) string {
+func getADM(adButlerBid *Placement) (string, int) {
 
 	if adButlerBid.Body != "" {
-		return adButlerBid.Body
+		return adButlerBid.Body, BANNER_ADTYPE
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height)
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), CREATIVE_ADTYPE
 	}
 
-	return ""
+	return "", INVALID_ADTYPE
+}
+
+func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
+
+	_, requestExt, errors := adapters.ValidateCMOnsiteRequest(request)
+
+	if len(errors) > 0 {
+		return nil
+	}
+
+	if requestExt == nil {
+		return nil
+	}
+
+	inventoryDetails, _, _ := adapters.GetInventoryAndAccountDetailsCMOnsite(requestExt)
+
+	impIDMap := make(map[string][]string)
+
+	for _, imp := range request.Imp {
+		inventory, ok := inventoryDetails[InventoryIDOnsite_Prefix+imp.ID]
+		if ok {
+			zoneID := strconv.Itoa(inventory.AdbulterZoneID)
+			impIDArray, ok := impIDMap[zoneID]
+			if ok {
+				impIDArray = append(impIDArray, imp.ID)
+				impIDMap[zoneID] = impIDArray
+			} else {
+				impIDArray := make([]string, 0)
+				impIDArray = append(impIDArray, imp.ID)
+				impIDMap[zoneID] = impIDArray
+			}
+		}
+	}
+
+	return impIDMap
 }
