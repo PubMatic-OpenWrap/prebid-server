@@ -8,7 +8,7 @@ type ExtBidCMOnsite struct {
 
 // ImpExtensionCommerce - Impression Commerce Extension
 type ExtImpCMOnsiteParams struct {
-	SlotsRequested int `json:"slots_requested,omitempty"`
+	Adtype []int `json:"adtype,omitempty"`
 }
 
 // ImpExtensionCommerce - Impression Commerce Extension
@@ -23,6 +23,8 @@ type CMOnsiteImpExtPrebidParams struct {
 type CMOnsiteInventoryDetails struct {
 	AdbulterZoneID int
 	Adtype         string
+	Width          int
+	Height         int
 }
 
 type ExtRequestOnsiteParams struct {

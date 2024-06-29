@@ -47,7 +47,6 @@ type Placement struct {
 type AdSet struct {
 	Status     string       `json:"status,omitempty"`
 	Placements []*Placement `json:"placements,omitempty"`
-	//Placements []map[string]interface{} `json:"placements,omitempty"`
 }
 
 type AdButlerOnsiteResponse map[string]AdSet
@@ -187,7 +186,7 @@ func getADM(adButlerBid *Placement) (string, int) {
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), CREATIVE_ADTYPE
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), NATIVE_ADTYPE
 	}
 
 	return "", INVALID_ADTYPE
