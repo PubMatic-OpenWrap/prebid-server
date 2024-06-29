@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"bytes"
@@ -209,18 +210,27 @@ func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
 	impIDMap := make(map[string][]string)
 
 	for _, imp := range request.Imp {
-		inventory, ok := inventoryDetails[InventoryIDOnsite_Prefix+imp.ID]
+		inventory, ok := inventoryDetails[InventoryIDOnsite_Prefix+imp.TagID]
 		if ok {
 			zoneID := strconv.Itoa(inventory.AdbulterZoneID)
 			impIDArray, ok := impIDMap[zoneID]
+			impID := strconv.Itoa(int(imp.Banner.Pos.Ptr().Val())) + imp.ID
 			if ok {
-				impIDArray = append(impIDArray, imp.ID)
+				impIDArray = append(impIDArray, impID)
 				impIDMap[zoneID] = impIDArray
 			} else {
 				impIDArray := make([]string, 0)
-				impIDArray = append(impIDArray, imp.ID)
+				impIDArray = append(impIDArray, impID)
 				impIDMap[zoneID] = impIDArray
 			}
+		}
+	}
+
+	//Sorting according pos and then trimming the position
+	for _, val := range impIDMap {
+		sort.Strings(val)
+		for i := 0; i < len(val); i++ {
+			val[i] = val[i][1:]
 		}
 	}
 
