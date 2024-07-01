@@ -35,6 +35,68 @@ process_arguments() {
     done
 }
 
+# Restart upgrade
+restart_upgrade() {
+    if [ "$RESTART" -eq "1" ]; then
+        log "Restarting the upgrade: rm -rf /tmp/prebid-server /tmp/pbs-patch/"
+        rm -rf /tmp/prebid-server /tmp/pbs-patch/
+        mkdir -p /tmp/pbs-patch/
+    fi
+}
+
+# Initialize upgrade
+initialize_upgrade() {
+    checkpoint_run clone_repo
+    cd /tmp/prebid-server
+    log "At $(pwd)"
+
+    # Get the latest tag if VERSION is not specified
+    if [ -z "$VERSION" ]; then
+        VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
+    fi
+
+    log "Final Upgrade Version: $VERSION"
+
+    git diff tags/$VERSION..origin/master > /tmp/pbs-patch/current_ow_patch-$VERSION-origin_master-$attempt.diff
+}
+
+# Start validation
+start_validation() {
+    go_mod
+    checkpoint_run "./validate.sh --race 5 --nofmt"
+    go_discard
+}
+
+# Setup branches
+setup_branches() {
+    tag_base_branch_name=prebid_$VERSION-$attempt-tag
+    upgrade_branch_name=prebid_$VERSION-$attempt
+    log "Reference tag branch: $tag_base_branch_name"
+    log "Upgrade branch: $upgrade_branch_name"
+
+    checkpoint_run checkout_branch
+}
+
+# Merge branches
+merge_branches() {
+    log "Merging master into $tag_base_branch_name"
+    checkpoint_run git merge master --no-edit
+
+    log "Validating the master merge into current tag. Fix and commit changes if required."
+    go_mod
+    checkpoint_run "./validate.sh --race 5 --nofmt"
+    go_discard
+
+    checkpoint_run git checkout master
+    checkpoint_run git merge $upgrade_branch_name --no-edit
+}
+
+# Generate patch file
+generate_patch() {
+    log "Generating patch file at /tmp/pbs-patch/ for $VERSION"
+    git diff tags/$VERSION..master > /tmp/pbs-patch/new_ow_patch_$VERSION-master-1.diff
+}
+
 # Log message
 log() {
     printf "\n$(date): $1\n"
@@ -118,68 +180,6 @@ go_mod() {
 # Discard Go module changes
 go_discard() {
     git checkout go.mod go.sum
-}
-
-# Restart upgrade
-restart_upgrade() {
-    if [ "$RESTART" -eq "1" ]; then
-        log "Restarting the upgrade: rm -rf /tmp/prebid-server /tmp/pbs-patch/"
-        rm -rf /tmp/prebid-server /tmp/pbs-patch/
-        mkdir -p /tmp/pbs-patch/
-    fi
-}
-
-# Initialize upgrade
-initialize_upgrade() {
-    checkpoint_run clone_repo
-    cd /tmp/prebid-server
-    log "At $(pwd)"
-
-    # Get the latest tag if VERSION is not specified
-    if [ -z "$VERSION" ]; then
-        VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
-    fi
-
-    log "Final Upgrade Version: $VERSION"
-
-    git diff tags/$VERSION..origin/master > /tmp/pbs-patch/current_ow_patch-$VERSION-origin_master-$attempt.diff
-}
-
-# Start validation
-start_validation() {
-    go_mod
-    checkpoint_run "./validate.sh --race 5 --nofmt"
-    go_discard
-}
-
-# Setup branches
-setup_branches() {
-    tag_base_branch_name=prebid_$VERSION-$attempt-tag
-    upgrade_branch_name=prebid_$VERSION-$attempt
-    log "Reference tag branch: $tag_base_branch_name"
-    log "Upgrade branch: $upgrade_branch_name"
-
-    checkpoint_run checkout_branch
-}
-
-# Merge branches
-merge_branches() {
-    log "Merging master into $tag_base_branch_name"
-    checkpoint_run git merge master --no-edit
-
-    log "Validating the master merge into current tag. Fix and commit changes if required."
-    go_mod
-    checkpoint_run "./validate.sh --race 5 --nofmt"
-    go_discard
-
-    checkpoint_run git checkout master
-    checkpoint_run git merge $upgrade_branch_name --no-edit
-}
-
-# Generate patch file
-generate_patch() {
-    log "Generating patch file at /tmp/pbs-patch/ for $VERSION"
-    git diff tags/$VERSION..master > /tmp/pbs-patch/new_ow_patch_$VERSION-master-1.diff
 }
 
 # Main script
