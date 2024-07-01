@@ -113,6 +113,7 @@ type RequestCtx struct {
 	AppSubIntegrationPath  *int
 	WakandaDebug           wakanda.WakandaDebug
 	PriceGranularity       *openrtb_ext.PriceGranularity
+	IsMaxFloorsEnabled     bool
 }
 
 type OwBid struct {

@@ -1221,3 +1221,129 @@ func getIntPtr(v int) *int {
 func getInt64Ptr(v int64) *int64 {
 	return &v
 }
+
+func TestGetMaxFloorValue(t *testing.T) {
+	rates := map[string]map[string]float64{
+		"USD": {
+			"INR": 81.17,
+		},
+	}
+	type args struct {
+		impFloor       float64
+		impFloorCur    string
+		floorRuleValue float64
+		floorRuleCur   string
+	}
+	tests := []struct {
+		name             string
+		args             args
+		expFloorValue    float64
+		expFloorCur      string
+		expFloorLocation string
+	}{
+		{
+			name: "Same Currency, ImpFloor value is less than floor rule value",
+			args: args{
+				impFloor:       1.0,
+				impFloorCur:    "USD",
+				floorRuleValue: 2.0,
+				floorRuleCur:   "USD",
+			},
+			expFloorValue:    2.0,
+			expFloorCur:      "USD",
+			expFloorLocation: "",
+		},
+		{
+			name: "Same Currency, ImpFloor value is higher than floor rule value",
+			args: args{
+				impFloor:       3.0,
+				impFloorCur:    "USD",
+				floorRuleValue: 2.0,
+				floorRuleCur:   "USD",
+			},
+			expFloorValue:    3.0,
+			expFloorCur:      "USD",
+			expFloorLocation: openrtb_ext.RequestLocation,
+		},
+		{
+			name: "Different Currency, ImpFloor value is higher than floor rule value",
+			args: args{
+				impFloor:       10.0,
+				impFloorCur:    "USD",
+				floorRuleValue: 100.0,
+				floorRuleCur:   "INR",
+			},
+			expFloorValue:    10.0,
+			expFloorCur:      "USD",
+			expFloorLocation: openrtb_ext.RequestLocation,
+		},
+		{
+			name: "Different Currency, ImpFloor value is less than floor rule value",
+			args: args{
+				impFloor:       120.0,
+				impFloorCur:    "INR",
+				floorRuleValue: 2.0,
+				floorRuleCur:   "USD",
+			},
+			expFloorValue:    2.0,
+			expFloorCur:      "USD",
+			expFloorLocation: "",
+		},
+		{
+			name: "Different Currency, ImpFloor value higher than floor rule value",
+			args: args{
+				impFloor:       190.0,
+				impFloorCur:    "INR",
+				floorRuleValue: 2.0,
+				floorRuleCur:   "USD",
+			},
+			expFloorValue:    190.0,
+			expFloorCur:      "INR",
+			expFloorLocation: openrtb_ext.RequestLocation,
+		},
+		{
+			name: "ImpFloorCur empty & impFloor value is greater than floor rule value",
+			args: args{
+				impFloor:       15.0,
+				impFloorCur:    "",
+				floorRuleValue: 10.0,
+				floorRuleCur:   "USD",
+			},
+			expFloorValue:    15.0,
+			expFloorCur:      "USD",
+			expFloorLocation: openrtb_ext.RequestLocation,
+		},
+		{
+			name: "ImpFloor value is less than floor rule value, floorRuleCur empty",
+			args: args{
+				impFloor:       7,
+				impFloorCur:    "USD",
+				floorRuleValue: 15,
+				floorRuleCur:   "",
+			},
+			expFloorValue:    15.0,
+			expFloorCur:      "USD",
+			expFloorLocation: "",
+		},
+		{
+			name: "ImpFloor value is less than floor rule value, floorRuleCur, ImpFlorCut empty",
+			args: args{
+				impFloor:       5,
+				impFloorCur:    "",
+				floorRuleValue: 7,
+				floorRuleCur:   "",
+			},
+			expFloorValue:    7.0,
+			expFloorCur:      "USD",
+			expFloorLocation: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actualFloorValue, actualFloorCur, actualFloorLocation := GetMaxFloorValue(tt.args.impFloor, tt.args.impFloorCur, tt.args.floorRuleValue, tt.args.floorRuleCur, getCurrencyRates(rates))
+			assert.Equal(t, tt.expFloorValue, actualFloorValue)
+			assert.Equal(t, tt.expFloorCur, actualFloorCur)
+			assert.Equal(t, tt.expFloorLocation, actualFloorLocation)
+		})
+	}
+}

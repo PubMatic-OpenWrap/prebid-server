@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/floors"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -80,6 +81,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.Country = getCountry(payload.BidRequest)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	rCtx.IsTBFFeatureEnabled = m.pubFeatures.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
@@ -502,7 +504,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap)
+	setFloorsExt(requestExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -634,15 +636,10 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
-		imp.BidFloor = *adUnitCfg.BidFloor
-		impBidCtx.BidFloor = imp.BidFloor
-	}
+	imp.BidFloor, imp.BidFloorCur = setImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
+	impBidCtx.BidFloor = imp.BidFloor
+	impBidCtx.BidFloorCur = imp.BidFloorCur
 
-	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
-		imp.BidFloorCur = *adUnitCfg.BidFloorCur
-		impBidCtx.BidFloorCur = imp.BidFloorCur
-	}
 	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
 	if adUnitCfg.Exp != nil {
@@ -672,6 +669,23 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 	}
 }
+func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.AdConfig, imp *openrtb2.Imp, conversions currency.Conversions) (float64, string) {
+	bidfloor := imp.BidFloor
+	bidfloorcur := imp.BidFloorCur
+
+	if rCtx.IsMaxFloorsEnabled && adUnitCfg.BidFloor != nil {
+		bidfloor, bidfloorcur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, conversions)
+	} else {
+		if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
+			bidfloor = *adUnitCfg.BidFloor
+		}
+
+		if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
+			bidfloorcur = *adUnitCfg.BidFloorCur
+		}
+	}
+	return bidfloor, bidfloorcur
+}
 
 func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 	if imp.Banner == nil {
@@ -684,15 +698,9 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
-		imp.BidFloor = *adUnitCfg.BidFloor
-		impBidCtx.BidFloor = imp.BidFloor
-	}
-
-	if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
-		imp.BidFloorCur = *adUnitCfg.BidFloorCur
-		impBidCtx.BidFloorCur = imp.BidFloorCur
-	}
+	imp.BidFloor, imp.BidFloorCur = setImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
+	impBidCtx.BidFloor = imp.BidFloor
+	impBidCtx.BidFloorCur = imp.BidFloorCur
 	rCtx.ImpBidCtx[imp.ID] = impBidCtx
 
 	if adUnitCfg.Exp != nil {

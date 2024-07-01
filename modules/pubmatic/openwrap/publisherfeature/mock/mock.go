@@ -47,6 +47,20 @@ func (mr *MockFeatureMockRecorder) IsAmpMultiformatEnabled(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAmpMultiformatEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultiformatEnabled), arg0)
 }
 
+// IsMaxFloorsEnabled mocks base method.
+func (m *MockFeature) IsMaxFloorsEnabled(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMaxFloorsEnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMaxFloorsEnabled indicates an expected call of IsMaxFloorsEnabled.
+func (mr *MockFeatureMockRecorder) IsMaxFloorsEnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMaxFloorsEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultiformatEnabled), arg0)
+}
+
 // IsAnalyticsTrackingThrottled mocks base method.
 func (m *MockFeature) IsAnalyticsTrackingThrottled(arg0, arg1 int) (bool, bool) {
 	m.ctrl.T.Helper()
