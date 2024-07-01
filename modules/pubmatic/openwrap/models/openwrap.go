@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 )
@@ -110,6 +111,7 @@ type RequestCtx struct {
 	AppPlatform            int
 	AppIntegrationPath     *int
 	AppSubIntegrationPath  *int
+	WakandaDebug           wakanda.WakandaDebug
 	PriceGranularity       *openrtb_ext.PriceGranularity
 }
 

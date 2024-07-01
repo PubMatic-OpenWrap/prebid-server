@@ -73,14 +73,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	pubID, err := getPubID(*payload.BidRequest)
-	if err != nil {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-		return result, fmt.Errorf("invalid publisher id : %v", err)
-	}
-	rCtx.PubID = pubID
-	rCtx.PubIDStr = strconv.Itoa(pubID)
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)

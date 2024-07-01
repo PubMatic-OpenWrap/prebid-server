@@ -5,6 +5,7 @@ import (
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
 // Config contains the values read from the config file at boot time
@@ -19,12 +20,14 @@ type Config struct {
 	Log           Log
 	Stats         stats.Stats
 	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
+	Wakanda       wakanda.Wakanda
 	GeoDB         GeoDB
 }
 
 type Server struct {
 	HostName string
 	DCName   string //Name of the data center
+	Endpoint string
 }
 
 type Database struct {
