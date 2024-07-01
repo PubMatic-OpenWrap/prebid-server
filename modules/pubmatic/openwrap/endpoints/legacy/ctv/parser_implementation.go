@@ -4500,9 +4500,7 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 
 	validEIDs := validateEIDs(eids)
 
-	if len(validEIDs) == 0 {
-		delete(userExt, ORTBExtEIDS)
-	} else {
+	if len(validEIDs) != 0 {
 		userExt[ORTBExtEIDS] = validEIDs
 	}
 

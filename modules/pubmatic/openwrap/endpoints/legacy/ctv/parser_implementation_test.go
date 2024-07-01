@@ -2418,65 +2418,50 @@ func TestORTBUserExtEIDS(t *testing.T) {
 func TestORTBUserExtEIDS1(t *testing.T) {
 	tests := []struct {
 		name          string
-		inputExt      json.RawMessage
 		eidsValue     string
 		expectedExt   json.RawMessage
 		expectedError bool
 	}{
 		{
-			name: "Valid EIDs with valid UIDs",
-			inputExt: json.RawMessage(`{
-				"eids": [
-					{
-						"source": "uidapi.com",
-						"uids": [{"id": "abc123"}, {"id": "xyz456"}]
-					}
-				]
-			}`),
+			name:          "Valid EIDs with valid UIDs",
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]}]`,
 			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]}]}`),
 			expectedError: false,
 		},
 		{
 			name:          "EIDs with empty UID",
-			inputExt:      json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":""},{"id":"xyz456"}]}]}`),
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":""},{"id":"xyz456"}]}]`,
 			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"xyz456"}]}]}`),
 			expectedError: false,
 		},
 		{
 			name:          "EIDs with all empty UIDs",
-			inputExt:      json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":""},{"id":""}]}]}`),
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":""}, {"id":""}]}]`,
 			expectedExt:   json.RawMessage(`{}`),
 			expectedError: false,
 		},
 		{
 			name:          "UID id value with valid: prefix: should be replaced",
-			inputExt:      json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"euid:abc123"},{"id":"UID2:abc123"},{"id":"ID5:abc123"},{"id":"BGID:abc123"},{"id":"euid:abc123"},{"id":"PAIRID:abc123"},{"id":"IDL:abc123"},{"id":"firstid:abc123"},{"id":"connectid:abc123"},{"id":"utiq:abc123"},{"id":""}]}]}`),
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":"euid:abc123"},{"id":"UID2:abc123"},{"id":"ID5:abc123"},{"id":"BGID:abc123"},{"id":"euid:abc123"},{"id":"PAIRID:abc123"},{"id":"IDL:abc123"},{"id":"firstid:abc123"},{"id":"connectid:abc123"},{"id":"utiq:abc123"},{"id":""}]}]`,
 			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"},{"id":"abc123"}]}]}`),
 			expectedError: false,
 		},
 		{
 			name:          "UID id value with EUID: prefix: should not replaced",
-			inputExt:      json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"EUID:abc123"},{"id":""}]}]}`),
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":"EUID:abc123"},{"id":""}]}]`,
 			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"EUID:abc123"}]}]}`),
 			expectedError: false,
 		},
 		{
 			name:          "Empty EIDs field",
-			inputExt:      json.RawMessage(`{}`),
 			eidsValue:     `[]`,
 			expectedExt:   json.RawMessage(`{}`),
 			expectedError: false,
 		},
 		{
 			name:          "Invalid EIDs JSON",
-			inputExt:      json.RawMessage(`{}`),
 			eidsValue:     `invalid-json`,
-			expectedExt:   json.RawMessage(`{}`),
+			expectedExt:   nil,
 			expectedError: true,
 		},
 	}
@@ -2486,9 +2471,7 @@ func TestORTBUserExtEIDS1(t *testing.T) {
 			// Setup the OpenRTB object
 			o := &OpenRTB{
 				ortb: &openrtb2.BidRequest{
-					User: &openrtb2.User{
-						Ext: tt.inputExt,
-					},
+					User: &openrtb2.User{},
 				},
 				values: URLValues{
 					Values: url.Values{
