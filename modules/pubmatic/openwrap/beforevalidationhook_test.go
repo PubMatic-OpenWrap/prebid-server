@@ -29,7 +29,6 @@ import (
 	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -5480,6 +5479,83 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 			}
 			got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestSetImpBidFloorParams(t *testing.T) {
+	type args struct {
+		rCtx        models.RequestCtx
+		adUnitCfg   *modelsAdunitConfig.AdConfig
+		imp         *openrtb2.Imp
+		conversions currency.Conversions
+	}
+	tests := []struct {
+		name           string
+		args           args
+		expBidfloor    float64
+		expBidfloorCur string
+	}{
+		{
+			name: "imp_bid_floor_present_IsMaxFloorsEnabled_false",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: false,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    0.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    0.6,
+			expBidfloorCur: "USD",
+		},
+		{
+			name: "imp_bid_floor_higher_than_adunit_IsMaxFloorsEnabled_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: true,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    0.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    2,
+			expBidfloorCur: "USD",
+		},
+		{
+			name: "imp_bid_floor_less_than_adunit_IsMaxFloorsEnabled_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: true,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    2.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    2.6,
+			expBidfloorCur: "USD",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bidfloor, bidfloorCur := setImpBidFloorParams(tt.args.rCtx, tt.args.adUnitCfg, tt.args.imp, tt.args.conversions)
+			assert.Equal(t, tt.expBidfloor, bidfloor, tt.name)
+			assert.Equal(t, tt.expBidfloorCur, bidfloorCur, tt.name)
 		})
 	}
 }

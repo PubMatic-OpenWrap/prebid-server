@@ -111,6 +111,7 @@ type RequestCtx struct {
 	AppIntegrationPath     *int
 	AppSubIntegrationPath  *int
 	PriceGranularity       *openrtb_ext.PriceGranularity
+	IsMaxFloorsEnabled     bool
 }
 
 type OwBid struct {
