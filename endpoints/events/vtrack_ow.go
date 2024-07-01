@@ -122,11 +122,11 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 	}
 
 	if trackersInjected {
-		out, err := doc.WriteToBytes()
+		out, err := doc.WriteToString()
 		if err != nil {
 			glog.Errorf("%v", err.Error())
 		}
-		return string(out), err
+		return out, err
 	}
 	return vastXML, nil
 }
