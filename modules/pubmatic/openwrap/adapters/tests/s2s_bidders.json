@@ -105,5 +105,20 @@
                 "placementId": "sjdsdkh"
             }
         }
+    },
+    {
+        "name": "pgamssp_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "pgamssp",
+            "requestJSON": {
+                "placementId": "123456",
+                "endpointId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "123456"
+            }
+        }
     }
 ]

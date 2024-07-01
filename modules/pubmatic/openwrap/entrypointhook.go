@@ -3,6 +3,7 @@ package openwrap
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
@@ -124,6 +126,9 @@ func (m OpenWrap) handleEntrypointHook(
 		Method:                    payload.Request.Method,
 		ResponseFormat:            strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
 		RedirectURL:               queryParams.Get(models.OWRedirectURLKey),
+		WakandaDebug: &wakanda.Debug{
+			Config: m.cfg.Wakanda,
+		},
 	}
 
 	// SSAuction will be always 1 for CTV request
@@ -145,6 +150,26 @@ func (m OpenWrap) handleEntrypointHook(
 	// temp, for AMP, etc
 	if pubid != 0 {
 		rCtx.PubID = pubid
+	}
+
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
+	}
+	rCtx.PubIDStr = pubIdStr
+
+	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
 	}
 
 	result.Reject = false

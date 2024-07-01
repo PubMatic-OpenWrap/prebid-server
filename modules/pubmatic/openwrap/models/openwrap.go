@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 )
@@ -114,6 +115,7 @@ type RequestCtx struct {
 	Errors                 []error
 	RedirectURL            string
 	ResponseFormat         string
+	WakandaDebug           wakanda.WakandaDebug
 	PriceGranularity       *openrtb_ext.PriceGranularity
 }
 
