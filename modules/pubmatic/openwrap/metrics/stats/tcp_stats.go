@@ -349,3 +349,4 @@ func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analytics
 func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                                 {}
 func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                       {}
 func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)               {}
+func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}

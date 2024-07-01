@@ -72,6 +72,11 @@ type MetricsEngine interface {
 	RecordSendLoggerDataTime(sendTime time.Duration)
 	RecordRequestTime(requestType string, requestTime time.Duration)
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
+
+	// prebid metrics
+	RecordPrebidCacheRequestTime(success bool, length time.Duration)
+
+	// AMP metrics
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
 	RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)

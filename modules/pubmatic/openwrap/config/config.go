@@ -4,6 +4,7 @@ import (
 	"time"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
@@ -22,6 +23,13 @@ type Config struct {
 	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
 	Wakanda       wakanda.Wakanda
 	GeoDB         GeoDB
+	BidCache      BidCache
+}
+
+type BidCache struct {
+	CacheClient config.HTTPClient    `mapstructure:"http_client_cache" json:"http_client_cache"`
+	CacheURL    config.Cache         `mapstructure:"cache" json:"cache"`
+	ExtCacheURL config.ExternalCache `mapstructure:"external_cache" json:"external_cache"`
 }
 
 type Server struct {

@@ -317,8 +317,6 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.POST("/optout", userSyncDeps.OptOut)
 	r.GET("/optout", userSyncDeps.OptOut)
 
-	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
-
 	g_syncers = syncersByBidder
 	g_metrics = r.MetricsEngine
 	g_cfg = cfg
@@ -338,6 +336,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_planBuilder = &planBuilder
 	g_currencyConversions = rateConvertor.Rates()
 	g_tmaxAdjustments = tmaxAdjustments
+
+	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
 	return r, nil
 }

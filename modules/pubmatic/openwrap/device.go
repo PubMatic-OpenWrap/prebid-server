@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
@@ -12,7 +13,7 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 		return
 	}
 	//this is needed in determine ifa_type parameter
-	dvc.DeviceIFA = device.IFA
+	dvc.DeviceIFA = strings.TrimSpace(device.IFA)
 
 	if device.Ext == nil {
 		return
@@ -35,44 +36,28 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 	}
 
 	deviceExt := dvc.Ext
-	extIFATypeStr, _ := deviceExt.GetIFAType()
-	extSessionIDStr, _ := deviceExt.GetSessionID()
+	extIFAType, ifaTypeFound := deviceExt.GetIFAType()
+	extSessionID, _ := deviceExt.GetSessionID()
 
-	if extIFATypeStr == "" {
-		if extSessionIDStr == "" {
+	if ifaTypeFound {
+		if dvc.DeviceIFA != "" {
+			if ifaTypeID, ok := models.DeviceIFATypeID[strings.ToLower(extIFAType)]; !ok {
+				deviceExt.DeleteIFAType()
+			} else {
+				dvc.IFATypeID = &ifaTypeID
+				deviceExt.SetIFAType(extIFAType)
+			}
+		} else if extSessionID != "" {
+			dvc.DeviceIFA = extSessionID
+			dvc.IFATypeID = ptrutil.ToPtr(models.DeviceIfaTypeIdSessionId)
+			deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
+		} else {
 			deviceExt.DeleteIFAType()
-			deviceExt.DeleteSessionID()
-			return
 		}
-		dvc.DeviceIFA = extSessionIDStr
-		extIFATypeStr = models.DeviceIFATypeSESSIONID
-	}
-	if dvc.DeviceIFA != "" {
-		if _, ok := models.DeviceIFATypeID[strings.ToLower(extIFATypeStr)]; !ok {
-			extIFATypeStr = ""
-		}
-	} else if extSessionIDStr != "" {
-		dvc.DeviceIFA = extSessionIDStr
-		extIFATypeStr = models.DeviceIFATypeSESSIONID
-
-	} else {
-		extIFATypeStr = ""
-	}
-
-	if ifaTypeID, ok := models.DeviceIFATypeID[strings.ToLower(extIFATypeStr)]; ok {
-		dvc.IFATypeID = &ifaTypeID
-	}
-
-	if extIFATypeStr == "" {
-		deviceExt.DeleteIFAType()
-	} else {
-		deviceExt.SetIFAType(extIFATypeStr)
-	}
-
-	if extSessionIDStr == "" {
-		deviceExt.DeleteSessionID()
-	} else {
-		deviceExt.SetSessionID(extSessionIDStr)
+	} else if extSessionID != "" {
+		dvc.DeviceIFA = extSessionID
+		dvc.IFATypeID = ptrutil.ToPtr(models.DeviceIfaTypeIdSessionId)
+		deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
 	}
 }
 

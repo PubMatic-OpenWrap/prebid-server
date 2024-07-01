@@ -1,9 +1,12 @@
 package openwrap
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -120,9 +123,17 @@ func (m OpenWrap) handleEntrypointHook(
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
 		TMax:                      m.cfg.Timeout.MaxTimeout,
+		Method:                    payload.Request.Method,
+		ResponseFormat:            strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
+		RedirectURL:               queryParams.Get(models.OWRedirectURLKey),
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
+	}
+
+	// SSAuction will be always 1 for CTV request
+	if rCtx.IsCTVRequest {
+		rCtx.SSAuction = 1
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
@@ -162,6 +173,14 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	result.Reject = false
+
+	if rCtx.IsCTVRequest {
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Request.Body = io.NopCloser(bytes.NewBuffer(ep.Body))
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-request-body")
+	}
+
 	return result, nil
 }
 
@@ -175,7 +194,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 	case models.EndpointV25:
 		fallthrough
-	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointWebS2S, models.EndpointAppLovinMax:
 		fallthrough
@@ -210,7 +229,7 @@ func GetEndpoint(path, source string, agent string) string {
 	case OpenWrapAmp:
 		return models.EndpointAMP
 	case OpenWrapOpenRTBVideo:
-		return models.EndpointVideo
+		return models.EndpointORTB
 	case OpenWrapVAST:
 		return models.EndpointVAST
 	case OpenWrapJSON:

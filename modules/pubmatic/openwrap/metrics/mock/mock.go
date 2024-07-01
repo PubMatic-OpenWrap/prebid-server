@@ -503,6 +503,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordPreProcessingTimeStats(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPreProcessingTimeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPreProcessingTimeStats), arg0, arg1)
 }
 
+// RecordPrebidCacheRequestTime mocks base method.
+func (m *MockMetricsEngine) RecordPrebidCacheRequestTime(arg0 bool, arg1 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPrebidCacheRequestTime", arg0, arg1)
+}
+
+// RecordPrebidCacheRequestTime indicates an expected call of RecordPrebidCacheRequestTime.
+func (mr *MockMetricsEngineMockRecorder) RecordPrebidCacheRequestTime(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPrebidCacheRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPrebidCacheRequestTime), arg0, arg1)
+}
+
 // RecordPrebidTimeoutRequests mocks base method.
 func (m *MockMetricsEngine) RecordPrebidTimeoutRequests(arg0, arg1 string) {
 	m.ctrl.T.Helper()

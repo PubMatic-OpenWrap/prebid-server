@@ -8,7 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func getIncomingSlots(imp openrtb2.Imp) []string {
+func getIncomingSlots(imp openrtb2.Imp, videoAdUnitCtx models.AdUnitCtx) []string {
 	sizes := map[string]struct{}{}
 	if imp.Banner == nil && imp.Video == nil && imp.Native != nil {
 		return []string{"1x1"}
@@ -23,8 +23,22 @@ func getIncomingSlots(imp openrtb2.Imp) []string {
 		}
 	}
 
-	if imp.Video != nil && imp.Video.W != nil && imp.Video.H != nil {
-		sizes[fmt.Sprintf("%dx%dv", *imp.Video.W, *imp.Video.H)] = struct{}{}
+	videoSlotEnabled := true
+	if videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
+		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled {
+		videoSlotEnabled = false
+	}
+
+	if imp.Video != nil && videoSlotEnabled {
+		if imp.Video.W != nil && imp.Video.H != nil {
+			sizes[fmt.Sprintf("%dx%d", *imp.Video.W, *imp.Video.H)] = struct{}{}
+		} else if videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
+			videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config != nil &&
+			videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.W != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.H != nil {
+			sizes[fmt.Sprintf("%dx%d", *videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.W, *videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Config.H)] = struct{}{}
+		} else {
+			sizes[fmt.Sprintf("%dx%d", 0, 0)] = struct{}{}
+		}
 	}
 
 	var s []string
@@ -41,7 +55,7 @@ func getDefaultImpBidCtx(request openrtb2.BidRequest) map[string]models.ImpCtx {
 		json.Unmarshal(imp.Ext, impExt)
 
 		impBidCtx[imp.ID] = models.ImpCtx{
-			IncomingSlots:     getIncomingSlots(imp),
+			IncomingSlots:     getIncomingSlots(imp, models.AdUnitCtx{}),
 			AdUnitName:        getAdunitName(imp.TagID, impExt),
 			SlotName:          getSlotName(imp.TagID, impExt),
 			IsRewardInventory: impExt.Reward,

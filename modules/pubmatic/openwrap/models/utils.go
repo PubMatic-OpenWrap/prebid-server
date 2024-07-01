@@ -19,6 +19,10 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
+const (
+	ImpressionIDSeparator = `::`
+)
+
 var videoRegex *regexp.Regexp
 
 func init() {
@@ -255,26 +259,53 @@ func ErrorWrap(cErr, nErr error) error {
 	return errors.Wrap(cErr, nErr.Error())
 }
 
+// getImpressionID will return impression id and sequence number
+func GetImpressionID(id string) (string, int) {
+	//get original impression id and sequence number
+	ImpID, sequenceNumber := DecodeImpressionID(id)
+	if sequenceNumber < 0 {
+		return id, -1
+	}
+
+	return ImpID, sequenceNumber
+}
+
+func DecodeImpressionID(id string) (string, int) {
+	index := strings.LastIndex(id, ImpressionIDSeparator)
+	if index == -1 {
+		return id, 0
+	}
+
+	sequence, err := strconv.Atoi(id[index+2:])
+	if err != nil || sequence == 0 {
+		return id, 0
+	}
+
+	return id[:index], sequence
+}
+
 func GetSizeForPlatform(width, height int64, platform string) string {
 	s := fmt.Sprintf("%dx%d", width, height)
-	if platform == PLATFORM_VIDEO {
-		s = s + VideoSizeSuffix
-	}
 	return s
 }
 
-func GetKGPSV(bid openrtb2.Bid, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
+func GetKGPSV(bid openrtb2.Bid, bidExt *BidExt, bidderMeta PartnerData, adformat string, tagId string, div string, source string) (string, string) {
 	kgpv := bidderMeta.KGPV
 	kgpsv := bidderMeta.MatchedSlot
+	kgp := bidderMeta.KGP
 	isRegex := bidderMeta.IsRegex
 	// 1. nobid
 	if IsDefaultBid(&bid) {
 		//NOTE: kgpsv = bidderMeta.MatchedSlot above. Use the same
-		if !isRegex && kgpv != "" { // unmapped pubmatic's slot
+		if kgp == ADUNIT_SOURCE_VASTTAG_KGP {
+			kgpv, kgpsv = getVASTBidderKGPVFromBidResponse(kgpv, bidExt)
+		} else if !isRegex && kgpv != "" { // unmapped pubmatic's slot
 			kgpsv = kgpv
 		} else if !isRegex {
 			kgpv = kgpsv
 		}
+	} else if kgp == ADUNIT_SOURCE_VASTTAG_KGP {
+		kgpv, kgpsv = getVASTBidderKGPVFromBidResponse(kgpv, bidExt)
 	} else if !isRegex {
 		if kgpv != "" { // unmapped pubmatic's slot
 			kgpsv = kgpv
@@ -327,7 +358,7 @@ func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
 	case "_AU_@_DIV_@_W_x_H_":
 		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
 	case "_AU_@_SRC_@_VASTTAG_":
-		return fmt.Sprintf("%s@%s@_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
+		return fmt.Sprintf("%s@%s@", tagid, src)
 	default:
 		// TODO: check if we need to fallback to old generic flow (below)
 		// Add this cases in a map and read it from yaml file
@@ -409,8 +440,17 @@ func GetFloorsDetails(responseExt openrtb_ext.ExtBidResponse) (floorDetails Floo
 	return floorDetails
 }
 
-func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
+func getVASTBidderKGPVFromBidResponse(slotKey string, bidExt *BidExt) (string, string) {
+	if bidExt.Prebid != nil && bidExt.Prebid.Video != nil && len(bidExt.Prebid.Video.VASTTagID) > 0 {
+		tagID := bidExt.Prebid.Video.VASTTagID
+		if index := strings.LastIndex(tagID, "@"); index > 0 {
+			return tagID, tagID[:index+1]
+		}
+	}
+	return slotKey, slotKey
+}
 
+func GetGrossEcpmFromNetEcpm(netEcpm float64, revShare float64) float64 {
 	if revShare == 100 {
 		return 0
 	}

@@ -121,7 +121,11 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 		if bidRequest != nil && bidRequest.Site != nil {
 			//Its web; now determine mobile or desktop
-			if isMobile(bidRequest.Device.DeviceType, userAgentString) {
+			var deviceType adcom1.DeviceType
+			if bidRequest.Device != nil {
+				deviceType = bidRequest.Device.DeviceType
+			}
+			if isMobile(deviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop
@@ -277,7 +281,7 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequestExt:
+	case nbr.InvalidRequestExt, openrtb3.NoBidInvalidRequest:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:
@@ -342,6 +346,9 @@ func getCountry(bidRequest *openrtb2.BidRequest) string {
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
+	if request == nil {
+		return platform
+	}
 	if request.Site != nil {
 		return models.PLATFORM_DISPLAY
 	}

@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
@@ -75,6 +76,20 @@ func (me *MultiMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 	}
 }
 
+// RecordPanic across all engines
+func (me *MultiMetricsEngine) RecordPanic(hostname, method string) {
+	for _, thisME := range *me {
+		thisME.RecordPanic(hostname, method)
+	}
+}
+
+// RecordBadRequest across all engines
+func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	for _, thisME := range *me {
+		thisME.RecordBadRequest(endpoint, pubId, nbr)
+	}
+}
+
 // RecordXMLParserResponseTime records execution time for multiple parsers
 func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
 }
@@ -105,4 +120,12 @@ func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 
 // RecordRejectedBidsForBidder as a noop
 func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+}
+
+// RecordPanic as a noop
+func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
+}
+
+// RecordBadRequest as a noop
+func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }
