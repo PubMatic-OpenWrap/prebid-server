@@ -17,11 +17,6 @@ const (
 )
 
 const (
-	UIDS = "uids"
-	ID   = "id"
-)
-
-const (
 	// BidRequest level parameters
 	ORTBBidRequestID      = "req.id"      //ORTBBidRequestID get api parameter req.id
 	ORTBBidRequestTest    = "req.test"    //ORTBBidRequestTest get api parameter req.test
@@ -353,6 +348,8 @@ const (
 	ORTBDeviceGeoExt           = "dev.geo.ext"       //ORTBDeviceGeoExt get api parameter dev.geo.ext
 	ORTBUserExt                = "user.ext"          //ORTBUserExt get api parameter user.ext
 	ORTBUserGeoExt             = "user.geo.ext"      //ORTBUserGeoExt get api parameter user.geo.ext
+	ORTBUserExtUIDS            = "uids"              //ORTBUserExtUIDs get api parameter user.ext.eids.uids
+	ORTBUserExtID              = "id"                //ORTBUserExtID get api parameter user.ext.eids.uids.id
 
 	// ORTB Extension Standard Keys */ //// get api parameter xtension Standard Klevel parameters
 	ORTBExtWrapper                                  = "wrapper"              //ORTBExtWrapper get api parameter wrapper

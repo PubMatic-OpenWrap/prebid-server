@@ -4518,7 +4518,7 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
 	validEIDs := []map[string]interface{}{}
 	for _, eid := range eids {
-		uids, ok := eid[UIDS].([]interface{})
+		uids, ok := eid[ORTBUserExtUIDS].([]interface{})
 		if !ok {
 			continue
 		}
@@ -4530,10 +4530,10 @@ func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
 				continue
 			}
 
-			if id, ok := uidMap[ID].(string); ok && id != "" {
+			if id, ok := uidMap[ORTBUserExtID].(string); ok && id != "" {
 				id = uidRegexp.ReplaceAllString(id, "")
 				if id != "" {
-					uidMap[ID] = id
+					uidMap[ORTBUserExtID] = id
 					validUIDs = append(validUIDs, uidMap)
 				}
 			}
@@ -4541,7 +4541,7 @@ func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
 		}
 
 		if len(validUIDs) > 0 {
-			eid[UIDS] = validUIDs
+			eid[ORTBUserExtUIDS] = validUIDs
 			validEIDs = append(validEIDs, eid)
 		}
 	}
