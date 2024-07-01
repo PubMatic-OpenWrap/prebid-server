@@ -4492,13 +4492,13 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 		}
 	}
 
-	eids := []map[string]interface{}{}
+	eids := []openrtb2.EID{}
 	err = json.Unmarshal([]byte(eidsValue), &eids)
 	if err != nil {
 		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBUserExtEIDS, "Failed to unmarshal user.ext.eids", eidsValue)
 	}
 
-	validEIDs := validateEIDs(eids)
+	validEIDs := ValidateEIDs(eids)
 
 	if len(validEIDs) != 0 {
 		userExt[ORTBExtEIDS] = validEIDs
@@ -4511,39 +4511,6 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 
 	o.ortb.User.Ext = data
 	return
-}
-
-func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
-	validEIDs := []map[string]interface{}{}
-	for _, eid := range eids {
-		uids, ok := eid[ORTBUserExtUIDS].([]interface{})
-		if !ok {
-			continue
-		}
-
-		validUIDs := make([]map[string]any, 0, len(uids))
-		for _, uid := range uids {
-			uidMap, ok := uid.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			if id, ok := uidMap[ORTBUserExtID].(string); ok && id != "" {
-				id = uidRegexp.ReplaceAllString(id, "")
-				if id != "" {
-					uidMap[ORTBUserExtID] = id
-					validUIDs = append(validUIDs, uidMap)
-				}
-			}
-
-		}
-
-		if len(validUIDs) > 0 {
-			eid[ORTBUserExtUIDS] = validUIDs
-			validEIDs = append(validEIDs, eid)
-		}
-	}
-	return validEIDs
 }
 
 // ORTBUserData will read and set ortb user.data parameter
