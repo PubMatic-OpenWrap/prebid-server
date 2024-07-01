@@ -127,9 +127,3 @@ func ValidateCMOnsiteRequest(request *openrtb2.BidRequest) (
 
 	return siteExt, requestExtCMOnsite, nil
 }
-
-func AddDefaultFieldsComm(bid *openrtb2.Bid) {
-	if bid != nil {
-		bid.CrID = "DefaultCRID"
-	}
-}
