@@ -27,11 +27,6 @@ type OpenRTB struct {
 
 var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
-const (
-	UIDS = "uids"
-	ID   = "id"
-)
-
 // NewOpenRTB Returns New ORTB Object of Version 2.5
 func NewOpenRTB(request *http.Request) Parser {
 	request.ParseForm()

@@ -17,6 +17,11 @@ const (
 )
 
 const (
+	UIDS = "uids"
+	ID   = "id"
+)
+
+const (
 	// BidRequest level parameters
 	ORTBBidRequestID      = "req.id"      //ORTBBidRequestID get api parameter req.id
 	ORTBBidRequestTest    = "req.test"    //ORTBBidRequestTest get api parameter req.test
