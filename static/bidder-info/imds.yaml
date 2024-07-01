@@ -1,4 +1,8 @@
 endpoint: "https://pbs.technoratimedia.com/openrtb/bids/{{.AccountID}}?src={{.SourceId}}&adapter=imds"
+# This bidder does not operate globally. Please consider setting "disabled: true" outside of the following regions:
+geoscope:
+  - USA
+  - CAN
 maintainer:
   email: "eng-demand@imds.tv"
 capabilities:
@@ -13,8 +17,10 @@ capabilities:
 userSync:
   supportCors: true
   iframe:
-    url: "https://ad-cdn.technoratimedia.com/html/usersync.html?gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&cb={{.RedirectURL}}"
+    url: "https://ad-cdn.technoratimedia.com/html/usersync.html?gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gppsid={{.GPPSID}}&cb={{.RedirectURL}}"
     userMacro: "[USER_ID]"
   redirect:
-    url: "https://sync.technoratimedia.com/services?srv=cs&gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&cb={{.RedirectURL}}"
+    url: "https://sync.technoratimedia.com/services?srv=cs&gdpr={{.GDPR}}&consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gppsid={{.GPPSID}}&cb={{.RedirectURL}}"
     userMacro: "[USER_ID]"
+openrtb:
+  gpp-supported: true

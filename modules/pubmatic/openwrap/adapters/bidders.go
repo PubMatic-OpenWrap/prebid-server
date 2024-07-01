@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // PrepareBidParamJSONForPartner preparing bid params json for partner
@@ -22,7 +22,7 @@ func PrepareBidParamJSONForPartner(width *int64, height *int64, fieldMap map[str
 	}
 
 	//get callback function and execute it
-	callback := getBuilder(params.AdapterName)
+	callback := GetBuilder(params.AdapterName)
 	return callback(params)
 }
 
@@ -309,16 +309,24 @@ func builderSovrn(params BidderParameters) (json.RawMessage, error) {
 func builderImproveDigital(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
+	var placementID, publisherID int
+	var ok bool
 
-	if placementID, ok := getInt(params.FieldMap["placementId"]); ok {
+	if placementID, ok = getInt(params.FieldMap["placementId"]); ok {
 		fmt.Fprintf(&jsonStr, `"placementId":%d`, placementID)
-	} else {
-		publisherID, ok1 := getInt(params.FieldMap["publisherId"])
-		placement, ok2 := getString(params.FieldMap["placementKey"])
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId'] or ['publisherId', 'placementKey']")
-		}
-		fmt.Fprintf(&jsonStr, `"publisherId":%d,"placementKey":"%s"`, publisherID, placement)
+	}
+
+	if placementID == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
+	}
+
+	//UOE-10317: Adding change as per discussion with improve digital
+	if publisherID, ok = getInt(params.FieldMap["publisherId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"publisherId":%d`, publisherID)
+	}
+
+	if publisherID == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['publisherId']")
 	}
 
 	width, height := params.Width, params.Height
@@ -556,6 +564,143 @@ func builderApacdex(params BidderParameters) (json.RawMessage, error) {
 			fmt.Fprintf(&jsonStr, `,"%s":%s`, BidderParamApacdex_geo, string(geoJson))
 		}
 	}
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderUnruly(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	anyOf := []string{"siteId", "siteid"}
+	for _, param := range anyOf {
+		if key, ok := getInt(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":%d`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, anyOf)
+	}
+
+	if value, ok := params.FieldMap["featureOverrides"]; ok {
+		if featureOverridesJson, err := json.Marshal(value); err == nil {
+			fmt.Fprintf(&jsonStr, `,"%s":%s`, "featureOverrides", string(featureOverridesJson))
+		}
+	}
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderBoldwin(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderParamBoldwinPlacementID, BidderParamBoldwinEndpointID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderColossus(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderParamColossusTagID, BidderParamColossusgroupID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderNextmillennium(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+
+	anyOf := []string{"placement_id", "group_id"}
+	for _, param := range anyOf {
+		if val, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `{"%s":"%s"}`, param, val)
+			break
+		}
+	}
+
+	if jsonStr.Len() == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, anyOf)
+	}
+
+	return jsonStr.Bytes(), nil
+}
+
+func builderRise(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderParamRiseOrg, BidderParamRisePublisherID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderKargo(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{BidderKaroPlacementID, BidderKargoAdSlotID}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+func builderPGAMSSP(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{"placementId", "endpointId"}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }

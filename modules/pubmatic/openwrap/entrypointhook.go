@@ -2,88 +2,101 @@ package openwrap
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/hooks/hookstage"
-	v25 "github.com/prebid/prebid-server/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/buger/jsonparser"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
 )
 
 const (
-	OpenWrapAuction  = "/pbs/openrtb2/auction"
-	OpenWrapV25      = "/openrtb/2.5"
-	OpenWrapV25Video = "/openrtb/2.5/video"
-	OpenWrapAmp      = "/openrtb/amp"
+	OpenWrapAuction      = "/pbs/openrtb2/auction"
+	OpenWrapV25          = "/openrtb/2.5"
+	OpenWrapV25Video     = "/openrtb/2.5/video"
+	OpenWrapOpenRTBVideo = "/video/openrtb"
+	OpenWrapVAST         = "/video/vast"
+	OpenWrapJSON         = "/video/json"
+	OpenWrapAmp          = "/amp"
 )
 
 func (m OpenWrap) handleEntrypointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
-) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
-	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
 	queryParams := payload.Request.URL.Query()
-	if queryParams.Get("sshb") != "1" {
-		return result, nil
-	}
+	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
 
+	rCtx := models.RequestCtx{}
 	var endpoint string
-	var err error
+	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
-	switch payload.Request.URL.Path {
-	case hookexecution.EndpointAuction:
-		if !models.IsHybrid(payload.Body) { // new hybrid api should not execute module
-			return result, nil
-		}
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-	case OpenWrapAuction: // legacy hybrid api should not execute module
-		m.metricEngine.RecordPBSAuctionRequestsStats()
-		return result, nil
-	case OpenWrapV25:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-		endpoint = models.EndpointV25
-	case OpenWrapV25Video:
-		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
-		endpoint = models.EndpointVideo
-	case OpenWrapAmp:
-		// requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Body)
-		endpoint = models.EndpointAMP
-	default:
-		// we should return from here
-	}
-
 	defer func() {
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(result.NbrCode))
+			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
+		} else {
+			result.ModuleContext = make(hookstage.ModuleContext)
+			result.ModuleContext["rctx"] = rCtx
 		}
 	}()
+
+	rCtx.Sshb = queryParams.Get("sshb")
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rCtx.Sshb == models.Enabled {
+		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
+		return result, nil
+	}
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+	if endpoint == models.EndpointHybrid {
+		rCtx.Endpoint = models.EndpointHybrid
+		return result, nil
+	}
+
+	if endpoint == models.EndpointAppLovinMax {
+		rCtx.MetricsEngine = m.metricEngine
+		// updating body locally to access updated fields from signal
+		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
+	}
 
 	// init default for all modules
 	result.Reject = true
 
+	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
 	if err != nil {
-		result.NbrCode = nbr.InvalidRequest
-		result.Errors = append(result.Errors, "InvalidRequest")
+		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
+		result.Errors = append(result.Errors, err.Error())
 		return result, err
 	}
 
-	if requestExtWrapper.ProfileId == 0 {
-		result.NbrCode = nbr.InvalidProfileID
+	if requestExtWrapper.ProfileId <= 0 {
+		result.NbrCode = int(nbr.InvalidProfileID)
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
 	}
 
-	rCtx := models.RequestCtx{
+	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
+	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
-		Debug:                     queryParams.Get(models.Debug) == "1",
+		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
+		DisplayVersionID:          requestExtWrapper.VersionId,
 		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
@@ -103,7 +116,13 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
 		Endpoint:                  endpoint,
 		MetricsEngine:             m.metricEngine,
+		DCName:                    m.cfg.Server.DCName,
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
+		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
+		TMax:                      m.cfg.Timeout.MaxTimeout,
+		WakandaDebug: &wakanda.Debug{
+			Config: m.cfg.Wakanda,
+		},
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
@@ -117,9 +136,85 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
 	}
 
-	result.ModuleContext = make(hookstage.ModuleContext)
-	result.ModuleContext["rctx"] = rCtx
+	// temp, for AMP, etc
+	if pubid != 0 {
+		rCtx.PubID = pubid
+	}
+
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
+	}
+	rCtx.PubIDStr = pubIdStr
+
+	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+	}
 
 	result.Reject = false
 	return result, nil
+}
+
+func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
+	var requestExtWrapper models.RequestExtWrapper
+	var err error
+	switch endpoint {
+	case models.EndpintInappVideo:
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+	case models.EndpointAMP:
+		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+	case models.EndpointV25:
+		fallthrough
+	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+	case models.EndpointWebS2S, models.EndpointAppLovinMax:
+		fallthrough
+	default:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+	}
+
+	return requestExtWrapper, err
+}
+
+func GetEndpoint(path, source string, agent string) string {
+	switch path {
+	case hookexecution.EndpointAuction:
+		switch source {
+		case "pbjs":
+			return models.EndpointWebS2S
+		case "owsdk":
+			switch agent {
+			case models.AppLovinMaxAgent:
+				return models.EndpointAppLovinMax
+			}
+			return models.EndpointV25
+		default:
+			return models.EndpointHybrid
+		}
+	case OpenWrapAuction:
+		return models.EndpointHybrid
+	case OpenWrapV25:
+		return models.EndpointV25
+	case OpenWrapV25Video:
+		return models.EndpintInappVideo
+	case OpenWrapAmp:
+		return models.EndpointAMP
+	case OpenWrapOpenRTBVideo:
+		return models.EndpointVideo
+	case OpenWrapVAST:
+		return models.EndpointVAST
+	case OpenWrapJSON:
+		return models.EndpointJson
+	}
+	return ""
 }

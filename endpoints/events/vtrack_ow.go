@@ -9,9 +9,9 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // standard VAST macros
@@ -59,8 +59,8 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
 	if nil != err {
-		err = fmt.Errorf("error parsing VAST XML. '%v'", err.Error())
-		glog.Errorf(err.Error())
+		err = fmt.Errorf("account:[%s] bidder:[%s] err:[vast_xml_parsing_failed:%s] vast:[%s] ", accountID, requestingBidder, err.Error(), vastXML)
+		glog.Error(err.Error())
 		return vastXML, err // false indicates events trackers are not injected
 	}
 

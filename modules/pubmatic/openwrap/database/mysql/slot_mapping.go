@@ -1,12 +1,14 @@
 package mysql
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // GetPublisherSlotNameHash Returns a map of all slot names and hashes for a publisher
@@ -14,7 +16,11 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error
 	nameHashMap := make(map[string]string)
 
 	query := db.formSlotNameHashQuery(pubID)
-	rows, err := db.conn.Query(query)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
+	defer cancel()
+
+	rows, err := db.conn.QueryContext(ctx, query)
 	if err != nil {
 		return nameHashMap, err
 	}

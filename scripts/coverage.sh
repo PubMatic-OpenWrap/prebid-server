@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate test coverage statistics for Go packages.
-# 
+#
 # Works around the fact that `go test -coverprofile` currently does not work
 # with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
 #
@@ -27,47 +27,51 @@ generate_cover_data() {
         fi
         # util/task uses _test package name
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/util\/task$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/util/task"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/util/task"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/router$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/router"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/router"
         fi
 
         # temporarily disable openwrap, remove as we add full support to each package
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/adapters$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/adapters"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/adunitconfig$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/adunitconfig"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/bidderparams$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/config$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/database$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/metrics$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
         fi
 
         if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/metrics\/stats$ ]]; then
-            cover+=" -coverpkg=github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
         fi
 
-        go test ${cover} "$pkg"
+        if [[ "$pkg" =~ ^github\.com\/PubMatic\-OpenWrap\/prebid\-server\/modules\/pubmatic\/openwrap\/models$ ]]; then
+            cover+=" -coverpkg=github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+        fi
+
+        go test -tags=ignoreNetacuity ${cover} "$pkg"
     done
 
     echo "mode: $mode" >"$profile"

@@ -3,7 +3,7 @@ package hooks
 import (
 	"fmt"
 
-	"github.com/prebid/prebid-server/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
 // HookRepository is the interface that exposes methods
@@ -53,7 +53,7 @@ type hookRepository struct {
 	auctionResponseHooks         map[string]hookstage.AuctionResponse
 }
 
-func (r *hookRepository) GetEntrypointHook(id string) (h hookstage.Entrypoint, ok bool) {
+func (r *hookRepository) GetEntrypointHook(id string) (hookstage.Entrypoint, bool) {
 	return getHook(r.entrypointHooks, id)
 }
 

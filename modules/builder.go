@@ -1,8 +1,8 @@
 package modules
 
 import (
-	prebidOrtb2blocking "github.com/prebid/prebid-server/modules/prebid/ortb2blocking"
-	pubmaticOpenwrap "github.com/prebid/prebid-server/modules/pubmatic/openwrap"
+	prebidOrtb2blocking "github.com/prebid/prebid-server/v2/modules/prebid/ortb2blocking"
+	pubmaticOpenwrap "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
 )
 
 // builders returns mapping between module name and its builder

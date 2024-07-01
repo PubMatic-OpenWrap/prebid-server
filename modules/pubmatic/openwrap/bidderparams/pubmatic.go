@@ -5,14 +5,20 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
+
+	// change profile id for pubmatic2
+	if secondaryProfileID, ok := rctx.PartnerConfigMap[partnerID][models.KEY_PROFILE_ID]; ok {
+		wrapExt = fmt.Sprintf(`{"%s":0,"%s":%s}`, models.SS_PM_VERSION_ID, models.SS_PM_PROFILE_ID, secondaryProfileID)
+	}
+
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: strconv.Itoa(rctx.PubID),
 		WrapExt:     json.RawMessage(wrapExt),
@@ -23,7 +29,9 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 
 	if rctx.IsTestRequest > 0 {
-		extImpPubMatic.AdSlot = slots[0]
+		if len(slots) > 0 {
+			extImpPubMatic.AdSlot = slots[0]
+		}
 		params, err := json.Marshal(extImpPubMatic)
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
@@ -31,10 +39,12 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	hash := ""
 	var err error
 	var matchedSlot, matchedPattern string
-	isRegexSlot := false
+	var isRegexSlot, isRegexKGP bool
 
 	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
-	isRegexKGP := kgp == models.REGEX_KGP
+	if kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
+		isRegexKGP = true
+	}
 
 	// simple+regex key match
 	for _, slot := range slots {
@@ -85,7 +95,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			div = impExt.Wrapper.Div
 		}
 		unmappedKPG := getDefaultMappingKGP(kgp)
-		extImpPubMatic.AdSlot = GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
+		extImpPubMatic.AdSlot = models.GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		}

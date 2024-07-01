@@ -1,17 +1,17 @@
 package exchange
 
 import (
-	"encoding/json"
 	"time"
 
-	"github.com/prebid/prebid-server/exchange/entities"
-
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/endpoints/events"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/exchange/entities"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
+
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/endpoints/events"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // eventTracking has configuration fields needed for adding event tracking to an auction response
@@ -19,6 +19,7 @@ type eventTracking struct {
 	accountID          string
 	enabledForAccount  bool
 	enabledForRequest  bool
+	enabledVideoEvents bool //TODO: OPENWRAP Video Events Flag
 	auctionTimestampMs int64
 	integrationType    string
 	bidderInfos        config.BidderInfos
@@ -29,8 +30,9 @@ type eventTracking struct {
 func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
 	return &eventTracking{
 		accountID:          account.ID,
-		enabledForAccount:  account.Events.IsEnabled(),
+		enabledForAccount:  account.Events.Enabled,
 		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
+		enabledVideoEvents: requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
 		auctionTimestampMs: ts.UnixNano() / 1e+6,
 		integrationType:    getIntegrationType(requestExtPrebid),
 		bidderInfos:        bidderInfos,
@@ -79,9 +81,11 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 		}
 	}
 
-	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	if newVastXML, err := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); err == nil {
-		bid.AdM = newVastXML
+	if ev.enabledVideoEvents {
+		// always inject event  trackers without checkign isModifyingVASTXMLAllowed
+		if newVastXML, err := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); err == nil {
+			bid.AdM = newVastXML
+		}
 	}
 }
 
@@ -97,7 +101,7 @@ func (ev *eventTracking) modifyBidJSON(pbsBid *entities.PbsOrtbBid, bidderName o
 		winEventURL = ev.makeEventURL(analytics.Win, pbsBid, bidderName)
 	}
 	// wurl attribute is not in the schema, so we have to patch
-	patch, err := json.Marshal(map[string]string{"wurl": winEventURL})
+	patch, err := jsonutil.Marshal(map[string]string{"wurl": winEventURL})
 	if err != nil {
 		return jsonBytes, err
 	}
@@ -136,7 +140,7 @@ func (ev *eventTracking) makeEventURL(evType analytics.EventType, pbsBid *entiti
 		})
 }
 
-// isEnabled checks if events are enabled by default or on account/request level
+// isEventAllowed checks if events are enabled by default or on account/request level
 func (ev *eventTracking) isEventAllowed() bool {
 	return ev.enabledForAccount || ev.enabledForRequest
 }

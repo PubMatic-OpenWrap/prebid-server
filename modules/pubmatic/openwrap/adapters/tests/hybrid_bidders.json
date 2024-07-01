@@ -173,6 +173,7 @@
         "want": {
             "expectedJSON": {
                 "placementId": 1234567,
+                "publisherId": 5890,
                 "size": {
                     "w": 720,
                     "h": 120
@@ -346,6 +347,20 @@
                     "lon": 99.7741712,
                     "accuracy": 20
                 }
+            }
+        }
+    },
+    {
+        "name": "mediafuse_client_json",
+        "args": {
+            "adapterName": "mediafuse",
+            "requestJSON": {
+                "placementId": "9880618"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 9880618
             }
         }
     }

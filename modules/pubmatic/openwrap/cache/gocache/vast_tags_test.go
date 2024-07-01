@@ -2,16 +2,15 @@ package gocache
 
 import (
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,7 +115,8 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -206,7 +206,8 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -218,9 +219,8 @@ func Test_cache_GetPublisherVASTTagsFromCache(t *testing.T) {
 			}
 			c.populatePublisherVASTTags(tt.args.pubID)
 			cacheKey := key(PubVASTTags, tt.args)
-			if got := c.GetPublisherVASTTagsFromCache(tt.args.pubID); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Vast tags for cacheKey= %v \n Expected= %v, but got= %v", cacheKey, got, tt.want)
-			}
+			got := c.GetPublisherVASTTagsFromCache(tt.args.pubID)
+			assert.Equal(t, tt.want, got, "Vast tags for cacheKey= %v \n Expected= %v, but got= %v", cacheKey, got, tt.want)
 		})
 	}
 }

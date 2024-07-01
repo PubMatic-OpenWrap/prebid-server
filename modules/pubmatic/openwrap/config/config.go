@@ -3,25 +3,31 @@ package config
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics/stats"
+	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
 // Config contains the values read from the config file at boot time
 type Config struct {
-	Server    Server
-	Database  Database
-	Cache     Cache
-	Timeout   Timeout
-	Tracker   Tracker
-	PixelView PixelView
-	Features  FeatureToggle
-	Log       Log
-	Stats     stats.Stats
+	Server        Server
+	Database      Database
+	Cache         Cache
+	Timeout       Timeout
+	Tracker       Tracker
+	PixelView     PixelView
+	Features      FeatureToggle
+	Log           Log
+	Stats         stats.Stats
+	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
+	Wakanda       wakanda.Wakanda
+	GeoDB         GeoDB
 }
 
 type Server struct {
 	HostName string
 	DCName   string //Name of the data center
+	Endpoint string
 }
 
 type Database struct {
@@ -53,16 +59,21 @@ type Queries struct {
 	GetAdunitConfigForLiveVersion     string
 	GetSlotNameHash                   string
 	GetPublisherVASTTagsQuery         string
-	GetAllFscDisabledPublishersQuery  string
 	GetAllDspFscPcntQuery             string
-	GetTBFRateQuery                   string
+	GetPublisherFeatureMapQuery       string
+	GetAnalyticsThrottlingQuery       string
+	GetAdpodConfig                    string
+	GetProfileTypePlatformMapQuery    string
+	GetAppIntegrationPathMapQuery     string
+	GetAppSubIntegrationPathMapQuery  string
 }
 
 type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
-	CacheDefaultExpiry int // in seconds
-	VASTTagCacheExpiry int // in seconds
+	CacheDefaultExpiry         int // in seconds
+	VASTTagCacheExpiry         int // in seconds
+	ProfileMetaDataCacheExpiry int // in seconds
 }
 
 type Timeout struct {
@@ -81,6 +92,9 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
+	VASTUnwrapPercent             int
+	VASTUnwrapStatsPercent        int
+	AnalyticsThrottlingPercentage string
 }
 
 type Log struct { //Log Details
@@ -91,4 +105,8 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
+}
+
+type GeoDB struct {
+	Location string
 }

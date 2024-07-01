@@ -4,21 +4,37 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func GetTrackerInfo(rCtx models.RequestCtx) string {
-	tracker := models.Tracker{
-		PubID:     rCtx.PubID,
-		ProfileID: fmt.Sprintf("%d", rCtx.ProfileID),
-		VersionID: fmt.Sprintf("%d", rCtx.DisplayID),
-		PageURL:   rCtx.PageURL,
-		Timestamp: rCtx.StartTime,
-		IID:       rCtx.LoggerImpressionID,
-		Platform:  int(rCtx.DevicePlatform),
+func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidResponse) string {
+	if rCtx.TrackerDisabled {
+		return ""
 	}
 
-	constructedURLString := ConstructTrackerURL(rCtx, tracker)
+	floorsDetails := models.GetFloorsDetails(responseExt)
+	tracker := models.Tracker{
+		PubID:             rCtx.PubID,
+		ProfileID:         fmt.Sprintf("%d", rCtx.ProfileID),
+		VersionID:         fmt.Sprintf("%d", rCtx.DisplayVersionID),
+		PageURL:           rCtx.PageURL,
+		Timestamp:         rCtx.StartTime,
+		IID:               rCtx.LoggerImpressionID,
+		Platform:          int(rCtx.DeviceCtx.Platform),
+		Origin:            rCtx.Origin,
+		TestGroup:         rCtx.ABTestConfigApplied,
+		FloorModelVersion: floorsDetails.FloorModelVersion,
+		FloorType:         floorsDetails.FloorType,
+		FloorSkippedFlag:  floorsDetails.Skipfloors,
+		FloorSource:       floorsDetails.FloorSource,
+	}
+
+	if rCtx.DeviceCtx.Ext != nil {
+		tracker.ATTS, _ = rCtx.DeviceCtx.Ext.GetAtts()
+	}
+
+	constructedURLString := constructTrackerURL(rCtx, tracker)
 
 	trackerURL, err := url.Parse(constructedURLString)
 	if err != nil {

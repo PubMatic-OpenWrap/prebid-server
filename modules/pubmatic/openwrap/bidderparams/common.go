@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 var ignoreKeys = map[string]bool{
@@ -25,6 +25,8 @@ var ignoreKeys = map[string]bool{
 	models.THROTTLE:             true,
 	models.BidderCode:           true,
 	models.IsAlias:              true,
+	models.VENDORID:             true,
+	models.BidderFilters:        true,
 }
 
 func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
@@ -72,7 +74,7 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 	var slots []string
 	for _, format := range hw {
 		// TODO fix the param sequence. make it consistent. HxW
-		slot := GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
+		slot := models.GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
 		if slot != "" {
 			slots = append(slots, slot)
 			// NYC_TODO: break at i=0 for pubmatic?
@@ -81,43 +83,6 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 
 	// NYC_TODO wh is returned temporarily
 	return slots, slotMap, slotMappingInfo, hw
-}
-
-// Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml
-// mysql> SELECT DISTINCT key_gen_pattern FROM wrapper_mapping_template;
-// +----------------------+
-// | key_gen_pattern      |
-// +----------------------+
-// | _AU_@_W_x_H_         |
-// | _DIV_@_W_x_H_        |
-// | _W_x_H_@_W_x_H_      |
-// | _DIV_                |
-// | _AU_@_DIV_@_W_x_H_   |
-// | _AU_@_SRC_@_VASTTAG_ |
-// +----------------------+
-// 6 rows in set (0.21 sec)
-func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
-	// func (H, W, Div), no need to validate, will always be non-nil
-	switch kgp {
-	case "_AU_": // adunitconfig
-		return tagid
-	case "_DIV_":
-		return div
-	case "_AU_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
-	case "_DIV_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", div, w, h)
-	case "_W_x_H_@_W_x_H_":
-		return fmt.Sprintf("%dx%d@%dx%d", w, h, w, h)
-	case "_AU_@_DIV_@_W_x_H_":
-		return fmt.Sprintf("%s@%s@%dx%d", tagid, div, w, h)
-	case "_AU_@_SRC_@_VASTTAG_":
-		return fmt.Sprintf("%s@%s@s_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
-	default:
-		// TODO: check if we need to fallback to old generic flow (below)
-		// Add this cases in a map and read it from yaml file
-	}
-	return ""
 }
 
 /*
@@ -163,13 +128,13 @@ func GetMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string, slo
 
 const pubSlotRegex = "psregex_%d_%d_%d_%d_%s" // slot and its matching regex info at publisher, profile, display version and adapter level
 
+type regexSlotEntry struct {
+	SlotName     string
+	RegexPattern string
+}
+
 // TODO: handle this db injection correctly
 func GetRegexMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string, slotMap map[string]models.SlotMapping, slotMappingInfo models.SlotMappingInfo, partnerID int) (string, string) {
-	type regexSlotEntry struct {
-		SlotName     string
-		RegexPattern string
-	}
-
 	// Ex. "psregex_5890_56777_1_8_/43743431/DMDemo1@@728x90"
 	cacheKey := fmt.Sprintf(pubSlotRegex, rctx.PubID, rctx.ProfileID, rctx.DisplayID, partnerID, slot)
 	if v, ok := cache.Get(cacheKey); ok {

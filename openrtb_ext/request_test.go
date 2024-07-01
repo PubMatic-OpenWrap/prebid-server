@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ func TestGranularityUnmarshal(t *testing.T) {
 	for _, tg := range testGroups {
 		for i, tc := range tg.in {
 			var resolved PriceGranularity
-			err := json.Unmarshal(tc.json, &resolved)
+			err := jsonutil.UnmarshalValid(tc.json, &resolved)
 
 			// Assert validation error
 			if tg.expectError && !assert.Errorf(t, err, "%s test case %d", tg.desc, i) {
@@ -268,15 +269,15 @@ func TestCloneExtRequestPrebid(t *testing.T) {
 				BidderConfigs: []BidderConfig{
 					{
 						Bidders: []string{"Bidder1", "bidder2"},
-						Config:  &Config{&ORTB2{Site: map[string]json.RawMessage{"test": json.RawMessage(`{}`)}}},
+						Config:  &Config{&ORTB2{Site: json.RawMessage(`{"value":"config1"}`)}},
 					},
 					{
 						Bidders: []string{"Bidder5", "bidder17"},
-						Config:  &Config{&ORTB2{Site: map[string]json.RawMessage{"test": json.RawMessage(`{"foo":"bar"}`), "more": json.RawMessage(`{}`)}}},
+						Config:  &Config{&ORTB2{App: json.RawMessage(`{"value":"config2"}`)}},
 					},
 					{
 						Bidders: []string{"foo"},
-						Config:  &Config{&ORTB2{User: map[string]json.RawMessage{"abc": json.RawMessage(`123`)}}},
+						Config:  &Config{&ORTB2{User: json.RawMessage(`{"value":"config3"}`)}},
 					},
 				},
 			},
@@ -284,15 +285,15 @@ func TestCloneExtRequestPrebid(t *testing.T) {
 				BidderConfigs: []BidderConfig{
 					{
 						Bidders: []string{"Bidder1", "bidder2"},
-						Config:  &Config{&ORTB2{Site: map[string]json.RawMessage{"test": json.RawMessage(`{}`)}}},
+						Config:  &Config{&ORTB2{Site: json.RawMessage(`{"value":"config1"}`)}},
 					},
 					{
 						Bidders: []string{"Bidder5", "bidder17"},
-						Config:  &Config{&ORTB2{Site: map[string]json.RawMessage{"test": json.RawMessage(`{"foo":"bar"}`), "more": json.RawMessage(`{}`)}}},
+						Config:  &Config{&ORTB2{App: json.RawMessage(`{"value":"config2"}`)}},
 					},
 					{
 						Bidders: []string{"foo"},
-						Config:  &Config{&ORTB2{User: map[string]json.RawMessage{"abc": json.RawMessage(`123`)}}},
+						Config:  &Config{&ORTB2{User: json.RawMessage(`{"value":"config3"}`)}},
 					},
 				},
 			},
@@ -302,7 +303,7 @@ func TestCloneExtRequestPrebid(t *testing.T) {
 					Bidders: []string{"george"},
 					Config:  &Config{nil},
 				}
-				prebid.BidderConfigs[2].Config.ORTB2.User["abc"] = json.RawMessage(`{"id": 345}`)
+				prebid.BidderConfigs[2].Config.ORTB2.User = json.RawMessage(`{"id": 345}`)
 				prebid.BidderConfigs = append(prebid.BidderConfigs, BidderConfig{
 					Bidders: []string{"bidder2"},
 					Config:  &Config{&ORTB2{}},

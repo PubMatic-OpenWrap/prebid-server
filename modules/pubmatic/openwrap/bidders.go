@@ -1,8 +1,8 @@
 package openwrap
 
 import (
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 var alias = map[string]string{
@@ -11,6 +11,7 @@ var alias = map[string]string{
 	models.BidderPubMaticSecondaryAlias: string(openrtb_ext.BidderPubmatic),
 	models.BidderDistrictmAlias:         string(openrtb_ext.BidderAppnexus),
 	models.BidderAndBeyondAlias:         string(openrtb_ext.BidderAdkernel),
+	models.BidderMediaFuseAlias:         string(openrtb_ext.BidderAppnexus),
 }
 
 // IsAlias will return copy of exisiting alias

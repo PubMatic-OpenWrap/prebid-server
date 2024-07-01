@@ -2,32 +2,42 @@ name: Validate
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - main
+      - ci
   pull_request:
-    branches: [master]
+    branches:
+      - master
+      - main
+      - ci
 
 jobs:
   validate:
     strategy:
       matrix:
-        go-version: [1.18.x, 1.19.x]
+        go-version: [1.20.x]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     
     steps:
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
 
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         # Resolves to empty string for push events and falls back to HEAD.
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Validate
       run: |
+        git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
         ./validate.sh --nofmt --cov --race 10
       env:
         GO111MODULE: "on"
+        GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+        TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+        USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}

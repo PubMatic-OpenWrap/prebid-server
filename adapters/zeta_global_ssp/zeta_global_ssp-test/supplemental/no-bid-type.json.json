@@ -44,7 +44,7 @@
             "application/json;charset=utf-8"
           ]
         },
-        "uri": "http://whatever.url",
+        "uri": "https://ssp.disqus.com/bid/prebid-server?sid=11",
         "body": {
           "id": "some-request-id",
           "imp": [
@@ -110,7 +110,7 @@
       }
     }
   ],
-  "expectedBidResponses": [],
+  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeBidsErrors": [
     {
       "value": "Failed to parse impression \"some-impression-id\" mediatype",

@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -9,14 +10,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/util/ptrutil"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +26,14 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	Regex:         true,
 	Config: map[string]*adunitconfig.AdConfig{
 		"default": {
+			BidderFilter: &adunitconfig.BidderFilter{
+				Filters: []adunitconfig.Filter{
+					{
+						Bidders:           []string{"bidderA"},
+						BiddingConditions: json.RawMessage(`{ "in": [{ "var": "country"}, ["IND"]]}`),
+					},
+				},
+			},
 			Floors: &openrtb_ext.PriceFloorRules{
 				FloorMin: 15,
 				Data: &openrtb_ext.PriceFloorData{
@@ -42,21 +51,21 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 								"*|728x90|www.website.com":       13,
 							},
 							Currency:     "USD",
-							ModelWeight:  ptrutil.ToPtr[int](40),
+							ModelWeight:  ptrutil.ToPtr(40),
 							ModelVersion: "model 1 from adunit config slot level",
 						},
 					},
 					Currency: "USD",
 				},
 				Enforcement: &openrtb_ext.PriceFloorEnforcement{
-					EnforcePBS:  ptrutil.ToPtr[bool](true),
+					EnforcePBS:  ptrutil.ToPtr(true),
 					EnforceRate: 100,
-					EnforceJS:   ptrutil.ToPtr[bool](true),
+					EnforceJS:   ptrutil.ToPtr(true),
 				},
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 			},
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{2},
 					Video: openrtb2.Video{
@@ -88,7 +97,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 		},
 		"Div1": {
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{0, 1, 2, 4},
 					Video: openrtb2.Video{
@@ -105,7 +114,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 				},
 			},
 			Banner: &adunitconfig.Banner{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.BannerConfig{
 					Banner: openrtb2.Banner{
 						Format: []openrtb2.Format{
@@ -124,7 +133,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 		},
 		"Div2": {
 			Video: &adunitconfig.Video{
-				Enabled: ptrutil.ToPtr[bool](true),
+				Enabled: ptrutil.ToPtr(true),
 				Config: &adunitconfig.VideoConfig{
 					ConnectionType: []int{0, 1, 2, 4},
 					Video: openrtb2.Video{
@@ -144,7 +153,7 @@ var testAdunitConfig = &adunitconfig.AdUnitConfig{
 	},
 }
 
-func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
+func TestCachePopulateCacheWithAdunitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -242,7 +251,8 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -267,7 +277,7 @@ func Test_cache_populateCacheWithAdunitConfig(t *testing.T) {
 	}
 }
 
-func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
+func TestCacheGetAdunitConfigFromCache(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockDatabase := mock_database.NewMockDatabase(ctrl)
@@ -387,7 +397,8 @@ func Test_cache_GetAdunitConfigFromCache(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()

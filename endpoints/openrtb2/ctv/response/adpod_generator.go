@@ -1,17 +1,15 @@
 package response
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/combination"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/combination"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 /********************* AdPodGenerator Functions *********************/
@@ -40,30 +38,24 @@ type highestCombination struct {
 // AdPodGenerator AdPodGenerator
 type AdPodGenerator struct {
 	IAdPodGenerator
-	request  *openrtb2.BidRequest
-	impIndex int
-	buckets  types.BidsBuckets
-	comb     combination.ICombination
-	adpod    *openrtb_ext.VideoAdPod
-	met      metrics.MetricsEngine
+	buckets types.BidsBuckets
+	comb    combination.ICombination
+	adpod   *openrtb_ext.VideoAdPod
+	met     metrics.MetricsEngine
 }
 
 // NewAdPodGenerator will generate adpod based on configuration
-func NewAdPodGenerator(request *openrtb2.BidRequest, impIndex int, buckets types.BidsBuckets, comb combination.ICombination, adpod *openrtb_ext.VideoAdPod, met metrics.MetricsEngine) *AdPodGenerator {
+func NewAdPodGenerator(buckets types.BidsBuckets, comb combination.ICombination, adpod *openrtb_ext.VideoAdPod, met metrics.MetricsEngine) *AdPodGenerator {
 	return &AdPodGenerator{
-		request:  request,
-		impIndex: impIndex,
-		buckets:  buckets,
-		comb:     comb,
-		adpod:    adpod,
-		met:      met,
+		buckets: buckets,
+		comb:    comb,
+		adpod:   adpod,
+		met:     met,
 	}
 }
 
 // GetAdPodBids will return Adpod based on configurations
 func (o *AdPodGenerator) GetAdPodBids() *types.AdPodBid {
-	defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v ImpId:%v adpodgenerator", o.request.ID, o.request.Imp[o.impIndex].ID))
-
 	results := o.getAdPodBids(10 * time.Millisecond)
 	adpodBid := o.getMaxAdPodBid(results)
 
@@ -74,8 +66,8 @@ func (o *AdPodGenerator) cleanup(wg *sync.WaitGroup, responseCh chan *highestCom
 	defer func() {
 		close(responseCh)
 		for extra := range responseCh {
-			if nil != extra {
-				util.Logf("Tid:%v ImpId:%v Delayed Response Durations:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, extra.durations, extra.bidIDs)
+			if extra != nil {
+				util.Logf("Delayed Response Durations:%v Bids:%v", extra.durations, extra.bidIDs)
 			}
 		}
 	}()
@@ -83,17 +75,24 @@ func (o *AdPodGenerator) cleanup(wg *sync.WaitGroup, responseCh chan *highestCom
 }
 
 func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombination {
-	start := time.Now()
-	defer util.TimeTrack(start, fmt.Sprintf("Tid:%v ImpId:%v getAdPodBids", o.request.ID, o.request.Imp[o.impIndex].ID))
-
-	maxRoutines := 3
+	maxRoutines := 2
 	isTimedOutORReceivedAllResponses := false
 	results := []*highestCombination{}
 	responseCh := make(chan *highestCombination, maxRoutines)
 	wg := new(sync.WaitGroup) // ensures each step generating impressions is finished
 	lock := sync.Mutex{}
 	ticker := time.NewTicker(timeout)
+	combGenStartTime := time.Now()
+	lock.Lock()
+	durations := o.comb.Get()
+	lock.Unlock()
+	combGenElapsedTime := time.Since(combGenStartTime)
 
+	if len(durations) != 0 {
+		hbc := o.getUniqueBids(durations)
+		hbc.timeTakenCombGen = combGenElapsedTime
+		responseCh <- hbc
+	}
 	combinationCount := 0
 	for i := 0; i < maxRoutines; i++ {
 		wg.Add(1)
@@ -111,7 +110,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 				hbc := o.getUniqueBids(durations)
 				hbc.timeTakenCombGen = combGenElapsedTime
 				responseCh <- hbc
-				util.Logf("Tid:%v GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v", o.request.ID, hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:])
+				util.Logf("GetUniqueBids Durations:%v Price:%v DealBids:%v Time:%v Bids:%v combGenElapsedTime:%v", hbc.durations[:], hbc.price, hbc.nDealBids, hbc.timeTakenCompExcl, hbc.bidIDs[:], combGenElapsedTime)
 			}
 			wg.Done()
 		}()
@@ -127,7 +126,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 		select {
 		case hbc, ok := <-responseCh:
 
-			if false == ok {
+			if !ok {
 				isTimedOutORReceivedAllResponses = true
 				break
 			}
@@ -139,7 +138,6 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 			}
 		case <-ticker.C:
 			isTimedOutORReceivedAllResponses = true
-			util.Logf("Tid:%v ImpId:%v GetAdPodBids Timeout Reached %v", o.request.ID, o.request.Imp[o.impIndex].ID, timeout)
 		}
 	}
 
@@ -166,8 +164,7 @@ func (o *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinati
 }
 
 func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.AdPodBid {
-	if 0 == len(results) {
-		util.Logf("Tid:%v ImpId:%v NoBid", o.request.ID, o.request.Imp[o.impIndex].ID)
+	if len(results) == 0 {
 		return nil
 	}
 
@@ -190,8 +187,7 @@ func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.Ad
 		}
 	}
 
-	if nil == maxResult {
-		util.Logf("Tid:%v ImpId:%v All Combination Filtered in Ad Exclusion", o.request.ID, o.request.Imp[o.impIndex].ID)
+	if maxResult == nil {
 		return nil
 	}
 
@@ -212,7 +208,7 @@ func (o *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *types.Ad
 		adpodBid.Cat = append(adpodBid.Cat, cat)
 	}
 
-	util.Logf("Tid:%v ImpId:%v Selected Durations:%v Price:%v Bids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, maxResult.durations[:], maxResult.price, maxResult.bidIDs[:])
+	util.Logf("Selected Durations:%v Price:%v Bids:%v", maxResult.durations, maxResult.price, maxResult.bidIDs)
 
 	return adpodBid
 }
@@ -222,11 +218,9 @@ func (o *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombinati
 	data := [][]*types.Bid{}
 	combinations := []int{}
 
-	defer util.TimeTrack(startTime, fmt.Sprintf("Tid:%v ImpId:%v getUniqueBids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, durationSequence))
-
 	uniqueDuration := 0
 	for index, duration := range durationSequence {
-		if 0 != index && durationSequence[index-1] == duration {
+		if index != 0 && durationSequence[index-1] == duration {
 			combinations[uniqueDuration-1]++
 			continue
 		}
@@ -263,7 +257,7 @@ func findUniqueCombinations(data [][]*types.Bid, combination []int, maxCategoryS
 	filterBids := map[string]*filteredBid{}
 
 	// maintain highest price combination
-	for true {
+	for {
 
 		ehc, inext, jnext, rc = evaluate(data[:], indices[:], totalBids, maxCategoryScore, maxDomainScore)
 		if nil != ehc {
@@ -285,7 +279,7 @@ func findUniqueCombinations(data [][]*types.Bid, combination []int, maxCategoryS
 			}
 		}
 
-		if -1 == inext {
+		if inext == -1 {
 			inext, jnext = n-1, 0
 		}
 

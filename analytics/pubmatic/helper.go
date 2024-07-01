@@ -3,41 +3,26 @@ package pubmatic
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
-// Send method
-func Send(url string, headers http.Header) error {
-	mhc := NewMultiHttpContext()
-	hc, err := NewHttpCall(url, "")
-	if err != nil {
-		return err
-	}
-
-	for k, v := range headers {
-		if len(v) != 0 {
-			hc.AddHeader(k, v[0])
-		}
-	}
-
-	mhc.AddHttpCall(hc)
-	_, erc := mhc.Execute()
-	if erc != 0 {
-		return errors.New("error in sending logger pixel")
-	}
-
-	return nil
-}
+const parseUrlFormat = "json"
 
 // PrepareLoggerURL returns the url for OW logger call
 func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) string {
+	if wlog == nil {
+		return ""
+	}
 	v := url.Values{}
 
 	jsonString, err := json.Marshal(wlog.record)
@@ -56,87 +41,112 @@ func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) st
 	return finalLoggerURL
 }
 
-func (wlog *WloggerRecord) logContentObject(content *openrtb2.Content) {
-	if nil == content {
+// getGdprEnabledFlag returns gdpr flag set in the partner config
+func getGdprEnabledFlag(partnerConfigMap map[int]map[string]string) int {
+	gdpr := 0
+	if val := partnerConfigMap[models.VersionLevelConfigID][models.GDPR_ENABLED]; val != "" {
+		gdpr, _ = strconv.Atoi(val)
+	}
+	return gdpr
+}
+
+// send function will send the owlogger to analytics endpoint
+func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.MultiHttpContextInterface) {
+	startTime := time.Now()
+	hc, _ := mhttp.NewHttpCall(url, "")
+
+	for k, v := range headers {
+		if len(v) != 0 {
+			hc.AddHeader(k, v[0])
+		}
+	}
+
+	if rCtx.KADUSERCookie != nil {
+		hc.AddCookie(models.KADUSERCOOKIE, rCtx.KADUSERCookie.Value)
+	}
+
+	mhc.AddHttpCall(hc)
+	_, erc := mhc.Execute()
+	if erc != 0 {
+		glog.Errorf("Failed to send the owlogger for pub:[%d], profile:[%d], version:[%d].",
+			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
+
+		// we will not record at version level in prometheus metric
+		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
 		return
 	}
-
-	wlog.Content = &Content{
-		ID:      content.ID,
-		Episode: int(content.Episode),
-		Title:   content.Title,
-		Series:  content.Series,
-		Season:  content.Season,
-		Cat:     content.Cat,
-	}
-}
-func getSizeForPlatform(width, height int64, platform string) string {
-	s := models.GetSize(width, height)
-	if platform == models.PLATFORM_VIDEO {
-		s = s + models.VideoSizeSuffix
-	}
-	return s
+	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))
+	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
 }
 
-// set partnerRecord MetaData
-func (partnerRecord *PartnerRecord) setMetaDataObject(meta *openrtb_ext.ExtBidPrebidMeta) {
+// RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
+func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
 
-	if meta.NetworkID != 0 || meta.AdvertiserID != 0 || len(meta.SecondaryCategoryIDs) > 0 {
-		partnerRecord.MetaData = &MetaData{
-			NetworkID:            meta.NetworkID,
-			AdvertiserID:         meta.AdvertiserID,
-			PrimaryCategoryID:    meta.PrimaryCategoryID,
-			AgencyID:             meta.AgencyID,
-			DemandSource:         meta.DemandSource,
-			SecondaryCategoryIDs: meta.SecondaryCategoryIDs,
+	if ao.Response.NBR != nil {
+		return nil
+	}
+
+	signalData := map[string]string{}
+	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
+		return err
+	}
+
+	if val, ok := signalData[models.SignalData]; !ok || val == "" {
+		return errors.New("signal data not found in the response")
+	}
+
+	orignalResponse := &openrtb2.BidResponse{}
+	if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
+		return err
+	}
+
+	*ao.Response = *orignalResponse
+	return nil
+}
+
+func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
+	wlog.ProfileType = rctx.ProfileType
+	wlog.ProfileTypePlatform = rctx.ProfileTypePlatform
+	wlog.AppPlatform = rctx.AppPlatform
+	if rctx.AppIntegrationPath != nil && *rctx.AppIntegrationPath >= 0 {
+		wlog.AppIntegrationPath = rctx.AppIntegrationPath
+	}
+	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
+		wlog.AppSubIntegrationPath = rctx.AppSubIntegrationPath
+	}
+}
+
+func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
+		setWakandaWinningBidFlag(rCtx.WakandaDebug, ao.Response)
+		parseURL, err := url.Parse(loggerURL)
+		if err != nil {
+			glog.Errorf("Failed to parse loggerURL while setting wakanda object err: %s", err.Error())
+		}
+		if parseURL != nil {
+			jsonParam := parseURL.Query().Get(parseUrlFormat)
+			rCtx.WakandaDebug.SetLogger(json.RawMessage(jsonParam))
+		}
+		bytes, err := json.Marshal(ao.Response)
+		if err != nil {
+			glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
+		}
+		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
+		rCtx.WakandaDebug.SetOpenRTB(ao.RequestWrapper.BidRequest)
+		rCtx.WakandaDebug.WriteLogToFiles()
+	}
+}
+
+// setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
+func setWakandaWinningBidFlag(wakandaDebug wakanda.WakandaDebug, response *openrtb2.BidResponse) {
+	if wakandaDebug != nil && response != nil {
+		if len(response.SeatBid) > 0 &&
+			len(response.SeatBid[0].Bid) > 0 &&
+			response.SeatBid[0].Bid[0].Price > 0 {
+			wakandaDebug.SetWinningBid(true)
 		}
 	}
-	//NOTE : We Don't get following Data points in Response, whenever got from translator,
-	//they can be populated.
-	//partnerRecord.MetaData.NetworkName = meta.NetworkName
-	//partnerRecord.MetaData.AdvertiserName = meta.AdvertiserName
-	//partnerRecord.MetaData.AgencyName = meta.AgencyName
-	//partnerRecord.MetaData.BrandName = meta.BrandName
-	//partnerRecord.MetaData.BrandID = meta.BrandID
-	//partnerRecord.MetaData.DChain = meta.DChain (type is json.RawMessage)
-}
-
-// Harcode would be the optimal. We could make it configurable like _AU_@_W_x_H_:%s@%dx%d entries in pbs.yaml
-// mysql> SELECT DISTINCT key_gen_pattern FROM wrapper_mapping_template;
-// +----------------------+
-// | key_gen_pattern      |
-// +----------------------+
-// | _AU_@_W_x_H_         |
-// | _DIV_@_W_x_H_        |
-// | _W_x_H_@_W_x_H_      |
-// | _DIV_                |
-// | _AU_@_DIV_@_W_x_H_   |
-// | _AU_@_SRC_@_VASTTAG_ |
-// +----------------------+
-// 6 rows in set (0.21 sec)
-func GenerateSlotName(h, w int64, kgp, tagid, div, src string) string {
-	// func (H, W, Div), no need to validate, will always be non-nil
-	switch kgp {
-	case "_AU_": // adunitconfig
-		return tagid
-	case "_DIV_":
-		return div
-	case "_AU_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", tagid, w, h)
-	case "_DIV_@_W_x_H_":
-		return fmt.Sprintf("%s@%dx%d", div, w, h)
-	case "_W_x_H_@_W_x_H_":
-		return fmt.Sprintf("%dx%d@%dx%d", w, h, w, h)
-	case "_AU_@_DIV_@_W_x_H_":
-		if div == "" {
-			return fmt.Sprintf("%s@%s@s%dx%d", tagid, div, w, h)
-		}
-		return fmt.Sprintf("%s@%s@s%dx%d", tagid, div, w, h)
-	case "_AU_@_SRC_@_VASTTAG_":
-		return fmt.Sprintf("%s@%s@s_VASTTAG_", tagid, src) //TODO check where/how _VASTTAG_ is updated
-	default:
-		// TODO: check if we need to fallback to old generic flow (below)
-		// Add this cases in a map and read it from yaml file
-	}
-	return ""
 }

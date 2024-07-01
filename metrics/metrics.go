@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // Labels defines the labels that can be attached to the metrics.
@@ -173,6 +173,7 @@ const PublisherUnknown = "unknown"
 const (
 	DemandWeb     DemandSource = "web"
 	DemandApp     DemandSource = "app"
+	DemandDOOH    DemandSource = "dooh"
 	DemandUnknown DemandSource = "unknown"
 )
 
@@ -180,22 +181,25 @@ func DemandTypes() []DemandSource {
 	return []DemandSource{
 		DemandWeb,
 		DemandApp,
+		DemandDOOH,
 		DemandUnknown,
 	}
 }
 
 // The request types (endpoints)
 const (
-	ReqTypeORTB2Web RequestType = "openrtb2-web"
-	ReqTypeORTB2App RequestType = "openrtb2-app"
-	ReqTypeAMP      RequestType = "amp"
-	ReqTypeVideo    RequestType = "video"
+	ReqTypeORTB2Web  RequestType = "openrtb2-web"
+	ReqTypeORTB2App  RequestType = "openrtb2-app"
+	ReqTypeORTB2DOOH RequestType = "openrtb2-dooh"
+	ReqTypeAMP       RequestType = "amp"
+	ReqTypeVideo     RequestType = "video"
 )
 
 func RequestTypes() []RequestType {
 	return []RequestType{
 		ReqTypeORTB2Web,
 		ReqTypeORTB2App,
+		ReqTypeORTB2DOOH,
 		ReqTypeAMP,
 		ReqTypeVideo,
 	}
@@ -276,6 +280,7 @@ const (
 	AdapterErrorTimeout             AdapterError = "timeout"
 	AdapterErrorFailedToRequestBids AdapterError = "failedtorequestbid"
 	AdapterErrorValidation          AdapterError = "validation"
+	AdapterErrorTmaxTimeout         AdapterError = "tmaxtimeout"
 	AdapterErrorUnknown             AdapterError = "unknown_error"
 )
 
@@ -286,6 +291,7 @@ func AdapterErrors() []AdapterError {
 		AdapterErrorTimeout,
 		AdapterErrorFailedToRequestBids,
 		AdapterErrorValidation,
+		AdapterErrorTmaxTimeout,
 		AdapterErrorUnknown,
 	}
 }
@@ -429,7 +435,9 @@ func SyncerSetUidStatuses() []SyncerSetUidStatus {
 // two groups should be consistent within themselves, but comparing numbers between groups
 // is generally not useful.
 type MetricsEngine interface {
+	OWMetricsEngine
 	RecordConnectionAccept(success bool)
+	RecordTMaxTimeout()
 	RecordConnectionClose(success bool)
 	RecordRequest(labels Labels)                           // ignores adapter. only statusOk and statusErr fom status
 	RecordImps(labels ImpLabels)                           // RecordImps across openRTB2 engines that support the 'Native' Imp Type
@@ -476,10 +484,6 @@ type MetricsEngine interface {
 	RecordModuleSuccessRejected(labels ModuleLabels)
 	RecordModuleExecutionError(labels ModuleLabels)
 	RecordModuleTimeout(labels ModuleLabels)
-	RecordAccountGDPRPurposeWarning(account string, purposeName string)
-	RecordAccountGDPRChannelEnabledWarning(account string)
-	RecordAccountCCPAChannelEnabledWarning(account string)
-	RecordAccountUpgradeStatus(account string)
 
 	// RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
 	// gives the bid response with multiple bids containing  same bid.ID
@@ -515,17 +519,9 @@ type MetricsEngine interface {
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 
-	//RecordDynamicFetchFailure records the dynamic fetch failure labeled by pubid and reason code
-	RecordDynamicFetchFailure(pubId, code string)
+	//RecordFloorStatus records the floor validation status labeled by pubid, source and reason code
+	RecordFloorStatus(pubId, source, code string)
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
 	RecordRejectedBids(pubid, bidder, code string)
-
-	//RecordBids records the bidder deal bids labeled by pubid, profile, bidder and deal
-	RecordBids(pubid, profileid, bidder, deal string)
-
-	//RecordVastVersion record the count of vast version labelled by bidder and vast version
-	RecordVastVersion(coreBidder, vastVersion string)
-
-	RecordHttpCounter()
 }

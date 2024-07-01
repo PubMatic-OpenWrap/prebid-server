@@ -7,8 +7,8 @@ import (
 
 // ExtBid defines the contract for bidresponse.seatbid.bid[i].ext
 type ExtBid struct {
-	Prebid *ExtBidPrebid   `json:"prebid,omitempty"`
-	Bidder json.RawMessage `json:"bidder,omitempty"`
+	DSA    *ExtBidDSA    `json:"dsa,omitempty"`
+	Prebid *ExtBidPrebid `json:"prebid,omitempty"`
 }
 
 // ExtBidPrebid defines the contract for bidresponse.seatbid.bid[i].ext.prebid
@@ -52,6 +52,7 @@ type ExtBidPrebidCacheBids struct {
 
 // ExtBidPrebidMeta defines the contract for bidresponse.seatbid.bid[i].ext.prebid.meta
 type ExtBidPrebidMeta struct {
+	AdapterCode          string          `json:"adaptercode,omitempty"`
 	AdvertiserDomains    []string        `json:"advertiserDomains,omitempty"`
 	AdvertiserID         int             `json:"advertiserId,omitempty"`
 	AdvertiserName       string          `json:"advertiserName,omitempty"`
@@ -59,14 +60,17 @@ type ExtBidPrebidMeta struct {
 	AgencyName           string          `json:"agencyName,omitempty"`
 	BrandID              int             `json:"brandId,omitempty"`
 	BrandName            string          `json:"brandName,omitempty"`
-	DemandSource         string          `json:"demandSource,omitempty"`
 	DChain               json.RawMessage `json:"dchain,omitempty"`
+	DemandSource         string          `json:"demandSource,omitempty"`
 	MediaType            string          `json:"mediaType,omitempty"`
 	NetworkID            int             `json:"networkId,omitempty"`
 	NetworkName          string          `json:"networkName,omitempty"`
 	PrimaryCategoryID    string          `json:"primaryCatId,omitempty"`
+	RendererName         string          `json:"rendererName,omitempty"`
+	RendererVersion      string          `json:"rendererVersion,omitempty"`
+	RendererData         json.RawMessage `json:"rendererData,omitempty"`
+	RendererUrl          string          `json:"rendererUrl,omitempty"`
 	SecondaryCategoryIDs []string        `json:"secondaryCatIds,omitempty"`
-	AdapterCode          string          `json:"adaptercode,omitempty"`
 }
 
 // ExtBidPrebidVideo defines the contract for bidresponse.seatbid.bid[i].ext.prebid.video
@@ -80,6 +84,13 @@ type ExtBidPrebidVideo struct {
 type ExtBidPrebidEvents struct {
 	Win string `json:"win,omitempty"`
 	Imp string `json:"imp,omitempty"`
+}
+
+// ExtBidDSA defines the contract for bidresponse.seatbid.bid[i].ext.dsa
+type ExtBidDSA struct {
+	AdRender *int8  `json:"adrender,omitempty"`
+	Behalf   string `json:"behalf,omitempty"`
+	Paid     string `json:"paid,omitempty"`
 }
 
 // BidType describes the allowed values for bidresponse.seatbid.bid[i].ext.prebid.type

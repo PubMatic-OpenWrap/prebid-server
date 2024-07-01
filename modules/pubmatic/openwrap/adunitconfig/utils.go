@@ -1,24 +1,31 @@
 package adunitconfig
 
 import (
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 // TODO use this
 func GetMatchedSlotName(rCtx models.RequestCtx, imp openrtb2.Imp, impExt models.ImpExtension) (slotAdUnitConfig *adunitconfig.AdConfig, isRegex bool) {
 	div := ""
-	height := imp.Video.H
-	width := imp.Video.W
+	var height, width int64
+	if imp.Video != nil {
+		if imp.Video.H != nil {
+			height = *imp.Video.H
+		}
+		if imp.Video.W != nil {
+			width = *imp.Video.W
+		}
+	}
 	tagID := imp.TagID
 
 	if impExt.Wrapper != nil {
 		div = impExt.Wrapper.Div
 	}
 
-	slotName := bidderparams.GenerateSlotName(height, width, rCtx.AdUnitConfig.ConfigPattern, tagID, div, rCtx.Source)
+	slotName := models.GenerateSlotName(height, width, rCtx.AdUnitConfig.ConfigPattern, tagID, div, rCtx.Source)
 
 	var ok bool
 	slotAdUnitConfig, ok = rCtx.AdUnitConfig.Config[slotName]
@@ -76,10 +83,15 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 	if (slotConfig.BidFloor == nil || *slotConfig.BidFloor == 0.0) && defaultConfig.BidFloor != nil {
 		slotConfig.BidFloor = defaultConfig.BidFloor
 
-		slotConfig.BidFloorCur = func() *string { s := "USD"; return &s }()
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 		if defaultConfig.BidFloorCur != nil {
 			slotConfig.BidFloorCur = defaultConfig.BidFloorCur
 		}
+	}
+
+	//slotConfig has bidfloor and not have BidFloorCur set by default USD
+	if slotConfig.BidFloor != nil && *slotConfig.BidFloor > float64(0) && slotConfig.BidFloorCur == nil {
+		slotConfig.BidFloorCur = ptrutil.ToPtr(models.USD)
 	}
 
 	if slotConfig.Banner == nil {

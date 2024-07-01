@@ -2,17 +2,16 @@ package gocache
 
 import (
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	mock_database "github.com/prebid/prebid-server/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	mock_database "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +20,7 @@ const (
 	testVersionID = 1
 	testProfileID = 123
 	testAdapterID = 1
-	testPartnerID = 10
+	testPartnerID = 1
 	testSlotName  = "adunit@300x250"
 	testTimeout   = 200
 	testHashValue = "2aa34b52a9e941c1594af7565e599c8d"
@@ -117,7 +116,8 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -315,7 +315,8 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -328,7 +329,7 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 			err := c.populateCacheWithWrapperSlotMappings(tt.args.pubid, tt.args.partnerConfigMap, tt.args.profileId, tt.args.displayVersion)
 			assert.Equal(t, tt.want.err, err)
 
-			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testAdapterID)
+			cacheKey := key(PUB_SLOT_INFO, tt.args.pubid, tt.args.profileId, tt.args.displayVersion, testPartnerID)
 			partnerSlotMapping, found := c.cache.Get(cacheKey)
 			assert.True(t, found)
 			assert.Equal(t, tt.want.partnerSlotMapping, partnerSlotMapping)
@@ -441,7 +442,8 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
@@ -451,9 +453,8 @@ func Test_cache_GetMappingsFromCacheV25(t *testing.T) {
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if got := c.GetMappingsFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappings) {
-				t.Errorf("cache.GetMappingsFromCacheV25() = %v, want %v", got, tt.want)
-			}
+			got := c.GetMappingsFromCacheV25(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want.mappings, got)
 		})
 	}
 }
@@ -543,20 +544,19 @@ func Test_cache_GetSlotToHashValueMapFromCacheV25(t *testing.T) {
 			setup: func() {},
 		},
 	}
-	for _, tt := range tests {
+	for ind := range tests {
+		tt := &tests[ind]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
 			c := &cache{
-				Map:   tt.fields.Map,
 				cache: tt.fields.cache,
 				cfg:   tt.fields.cfg,
 				db:    tt.fields.db,
 			}
-			if got := c.GetSlotToHashValueMapFromCacheV25(tt.args.rctx, tt.args.partnerID); !reflect.DeepEqual(got, tt.want.mappinInfo) {
-				t.Errorf("cache.GetSlotToHashValueMapFromCacheV25() = %v, want %v", got, tt.want.mappinInfo)
-			}
+			got := c.GetSlotToHashValueMapFromCacheV25(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want.mappinInfo, got)
 		})
 	}
 }

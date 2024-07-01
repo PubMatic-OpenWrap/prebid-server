@@ -34,6 +34,7 @@ var _defaultMapper = Mapper{
 	MacroFD:             &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroFD},
 	MacroTransactionID:  &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroTransactionID},
 	MacroPaymentIDChain: &macroCallBack{cached: true, escape: true, callback: IBidderMacro.MacroPaymentIDChain},
+	MacroSchain:         &macroCallBack{cached: true, escape: false, callback: IBidderMacro.MacroSchain},
 
 	//Regs
 	MacroCoppa: &macroCallBack{cached: true, callback: IBidderMacro.MacroCoppa},
@@ -174,6 +175,10 @@ var _defaultMapper = Mapper{
 
 	//Additional
 	MacroCacheBuster: &macroCallBack{cached: false, callback: IBidderMacro.MacroCacheBuster},
+
+	//KeyVal
+	MacroKV:  &macroCallBack{cached: false, callback: IBidderMacro.MacroKV},
+	MacroKVM: &macroCallBack{cached: false, callback: IBidderMacro.MacroKVM},
 }
 
 // GetDefaultMapper will return clone of default Mapper function

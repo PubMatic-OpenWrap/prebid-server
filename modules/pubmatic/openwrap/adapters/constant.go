@@ -23,8 +23,18 @@ var ignoreAppnexusKeys = map[string]bool{
 
 // Bidder Params
 const (
-	BidderParamApacdex_siteId      = "siteId"
-	BidderParamApacdex_placementId = "placementId"
-	BidderParamApacdex_geo         = "geo"
-	BidderParamApacdex_floorPrice  = "floorPrice"
+	BidderParamApacdex_siteId       = "siteId"
+	BidderParamApacdex_placementId  = "placementId"
+	BidderParamApacdex_geo          = "geo"
+	BidderParamApacdex_floorPrice   = "floorPrice"
+	BidderParamBoldwinPlacementID   = "placementId"
+	BidderParamBoldwinEndpointID    = "endpointId"
+	BidderParamColossusTagID        = "TagID"
+	BidderParamColossusgroupID      = "groupId"
+	BidderNextmillenniumPlacementID = "placement_id"
+	BidderNextmillenniumgroupID     = "group_id"
+	BidderParamRiseOrg              = "org"
+	BidderParamRisePublisherID      = "publisher_id"
+	BidderKaroPlacementID           = "placementId"
+	BidderKargoAdSlotID             = "adSlotID"
 )

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func JLogf(msg string, obj interface{}) {
@@ -168,15 +169,15 @@ func createNewContentObject(contentObject *openrtb2.Content, include bool, keys 
 			case "keywords":
 				newContentObject.Keywords = ""
 			case "livestream":
-				newContentObject.LiveStream = 0
+				newContentObject.LiveStream = ptrutil.ToPtr[int8](0)
 			case "sourcerelationship":
-				newContentObject.SourceRelationship = 0
+				newContentObject.SourceRelationship = ptrutil.ToPtr[int8](0)
 			case "len":
 				newContentObject.Len = 0
 			case "language":
 				newContentObject.Language = ""
 			case "embeddable":
-				newContentObject.Embeddable = 0
+				newContentObject.Embeddable = ptrutil.ToPtr[int8](0)
 			case "data":
 				newContentObject.Data = nil
 			case "ext":
@@ -256,22 +257,4 @@ func createNewContentObject(contentObject *openrtb2.Content, include bool, keys 
 	}
 
 	return newContentObject
-}
-
-func applyBidAdjustmentToFloor(allBidderRequests []BidderRequest, bidAdjustmentFactors map[string]float64) {
-
-	for _, bidderRequest := range allBidderRequests {
-		bidAdjustment := 1.0
-
-		if bidAdjustemntValue, ok := bidAdjustmentFactors[string(bidderRequest.BidderName)]; ok {
-			bidAdjustment = bidAdjustemntValue
-		}
-
-		if bidAdjustment != 1.0 {
-			for index, imp := range bidderRequest.BidRequest.Imp {
-				imp.BidFloor = imp.BidFloor / bidAdjustment
-				bidderRequest.BidRequest.Imp[index] = imp
-			}
-		}
-	}
 }

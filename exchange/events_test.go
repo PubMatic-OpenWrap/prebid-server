@@ -3,11 +3,10 @@ package exchange
 import (
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/exchange/entities"
-
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/exchange/entities"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -197,8 +196,9 @@ func Test_isEventAllowed(t *testing.T) {
 
 func TestModifyBidVAST(t *testing.T) {
 	type args struct {
-		bidReq *openrtb2.BidRequest
-		bid    *openrtb2.Bid
+		enabledVideoEvents bool
+		bidReq             *openrtb2.BidRequest
+		bid                *openrtb2.Bid
 	}
 	tests := []struct {
 		name    string
@@ -208,6 +208,7 @@ func TestModifyBidVAST(t *testing.T) {
 		{
 			name: "empty_adm", // expect adm contain vast tag with tracking events and  VASTAdTagURI nurl contents
 			args: args{
+				enabledVideoEvents: true,
 				bidReq: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
 				},
@@ -222,6 +223,7 @@ func TestModifyBidVAST(t *testing.T) {
 		{
 			name: "adm_containing_url", // expect adm contain vast tag with tracking events and  VASTAdTagURI adm url (previous value) contents
 			args: args{
+				enabledVideoEvents: true,
 				bidReq: &openrtb2.BidRequest{
 					Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
 				},
@@ -242,6 +244,7 @@ func TestModifyBidVAST(t *testing.T) {
 						ModifyingVastXmlAllowed: false,
 					},
 				},
+				enabledVideoEvents: tc.args.enabledVideoEvents,
 			}
 			ev.modifyBidVAST(&entities.PbsOrtbBid{
 				Bid:     tc.args.bid,

@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -20,6 +20,11 @@ func (me *MetricsEngineMock) RecordRequest(labels Labels) {
 // RecordConnectionAccept mock
 func (me *MetricsEngineMock) RecordConnectionAccept(success bool) {
 	me.Called(success)
+}
+
+// RecordTMaxTimeout mock
+func (me *MetricsEngineMock) RecordTMaxTimeout() {
+	me.Called()
 }
 
 // RecordConnectionClose mock
@@ -229,29 +234,10 @@ func (me *MetricsEngineMock) RecordModuleTimeout(labels ModuleLabels) {
 	me.Called(labels)
 }
 
-func (me *MetricsEngineMock) RecordAccountGDPRPurposeWarning(account string, purposeName string) {
-	me.Called(account, purposeName)
-}
-
-func (me *MetricsEngineMock) RecordAccountGDPRChannelEnabledWarning(account string) {
-	me.Called(account)
-}
-
-func (me *MetricsEngineMock) RecordAccountCCPAChannelEnabledWarning(account string) {
-	me.Called(account)
-}
-
-func (me *MetricsEngineMock) RecordAccountUpgradeStatus(account string) {
-	me.Called(account)
-}
-
 func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 	me.Called(pubid, bidder, code)
 }
 
-func (me *MetricsEngineMock) RecordDynamicFetchFailure(pubId, code string) {
-	me.Called(pubId, code)
-}
-
-func (me *MetricsEngineMock) RecordHttpCounter() {
+func (me *MetricsEngineMock) RecordFloorStatus(pubId, source, code string) {
+	me.Called(pubId, source, code)
 }

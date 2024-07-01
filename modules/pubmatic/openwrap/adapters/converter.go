@@ -26,7 +26,7 @@ func FixBidderParams(reqID, adapterName, bidderCode string, ext json.RawMessage)
 	fieldMap := convertExtToFieldMap(bidderCode, ext)
 
 	//get callback function and execute it
-	callback := getBuilder(adapterName)
+	callback := GetBuilder(adapterName)
 
 	//executing callback function
 	return callback(BidderParameters{

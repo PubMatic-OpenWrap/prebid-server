@@ -6,10 +6,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,14 +31,15 @@ type GroupOutcomeTest struct {
 
 type HookOutcomeTest struct {
 	ExecutionTime
-	AnalyticsTags hookanalytics.Analytics `json:"analytics_tags"`
-	HookID        HookID                  `json:"hook_id"`
-	Status        Status                  `json:"status"`
-	Action        Action                  `json:"action"`
-	Message       string                  `json:"message"`
-	DebugMessages []string                `json:"debug_messages"`
-	Errors        []string                `json:"errors"`
-	Warnings      []string                `json:"warnings"`
+	AnalyticsTags hookanalytics.Analytics      `json:"analytics_tags"`
+	HookID        HookID                       `json:"hook_id"`
+	Status        Status                       `json:"status"`
+	Action        Action                       `json:"action"`
+	Message       string                       `json:"message"`
+	DebugMessages []string                     `json:"debug_messages"`
+	Errors        []string                     `json:"errors"`
+	Warnings      []string                     `json:"warnings"`
+	SeatNonBid    openrtb_ext.NonBidCollection `json:"seatnonbid"`
 }
 
 func TestEnrichBidResponse(t *testing.T) {
@@ -258,7 +260,7 @@ func TestGetModulesJSON(t *testing.T) {
 				assert.Empty(t, expectedResponse)
 			} else {
 				var expectedExtBidResponse openrtb_ext.ExtBidResponse
-				err := json.Unmarshal(expectedResponse, &expectedExtBidResponse)
+				err := jsonutil.UnmarshalValid(expectedResponse, &expectedExtBidResponse)
 				assert.NoError(t, err, "Failed to unmarshal prebid response extension")
 				assert.JSONEq(t, string(expectedExtBidResponse.Prebid.Modules), string(modules))
 			}
@@ -271,7 +273,7 @@ func getStageOutcomes(t *testing.T, file string) []StageOutcome {
 	var stageOutcomesTest []StageOutcomeTest
 
 	data := readFile(t, file)
-	err := json.Unmarshal(data, &stageOutcomesTest)
+	err := jsonutil.UnmarshalValid(data, &stageOutcomesTest)
 	require.NoError(t, err, "Failed to unmarshal stage outcomes: %s", err)
 
 	for _, stageT := range stageOutcomesTest {

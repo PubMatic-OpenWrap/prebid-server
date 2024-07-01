@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prebid/prebid-server/endpoints/openrtb2/ctv/util"
-	"github.com/prebid/prebid-server/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -235,6 +235,6 @@ func readExpectedOutput() map[string][][]int {
 	var bytes []byte
 	file.Read(bytes)
 	eOut := make(map[string][][]int, 0)
-	json.Unmarshal(bytes, eOut)
+	json.Unmarshal(bytes, &eOut)
 	return eOut
 }

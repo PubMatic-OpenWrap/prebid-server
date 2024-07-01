@@ -14,29 +14,31 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/openrtb/v19/openrtb3"
-	"github.com/prebid/prebid-server/hooks/hookexecution"
-	"github.com/prebid/prebid-server/ortb"
-	"github.com/prebid/prebid-server/util/uuidutil"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v2/ortb"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
-	accountService "github.com/prebid/prebid-server/account"
-	"github.com/prebid/prebid-server/amp"
-	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/config"
-	"github.com/prebid/prebid-server/errortypes"
-	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/gdpr"
-	"github.com/prebid/prebid-server/hooks"
-	"github.com/prebid/prebid-server/metrics"
-	"github.com/prebid/prebid-server/openrtb_ext"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
-	"github.com/prebid/prebid-server/stored_responses"
-	"github.com/prebid/prebid-server/usersync"
-	"github.com/prebid/prebid-server/util/iputil"
-	"github.com/prebid/prebid-server/version"
+	accountService "github.com/prebid/prebid-server/v2/account"
+	"github.com/prebid/prebid-server/v2/amp"
+	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/gdpr"
+	"github.com/prebid/prebid-server/v2/hooks"
+	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/privacy"
+	"github.com/prebid/prebid-server/v2/stored_requests"
+	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
+	"github.com/prebid/prebid-server/v2/stored_responses"
+	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/iputil"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v2/version"
 )
 
 const defaultAmpRequestTimeoutMillis = 900
@@ -62,19 +64,20 @@ func NewAmpEndpoint(
 	accounts stored_requests.AccountFetcher,
 	cfg *config.Configuration,
 	metricsEngine metrics.MetricsEngine,
-	pbsAnalytics analytics.PBSAnalyticsModule,
+	analyticsRunner analytics.Runner,
 	disabledBidders map[string]string,
 	defReqJSON []byte,
 	bidderMap map[string]openrtb_ext.BidderName,
 	storedRespFetcher stored_requests.Fetcher,
 	hookExecutionPlanBuilder hooks.ExecutionPlanBuilder,
+	tmaxAdjustments *exchange.TmaxAdjustmentsPreprocessed,
 ) (httprouter.Handle, error) {
 
 	if ex == nil || validator == nil || requestsById == nil || accounts == nil || cfg == nil || metricsEngine == nil {
 		return nil, errors.New("NewAmpEndpoint requires non-nil arguments.")
 	}
 
-	defRequest := defReqJSON != nil && len(defReqJSON) > 0
+	defRequest := len(defReqJSON) > 0
 
 	ipValidator := iputil.PublicNetworkIPValidator{
 		IPv4PrivateNetworks: cfg.RequestValidation.IPv4PrivateNetworksParsed,
@@ -90,7 +93,7 @@ func NewAmpEndpoint(
 		accounts,
 		cfg,
 		metricsEngine,
-		pbsAnalytics,
+		analyticsRunner,
 		disabledBidders,
 		defRequest,
 		defReqJSON,
@@ -99,7 +102,10 @@ func NewAmpEndpoint(
 		nil,
 		ipValidator,
 		storedRespFetcher,
-		hookExecutionPlanBuilder}).AmpAuction), nil
+		hookExecutionPlanBuilder,
+		tmaxAdjustments,
+		openrtb_ext.NormalizeBidderName,
+	}).AmpAuction), nil
 
 }
 
@@ -111,6 +117,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// We can respect timeouts more accurately if we note the *real* start time, and use it
 	// to compute the auction timeout.
 	start := time.Now()
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAmp, deps.metricsEngine)
 
@@ -128,11 +135,18 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		CookieFlag:    metrics.CookieFlagUnknown,
 		RequestStatus: metrics.RequestStatusOK,
 	}
+	activityControl := privacy.ActivityControl{}
 
 	defer func() {
+		// if AmpObject.AuctionResponse is nil then collect nonbids from all stage outcomes and set it in the AmpObject.SeatNonBid
+		// Nil AmpObject.AuctionResponse indicates the occurrence of a fatal error.
+		if ao.AuctionResponse == nil {
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		deps.metricsEngine.RecordRequest(labels)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
-		deps.analytics.LogAmpObject(&ao)
+		deps.analytics.LogAmpObject(&ao, activityControl)
 	}()
 
 	// Add AMP headers
@@ -156,7 +170,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// Process reject after parsing amp request, so we can use reqWrapper.
 	// There is no body for AMP requests, so we pass a nil body and ignore the return value.
 	if rejectErr != nil {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, *seatNonBid)
 		return
 	}
 
@@ -180,12 +194,15 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	}
 	defer cancel()
 
-	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
+	// Read UserSyncs/Cookie from Request
+	usersyncs := usersync.ReadCookie(r, usersync.Base64Decoder{}, &deps.cfg.HostCookie)
+	usersync.SyncHostCookie(r, usersyncs, &deps.cfg.HostCookie)
 	if usersyncs.HasAnyLiveSyncs() {
 		labels.CookieFlag = metrics.CookieFlagYes
 	} else {
 		labels.CookieFlag = metrics.CookieFlagNo
 	}
+
 	labels.PubID = getAccountID(reqWrapper.Site.Publisher)
 	// Look up account now that we have resolved the pubID value
 	account, acctIDErrs := accountService.GetAccount(ctx, deps.cfg, deps.accounts, labels.PubID, deps.metricsEngine)
@@ -199,7 +216,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		metricsStatus := metrics.RequestStatusBadInput
 		for _, er := range errL {
 			errCode := errortypes.ReadCode(er)
-			if errCode == errortypes.BlacklistedAppErrorCode || errCode == errortypes.BlacklistedAcctErrorCode {
+			if errCode == errortypes.BlacklistedAppErrorCode || errCode == errortypes.AccountDisabledErrorCode {
 				httpStatus = http.StatusServiceUnavailable
 				metricsStatus = metrics.RequestStatusBlacklisted
 				break
@@ -219,7 +236,25 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		return
 	}
 
+	hasStoredResponses := len(storedAuctionResponses) > 0
+	errs := deps.validateRequest(account, r, reqWrapper, true, hasStoredResponses, storedBidResponses, false)
+	errL = append(errL, errs...)
+	ao.Errors = append(ao.Errors, errs...)
+	if errortypes.ContainsFatalError(errs) {
+		w.WriteHeader(http.StatusBadRequest)
+		for _, err := range errortypes.FatalOnly(errs) {
+			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
+		}
+		labels.RequestStatus = metrics.RequestStatusBadInput
+		return
+	}
+
 	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
+
+	activityControl = privacy.NewActivityControl(&account.Privacy)
+
+	hookExecutor.SetActivityControl(activityControl)
+	hookExecutor.SetAccount(account)
 
 	secGPC := r.Header.Get("Sec-GPC")
 
@@ -238,14 +273,21 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		HookExecutor:               hookExecutor,
 		QueryParams:                r.URL.Query(),
 		TCF2Config:                 tcf2Config,
+		Activities:                 activityControl,
+		TmaxAdjustments:            deps.tmaxAdjustments,
 	}
 
 	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	defer func() {
+		if !auctionRequest.BidderResponseStartTime.IsZero() {
+			deps.metricsEngine.RecordOverheadTime(metrics.MakeAuctionResponse, time.Since(auctionRequest.BidderResponseStartTime))
+		}
+	}()
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
-	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
 	ao.AuctionResponse = response
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
@@ -265,18 +307,21 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		glog.Errorf("/openrtb2/amp Critical error: %v", err)
 		ao.Status = http.StatusInternalServerError
 		ao.Errors = append(ao.Errors, err)
+		if ao.AuctionResponse != nil {
+			// this check ensures that we collect nonBids from stageOutcomes only once.
+			// there could be a case where ao.AuctionResponse nil and reqWrapper.RebuildRequest returns error
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		return
 	}
 
 	if isRejectErr {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL, *seatNonBid)
 		return
 	}
 
-	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL)
-	if len(ao.Errors) == 0 {
-		recordResponsePreparationMetrics(auctionRequest.MakeBidsTimeInfo, deps.metricsEngine)
-	}
+	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL, *seatNonBid)
 }
 
 func rejectAmpRequest(
@@ -288,12 +333,13 @@ func rejectAmpRequest(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
 	ao.AuctionResponse = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
-	return sendAmpResponse(w, hookExecutor, &exchange.AuctionResponse{BidResponse: response}, reqWrapper, account, labels, ao, errs)
+	return sendAmpResponse(w, hookExecutor, &exchange.AuctionResponse{BidResponse: response}, reqWrapper, account, labels, ao, errs, seatNonBid)
 }
 
 func sendAmpResponse(
@@ -305,6 +351,7 @@ func sendAmpResponse(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
@@ -325,13 +372,15 @@ func sendAmpResponse(
 					// but this is a very unlikely corner case. Doing this so we can catch "hb_cache_id"
 					// and "hb_cache_id_{deal}", which allows for deal support in AMP.
 					bidExt := &openrtb_ext.ExtBid{}
-					err := json.Unmarshal(bid.Ext, bidExt)
+					err := jsonutil.Unmarshal(bid.Ext, bidExt)
 					if err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 						fmt.Fprintf(w, "Critical error while unpacking AMP targets: %v", err)
 						glog.Errorf("/openrtb2/amp Critical error unpacking targets: %v", err)
 						ao.Errors = append(ao.Errors, fmt.Errorf("Critical error while unpacking AMP targets: %v", err))
 						ao.Status = http.StatusInternalServerError
+						seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+						ao.SeatNonBid = seatNonBid.Get()
 						return labels, ao
 					}
 					for key, value := range bidExt.Prebid.Targeting {
@@ -344,7 +393,7 @@ func sendAmpResponse(
 
 	// Extract global targeting
 	var extResponse openrtb_ext.ExtBidResponse
-	eRErr := json.Unmarshal(response.Ext, &extResponse)
+	eRErr := jsonutil.Unmarshal(response.Ext, &extResponse)
 	if eRErr != nil {
 		ao.Errors = append(ao.Errors, fmt.Errorf("AMP response: failed to unpack OpenRTB response.ext, debug info cannot be forwarded: %v", eRErr))
 	}
@@ -360,7 +409,7 @@ func sendAmpResponse(
 	}
 	// Now JSONify the targets for the AMP response.
 	ampResponse := AmpResponse{Targeting: targets}
-	ao, ampResponse.ORTB2.Ext = getExtBidResponse(hookExecutor, auctionResponse, reqWrapper, account, ao, errs)
+	ao, ampResponse.ORTB2.Ext = getExtBidResponse(hookExecutor, auctionResponse, reqWrapper, account, ao, errs, seatNonBid)
 
 	ao.AmpTargetingValues = targets
 
@@ -386,6 +435,7 @@ func getExtBidResponse(
 	account *config.Account,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (analytics.AmpObject, openrtb_ext.ExtBidResponse) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
@@ -393,7 +443,7 @@ func getExtBidResponse(
 	}
 	// Extract any errors
 	var extResponse openrtb_ext.ExtBidResponse
-	eRErr := json.Unmarshal(response.Ext, &extResponse)
+	eRErr := jsonutil.Unmarshal(response.Ext, &extResponse)
 	if eRErr != nil {
 		ao.Errors = append(ao.Errors, fmt.Errorf("AMP response: failed to unpack OpenRTB response.ext, debug info cannot be forwarded: %v", eRErr))
 	}
@@ -415,6 +465,7 @@ func getExtBidResponse(
 		Warnings: warnings,
 	}
 
+	stageOutcomes := hookExecutor.GetOutcomes()
 	// add debug information if requested
 	if reqWrapper != nil {
 		if reqWrapper.Test == 1 && eRErr == nil {
@@ -426,7 +477,6 @@ func getExtBidResponse(
 			}
 		}
 
-		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
 		modules, warns, err := hookexecution.GetModulesJSON(stageOutcomes, reqWrapper.BidRequest, account)
 		if err != nil {
@@ -442,8 +492,12 @@ func getExtBidResponse(
 		}
 	}
 
-	setSeatNonBid(&extBidResponse, reqWrapper, auctionResponse)
-
+	// collect seatNonBid from all stage-outcomes and set in the response.ext.prebid
+	seatNonBid.Append(getNonBidsFromStageOutcomes(stageOutcomes))
+	ao.SeatNonBid = seatNonBid.Get()
+	if returnAllBidStatus(reqWrapper) {
+		setSeatNonBid(&extBidResponse, ao.SeatNonBid)
+	}
 	return ao, extBidResponse
 }
 
@@ -477,10 +531,6 @@ func (deps *endpointDeps) parseAmpRequest(httpRequest *http.Request) (req *openr
 		return
 	}
 
-	hasStoredResponses := len(storedAuctionResponses) > 0
-	e = deps.validateRequest(req, true, hasStoredResponses, storedBidResponses, false)
-	errs = append(errs, e...)
-
 	return
 }
 
@@ -508,12 +558,12 @@ func (deps *endpointDeps) loadRequestJSONForAmp(httpRequest *http.Request) (req 
 
 	// The fetched config becomes the entire OpenRTB request
 	requestJSON := storedRequests[ampParams.StoredRequestID]
-	if err := json.Unmarshal(requestJSON, req); err != nil {
+	if err := jsonutil.UnmarshalValid(requestJSON, req); err != nil {
 		errs = []error{err}
 		return
 	}
 
-	storedAuctionResponses, storedBidResponses, bidderImpReplaceImp, errs = stored_responses.ProcessStoredResponses(ctx, requestJSON, deps.storedRespFetcher, deps.bidderMap)
+	storedAuctionResponses, storedBidResponses, bidderImpReplaceImp, errs = stored_responses.ProcessStoredResponses(ctx, &openrtb_ext.RequestWrapper{BidRequest: req}, deps.storedRespFetcher)
 	if err != nil {
 		errs = []error{err}
 		return
@@ -803,12 +853,12 @@ func setEffectiveAmpPubID(req *openrtb2.BidRequest, account string) {
 	}
 }
 
-func setTrace(req *openrtb2.BidRequest, value string) (err error) {
+func setTrace(req *openrtb2.BidRequest, value string) error {
 	if value == "" {
 		return nil
 	}
 
-	ext, err := json.Marshal(map[string]map[string]string{"prebid": {"trace": value}})
+	ext, err := jsonutil.Marshal(map[string]map[string]string{"prebid": {"trace": value}})
 	if err != nil {
 		return err
 	}
@@ -822,24 +872,4 @@ func setTrace(req *openrtb2.BidRequest, value string) (err error) {
 	req.Ext = ext
 
 	return nil
-}
-
-// setSeatNonBid populates bidresponse.ext.prebid.seatnonbid if bidrequest.ext.prebid.returnallbidstatus is true
-func setSeatNonBid(finalExtBidResponse *openrtb_ext.ExtBidResponse, request *openrtb_ext.RequestWrapper, auctionResponse *exchange.AuctionResponse) bool {
-	if finalExtBidResponse == nil || auctionResponse == nil || request == nil {
-		return false
-	}
-	reqExt, err := request.GetRequestExt()
-	if err != nil {
-		return false
-	}
-	prebid := reqExt.GetPrebid()
-	if prebid == nil || !prebid.ReturnAllBidStatus {
-		return false
-	}
-	if finalExtBidResponse.Prebid == nil {
-		finalExtBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
-	}
-	finalExtBidResponse.Prebid.SeatNonBid = auctionResponse.GetSeatNonBid()
-	return true
 }

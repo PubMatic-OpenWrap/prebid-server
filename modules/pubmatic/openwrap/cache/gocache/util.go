@@ -1,9 +1,8 @@
 package gocache
 
 import (
-	"github.com/pkg/errors"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // validation check for Universal Pixels Object
@@ -23,13 +22,4 @@ func validUPixels(upixel []adunitconfig.UniversalPixel) []adunitconfig.Universal
 		validPixels = append(validPixels, upixel[index])
 	}
 	return validPixels
-}
-
-// wraps error with error msg
-func errorWrap(cErr, nErr error) error {
-	if cErr == nil {
-		return nErr
-	}
-
-	return errors.Wrap(cErr, nErr.Error())
 }

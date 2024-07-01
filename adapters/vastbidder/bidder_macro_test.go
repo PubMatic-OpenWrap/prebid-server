@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/prebid/openrtb/v19/adcom1"
-	"github.com/prebid/openrtb/v19/openrtb2"
-	"github.com/prebid/prebid-server/config"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -660,7 +661,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
 					Source: &openrtb2.Source{
-						FD:     1,
+						FD:     ptrutil.ToPtr[int8](1),
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
@@ -704,8 +705,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxDuration:    60,
 								Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST40Wrapper},
 								Protocol:       adcom1.CreativeVAST40Wrapper,
-								W:              640,
-								H:              480,
+								W:              ptrutil.ToPtr[int64](640),
+								H:              ptrutil.ToPtr[int64](480),
 								StartDelay:     new(adcom1.StartDelay),
 								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
@@ -717,7 +718,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
-								BoxingAllowed:  1,
+								BoxingAllowed:  ptrutil.ToPtr[int8](1),
 								PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn, adcom1.PlaybackClickSoundOn},
 								PlaybackEnd:    adcom1.PlaybackCompletion,
 								Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryStreaming, adcom1.DeliveryDownload},
@@ -736,8 +737,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						Page:          `site-page-url`,
 						Ref:           `site-referer-url`,
 						Search:        `site-search-keywords`,
-						Mobile:        1,
-						PrivacyPolicy: 2,
+						Mobile:        ptrutil.ToPtr[int8](1),
+						PrivacyPolicy: ptrutil.ToPtr[int8](2),
 						Keywords:      `site-keywords`,
 						Publisher: &openrtb2.Publisher{
 							ID:     `site-pub-id`,
@@ -763,11 +764,11 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UserRating:         `2.2`,
 							QAGMediaRating:     adcom1.MediaRatingAll,
 							Keywords:           `site-cnt-keywords`,
-							LiveStream:         1,
-							SourceRelationship: 1,
+							LiveStream:         ptrutil.ToPtr[int8](1),
+							SourceRelationship: ptrutil.ToPtr[int8](1),
 							Len:                100,
 							Language:           `english`,
-							Embeddable:         1,
+							Embeddable:         ptrutil.ToPtr[int8](1),
 							Producer: &openrtb2.Producer{
 								ID:   `site-cnt-prod-id`,
 								Name: `site-cnt-prod-name`,
@@ -787,7 +788,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						OSV:            `os-version`,
 						H:              1024,
 						W:              2048,
-						JS:             1,
+						JS:             ptrutil.ToPtr[int8](1),
 						Language:       `device-lang`,
 						ConnectionType: new(adcom1.ConnectionType),
 						IFA:            `ifa`,
@@ -798,8 +799,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
 						Geo: &openrtb2.Geo{
-							Lat:       1.1,
-							Lon:       2.2,
+							Lat:       ptrutil.ToPtr[float64](1.1),
+							Lon:       ptrutil.ToPtr[float64](2.2),
 							Country:   `country`,
 							Region:    `region`,
 							City:      `city`,
@@ -959,7 +960,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					BAdv:  []string{`badv-1`, `badv-2`},
 					BApp:  []string{`bapp-1`, `bapp-2`},
 					Source: &openrtb2.Source{
-						FD:     1,
+						FD:     ptrutil.ToPtr[int8](1),
 						TID:    `source-tid`,
 						PChain: `source-pchain`,
 					},
@@ -1003,8 +1004,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxDuration:    60,
 								Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST40Wrapper},
 								Protocol:       adcom1.CreativeVAST40Wrapper,
-								W:              640,
-								H:              480,
+								W:              ptrutil.ToPtr[int64](640),
+								H:              ptrutil.ToPtr[int64](480),
 								StartDelay:     new(adcom1.StartDelay),
 								Placement:      adcom1.VideoPlacementInStream,
 								Linearity:      adcom1.LinearityLinear,
@@ -1016,7 +1017,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 								MaxExtended:    10,
 								MinBitRate:     360,
 								MaxBitRate:     1080,
-								BoxingAllowed:  1,
+								BoxingAllowed:  ptrutil.ToPtr[int8](1),
 								PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOn, adcom1.PlaybackClickSoundOn},
 								PlaybackEnd:    adcom1.PlaybackCompletion,
 								Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryStreaming, adcom1.DeliveryDownload},
@@ -1030,13 +1031,13 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						Bundle:        `app-bundle`,
 						StoreURL:      `app-store-url`,
 						Ver:           `app-version`,
-						Paid:          1,
+						Paid:          ptrutil.ToPtr[int8](1),
 						Name:          `app-name`,
 						Domain:        `app-domain`,
 						Cat:           []string{`app-cat1`, `app-cat2`},
 						SectionCat:    []string{`app-sec-cat1`, `app-sec-cat2`},
 						PageCat:       []string{`app-page-cat1`, `app-page-cat2`},
-						PrivacyPolicy: 2,
+						PrivacyPolicy: ptrutil.ToPtr[int8](2),
 						Keywords:      `app-keywords`,
 						Publisher: &openrtb2.Publisher{
 							ID:     `app-pub-id`,
@@ -1062,11 +1063,11 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 							UserRating:         `2.2`,
 							QAGMediaRating:     adcom1.MediaRatingAll,
 							Keywords:           `app-cnt-keywords`,
-							LiveStream:         1,
-							SourceRelationship: 1,
+							LiveStream:         ptrutil.ToPtr[int8](1),
+							SourceRelationship: ptrutil.ToPtr[int8](1),
 							Len:                100,
 							Language:           `english`,
-							Embeddable:         1,
+							Embeddable:         ptrutil.ToPtr[int8](1),
 							Producer: &openrtb2.Producer{
 								ID:   `app-cnt-prod-id`,
 								Name: `app-cnt-prod-name`,
@@ -1085,7 +1086,7 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						OSV:            `os-version`,
 						H:              1024,
 						W:              2048,
-						JS:             1,
+						JS:             ptrutil.ToPtr[int8](1),
 						Language:       `device-lang`,
 						ConnectionType: new(adcom1.ConnectionType),
 						IFA:            `ifa`,
@@ -1096,8 +1097,8 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 						MACSHA1:        `macsha1`,
 						MACMD5:         `macmd5`,
 						Geo: &openrtb2.Geo{
-							Lat:       1.1,
-							Lon:       2.2,
+							Lat:       ptrutil.ToPtr[float64](1.1),
+							Lon:       ptrutil.ToPtr[float64](2.2),
 							Country:   `country`,
 							Region:    `region`,
 							City:      `city`,
@@ -1260,6 +1261,504 @@ func TestBidderMacro_MacroTest(t *testing.T) {
 					assert.Equal(t, result, actual, fmt.Sprintf("MacroFunction: %v", key))
 				}
 			}
+		})
+	}
+}
+
+func TestBidderGetValue(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		want       string
+		isKeyFound bool // if key has the prefix kv/kvm then it should return thr isKeyFound true
+	}{
+		{
+			name: "valid_Key",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:       args{key: "kv.name"},
+			want:       "test",
+			isKeyFound: true,
+		},
+		{
+			name: "invalid_Key",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name:       "empty_kv_map",
+			fields:     fields{KV: nil},
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name:       "kv_map_with_no_key_val_pair",
+			fields:     fields{KV: map[string]interface{}{}},
+			args:       args{key: "kv.anykey"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name: "key_with_value_as_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http://example.com?k1=v1&k2=v2",
+				},
+			}},
+			args:       args{key: "kvm.country.url"},
+			want:       "http://example.com?k1=v1&k2=v2",
+			isKeyFound: true,
+		},
+		{
+			name: "kvm_prefix_key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "kvm.country"},
+			want:       "{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\",\"url\":\"http//example.com?k1=v1&k2=v2\"}",
+			isKeyFound: true,
+		},
+		{
+			name: "kv_prefix_key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http://example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "kv.country"},
+			want:       "metadata=k1%3Dv1%26k2%3Dv2&pincode=411041&state=MH&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			isKeyFound: true,
+		},
+		{
+			name: "key_without_kv_kvm_prefix",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"url":     "http//example.com?k1=v1&k2=v2",
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args:       args{key: "someprefix.kv"},
+			want:       "",
+			isKeyFound: false, // hence this key is not starting with kv/kvm prefix we return isKeyFound as false
+		},
+		{
+			name: "multi-level_key",
+			fields: fields{KV: map[string]interface{}{
+				"k1": map[string]interface{}{
+					"k2": map[string]interface{}{
+						"k3": map[string]interface{}{
+							"k4": map[string]interface{}{
+								"name": "test",
+							},
+						},
+					},
+				},
+			}},
+			args:       args{key: "kv.k1.k2.k3.k4.name"},
+			want:       "test",
+			isKeyFound: true,
+		},
+		{
+			name: "key_not_matched",
+			fields: fields{KV: map[string]interface{}{
+				"k1": map[string]interface{}{
+					"k2": map[string]interface{}{
+						"k3": map[string]interface{}{
+							"k4": map[string]interface{}{
+								"name": "test",
+							},
+						},
+					},
+				},
+			}},
+			args:       args{key: "kv.k1.k2.k3.name"},
+			want:       "",
+			isKeyFound: true,
+		},
+		{
+			name: "key_wihtout_any_prefix",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args:       args{key: "kv"},
+			want:       "",
+			isKeyFound: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			value, isKeyFound := tag.GetValue(tt.args.key)
+			assert.Equal(t, tt.want, value, tt.name)
+			assert.Equal(t, tt.isKeyFound, isKeyFound)
+		})
+	}
+}
+
+func TestBidderMacroKV(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "valid_test",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  "22",
+			}},
+			args: args{key: "kv"},
+			want: "age=22&name=test",
+		},
+		{
+			name: "valid_test_with_url",
+			fields: fields{KV: map[string]interface{}{
+				"age": "22",
+				"url": "http://example.com?k1=v1&k2=v2",
+			}},
+			args: args{key: "kv"},
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+		},
+		{
+			name: "valid_test_with_encoded_url",
+			fields: fields{KV: map[string]interface{}{
+				"age": "22",
+				"url": "http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+			}},
+			args: args{key: "kv"},
+			want: "age=22&url=http%3A%2F%2Fexample.com%3Fk1%3Dv1%26k2%3Dv2",
+		},
+		{
+			name:   "empty_KV_map",
+			fields: fields{KV: nil},
+			args:   args{key: "kv"},
+			want:   "",
+		},
+		{
+			name:   "kv_map_with_no_key_val_pair",
+			fields: fields{KV: map[string]interface{}{}},
+			args:   args{key: "kv"},
+			want:   "",
+		},
+		{
+			name: "key_with_value_as_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+				},
+			}},
+			args: args{key: "kv"},
+			want: "age=22&country=pincode%3D411041%26state%3DMH",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"age": 22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": 223,
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kv"},
+			want: "age=22&country=metadata%3Dk1%253D223%2526k2%253Dv2%26pincode%3D411041%26state%3DMH",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			got := tag.MacroKV(tt.args.key)
+
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestBidderMacroKVM(t *testing.T) {
+	type fields struct {
+		KV map[string]interface{}
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "valid_test",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  "22",
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":\"22\",\"name\":\"test\"}",
+		},
+		{
+			name:   "empty_kv_map",
+			fields: fields{KV: nil},
+			args:   args{key: "kvm"},
+			want:   "",
+		},
+		{
+			name: "value_as_int_data_type",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":22,\"name\":\"test\"}",
+		},
+		{
+			name:   "kv_map_with_no_key_val_pair",
+			fields: fields{KV: map[string]interface{}{}},
+			args:   args{key: "kvm"},
+			want:   "{}",
+		},
+		{
+			name: "marshal_error",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  make(chan int),
+			}},
+			args: args{key: "kvm"},
+			want: "",
+		},
+		{
+			name: "test_with_url",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"url":  "http://example.com?k1=v1&k2=v2",
+			}},
+			args: args{key: "kvm"},
+			want: "{\"name\":\"test\",\"url\":\"http://example.com?k1=v1&k2=v2\"}",
+		},
+		{
+			name: "key_with_value_as_nested_map",
+			fields: fields{KV: map[string]interface{}{
+				"name": "test",
+				"age":  22,
+				"country": map[string]interface{}{
+					"state":   "MH",
+					"pincode": 411041,
+					"metadata": map[string]interface{}{
+						"k1": "v1",
+						"k2": "v2",
+					},
+				},
+			}},
+			args: args{key: "kvm"},
+			want: "{\"age\":22,\"country\":{\"metadata\":{\"k1\":\"v1\",\"k2\":\"v2\"},\"pincode\":411041,\"state\":\"MH\"},\"name\":\"test\"}",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				KV: tt.fields.KV,
+			}
+			got := tag.MacroKVM(tt.args.key)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestMacroSchain(t *testing.T) {
+
+	type fields struct {
+		Request *openrtb2.BidRequest
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "source_object_with_both_source.schain_and_source.ext.schain",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{},
+				Ext: []byte(`{
+					"schain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"name":"publisher name"
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "", // here we have given priority to source.schain object hence source.schain is not nil it return empty string
+		},
+		{
+			name: "nil_source.schain_object",
+			fields: fields{&openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: nil,
+					Ext: []byte(`{
+						"schain":{
+							"complete":0,
+							"nodes":[
+								{
+									"asi":"exchange2.com",
+									"sid":"abcd",
+									"hp":1
+								}
+							],
+							"ver":"1.0"
+						}
+					}`),
+				},
+			}},
+			args: args{key: "schain"},
+			want: "1.0,0!exchange2.com,abcd,1,,,",
+		},
+		{
+			name: "missing_schain_object",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"somechain":{
+						"complete":1,
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"hp":1,
+								"ext":{"k1":"v1"}
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+		{
+			name:   "missing_both_source.schain_and_source.ext",
+			fields: fields{&openrtb2.BidRequest{Source: nil}},
+			args:   args{key: "schain"},
+			want:   "",
+		},
+		{
+			name: "source.schain_is_present",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{
+					Complete: 1,
+					Ver:      "1.0",
+					Nodes: []openrtb2.SupplyChainNode{
+						{
+							ASI:    "asi",
+							SID:    "sid",
+							RID:    "rid",
+							Name:   "name",
+							Domain: "domain",
+							HP:     openrtb2.Int8Ptr(1),
+						},
+					}},
+			}}},
+			args: args{key: "schain"},
+			want: "1.0,1!asi,sid,1,rid,name,domain",
+		},
+		{
+			name: "unmarshaling_error",
+			fields: fields{&openrtb2.BidRequest{Source: &openrtb2.Source{
+				Ext: []byte(`{
+					"schain":{
+						"complete":"1",
+						"nodes":[
+							{
+								"asi":"exchange1.com",
+								"sid":"1234&abcd",
+								"rid":"bid-request-1",
+								"name":"publisher%20name",
+								"domain":"publisher.com",
+								"hp":1
+							}
+						],
+						"ver":"1.0"
+					}
+				}`),
+			}}},
+			args: args{key: "schain"},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := &BidderMacro{
+				Request: tt.fields.Request,
+			}
+			got := tag.MacroSchain(tt.args.key)
+			assert.Equal(t, got, tt.want, tt.name)
 		})
 	}
 }

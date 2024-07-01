@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1063,22 +1063,22 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], "5890"):                   1,
-					fmt.Sprintf(statKeys[statsKeyVideoPublisherRequests], "5890"):                 1,
-					fmt.Sprintf(statKeys[statsKey25PublisherRequests], "banner", "5890"):          1,
-					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "ortb", "banner", "5890"): 1,
-					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "json", "banner", "5890"): 1,
-					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "vast", "banner", "5890"): 1,
+					fmt.Sprintf(statKeys[statsKeyAMPPublisherRequests], "5890"):                    1,
+					fmt.Sprintf(statKeys[statsKeyVideoPublisherRequests], "5890"):                  1,
+					fmt.Sprintf(statKeys[statsKey25PublisherRequests], "app", "5890"):              1,
+					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "ortb", "app", "5890"):     1,
+					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "json", "app", "5890"):     1,
+					fmt.Sprintf(statKeys[statsKeyCTVPublisherRequests], "vast", "display", "5890"): 1,
 				},
 				channelSize: 6,
 			},
 			callRecord: func(st *StatsTCP) {
 				st.RecordPublisherRequests("amp", "5890", "")
 				st.RecordPublisherRequests("video", "5890", "")
-				st.RecordPublisherRequests("v25", "5890", "banner")
-				st.RecordPublisherRequests("ortb", "5890", "banner")
-				st.RecordPublisherRequests("json", "5890", "banner")
-				st.RecordPublisherRequests("vast", "5890", "banner")
+				st.RecordPublisherRequests("v25", "5890", "in-app")
+				st.RecordPublisherRequests("ortb", "5890", "in-app")
+				st.RecordPublisherRequests("json", "5890", "app")
+				st.RecordPublisherRequests("vast", "5890", "display")
 			},
 		},
 		{

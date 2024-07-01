@@ -6,9 +6,9 @@ import (
 	"time"
 
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/database"
-	"github.com/prebid/prebid-server/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 )
 
 const (
@@ -21,6 +21,7 @@ const (
 	PubSlotRegex    = "psregex_%d_%d_%d_%d_%s" // slot and its matching regex info at publisher, profile, display version and adapter level
 	PubSlotNameHash = "pslotnamehash_%d"       //publisher slotname hash mapping cache key
 	PubVASTTags     = "pvasttags_%d"           //publisher level vasttags
+	PubAdpodConfig  = "apcfg_%d_%d_%d"
 )
 
 func key(format string, v ...interface{}) string {
