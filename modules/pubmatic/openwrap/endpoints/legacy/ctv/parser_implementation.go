@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/golang/glog"
@@ -23,6 +24,8 @@ type OpenRTB struct {
 	values  URLValues
 	ortb    *openrtb2.BidRequest
 }
+
+var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
 // NewOpenRTB Returns New ORTB Object of Version 2.5
 func NewOpenRTB(request *http.Request) Parser {
@@ -4489,13 +4492,17 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 		}
 	}
 
-	eids := []map[string]interface{}{}
+	eids := []openrtb2.EID{}
 	err = json.Unmarshal([]byte(eidsValue), &eids)
 	if err != nil {
 		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBUserExtEIDS, "Failed to unmarshal user.ext.eids", eidsValue)
 	}
 
-	userExt[ORTBExtEIDS] = eids
+	validEIDs := ValidateEIDs(eids)
+	if len(validEIDs) != 0 {
+		userExt[ORTBExtEIDS] = validEIDs
+	}
+
 	data, err := json.Marshal(userExt)
 	if err != nil {
 		return
