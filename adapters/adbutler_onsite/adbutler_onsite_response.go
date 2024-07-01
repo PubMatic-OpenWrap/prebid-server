@@ -145,7 +145,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 
 			adm, adType := getADM(adButlerBid)
 
-			if adType == INVALID_ADTYPE {
+			if adType == Adtype_Invalid {
 				continue
 			}
 
@@ -185,14 +185,14 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 func getADM(adButlerBid *Placement) (string, int) {
 
 	if adButlerBid.Body != "" {
-		return adButlerBid.Body, BANNER_ADTYPE
+		return adButlerBid.Body, Adtype_Custom_Banner
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), NATIVE_ADTYPE
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), Adtype_Banner
 	}
 
-	return "", INVALID_ADTYPE
+	return "", Adtype_Invalid
 }
 
 func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
