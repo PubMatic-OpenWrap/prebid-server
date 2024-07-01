@@ -66,22 +66,18 @@ func GetMaxFloorValue(impFloor float64, impFloorCur string, floorRuleValue float
 
 	if impFloorCur != floorRuleCur {
 		rate, err := conversions.GetRate(impFloorCur, floorRuleCur)
-		if err == nil {
-			floorVal := rate * impFloor
-			if floorVal > floorRuleValue {
-				return impFloor, impFloorCur, openrtb_ext.RequestLocation
-			} else {
-				return floorRuleValue, floorRuleCur, ""
-			}
-
+		if err != nil {
+			return floorRuleValue, floorRuleCur, ""
 		}
-	} else {
-		if impFloor > floorRuleValue {
+
+		if floorVal := rate * impFloor; floorVal > floorRuleValue {
 			return impFloor, impFloorCur, openrtb_ext.RequestLocation
 		}
+	} else if impFloor > floorRuleValue {
+		return impFloor, impFloorCur, openrtb_ext.RequestLocation
 	}
-	return floorRuleValue, floorRuleCur, ""
 
+	return floorRuleValue, floorRuleCur, ""
 }
 
 // getMinFloorValue returns floorMin and floorMinCur,

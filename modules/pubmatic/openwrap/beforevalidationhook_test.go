@@ -1733,7 +1733,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 			name: "imp.BidFloor_is_less_than_BidFloor_from_adunit_config_for_applovinmax_setMaxFloor_true",
 			args: args{
 				rCtx: models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"testImp": {
 							VideoAdUnitCtx: models.AdUnitCtx{
@@ -1752,9 +1753,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					Video:       &openrtb2.Video{},
 				},
 			},
-			setup: func() {
-				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(true)
-			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID:          "testImp",
@@ -1763,7 +1761,8 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					BidFloorCur: "USD",
 				},
 				rCtx: models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"testImp": {
 							VideoAdUnitCtx: models.AdUnitCtx{
@@ -1801,9 +1800,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 					BidFloorCur: "USD",
 					Video:       &openrtb2.Video{},
 				},
-			},
-			setup: func() {
-				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 			},
 			want: want{
 				imp: &openrtb2.Imp{
@@ -2094,7 +2090,8 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 			name: "imp.BidFloor_less_than_BidFloor_from_adunit_config_applovinmax_setMaxFloor_true",
 			args: args{
 				rCtx: models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"testImp": {
 							BannerAdUnitCtx: models.AdUnitCtx{
@@ -2113,9 +2110,6 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					Banner:      &openrtb2.Banner{},
 				},
 			},
-			setup: func() {
-				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(true)
-			},
 			want: want{
 				imp: &openrtb2.Imp{
 					ID:          "testImp",
@@ -2124,7 +2118,8 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					BidFloorCur: "USD",
 				},
 				rCtx: models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"testImp": {
 							BannerAdUnitCtx: models.AdUnitCtx{
@@ -2162,9 +2157,6 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 					BidFloorCur: "USD",
 					Banner:      &openrtb2.Banner{},
 				},
-			},
-			setup: func() {
-				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 			},
 			want: want{
 				imp: &openrtb2.Imp{

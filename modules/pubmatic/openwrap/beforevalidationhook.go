@@ -89,6 +89,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
 	rCtx.Country = getCountry(payload.BidRequest)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
+	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	rCtx.IsTBFFeatureEnabled = m.pubFeatures.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
@@ -511,8 +512,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setMaxFloor := rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap, setMaxFloor)
+	setFloorsExt(requestExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -644,7 +644,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	if rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID) && adUnitCfg.BidFloor != nil {
+	if rCtx.IsMaxFloorsEnabled && adUnitCfg.BidFloor != nil {
 		imp.BidFloor, imp.BidFloorCur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, m.rateConvertor.Rates())
 		impBidCtx.BidFloor = imp.BidFloor
 		impBidCtx.BidFloorCur = imp.BidFloorCur
@@ -702,7 +702,7 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID) && adUnitCfg.BidFloor != nil {
+	if rCtx.IsMaxFloorsEnabled && adUnitCfg.BidFloor != nil {
 		imp.BidFloor, imp.BidFloorCur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, m.rateConvertor.Rates())
 		impBidCtx.BidFloor = imp.BidFloor
 		impBidCtx.BidFloorCur = imp.BidFloorCur
