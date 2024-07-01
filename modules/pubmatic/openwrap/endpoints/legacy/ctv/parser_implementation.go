@@ -4499,7 +4499,6 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 	}
 
 	validEIDs := ValidateEIDs(eids)
-
 	if len(validEIDs) != 0 {
 		userExt[ORTBExtEIDS] = validEIDs
 	}

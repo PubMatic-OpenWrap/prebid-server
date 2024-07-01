@@ -2389,34 +2389,6 @@ func TestORTBDeviceExtSessionID(t *testing.T) {
 
 func TestORTBUserExtEIDS(t *testing.T) {
 	tests := []struct {
-		name    string
-		o       OpenRTB
-		wantErr bool
-	}{
-		{
-			name: "ORTBUserExtEIDS with nil values",
-			o: OpenRTB{
-				values: URLValues{
-					Values: url.Values{
-						ORTBDeviceExtSessionID: []string{"anything"},
-					},
-				},
-				ortb: &openrtb2.BidRequest{},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.o.ORTBUserExtEIDS(); (err != nil) != tt.wantErr {
-				t.Errorf("ORTBUserExtEIDS() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestORTBUserExtEIDS1(t *testing.T) {
-	tests := []struct {
 		name          string
 		eidsValue     string
 		expectedExt   json.RawMessage
@@ -2426,6 +2398,18 @@ func TestORTBUserExtEIDS1(t *testing.T) {
 			name:          "Valid EIDs with valid UIDs",
 			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]}]`,
 			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]}]}`),
+			expectedError: false,
+		},
+		{
+			name:          "Valid EIDs list with valid and invalid UIDs",
+			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]},{"source":"liveramp.com","uids":[{"id":""},{"id":""}]},{"source":"liveramp.com","uids":[{"id":"test123"},{"id":""}]}]`,
+			expectedExt:   json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"abc123"},{"id":"xyz456"}]},{"source":"liveramp.com","uids":[{"id":"test123"}]}]}`),
+			expectedError: false,
+		},
+		{
+			name:          "Valid EIDs list with invalid UIDs",
+			eidsValue:     `[{"source":"uidapi.com","uids":[{"id":""},{"id":""}]},{"source":"liveramp.com","uids":[{"id":""},{"id":""}]},{"source":"liveramp.com","uids":[{"id":""},{"id":""}]}]`,
+			expectedExt:   json.RawMessage(`{}`),
 			expectedError: false,
 		},
 		{

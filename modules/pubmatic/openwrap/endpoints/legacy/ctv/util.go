@@ -15,17 +15,15 @@ func GetPubIdFromQueryParams(params url.Values) string {
 }
 
 func ValidateEIDs(eids []openrtb2.EID) []openrtb2.EID {
-	validEIDs := []openrtb2.EID{}
+	validEIDs := make([]openrtb2.EID, 0, len(eids))
 	for _, eid := range eids {
 		validUIDs := make([]openrtb2.UID, 0, len(eid.UIDs))
-
 		for _, uid := range eid.UIDs {
 			uid.ID = uidRegexp.ReplaceAllString(uid.ID, "")
 			if uid.ID != "" {
 				validUIDs = append(validUIDs, uid)
 			}
 		}
-
 		if len(validUIDs) > 0 {
 			eid.UIDs = validUIDs
 			validEIDs = append(validEIDs, eid)
