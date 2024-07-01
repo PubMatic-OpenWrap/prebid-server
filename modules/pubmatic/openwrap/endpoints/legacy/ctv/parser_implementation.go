@@ -27,6 +27,11 @@ type OpenRTB struct {
 
 var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
+const (
+	UIDS = "uids"
+	ID   = "id"
+)
+
 // NewOpenRTB Returns New ORTB Object of Version 2.5
 func NewOpenRTB(request *http.Request) Parser {
 	request.ParseForm()
@@ -4498,32 +4503,7 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBUserExtEIDS, "Failed to unmarshal user.ext.eids", eidsValue)
 	}
 
-	// Filter EIDs and UIDs
-	validEIDs := []map[string]interface{}{}
-	for _, eid := range eids {
-		uids, ok := eid["uids"].([]interface{})
-		if !ok {
-			continue
-		}
-
-		validUIDs := []map[string]interface{}{}
-		for _, uid := range uids {
-			uidMap, ok := uid.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			if id, ok := uidMap["id"].(string); ok && id != "" {
-				uidMap["id"] = uidRegexp.ReplaceAllString(id, "")
-				validUIDs = append(validUIDs, uidMap)
-			}
-		}
-
-		if len(validUIDs) > 0 {
-			eid["uids"] = validUIDs
-			validEIDs = append(validEIDs, eid)
-		}
-	}
+	validEIDs := validateEIDs(eids)
 
 	if len(validEIDs) == 0 {
 		delete(userExt, ORTBExtEIDS)
@@ -4538,6 +4518,39 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 
 	o.ortb.User.Ext = data
 	return
+}
+
+func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
+	validEIDs := []map[string]interface{}{}
+	for _, eid := range eids {
+		uids, ok := eid[UIDS].([]interface{})
+		if !ok {
+			continue
+		}
+
+		validUIDs := []map[string]interface{}{}
+		for _, uid := range uids {
+			uidMap, ok := uid.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			if id, ok := uidMap[ID].(string); ok && id != "" {
+				id = uidRegexp.ReplaceAllString(id, "")
+				if id != "" {
+					uidMap[ID] = id
+					validUIDs = append(validUIDs, uidMap)
+				}
+			}
+
+		}
+
+		if len(validUIDs) > 0 {
+			eid[UIDS] = validUIDs
+			validEIDs = append(validEIDs, eid)
+		}
+	}
+	return validEIDs
 }
 
 // ORTBUserData will read and set ortb user.data parameter
