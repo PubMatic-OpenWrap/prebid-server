@@ -4523,7 +4523,7 @@ func validateEIDs(eids []map[string]interface{}) []map[string]interface{} {
 			continue
 		}
 
-		validUIDs := []map[string]interface{}{}
+		validUIDs := make([]map[string]any, 0, len(uids))
 		for _, uid := range uids {
 			uidMap, ok := uid.(map[string]interface{})
 			if !ok {
