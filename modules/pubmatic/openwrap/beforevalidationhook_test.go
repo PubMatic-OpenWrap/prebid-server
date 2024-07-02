@@ -1106,7 +1106,6 @@ func TestOpenWrap_applyProfileChanges(t *testing.T) {
 }
 
 func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
