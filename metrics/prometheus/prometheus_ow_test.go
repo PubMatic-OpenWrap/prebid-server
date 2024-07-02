@@ -212,3 +212,61 @@ func TestRecordFloorStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestRecordXMLParserResponseMismatch(t *testing.T) {
+	type args struct {
+		method, bidder string
+		isMismatch     bool
+	}
+	type want struct {
+		expCount int
+		status   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "mismatch found",
+			args: args{
+				method:     "xml",
+				bidder:     "bidder",
+				isMismatch: true,
+			},
+			want: want{
+				expCount: 1,
+				status:   requestFailed,
+			},
+		},
+		{
+			name: "mismatch not found",
+			args: args{
+				method:     "xml",
+				bidder:     "bidder",
+				isMismatch: false,
+			},
+			want: want{
+				expCount: 1,
+				status:   requestSuccessful,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			pm := createMetricsForTesting()
+			pm.RecordXMLParserResponseMismatch(tt.args.method, tt.args.bidder, tt.args.isMismatch)
+			assertCounterVecValue(t,
+				"",
+				"record dynamic fetch failure",
+				pm.xmlParserMismatch,
+				float64(tt.want.expCount),
+				prometheus.Labels{
+					methodLabel:  tt.args.method,
+					adapterLabel: tt.args.bidder,
+					statusLabel:  tt.want.status,
+				})
+		})
+	}
+}
