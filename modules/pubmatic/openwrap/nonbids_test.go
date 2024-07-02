@@ -464,9 +464,11 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 		{
 			name: "do not update LossBidLostToHigherBid NonBR code if bid satisifies dealTier",
 			rctx: &models.RequestCtx{
-				WinningBids: map[string]models.OwBid{
-					"imp1": {
-						ID: "bid-id-3",
+				WinningBids: models.WinningBids{
+					"imp1": []*models.OwBid{
+						{
+							ID: "bid-id-3",
+						},
 					},
 				},
 				ImpBidCtx: map[string]models.ImpCtx{
@@ -553,9 +555,11 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 		{
 			name: "update LossBidLostToHigherBid NonBR code if bid not satisifies dealTier",
 			rctx: &models.RequestCtx{
-				WinningBids: map[string]models.OwBid{
-					"imp1": {
-						ID: "bid-id-3",
+				WinningBids: models.WinningBids{
+					"imp1": []*models.OwBid{
+						{
+							ID: "bid-id-3",
+						},
 					},
 				},
 				ImpBidCtx: map[string]models.ImpCtx{
@@ -642,12 +646,16 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 		{
 			name: "test for multiple impression",
 			rctx: &models.RequestCtx{
-				WinningBids: map[string]models.OwBid{
-					"imp1": {
-						ID: "bid-id-3",
+				WinningBids: models.WinningBids{
+					"imp1": []*models.OwBid{
+						{
+							ID: "bid-id-3",
+						},
 					},
-					"imp2": {
-						ID: "bid-id-2",
+					"imp2": []*models.OwBid{
+						{
+							ID: "bid-id-2",
+						},
 					},
 				},
 				ImpBidCtx: map[string]models.ImpCtx{

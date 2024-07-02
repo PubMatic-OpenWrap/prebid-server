@@ -9,21 +9,24 @@ import (
 	"strconv"
 	"strings"
 
+	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/boolutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
@@ -50,6 +53,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
+			if rCtx.IsCTVRequest {
+				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
+			}
 		}
 	}()
 
@@ -63,6 +69,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		//TODO: Add bidder params fix
 		result.Reject = false
 		return result, nil
+	}
+
+	if rCtx.IsCTVRequest {
+		m.metricEngine.RecordCTVRequests(rCtx.Endpoint, getPlatformFromRequest(payload.BidRequest))
 	}
 
 	// return prebid validation error
@@ -82,6 +92,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
+	if rCtx.IsCTVRequest {
+		m.metricEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	}
+
 	rCtx.IsTBFFeatureEnabled = m.pubFeatures.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 
 	if rCtx.UidCookie == nil {
@@ -92,9 +106,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidRequestExt)
-		err = errors.New("failed to get request ext: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
-		return result, err
+		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
+		return result, nil
 	}
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
@@ -115,11 +128,39 @@ func (m OpenWrap) handleBeforeValidationHook(
 		} else {
 			err = errors.New("failed to get profile data: received empty data")
 		}
-		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, err
+	}
+
+	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
+		if len(rCtx.ResponseFormat) > 0 {
+			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
+				result.NbrCode = int(nbr.InvalidResponseFormat)
+				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+				return result, nil
+			}
+		}
+
+		if len(rCtx.RedirectURL) == 0 {
+			rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
+		}
+
+		if len(rCtx.RedirectURL) > 0 {
+			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
+			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
+				result.NbrCode = int(nbr.InvalidRedirectURL)
+				result.Errors = append(result.Errors, "Invalid redirect URL")
+				return result, nil
+			}
+		}
+
+		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
+			result.NbrCode = int(nbr.MissingOWRedirectURL)
+			result.Errors = append(result.Errors, "owRedirectURL is missing")
+			return result, nil
+		}
 	}
 
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
@@ -129,12 +170,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = int(nbr.InvalidPlatform)
-		err = errors.New("failed to get platform data")
-		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, errors.New("failed to get platform data")
 	}
 	rCtx.Platform = platform
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
@@ -175,7 +214,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, nil
 	}
 
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
@@ -192,26 +231,29 @@ func (m OpenWrap) handleBeforeValidationHook(
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
-		err = errors.New("failed to price granularity details: " + err.Error())
-		result.Errors = append(result.Errors, err.Error())
+		result.Errors = append(result.Errors, "failed to price granularity details: "+err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, err
+		return result, nil
 	}
 
 	rCtx.PriceGranularity = &priceGranularity
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
 	requestExt.Prebid.Debug = rCtx.Debug
-	// requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
+	requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
 	requestExt.Prebid.ExtOWRequestPrebid.TrackerDisabled = rCtx.TrackerDisabled
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
 	requestExt.Prebid.Targeting = &openrtb_ext.ExtRequestTargeting{
 		PriceGranularity:  &priceGranularity,
-		IncludeBidderKeys: boolutil.BoolPtr(true),
-		IncludeWinners:    boolutil.BoolPtr(true),
+		IncludeBidderKeys: ptrutil.ToPtr(true),
+		IncludeWinners:    ptrutil.ToPtr(true),
 	}
+	// TODO: Check if we can directly accept keyVal in prebid ext
+	if requestExt.Wrapper != nil && requestExt.Wrapper.KeyValues != nil {
+		requestExt.Prebid.KeyVal = requestExt.Wrapper.KeyValues
+	}
+	setIncludeBrandCategory(requestExt.Wrapper, &requestExt.Prebid, partnerConfigMap, rCtx.IsCTVRequest)
 
-	isAdPodRequest := false
 	disabledSlots := 0
 	serviceSideBidderPresent := false
 	requestExt.Prebid.BidAdjustmentFactors = map[string]float64{}
@@ -225,18 +267,26 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return 0, err
 	}
 
+	if rCtx.IsCTVRequest {
+		err := ctv.ValidateVideoImpressions(payload.BidRequest)
+		if err != nil {
+			result.NbrCode = int(nbr.InvalidVideoRequest)
+			result.Errors = append(result.Errors, err.Error())
+			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			return result, nil
+		}
+	}
+
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
-		var adpodExt *models.AdPod
-		var isAdPodImpression bool
 		imp := payload.BidRequest.Imp[i]
 
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
 			if err != nil {
-				result.NbrCode = int(nbr.InternalError)
+				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
@@ -268,10 +318,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(impExt.Data.PbAdslot) == 0 {
 			impExt.Data.PbAdslot = imp.TagID
 		}
-
-		incomingSlots := getIncomingSlots(imp)
-		slotName := getSlotName(imp.TagID, impExt)
-		adUnitName := getAdunitName(imp.TagID, impExt)
 
 		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
@@ -309,17 +355,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			if rCtx.IsCTVRequest && imp.Video.Ext != nil {
 				if _, _, _, err := jsonparser.Get(imp.Video.Ext, "adpod"); err == nil {
-					isAdPodImpression = true
-					if !isAdPodRequest {
-						isAdPodRequest = true
-						rCtx.MetricsEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
-					}
+					m.metricEngine.RecordCTVReqCountWithAdPod(rCtx.PubIDStr, rCtx.ProfileIDStr)
 				}
 			}
 		}
 
+		incomingSlots := getIncomingSlots(imp, videoAdUnitCtx)
+		slotName := getSlotName(imp.TagID, impExt)
+		adUnitName := getAdunitName(imp.TagID, impExt)
+
 		// ignore adunit config status for native as it is not supported for native
-		if (!isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx)) && imp.Native == nil {
+		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx) {
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
@@ -329,6 +375,32 @@ func (m OpenWrap) handleBeforeValidationHook(
 				IsRewardInventory: reward,
 			}
 			continue
+		}
+
+		var adpodConfig *models.AdPod
+		if rCtx.IsCTVRequest {
+			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			if err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
+
+			//Adding default durations for CTV Test requests
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
+				adpodConfig.VideoAdDuration = []int{5, 10}
+			}
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
+				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+			}
+
+			if err := adpod.Validate(adpodConfig); err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
 		}
 
 		bidderMeta := make(map[string]models.PartnerData)
@@ -372,7 +444,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			case models.BidderVASTBidder:
-				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodExt)
+				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			}
@@ -389,6 +461,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
+			if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
+				var bidderParamsMap map[string]interface{}
+				err := json.Unmarshal(bidderParams, &bidderParamsMap)
+				if err == nil {
+					if bidderExt, ok := impExt.Bidder[bidderCode]; ok && bidderExt != nil && bidderExt.DealTier != nil {
+						bidderParamsMap[models.DEAL_TIER_KEY] = bidderExt.DealTier
+					}
+					newBidderParams, err := json.Marshal(bidderParamsMap)
+					if err == nil {
+						bidderParams = newBidderParams
+					}
+				}
+			}
+
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
 				PrebidBidderCode: prebidBidderCode,
@@ -399,8 +485,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 				IsRegex:          isRegex,                                                  // regex pattern
 			}
 
-			for _, bidder := range matchedSlotKeysVAST {
-				bidderMeta[bidder].VASTTagFlags[bidder] = false
+			if len(matchedSlotKeysVAST) > 0 {
+				meta := bidderMeta[bidderCode]
+				meta.VASTTagFlags = make(map[string]bool)
+				bidderMeta[bidderCode] = meta
 			}
 
 			isAlias := false
@@ -431,7 +519,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for bidder, meta := range bidderMeta {
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
-
+		adserverURL := ""
+		if impExt.Wrapper != nil {
+			adserverURL = impExt.Wrapper.AdServerURL
+		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -457,14 +548,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 				Bidders:           make(map[string]models.PartnerData),
 				BidCtx:            make(map[string]models.BidCtx),
 				NewExt:            json.RawMessage(newImpExt),
-				IsAdPodRequest:    isAdPodRequest,
+				AdpodConfig:       adpodConfig,
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
+				AdserverURL:       adserverURL,
 			}
-		}
-
-		if isAdPodImpression {
-			bidderMeta[string(openrtb_ext.BidderOWPrebidCTV)] = models.PartnerData{}
 		}
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
@@ -478,9 +566,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = int(nbr.AllSlotsDisabled)
 		if err != nil {
-			err = errors.New("All slots disabled: " + err.Error())
+			err = errors.New("all slots disabled: " + err.Error())
 		} else {
-			err = errors.New("All slots disabled")
+			err = errors.New("all slots disabled")
 		}
 		result.Errors = append(result.Errors, err.Error())
 		return result, nil
@@ -516,9 +604,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
 	}
 
-	if _, ok := requestExt.Prebid.Aliases[string(models.BidderPubMaticSecondaryAlias)]; ok {
-		if _, ok := rCtx.AdapterThrottleMap[string(models.BidderPubMaticSecondaryAlias)]; !ok {
-			requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(models.BidderPubMaticSecondaryAlias))
+	for bidderCode, coreBidder := range rCtx.Aliases {
+		if coreBidder == string(openrtb_ext.BidderPubmatic) {
+			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
+			}
 		}
 	}
 
@@ -536,9 +626,24 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var err error
+		if rctx.IsCTVRequest && ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
+			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
+			if err != nil {
+				schainBytes, _ := json.Marshal(ep.BidRequest.Source.SChain)
+				glog.Errorf(ctv.ErrSchainValidationFailed, SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
+				ep.BidRequest.Source.SChain = nil
+			}
+		}
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
+		}
+
+		if rctx.IsCTVRequest {
+			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
+			if err != nil {
+				result.Errors = append(result.Errors, err.Error())
+			}
 		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
@@ -580,12 +685,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
 	}
 
-	if rctx.Platform == models.PLATFORM_APP || rctx.Platform == models.PLATFORM_VIDEO {
-		sChainObj := getSChainObj(rctx.PartnerConfigMap)
-		if sChainObj != nil {
-			setSchainInSourceObject(bidRequest.Source, sChainObj)
-		}
-	}
+	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
@@ -656,6 +756,8 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	//check if video is disabled, if yes then remove video from imp object
 	if adUnitCfg.Video.Enabled != nil && !*adUnitCfg.Video.Enabled {
 		imp.Video = nil
+		impBidCtx.Video = nil
+		rCtx.ImpBidCtx[imp.ID] = impBidCtx
 		return
 	}
 
@@ -926,26 +1028,32 @@ func getValidLanguage(language string) string {
 	return language
 }
 
-func isSlotEnabled(videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
+func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
 	videoEnabled := true
-	if videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
-		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled {
+	if imp.Video == nil || (videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
+		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled) {
 		videoEnabled = false
 	}
 
 	bannerEnabled := true
-	if bannerAdUnitCtx.AppliedSlotAdUnitConfig != nil && bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner != nil &&
-		bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled != nil && !*bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled {
+	if imp.Banner == nil || (bannerAdUnitCtx.AppliedSlotAdUnitConfig != nil && bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner != nil &&
+		bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled != nil && !*bannerAdUnitCtx.AppliedSlotAdUnitConfig.Banner.Enabled) {
 		bannerEnabled = false
 	}
 
-	return videoEnabled || bannerEnabled
+	nativeEnabled := true
+	if imp.Native == nil {
+		nativeEnabled = false
+	}
+
+	return videoEnabled || bannerEnabled || nativeEnabled
 }
 
 func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
-	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil {
+
+	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
 		pubID, err = strconv.Atoi(bidRequest.Site.Publisher.ID)
-	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil {
+	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil && bidRequest.App.Publisher.ID != "" {
 		pubID, err = strconv.Atoi(bidRequest.App.Publisher.ID)
 	}
 	return pubID, err
@@ -977,7 +1085,6 @@ func (m OpenWrap) setAnanlyticsFlags(rCtx *models.RequestCtx) {
 }
 
 func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *modelsAdunitConfig.VideoConfig) {
-
 	if len(imp.Video.MIMEs) == 0 {
 		imp.Video.MIMEs = configObjInVideoConfig.MIMEs
 	}
@@ -1159,4 +1266,11 @@ func getH(imp *openrtb2.Imp) *int64 {
 		}
 	}
 	return nil
+}
+
+func isValidURL(urlVal string) bool {
+	if !(strings.HasPrefix(urlVal, "http://") || strings.HasPrefix(urlVal, "https://")) {
+		return false
+	}
+	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }

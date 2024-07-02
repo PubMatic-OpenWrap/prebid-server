@@ -142,6 +142,7 @@ const (
 	PwtPb          = "pwtpb"
 	PwtCat         = "pwtcat"
 	PwtPbCatDur    = "pwtpb_cat_dur"
+	PwtDT          = "pwtdt"
 
 	//constants for query params in AMP request
 	PUBID_KEY         = "pubId"
@@ -302,6 +303,8 @@ const (
 	SoftFloorType      = "soft"
 	HardFloorType      = "hard"
 
+	OwRedirectURL = "owRedirectURL"
+
 	//include brand categories values
 	IncludeNoCategory            = 0
 	IncludeIABBranchCategory     = 1
@@ -354,6 +357,12 @@ const (
 	PixelTypeJS   = "js"
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
+
+	DealIDNotApplicable   = "na"
+	DealTierNotApplicable = "na"
+	PwtDealTier           = "pwtdealtier"
+	DealTierLineItemSetup = "dealTierLineItemSetup"
+	DealIDLineItemSetup   = "dealIdLineItemSetup"
 
 	//floor types
 	SoftFloor = 0
@@ -485,6 +494,35 @@ const (
 	PartnerErrMisConfig            //1
 )
 
+const (
+	ArraySeparator = ","
+)
+
+const (
+	OWExactVideoAdDurationMatching   = `exact`
+	OWRoundupVideoAdDurationMatching = `roundup`
+)
+
+const (
+	// MaximizeForDuration algorithm tends towards Ad Pod Maximum Duration, Ad Slot Maximum Duration
+	// and Maximum number of Ads. Accordingly it computes the number of impressions
+	MaximizeForDuration = iota
+	// MinMaxAlgorithm algorithm ensures all possible impression breaks are plotted by considering
+	// minimum as well as maxmimum durations and ads received in the ad pod request.
+	// It computes number of impressions with following steps
+	//  1. Passes input configuration as it is (Equivalent of MaximizeForDuration algorithm)
+	//	2. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = max ads
+	//	3. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = min ads
+	//	4. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = max ads
+	//	5. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = min ads
+	MinMaxAlgorithm
+	// ByDurationRanges algorithm plots the impression objects based on expected video duration
+	// ranges reveived in the input prebid-request. Based on duration matching policy
+	// it will generate the impression objects. in case 'exact' duration matching impression
+	// min duration = max duration. In case 'round up' this algorithm will not be executed.Instead
+	ByDurationRanges
+)
+
 // constants for query_type label in stats
 const (
 	PartnerConfigQuery                 = "GetPartnerConfig"
@@ -528,6 +566,10 @@ const (
 const (
 	Success = "success"
 	Failure = "failure"
+)
+
+const (
+	AdPodEnabled = 1
 )
 
 // constants for imp.Ext.Data fields
