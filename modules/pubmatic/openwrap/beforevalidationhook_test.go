@@ -1966,7 +1966,6 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	}
 }
 
-
 func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

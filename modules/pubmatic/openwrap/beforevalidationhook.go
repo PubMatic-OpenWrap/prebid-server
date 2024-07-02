@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-
-	"github.com/prebid/prebid-server/v2/floors"
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
@@ -18,6 +16,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/floors"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
