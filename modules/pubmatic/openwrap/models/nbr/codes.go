@@ -26,4 +26,10 @@ const (
 	AllSlotsDisabled               openrtb3.NoBidReason = 611
 	ServerSidePartnerNotConfigured openrtb3.NoBidReason = 612
 	AllPartnersFiltered            openrtb3.NoBidReason = 613
+	InvalidVideoRequest            openrtb3.NoBidReason = 614
+	EmptySeatBid                   openrtb3.NoBidReason = 615
+	InvalidAdpodConfig             openrtb3.NoBidReason = 616
+	InvalidRedirectURL             openrtb3.NoBidReason = 617
+	InvalidResponseFormat          openrtb3.NoBidReason = 618
+	MissingOWRedirectURL           openrtb3.NoBidReason = 619
 )

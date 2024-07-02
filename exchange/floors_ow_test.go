@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/boolutil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +36,7 @@ func TestFloorsEnabled(t *testing.T) {
 							ext := make(map[string]interface{})
 							prebidExt := openrtb_ext.ExtRequestPrebid{
 								Floors: &openrtb_ext.PriceFloorRules{
-									Enabled:     boolutil.BoolPtr(true),
+									Enabled:     ptrutil.ToPtr(true),
 									FloorMin:    2,
 									FloorMinCur: "INR",
 									Data: &openrtb_ext.PriceFloorData{
@@ -54,7 +54,7 @@ func TestFloorsEnabled(t *testing.T) {
 			wantEnabled: true,
 			wantRules: func() *openrtb_ext.PriceFloorRules {
 				floors := openrtb_ext.PriceFloorRules{
-					Enabled:     boolutil.BoolPtr(true),
+					Enabled:     ptrutil.ToPtr(true),
 					FloorMin:    2,
 					FloorMinCur: "INR",
 					Data: &openrtb_ext.PriceFloorData{
@@ -78,7 +78,7 @@ func TestFloorsEnabled(t *testing.T) {
 							ext := map[string]interface{}{
 								"prebid": openrtb_ext.ExtRequestPrebid{
 									Floors: &openrtb_ext.PriceFloorRules{
-										Enabled:     boolutil.BoolPtr(true),
+										Enabled:     ptrutil.ToPtr(true),
 										FloorMin:    2,
 										FloorMinCur: "INR",
 										Data: &openrtb_ext.PriceFloorData{
@@ -96,7 +96,7 @@ func TestFloorsEnabled(t *testing.T) {
 			wantEnabled: false,
 			wantRules: func() *openrtb_ext.PriceFloorRules {
 				floors := openrtb_ext.PriceFloorRules{
-					Enabled:     boolutil.BoolPtr(true),
+					Enabled:     ptrutil.ToPtr(true),
 					FloorMin:    2,
 					FloorMinCur: "INR",
 					Data: &openrtb_ext.PriceFloorData{
