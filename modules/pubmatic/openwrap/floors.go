@@ -50,7 +50,5 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 			requestExt.Prebid.Floors.Location.URL = url
 		}
 	}
-	if setMaxFloor {
-		requestExt.Prebid.Floors.SetMaxFloor = ptrutil.ToPtr(setMaxFloor)
-	}
+	requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
 }

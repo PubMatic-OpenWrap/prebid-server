@@ -367,7 +367,7 @@ func TestSetFloorsExt(t *testing.T) {
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							Floors: &openrtb_ext.PriceFloorRules{
 								Enabled:     &enable,
-								SetMaxFloor: &enable,
+								SetMaxFloor: enable,
 								Enforcement: &openrtb_ext.PriceFloorEnforcement{
 									EnforcePBS: &enable,
 								},

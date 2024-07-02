@@ -2241,7 +2241,7 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				extFloorRules: &openrtb_ext.PriceFloorRules{
 					Enabled:            getTrue(),
 					FloorMinCur:        "USD",
-					SetMaxFloor:        getTrue(),
+					SetMaxFloor:        true,
 					PriceFloorLocation: openrtb_ext.RequestLocation,
 					Enforcement: &openrtb_ext.PriceFloorEnforcement{
 						EnforcePBS:  getTrue(),
