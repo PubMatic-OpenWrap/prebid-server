@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/v2/metrics"
@@ -97,13 +98,22 @@ func (sa *structuredAdpod) HoldAuction() {
 	for i := range slots {
 		bids := sa.ImpBidMap[slots[i].ImpId]
 		// Add validations on len of array and index chosen
-		sa.WinningBid[slots[i].ImpId] = *bids[slots[i].Index]
-	}
+		// Validate the array length and index chosen
+		if len(bids) > slots[i].Index {
+			selectedBid := bids[slots[i].Index]
+			selectedBid.Status = constant.StatusWinningBid
+			sa.WinningBid[slots[i].ImpId] = *selectedBid
+		}
 
+	}
 }
 
 func (sa *structuredAdpod) Validate() []error {
 	return nil
+}
+
+func (sa *structuredAdpod) GetWinningBids() []openrtb2.SeatBid {
+	return sa.GetAdpodSeatBids()
 }
 
 func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
@@ -121,6 +131,22 @@ func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	}
 
 	return seatBid
+}
+
+func (sa *structuredAdpod) GetSeatNonBid(snb *openrtb_ext.NonBidCollection) {
+	for _, bids := range sa.ImpBidMap {
+		for _, bid := range bids {
+			if bid.Status != constant.StatusWinningBid {
+				nonBidParams := GetNonBidParamsFromPbsOrtbBid(bid, bid.Seat)
+				convertedReason := ConvertAPRCToNBRC(bid.Status)
+				if convertedReason != nil {
+					nonBidParams.NonBidReason = int(*convertedReason)
+				}
+				snb.AddBid(openrtb_ext.NewNonBid(nonBidParams), bid.Seat)
+			}
+		}
+	}
+	return
 }
 
 func (sa *structuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
@@ -234,9 +260,11 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 
 	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
+			slotBids[selectedSlot.Index].Status = constant.StatusCategoryExclusion
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
+			slotBids[selectedSlot.Index].Status = constant.StatusCategoryExclusion
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {

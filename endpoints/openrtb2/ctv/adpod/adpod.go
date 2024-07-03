@@ -24,7 +24,9 @@ type Adpod interface {
 	CollectBid(bid *openrtb2.Bid, seat string)
 	HoldAuction()
 	GetAdpodSeatBids() []openrtb2.SeatBid
+	GetWinningBids() []openrtb2.SeatBid
 	GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData
+	GetSeatNonBid(snb *openrtb_ext.NonBidCollection)
 }
 
 type AdpodCtx struct {
@@ -43,4 +45,32 @@ type Exclusion struct {
 
 func (ex *Exclusion) shouldApplyExclusion() bool {
 	return ex.AdvertiserDomainExclusion || ex.IABCategoryExclusion
+}
+
+// GetNonBidParamsFromPbsOrtbBid function returns NonBidParams from PbsOrtbBid
+func GetNonBidParamsFromPbsOrtbBid(bid *types.Bid, seat string) openrtb_ext.NonBidParams {
+	adapterCode := seat
+	// if bid.AlternateBidderCode != "" {
+	// 	adapterCode = string(openrtb_ext.BidderName(bid.AlternateBidderCode))
+	// }
+	if bid.Prebid.Meta == nil {
+		bid.Prebid.Meta = &openrtb_ext.ExtBidPrebidMeta{}
+	}
+	bid.Prebid.Meta.AdapterCode = adapterCode
+	return openrtb_ext.NonBidParams{
+		Bid:               bid.Bid,
+		OriginalBidCPM:    bid.OriginalBidCPM,
+		OriginalBidCur:    bid.OriginalBidCur,
+		DealPriority:      bid.Prebid.DealPriority,
+		DealTierSatisfied: bid.Prebid.DealTierSatisfied,
+		GeneratedBidID:    bid.Prebid.BidId,
+		TargetBidderCode:  bid.Prebid.TargetBidderCode,
+		OriginalBidCPMUSD: bid.OriginalBidCPMUSD,
+		BidMeta:           bid.Prebid.Meta,
+		BidType:           bid.Prebid.Type,
+		BidTargets:        bid.Prebid.Targeting,
+		BidVideo:          bid.Prebid.Video,
+		BidEvents:         bid.Prebid.Events,
+		BidFloors:         bid.Prebid.Floors,
+	}
 }
