@@ -231,13 +231,13 @@ func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, bi
 // RecordVastVersion record the count of vast version labelled by bidder and vast version
 func (m *OWMetrics) RecordXMLParserResponseMismatch(method, bidder string, isMismatch bool) {
 	status := requestSuccessful
-	if !isMismatch {
+	if isMismatch {
 		status = requestFailed
 	}
 	m.xmlParserMismatch.With(prometheus.Labels{
 		methodLabel:  method,
 		adapterLabel: bidder,
-		status:       status,
+		statusLabel:  status,
 	}).Inc()
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
@@ -29,7 +30,6 @@ import (
 	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1251,6 +1251,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 		fields fields
 		args   args
 		want   want
+		setup  func()
 	}{
 		{
 			name: "imp.video_is_nil",
@@ -1849,14 +1850,114 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "imp.BidFloor_is_less_than_BidFloor_from_adunit_config_for_applovinmax_setMaxFloor_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+						},
+					},
+				},
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					BidFloor:    1,
+					BidFloorCur: "USD",
+					Video:       &openrtb2.Video{},
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Video:       &openrtb2.Video{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "imp.BidFloor_is_less_than_BidFloor_from_adunit_config_for_applovinmax_setMaxFloor_false",
+			args: args{
+				rCtx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+						},
+					},
+				},
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					BidFloor:    1,
+					BidFloorCur: "USD",
+					Video:       &openrtb2.Video{},
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Video:       &openrtb2.Video{},
+					BidFloor:    1.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							VideoAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    1,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
-				pubFeatures:  mockFeature,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				pubFeatures:   mockFeature,
+				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+			}
+			if tt.setup != nil {
+				tt.setup()
 			}
 			m.applyVideoAdUnitConfig(tt.args.rCtx, tt.args.imp)
 			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp video is not upadted as expected from adunit config")
@@ -1865,7 +1966,10 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	}
 }
 
-func TestOpenWrapApplyBannerAdUnitConfig(t *testing.T) {
+func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
 	type fields struct {
 		cfg          config.Config
 		cache        cache.Cache
@@ -1884,6 +1988,7 @@ func TestOpenWrapApplyBannerAdUnitConfig(t *testing.T) {
 		fields fields
 		args   args
 		want   want
+		setup  func()
 	}{
 		{
 			name: "imp.banner_is_nil",
@@ -2101,13 +2206,114 @@ func TestOpenWrapApplyBannerAdUnitConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "imp.BidFloor_less_than_BidFloor_from_adunit_config_applovinmax_setMaxFloor_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+						},
+					},
+				},
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					BidFloor:    1,
+					BidFloorCur: "USD",
+					Banner:      &openrtb2.Banner{},
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Banner:      &openrtb2.Banner{},
+					BidFloor:    2.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					Endpoint:           models.EndpointAppLovinMax,
+					IsMaxFloorsEnabled: true,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    2,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "imp.BidFloor_less_than_BidFloor_from_adunit_config_applovinmax_setMaxFloor_false",
+			args: args{
+				rCtx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+						},
+					},
+				},
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					BidFloor:    1,
+					BidFloorCur: "USD",
+					Banner:      &openrtb2.Banner{},
+				},
+			},
+			want: want{
+				imp: &openrtb2.Imp{
+					ID:          "testImp",
+					Banner:      &openrtb2.Banner{},
+					BidFloor:    1.0,
+					BidFloorCur: "USD",
+				},
+				rCtx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp": {
+							BannerAdUnitCtx: models.AdUnitCtx{
+								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+									BidFloor:    ptrutil.ToPtr(2.0),
+									BidFloorCur: ptrutil.ToPtr("USD"),
+								},
+							},
+							BidFloor:    1,
+							BidFloorCur: "USD",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &OpenWrap{
-				cfg:          tt.fields.cfg,
-				cache:        tt.fields.cache,
-				metricEngine: tt.fields.metricEngine,
+				cfg:           tt.fields.cfg,
+				cache:         tt.fields.cache,
+				metricEngine:  tt.fields.metricEngine,
+				pubFeatures:   mockFeature,
+				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+			}
+			if tt.setup != nil {
+				tt.setup()
 			}
 			m.applyBannerAdUnitConfig(tt.args.rCtx, tt.args.imp)
 			assert.Equal(t, tt.args.imp, tt.want.imp, "Imp banner is not upadted as expected from adunit config")
@@ -5382,6 +5588,83 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 			}
 			got := isVastUnwrapEnabled(tt.args.PartnerConfigMap, tt.args.VASTUnwrapTraffic)
 			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestSetImpBidFloorParams(t *testing.T) {
+	type args struct {
+		rCtx        models.RequestCtx
+		adUnitCfg   *modelsAdunitConfig.AdConfig
+		imp         *openrtb2.Imp
+		conversions currency.Conversions
+	}
+	tests := []struct {
+		name           string
+		args           args
+		expBidfloor    float64
+		expBidfloorCur string
+	}{
+		{
+			name: "imp_bid_floor_present_IsMaxFloorsEnabled_false",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: false,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    0.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    0.6,
+			expBidfloorCur: "USD",
+		},
+		{
+			name: "imp_bid_floor_higher_than_adunit_IsMaxFloorsEnabled_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: true,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    0.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    2,
+			expBidfloorCur: "USD",
+		},
+		{
+			name: "imp_bid_floor_less_than_adunit_IsMaxFloorsEnabled_true",
+			args: args{
+				rCtx: models.RequestCtx{
+					IsMaxFloorsEnabled: true,
+				},
+				adUnitCfg: &modelsAdunitConfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("USD"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    2.6,
+					BidFloorCur: "USD",
+				},
+			},
+			expBidfloor:    2.6,
+			expBidfloorCur: "USD",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bidfloor, bidfloorCur := setImpBidFloorParams(tt.args.rCtx, tt.args.adUnitCfg, tt.args.imp, tt.args.conversions)
+			assert.Equal(t, tt.expBidfloor, bidfloor, tt.name)
+			assert.Equal(t, tt.expBidfloorCur, bidfloorCur, tt.name)
 		})
 	}
 }
