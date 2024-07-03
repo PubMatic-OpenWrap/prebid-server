@@ -1962,7 +1962,6 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 		args  args
 		setup func()
 	}{
-
 		{
 			name: "test record floor status with no failures",
 			args: args{
@@ -2191,11 +2190,104 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 				me.On("RecordFloorStatus", "5890", "request", "6").Return()
 			},
 		},
+		{
+			name: "setmax floor disabled, and imp.bidfloor > floor value",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMinCur:        "USD",
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           21,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", BidFloor: 50, BidFloorCur: "USD", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			setup: func() {
+			},
+		},
+		{
+			name: "setmax floor enabled, and imp.bidfloor > floor value",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMinCur:        "USD",
+					SetMaxFloor:        true,
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           21,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", BidFloor: 50, BidFloorCur: "USD", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "7").Return()
+			},
+		},
 	}
 	for _, test := range tests {
 		if test.setup != nil {
 			test.setup()
 		}
 		updateBidRequestWithFloors(test.args.extFloorRules, test.args.request, test.args.conversions, me, test.args.accountID)
+		assert.True(t, me.AssertExpectations(t))
 	}
 }

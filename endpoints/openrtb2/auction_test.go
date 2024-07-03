@@ -7443,3 +7443,102 @@ func TestSetSeatNonBid(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAccountIdFromRawRequest(t *testing.T) {
+	testCases := []struct {
+		description       string
+		hasStoredRequest  bool
+		storedRequest     json.RawMessage
+		originalRequest   []byte
+		expectedAccID     string
+		expectedIsAppReq  bool
+		expectedIsDOOHReq bool
+		expectedError     []error
+	}{
+		{
+			description:       "hasStoredRequest is false",
+			hasStoredRequest:  false,
+			storedRequest:     []byte(`{"app":{"publisher":{"id":"42"}}}`),
+			originalRequest:   []byte(`{"app":{"publisher":{"id":"50"}}}`),
+			expectedAccID:     "50",
+			expectedError:     nil,
+			expectedIsAppReq:  true,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID doesn't exist in storedrequest",
+			hasStoredRequest:  true,
+			storedRequest:     []byte(`{"site":{"publisher":{}}}`),
+			expectedAccID:     "unknown",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID as string in original request",
+			originalRequest:   []byte(`{"site":{"publisher":{"id":"42"}}}`),
+			expectedAccID:     "42",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+	}
+	for _, test := range testCases {
+		accountId, isAppReq, isDOOHReq, err := getAccountIdFromRawRequest(test.hasStoredRequest, test.storedRequest, test.originalRequest)
+		assert.Equal(t, test.expectedAccID, accountId, "getAccountIdFromRawRequest should return expected account ID for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsAppReq, isAppReq, "getAccountIdFromRawRequest should return expected isAppReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsDOOHReq, isDOOHReq, "getAccountIdFromRawRequest should return expected isDOOHReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedError, err, "getAccountIdFromRawRequest should return expected error for test case: %s", test.description)
+	}
+
+}
+
+func TestGetStringValueFromRequest(t *testing.T) {
+	testCases := []struct {
+		description   string
+		request       []byte
+		key           []string
+		expectedAccID string
+		expectedError error
+		expectedExist bool
+	}{
+		{
+			description:   "Both input are nil",
+			request:       nil,
+			key:           nil,
+			expectedAccID: "",
+			expectedError: nil,
+			expectedExist: false,
+		},
+		{
+			description:   "key is nil",
+			request:       []byte(`{}`),
+			key:           nil,
+			expectedAccID: "",
+			expectedError: errors.New(" must be a string"),
+			expectedExist: true,
+		},
+		{
+			description:   "Invalid request",
+			request:       []byte(`{"dooh":{"publisher":{"id":42}}}`),
+			key:           []string{"dooh", "publisher", "id"},
+			expectedAccID: "",
+			expectedError: errors.New("dooh.publisher.id must be a string"),
+			expectedExist: true,
+		},
+		{
+			description:   "Correct input from request",
+			request:       []byte(`{"dooh":{"publisher":{"id":"42"}}}`),
+			key:           []string{"dooh", "publisher", "id"},
+			expectedAccID: "42",
+			expectedError: nil,
+			expectedExist: true,
+		},
+	}
+	for _, test := range testCases {
+		accountId, exists, err := getStringValueFromRequest(test.request, test.key)
+		assert.Equal(t, test.expectedAccID, accountId, "getStringValueFromRequest should return expected account ID for test case: %s", test.description)
+		assert.Equal(t, test.expectedExist, exists, "getStringValueFromRequest should return expected exists for test case: %s", test.description)
+		assert.Equal(t, test.expectedError, err, "getStringValueFromRequest should return expected error for test case: %s", test.description)
+	}
+}

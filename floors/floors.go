@@ -40,6 +40,7 @@ const (
 	floorsSkipped    = "4"
 	zeroFloorValue   = "5"
 	highFloorValue   = "6"
+	setMaxFloorValue = "7"
 	ZERO_FLOOR_VALUE = 0
 	HIGH_FLOOR_VALUE = 200
 )
@@ -112,8 +113,19 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				if bidFloor > HIGH_FLOOR_VALUE {
 					metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, highFloorValue)
 				}
-				imp.BidFloor = bidFloor
-				imp.BidFloorCur = floorCur
+
+				if extFloorRules.SetMaxFloor {
+					floorVal, floorCur, floorLoc := GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, floorVal, floorCur, conversions)
+					imp.BidFloor = floorVal
+					imp.BidFloorCur = floorCur
+					if floorLoc != "" {
+						extFloorRules.PriceFloorLocation = openrtb_ext.RequestLocation
+						metricEngine.RecordFloorStatus(accountID, extFloorRules.PriceFloorLocation, setMaxFloorValue)
+					}
+				} else {
+					imp.BidFloor = bidFloor
+					imp.BidFloorCur = floorCur
+				}
 
 				err = updateImpExtWithFloorDetails(imp, matchedRule, floorVal, imp.BidFloor)
 				if err != nil {

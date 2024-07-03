@@ -106,8 +106,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
+	initOpenWrapServer(&cfg)
+
 	// init geoDBClient
-	geoDBClient := netacuity.DummyNetAcuity{}
+	geoDBClient := netacuity.NetAcuity{}
 	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
@@ -125,6 +127,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			profileMetaData: profileMetaData,
 		}
 	})
+
 	return *ow, nil
 }
 

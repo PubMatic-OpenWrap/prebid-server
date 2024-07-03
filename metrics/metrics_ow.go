@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/prebid/openrtb/v20/openrtb3"
+)
 
 const (
 	XMLParserLabelFastXML = "fastxml"
@@ -15,6 +19,8 @@ type OWMetricsEngine interface {
 	//RecordVASTTagType record the count of vast tag type labeled by bidder and vast tag
 	RecordVASTTagType(bidder, vastTagType string)
 
+	RecordPanic(hostname, method string)
+	RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason)
 	//RecordXMLParserResponseTime records execution time for multiple parsers
 	RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration)
 	//RecordXMLParserResponseMismatch records number of response mismatch

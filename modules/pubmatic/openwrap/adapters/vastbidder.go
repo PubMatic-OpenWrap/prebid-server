@@ -67,9 +67,60 @@ func PrepareVASTBidderParamJSON(pubVASTTags models.PublisherVASTTags, matchedSlo
 // getVASTTagID returns VASTTag ID details from slot key
 func getVASTTagID(key string) int {
 	index := strings.LastIndex(key, "@")
-	if -1 == index {
+	if index == -1 {
 		return 0
 	}
 	id, _ := strconv.Atoi(key[index+1:])
 	return id
+}
+
+func FilterImpsVastTagsByDuration(imps []*openrtb_ext.ImpWrapper, impBidCtx map[string]models.ImpCtx) {
+	if len(imps) == 0 {
+		return
+	}
+
+	for i := range imps {
+		impId, _ := models.GetImpressionID(imps[i].ID)
+		impCtx := impBidCtx[impId]
+
+		impExt, err := imps[i].GetImpExt()
+		if err != nil {
+			continue
+		}
+
+		prebidExt := impExt.GetPrebid()
+		for bidder, partnerdata := range prebidExt.Bidder {
+			var vastBidderExt openrtb_ext.ExtImpVASTBidder
+			err := json.Unmarshal(partnerdata, &vastBidderExt)
+			if err != nil {
+				continue
+			}
+
+			if len(vastBidderExt.Tags) == 0 {
+				continue
+			}
+
+			partnerData := impCtx.Bidders[bidder]
+			vastTagFlags := partnerData.VASTTagFlags
+			if vastTagFlags == nil {
+				vastTagFlags = make(map[string]bool)
+			}
+
+			var compatibleTags []*openrtb_ext.ExtImpVASTBidderTag
+			for _, tag := range vastBidderExt.Tags {
+				if imps[i].Video.MinDuration <= int64(tag.Duration) && int64(tag.Duration) <= imps[i].Video.MaxDuration {
+					compatibleTags = append(compatibleTags, tag)
+					vastTagFlags[tag.TagID] = false
+				}
+			}
+
+			partnerData.VASTTagFlags = vastTagFlags
+			impCtx.Bidders[bidder] = partnerData
+
+			vastBidderExt.Tags = compatibleTags
+			newPartnerData, _ := json.Marshal(vastBidderExt)
+			prebidExt.Bidder[bidder] = newPartnerData
+		}
+		impExt.SetPrebid(prebidExt)
+	}
 }

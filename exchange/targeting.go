@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -97,7 +98,7 @@ func (targData *targetData) setTargeting(auc *auction, isApp bool, categoryMappi
 					targData.addKeys(targets, openrtb_ext.HbEnvKey, openrtb_ext.HbEnvKeyApp, targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
 				}
 				if len(categoryMapping) > 0 {
-					targData.addKeys(targets, openrtb_ext.HbCategoryDurationKey, categoryMapping[topBid.Bid.ID], targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
+					targData.addKeys(targets, openrtb_ext.HbCategoryDurationKey, categoryMapping[utils.GetOriginalBidId(topBid.Bid.ID)], targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
 				}
 				targData.addBidderKeys(targets, topBid.BidTargets)
 				topBid.BidTargets = targets

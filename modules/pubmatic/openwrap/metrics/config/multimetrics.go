@@ -446,6 +446,13 @@ func (me *MultiMetricsEngine) RecordOWServerPanic(endpoint, methodName, nodeName
 	}
 }
 
+// RecordPrebidCacheRequestTime across all engines
+func (me *MultiMetricsEngine) RecordPrebidCacheRequestTime(success bool, length time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordPrebidCacheRequestTime(success, length)
+	}
+}
+
 // RecordAmpVideoRequests across all engines
 func (me *MultiMetricsEngine) RecordAmpVideoRequests(pubid, profileid string) {
 	for _, thisME := range *me {
