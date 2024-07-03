@@ -109,7 +109,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	initOpenWrapServer(&cfg)
 
 	// init geoDBClient
-	geoDBClient := netacuity.DummyNetAcuity{}
+	geoDBClient := netacuity.NetAcuity{}
 	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
