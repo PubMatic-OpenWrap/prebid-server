@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestRequestCtx_GetVersionLevelKey(t *testing.T) {
+func TestRequestCtxGetVersionLevelKey(t *testing.T) {
 	type fields struct {
 		PartnerConfigMap map[int]map[string]string
 	}

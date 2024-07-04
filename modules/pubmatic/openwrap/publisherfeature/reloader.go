@@ -25,6 +25,7 @@ type feature struct {
 	tbf              tbf
 	ant              analyticsThrottle
 	ampMultiformat   ampMultiformat
+	maxFloors        maxFloors
 }
 
 var fe *feature
@@ -45,6 +46,9 @@ func New(config Config) *feature {
 				pubProfileTraffic: make(map[int]map[int]int),
 			},
 			ampMultiformat: ampMultiformat{
+				enabledPublishers: make(map[int]struct{}),
+			},
+			maxFloors: maxFloors{
 				enabledPublishers: make(map[int]struct{}),
 			},
 			ant: analyticsThrottle{
@@ -104,6 +108,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 
 	fe.updateTBFConfigMap()
 	fe.updateAmpMutiformatEnabledPublishers()
+	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
 
 	if err != nil {

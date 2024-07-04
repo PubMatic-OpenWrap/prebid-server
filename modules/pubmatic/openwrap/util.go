@@ -1,6 +1,8 @@
 package openwrap
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
@@ -12,11 +14,13 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 var (
@@ -31,6 +35,18 @@ var (
 	openRTBDeviceOsIosRegex     *regexp.Regexp
 	mobileDeviceUARegex         *regexp.Regexp
 	ctvRegex                    *regexp.Regexp
+	accountIdSearchPath         = [...]struct {
+		isApp  bool
+		isDOOH bool
+		key    []string
+	}{
+		{true, false, []string{"app", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{true, false, []string{"app", "publisher", "id"}},
+		{false, false, []string{"site", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, false, []string{"site", "publisher", "id"}},
+		{false, true, []string{"dooh", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, true, []string{"dooh", "publisher", "id"}},
+	}
 )
 
 const (
@@ -105,7 +121,11 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 		if bidRequest != nil && bidRequest.Site != nil {
 			//Its web; now determine mobile or desktop
-			if isMobile(bidRequest.Device.DeviceType, userAgentString) {
+			var deviceType adcom1.DeviceType
+			if bidRequest.Device != nil {
+				deviceType = bidRequest.Device.DeviceType
+			}
+			if isMobile(deviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop
@@ -211,26 +231,28 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 
 // getHostName Generates server name from node and pod name in K8S  environment
 func GetHostName() string {
-	var (
-		nodeName string
-		podName  string
-	)
 
+	var nodeName string
 	if nodeName, _ = os.LookupEnv(models.ENV_VAR_NODE_NAME); nodeName == "" {
 		nodeName = models.DEFAULT_NODENAME
 	} else {
 		nodeName = strings.Split(nodeName, ".")[0]
 	}
 
+	podName := getPodName()
+
+	return nodeName + ":" + podName
+}
+
+func getPodName() string {
+
+	var podName string
 	if podName, _ = os.LookupEnv(models.ENV_VAR_POD_NAME); podName == "" {
 		podName = models.DEFAULT_PODNAME
 	} else {
 		podName = strings.TrimPrefix(podName, "ssheaderbidding-")
 	}
-
-	serverName := nodeName + ":" + podName
-
-	return serverName
+	return podName
 }
 
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
@@ -259,7 +281,7 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequestExt:
+	case nbr.InvalidRequestExt, openrtb3.NoBidInvalidRequest:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:
@@ -324,6 +346,9 @@ func getCountry(bidRequest *openrtb2.BidRequest) string {
 
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
+	if request == nil {
+		return platform
+	}
 	if request.Site != nil {
 		return models.PLATFORM_DISPLAY
 	}
@@ -407,4 +432,57 @@ func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profil
 		}
 	}
 	return -1
+}
+
+func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest, originalRequest json.RawMessage) (string, bool, bool, []error) {
+	request := originalRequest
+	if hasStoredRequest {
+		request = storedRequest
+	}
+
+	accountId, isAppReq, isDOOHReq, err := searchAccountId(request)
+	if err != nil {
+		return "", isAppReq, isDOOHReq, []error{err}
+	}
+
+	// In case the stored request did not have account data we specifically search it in the original request
+	if accountId == "" && hasStoredRequest {
+		accountId, _, _, err = searchAccountId(originalRequest)
+		if err != nil {
+			return "", isAppReq, isDOOHReq, []error{err}
+		}
+	}
+
+	if accountId == "" {
+		return metrics.PublisherUnknown, isAppReq, isDOOHReq, nil
+	}
+
+	return accountId, isAppReq, isDOOHReq, nil
+}
+
+func searchAccountId(request []byte) (string, bool, bool, error) {
+	for _, path := range accountIdSearchPath {
+		accountId, exists, err := getStringValueFromRequest(request, path.key)
+		if err != nil {
+			return "", path.isApp, path.isDOOH, err
+		}
+		if exists {
+			return accountId, path.isApp, path.isDOOH, nil
+		}
+	}
+	return "", false, false, nil
+}
+
+func getStringValueFromRequest(request []byte, key []string) (string, bool, error) {
+	val, dataType, _, err := jsonparser.Get(request, key...)
+	if dataType == jsonparser.NotExist {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	if dataType != jsonparser.String {
+		return "", true, fmt.Errorf("%s must be a string", strings.Join(key, "."))
+	}
+	return string(val), true, nil
 }
