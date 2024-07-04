@@ -251,6 +251,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	response = auctionResponse.BidResponse
 	seatNonBid.Append(auctionResponse.SeatNonBid)
 	seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes())) // append seatNonBids available in hook-stage-outcomes
+
 	if len(deps.podCtx) > 0 {
 		//Create Impression Bids
 		deps.collectBids(response)
@@ -269,6 +270,13 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		}
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
+	} else {
+		ao.SeatNonBid = seatNonBid.Get()
+		//add seatNonBids in response.Ext based on 'returnallbidstatus' flag
+		err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+		if err != nil {
+			util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
+		}
 	}
 	ao.Response = response
 
