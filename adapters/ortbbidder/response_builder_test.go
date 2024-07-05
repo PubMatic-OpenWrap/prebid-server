@@ -214,28 +214,13 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			},
 		},
 		{
-			name:                "Valid bidder respone, with bidder params",
+			name:                "Valid bidder respone, with single bidder param - bidType",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123","ext": {"bidtype": "video"}}]}]}`),
-			bidderResponse: map[string]any{
-				"cur": "USD",
-				seatBidKey: []any{
-					map[string]any{
-						"bid": []any{
-							map[string]any{
-								"id": "123",
-								"ext": map[string]any{
-									"bidtype": "video",
-								},
-							},
-						},
-					},
-				},
-			},
 			responseParams: map[string]bidderparams.BidderParamMapper{
 				"currency": {
 					Location: "cur",
 				},
-				"bidtype": {
+				"bidType": {
 					Location: "seatbid.#.bid.#.ext.bidtype",
 				},
 			},
@@ -250,13 +235,59 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 								"bidtype": "video",
 							},
 						},
-						"BidType": "video",
+						"BidType": openrtb_ext.BidType("video"),
+					},
+				},
+			},
+		},
+		{
+			name: "Valid bidder respone, with multiple bidder params",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","ext":{"dp":2},"bid":[{"id":"123","cat":["music"],"ext":{"bidtype":"video","advertiserId":"5"` +
+				`,"networkId":5,"duration":10,"meta_object":{"advertiserDomains":["xyz.com"],"mediaType":"video"}}}]}]}`),
+			responseParams: map[string]bidderparams.BidderParamMapper{
+				"currency":            {Location: "cur"},
+				"bidType":             {Location: "seatbid.#.bid.#.ext.bidtype"},
+				"bidDealPriority":     {Location: "seatbid.#.ext.dp"},
+				"bidVideoDuration":    {Location: "seatbid.#.bid.#.ext.duration"},
+				"bidMeta":             {Location: "seatbid.#.bid.#.ext.meta_object"},
+				"bidMetaAdvertiserId": {Location: "seatbid.#.bid.#.ext.advertiserId"},
+				"bidMetaNetworkId":    {Location: "seatbid.#.bid.#.ext.networkId"},
+			},
+			expectedError: nil,
+			expectedResponse: map[string]any{
+				"Currency": "USD",
+				"Bids": []any{
+					map[string]any{
+						"Bid": map[string]any{
+							"id":  "123",
+							"cat": []any{"music"},
+							"ext": map[string]any{
+								"bidtype":      "video",
+								"advertiserId": "5",
+								"networkId":    5.0,
+								"duration":     10.0,
+								"meta_object": map[string]any{
+									"advertiserDomains": []any{"xyz.com"},
+									"mediaType":         "video",
+								},
+							},
+						},
+						"BidType": openrtb_ext.BidType("video"),
+						"BidVideo": map[string]any{
+							"primary_category": "music",
+							"duration":         int64(10),
+						},
+						"DealPriority": 2,
+						"BidMeta": map[string]any{
+							"advertiserDomains": []string{"xyz.com"},
+							"mediaType":         "video",
+							"networkId":         int(5),
+						},
 					},
 				},
 			},
 		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			rb := &responseBuilder{
@@ -265,7 +296,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			}
 			err := rb.setPrebidBidderResponse(tc.bidderResponseBytes)
 			assert.Equal(t, tc.expectedError, err)
-			assert.Equal(t, tc.expectedResponse, rb.adapterRespone)
+			assert.Equal(t, tc.expectedResponse, rb.adapterRespone, "mismatched adapterRespone")
 		})
 	}
 }

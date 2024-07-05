@@ -5,17 +5,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-)
-
-// Constants used for look up in ortb response
-const (
-	mtypeKey    = "mtype"
-	bidTypeKey  = "BidType"
-	currencyKey = "Currency"
-	curKey      = "cur"
-	admKey      = "adm"
-	impIdKey    = "impid"
 )
 
 var (
@@ -26,13 +17,13 @@ var (
 // 1. It first attempts to retrieve the bid type from the response.seat.bid.mtype location.
 // 2. If not found, it then tries to retrieve the bid type using the bidder param location.
 // 3. If still not found, it automatically detects the bid type using either the adm or impression.
-// The determined bid type is subsequently assigned to adapterresponse.typebid.bidtype
+// The determined bid type is subsequently assigned to adapterresponse.typedbid.bidtype
 type bidTypeResolver struct {
-	valueResolver
+	defaultValueResolver
 }
 
 func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
-	mtype, ok := bid[mtypeKey].(float64)
+	mtype, ok := bid[ortbFieldMtype].(float64)
 	if !ok || mtype == 0 {
 		return nil, false
 	}
@@ -43,22 +34,31 @@ func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
 	return nil, false
 }
 
+func (r *bidTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+	value, found := util.GetValueFromLocation(responseNode, path)
+	if !found {
+		return nil, false
+	}
+	bidType, ok := value.(string)
+	return openrtb_ext.BidType(bidType), ok
+}
+
 func (r *bidTypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
-	adm, ok := bid[admKey].(string)
+	adm, ok := bid[ortbFieldAdM].(string)
 	if ok && adm != "" {
 		return getMediaTypeFromAdm(adm), true // Adm is present, get media type from adm
 	}
-	impId, ok := bid[impIdKey].(string)
+	impId, ok := bid[ortbFieldImpId].(string)
 	if !ok {
 		return nil, false
 	}
 	// Adm is not present, get media type from imp
 	return getMediaTypeFromImp(request.Imp, impId), true
-
 }
 
-func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) {
+func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) bool {
 	adapterBid[bidTypeKey] = value
+	return true
 }
 
 func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {

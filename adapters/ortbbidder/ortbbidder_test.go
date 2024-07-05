@@ -611,7 +611,7 @@ func TestMakeBids(t *testing.T) {
 				bc := bidderparams.NewBidderConfig()
 				bc.BidderConfigMap["owortb_testbidder"] = &bidderparams.Config{
 					ResponseParams: map[string]bidderparams.BidderParamMapper{
-						"bidtype":  {Location: "seatbid.#.bid.#.ext.bidtype"},
+						"bidType":  {Location: "seatbid.#.bid.#.ext.bidtype"},
 						"currency": {Location: "ext.currency"},
 					},
 				}

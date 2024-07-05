@@ -39,18 +39,18 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 	adapterResponse := map[string]any{
 		currencyKey: rb.bidderResponse[ortbCurrencyKey],
 	}
-
 	// Resolve the  adapter response level parameters.
-	paramMapper := rb.responseParams[resolver.Fledge.String()]
-	paramResolver.Resolve(rb.bidderResponse, adapterResponse, paramMapper.Location, resolver.Fledge)
-
+	for _, param := range resolver.ResponseParams {
+		bidderParam := rb.responseParams[param.String()]
+		paramResolver.Resolve(rb.bidderResponse, adapterResponse, bidderParam.Location, param)
+	}
 	// Extract the seat bids from the bidder response.
 	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
 	if !ok {
 		return newBadServerResponseError("invalid seatbid array found in response, seatbids:[%v]", rb.bidderResponse[seatBidKey])
 	}
-	// Initialize the list of type bids.
-	typeBids := make([]any, 0)
+	// Initialize the list of typed bids.
+	typedBids := make([]any, 0)
 	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
@@ -65,21 +65,22 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 			if !ok {
 				return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", bids[bidIndex])
 			}
-			// Initialize the type bid with the bid.
-			typeBid := map[string]any{
-				typeBidKey: bid,
+			// Initialize the typed bid with the bid.
+			typedBid := map[string]any{
+				typedbidKey: bid,
 			}
-			// Resolve the type bid level parameters.
-			paramMapper := rb.responseParams[resolver.BidType.String()]
-			location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
-			paramResolver.Resolve(bid, typeBid, location, resolver.BidType)
-
-			// Add the type bid to the list of type bids.
-			typeBids = append(typeBids, typeBid)
+			// Resolve the typed bid level parameters.
+			for _, params := range resolver.TypedBidParams {
+				paramMapper := rb.responseParams[params.String()]
+				location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
+				paramResolver.Resolve(bid, typedBid, location, params)
+			}
+			// Add the type bid to the list of typed bids.
+			typedBids = append(typedBids, typedBid)
 		}
 	}
 	// Add the type bids to the adapter response.
-	adapterResponse[bidsKey] = typeBids
+	adapterResponse[bidsKey] = typedBids
 	// Set the adapter response in the response builder.
 	rb.adapterRespone = adapterResponse
 	return nil
