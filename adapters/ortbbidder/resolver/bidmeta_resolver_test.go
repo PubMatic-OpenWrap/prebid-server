@@ -83,14 +83,18 @@ func TestValidateBidMeta(t *testing.T) {
 			value: map[string]any{
 				bidMetaSecondaryCatIdKey: []any{"music", "sports"},
 				bidMetaAdvertiserIdKey:   123.0,
-				bidMetaDChainKey:         json.RawMessage(`{"field": "value"}`),
-				"customField":            "customValue",
+				bidMetaDChainKey: map[string]any{
+					"field": "value",
+				},
+				"customField": "customValue",
 			},
 			expected: map[string]any{
 				bidMetaSecondaryCatIdKey: []string{"music", "sports"},
 				bidMetaAdvertiserIdKey:   123,
-				bidMetaDChainKey:         json.RawMessage(`{"field": "value"}`),
-				"customField":            "customValue",
+				bidMetaDChainKey: map[string]any{
+					"field": "value",
+				},
+				"customField": "customValue",
 			},
 			valid: true,
 		},
@@ -101,7 +105,7 @@ func TestValidateBidMeta(t *testing.T) {
 				bidMetaAdvertiserIdKey:      "123",         // should be an float
 			},
 			expected: map[string]any{},
-			valid:    true, // Note: the map is still valid, but fields are removed
+			valid:    false,
 		},
 		{
 			name:     "Invalid type for value",
@@ -125,7 +129,6 @@ func TestValidateBidMeta(t *testing.T) {
 				bidMetaAdvertiserIdKey:      123,
 				bidMetaAgencyIdKey:          11,
 				bidMetaNetworkIdKey:         22,
-				bidMetaRenderedDataKey:      json.RawMessage("anything"),
 			},
 			valid: true,
 		},
@@ -839,11 +842,21 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 			ortbResponse: map[string]any{
 				"cur": "USD",
 				"ext": map[string]any{
-					"dchain": json.RawMessage(`{"segment":[{"s":"","t":1}]}`),
+					"dchain": map[string]any{
+						"segment": map[string]any{
+							"s": "",
+							"t": 1,
+						},
+					},
 				},
 			},
-			path:          "ext.dchain",
-			expectedValue: json.RawMessage(`{"segment":[{"s":"","t":1}]}`),
+			path: "ext.dchain",
+			expectedValue: map[string]any{
+				"segment": map[string]any{
+					"s": "",
+					"t": 1,
+				},
+			},
 			expectedFound: true,
 		},
 		{
@@ -855,7 +868,7 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.dchain",
-			expectedValue: json.RawMessage(nil),
+			expectedValue: map[string]any(nil),
 			expectedFound: false,
 		},
 		{
@@ -1573,11 +1586,11 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 			ortbResponse: map[string]any{
 				"cur": "USD",
 				"ext": map[string]any{
-					"rendererData": json.RawMessage(`{"key":"value"}`),
+					"rendererData": map[string]any{"key": "value"},
 				},
 			},
 			path:          "ext.rendererData",
-			expectedValue: json.RawMessage(`{"key":"value"}`),
+			expectedValue: map[string]any{"key": "value"},
 			expectedFound: true,
 		},
 		{
@@ -1589,7 +1602,7 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.rendererData",
-			expectedValue: json.RawMessage(nil),
+			expectedValue: map[string]any(nil),
 			expectedFound: false,
 		},
 		{
