@@ -2,6 +2,8 @@ package resolver
 
 import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // bidMetaResolver retrieves the meta object of the bid using the bidder param location.
@@ -18,34 +20,18 @@ func (b *bidMetaResolver) retrieveFromBidderParamLocation(responseNode map[strin
 	return validateBidMeta(value)
 }
 
-func validateBidMeta(value any) (map[string]any, bool) {
-	inputMeta, ok := value.(map[string]any)
-	if !ok {
+func validateBidMeta(value any) (any, bool) {
+	bidMetaBytes, err := jsonutil.Marshal(value)
+	if err != nil {
 		return nil, false
 	}
 
-	outputMeta := map[string]any{}
-	for metaKey, metaValue := range inputMeta {
-		switch metaKey {
-		case bidMetaAdvertiserDomainsKey, bidMetaSecondaryCatIdKey:
-			metaValue, ok = validateDataTypeSlice[string](metaValue)
-
-		case bidMetaAdvertiserIdKey, bidMetaAgencyIdKey, bidMetaBrandIdKey, bidMetaNetworkIdKey:
-			metaValue, ok = validateInt(metaValue)
-
-		case bidMetaDChainKey, bidMetaRenderedDataKey: // TODO - verify this ???
-			metaValue, ok = validateJSONRawMessage(metaValue)
-
-		default:
-			metaValue, ok = validateString(metaValue)
-		}
-		if !ok {
-			continue
-		}
-		outputMeta[metaKey] = metaValue
+	var bidMeta openrtb_ext.ExtBidPrebidMeta
+	err = jsonutil.UnmarshalValid(bidMetaBytes, &bidMeta)
+	if err != nil {
+		return nil, false
 	}
-
-	return outputMeta, len(outputMeta) != 0
+	return value, true
 }
 
 func (b *bidMetaResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -82,7 +68,7 @@ func (b *bidMetaAdvIDResolver) retrieveFromBidderParamLocation(responseNode map[
 	if !found {
 		return nil, false
 	}
-	return validateInt(value)
+	return validateNumber[int](value)
 }
 
 func (b *bidMetaAdvIDResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -118,7 +104,7 @@ func (b *bidMetaAgencyIDResolver) retrieveFromBidderParamLocation(responseNode m
 	if !found {
 		return nil, false
 	}
-	return validateInt(value)
+	return validateNumber[int](value)
 }
 
 func (b *bidMetaAgencyIDResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -154,7 +140,7 @@ func (b *bidMetaBrandIDResolver) retrieveFromBidderParamLocation(responseNode ma
 	if !found {
 		return nil, false
 	}
-	return validateInt(value)
+	return validateNumber[int](value)
 }
 
 func (b *bidMetaBrandIDResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -190,7 +176,7 @@ func (b *bidMetaDChainResolver) retrieveFromBidderParamLocation(responseNode map
 	if !found {
 		return nil, false
 	}
-	return validateJSONRawMessage(value)
+	return validateMap(value)
 }
 
 func (b *bidMetaDChainResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -244,7 +230,7 @@ func (b *bidMetaNetworkIDResolver) retrieveFromBidderParamLocation(responseNode 
 	if !found {
 		return nil, false
 	}
-	return validateInt(value)
+	return validateNumber[int](value)
 }
 
 func (b *bidMetaNetworkIDResolver) setValue(adapterBid map[string]any, value any) bool {
@@ -334,7 +320,7 @@ func (b *bidMetaRendererDataResolver) retrieveFromBidderParamLocation(responseNo
 	if !found {
 		return nil, false
 	}
-	return validateJSONRawMessage(value)
+	return validateMap(value)
 }
 
 func (b *bidMetaRendererDataResolver) setValue(adapterBid map[string]any, value any) bool {

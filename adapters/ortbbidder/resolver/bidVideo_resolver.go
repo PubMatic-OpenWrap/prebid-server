@@ -2,6 +2,8 @@ package resolver
 
 import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // bidVideoResolver determines the duration of the bid by retrieving the video field using the bidder param location.
@@ -18,26 +20,18 @@ func (b *bidVideoResolver) retrieveFromBidderParamLocation(responseNode map[stri
 	return validateBidVideo(value)
 }
 
-func validateBidVideo(value any) (map[string]any, bool) {
-	inputVideo, ok := value.(map[string]any)
-	if !ok {
+func validateBidVideo(value any) (any, bool) {
+	bidVideoBytes, err := jsonutil.Marshal(value)
+	if err != nil {
 		return nil, false
 	}
 
-	outputVideo := map[string]any{}
-	for videoKey, videoValue := range inputVideo {
-		ok = true
-		switch videoKey {
-		case bidVideoDurationKey:
-			videoValue, ok = validateInt64(videoValue)
-		case bidVideoPrimaryCategoryKey:
-			videoValue, ok = validateString(videoValue)
-		}
-		if ok {
-			outputVideo[videoKey] = videoValue
-		}
+	var bidVideo openrtb_ext.ExtBidPrebidVideo
+	err = jsonutil.UnmarshalValid(bidVideoBytes, &bidVideo)
+	if err != nil {
+		return nil, false
 	}
-	return outputVideo, len(outputVideo) != 0
+	return value, true
 }
 
 func (b *bidVideoResolver) setValue(adapterBid map[string]any, value any) bool {

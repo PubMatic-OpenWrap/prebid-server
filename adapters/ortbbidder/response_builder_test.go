@@ -269,6 +269,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 								"meta_object": map[string]any{
 									"advertiserDomains": []any{"xyz.com"},
 									"mediaType":         "video",
+									"networkId":         int(5), //TODO ??????????????????????? (discuss this)
 								},
 							},
 						},
@@ -279,7 +280,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 						},
 						"DealPriority": 2,
 						"BidMeta": map[string]any{
-							"advertiserDomains": []string{"xyz.com"},
+							"advertiserDomains": []any{"xyz.com"},
 							"mediaType":         "video",
 							"networkId":         int(5),
 						},

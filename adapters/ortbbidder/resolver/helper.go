@@ -1,13 +1,12 @@
 package resolver
 
-func validateInt(value any) (int, bool) {
+func validateNumber[T int | int64](value any) (T, bool) {
 	v, ok := value.(float64)
-	return int(v), ok
-}
-
-func validateInt64(value any) (int64, bool) {
-	v, ok := value.(float64)
-	return int64(v), ok
+	if !ok {
+		var zero T
+		return zero, false
+	}
+	return T(v), true
 }
 
 func validateString(value any) (string, bool) {
@@ -34,7 +33,7 @@ func validateDataTypeSlice[T any](value any) ([]T, bool) {
 	return values, len(values) != 0
 }
 
-func validateJSONRawMessage(value any) (map[string]any, bool) {
+func validateMap(value any) (map[string]any, bool) {
 	v, ok := value.(map[string]any)
 	return v, ok
 }

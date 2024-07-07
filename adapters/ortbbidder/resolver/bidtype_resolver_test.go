@@ -91,6 +91,27 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 			expectedFound: true,
 		},
 		{
+			name: "Found invalid bidtype in location",
+			ortbResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id": "123",
+								"ext": map[string]any{
+									"mtype": 1,
+								},
+							},
+						},
+					},
+				},
+			},
+			path:          "seatbid.0.bid.0.ext.mtype",
+			expectedValue: openrtb_ext.BidType(""),
+			expectedFound: false,
+		},
+		{
 			name: "Not found in location",
 			ortbResponse: map[string]any{
 				"cur": "USD",

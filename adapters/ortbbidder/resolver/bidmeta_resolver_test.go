@@ -37,10 +37,34 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 			},
 			path: "seatbid.0.bid.0.ext.metaObject",
 			expectedValue: map[string]any{
-				"advertiserDomains": []string{"abc.com", "xyz.com"},
-				"brandId":           1,
+				"advertiserDomains": []any{"abc.com", "xyz.com"},
+				"brandId":           1.0,
 			},
 			expectedFound: true,
+		},
+		{
+			name: "Found invalid meta object in location",
+			ortbResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id": "123",
+								"ext": map[string]any{
+									"metaObject": map[string]any{
+										"advertiserDomains": "abc.com",
+										"brandId":           1.0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			path:          "seatbid.0.bid.0.ext.metaObject",
+			expectedValue: nil,
+			expectedFound: false,
 		},
 		{
 			name: "Not found in location",
@@ -75,7 +99,7 @@ func TestValidateBidMeta(t *testing.T) {
 	tests := []struct {
 		name     string
 		value    any
-		expected map[string]any
+		expected any
 		valid    bool
 	}{
 		{
@@ -89,8 +113,8 @@ func TestValidateBidMeta(t *testing.T) {
 				"customField": "customValue",
 			},
 			expected: map[string]any{
-				bidMetaSecondaryCatIdKey: []string{"music", "sports"},
-				bidMetaAdvertiserIdKey:   123,
+				bidMetaSecondaryCatIdKey: []any{"music", "sports"},
+				bidMetaAdvertiserIdKey:   123.0,
 				bidMetaDChainKey: map[string]any{
 					"field": "value",
 				},
@@ -99,38 +123,19 @@ func TestValidateBidMeta(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "Metadata with all wrong type",
+			name: "Metadata with wrong type",
 			value: map[string]any{
 				bidMetaAdvertiserDomainsKey: "example.com", // should be a slice
 				bidMetaAdvertiserIdKey:      "123",         // should be an float
 			},
-			expected: map[string]any{},
-			valid:    false,
-		},
-		{
-			name:     "Invalid type for value",
-			value:    "invalid",
 			expected: nil,
 			valid:    false,
 		},
 		{
-			name: "Partially valid metadata",
-			value: map[string]any{
-				bidMetaAdvertiserDomainsKey: []any{"example.com"},
-				bidMetaAdvertiserIdKey:      123.0,
-				bidMetaBrandIdKey:           "invalid", // should be float
-				bidMetaAgencyIdKey:          11.11,
-				bidMetaNetworkIdKey:         22.22,
-				bidMetaDChainKey:            "invalid",
-				bidMetaRenderedDataKey:      json.RawMessage("anything"),
-			},
-			expected: map[string]any{
-				bidMetaAdvertiserDomainsKey: []string{"example.com"},
-				bidMetaAdvertiserIdKey:      123,
-				bidMetaAgencyIdKey:          11,
-				bidMetaNetworkIdKey:         22,
-			},
-			valid: true,
+			name:     "Invalid type for value",
+			value:    make(chan int),
+			expected: nil,
+			valid:    false,
 		},
 	}
 
@@ -205,7 +210,7 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 			expectedFound: true,
 		},
 		{
-			name: "Found in location but data type is other than []any",
+			name: "Found in location but data type is invalid",
 			ortbResponse: map[string]any{
 				"cur": "USD",
 				"seatbid": []any{

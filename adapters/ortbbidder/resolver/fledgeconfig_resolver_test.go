@@ -32,8 +32,8 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path: "ext.fledgeCfg",
-			expectedValue: []map[string]any{
-				{
+			expectedValue: []any{
+				map[string]any{
 					"impid":  "imp_1",
 					"bidder": "magnite",
 					"config": map[string]any{
@@ -42,6 +42,26 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			expectedFound: true,
+		},
+		{
+			name: "Found  invalid fledgeConfig in location",
+			responseNode: map[string]any{
+				"cur": "USD",
+				"ext": map[string]any{
+					"fledgeCfg": []any{
+						map[string]any{
+							"impid":  1,
+							"bidder": "magnite",
+							"config": map[string]any{
+								"key": "value",
+							},
+						},
+					},
+				},
+			},
+			path:          "ext.fledgeCfg",
+			expectedValue: nil,
+			expectedFound: false,
 		},
 		{
 			name:          "Not found fledge config in location",
@@ -60,127 +80,11 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 	}
 }
 
-func TestValidateFledgeConfig(t *testing.T) {
-	testCases := []struct {
-		name               string
-		input              any
-		expectedOutput     map[string]any
-		expectedValidation bool
-	}{
-		{
-			name: "Valid fledge config with all valid keys",
-			input: map[string]any{
-				"impid":   "123",
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-				"config": map[string]any{
-					"key1": "value1",
-					"key2": "value2",
-				},
-			},
-			expectedOutput: map[string]any{
-				"impid":   "123",
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-				"config": map[string]any{
-					"key1": "value1",
-					"key2": "value2",
-				},
-			},
-			expectedValidation: true,
-		},
-		{
-			name: "Invalid fledge config with non-string impid",
-			input: map[string]any{
-				"impid":   123,
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-				"config": map[string]any{
-					"key1": "value1",
-					"key2": "value2",
-				},
-			},
-			expectedOutput: map[string]any{
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-				"config": map[string]any{
-					"key1": "value1",
-					"key2": "value2",
-				},
-			},
-			expectedValidation: true,
-		},
-		{
-			name: "Invalid fledge config with non-map config",
-			input: map[string]any{
-				"impid":   "123",
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-				"config":  "invalidConfig",
-			},
-			expectedOutput: map[string]any{
-				"impid":   "123",
-				"bidder":  "exampleBidder",
-				"adapter": "exampleAdapter",
-			},
-			expectedValidation: true,
-		},
-		{
-			name: "Invalid fledge config with unknown keys",
-			input: map[string]any{
-				"impid":      "123",
-				"bidder":     "exampleBidder",
-				"adapter":    "exampleAdapter",
-				"config":     map[string]any{"key1": "value1"},
-				"unknownKey": "unknownValue",
-			},
-			expectedOutput: map[string]any{
-				"impid":      "123",
-				"bidder":     "exampleBidder",
-				"adapter":    "exampleAdapter",
-				"config":     map[string]any{"key1": "value1"},
-				"unknownKey": "unknownValue",
-			},
-			expectedValidation: true,
-		},
-		{
-			name: "Empty fledge config",
-			input: map[string]any{
-				"impid":   "",
-				"bidder":  "",
-				"adapter": "",
-				"config":  map[string]any{},
-			},
-			expectedOutput: map[string]any{
-				"impid":   "",
-				"bidder":  "",
-				"adapter": "",
-				"config":  map[string]any{},
-			},
-			expectedValidation: true,
-		},
-		{
-			name:               "Non-map input",
-			input:              "invalid",
-			expectedOutput:     nil,
-			expectedValidation: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			output, valid := validateFledgeConfig(tc.input)
-			assert.Equal(t, tc.expectedOutput, output)
-			assert.Equal(t, tc.expectedValidation, valid)
-		})
-	}
-}
-
 func TestValidateFledgeConfigs(t *testing.T) {
 	testCases := []struct {
 		name               string
 		input              any
-		expectedOutput     []map[string]any
+		expectedOutput     any
 		expectedValidation bool
 	}{
 		{
@@ -196,8 +100,8 @@ func TestValidateFledgeConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: []map[string]any{
-				{
+			expectedOutput: []any{
+				map[string]any{
 					"impid":   "123",
 					"bidder":  "exampleBidder",
 					"adapter": "exampleAdapter",
@@ -223,35 +127,25 @@ func TestValidateFledgeConfigs(t *testing.T) {
 				},
 				"invalidEntry",
 			},
-			expectedOutput: []map[string]any{
-				{
-					"impid":   "123",
-					"bidder":  "exampleBidder",
-					"adapter": "exampleAdapter",
-					"config": map[string]any{
-						"key1": "value1",
-						"key2": "value2",
-					},
-				},
-			},
-			expectedValidation: true,
-		},
-		{
-			name:               "Empty fledge configs",
-			input:              []any{},
-			expectedOutput:     []map[string]any{},
+			expectedOutput:     nil,
 			expectedValidation: false,
 		},
 		{
+			name:               "nil fledge configs",
+			input:              nil,
+			expectedOutput:     nil,
+			expectedValidation: true,
+		},
+		{
 			name:               "Non-slice input",
-			input:              "invalidInput",
+			input:              make(chan int),
 			expectedOutput:     nil,
 			expectedValidation: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			output, valid := validateFledgeConfigs(tc.input)
+			output, valid := validateFledgeConfig(tc.input)
 			assert.Equal(t, tc.expectedOutput, output)
 			assert.Equal(t, tc.expectedValidation, valid)
 		})

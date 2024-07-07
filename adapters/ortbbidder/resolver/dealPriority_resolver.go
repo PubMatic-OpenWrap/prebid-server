@@ -13,7 +13,7 @@ func (b *bidDealPriorityResolver) retrieveFromBidderParamLocation(responseNode m
 	if !found {
 		return nil, false
 	}
-	return validateInt(value)
+	return validateNumber[int](value)
 }
 
 func (b *bidDealPriorityResolver) setValue(adapterBid map[string]any, value any) bool {

@@ -18,7 +18,7 @@ func TestValidateInt(t *testing.T) {
 		{input: nil, expected: 0, ok: false},
 	}
 	for _, test := range tests {
-		result, ok := validateInt(test.input)
+		result, ok := validateNumber[int](test.input)
 		if result != test.expected || ok != test.ok {
 			t.Errorf("validateInt(%v) = (%d, %v), want (%d, %v)", test.input, result, ok, test.expected, test.ok)
 		}
@@ -37,7 +37,7 @@ func TestValidateInt64(t *testing.T) {
 		{input: 42, expected: 0, ok: false},
 	}
 	for _, test := range tests {
-		result, ok := validateInt64(test.input)
+		result, ok := validateNumber[int64](test.input)
 		if result != test.expected || ok != test.ok {
 			t.Errorf("validateInt64(%v) = (%d, %v), want (%d, %v)", test.input, result, ok, test.expected, test.ok)
 		}
@@ -63,7 +63,7 @@ func TestValidateString(t *testing.T) {
 	}
 }
 
-func TestValidateJSONRawMessage(t *testing.T) {
+func TestValidateMap(t *testing.T) {
 	tests := []struct {
 		input    any
 		expected map[string]any
@@ -74,7 +74,7 @@ func TestValidateJSONRawMessage(t *testing.T) {
 		{input: nil, expected: nil, ok: false},
 	}
 	for _, test := range tests {
-		result, ok := validateJSONRawMessage(test.input)
+		result, ok := validateMap(test.input)
 		assert.Equal(t, test.expected, result, "mismatched result")
 		assert.Equal(t, test.ok, ok, "mismatched status")
 	}

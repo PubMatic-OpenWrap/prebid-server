@@ -1,6 +1,10 @@
 package resolver
 
-import "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+import (
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
+)
 
 // fledgeResolver retrieves the fledge auction config of the bidresponse using the bidder param location.
 // The determined fledge config is subsequently assigned to adapterresponse.FledgeAuctionConfigs
@@ -13,45 +17,21 @@ func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string
 	if !found {
 		return nil, false
 	}
-	return validateFledgeConfigs(value)
+	return validateFledgeConfig(value)
 }
 
-func validateFledgeConfigs(value any) ([]map[string]any, bool) {
-	inputFledgeCfgs, ok := value.([]any)
-	if !ok {
+func validateFledgeConfig(value any) (any, bool) {
+	fledgeCfgBytes, err := jsonutil.Marshal(value)
+	if err != nil {
 		return nil, false
 	}
 
-	outputFledgeCfgs := make([]map[string]any, 0, len(inputFledgeCfgs))
-	for _, fledgeCfg := range inputFledgeCfgs {
-		validFledgeCfg, ok := validateFledgeConfig(fledgeCfg)
-		if ok {
-			outputFledgeCfgs = append(outputFledgeCfgs, validFledgeCfg)
-		}
-	}
-	return outputFledgeCfgs, len(outputFledgeCfgs) != 0
-}
-
-func validateFledgeConfig(fledgeCfg any) (map[string]any, bool) {
-	inputFledgeCfg, ok := fledgeCfg.(map[string]any)
-	if !ok {
+	var fledgeCfg []*openrtb_ext.FledgeAuctionConfig
+	err = jsonutil.UnmarshalValid(fledgeCfgBytes, &fledgeCfg)
+	if err != nil {
 		return nil, false
 	}
-
-	outputFledgeCfg := make(map[string]any, len(inputFledgeCfg))
-	for key, value := range inputFledgeCfg {
-		ok = true
-		switch key {
-		case ortbFieldImpId, ortbFieldBidder, ortbFieldAdapter:
-			value, ok = value.(string)
-		case ortbFieldConfig:
-			value, ok = value.(map[string]any)
-		}
-		if ok {
-			outputFledgeCfg[key] = value
-		}
-	}
-	return outputFledgeCfg, len(outputFledgeCfg) != 0
+	return value, true
 }
 
 func (f *fledgeResolver) setValue(adapterBid map[string]any, value any) bool {

@@ -37,14 +37,14 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 			},
 			path: "seatbid.0.bid.0.ext.video",
 			expectedValue: map[string]any{
-				"duration":         int64(11),
+				"duration":         11.0,
 				"primary_category": "sport",
 				"extra_key":        "extra_value",
 			},
 			expectedFound: true,
 		},
 		{
-			name: "bidVideo found but duration is invalid",
+			name: "bidVideo found but few fields are invalid",
 			responseNode: map[string]any{
 				"seatbid": []any{
 					map[string]any{
@@ -53,7 +53,7 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 								"duration": 100.0,
 								"ext": map[string]any{
 									"video": map[string]any{
-										"duration":         11,
+										"duration":         "11", // invalid
 										"primary_category": "sport",
 										"extra_key":        "extra_value",
 									},
@@ -63,39 +63,9 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 					},
 				},
 			},
-			path: "seatbid.0.bid.0.ext.video",
-			expectedValue: map[string]any{
-				"primary_category": "sport",
-				"extra_key":        "extra_value",
-			},
-			expectedFound: true,
-		},
-		{
-			name: "bidVideo found but primary_category is invalid",
-			responseNode: map[string]any{
-				"seatbid": []any{
-					map[string]any{
-						"bid": []any{
-							map[string]any{
-								"duration": 100.0,
-								"ext": map[string]any{
-									"video": map[string]any{
-										"duration":         11.0,
-										"primary_category": 11,
-										"extra_key":        "extra_value",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			path: "seatbid.0.bid.0.ext.video",
-			expectedValue: map[string]any{
-				"duration":  int64(11),
-				"extra_key": "extra_value",
-			},
-			expectedFound: true,
+			path:          "seatbid.0.bid.0.ext.video",
+			expectedValue: nil,
+			expectedFound: false,
 		},
 		{
 			name: "bidVideo not found in location",
@@ -122,7 +92,7 @@ func TestValidateBidVideo(t *testing.T) {
 	testCases := []struct {
 		name            string
 		video           any
-		expectedVideo   map[string]any
+		expectedVideo   any
 		expectedIsValid bool
 	}{
 		{
@@ -133,7 +103,7 @@ func TestValidateBidVideo(t *testing.T) {
 				"extra_key":        "extra_value",
 			},
 			expectedVideo: map[string]any{
-				"duration":         int64(30),
+				"duration":         30.0,
 				"primary_category": "sports",
 				"extra_key":        "extra_value",
 			},
@@ -145,10 +115,8 @@ func TestValidateBidVideo(t *testing.T) {
 				"duration":         "30",
 				"primary_category": "sports",
 			},
-			expectedVideo: map[string]any{
-				"primary_category": "sports",
-			},
-			expectedIsValid: true,
+			expectedVideo:   nil,
+			expectedIsValid: false,
 		},
 		{
 			name: "Invalid primary category type",
@@ -156,14 +124,12 @@ func TestValidateBidVideo(t *testing.T) {
 				"duration":         30.0,
 				"primary_category": 123,
 			},
-			expectedVideo: map[string]any{
-				"duration": int64(30),
-			},
-			expectedIsValid: true,
+			expectedVideo:   nil,
+			expectedIsValid: false,
 		},
 		{
 			name:            "Invalid type (not a map)",
-			video:           "invalid",
+			video:           make(chan int),
 			expectedVideo:   nil,
 			expectedIsValid: false,
 		},

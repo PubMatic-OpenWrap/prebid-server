@@ -26,6 +26,16 @@ func TestBidDealPriorityFromLocation(t *testing.T) {
 			expectedFound: true,
 		},
 		{
+			name: "Found invalid dealPriority in location",
+			responseNode: map[string]any{
+				"cur": "USD",
+				"dp":  "invalid",
+			},
+			path:          "dp",
+			expectedValue: 0,
+			expectedFound: false,
+		},
+		{
 			name:          "Not found dealPriority in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
