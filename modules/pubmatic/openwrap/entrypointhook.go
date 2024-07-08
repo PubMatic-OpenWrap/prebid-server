@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
@@ -48,10 +49,14 @@ func (m OpenWrap) handleEntrypointHook(
 	defer func() {
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
-		} else {
-			result.ModuleContext = make(hookstage.ModuleContext)
-			result.ModuleContext["rctx"] = rCtx
+			if glog.V(3) {
+				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
+					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, queryParams.Encode(), string(payload.Body))
+			}
+			return
 		}
+		result.ModuleContext = make(hookstage.ModuleContext)
+		result.ModuleContext["rctx"] = rCtx
 	}()
 
 	rCtx.Sshb = queryParams.Get("sshb")
