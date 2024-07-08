@@ -46,7 +46,7 @@ func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
 }
 
 // ConvertNBRCTOAPRC converts NonBidStatusCode to aprc
-func ConvertNBRCTOAPRC(noBidReason *openrtb3.NoBidReason) int64 {
+func ConvertNBRCTOAPRC(noBidReason *openrtb3.NoBidReason) *int64 {
 	var aprc int64
 
 	switch *noBidReason {
@@ -58,11 +58,10 @@ func ConvertNBRCTOAPRC(noBidReason *openrtb3.NoBidReason) int64 {
 		aprc = constant.StatusDomainExclusion
 	case exchange.ResponseRejectedInvalidCreative:
 		aprc = constant.StatusDurationMismatch
-
 	default:
-		return aprc
+		return nil
 	}
-	return aprc
+	return &aprc
 }
 
 func GetPodType(imp openrtb2.Imp, extAdpod openrtb_ext.ExtVideoAdPod) PodType {

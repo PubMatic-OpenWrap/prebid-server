@@ -10,11 +10,10 @@ import (
 type Bid struct {
 	*openrtb2.Bid
 	openrtb_ext.ExtBid
-	Duration            int
-	Status              constant.BidStatus
-	DealTierSatisfied   bool
-	Seat                string
-	AlternateBidderCode string
+	Duration          int
+	Status            constant.BidStatus
+	DealTierSatisfied bool
+	Seat              string
 }
 
 // ExtCTVBidResponse object for ctv bid resposne object

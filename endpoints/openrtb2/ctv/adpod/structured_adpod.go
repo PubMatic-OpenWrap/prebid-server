@@ -135,16 +135,7 @@ func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 
 func (sa *structuredAdpod) GetSeatNonBid(snb *openrtb_ext.NonBidCollection) {
 	for _, bids := range sa.ImpBidMap {
-		for _, bid := range bids {
-			if bid.Status != constant.StatusWinningBid {
-				nonBidParams := GetNonBidParamsFromPbsOrtbBid(bid, bid.Seat)
-				convertedReason := ConvertAPRCToNBRC(bid.Status)
-				if convertedReason != nil {
-					nonBidParams.NonBidReason = int(*convertedReason)
-				}
-				snb.AddBid(openrtb_ext.NewNonBid(nonBidParams), bid.Seat)
-			}
-		}
+		addSeatNonBids(snb, bids)
 	}
 	return
 }
@@ -260,11 +251,9 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 
 	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
-			slotBids[selectedSlot.Index].Status = constant.StatusCategoryExclusion
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
-			slotBids[selectedSlot.Index].Status = constant.StatusCategoryExclusion
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {

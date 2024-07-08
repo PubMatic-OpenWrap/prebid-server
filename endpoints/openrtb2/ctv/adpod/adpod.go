@@ -2,6 +2,7 @@ package adpod
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -50,9 +51,6 @@ func (ex *Exclusion) shouldApplyExclusion() bool {
 // GetNonBidParamsFromPbsOrtbBid function returns NonBidParams from PbsOrtbBid
 func GetNonBidParamsFromPbsOrtbBid(bid *types.Bid, seat string) openrtb_ext.NonBidParams {
 	adapterCode := seat
-	// if bid.AlternateBidderCode != "" {
-	// 	adapterCode = string(openrtb_ext.BidderName(bid.AlternateBidderCode))
-	// }
 	if bid.Prebid.Meta == nil {
 		bid.Prebid.Meta = &openrtb_ext.ExtBidPrebidMeta{}
 	}
@@ -72,5 +70,18 @@ func GetNonBidParamsFromPbsOrtbBid(bid *types.Bid, seat string) openrtb_ext.NonB
 		BidVideo:          bid.Prebid.Video,
 		BidEvents:         bid.Prebid.Events,
 		BidFloors:         bid.Prebid.Floors,
+	}
+}
+
+func addSeatNonBids(snb *openrtb_ext.NonBidCollection, bids []*types.Bid) {
+	for _, bid := range bids {
+		if bid.Status != constant.StatusWinningBid {
+			nonBidParams := GetNonBidParamsFromPbsOrtbBid(bid, bid.Seat)
+			convertedReason := ConvertAPRCToNBRC(bid.Status)
+			if convertedReason != nil {
+				nonBidParams.NonBidReason = int(*convertedReason)
+			}
+			snb.AddBid(openrtb_ext.NewNonBid(nonBidParams), bid.Seat)
+		}
 	}
 }

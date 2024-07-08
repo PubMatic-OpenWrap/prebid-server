@@ -2,6 +2,7 @@ package adpod
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -482,6 +483,186 @@ func TestGetAdPodBidCreative(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getAdPodBidCreative(tt.args.adpod, tt.args.generatedBidID)
 			assert.Equalf(t, tt.want, *got, "found incorrect creative")
+		})
+	}
+}
+
+func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
+	type fields struct {
+		AdpodBid *types.AdPodBid
+	}
+	type args struct {
+		snb *openrtb_ext.NonBidCollection
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *openrtb_ext.NonBidCollection
+	}{
+		{
+			name: "Test Get seat non bid- winning and non winning bids",
+			fields: fields{
+				AdpodBid: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "BID-1",
+								Price: 10,
+							},
+							ExtBid: openrtb_ext.ExtBid{
+								Prebid: &openrtb_ext.ExtBidPrebid{
+									Meta: &openrtb_ext.ExtBidPrebidMeta{
+										AdapterCode: "pubmatic",
+									},
+									Type: "video",
+								},
+								OriginalBidCPM:    10,
+								OriginalBidCur:    "USD",
+								OriginalBidCPMUSD: 10,
+							},
+							DealTierSatisfied: false,
+							Seat:              "pubmatic",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "BID-2",
+								Price: 15,
+							},
+							ExtBid: openrtb_ext.ExtBid{
+								Prebid: &openrtb_ext.ExtBidPrebid{
+									Meta: &openrtb_ext.ExtBidPrebidMeta{
+										AdapterCode: "pubmatic",
+									},
+								},
+							},
+							Status:            constant.StatusWinningBid,
+							DealTierSatisfied: false,
+							Seat:              "pubmatic",
+						},
+					},
+				},
+			},
+			args: args{
+				snb: &openrtb_ext.NonBidCollection{},
+			},
+			want: func() *openrtb_ext.NonBidCollection {
+				seatNonBid := openrtb_ext.NonBidCollection{}
+				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+					Bid:               &openrtb2.Bid{ID: "BID-1", Price: 10},
+					NonBidReason:      501,
+					OriginalBidCPM:    10,
+					OriginalBidCur:    "USD",
+					BidType:           "video",
+					OriginalBidCPMUSD: 10,
+					BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+						AdapterCode: "pubmatic",
+					},
+				})
+				seatNonBid.AddBid(nonBid, "pubmatic")
+				return &seatNonBid
+			}(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			da := &dynamicAdpod{
+				AdpodBid: tt.fields.AdpodBid,
+			}
+			da.GetSeatNonBid(tt.args.snb)
+			assert.Equal(t, tt.args.snb, tt.want)
+		})
+	}
+}
+
+func TestDynamicAdpodGetWinningBids(t *testing.T) {
+	type fields struct {
+		WinningBids *types.AdPodBid
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []openrtb2.SeatBid
+	}{
+		{
+			name: "Test Empty Bids in WinningBids",
+			fields: fields{
+				WinningBids: &types.AdPodBid{
+					Bids: []*types.Bid{},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "Test GetWinningBids",
+			fields: fields{
+				WinningBids: &types.AdPodBid{
+					Bids: []*types.Bid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "BID-2",
+								Price: 15,
+							},
+							ExtBid: openrtb_ext.ExtBid{
+								Prebid: &openrtb_ext.ExtBidPrebid{
+									Meta: &openrtb_ext.ExtBidPrebidMeta{
+										AdapterCode: "pubmatic",
+									},
+								},
+							},
+							Status:            constant.StatusWinningBid,
+							DealTierSatisfied: false,
+							Seat:              "pubmatic",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "BID-3",
+								Price: 25,
+							},
+							ExtBid: openrtb_ext.ExtBid{
+								Prebid: &openrtb_ext.ExtBidPrebid{
+									Meta: &openrtb_ext.ExtBidPrebidMeta{
+										AdapterCode: "appnexus",
+									},
+								},
+							},
+							Status:            constant.StatusWinningBid,
+							DealTierSatisfied: false,
+							Seat:              "appnexus",
+						},
+					},
+				},
+			},
+			want: []openrtb2.SeatBid{
+				{
+					Seat: "pubmatic",
+					Bid: []openrtb2.Bid{
+						{
+							ID:    "BID-2",
+							Price: 15,
+						},
+					},
+				},
+				{
+					Seat: "appnexus",
+					Bid: []openrtb2.Bid{
+						{
+							ID:    "BID-3",
+							Price: 25,
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			da := &dynamicAdpod{
+				WinningBids: tt.fields.WinningBids,
+			}
+			if got := da.GetWinningBids(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("dynamicAdpod.GetWinningBids() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

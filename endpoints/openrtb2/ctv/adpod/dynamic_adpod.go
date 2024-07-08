@@ -183,18 +183,8 @@ func (da *dynamicAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 
 func (da *dynamicAdpod) GetSeatNonBid(snb *openrtb_ext.NonBidCollection) {
 	if da.AdpodBid != nil && len(da.AdpodBid.Bids) > 0 {
-		for _, bid := range da.AdpodBid.Bids {
-			if bid.Status != constant.StatusWinningBid {
-				nonBidParams := GetNonBidParamsFromPbsOrtbBid(bid, bid.Seat)
-				convertedReason := ConvertAPRCToNBRC(bid.Status)
-				if convertedReason != nil {
-					nonBidParams.NonBidReason = int(*convertedReason)
-				}
-				snb.AddBid(openrtb_ext.NewNonBid(nonBidParams), bid.Seat)
-			}
-		}
+		addSeatNonBids(snb, da.AdpodBid.Bids)
 	}
-	return
 }
 
 func (da *dynamicAdpod) GetWinningBids() []openrtb2.SeatBid {
