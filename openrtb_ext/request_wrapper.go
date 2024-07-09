@@ -648,7 +648,6 @@ func (ue *UserExt) SetConsentedProvidersSettingsOut(cpSettings *ConsentedProvide
 
 	ue.consentedProvidersSettingsOut = cpSettings
 	ue.consentedProvidersSettingsOutDirty = true
-	return
 }
 
 func (ue *UserExt) GetPrebid() *ExtUserPrebid {

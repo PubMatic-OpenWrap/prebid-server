@@ -13,6 +13,7 @@ type singleRequestBuilder struct {
 	requestBuilderImpl
 	newRequest map[string]any
 	imps       []map[string]any
+	impIDs     []string
 }
 
 // parseRequest parse the incoming request and populates intermediate fields required for building requestData object
@@ -36,6 +37,11 @@ func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err 
 		if !ok {
 			return fmt.Errorf("invalid imp found at index:%d", index)
 		}
+
+		if _, ok := imp[idKey].(string); !ok {
+			return fmt.Errorf("invalid imp found error while paring imp id at index :%d", index)
+		}
+		rb.impIDs = append(rb.impIDs, imp[idKey].(string))
 		rb.imps = append(rb.imps, imp)
 	}
 	return
@@ -68,7 +74,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 	}
 
 	//step 3: append new request data
-	if requestData, err = appendRequestData(requestData, rb.newRequest, endpoint); err != nil {
+	if requestData, err = appendRequestData(requestData, rb.newRequest, endpoint, rb.impIDs); err != nil {
 		errs = append(errs, newBadInputError(err.Error()))
 	}
 	return requestData, errs
