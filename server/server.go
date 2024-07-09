@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/metrics"
@@ -95,7 +94,7 @@ func newAdminServer(cfg *config.Configuration, handler http.Handler) *http.Serve
 
 func newMainServer(cfg *config.Configuration, handler http.Handler) *http.Server {
 	serverHandler := getCompressionEnabledHandler(handler, cfg.Compression.Response)
-	serverHandler = utils.SetResponseHeaders(serverHandler)
+	serverHandler = openwrap.SetResponseHeaders(serverHandler)
 	return &http.Server{
 		Addr:         cfg.Host + ":" + strconv.Itoa(cfg.Port),
 		Handler:      serverHandler,
