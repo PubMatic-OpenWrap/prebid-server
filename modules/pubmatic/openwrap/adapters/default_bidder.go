@@ -37,6 +37,9 @@ func prepareBidParamJSONDefault(params BidderParameters) (json.RawMessage, error
 			if err != nil && mapping.Required {
 				return nil, err
 			}
+			if params.AdapterName == "aidem" && mapping.KeyName == "rateLimit" {
+				delete(bidderParams, mapping.KeyName)
+			}
 		}
 	}
 
