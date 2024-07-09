@@ -110,6 +110,9 @@ func getExpectedResponseSlotMappings(params map[string]*ParameterMapping, skipRe
 			continue
 		}
 		targetMap[mapping.KeyName] = getExpectedResponseValue(mapping.Datatype)
+		if mapping.KeyName == "rateLimit" {
+			delete(targetMap, mapping.KeyName)
+		}
 	}
 	return targetMap
 }
