@@ -12,26 +12,23 @@ import (
 
 func TestAddSeatNonBids(t *testing.T) {
 	type args struct {
-		snb  *openrtb_ext.NonBidCollection
 		bids []*types.Bid
 	}
 	tests := []struct {
 		name string
 		args args
-		want *openrtb_ext.NonBidCollection
+		want openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "Empty NonBid Collection",
 			args: args{
-				snb:  &openrtb_ext.NonBidCollection{},
 				bids: []*types.Bid{},
 			},
-			want: &openrtb_ext.NonBidCollection{},
+			want: openrtb_ext.NonBidCollection{},
 		},
 		{
 			name: "Winning and Nonwinning Bid",
 			args: args{
-				snb: &openrtb_ext.NonBidCollection{},
 				bids: []*types.Bid{
 					{
 						Bid: &openrtb2.Bid{
@@ -70,7 +67,7 @@ func TestAddSeatNonBids(t *testing.T) {
 					},
 				},
 			},
-			want: func() *openrtb_ext.NonBidCollection {
+			want: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:               &openrtb2.Bid{ID: "BID-1", Price: 10},
@@ -84,14 +81,14 @@ func TestAddSeatNonBids(t *testing.T) {
 					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
-				return &seatNonBid
+				return seatNonBid
 			}(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			addSeatNonBids(tt.args.snb, tt.args.bids)
-			assert.Equal(t, tt.args.snb, tt.want)
+			snb := addSeatNonBids(tt.args.bids)
+			assert.Equal(t, snb, tt.want)
 		})
 	}
 }

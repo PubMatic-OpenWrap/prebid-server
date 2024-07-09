@@ -181,10 +181,11 @@ func (da *dynamicAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return da.getBidResponseSeatBids()
 }
 
-func (da *dynamicAdpod) GetSeatNonBid(snb *openrtb_ext.NonBidCollection) {
+func (da *dynamicAdpod) GetSeatNonBid() openrtb_ext.NonBidCollection {
 	if da.AdpodBid != nil && len(da.AdpodBid.Bids) > 0 {
-		addSeatNonBids(snb, da.AdpodBid.Bids)
+		return addSeatNonBids(da.AdpodBid.Bids)
 	}
+	return openrtb_ext.NonBidCollection{}
 }
 
 func (da *dynamicAdpod) GetWinningBids() []openrtb2.SeatBid {
@@ -193,6 +194,9 @@ func (da *dynamicAdpod) GetWinningBids() []openrtb2.SeatBid {
 	}
 	var seatBid []openrtb2.SeatBid
 	for _, bid := range da.WinningBids.Bids {
+		if bid == nil || bid.Bid == nil {
+			continue
+		}
 		adpodSeat := openrtb2.SeatBid{
 			Bid:  []openrtb2.Bid{*bid.Bid},
 			Seat: bid.Seat,

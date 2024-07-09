@@ -892,14 +892,10 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 	type fields struct {
 		ImpBidMap map[string][]*types.Bid
 	}
-	type args struct {
-		snb *openrtb_ext.NonBidCollection
-	}
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
-		want   *openrtb_ext.NonBidCollection
+		want   openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "Test Get Seat Non Bid",
@@ -944,10 +940,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				snb: &openrtb_ext.NonBidCollection{},
-			},
-			want: func() *openrtb_ext.NonBidCollection {
+			want: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:               &openrtb2.Bid{ID: "BID-1", Price: 10},
@@ -961,7 +954,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
-				return &seatNonBid
+				return seatNonBid
 			}(),
 		},
 	}
@@ -970,8 +963,8 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 			sa := &structuredAdpod{
 				ImpBidMap: tt.fields.ImpBidMap,
 			}
-			sa.GetSeatNonBid(tt.args.snb)
-			assert.Equal(t, tt.args.snb, tt.want)
+			snb := sa.GetSeatNonBid()
+			assert.Equal(t, snb, tt.want)
 		})
 	}
 }

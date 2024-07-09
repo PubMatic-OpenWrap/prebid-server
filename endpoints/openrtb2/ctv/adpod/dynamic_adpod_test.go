@@ -491,14 +491,10 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 	type fields struct {
 		AdpodBid *types.AdPodBid
 	}
-	type args struct {
-		snb *openrtb_ext.NonBidCollection
-	}
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
-		want   *openrtb_ext.NonBidCollection
+		want   openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "Test Get seat non bid- winning and non winning bids",
@@ -543,10 +539,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				snb: &openrtb_ext.NonBidCollection{},
-			},
-			want: func() *openrtb_ext.NonBidCollection {
+			want: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:               &openrtb2.Bid{ID: "BID-1", Price: 10},
@@ -560,7 +553,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 					},
 				})
 				seatNonBid.AddBid(nonBid, "pubmatic")
-				return &seatNonBid
+				return seatNonBid
 			}(),
 		},
 	}
@@ -569,8 +562,8 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 			da := &dynamicAdpod{
 				AdpodBid: tt.fields.AdpodBid,
 			}
-			da.GetSeatNonBid(tt.args.snb)
-			assert.Equal(t, tt.args.snb, tt.want)
+			snb := da.GetSeatNonBid()
+			assert.Equal(t, snb, tt.want)
 		})
 	}
 }

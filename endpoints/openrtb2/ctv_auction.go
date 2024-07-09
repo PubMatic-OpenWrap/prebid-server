@@ -111,6 +111,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var err error
 	var errL []error
 	seatNonBid := &openrtb_ext.NonBidCollection{}
+	var adPodBidResponse *openrtb2.BidResponse
+	var adPodseatNonBid openrtb_ext.NonBidCollection
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,
@@ -260,24 +262,21 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.doAdpodAuction()
 
 		//Create Bid Response
-		adPodBidResponse, adPodseatNonBid := deps.createAdPodBidResponse(response)
-		seatNonBid.Append(*adPodseatNonBid)
-		ao.SeatNonBid = seatNonBid.Get()
-		//add seatNonBids in response.Ext based on 'returnallbidstatus' flag
-		err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
-		if err != nil {
-			util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
-		}
+		adPodBidResponse, adPodseatNonBid = deps.createAdPodBidResponse(response)
+		seatNonBid.Append(adPodseatNonBid)
+	}
+	ao.SeatNonBid = seatNonBid.Get()
+	//add seatNonBids in response.Ext based on 'returnallbidstatus' flag
+	err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+	if err != nil {
+		util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
+	}
+
+	if len(deps.podCtx) > 0 {
 		adPodBidResponse.Ext = deps.getBidResponseExt(response)
 		response = adPodBidResponse
-	} else {
-		ao.SeatNonBid = seatNonBid.Get()
-		//add seatNonBids in response.Ext based on 'returnallbidstatus' flag
-		err = setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
-		if err != nil {
-			util.JLogf("Error setting seatNonBid in responseExt: %v", err) //TODO: REMOVE LOG
-		}
 	}
+
 	ao.Response = response
 
 	// Response Generation
@@ -659,16 +658,17 @@ func (deps *ctvEndpointDeps) doAdpodAuction() {
 /********************* Creating CTV BidResponse *********************/
 
 // createAdPodBidResponse
-func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse) (*openrtb2.BidResponse, *openrtb_ext.NonBidCollection) {
+func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse) (*openrtb2.BidResponse, openrtb_ext.NonBidCollection) {
 	var seatbids []openrtb2.SeatBid
-	seatNonBid := &openrtb_ext.NonBidCollection{} //append pure video request seats
+	seatNonBid := openrtb_ext.NonBidCollection{}
+	//append pure video request seats
 	for _, seat := range deps.videoSeats {
 		seatbids = append(seatbids, *seat)
 	}
 
 	for _, adpod := range deps.podCtx {
 		seatbids = append(seatbids, adpod.GetAdpodSeatBids()...)
-		adpod.GetSeatNonBid(seatNonBid)
+		seatNonBid.Append(adpod.GetSeatNonBid())
 	}
 
 	bidResp := &openrtb2.BidResponse{
