@@ -269,7 +269,6 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 								"meta_object": map[string]any{
 									"advertiserDomains": []any{"xyz.com"},
 									"mediaType":         "video",
-									"networkId":         int(5), //TODO ??????????????????????? (discuss this)
 								},
 							},
 						},

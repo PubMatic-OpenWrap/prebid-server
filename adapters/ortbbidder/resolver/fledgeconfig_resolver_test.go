@@ -1,8 +1,10 @@
 package resolver
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,13 +34,11 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path: "ext.fledgeCfg",
-			expectedValue: []any{
-				map[string]any{
-					"impid":  "imp_1",
-					"bidder": "magnite",
-					"config": map[string]any{
-						"key": "value",
-					},
+			expectedValue: []*openrtb_ext.FledgeAuctionConfig{
+				{
+					ImpId:  "imp_1",
+					Bidder: "magnite",
+					Config: json.RawMessage(`{"key":"value"}`),
 				},
 			},
 			expectedFound: true,
@@ -100,15 +100,12 @@ func TestValidateFledgeConfigs(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: []any{
-				map[string]any{
-					"impid":   "123",
-					"bidder":  "exampleBidder",
-					"adapter": "exampleAdapter",
-					"config": map[string]any{
-						"key1": "value1",
-						"key2": "value2",
-					},
+			expectedOutput: []*openrtb_ext.FledgeAuctionConfig{
+				{
+					ImpId:   "123",
+					Bidder:  "exampleBidder",
+					Adapter: "exampleAdapter",
+					Config:  json.RawMessage(`{"key1":"value1","key2":"value2"}`),
 				},
 			},
 			expectedValidation: true,
@@ -133,8 +130,8 @@ func TestValidateFledgeConfigs(t *testing.T) {
 		{
 			name:               "nil fledge configs",
 			input:              nil,
-			expectedOutput:     nil,
-			expectedValidation: true,
+			expectedOutput:     []*openrtb_ext.FledgeAuctionConfig(nil),
+			expectedValidation: false,
 		},
 		{
 			name:               "Non-slice input",

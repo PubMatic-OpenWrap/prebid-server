@@ -31,7 +31,13 @@ func validateBidVideo(value any) (any, bool) {
 	if err != nil {
 		return nil, false
 	}
-	return value, true
+
+	var bidVideoMap map[string]any
+	err = jsonutil.UnmarshalValid(bidVideoBytes, &bidVideoMap)
+	if err != nil {
+		return nil, false
+	}
+	return bidVideoMap, true
 }
 
 func (b *bidVideoResolver) setValue(adapterBid map[string]any, value any) bool {

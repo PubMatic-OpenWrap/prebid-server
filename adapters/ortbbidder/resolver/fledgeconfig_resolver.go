@@ -31,7 +31,7 @@ func validateFledgeConfig(value any) (any, bool) {
 	if err != nil {
 		return nil, false
 	}
-	return value, true
+	return fledgeCfg, len(fledgeCfg) != 0
 }
 
 func (f *fledgeResolver) setValue(adapterBid map[string]any, value any) bool {

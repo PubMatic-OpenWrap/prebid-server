@@ -31,7 +31,13 @@ func validateBidMeta(value any) (any, bool) {
 	if err != nil {
 		return nil, false
 	}
-	return value, true
+
+	var bidMetaMap map[string]any
+	err = jsonutil.UnmarshalValid(bidMetaBytes, &bidMetaMap)
+	if err != nil {
+		return nil, false
+	}
+	return bidMetaMap, true
 }
 
 func (b *bidMetaResolver) setValue(adapterBid map[string]any, value any) bool {
