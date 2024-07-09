@@ -1,11 +1,9 @@
 package openwrap
 
-import "net/http"
+import (
+	"net/http"
 
-const (
-	ContentSecurityPolicy = "frame-ancestors 'self' https://pubmatic.com  https://*.pubmatic.com"
-	XContentTypeOptions   = "nosniff"
-	XXSSProtection        = "1; mode=block"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // Middleware to set headers for responses
@@ -18,7 +16,7 @@ func SetResponseHeaders(serverHandler http.Handler) http.Handler {
 }
 
 func SetSecurityHeaders(rw http.ResponseWriter) {
-	rw.Header().Set("Content-Security-Policy", ContentSecurityPolicy)
-	rw.Header().Set("X-Content-Type-Options", XContentTypeOptions)
-	rw.Header().Set("X-XSS-Protection", XXSSProtection)
+	rw.Header().Set("Content-Security-Policy", models.ContentSecurityPolicy)
+	rw.Header().Set("X-Content-Type-Options", models.XContentTypeOptions)
+	rw.Header().Set("X-XSS-Protection", models.XXSSProtection)
 }

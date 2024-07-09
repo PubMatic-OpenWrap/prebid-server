@@ -604,3 +604,9 @@ const (
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
 )
+
+const (
+	ContentSecurityPolicy = "frame-ancestors 'self' https://pubmatic.com  https://*.pubmatic.com"
+	XContentTypeOptions   = "nosniff"
+	XXSSProtection        = "1; mode=block"
+)
