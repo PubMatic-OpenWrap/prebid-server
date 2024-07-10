@@ -1,8 +1,10 @@
 package resolver
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -514,5 +516,37 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, result)
 			assert.Equal(t, tc.expectedAdapter, tc.adapterBid)
 		})
+	}
+}
+
+// TestExtBidPrebidVideo notifies us of any changes in the openrtb_ext.ExtBidPrebidVideo struct.
+// If a new field is added in openrtb_ext.ExtBidPrebidVideo, then add the support to resolve the new field and update the test case.
+// If the data type of an existing field changes then update the resolver of the respective field.
+func TestExtBidPrebidVideoFields(t *testing.T) {
+	// Expected field count and types
+	expectedFields := map[string]reflect.Type{
+		"Duration":        reflect.TypeOf(0),
+		"PrimaryCategory": reflect.TypeOf(""),
+		"VASTTagID":       reflect.TypeOf(""), // not expected to be set by adapter
+	}
+
+	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidVideo{})
+	fieldCount := structType.NumField()
+
+	// Check if the number of fields matches the expected count
+	if fieldCount != len(expectedFields) {
+		t.Errorf("Expected %d fields, but got %d fields", len(expectedFields), fieldCount)
+	}
+
+	// Check if the field types match the expected types
+	for i := 0; i < fieldCount; i++ {
+		field := structType.Field(i)
+		expectedType, ok := expectedFields[field.Name]
+		if !ok {
+			t.Errorf("Unexpected field: %s", field.Name)
+		}
+		if field.Type != expectedType {
+			t.Errorf("Field %s: expected type %v, but got %v", field.Name, expectedType, field.Type)
+		}
 	}
 }

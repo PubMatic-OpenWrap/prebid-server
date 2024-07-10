@@ -2,8 +2,10 @@ package resolver
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1874,5 +1876,53 @@ func TestSetKeyValueInBidMeta(t *testing.T) {
 			assert.Equal(t, tt.expectedFound, found)
 			assert.Equal(t, tt.expectedBid, tt.adapterBid)
 		})
+	}
+}
+
+// TestExtBidPrebidMetaFields notifies us of any changes in the openrtb_ext.ExtBidPrebidMeta struct.
+// If a new field is added in openrtb_ext.ExtBidPrebidMeta, then add the support to resolve the new field and update the test case.
+// If the data type of an existing field changes then update the resolver of the respective field.
+func TestExtBidPrebidMetaFields(t *testing.T) {
+	// Expected field count and types
+	expectedFields := map[string]reflect.Type{
+		"AdapterCode":          reflect.TypeOf(""), // not expected to be set by adapter
+		"AdvertiserDomains":    reflect.TypeOf([]string{}),
+		"AdvertiserID":         reflect.TypeOf(0),
+		"AdvertiserName":       reflect.TypeOf(""),
+		"AgencyID":             reflect.TypeOf(0),
+		"AgencyName":           reflect.TypeOf(""),
+		"BrandID":              reflect.TypeOf(0),
+		"BrandName":            reflect.TypeOf(""),
+		"DChain":               reflect.TypeOf(json.RawMessage{}),
+		"DemandSource":         reflect.TypeOf(""),
+		"MediaType":            reflect.TypeOf(""),
+		"NetworkID":            reflect.TypeOf(0),
+		"NetworkName":          reflect.TypeOf(""),
+		"PrimaryCategoryID":    reflect.TypeOf(""),
+		"RendererName":         reflect.TypeOf(""),
+		"RendererVersion":      reflect.TypeOf(""),
+		"RendererData":         reflect.TypeOf(json.RawMessage{}),
+		"RendererUrl":          reflect.TypeOf(""),
+		"SecondaryCategoryIDs": reflect.TypeOf([]string{}),
+	}
+
+	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidMeta{})
+	fieldCount := structType.NumField()
+
+	// Check if the number of fields matches the expected count
+	if fieldCount != len(expectedFields) {
+		t.Errorf("Expected %d fields, but got %d fields", len(expectedFields), fieldCount)
+	}
+
+	// Check if the field types match the expected types
+	for i := 0; i < fieldCount; i++ {
+		field := structType.Field(i)
+		expectedType, ok := expectedFields[field.Name]
+		if !ok {
+			t.Errorf("Unexpected field: %s", field.Name)
+		}
+		if field.Type != expectedType {
+			t.Errorf("Field %s: expected type %v, but got %v", field.Name, expectedType, field.Type)
+		}
 	}
 }

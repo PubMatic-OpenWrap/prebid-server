@@ -76,7 +76,7 @@ func (b *bidVideoDurationResolver) setValue(adapterBid map[string]any, value any
 
 // bidVideoPrimaryCategoryResolver determines the primary-category of the bid based on the following hierarchy:
 // 1. It first attempts to retrieve the bid category from the response.seat.bid.cat[0] location.
-// 2. If not found, it then tries to retrieve the duration using the bidder param location.
+// 2. If not found, it then tries to retrieve the primary category using the bidder param location.
 // The determined category is subsequently assigned to adapterresponse.typedbid.bidvideo.primary_category
 type bidVideoPrimaryCategoryResolver struct {
 	defaultValueResolver
