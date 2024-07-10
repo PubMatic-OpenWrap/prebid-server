@@ -112,7 +112,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var errL []error
 	seatNonBid := &openrtb_ext.NonBidCollection{}
 	var adPodBidResponse *openrtb2.BidResponse
-	var adPodseatNonBid openrtb_ext.NonBidCollection
+	var adPodSeatNonBid openrtb_ext.NonBidCollection
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,
@@ -262,8 +262,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		deps.doAdpodAuction()
 
 		//Create Bid Response
-		adPodBidResponse, adPodseatNonBid = deps.createAdPodBidResponse(response)
-		seatNonBid.Append(adPodseatNonBid)
+		adPodBidResponse, adPodSeatNonBid = deps.createAdPodBidResponse(response)
+		seatNonBid.Append(adPodSeatNonBid)
 	}
 	ao.SeatNonBid = seatNonBid.Get()
 	//add seatNonBids in response.Ext based on 'returnallbidstatus' flag

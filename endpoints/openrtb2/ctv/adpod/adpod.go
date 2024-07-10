@@ -52,7 +52,7 @@ func (ex *Exclusion) shouldApplyExclusion() bool {
 // GetNonBidParamsFromTypesBid function returns NonBidParams from types Bid
 func GetNonBidParamsFromTypesBid(bid *types.Bid, seat string) openrtb_ext.NonBidParams {
 	if bid.Bid == nil {
-		bid.Bid = &openrtb2.Bid{}
+		return openrtb_ext.NonBidParams{}
 	}
 	if bid.ExtBid.Prebid == nil {
 		bid.ExtBid.Prebid = &openrtb_ext.ExtBidPrebid{}
