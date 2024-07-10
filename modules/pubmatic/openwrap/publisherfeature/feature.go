@@ -6,4 +6,5 @@ type Feature interface {
 	IsMaxFloorsEnabled(pubId int) bool
 	IsTBFFeatureEnabled(pubid int, profid int) bool
 	IsAnalyticsTrackingThrottled(pubID, profileID int) (bool, bool)
+	IsBidRecoveryEnabled(pubID int) bool
 }
