@@ -17,7 +17,7 @@ func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
 	tests := []struct {
 		name                             string
 		fields                           fields
-		wantBidrecoveryEnabledPublishers map[int]struct{}
+		wantBidrecoveryEnabledPublishers map[int]map[int]struct{}
 	}{
 		{
 			name: "publisherFeature map is nil",
@@ -40,6 +40,7 @@ func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
 						},
 						6: models.FeatureData{
 							Enabled: 1,
+							Value:   "[222]",
 						},
 					},
 					5891: {
@@ -49,13 +50,26 @@ func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
 						1: models.FeatureData{
 							Enabled: 1,
 						},
+						6: models.FeatureData{
+							Enabled: 1,
+							Value:   "[123,456,789]",
+						},
 					},
 				},
 				bidRecovery: bidRecovery{
-					enabledPublishers: make(map[int]struct{}),
+					enabledPublisherProfile: make(map[int]map[int]struct{}),
 				},
 			},
-			wantBidrecoveryEnabledPublishers: map[int]struct{}{5890: {}},
+			wantBidrecoveryEnabledPublishers: map[int]map[int]struct{}{
+				5890: {
+					222: {},
+				},
+				5891: {
+					123: {},
+					456: {},
+					789: {},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -66,7 +80,7 @@ func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
 				bidRecovery:      tt.fields.bidRecovery,
 			}
 			fe.updateBidRecoveryEnabledPublishers()
-			assert.Equal(t, tt.wantBidrecoveryEnabledPublishers, fe.bidRecovery.enabledPublishers)
+			assert.Equal(t, tt.wantBidrecoveryEnabledPublishers, fe.bidRecovery.enabledPublisherProfile)
 		})
 	}
 }
@@ -76,7 +90,8 @@ func Test_feature_IsBidRecoveryEnabled(t *testing.T) {
 		bidRecovery bidRecovery
 	}
 	type args struct {
-		pubID int
+		pubID     int
+		profileID int
 	}
 	tests := []struct {
 		name   string
@@ -85,14 +100,17 @@ func Test_feature_IsBidRecoveryEnabled(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "bid recovery enabled for pub",
+			name: "bid recovery enabled for pub and profile",
 			args: args{
-				pubID: 5890,
+				pubID:     5890,
+				profileID: 3,
 			},
 			fields: fields{
 				bidRecovery: bidRecovery{
-					enabledPublishers: map[int]struct{}{
-						5890: {},
+					enabledPublisherProfile: map[int]map[int]struct{}{
+						5890: {
+							3: {},
+						},
 					},
 				},
 			},
@@ -101,11 +119,33 @@ func Test_feature_IsBidRecoveryEnabled(t *testing.T) {
 		{
 			name: "bid recovery not enabled for pub",
 			args: args{
-				pubID: 5890,
+				pubID:     5891,
+				profileID: 3,
 			},
 			fields: fields{
 				bidRecovery: bidRecovery{
-					enabledPublishers: map[int]struct{}{},
+					enabledPublisherProfile: map[int]map[int]struct{}{
+						5890: {
+							3: {},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "bid recovery not enabled for profile",
+			args: args{
+				pubID:     5890,
+				profileID: 1,
+			},
+			fields: fields{
+				bidRecovery: bidRecovery{
+					enabledPublisherProfile: map[int]map[int]struct{}{
+						5890: {
+							3: {},
+						},
+					},
 				},
 			},
 			want: false,
@@ -116,7 +156,7 @@ func Test_feature_IsBidRecoveryEnabled(t *testing.T) {
 			fe := &feature{
 				bidRecovery: tt.fields.bidRecovery,
 			}
-			got := fe.IsBidRecoveryEnabled(tt.args.pubID)
+			got := fe.IsBidRecoveryEnabled(tt.args.pubID, tt.args.profileID)
 			assert.Equal(t, tt.want, got)
 		})
 	}

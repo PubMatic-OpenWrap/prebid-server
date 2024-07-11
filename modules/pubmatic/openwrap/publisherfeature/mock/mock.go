@@ -62,17 +62,17 @@ func (mr *MockFeatureMockRecorder) IsAnalyticsTrackingThrottled(arg0, arg1 inter
 }
 
 // IsBidRecoveryEnabled mocks base method
-func (m *MockFeature) IsBidRecoveryEnabled(arg0 int) bool {
+func (m *MockFeature) IsBidRecoveryEnabled(arg0, arg1 int) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsBidRecoveryEnabled", arg0)
+	ret := m.ctrl.Call(m, "IsBidRecoveryEnabled", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsBidRecoveryEnabled indicates an expected call of IsBidRecoveryEnabled
-func (mr *MockFeatureMockRecorder) IsBidRecoveryEnabled(arg0 interface{}) *gomock.Call {
+func (mr *MockFeatureMockRecorder) IsBidRecoveryEnabled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBidRecoveryEnabled", reflect.TypeOf((*MockFeature)(nil).IsBidRecoveryEnabled), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBidRecoveryEnabled", reflect.TypeOf((*MockFeature)(nil).IsBidRecoveryEnabled), arg0, arg1)
 }
 
 // IsFscApplicable mocks base method
