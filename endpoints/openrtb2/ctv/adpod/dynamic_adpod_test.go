@@ -6,10 +6,14 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,7 +26,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 	type want struct {
 		duration int64
-		status   constant.BidStatus
+		nbr      openrtb3.NoBidReason
 	}
 	tests := []struct {
 		name string
@@ -43,7 +47,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 10,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -60,7 +64,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 10,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -77,7 +81,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 15,
-				status:   constant.StatusDurationMismatch,
+				nbr:      exchange.ResponseRejectedInvalidCreative,
 			},
 		},
 		{
@@ -94,7 +98,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 20,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -111,7 +115,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -128,7 +132,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 45,
-				status:   constant.StatusDurationMismatch,
+				nbr:      exchange.ResponseRejectedInvalidCreative,
 			},
 		},
 
@@ -136,9 +140,9 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			duration, status := getDurationBasedOnDurationMatchingPolicy(tt.args.duration, tt.args.policy, tt.args.config)
+			duration, nbr := getDurationBasedOnDurationMatchingPolicy(tt.args.duration, tt.args.policy, tt.args.config)
 			assert.Equal(t, tt.want.duration, duration)
-			assert.Equal(t, tt.want.status, status)
+			assert.Equal(t, tt.want.nbr, nbr)
 		})
 	}
 }
@@ -152,7 +156,7 @@ func TestGetBidDuration(t *testing.T) {
 	}
 	type want struct {
 		duration int64
-		status   constant.BidStatus
+		nbr      openrtb3.NoBidReason
 	}
 	var tests = []struct {
 		name   string
@@ -170,7 +174,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -185,7 +189,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -200,7 +204,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -215,7 +219,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -230,7 +234,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -245,7 +249,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -262,7 +266,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -284,7 +288,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				status:   constant.StatusOK,
+				nbr:      nbr.LossBidLostToHigherBid,
 			},
 		},
 		{
@@ -306,15 +310,15 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 35,
-				status:   constant.StatusDurationMismatch,
+				nbr:      exchange.ResponseRejectedInvalidCreative,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			duration, status := getBidDuration(tt.args.bid, tt.args.reqExt, tt.args.config, tt.args.defaultDuration)
+			duration, nbr := getBidDuration(tt.args.bid, tt.args.reqExt, tt.args.config, tt.args.defaultDuration)
 			assert.Equal(t, tt.want.duration, duration)
-			assert.Equal(t, tt.want.status, status)
+			assert.Equal(t, tt.want.nbr, nbr)
 		})
 	}
 }
@@ -339,30 +343,29 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 				bids: types.AdPodBid{
 					Bids: []*types.Bid{
 						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusCategoryExclusion,
-							Seat:   "pubmatic",
+							Bid:  &openrtb2.Bid{},
+							Nbr:  ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions),
+							Seat: "pubmatic",
 						},
 						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusWinningBid,
-							Seat:   "pubmatic",
+							Bid:  &openrtb2.Bid{},
+							Seat: "pubmatic",
 						},
 						{
-							Bid:    &openrtb2.Bid{},
-							Status: constant.StatusOK,
-							Seat:   "pubmatic",
+							Bid:  &openrtb2.Bid{},
+							Nbr:  ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
+							Seat: "pubmatic",
 						},
 						{
-							Bid:    &openrtb2.Bid{},
-							Status: 100,
-							Seat:   "pubmatic",
+							Bid:  &openrtb2.Bid{},
+							Nbr:  ptrutil.ToPtr[openrtb3.NoBidReason](100),
+							Seat: "pubmatic",
 						},
 					},
 				},
 			},
 			want: want{
-				expectedCalls: 2,
+				expectedCalls: 3,
 			},
 		},
 	}
@@ -519,6 +522,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 							},
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
+							Nbr:               ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
 						},
 						{
 							Bid: &openrtb2.Bid{

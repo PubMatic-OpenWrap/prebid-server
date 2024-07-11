@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 type structuredAdpod struct {
@@ -101,8 +103,19 @@ func (sa *structuredAdpod) HoldAuction() {
 		// Validate the array length and index chosen
 		if len(bids) > slots[i].Index {
 			selectedBid := bids[slots[i].Index]
-			selectedBid.Status = constant.StatusWinningBid
 			sa.WinningBid[slots[i].ImpId] = *selectedBid
+			// Set rejection reasons for other bids
+			for j, bid := range bids {
+				if j == slots[i].Index || bid.Nbr != nil {
+					continue
+				}
+				bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
+				if selectedBid.DealTierSatisfied {
+					if !bid.DealTierSatisfied {
+						bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToDealBid)
+					}
+				}
+			}
 		}
 
 	}
@@ -251,9 +264,11 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 
 	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
+			slotBids[selectedSlot.Index].Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
+			slotBids[selectedSlot.Index].Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {

@@ -7,7 +7,9 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,7 +89,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -95,7 +96,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -103,7 +103,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -188,7 +187,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -196,7 +194,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -205,7 +202,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -285,7 +281,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -294,7 +289,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "index",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -303,7 +297,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -388,7 +381,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -396,7 +388,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -405,7 +396,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -498,7 +488,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -507,7 +496,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -515,7 +503,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -616,7 +603,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -625,7 +611,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -633,7 +618,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -734,7 +718,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -742,7 +725,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -751,7 +733,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -852,7 +833,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -861,7 +841,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -869,7 +848,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -920,6 +898,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 							},
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
+							Nbr:               ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
 						},
 						{
 							Bid: &openrtb2.Bid{
@@ -933,7 +912,6 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 									},
 								},
 							},
-							Status:            constant.StatusWinningBid,
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
 						},

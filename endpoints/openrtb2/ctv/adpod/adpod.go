@@ -2,7 +2,6 @@ package adpod
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/metrics"
@@ -51,9 +50,6 @@ func (ex *Exclusion) shouldApplyExclusion() bool {
 
 // GetNonBidParamsFromTypesBid function returns NonBidParams from types Bid
 func GetNonBidParamsFromTypesBid(bid *types.Bid, seat string) openrtb_ext.NonBidParams {
-	if bid.Bid == nil {
-		return openrtb_ext.NonBidParams{}
-	}
 	if bid.ExtBid.Prebid == nil {
 		bid.ExtBid.Prebid = &openrtb_ext.ExtBidPrebid{}
 	}
@@ -79,12 +75,9 @@ func GetNonBidParamsFromTypesBid(bid *types.Bid, seat string) openrtb_ext.NonBid
 func addSeatNonBids(bids []*types.Bid) openrtb_ext.NonBidCollection {
 	var snb openrtb_ext.NonBidCollection
 	for _, bid := range bids {
-		if bid.Status != constant.StatusWinningBid {
+		if bid.Nbr != nil {
 			nonBidParams := GetNonBidParamsFromTypesBid(bid, bid.Seat)
-			convertedReason := ConvertAPRCToNBRC(bid.Status)
-			if convertedReason != nil {
-				nonBidParams.NonBidReason = int(*convertedReason)
-			}
+			nonBidParams.NonBidReason = int(*bid.Nbr)
 			snb.AddBid(openrtb_ext.NewNonBid(nonBidParams), bid.Seat)
 		}
 	}
