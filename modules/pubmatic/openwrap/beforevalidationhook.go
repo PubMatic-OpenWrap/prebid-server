@@ -57,6 +57,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
+			if glog.V(models.LogLevelDebug) {
+				bidRequest, _ := json.Marshal(payload.BidRequest)
+				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
+			}
 		}
 	}()
 
