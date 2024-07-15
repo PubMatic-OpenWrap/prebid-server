@@ -356,7 +356,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"bid_recovery_response_time",
 		"Total time taken by request for secondary auction in ms at publisher level.",
 		[]string{pubIDLabel, successLabel},
-		[]float64{50, 100, 150, 200},
+		[]float64{100, 200, 300, 400},
 	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
