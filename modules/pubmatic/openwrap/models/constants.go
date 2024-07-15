@@ -1,5 +1,7 @@
 package models
 
+import "github.com/golang/glog"
+
 const (
 	PARTNER_ID                  = "partnerId"
 	ADAPTER_ID                  = "adapterId"
@@ -603,4 +605,9 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+)
+
+// constants for log level
+const (
+	LogLevelDebug glog.Level = 3
 )
