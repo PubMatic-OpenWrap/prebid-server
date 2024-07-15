@@ -374,6 +374,21 @@ func TestRecordAdruleValidationFailure(t *testing.T) {
 		})
 }
 
+func TestRecordBidRecoveryStatus(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordBidRecoveryStatus("5890", time.Duration(70)*time.Millisecond, true)
+	m.RecordBidRecoveryStatus("5890", time.Duration(130)*time.Millisecond, false)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryStatus,
+		pubIDLabel, "5890", successLabel, "true")
+	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 1, 70)
+
+	resultingHistogram = getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryStatus,
+		pubIDLabel, "5890", successLabel, "false")
+
+	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 1, 130)
+}
+
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {

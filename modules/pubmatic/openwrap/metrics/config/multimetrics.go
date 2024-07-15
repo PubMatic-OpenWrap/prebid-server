@@ -522,3 +522,10 @@ func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalTyp
 		thisME.RecordSignalDataStatus(pubid, profileid, signalType)
 	}
 }
+
+// RecordBidRecoveryStatus across all engines
+func (me *MultiMetricsEngine) RecordBidRecoveryStatus(publisher string, responseTime time.Duration, success bool) {
+	for _, thisME := range *me {
+		thisME.RecordBidRecoveryStatus(publisher, responseTime, success)
+	}
+}
