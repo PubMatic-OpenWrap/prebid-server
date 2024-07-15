@@ -216,7 +216,12 @@ func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
 		if ok {
 			zoneID := strconv.Itoa(inventory.AdbulterZoneID)
 			impIDArray, ok := impIDMap[zoneID]
-			impID := strconv.Itoa(int(imp.Banner.Pos.Ptr().Val())) + imp.ID
+			var impID string
+			if imp.Banner.Pos != nil {
+				impID = strconv.Itoa(int(imp.Banner.Pos.Ptr().Val())) + imp.ID
+			} else {
+				impID = strconv.Itoa(0) + imp.ID
+			}
 			if ok {
 				impIDArray = append(impIDArray, impID)
 				impIDMap[zoneID] = impIDArray
