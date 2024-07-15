@@ -1,5 +1,7 @@
 package models
 
+import "github.com/golang/glog"
+
 const (
 	PARTNER_ID                  = "partnerId"
 	ADAPTER_ID                  = "adapterId"
@@ -606,8 +608,7 @@ const (
 	InvalidSignal    = "invalid"
 )
 
+// constants for log level
 const (
-	ContentSecurityPolicy = "frame-ancestors 'self' https://pubmatic.com  https://*.pubmatic.com"
-	XContentTypeOptions   = "nosniff"
-	XXSSProtection        = "1; mode=block"
+	LogLevelDebug glog.Level = 3
 )
