@@ -1,11 +1,16 @@
 package openwrap
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
@@ -13,6 +18,7 @@ import (
 	v25 "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 	uuid "github.com/satori/go.uuid"
@@ -43,10 +49,14 @@ func (m OpenWrap) handleEntrypointHook(
 	defer func() {
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
-		} else {
-			result.ModuleContext = make(hookstage.ModuleContext)
-			result.ModuleContext["rctx"] = rCtx
+			if glog.V(models.LogLevelDebug) {
+				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
+					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, queryParams.Encode(), string(payload.Body))
+			}
+			return
 		}
+		result.ModuleContext = make(hookstage.ModuleContext)
+		result.ModuleContext["rctx"] = rCtx
 	}()
 
 	rCtx.Sshb = queryParams.Get("sshb")
@@ -118,6 +128,17 @@ func (m OpenWrap) handleEntrypointHook(
 		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
 		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
 		TMax:                      m.cfg.Timeout.MaxTimeout,
+		Method:                    payload.Request.Method,
+		ResponseFormat:            strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
+		RedirectURL:               queryParams.Get(models.OWRedirectURLKey),
+		WakandaDebug: &wakanda.Debug{
+			Config: m.cfg.Wakanda,
+		},
+	}
+
+	// SSAuction will be always 1 for CTV request
+	if rCtx.IsCTVRequest {
+		rCtx.SSAuction = 1
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
@@ -136,7 +157,35 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.PubID = pubid
 	}
 
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
+	}
+	rCtx.PubIDStr = pubIdStr
+
+	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+	}
+
 	result.Reject = false
+
+	if rCtx.IsCTVRequest {
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Request.Body = io.NopCloser(bytes.NewBuffer(ep.Body))
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-request-body")
+	}
+
 	return result, nil
 }
 
@@ -150,7 +199,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 	case models.EndpointV25:
 		fallthrough
-	case models.EndpointVideo, models.EndpointVAST, models.EndpointJson:
+	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointWebS2S, models.EndpointAppLovinMax:
 		fallthrough
@@ -185,7 +234,7 @@ func GetEndpoint(path, source string, agent string) string {
 	case OpenWrapAmp:
 		return models.EndpointAMP
 	case OpenWrapOpenRTBVideo:
-		return models.EndpointVideo
+		return models.EndpointORTB
 	case OpenWrapVAST:
 		return models.EndpointVAST
 	case OpenWrapJSON:

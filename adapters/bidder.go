@@ -63,6 +63,7 @@ type BidderResponse struct {
 	Currency             string
 	Bids                 []*TypedBid
 	FledgeAuctionConfigs []*openrtb_ext.FledgeAuctionConfig
+	FastXMLMetrics       *openrtb_ext.FastXMLMetrics
 }
 
 // NewBidderResponseWithBidsCapacity create a new BidderResponse initialising the bids array capacity and the default currency value
@@ -123,12 +124,12 @@ type BidRequestParams struct {
 
 // RequestData packages together the fields needed to make an http.Request.
 type RequestData struct {
-	Params  *BidRequestParams
-	Method  string
-	Uri     string
-	Body    []byte
-	Headers http.Header
-
+	Params     *BidRequestParams
+	Method     string
+	Uri        string
+	Body       []byte
+	Headers    http.Header
+	ImpIDs     []string
 	BidderName openrtb_ext.BidderName `json:"-"`
 }
 

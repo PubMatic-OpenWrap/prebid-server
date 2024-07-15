@@ -96,11 +96,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 	// parent bidder could in one of the above and we need them by prebid's bidderCode and not seat(could be alias)
 	slots := make([]SlotRecord, 0)
-	for _, imp := range ao.RequestWrapper.Imp {
-		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
-		if !ok {
-			continue
-		}
+	for impId, impCtx := range rCtx.ImpBidCtx {
 		reward := 0
 		if impCtx.IsRewardInventory != nil {
 			reward = int(*impCtx.IsRewardInventory)
@@ -108,8 +104,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 		// to keep existing response intact
 		partnerData := make([]PartnerRecord, 0)
-		if ipr[imp.ID] != nil {
-			partnerData = ipr[imp.ID]
+		if ipr[impId] != nil {
+			partnerData = ipr[impId]
 		}
 
 		slots = append(slots, SlotRecord{
@@ -119,7 +115,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			Adunit:            impCtx.AdUnitName,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
-			// AdPodSlot:         getAdPodSlot(imp, responseMap.AdPodBidsExt),
+			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
 		})
 	}
 
@@ -324,7 +320,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
+			var sequence int
+			impId := bid.ImpID
+			if rCtx.IsCTVRequest {
+				impId, sequence = models.GetImpressionID(impId)
+			}
+			impCtx, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}
@@ -378,7 +379,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			kgpv = tracker.Tracker.PartnerInfo.KGPV
 			kgpsv = tracker.Tracker.LoggerData.KGPSV
 			if kgpv == "" || kgpsv == "" {
-				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
+				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, &bidExt, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
 			}
 
 			price := bid.Price
@@ -391,7 +392,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if seat == models.BidderPubMatic {
-				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
+				pmMkt[impId] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,
@@ -456,7 +457,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// WinningBids contains map of imp.id against bid.id+::+uuid
-			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bidIDForLookup {
+			if rCtx.WinningBids.IsWinningBid(impId, bidIDForLookup) {
 				pr.WinningBidStaus = 1
 			}
 
@@ -495,12 +496,23 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
+			if len(bid.Cat) > 0 {
+				pr.Cat = append(pr.Cat, bid.Cat...)
+			}
+
+			// Adpod parameters
+			if impCtx.AdpodConfig != nil {
+				pr.AdPodSequenceNumber = &sequence
+				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
+				pr.NoBidReason = &aprc
+			}
+
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
-			if pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
+			if !models.IsDefaultBid(bid.Bid) && pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
 				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
 			}
 
-			ipr[bid.ImpID] = append(ipr[bid.ImpID], pr)
+			ipr[impId] = append(ipr[impId], pr)
 		}
 	}
 
@@ -534,4 +546,21 @@ func getDefaultPartnerRecordsByImp(rCtx *models.RequestCtx) map[string][]Partner
 		}}
 	}
 	return ipr
+}
+
+func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
+	if adPodConfig == nil {
+		return nil
+	}
+
+	adPodSlot := AdPodSlot{
+		MinAds:                      adPodConfig.MinAds,
+		MaxAds:                      adPodConfig.MaxAds,
+		MinDuration:                 adPodConfig.MinDuration,
+		MaxDuration:                 adPodConfig.MaxDuration,
+		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
+		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
+	}
+
+	return &adPodSlot
 }
