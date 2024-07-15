@@ -261,7 +261,7 @@ func TestDefaultvalueResolver(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &defaultValueResolver{}
+			r := &paramResolver{}
 			value, found := r.retrieveFromBidderParamLocation(map[string]any{}, "any.path")
 			assert.Equal(t, tt.wantFound, found)
 			assert.Equal(t, tt.wantValue, value)

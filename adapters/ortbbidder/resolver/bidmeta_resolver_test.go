@@ -1905,24 +1905,6 @@ func TestExtBidPrebidMetaFields(t *testing.T) {
 		"RendererUrl":          reflect.TypeOf(""),
 		"SecondaryCategoryIDs": reflect.TypeOf([]string{}),
 	}
-
 	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidMeta{})
-	fieldCount := structType.NumField()
-
-	// Check if the number of fields matches the expected count
-	if fieldCount != len(expectedFields) {
-		t.Errorf("Expected %d fields, but got %d fields", len(expectedFields), fieldCount)
-	}
-
-	// Check if the field types match the expected types
-	for i := 0; i < fieldCount; i++ {
-		field := structType.Field(i)
-		expectedType, ok := expectedFields[field.Name]
-		if !ok {
-			t.Errorf("Unexpected field: %s", field.Name)
-		}
-		if field.Type != expectedType {
-			t.Errorf("Field %s: expected type %v, but got %v", field.Name, expectedType, field.Type)
-		}
-	}
+	validateStructFields(t, expectedFields, structType)
 }

@@ -55,6 +55,18 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 	}
 }
 
+func (r *paramResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+	return nil, false
+}
+
+func (r *paramResolver) getFromORTBObject(bid map[string]any) (any, bool) {
+	return nil, false
+}
+
+func (r *paramResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
+	return nil, false
+}
+
 // Resolve fetches a parameter value from sourceNode or bidderResponse and sets it in targetNode.
 // The order of lookup is as follows:
 // 1) ORTB standard field
@@ -85,21 +97,6 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path str
 	}
 
 	return resolver.setValue(targetNode, value)
-}
-
-// defaultValueResolver is a resolver which returns default values
-type defaultValueResolver struct{}
-
-func (r *defaultValueResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
-	return nil, false
-}
-
-func (r *defaultValueResolver) getFromORTBObject(bid map[string]any) (any, bool) {
-	return nil, false
-}
-
-func (r *defaultValueResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
-	return nil, false
 }
 
 // list of parameters to be resolved at typedBid level.

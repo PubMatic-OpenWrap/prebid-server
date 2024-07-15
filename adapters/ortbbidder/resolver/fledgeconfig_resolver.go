@@ -9,7 +9,7 @@ import (
 // fledgeResolver retrieves the fledge auction config of the bidresponse using the bidder param location.
 // The determined fledge config is subsequently assigned to adapterresponse.FledgeAuctionConfigs
 type fledgeResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {

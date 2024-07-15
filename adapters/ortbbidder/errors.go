@@ -13,7 +13,6 @@ var (
 	errNilBidderParamCfg error = errors.New("found nil bidderParamsConfig")
 )
 
-// newBadInputError returns the error of type bad-input
 func newBadInputError(message string, args ...any) error {
 	return &errortypes.BadServerResponse{
 		Message: fmt.Sprintf(message, args...),
@@ -22,6 +21,12 @@ func newBadInputError(message string, args ...any) error {
 
 func newBadServerResponseError(message string, args ...any) error {
 	return &errortypes.BadServerResponse{
+		Message: fmt.Sprintf(message, args...),
+	}
+}
+
+func newWarning(message string, args ...any) error {
+	return &errortypes.Warning{
 		Message: fmt.Sprintf(message, args...),
 	}
 }

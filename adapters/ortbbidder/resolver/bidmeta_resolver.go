@@ -9,7 +9,7 @@ import (
 // bidMetaResolver retrieves the meta object of the bid using the bidder param location.
 // The determined bidMeta is subsequently assigned to adapterresponse.typedbid.bidmeta
 type bidMetaResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -48,7 +48,7 @@ func (b *bidMetaResolver) setValue(adapterBid map[string]any, value any) bool {
 // bidMetaAdvDomainsResolver retrieves the advertiserDomains of the bid using the bidder param location.
 // The determined advertiserDomains is subsequently assigned to adapterresponse.typedbid.bidmeta.advertiserDomains
 type bidMetaAdvDomainsResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaAdvDomainsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -66,7 +66,7 @@ func (b *bidMetaAdvDomainsResolver) setValue(adapterBid map[string]any, value an
 // bidMetaAdvIDResolver retrieves the advertiserId of the bid using the bidder param location.
 // The determined advertiserId is subsequently assigned to adapterresponse.typedbid.bidmeta.advertiserId
 type bidMetaAdvIDResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaAdvIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -84,7 +84,7 @@ func (b *bidMetaAdvIDResolver) setValue(adapterBid map[string]any, value any) bo
 // bidMetaAdvNameResolver retrieves the advertiserName of the bid using the bidder param location.
 // The determined advertiserName is subsequently assigned to adapterresponse.typedbid.bidmeta.AdvertiserName
 type bidMetaAdvNameResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaAdvNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -102,7 +102,7 @@ func (b *bidMetaAdvNameResolver) setValue(adapterBid map[string]any, value any) 
 // bidMetaAgencyIDResolver retrieves the AgencyID of the bid using the bidder param location.
 // The determined AgencyID is subsequently assigned to adapterresponse.typedbid.bidmeta.AgencyID
 type bidMetaAgencyIDResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaAgencyIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -120,7 +120,7 @@ func (b *bidMetaAgencyIDResolver) setValue(adapterBid map[string]any, value any)
 // bidMetaAgencyNameResolver retrieves the AgencyName of the bid using the bidder param location.
 // The determined AgencyName is subsequently assigned to adapterresponse.typedbid.bidmeta.AgencyName
 type bidMetaAgencyNameResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaAgencyNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -138,7 +138,7 @@ func (b *bidMetaAgencyNameResolver) setValue(adapterBid map[string]any, value an
 // bidMetaBrandIDResolver retrieves the BrandID of the bid using the bidder param location.
 // The determined BrandID is subsequently assigned to adapterresponse.typedbid.bidmeta.BrandID
 type bidMetaBrandIDResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaBrandIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -156,7 +156,7 @@ func (b *bidMetaBrandIDResolver) setValue(adapterBid map[string]any, value any) 
 // bidMetaBrandNameResolver retrieves the BrandName of the bid using the bidder param location.
 // The determined BrandName is subsequently assigned to adapterresponse.typedbid.bidmeta.BrandName
 type bidMetaBrandNameResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaBrandNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -174,7 +174,7 @@ func (b *bidMetaBrandNameResolver) setValue(adapterBid map[string]any, value any
 // bidMetaDChainResolver retrieves the Dchain of the bid using the bidder param location.
 // The determined Dchain is subsequently assigned to adapterresponse.typedbid.bidmeta.DChain
 type bidMetaDChainResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaDChainResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -192,7 +192,7 @@ func (b *bidMetaDChainResolver) setValue(adapterBid map[string]any, value any) b
 // bidMetaDemandSourceResolver retrieves the DemandSource of the bid using the bidder param location.
 // The determined DemandSource is subsequently assigned to adapterresponse.typedbid.bidmeta.DemandSource
 type bidMetaDemandSourceResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaDemandSourceResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -210,7 +210,7 @@ func (b *bidMetaDemandSourceResolver) setValue(adapterBid map[string]any, value 
 // bidMetaMediaTypeResolver retrieves the MediaType of the bid using the bidder param location.
 // The determined MediaType is subsequently assigned to adapterresponse.typedbid.bidmeta.MediaType
 type bidMetaMediaTypeResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaMediaTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -228,7 +228,7 @@ func (b *bidMetaMediaTypeResolver) setValue(adapterBid map[string]any, value any
 // bidMetaNetworkIDResolver retrieves the NetworkID of the bid using the bidder param location.
 // The determined NetworkID is subsequently assigned to adapterresponse.typedbid.bidmeta.NetworkID
 type bidMetaNetworkIDResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaNetworkIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -246,7 +246,7 @@ func (b *bidMetaNetworkIDResolver) setValue(adapterBid map[string]any, value any
 // bidMetaNetworkNameResolver retrieves the NetworkName of the bid using the bidder param location.
 // The determined NetworkName is subsequently assigned to adapterresponse.typedbid.bidmeta.NetworkName
 type bidMetaNetworkNameResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaNetworkNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -264,7 +264,7 @@ func (b *bidMetaNetworkNameResolver) setValue(adapterBid map[string]any, value a
 // bidMetaPrimaryCategoryIDResolver retrieves the PrimaryCategory of the bid using the bidder param location.
 // The determined PrimaryCategory is subsequently assigned to adapterresponse.typedbid.bidmeta.PrimaryCategory
 type bidMetaPrimaryCategoryIDResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaPrimaryCategoryIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -282,7 +282,7 @@ func (b *bidMetaPrimaryCategoryIDResolver) setValue(adapterBid map[string]any, v
 // bidMetaRendererNameResolver retrieves the RendererName of the bid using the bidder param location.
 // The determined RendererName is subsequently assigned to adapterresponse.typedbid.bidmeta.RendererName
 type bidMetaRendererNameResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaRendererNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -300,7 +300,7 @@ func (b *bidMetaRendererNameResolver) setValue(adapterBid map[string]any, value 
 // bidMetaRendererVersionResolver retrieves the RendererVersion of the bid using the bidder param location.
 // The determined RendererVersion is subsequently assigned to adapterresponse.typedbid.bidmeta.RendererVersion
 type bidMetaRendererVersionResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaRendererVersionResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -318,7 +318,7 @@ func (b *bidMetaRendererVersionResolver) setValue(adapterBid map[string]any, val
 // bidMetaRendererDataResolver retrieves the RendererData of the bid using the bidder param location.
 // The determined RendererData is subsequently assigned to adapterresponse.typedbid.bidmeta.RendererData
 type bidMetaRendererDataResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaRendererDataResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -336,7 +336,7 @@ func (b *bidMetaRendererDataResolver) setValue(adapterBid map[string]any, value 
 // bidMetaRendererUrlResolver retrieves the RendererUrl of the bid using the bidder param location.
 // The determined RendererUrl is subsequently assigned to adapterresponse.typedbid.bidmeta.RendererUrl
 type bidMetaRendererUrlResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaRendererUrlResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -354,7 +354,7 @@ func (b *bidMetaRendererUrlResolver) setValue(adapterBid map[string]any, value a
 // bidMetaSecondaryCategoryIDsResolver retrieves the secondary-category ids of the bid using the bidder param location.
 // The determined secondary-category id are subsequently assigned to adapterresponse.typedbid.bidmeta.secondaryCatIds
 type bidMetaSecondaryCategoryIDsResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidMetaSecondaryCategoryIDsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {

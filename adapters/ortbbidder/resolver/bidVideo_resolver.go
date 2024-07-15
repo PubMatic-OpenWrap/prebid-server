@@ -9,7 +9,7 @@ import (
 // bidVideoResolver determines the duration of the bid by retrieving the video field using the bidder param location.
 // The determined video field is subsequently assigned to adapterresponse.typedbid.bidvideo
 type bidVideoResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidVideoResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
@@ -50,7 +50,7 @@ func (b *bidVideoResolver) setValue(adapterBid map[string]any, value any) bool {
 // 2. If not found, it then tries to retrieve the duration using the bidder param location.
 // The determined bid duration is subsequently assigned to adapterresponse.typedbid.bidvideo.dur
 type bidVideoDurationResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidVideoDurationResolver) getFromORTBObject(bid map[string]any) (any, bool) {
@@ -79,7 +79,7 @@ func (b *bidVideoDurationResolver) setValue(adapterBid map[string]any, value any
 // 2. If not found, it then tries to retrieve the primary category using the bidder param location.
 // The determined category is subsequently assigned to adapterresponse.typedbid.bidvideo.primary_category
 type bidVideoPrimaryCategoryResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidVideoPrimaryCategoryResolver) getFromORTBObject(bid map[string]any) (any, bool) {

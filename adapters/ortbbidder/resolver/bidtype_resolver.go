@@ -19,7 +19,7 @@ var (
 // 3. If still not found, it automatically detects the bid type using either the adm or impression.
 // The determined bid type is subsequently assigned to adapterresponse.typedbid.bidtype
 type bidTypeResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {

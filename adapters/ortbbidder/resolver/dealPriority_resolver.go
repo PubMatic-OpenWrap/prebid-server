@@ -5,7 +5,7 @@ import "github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 // bidDealPriorityResolver retrieves the priority of the deal bid using the bidder param location.
 // The determined dealPriority is subsequently assigned to adapterresponse.typedbid.dealPriority
 type bidDealPriorityResolver struct {
-	defaultValueResolver
+	paramResolver
 }
 
 func (b *bidDealPriorityResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
