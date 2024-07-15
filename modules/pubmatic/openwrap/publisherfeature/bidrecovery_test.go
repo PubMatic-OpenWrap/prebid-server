@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
+func TestUpdateBidRecoveryEnabledPublishers(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
@@ -85,7 +85,7 @@ func Test_feature_updateBidRecoveryEnabledPublishers(t *testing.T) {
 	}
 }
 
-func Test_feature_IsBidRecoveryEnabled(t *testing.T) {
+func TestIsBidRecoveryEnabled(t *testing.T) {
 	type fields struct {
 		bidRecovery bidRecovery
 	}
