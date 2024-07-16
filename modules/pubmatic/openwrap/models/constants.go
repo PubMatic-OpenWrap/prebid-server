@@ -594,6 +594,7 @@ const (
 	FeatureAMPMultiFormat    = 3
 	FeatureAnalyticsThrottle = 4
 	FeatureMaxFloors         = 5
+	FeatureBidRecovery       = 6
 )
 
 // constants for applovinmax requests
