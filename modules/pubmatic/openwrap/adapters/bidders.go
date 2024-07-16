@@ -708,18 +708,22 @@ func builderPGAMSSP(params BidderParameters) (json.RawMessage, error) {
 func builderAidem(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
-	oneOf := []string{"publisherId", "siteId"}
-	for _, param := range oneOf {
-		if key, ok := getString(params.FieldMap[param]); ok {
-			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
-			break
-		}
-	}
-	//  len=0 (no mandatory params present)
-	if jsonStr.Len() == 1 {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+
+	//publisherID
+	publisherID, _ := getString(params.FieldMap["publisherId"])
+	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
+
+	//siteId
+	if adSlot, ok := getString(params.FieldMap["siteId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"siteId":"%s"`, adSlot)
 	}
 
+	//rateLimit
+	_, ok := getString(params.FieldMap["rateLimit"])
+	if ok {
+		delete(params.FieldMap, "rateLimit")
+	}
 	jsonStr.WriteByte('}')
+
 	return jsonStr.Bytes(), nil
 }
