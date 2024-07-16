@@ -3060,3 +3060,56 @@ func Test_builderPGAMSSP(t *testing.T) {
 		})
 	}
 }
+
+func Test_builderAidem(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio rateLimit is present along with all other parameters",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "ABCDEF", "siteId": "ABCDEF", "publisherId": "5890", "rateLimit": 0.6}}},
+			want:    json.RawMessage(`{"placementId": "ABCDEF", "siteId": "ABCDEF", "publisherId": "5890"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio rateLimit is absent along with all other parameters",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "ABCDEF", "siteId": "ABCDEF", "publisherId": "5890"}}},
+			want:    json.RawMessage(`{"placementId": "ABCDEF", "siteId": "ABCDEF", "publisherId": "5890"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of publisherId or siteId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (Only publisherId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"publisherId": "5890"}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (Only siteId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"siteId": "abcd"}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderAidem(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderAidem() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}

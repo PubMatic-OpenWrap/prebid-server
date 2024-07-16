@@ -710,24 +710,35 @@ func builderAidem(params BidderParameters) (json.RawMessage, error) {
 	jsonStr.WriteByte('{')
 
 	//publisherID
-	publisherID, _ := getString(params.FieldMap["publisherId"])
-	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
+	if publisherID, ok := getString(params.FieldMap["publisherId"]); ok {
+		fmt.Fprintf(&jsonStr, `"publisherId":"%s",`, publisherID)
+	} else {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'publisherId'")
+	}
 
 	//siteId
-	if adSlot, ok := getString(params.FieldMap["siteId"]); ok {
-		fmt.Fprintf(&jsonStr, `,"siteId":"%s"`, adSlot)
+	if siteId, ok := getString(params.FieldMap["siteId"]); ok {
+		fmt.Fprintf(&jsonStr, `"siteId":"%s",`, siteId)
+	} else {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'siteId'")
 	}
 
 	//placementId
-	if adSlot, ok := getString(params.FieldMap["placementId"]); ok {
-		fmt.Fprintf(&jsonStr, `,"placementId":"%s"`, adSlot)
+	if placementId, ok := getString(params.FieldMap["placementId"]); ok {
+		fmt.Fprintf(&jsonStr, `"placementId":"%s",`, placementId)
 	}
 
 	//rateLimit
-	_, ok := getString(params.FieldMap["rateLimit"])
-	if ok {
+	if _, ok := getString(params.FieldMap["rateLimit"]); ok {
 		delete(params.FieldMap, "rateLimit")
 	}
+
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'publisherId' and 'siteId'")
+	}
+
+	trimComma(&jsonStr)
 	jsonStr.WriteByte('}')
 
 	return jsonStr.Bytes(), nil
