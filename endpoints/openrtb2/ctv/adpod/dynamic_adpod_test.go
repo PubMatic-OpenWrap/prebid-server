@@ -7,7 +7,6 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/metrics"
@@ -26,7 +25,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 	}
 	type want struct {
 		duration int64
-		nbr      openrtb3.NoBidReason
+		nbr      *openrtb3.NoBidReason
 	}
 	tests := []struct {
 		name string
@@ -47,7 +46,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 10,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -64,7 +63,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 10,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -81,7 +80,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 15,
-				nbr:      exchange.ResponseRejectedInvalidCreative,
+				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
 			},
 		},
 		{
@@ -98,7 +97,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 20,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -115,7 +114,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -132,7 +131,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 45,
-				nbr:      exchange.ResponseRejectedInvalidCreative,
+				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
 			},
 		},
 
@@ -156,7 +155,7 @@ func TestGetBidDuration(t *testing.T) {
 	}
 	type want struct {
 		duration int64
-		nbr      openrtb3.NoBidReason
+		nbr      *openrtb3.NoBidReason
 	}
 	var tests = []struct {
 		name   string
@@ -174,7 +173,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -189,7 +188,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -204,7 +203,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -219,7 +218,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -234,7 +233,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 100,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -249,7 +248,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -266,7 +265,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -288,7 +287,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 30,
-				nbr:      nbr.LossBidLostToHigherBid,
+				nbr:      nil,
 			},
 		},
 		{
@@ -310,7 +309,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 35,
-				nbr:      exchange.ResponseRejectedInvalidCreative,
+				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
 			},
 		},
 	}
@@ -404,10 +403,9 @@ func TestSetBidExtParams(t *testing.T) {
 					Bids: []*types.Bid{
 						{
 							Bid: &openrtb2.Bid{
-								Ext: json.RawMessage(`{"prebid": {"video": {} },"adpod": {}}`),
+								Ext: json.RawMessage(`{"prebid": {"video": {} }}`),
 							},
 							Duration: 10,
-							Status:   1,
 						},
 					},
 				},
@@ -417,10 +415,9 @@ func TestSetBidExtParams(t *testing.T) {
 					Bids: []*types.Bid{
 						{
 							Bid: &openrtb2.Bid{
-								Ext: json.RawMessage(`{"prebid": {"video": {"duration":10} },"adpod": {"aprc":1}}`),
+								Ext: json.RawMessage(`{"prebid": {"video": {"duration":10} }}`),
 							},
 							Duration: 10,
-							Status:   1,
 						},
 					},
 				},
@@ -536,7 +533,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 									},
 								},
 							},
-							Status:            constant.StatusWinningBid,
+							Nbr:               nil,
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
 						},
@@ -607,7 +604,7 @@ func TestDynamicAdpodGetWinningBids(t *testing.T) {
 									},
 								},
 							},
-							Status:            constant.StatusWinningBid,
+							Nbr:               nil,
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
 						},
@@ -623,7 +620,7 @@ func TestDynamicAdpodGetWinningBids(t *testing.T) {
 									},
 								},
 							},
-							Status:            constant.StatusWinningBid,
+							Nbr:               nil,
 							DealTierSatisfied: false,
 							Seat:              "appnexus",
 						},

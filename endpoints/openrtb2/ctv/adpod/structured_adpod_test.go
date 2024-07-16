@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -973,7 +972,7 @@ func TestStructuredAdpodGetAdpodSeatBids(t *testing.T) {
 						},
 						DealTierSatisfied: false,
 						Seat:              "pubmatic",
-						Status:            constant.StatusWinningBid,
+						Nbr:               nil,
 					},
 				},
 			},

@@ -80,6 +80,11 @@ func (sa *structuredAdpod) HoldAuction() {
 	// Sort Bids impression wise
 	for _, bids := range sa.ImpBidMap {
 		util.SortBids(bids)
+		for _, bid := range bids {
+			if bid.Nbr == nil {
+				bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
+			}
+		}
 	}
 
 	// Create Slots
@@ -103,19 +108,8 @@ func (sa *structuredAdpod) HoldAuction() {
 		// Validate the array length and index chosen
 		if len(bids) > slots[i].Index {
 			selectedBid := bids[slots[i].Index]
+			selectedBid.Nbr = nil
 			sa.WinningBid[slots[i].ImpId] = *selectedBid
-			// Set rejection reasons for other bids
-			for j, bid := range bids {
-				if j == slots[i].Index || bid.Nbr != nil {
-					continue
-				}
-				bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
-				if selectedBid.DealTierSatisfied {
-					if !bid.DealTierSatisfied {
-						bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToDealBid)
-					}
-				}
-			}
 		}
 
 	}
@@ -190,6 +184,7 @@ func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.Cat {
 		if _, ok := sa.SelectedCategories[bid.Cat[i]]; ok {
+			bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
 			return true
 		}
 	}
@@ -208,6 +203,7 @@ func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.ADomain {
 		if _, ok := sa.SelectedDomains[bid.ADomain[i]]; ok {
+			bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
 			return true
 		}
 	}
@@ -247,7 +243,16 @@ func isDealBid(bid *types.Bid) bool {
 }
 
 func (sa *structuredAdpod) isOverlap(bid *types.Bid, catMap map[string]bool, domainMap map[string]bool) bool {
-	return sa.isCatOverlap(bid.Cat, catMap) || sa.isDomainOverlap(bid.ADomain, domainMap)
+	var overlap bool
+	if sa.isDomainOverlap(bid.ADomain, domainMap) {
+		overlap = true
+		bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
+	}
+	if sa.isCatOverlap(bid.Cat, catMap) {
+		overlap = true
+		bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
+	}
+	return overlap
 }
 
 func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
@@ -264,11 +269,9 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 
 	if sa.Exclusion.shouldApplyExclusion() {
 		if bidIndex, ok := sa.isBetterBidThanDeal(slots, slotIndex, selectedSlot, selectedBid); ok {
-			slotBids[selectedSlot.Index].Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
-			slotBids[selectedSlot.Index].Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {

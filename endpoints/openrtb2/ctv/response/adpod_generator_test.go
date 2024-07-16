@@ -7,8 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 func Test_findUniqueCombinations(t *testing.T) {
@@ -123,9 +124,9 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 				results: []*highestCombination{
 					{
 						filteredBids: map[string]*filteredBid{
-							`bid-1`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-1`}}, status: constant.StatusCategoryExclusion},
-							`bid-2`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-2`}}, status: constant.StatusCategoryExclusion},
-							`bid-3`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-3`}}, status: constant.StatusCategoryExclusion},
+							`bid-1`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-1`}}, Nbr: ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)},
+							`bid-2`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-2`}}, Nbr: ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)},
+							`bid-3`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-3`}}, Nbr: ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)},
 						},
 					},
 				},
@@ -158,7 +159,7 @@ func TestAdPodGenerator_getMaxAdPodBid(t *testing.T) {
 							`domain-2`: 1,
 						},
 						filteredBids: map[string]*filteredBid{
-							`bid-4`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-4`}}, status: constant.StatusCategoryExclusion},
+							`bid-4`: {bid: &types.Bid{Bid: &openrtb2.Bid{ID: `bid-4`}}, Nbr: ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)},
 						},
 					},
 				},
