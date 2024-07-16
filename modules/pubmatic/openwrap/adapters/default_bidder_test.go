@@ -153,7 +153,7 @@ func getDummyValue(datatype string) interface{} {
 	case "number":
 		return 0.10011
 	case "integer":
-		return 1
+		return float64(1)
 	case "boolean":
 		return true
 	case "[]string":
@@ -265,12 +265,7 @@ func Test_addBidParam(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid integer input for paramType",
-			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: int(3128755)},
-			wantErr: false,
-		},
-		{
-			name:    "valid float64 input for paramType(in case of unmarshaling interface number values to float64)",
+			name:    "valid number(integer) input for paramType(in case of unmarshaling interface number values to float64)",
 			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: float64(3128755)},
 			wantErr: false,
 		},
