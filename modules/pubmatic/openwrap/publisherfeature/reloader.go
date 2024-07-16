@@ -26,6 +26,7 @@ type feature struct {
 	ant              analyticsThrottle
 	ampMultiformat   ampMultiformat
 	maxFloors        maxFloors
+	bidRecovery      bidRecovery
 }
 
 var fe *feature
@@ -110,6 +111,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAmpMutiformatEnabledPublishers()
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
+	fe.updateBidRecoveryEnabledPublishers()
 
 	if err != nil {
 		glog.Error(err.Error())
