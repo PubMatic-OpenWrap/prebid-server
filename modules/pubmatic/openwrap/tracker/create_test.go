@@ -365,13 +365,15 @@ func TestConstructTrackerURL(t *testing.T) {
 					AdPodSlot:         0,
 					FloorSkippedFlag:  ptrutil.ToPtr(0),
 					FloorModelVersion: "test version",
-					FloorProvider:     "PM",
 					FloorSource:       ptrutil.ToPtr(1),
 					FloorType:         1,
 					RewardedInventory: 1,
 					Secure:            1,
 					SSAI:              "mediatailor",
 					CustomDimensions:  "traffic=media;age=23",
+					LoggerData: models.LoggerData{
+						FloorProvider: "PM",
+					},
 					PartnerInfo: models.Partner{
 						PartnerID:      "AppNexus",
 						BidderCode:     "AppNexus1",

@@ -74,7 +74,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
 				TestGroup:         rctx.ABTestConfigApplied,
 				FloorModelVersion: floorsDetails.FloorModelVersion,
-				FloorProvider:     floorsDetails.FloorProvider,
 				FloorType:         floorsDetails.FloorType,
 				FloorSkippedFlag:  floorsDetails.Skipfloors,
 				FloorSource:       floorsDetails.FloorSource,
@@ -271,8 +270,8 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(tracker.FloorModelVersion) > 0 {
 		v.Set(models.TRKFloorModelVersion, tracker.FloorModelVersion)
 	}
-	if len(tracker.FloorProvider) > 0 {
-		v.Set(models.TRKFloorProvider, tracker.FloorProvider)
+	if len(tracker.LoggerData.FloorProvider) > 0 {
+		v.Set(models.TRKFloorProvider, tracker.LoggerData.FloorProvider)
 	}
 
 	if tracker.FloorSource != nil {
