@@ -718,6 +718,11 @@ func builderAidem(params BidderParameters) (json.RawMessage, error) {
 		fmt.Fprintf(&jsonStr, `,"siteId":"%s"`, adSlot)
 	}
 
+	//placementId
+	if adSlot, ok := getString(params.FieldMap["placementId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"placementId":"%s"`, adSlot)
+	}
+
 	//rateLimit
 	_, ok := getString(params.FieldMap["rateLimit"])
 	if ok {
