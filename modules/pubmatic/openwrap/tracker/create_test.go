@@ -365,6 +365,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					AdPodSlot:         0,
 					FloorSkippedFlag:  ptrutil.ToPtr(0),
 					FloorModelVersion: "test version",
+					FloorProvider:     "PM",
 					FloorSource:       ptrutil.ToPtr(1),
 					FloorType:         1,
 					RewardedInventory: 1,
@@ -390,7 +391,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&fp=PM&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_secure_enable_in_tracker",

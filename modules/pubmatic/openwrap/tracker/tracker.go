@@ -25,6 +25,7 @@ func GetTrackerInfo(rCtx models.RequestCtx, responseExt openrtb_ext.ExtBidRespon
 		Origin:            rCtx.Origin,
 		TestGroup:         rCtx.ABTestConfigApplied,
 		FloorModelVersion: floorsDetails.FloorModelVersion,
+		FloorProvider:     floorsDetails.FloorProvider,
 		FloorType:         floorsDetails.FloorType,
 		FloorSkippedFlag:  floorsDetails.Skipfloors,
 		FloorSource:       floorsDetails.FloorSource,
