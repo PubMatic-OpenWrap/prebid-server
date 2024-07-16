@@ -16,7 +16,7 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 			name          string
 			bid           map[string]any
 			expectedValue any
-			expectedFound bool
+			expectedError bool
 		}{
 			{
 				name: "mtype found in bid",
@@ -24,7 +24,7 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 					"mtype": 2.0,
 				},
 				expectedValue: openrtb_ext.BidTypeVideo,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "mtype found in bid - invalid type",
@@ -32,7 +32,7 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 					"mtype": "vide0",
 				},
 				expectedValue: nil,
-				expectedFound: false,
+				expectedError: true,
 			},
 			{
 				name: "mtype found in bid - invalid value",
@@ -40,21 +40,21 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 					"mtype": 11.0,
 				},
 				expectedValue: nil,
-				expectedFound: false,
+				expectedError: true,
 			},
 			{
 				name:          "mtype not found in bid",
 				bid:           map[string]any{},
 				expectedValue: nil,
-				expectedFound: false,
+				expectedError: false,
 			},
 		}
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				value, found := resolver.getFromORTBObject(tc.bid)
+				value, err := resolver.getFromORTBObject(tc.bid)
 				assert.Equal(t, tc.expectedValue, value)
-				assert.Equal(t, tc.expectedFound, found)
+				assert.Equal(t, tc.expectedError, err != nil)
 			})
 		}
 	})
@@ -67,7 +67,7 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -88,7 +88,7 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.mtype",
 			expectedValue: openrtb_ext.BidType("video"),
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found invalid bidtype in location",
@@ -108,8 +108,8 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.mtype",
-			expectedValue: openrtb_ext.BidType(""),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -130,15 +130,15 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidTypeResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -152,7 +152,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 			bid           map[string]any
 			request       *openrtb2.BidRequest
 			expectedValue any
-			expectedFound bool
+			expectedError bool
 		}{
 			{
 				name: "Auto detect from imp - Video",
@@ -169,7 +169,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					},
 				},
 				expectedValue: openrtb_ext.BidTypeVideo,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect from imp - banner",
@@ -186,7 +186,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					},
 				},
 				expectedValue: openrtb_ext.BidTypeBanner,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect from imp - native",
@@ -203,7 +203,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					},
 				},
 				expectedValue: openrtb_ext.BidTypeNative,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect from imp - multi format",
@@ -221,7 +221,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					},
 				},
 				expectedValue: openrtb_ext.BidType(""),
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect with Video Adm",
@@ -229,7 +229,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
 				},
 				expectedValue: openrtb_ext.BidTypeVideo,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect with Native Adm",
@@ -237,7 +237,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					"adm": "{\"native\":{\"link\":{},\"assets\":[]}}",
 				},
 				expectedValue: openrtb_ext.BidTypeNative,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name: "Auto detect with Banner Adm",
@@ -245,13 +245,13 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					"adm": "<div>Some HTML content</div>",
 				},
 				expectedValue: openrtb_ext.BidTypeBanner,
-				expectedFound: true,
+				expectedError: false,
 			},
 			{
 				name:          "Auto detect with no Adm",
 				bid:           map[string]any{},
 				expectedValue: nil,
-				expectedFound: false,
+				expectedError: true,
 			},
 			{
 				name: "Auto detect with empty Adm",
@@ -259,14 +259,14 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					"adm": "",
 				},
 				expectedValue: nil,
-				expectedFound: false,
+				expectedError: true,
 			},
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				value, found := resolver.autoDetect(tc.request, tc.bid)
+				value, err := resolver.autoDetect(tc.request, tc.bid)
 				assert.Equal(t, tc.expectedValue, value)
-				assert.Equal(t, tc.expectedFound, found)
+				assert.Equal(t, tc.expectedError, err != nil)
 			})
 		}
 	})

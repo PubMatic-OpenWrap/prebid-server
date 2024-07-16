@@ -13,7 +13,7 @@ func TestBidDealPriorityFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found dealPriority in location",
@@ -23,7 +23,7 @@ func TestBidDealPriorityFromLocation(t *testing.T) {
 			},
 			path:          "dp",
 			expectedValue: 10,
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found invalid dealPriority in location",
@@ -32,22 +32,22 @@ func TestBidDealPriorityFromLocation(t *testing.T) {
 				"dp":  "invalid",
 			},
 			path:          "dp",
-			expectedValue: 0,
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found dealPriority in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }

@@ -15,7 +15,7 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found bidVideo in location",
@@ -43,7 +43,7 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 				"primary_category": "sport",
 				"extra_key":        "extra_value",
 			},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "bidVideo found but few fields are invalid",
@@ -67,7 +67,7 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.video",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: true,
 		},
 		{
 			name: "bidVideo not found in location",
@@ -78,24 +78,24 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.video",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
 
 func TestValidateBidVideo(t *testing.T) {
 	testCases := []struct {
-		name            string
-		video           any
-		expectedVideo   any
-		expectedIsValid bool
+		name          string
+		video         any
+		expectedVideo any
+		expectedError bool
 	}{
 		{
 			name: "Valid video map",
@@ -109,7 +109,7 @@ func TestValidateBidVideo(t *testing.T) {
 				"primary_category": "sports",
 				"extra_key":        "extra_value",
 			},
-			expectedIsValid: true,
+			expectedError: false,
 		},
 		{
 			name: "Invalid duration type",
@@ -117,8 +117,8 @@ func TestValidateBidVideo(t *testing.T) {
 				"duration":         "30",
 				"primary_category": "sports",
 			},
-			expectedVideo:   nil,
-			expectedIsValid: false,
+			expectedVideo: nil,
+			expectedError: true,
 		},
 		{
 			name: "Invalid primary category type",
@@ -126,21 +126,21 @@ func TestValidateBidVideo(t *testing.T) {
 				"duration":         30.0,
 				"primary_category": 123,
 			},
-			expectedVideo:   nil,
-			expectedIsValid: false,
+			expectedVideo: nil,
+			expectedError: true,
 		},
 		{
-			name:            "Invalid type (not a map)",
-			video:           make(chan int),
-			expectedVideo:   nil,
-			expectedIsValid: false,
+			name:          "Invalid type (not a map)",
+			video:         make(chan int),
+			expectedVideo: nil,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			validatedVideo, isValid := validateBidVideo(tc.video)
+			validatedVideo, err := validateBidVideo(tc.video)
 			assert.Equal(t, tc.expectedVideo, validatedVideo)
-			assert.Equal(t, tc.expectedIsValid, isValid)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -170,7 +170,7 @@ func TestBidVideoSetValue(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resolver.setValue(tc.adapterBid, tc.value)
+			_ = resolver.setValue(tc.adapterBid, tc.value)
 			assert.Equal(t, tc.expectedAdapter, tc.adapterBid)
 		})
 	}
@@ -182,15 +182,21 @@ func TestBidVideoDurationGetFromORTBObject(t *testing.T) {
 		name          string
 		responseNode  map[string]any
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
+		{
+			name:          "Not found dur in location",
+			responseNode:  map[string]any{},
+			expectedValue: nil,
+			expectedError: false,
+		},
 		{
 			name: "Found dur in location",
 			responseNode: map[string]any{
 				"dur": 11.0,
 			},
 			expectedValue: int64(11),
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found dur in location but type is invalid",
@@ -198,14 +204,14 @@ func TestBidVideoDurationGetFromORTBObject(t *testing.T) {
 				"dur": "invalid",
 			},
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.getFromORTBObject(tc.responseNode)
+			value, err := resolver.getFromORTBObject(tc.responseNode)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -217,7 +223,7 @@ func TestBidVideoDurarionRetrieveFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found dur in location",
@@ -234,7 +240,7 @@ func TestBidVideoDurarionRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.duration",
 			expectedValue: int64(100),
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found dur in location but type is invalid",
@@ -250,22 +256,22 @@ func TestBidVideoDurarionRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.duration",
-			expectedValue: int64(0),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "dur not found in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -277,7 +283,7 @@ func TestSetValueBidVideoDuration(t *testing.T) {
 		adapterBid      map[string]any
 		value           any
 		expectedAdapter map[string]any
-		expectedResult  bool
+		expectedError   bool
 	}{
 		{
 			name:       "Set video duration when video is absent",
@@ -288,7 +294,7 @@ func TestSetValueBidVideoDuration(t *testing.T) {
 					bidVideoDurationKey: 10,
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 		{
 			name: "Set videoduration when video is present",
@@ -304,13 +310,13 @@ func TestSetValueBidVideoDuration(t *testing.T) {
 					bidVideoPrimaryCategoryKey: "IAB-1",
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := resolver.setValue(tc.adapterBid, tc.value)
-			assert.Equal(t, tc.expectedResult, result)
+			assert.Equal(t, tc.expectedError, result != nil)
 			assert.Equal(t, tc.expectedAdapter, tc.adapterBid)
 		})
 	}
@@ -323,7 +329,7 @@ func TestBidVideoPrimaryCategoryRetrieveFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found category in location",
@@ -332,7 +338,7 @@ func TestBidVideoPrimaryCategoryRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "cat.1",
 			expectedValue: "IAB-2",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found category in location but type is invalid",
@@ -340,22 +346,22 @@ func TestBidVideoPrimaryCategoryRetrieveFromLocation(t *testing.T) {
 				"cat": []any{"IAB-1", 100},
 			},
 			path:          "cat.1",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Category not found in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -366,7 +372,7 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 		name          string
 		responseNode  map[string]any
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found category in location",
@@ -374,7 +380,23 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 				"cat": []any{"IAB-1", "IAB-2"},
 			},
 			expectedValue: "IAB-1",
-			expectedFound: true,
+			expectedError: false,
+		},
+		{
+			name: "Found empty category in location",
+			responseNode: map[string]any{
+				"cat": []any{},
+			},
+			expectedValue: nil,
+			expectedError: false,
+		},
+		{
+			name: "Not found category in location",
+			responseNode: map[string]any{
+				"field": []any{},
+			},
+			expectedValue: nil,
+			expectedError: false,
 		},
 		{
 			name: "Found category in location but type is invalid",
@@ -382,7 +404,7 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 				"cat": "invalid",
 			},
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: true,
 		},
 		{
 			name: "Found category in location but first category type is invalid",
@@ -390,14 +412,14 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 				"cat": []any{1, 2},
 			},
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.getFromORTBObject(tc.responseNode)
+			value, err := resolver.getFromORTBObject(tc.responseNode)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -409,7 +431,7 @@ func TestSetValuePrimaryCategory(t *testing.T) {
 		adapterBid      map[string]any
 		value           any
 		expectedAdapter map[string]any
-		expectedResult  bool
+		expectedError   bool
 	}{
 		{
 			name:       "Set video key-value when video is absent",
@@ -420,7 +442,7 @@ func TestSetValuePrimaryCategory(t *testing.T) {
 					bidVideoPrimaryCategoryKey: "IAB-1",
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 		{
 			name: "Set video key-value when video is present",
@@ -436,13 +458,13 @@ func TestSetValuePrimaryCategory(t *testing.T) {
 					bidVideoPrimaryCategoryKey: "IAB-1",
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := resolver.setValue(tc.adapterBid, tc.value)
-			assert.Equal(t, tc.expectedResult, result)
+			err := resolver.setValue(tc.adapterBid, tc.value)
+			assert.Equal(t, tc.expectedError, err != nil)
 			assert.Equal(t, tc.expectedAdapter, tc.adapterBid)
 		})
 	}
@@ -455,7 +477,7 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 		key             string
 		value           any
 		expectedAdapter map[string]any
-		expectedResult  bool
+		expectedError   bool
 	}{
 		{
 			name:       "Set video key-value when video is absent",
@@ -467,7 +489,7 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 					"duration": 30,
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 		{
 			name: "Set video key-value when video is present",
@@ -481,7 +503,7 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 					"duration": 30,
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 		{
 			name: "Override existing video key-value",
@@ -497,7 +519,7 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 					"duration": 30,
 				},
 			},
-			expectedResult: true,
+			expectedError: false,
 		},
 		{
 			name: "Invalid video type",
@@ -507,13 +529,13 @@ func TestSetKeyValueInBidVideo(t *testing.T) {
 			key:             "duration",
 			value:           30,
 			expectedAdapter: map[string]any{"BidVideo": "invalid"},
-			expectedResult:  false,
+			expectedError:   true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := setKeyValueInBidVideo(tc.adapterBid, tc.key, tc.value)
-			assert.Equal(t, tc.expectedResult, result)
+			err := setKeyValueInBidVideo(tc.adapterBid, tc.key, tc.value)
+			assert.Equal(t, tc.expectedError, err != nil)
 			assert.Equal(t, tc.expectedAdapter, tc.adapterBid)
 		})
 	}
@@ -531,5 +553,8 @@ func TestExtBidPrebidVideoFields(t *testing.T) {
 	}
 
 	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidVideo{})
-	validateStructFields(t, expectedFields, structType)
+	err := ValidateStructFields(expectedFields, structType)
+	if err != nil {
+		t.Error(err)
+	}
 }

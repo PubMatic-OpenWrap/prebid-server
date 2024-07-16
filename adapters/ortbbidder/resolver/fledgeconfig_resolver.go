@@ -12,29 +12,34 @@ type fledgeResolver struct {
 	paramResolver
 }
 
-func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateFledgeConfig(value)
+	fledgeCfg, err := validateFledgeConfig(value)
+	if err != nil {
+		return nil, util.NewWarning("failed to map response-param:[fledgeAuctionConfig] value:[%+v]", value)
+	}
+	return fledgeCfg, nil
 }
 
-func validateFledgeConfig(value any) (any, bool) {
+func validateFledgeConfig(value any) (any, error) {
 	fledgeCfgBytes, err := jsonutil.Marshal(value)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
 
 	var fledgeCfg []*openrtb_ext.FledgeAuctionConfig
 	err = jsonutil.UnmarshalValid(fledgeCfgBytes, &fledgeCfg)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
-	return fledgeCfg, len(fledgeCfg) != 0
+
+	return fledgeCfg, nil
 }
 
-func (f *fledgeResolver) setValue(adapterBid map[string]any, value any) bool {
+func (f *fledgeResolver) setValue(adapterBid map[string]any, value any) error {
 	adapterBid[fledgeAuctionConfigKey] = value
-	return true
+	return nil
 }

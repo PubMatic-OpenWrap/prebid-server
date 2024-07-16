@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +16,7 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError error
 	}{
 		{
 			name: "Found fledgeConfig in location",
@@ -41,7 +42,7 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 					Config: json.RawMessage(`{"key":"value"}`),
 				},
 			},
-			expectedFound: true,
+			expectedError: nil,
 		},
 		{
 			name: "Found  invalid fledgeConfig in location",
@@ -61,31 +62,31 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.fledgeCfg",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: util.NewWarning("failed to map response-param:[fledgeAuctionConfig] value:[[map[bidder:magnite config:map[key:value] impid:1]]]"),
 		},
 		{
 			name:          "Not found fledge config in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: nil,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err)
 		})
 	}
 }
 
 func TestValidateFledgeConfigs(t *testing.T) {
 	testCases := []struct {
-		name               string
-		input              any
-		expectedOutput     any
-		expectedValidation bool
+		name           string
+		input          any
+		expectedOutput any
+		expectedError  bool
 	}{
 		{
 			name: "Valid fledge configs",
@@ -108,7 +109,7 @@ func TestValidateFledgeConfigs(t *testing.T) {
 					Config:  json.RawMessage(`{"key1":"value1","key2":"value2"}`),
 				},
 			},
-			expectedValidation: true,
+			expectedError: false,
 		},
 		{
 			name: "Invalid fledge config with non-map entry",
@@ -124,27 +125,27 @@ func TestValidateFledgeConfigs(t *testing.T) {
 				},
 				"invalidEntry",
 			},
-			expectedOutput:     nil,
-			expectedValidation: false,
+			expectedOutput: nil,
+			expectedError:  true,
 		},
 		{
-			name:               "nil fledge configs",
-			input:              nil,
-			expectedOutput:     []*openrtb_ext.FledgeAuctionConfig(nil),
-			expectedValidation: false,
+			name:           "nil fledge configs",
+			input:          nil,
+			expectedOutput: []*openrtb_ext.FledgeAuctionConfig(nil),
+			expectedError:  false,
 		},
 		{
-			name:               "Non-slice input",
-			input:              make(chan int),
-			expectedOutput:     nil,
-			expectedValidation: false,
+			name:           "Non-slice input",
+			input:          make(chan int),
+			expectedOutput: nil,
+			expectedError:  true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			output, valid := validateFledgeConfig(tc.input)
+			output, err := validateFledgeConfig(tc.input)
 			assert.Equal(t, tc.expectedOutput, output)
-			assert.Equal(t, tc.expectedValidation, valid)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }

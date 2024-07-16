@@ -9,6 +9,7 @@ var (
 		fledgeAuctionConfig:      &fledgeResolver{},
 		bidType:                  &bidTypeResolver{},
 		bidDealPriority:          &bidDealPriorityResolver{},
+		bidVideo:                 &bidVideoResolver{},
 		bidVideoDuration:         &bidVideoDurationResolver{},
 		bidVideoPrimaryCategory:  &bidVideoPrimaryCategoryResolver{},
 		bidMeta:                  &bidMetaResolver{},
@@ -34,10 +35,10 @@ var (
 )
 
 type resolver interface {
-	getFromORTBObject(sourceNode map[string]any) (any, bool)
-	retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool)
-	autoDetect(request *openrtb2.BidRequest, sourceNode map[string]any) (any, bool)
-	setValue(targetNode map[string]any, value any) bool
+	getFromORTBObject(sourceNode map[string]any) (any, error)
+	retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error)
+	autoDetect(request *openrtb2.BidRequest, sourceNode map[string]any) (any, error)
+	setValue(targetNode map[string]any, value any) error
 }
 
 type resolverMap map[parameter]resolver
@@ -55,16 +56,16 @@ func New(request *openrtb2.BidRequest, bidderResponse map[string]any) *paramReso
 	}
 }
 
-func (r *paramResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
-	return nil, false
+func (r *paramResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
+	return nil, nil
 }
 
-func (r *paramResolver) getFromORTBObject(bid map[string]any) (any, bool) {
-	return nil, false
+func (r *paramResolver) getFromORTBObject(bid map[string]any) (any, error) {
+	return nil, nil
 }
 
-func (r *paramResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
-	return nil, false
+func (r *paramResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, error) {
+	return nil, nil
 }
 
 // Resolve fetches a parameter value from sourceNode or bidderResponse and sets it in targetNode.
@@ -73,30 +74,44 @@ func (r *paramResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]
 // 2) Location from JSON file (bidder params)
 // 3) Auto-detection
 // If the value is found, it is set in the targetNode.
-func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path string, param parameter) bool {
+func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path string, param parameter) (errs []error) {
 	if sourceNode == nil || targetNode == nil || pr.bidderResponse == nil {
-		return false
+		return
 	}
 	resolver, ok := resolvers[param]
 	if !ok {
-		return false
+		return
 	}
 
-	// get the value from the ORTB object
-	value, found := resolver.getFromORTBObject(sourceNode)
-	if !found {
-		// get the value from the bidder response using the location
-		value, found = resolver.retrieveFromBidderParamLocation(pr.bidderResponse, path)
-		if !found {
-			// auto detect value
-			value, found = resolver.autoDetect(pr.request, sourceNode)
-			if !found {
-				return false
-			}
+	value, err := resolver.getFromORTBObject(sourceNode) // get the value from the ORTB object
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if value == nil {
+		value, err = resolver.retrieveFromBidderParamLocation(pr.bidderResponse, path) // get the value from the bidder response using the location
+		if err != nil {
+			errs = append(errs, err)
 		}
 	}
 
-	return resolver.setValue(targetNode, value)
+	if value == nil {
+		value, err = resolver.autoDetect(pr.request, sourceNode) // auto detect value
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	// return if value not found
+	if value == nil {
+		return errs
+	}
+
+	err = resolver.setValue(targetNode, value)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	return errs
 }
 
 // list of parameters to be resolved at typedBid level.

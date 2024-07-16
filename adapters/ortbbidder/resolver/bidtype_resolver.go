@@ -22,43 +22,51 @@ type bidTypeResolver struct {
 	paramResolver
 }
 
-func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, bool) {
-	mtype, ok := bid[ortbFieldMtype].(float64)
+func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, error) {
+	value, ok := bid[ortbFieldMtype]
+	if !ok {
+		return nil, nil
+	}
+
+	mtype, ok := value.(float64)
 	if !ok || mtype == 0 {
-		return nil, false
+		return nil, util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[%v]", value)
 	}
 
 	if bidType := convertToBidType(openrtb2.MarkupType(mtype)); bidType != openrtb_ext.BidType("") {
-		return bidType, true
+		return bidType, nil
 	}
-	return nil, false
+	return nil, util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[%v]", value)
 }
 
-func (r *bidTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (r *bidTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
 	bidType, ok := value.(string)
-	return openrtb_ext.BidType(bidType), ok
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidType] method:[response_param_location] value:[%v]", value)
+	}
+	return openrtb_ext.BidType(bidType), nil
 }
 
-func (r *bidTypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, bool) {
+func (r *bidTypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[string]any) (any, error) {
 	adm, ok := bid[ortbFieldAdM].(string)
 	if ok && adm != "" {
-		return getMediaTypeFromAdm(adm), true // Adm is present, get media type from adm
+		return getMediaTypeFromAdm(adm), nil // Adm is present, get media type from adm
 	}
 	impId, ok := bid[ortbFieldImpId].(string)
 	if !ok {
-		return nil, false
+		return nil, util.ErrBidTypeMissingImpID
 	}
 	// Adm is not present, get media type from imp
-	return getMediaTypeFromImp(request.Imp, impId), true
+	return getMediaTypeFromImp(request.Imp, impId), nil
 }
 
-func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) bool {
+func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) error {
 	adapterBid[bidTypeKey] = value
-	return true
+	return nil
 }
 
 func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {

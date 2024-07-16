@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,6 +18,7 @@ func TestResolveTypeBid(t *testing.T) {
 		location        string
 		paramName       parameter
 		expectedTypeBid map[string]any
+		expectedErrs    []error
 		request         *openrtb2.BidRequest
 	}{
 		{
@@ -95,7 +97,7 @@ func TestResolveTypeBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Get paramName from the ortb bid object",
+			name: "Get param from the ortb bid object",
 			bid: map[string]any{
 				"id":    "123",
 				"mtype": float64(2),
@@ -130,7 +132,48 @@ func TestResolveTypeBid(t *testing.T) {
 			},
 		},
 		{
-			name: "Get paramName from the bidder paramName location",
+			name: "fail to get param from the ortb bid object, fallback to get from bidder param location",
+			bid: map[string]any{
+				"id":    "123",
+				"mtype": float64(0),
+			},
+			typeBid: map[string]any{
+				"Bid": map[string]any{
+					"id":    "123",
+					"mtype": float64(0),
+				},
+			},
+			bidderResponse: map[string]any{
+				"cur": "USD",
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id":    "123",
+								"mtype": float64(0),
+								"ext": map[string]any{
+									"bidtype": "banner",
+								},
+							},
+						},
+					},
+				},
+			},
+			location:  "seatbid.0.bid.0.ext.bidtype",
+			paramName: "bidType",
+			expectedTypeBid: map[string]any{
+				"Bid": map[string]any{
+					"id":    "123",
+					"mtype": float64(0),
+				},
+				"BidType": openrtb_ext.BidType("banner"),
+			},
+			expectedErrs: []error{
+				util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[0]"),
+			},
+		},
+		{
+			name: "Get param from the bidder paramName location",
 			bid: map[string]any{
 				"id": "123",
 				"ext": map[string]any{
@@ -170,6 +213,45 @@ func TestResolveTypeBid(t *testing.T) {
 					},
 				},
 				"BidType": openrtb_ext.BidType("video"),
+			},
+		},
+		{
+			name: "fail to detect from location, fallback to Auto detect",
+			bid: map[string]any{
+				"id":  "123",
+				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+			},
+			typeBid: map[string]any{
+				"Bid": map[string]any{
+					"id":  "123",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				},
+			},
+			bidderResponse: map[string]any{
+				"cur":     "USD",
+				"bidtype": 1,
+				"seatbid": []any{
+					map[string]any{
+						"bid": []any{
+							map[string]any{
+								"id":  "123",
+								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+							},
+						},
+					},
+				},
+			},
+			location:  "bidtype",
+			paramName: "bidType",
+			expectedTypeBid: map[string]any{
+				"Bid": map[string]any{
+					"id":  "123",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				},
+				"BidType": openrtb_ext.BidType("video"),
+			},
+			expectedErrs: []error{
+				util.NewWarning("failed to map response-param:[bidType] method:[response_param_location] value:[1]"),
 			},
 		},
 		{
@@ -236,13 +318,17 @@ func TestResolveTypeBid(t *testing.T) {
 					"id": "123",
 				},
 			},
+			expectedErrs: []error{
+				util.NewWarning("failed to map response-param:[bidType] method:[auto_detect] error:[bid.impid is missing]"),
+			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			pr := New(tc.request, tc.bidderResponse)
-			pr.Resolve(tc.bid, tc.typeBid, tc.location, tc.paramName)
+			errs := pr.Resolve(tc.bid, tc.typeBid, tc.location, tc.paramName)
 			assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
+			assert.Equal(t, tc.expectedErrs, errs)
 		})
 	}
 }
@@ -251,27 +337,27 @@ func TestDefaultvalueResolver(t *testing.T) {
 	tests := []struct {
 		name      string
 		wantValue any
-		wantFound bool
+		wantErr   error
 	}{
 		{
 			name:      "test default values",
 			wantValue: nil,
-			wantFound: false,
+			wantErr:   nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &paramResolver{}
 			value, found := r.retrieveFromBidderParamLocation(map[string]any{}, "any.path")
-			assert.Equal(t, tt.wantFound, found)
+			assert.Equal(t, tt.wantErr, found)
 			assert.Equal(t, tt.wantValue, value)
 
 			value, found = r.getFromORTBObject(map[string]any{})
-			assert.Equal(t, tt.wantFound, found)
+			assert.Equal(t, tt.wantErr, found)
 			assert.Equal(t, tt.wantValue, value)
 
 			value, found = r.autoDetect(&openrtb2.BidRequest{}, map[string]any{})
-			assert.Equal(t, tt.wantFound, found)
+			assert.Equal(t, tt.wantErr, found)
 			assert.Equal(t, tt.wantValue, value)
 		})
 	}

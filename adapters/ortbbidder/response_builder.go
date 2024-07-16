@@ -27,11 +27,11 @@ func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper
 
 // setPrebidBidderResponse determines and construct adapters.BidderResponse and adapters.TypedBid object with the help
 // of response parameter mappings defined in static/bidder-response-params
-func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawMessage) error {
+func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawMessage) (errs []error) {
 
 	err := jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
 	if err != nil {
-		return err
+		return []error{util.NewBadServerResponseError(err.Error())}
 	}
 	// Create a new ParamResolver with the bidder response.
 	paramResolver := resolver.New(rb.request, rb.bidderResponse)
@@ -42,28 +42,29 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 	// Resolve the  adapter response level parameters.
 	for _, param := range resolver.ResponseParams {
 		bidderParam := rb.responseParams[param.String()]
-		paramResolver.Resolve(rb.bidderResponse, adapterResponse, bidderParam.Location, param)
+		resolverErrors := paramResolver.Resolve(rb.bidderResponse, adapterResponse, bidderParam.Location, param)
+		errs = append(errs, resolverErrors...)
 	}
 	// Extract the seat bids from the bidder response.
 	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
 	if !ok {
-		return newBadServerResponseError("invalid seatbid array found in response, seatbids:[%v]", rb.bidderResponse[seatBidKey])
+		return []error{util.NewBadServerResponseError("invalid seatbid array found in response, seatbids:[%v]", rb.bidderResponse[seatBidKey])}
 	}
 	// Initialize the list of typed bids.
 	typedBids := make([]any, 0)
 	for seatIndex, seatBid := range seatBids {
 		seatBid, ok := seatBid.(map[string]any)
 		if !ok {
-			return newBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids[seatIndex])
+			return []error{util.NewBadServerResponseError("invalid seatbid found in seatbid array, seatbid:[%v]", seatBids[seatIndex])}
 		}
 		bids, ok := seatBid[bidKey].([]any)
 		if !ok {
-			return newBadServerResponseError("invalid bid array found in seatbid, bids:[%v]", seatBid[bidKey])
+			return []error{util.NewBadServerResponseError("invalid bid array found in seatbid, bids:[%v]", seatBid[bidKey])}
 		}
 		for bidIndex, bid := range bids {
 			bid, ok := bid.(map[string]any)
 			if !ok {
-				return newBadServerResponseError("invalid bid found in bids array, bid:[%v]", bids[bidIndex])
+				return []error{util.NewBadServerResponseError("invalid bid found in bids array, bid:[%v]", bids[bidIndex])}
 			}
 			// Initialize the typed bid with the bid.
 			typedBid := map[string]any{
@@ -73,7 +74,8 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 			for _, params := range resolver.TypedBidParams {
 				paramMapper := rb.responseParams[params.String()]
 				location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
-				paramResolver.Resolve(bid, typedBid, location, params)
+				resolverErrors := paramResolver.Resolve(bid, typedBid, location, params)
+				errs = append(errs, resolverErrors...)
 			}
 			// Add the type bid to the list of typed bids.
 			typedBids = append(typedBids, typedBid)
@@ -83,7 +85,7 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 	adapterResponse[bidsKey] = typedBids
 	// Set the adapter response in the response builder.
 	rb.adapterRespone = adapterResponse
-	return nil
+	return errs
 }
 
 // buildAdapterResponse converts the responseBuilder's adapter response to a prebid format.
@@ -92,12 +94,12 @@ func (rb *responseBuilder) buildAdapterResponse() (resp *adapters.BidderResponse
 	var adapterResponeBytes json.RawMessage
 	adapterResponeBytes, err = jsonutil.Marshal(rb.adapterRespone)
 	if err != nil {
-		return
+		return nil, util.NewBadServerResponseError(err.Error())
 	}
 
 	err = jsonutil.UnmarshalValid(adapterResponeBytes, &resp)
 	if err != nil {
-		return nil, err
+		return nil, util.NewBadServerResponseError(err.Error())
 	}
 	return
 }

@@ -1,11 +1,14 @@
 package ortbbidder
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/resolver"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -89,7 +92,7 @@ func TestBuildAdapterResponse(t *testing.T) {
 				},
 			},
 			expectedResponse: nil,
-			expectedError: &errortypes.FailedToUnmarshal{
+			expectedError: &errortypes.BadServerResponse{
 				Message: "cannot unmarshal adapters.BidderResponse.Bids: decode slice: expect [ or n, but found {",
 			},
 		},
@@ -105,7 +108,7 @@ func TestBuildAdapterResponse(t *testing.T) {
 				},
 			},
 			expectedResponse: nil,
-			expectedError:    &errortypes.FailedToMarshal{Message: "chan int is unsupported type"},
+			expectedError:    &errortypes.BadServerResponse{Message: "chan int is unsupported type"},
 		},
 	}
 	for _, tc := range testCases {
@@ -126,7 +129,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 		bidderResponse      map[string]any
 		bidderResponseBytes []byte
 		responseParams      map[string]bidderparams.BidderParamMapper
-		expectedError       error
+		expectedError       []error
 		expectedResponse    map[string]any
 	}{
 		{
@@ -137,7 +140,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.FailedToUnmarshal{Message: "expect ] in the end, but found \x00"},
+			expectedError: []error{&errortypes.BadServerResponse{Message: "expect ] in the end, but found \x00"}},
 		},
 		{
 			name:                "Invalid seatbid object in response",
@@ -147,7 +150,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[invalid]"},
+			expectedError: []error{&errortypes.BadServerResponse{Message: "invalid seatbid array found in response, seatbids:[invalid]"}},
 		},
 		{
 			name:                "Invalid seatbid is seatbid arrays",
@@ -157,7 +160,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[invalid]"},
+			expectedError: []error{&errortypes.BadServerResponse{Message: "invalid seatbid found in seatbid array, seatbid:[invalid]"}},
 		},
 		{
 			name:                "Invalid bid in seatbid",
@@ -167,7 +170,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid bid array found in seatbid, bids:[invalid]"},
+			expectedError: []error{&errortypes.BadServerResponse{Message: "invalid bid array found in seatbid, bids:[invalid]"}},
 		},
 		{
 			name:                "Invalid bid in bids array",
@@ -177,13 +180,13 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 					Location: "cur",
 				},
 			},
-			expectedError: &errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"},
+			expectedError: []error{&errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"}},
 		},
 		{
 			name:                "Valid bidder respone, no bidder params",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
 			responseParams:      map[string]bidderparams.BidderParamMapper{},
-			expectedError:       nil,
+			expectedError:       []error{util.ErrBidTypeMissingImpID},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -253,7 +256,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 				"bidMetaAdvertiserId": {Location: "seatbid.#.bid.#.ext.advertiserId"},
 				"bidMetaNetworkId":    {Location: "seatbid.#.bid.#.ext.networkId"},
 			},
-			expectedError: nil,
+			expectedError: []error{util.NewWarning("failed to map response-param:[bidMetaAdvertiserId] method:[response_param_location] value:[5]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -298,5 +301,43 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectedResponse, rb.adapterRespone, "mismatched adapterRespone")
 		})
+	}
+}
+
+// TestTypedBidFields notifies us of any changes in the adapters.TypedBid struct.
+// If a new field is added in adapters.TypedBid, then add the support to resolve the new field and update the test case.
+// If the data type of an existing field changes then update the resolver of the respective field.
+func TestTypedBidFields(t *testing.T) {
+	expectedFields := map[string]reflect.Type{
+		"Bid":          reflect.TypeOf(&openrtb2.Bid{}),
+		"BidMeta":      reflect.TypeOf(&openrtb_ext.ExtBidPrebidMeta{}),
+		"BidType":      reflect.TypeOf(openrtb_ext.BidTypeBanner),
+		"BidVideo":     reflect.TypeOf(&openrtb_ext.ExtBidPrebidVideo{}),
+		"BidTargets":   reflect.TypeOf(map[string]string{}),
+		"DealPriority": reflect.TypeOf(0),
+		"Seat":         reflect.TypeOf(openrtb_ext.BidderName("")),
+	}
+
+	structType := reflect.TypeOf(adapters.TypedBid{})
+	err := resolver.ValidateStructFields(expectedFields, structType)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+// TestBidderResponseFields notifies us of any changes in the adapters.BidderResponse struct.
+// If a new field is added in adapters.BidderResponse, then add the support to resolve the new field and update the test case.
+// If the data type of an existing field changes then update the resolver of the respective field.
+func TestBidderResponseFields(t *testing.T) {
+	expectedFields := map[string]reflect.Type{
+		"Currency":             reflect.TypeOf(""),
+		"Bids":                 reflect.TypeOf([]*adapters.TypedBid{nil}),
+		"FledgeAuctionConfigs": reflect.TypeOf([]*openrtb_ext.FledgeAuctionConfig{}),
+		"FastXMLMetrics":       reflect.TypeOf(&openrtb_ext.FastXMLMetrics{}),
+	}
+	structType := reflect.TypeOf(adapters.BidderResponse{})
+	err := resolver.ValidateStructFields(expectedFields, structType)
+	if err != nil {
+		t.Error(err)
 	}
 }

@@ -12,37 +12,41 @@ type bidMetaResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateBidMeta(value)
+	bidMeta, err := validateBidMeta(value)
+	if err != nil {
+		return nil, util.NewWarning("failed to map response-param:[bidMeta] method:[response_param_location] value:[%v]", value)
+	}
+	return bidMeta, nil
 }
 
-func validateBidMeta(value any) (any, bool) {
+func validateBidMeta(value any) (any, error) {
 	bidMetaBytes, err := jsonutil.Marshal(value)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
 
 	var bidMeta openrtb_ext.ExtBidPrebidMeta
 	err = jsonutil.UnmarshalValid(bidMetaBytes, &bidMeta)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
 
 	var bidMetaMap map[string]any
 	err = jsonutil.UnmarshalValid(bidMetaBytes, &bidMetaMap)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
-	return bidMetaMap, true
+	return bidMetaMap, nil
 }
 
-func (b *bidMetaResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaResolver) setValue(adapterBid map[string]any, value any) error {
 	adapterBid[bidMetaKey] = value
-	return true
+	return nil
 }
 
 // bidMetaAdvDomainsResolver retrieves the advertiserDomains of the bid using the bidder param location.
@@ -51,15 +55,20 @@ type bidMetaAdvDomainsResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaAdvDomainsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaAdvDomainsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, ok := util.GetValueFromLocation(responseNode, path)
 	if !ok {
-		return nil, false
+		return nil, nil
 	}
-	return validateDataTypeSlice[string](value)
+
+	adomains, ok := validateDataTypeSlice[string](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserDomains] method:[response_param_location] value:[%v]", value)
+	}
+	return adomains, nil
 }
 
-func (b *bidMetaAdvDomainsResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaAdvDomainsResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaAdvertiserDomainsKey, value)
 }
 
@@ -69,15 +78,19 @@ type bidMetaAdvIDResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaAdvIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaAdvIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateNumber[int](value)
+	advId, ok := validateNumber[int](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserId] method:[response_param_location] value:[%v]", value)
+	}
+	return advId, nil
 }
 
-func (b *bidMetaAdvIDResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaAdvIDResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaAdvertiserIdKey, value)
 }
 
@@ -87,15 +100,19 @@ type bidMetaAdvNameResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaAdvNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaAdvNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	advName, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserName] method:[response_param_location] value:[%v]", value)
+	}
+	return advName, nil
 }
 
-func (b *bidMetaAdvNameResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaAdvNameResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaAdvertiserNameKey, value)
 }
 
@@ -105,15 +122,19 @@ type bidMetaAgencyIDResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaAgencyIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaAgencyIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateNumber[int](value)
+	agencyId, ok := validateNumber[int](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaAgencyId] method:[response_param_location] value:[%v]", value)
+	}
+	return agencyId, nil
 }
 
-func (b *bidMetaAgencyIDResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaAgencyIDResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaAgencyIdKey, value)
 }
 
@@ -123,15 +144,19 @@ type bidMetaAgencyNameResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaAgencyNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaAgencyNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	agencyName, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaAgencyName] method:[response_param_location] value:[%v]", value)
+	}
+	return agencyName, nil
 }
 
-func (b *bidMetaAgencyNameResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaAgencyNameResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaAgencyNameKey, value)
 }
 
@@ -141,15 +166,19 @@ type bidMetaBrandIDResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaBrandIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaBrandIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateNumber[int](value)
+	brandId, ok := validateNumber[int](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaBrandId] method:[response_param_location] value:[%v]", value)
+	}
+	return brandId, nil
 }
 
-func (b *bidMetaBrandIDResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaBrandIDResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaBrandIdKey, value)
 }
 
@@ -159,15 +188,19 @@ type bidMetaBrandNameResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaBrandNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaBrandNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	brandName, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaBrandName] method:[response_param_location] value:[%v]", value)
+	}
+	return brandName, nil
 }
 
-func (b *bidMetaBrandNameResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaBrandNameResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaBrandNameKey, value)
 }
 
@@ -177,15 +210,19 @@ type bidMetaDChainResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaDChainResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaDChainResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateMap(value)
+	dChain, ok := validateMap(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaDchain] method:[response_param_location] value:[%v]", value)
+	}
+	return dChain, nil
 }
 
-func (b *bidMetaDChainResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaDChainResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaDChainKey, value)
 }
 
@@ -195,15 +232,19 @@ type bidMetaDemandSourceResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaDemandSourceResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaDemandSourceResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	demandSource, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaDemandSource] method:[response_param_location] value:[%v]", value)
+	}
+	return demandSource, nil
 }
 
-func (b *bidMetaDemandSourceResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaDemandSourceResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaDemandSourceKey, value)
 }
 
@@ -213,15 +254,19 @@ type bidMetaMediaTypeResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaMediaTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaMediaTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	mediaType, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaMediaType] method:[response_param_location] value:[%v]", value)
+	}
+	return mediaType, nil
 }
 
-func (b *bidMetaMediaTypeResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaMediaTypeResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaMediaTypeKey, value)
 }
 
@@ -231,15 +276,19 @@ type bidMetaNetworkIDResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaNetworkIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaNetworkIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateNumber[int](value)
+	networkId, ok := validateNumber[int](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaNetworkId] method:[response_param_location] value:[%v]", value)
+	}
+	return networkId, nil
 }
 
-func (b *bidMetaNetworkIDResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaNetworkIDResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaNetworkIdKey, value)
 }
 
@@ -249,15 +298,19 @@ type bidMetaNetworkNameResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaNetworkNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaNetworkNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	networkName, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaNetworkName] method:[response_param_location] value:[%v]", value)
+	}
+	return networkName, nil
 }
 
-func (b *bidMetaNetworkNameResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaNetworkNameResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaNetworkNameKey, value)
 }
 
@@ -267,15 +320,19 @@ type bidMetaPrimaryCategoryIDResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaPrimaryCategoryIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaPrimaryCategoryIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	categoryId, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaPrimaryCatId] method:[response_param_location] value:[%v]", value)
+	}
+	return categoryId, nil
 }
 
-func (b *bidMetaPrimaryCategoryIDResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaPrimaryCategoryIDResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaPrimaryCatIdKey, value)
 }
 
@@ -285,15 +342,19 @@ type bidMetaRendererNameResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaRendererNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaRendererNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	rendererName, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererName] method:[response_param_location] value:[%v]", value)
+	}
+	return rendererName, nil
 }
 
-func (b *bidMetaRendererNameResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaRendererNameResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaRendererNameKey, value)
 }
 
@@ -303,15 +364,19 @@ type bidMetaRendererVersionResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaRendererVersionResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaRendererVersionResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	rendererVersion, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererVersion] method:[response_param_location] value:[%v]", value)
+	}
+	return rendererVersion, nil
 }
 
-func (b *bidMetaRendererVersionResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaRendererVersionResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaRendererVersionKey, value)
 }
 
@@ -321,15 +386,19 @@ type bidMetaRendererDataResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaRendererDataResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaRendererDataResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateMap(value)
+	rendererData, ok := validateMap(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererData] method:[response_param_location] value:[%v]", value)
+	}
+	return rendererData, nil
 }
 
-func (b *bidMetaRendererDataResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaRendererDataResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaRenderedDataKey, value)
 }
 
@@ -339,15 +408,19 @@ type bidMetaRendererUrlResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaRendererUrlResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaRendererUrlResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateString(value)
+	rendererUrl, ok := validateString(value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererUrl] method:[response_param_location] value:[%v]", value)
+	}
+	return rendererUrl, nil
 }
 
-func (b *bidMetaRendererUrlResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaRendererUrlResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaRenderedUrlKey, value)
 }
 
@@ -357,21 +430,25 @@ type bidMetaSecondaryCategoryIDsResolver struct {
 	paramResolver
 }
 
-func (b *bidMetaSecondaryCategoryIDsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, bool) {
+func (b *bidMetaSecondaryCategoryIDsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, false
+		return nil, nil
 	}
-	return validateDataTypeSlice[string](value)
+	secondaryCategories, ok := validateDataTypeSlice[string](value)
+	if !ok {
+		return nil, util.NewWarning("failed to map response-param:[bidMetaSecondaryCatIds] method:[response_param_location] value:[%v]", value)
+	}
+	return secondaryCategories, nil
 }
 
-func (b *bidMetaSecondaryCategoryIDsResolver) setValue(adapterBid map[string]any, value any) bool {
+func (b *bidMetaSecondaryCategoryIDsResolver) setValue(adapterBid map[string]any, value any) error {
 	return setKeyValueInBidMeta(adapterBid, bidMetaSecondaryCatIdKey, value)
 }
 
 // setKeyValueInBidMeta sets the key and value in bidMeta object
 // it creates the bidMeta object if required.
-func setKeyValueInBidMeta(adapterBid map[string]any, key string, value any) bool {
+func setKeyValueInBidMeta(adapterBid map[string]any, key string, value any) error {
 	meta, found := adapterBid[bidMetaKey]
 	if !found {
 		meta = map[string]any{}
@@ -379,8 +456,8 @@ func setKeyValueInBidMeta(adapterBid map[string]any, key string, value any) bool
 	}
 	typedMeta, ok := meta.(map[string]any)
 	if !ok || typedMeta == nil {
-		return false
+		return util.NewWarning("failed to set key:[%s] in BidMeta, value:[%+v] error:[incorrect data type]", key, value)
 	}
 	typedMeta[key] = value
-	return true
+	return nil
 }

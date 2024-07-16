@@ -15,7 +15,7 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -42,7 +42,7 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 				"advertiserDomains": []any{"abc.com", "xyz.com"},
 				"brandId":           1.0,
 			},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found invalid meta object in location",
@@ -66,7 +66,7 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.metaObject",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -84,25 +84,25 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
 
 func TestValidateBidMeta(t *testing.T) {
 	tests := []struct {
-		name     string
-		value    any
-		expected any
-		valid    bool
+		name          string
+		value         any
+		expected      any
+		expectedError bool
 	}{
 		{
 			name: "Metadata with all valid fields",
@@ -122,7 +122,7 @@ func TestValidateBidMeta(t *testing.T) {
 				},
 				"customField": "customValue",
 			},
-			valid: true,
+			expectedError: false,
 		},
 		{
 			name: "Metadata with wrong type",
@@ -130,21 +130,21 @@ func TestValidateBidMeta(t *testing.T) {
 				bidMetaAdvertiserDomainsKey: "example.com", // should be a slice
 				bidMetaAdvertiserIdKey:      "123",         // should be an float
 			},
-			expected: nil,
-			valid:    false,
+			expected:      nil,
+			expectedError: true,
 		},
 		{
-			name:     "Invalid type for value",
-			value:    make(chan int),
-			expected: nil,
-			valid:    false,
+			name:          "Invalid type for value",
+			value:         make(chan int),
+			expected:      nil,
+			expectedError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, valid := validateBidMeta(tt.value)
-			assert.Equal(t, tt.valid, valid)
+			result, err := validateBidMeta(tt.value)
+			assert.Equal(t, tt.expectedError, err != nil)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -176,7 +176,7 @@ func TestBidMetaSetValue(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resolver.setValue(tc.typeBid, tc.value)
+			_ = resolver.setValue(tc.typeBid, tc.value)
 			assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
 		})
 	}
@@ -188,7 +188,7 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -209,7 +209,7 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.adomains",
 			expectedValue: []string{"abc.com", "xyz.com"},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is invalid",
@@ -229,8 +229,8 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.adomains",
-			expectedValue: []string(nil),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -248,15 +248,15 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaAdvDomainsResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -286,7 +286,7 @@ func TestBidMetaAdvDomainsResolverSetValue(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resolver.setValue(tc.typeBid, tc.value)
+			_ = resolver.setValue(tc.typeBid, tc.value)
 			assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
 		})
 	}
@@ -298,7 +298,7 @@ func TestBidMetaAdvIdRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -319,7 +319,7 @@ func TestBidMetaAdvIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.advid",
 			expectedValue: 10,
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than float",
@@ -339,8 +339,8 @@ func TestBidMetaAdvIdRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.advid",
-			expectedValue: 0,
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -358,15 +358,15 @@ func TestBidMetaAdvIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaAdvIDResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -395,7 +395,7 @@ func TestBidMetaAdvIdResolverSetValue(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resolver.setValue(tc.typeBid, tc.value)
+			_ = resolver.setValue(tc.typeBid, tc.value)
 			assert.Equal(t, tc.expectedTypeBid, tc.typeBid)
 		})
 	}
@@ -407,7 +407,7 @@ func TestBidMetaAdvNameRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -417,7 +417,7 @@ func TestBidMetaAdvNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "advname",
 			expectedValue: "Acme Corp",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -427,8 +427,8 @@ func TestBidMetaAdvNameRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.advname",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -437,15 +437,15 @@ func TestBidMetaAdvNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaAdvNameResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -487,7 +487,7 @@ func TestBidMetaAgencyIDRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -499,7 +499,7 @@ func TestBidMetaAgencyIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.agencyid",
 			expectedValue: 10,
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than float",
@@ -508,8 +508,8 @@ func TestBidMetaAgencyIDRetrieveFromLocation(t *testing.T) {
 				"agencyid": 10,
 			},
 			path:          "agencyid",
-			expectedValue: 0,
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -519,15 +519,15 @@ func TestBidMetaAgencyIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaAgencyIDResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -569,7 +569,7 @@ func TestBidMetaAgencyNameRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -581,7 +581,7 @@ func TestBidMetaAgencyNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.agencyName",
 			expectedValue: "TestAgency",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -592,22 +592,22 @@ func TestBidMetaAgencyNameRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.agencyName",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -648,7 +648,7 @@ func TestBidMetaBrandIDRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -669,7 +669,7 @@ func TestBidMetaBrandIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.brandid",
 			expectedValue: 10,
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than float",
@@ -689,8 +689,8 @@ func TestBidMetaBrandIDRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.brandid",
-			expectedValue: 0,
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -708,15 +708,15 @@ func TestBidMetaBrandIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	resolver := &bidMetaBrandIDResolver{}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -759,7 +759,7 @@ func TestBidMetaBrandNameRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -771,7 +771,7 @@ func TestBidMetaBrandNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.brandname",
 			expectedValue: "TestBrand",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -782,8 +782,8 @@ func TestBidMetaBrandNameRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.brandname",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -792,14 +792,14 @@ func TestBidMetaBrandNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -842,7 +842,7 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -864,7 +864,7 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 					"t": 1,
 				},
 			},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than json.RawMessage",
@@ -875,23 +875,23 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.dchain",
-			expectedValue: map[string]any(nil),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -935,7 +935,7 @@ func TestBidMetaDemandSourceRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -956,7 +956,7 @@ func TestBidMetaDemandSourceRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.ext.demandSource",
 			expectedValue: "Direct",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -976,8 +976,8 @@ func TestBidMetaDemandSourceRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.demandSource",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -995,14 +995,14 @@ func TestBidMetaDemandSourceRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1044,7 +1044,7 @@ func TestBidMetaMediaTypeRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1067,7 +1067,7 @@ func TestBidMetaMediaTypeRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.bidder.mediaType",
 			expectedValue: "banner",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1087,8 +1087,8 @@ func TestBidMetaMediaTypeRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.mediaType",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -1106,14 +1106,14 @@ func TestBidMetaMediaTypeRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1158,7 +1158,7 @@ func TestBidMetaNetworkIDRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1179,7 +1179,7 @@ func TestBidMetaNetworkIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.networkID",
 			expectedValue: 100,
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than int",
@@ -1199,8 +1199,8 @@ func TestBidMetaNetworkIDRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "seatbid.0.bid.0.ext.networkID",
-			expectedValue: 0,
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -1210,14 +1210,14 @@ func TestBidMetaNetworkIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1259,7 +1259,7 @@ func TestBidMetaNetworkNameRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1274,7 +1274,7 @@ func TestBidMetaNetworkNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "networkName",
 			expectedValue: "TestNetwork",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1288,8 +1288,8 @@ func TestBidMetaNetworkNameRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "networkName",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -1298,14 +1298,14 @@ func TestBidMetaNetworkNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1347,7 +1347,7 @@ func TestBidMetaPrimaryCatIdRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1357,7 +1357,7 @@ func TestBidMetaPrimaryCatIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "primaryCatId",
 			expectedValue: "testCategory",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1366,8 +1366,8 @@ func TestBidMetaPrimaryCatIdRetrieveFromLocation(t *testing.T) {
 				"primaryCatId": 12345,
 			},
 			path:          "primaryCatId",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Not found in location",
@@ -1376,14 +1376,14 @@ func TestBidMetaPrimaryCatIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1426,7 +1426,7 @@ func TestBidMetaRendererNameRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1438,7 +1438,7 @@ func TestBidMetaRendererNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.rendererName",
 			expectedValue: "testRenderer",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1449,22 +1449,22 @@ func TestBidMetaRendererNameRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.rendererName",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1506,7 +1506,7 @@ func TestBidMetaRendererVersionRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1518,7 +1518,7 @@ func TestBidMetaRendererVersionRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.rendererVersion",
 			expectedValue: "1.0.0",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1529,22 +1529,22 @@ func TestBidMetaRendererVersionRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.rendererVersion",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1586,7 +1586,7 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1598,7 +1598,7 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.rendererData",
 			expectedValue: map[string]any{"key": "value"},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than json.RawMessage",
@@ -1609,22 +1609,22 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.rendererData",
-			expectedValue: map[string]any(nil),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1666,7 +1666,7 @@ func TestBidMetaRendererUrlRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1678,7 +1678,7 @@ func TestBidMetaRendererUrlRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.rendererUrl",
 			expectedValue: "https://example.com/renderer",
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than string",
@@ -1689,22 +1689,22 @@ func TestBidMetaRendererUrlRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.rendererUrl",
-			expectedValue: "",
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1746,7 +1746,7 @@ func TestBidMetaSecCatIdsRetrieveFromLocation(t *testing.T) {
 		ortbResponse  map[string]any
 		path          string
 		expectedValue any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name: "Found in location",
@@ -1758,7 +1758,7 @@ func TestBidMetaSecCatIdsRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.secondaryCatIds",
 			expectedValue: []string{"cat1", "cat2"},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Found in location but data type is other than []string",
@@ -1769,22 +1769,22 @@ func TestBidMetaSecCatIdsRetrieveFromLocation(t *testing.T) {
 				},
 			},
 			path:          "ext.secondaryCatIds",
-			expectedValue: []string(nil),
-			expectedFound: false,
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name:          "Not found in location",
 			ortbResponse:  map[string]any{},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedFound: false,
+			expectedError: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			value, found := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
+			value, err := resolver.retrieveFromBidderParamLocation(tc.ortbResponse, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedFound, found)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }
@@ -1826,7 +1826,7 @@ func TestSetKeyValueInBidMeta(t *testing.T) {
 		key           string
 		value         any
 		expectedBid   map[string]any
-		expectedFound bool
+		expectedError bool
 	}{
 		{
 			name:       "Set new key-value pair when meta object is absent",
@@ -1838,7 +1838,7 @@ func TestSetKeyValueInBidMeta(t *testing.T) {
 					"testKey": "testValue",
 				},
 			},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Update existing key-value pair in meta object",
@@ -1854,7 +1854,7 @@ func TestSetKeyValueInBidMeta(t *testing.T) {
 					"existingKey": "newValue",
 				},
 			},
-			expectedFound: true,
+			expectedError: false,
 		},
 		{
 			name: "Fail to set value when meta object is invalid",
@@ -1866,14 +1866,14 @@ func TestSetKeyValueInBidMeta(t *testing.T) {
 			expectedBid: map[string]any{
 				"BidMeta": "",
 			},
-			expectedFound: false,
+			expectedError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			found := setKeyValueInBidMeta(tt.adapterBid, tt.key, tt.value)
-			assert.Equal(t, tt.expectedFound, found)
+			err := setKeyValueInBidMeta(tt.adapterBid, tt.key, tt.value)
+			assert.Equal(t, tt.expectedError, err != nil)
 			assert.Equal(t, tt.expectedBid, tt.adapterBid)
 		})
 	}
@@ -1906,5 +1906,8 @@ func TestExtBidPrebidMetaFields(t *testing.T) {
 		"SecondaryCategoryIDs": reflect.TypeOf([]string{}),
 	}
 	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidMeta{})
-	validateStructFields(t, expectedFields, structType)
+	err := ValidateStructFields(expectedFields, structType)
+	if err != nil {
+		t.Error(err)
+	}
 }
