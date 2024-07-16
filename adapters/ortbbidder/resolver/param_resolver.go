@@ -93,18 +93,15 @@ func (pr *paramResolver) Resolve(sourceNode, targetNode map[string]any, path str
 		if err != nil {
 			errs = append(errs, err)
 		}
-	}
-
-	if value == nil {
-		value, err = resolver.autoDetect(pr.request, sourceNode) // auto detect value
-		if err != nil {
-			errs = append(errs, err)
+		if value == nil {
+			value, err = resolver.autoDetect(pr.request, sourceNode) // auto detect value
+			if err != nil {
+				errs = append(errs, err)
+			}
+			if value == nil {
+				return errs // return if value not found
+			}
 		}
-	}
-
-	// return if value not found
-	if value == nil {
-		return errs
 	}
 
 	err = resolver.setValue(targetNode, value)
