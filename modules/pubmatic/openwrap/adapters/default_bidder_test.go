@@ -265,8 +265,18 @@ func Test_addBidParam(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid number(integer) input for paramType(in case of unmarshaling interface number values to float64)",
+			name:    "valid integer input for paramType and interface type float64",
 			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: float64(3128755)},
+			wantErr: false,
+		},
+		{
+			name:    "valid integer input for paramType and interface type int",
+			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: 3128755},
+			wantErr: false,
+		},
+		{
+			name:    "valid integer input for paramType and interface type string",
+			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: "3128755"},
 			wantErr: false,
 		},
 	}
