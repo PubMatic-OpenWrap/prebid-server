@@ -66,7 +66,7 @@ func addBidParam(bidParams map[string]interface{}, name string, paramType string
 		case int:
 			bidParams[name] = int64(v)
 		default:
-			errMsg := fmt.Sprintf("unknown array type %T!\n", v)
+			errMsg := fmt.Sprintf("unknown type %T!\n", v)
 			return errors.New(errMsg)
 		}
 	case models.DataTypeFloat:
