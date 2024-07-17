@@ -153,7 +153,7 @@ func getDummyValue(datatype string) interface{} {
 	case "number":
 		return 0.10011
 	case "integer":
-		return float64(1)
+		return 1
 	case "boolean":
 		return true
 	case "[]string":

@@ -434,10 +434,10 @@ func TestPrepareBidParamJSONForPartnerForConversant(t *testing.T) {
 	mapping := map[string]interface{}{
 		"site_id":     "12313",
 		"tag_id":      "45343",
-		"secure":      float64(1),
-		"position":    float64(1),
-		"bidfloor":    float64(0.12),
-		"maxduration": float64(100),
+		"secure":      "1",
+		"position":    "1",
+		"bidfloor":    "0.12",
+		"maxduration": "100",
 		"mimes":       "[video/mp4,video/mp3]",
 		"api":         "[1,2,3]",
 		"protocols":   "[1]",
@@ -1581,11 +1581,27 @@ func TestPrepareBidParamJSONForPartnerNobid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"siteId":      float64(1234),
-					"placementId": float64(5678),
+					"siteId":      1234,
+					"placementId": 5678,
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderNoBid),
+			},
+			want: json.RawMessage(`{"siteId":1234,"placementId":5678}`),
+		},
+		{
+			name: "All params present with string mapping value datatype",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"siteId":      "1234",
+					"placementId": "5678",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderNoBid),
+				bidderCode:  string(openrtb_ext.BidderNoBid),
 			},
 			want: json.RawMessage(`{"siteId":1234,"placementId":5678}`),
 		},
@@ -1596,7 +1612,7 @@ func TestPrepareBidParamJSONForPartnerNobid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"placementId": float64(5678),
+					"placementId": "5678",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderNoBid),
@@ -1626,7 +1642,7 @@ func TestPrepareBidParamJSONForPartnerNobid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"siteId": float64(1234),
+					"siteId": "1234",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderNoBid),
@@ -1641,7 +1657,7 @@ func TestPrepareBidParamJSONForPartnerNobid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"siteId":      float64(1234),
+					"siteId":      1234,
 					"placementId": "abc",
 				},
 				slotKey:     "",
