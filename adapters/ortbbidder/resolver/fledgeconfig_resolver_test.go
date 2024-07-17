@@ -62,7 +62,7 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.fledgeCfg",
 			expectedValue: nil,
-			expectedError: util.NewWarning("failed to map response-param:[fledgeAuctionConfig] value:[[map[bidder:magnite config:map[key:value] impid:1]]]"),
+			expectedError: util.NewWarning("failed to map response-param:[fledgeAuctionConfig] method:[response_param_location] value:[[map[bidder:magnite config:map[key:value] impid:1]]]"),
 		},
 		{
 			name:          "Not found fledge config in location",

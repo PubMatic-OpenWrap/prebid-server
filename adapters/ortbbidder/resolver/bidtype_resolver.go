@@ -29,8 +29,12 @@ func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, error) {
 	}
 
 	mtype, ok := value.(float64)
-	if !ok || mtype == 0 {
+	if !ok {
 		return nil, util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[%v]", value)
+	}
+
+	if mtype == 0 {
+		return nil, nil
 	}
 
 	if bidType := convertToBidType(openrtb2.MarkupType(mtype)); bidType != openrtb_ext.BidType("") {

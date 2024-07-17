@@ -135,7 +135,7 @@ func TestResolveTypeBid(t *testing.T) {
 			name: "fail to get param from the ortb bid object, fallback to get from bidder param location",
 			bid: map[string]any{
 				"id":    "123",
-				"mtype": float64(0),
+				"mtype": "a",
 			},
 			typeBid: map[string]any{
 				"Bid": map[string]any{
@@ -169,7 +169,7 @@ func TestResolveTypeBid(t *testing.T) {
 				"BidType": openrtb_ext.BidType("banner"),
 			},
 			expectedErrs: []error{
-				util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[0]"),
+				util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[a]"),
 			},
 		},
 		{

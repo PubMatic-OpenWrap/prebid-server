@@ -19,7 +19,7 @@ func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string
 	}
 	fledgeCfg, err := validateFledgeConfig(value)
 	if err != nil {
-		return nil, util.NewWarning("failed to map response-param:[fledgeAuctionConfig] value:[%+v]", value)
+		return nil, util.NewWarning("failed to map response-param:[fledgeAuctionConfig] method:[response_param_location] value:[%+v]", value)
 	}
 	return fledgeCfg, nil
 }

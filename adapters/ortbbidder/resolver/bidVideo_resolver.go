@@ -19,7 +19,7 @@ func (b *bidVideoResolver) retrieveFromBidderParamLocation(responseNode map[stri
 	}
 	video, err := validateBidVideo(value)
 	if err != nil {
-		return nil, util.NewWarning("failed to map response-param:[bidVideo] value:[%v]", value)
+		return nil, util.NewWarning("failed to map response-param:[bidVideo] method:[response_param_location] value:[%v]", value)
 	}
 	return video, nil
 }

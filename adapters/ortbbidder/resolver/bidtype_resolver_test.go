@@ -27,6 +27,14 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 				expectedError: false,
 			},
 			{
+				name: "mtype found in bid but its zero",
+				bid: map[string]any{
+					"mtype": 0.0,
+				},
+				expectedValue: nil,
+				expectedError: false,
+			},
+			{
 				name: "mtype found in bid - invalid type",
 				bid: map[string]any{
 					"mtype": "vide0",

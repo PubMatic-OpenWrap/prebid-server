@@ -17,7 +17,7 @@ func (b *bidDealPriorityResolver) retrieveFromBidderParamLocation(responseNode m
 	}
 	val, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidDealPriority] value:[%v]", value)
+		return nil, util.NewWarning("failed to map response-param:[bidDealPriority] method:[response_param_location] value:[%v]", value)
 	}
 	return val, nil
 }
