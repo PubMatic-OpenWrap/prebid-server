@@ -1749,7 +1749,7 @@ func TestPrepareBidParamJSONForPartnerGrid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"uid": 1234,
+					"uid": "1234",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderGrid),
