@@ -1657,7 +1657,7 @@ func TestPrepareBidParamJSONForPartnerNobid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"siteId":      1234,
+					"siteId":      "1234",
 					"placementId": "abc",
 				},
 				slotKey:     "",
@@ -1749,7 +1749,7 @@ func TestPrepareBidParamJSONForPartnerGrid(t *testing.T) {
 				width:  nil,
 				height: nil,
 				fieldMap: map[string]interface{}{
-					"uid": float64(1234),
+					"uid": 1234,
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderGrid),
