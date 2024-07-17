@@ -330,24 +330,26 @@ func (st *StatsTCP) Shutdown() {
 	st.statsClient.ShutdownProcess()
 }
 
-func (st *StatsTCP) RecordRequest(labels metrics.Labels)                                            {}
-func (st *StatsTCP) RecordLurlSent(labels metrics.LurlStatusLabels)                                 {}
-func (st *StatsTCP) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels)                       {}
-func (st *StatsTCP) RecordBids(pubid, profileid, biddder, deal string)                              {}
-func (st *StatsTCP) RecordPartnerTimeoutRequests(pubid, profileid, bidder string)                   {}
-func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                                       {}
-func (st *StatsTCP) RecordSendLoggerDataTime(sendTime time.Duration)                                {}
-func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)                {}
-func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)             {}
-func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                                 {}
-func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                                {}
-func (st *StatsTCP) RecordUnwrapRequestStatus(accountId, bidder, status string)                     {}
-func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string)               {}
-func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)       {}
-func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)       {}
-func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)        {}
-func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                                       {}
-func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                             {}
-func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)                     {}
-func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)                {}
-func (st *StatsTCP) RecordBidRecoveryStatus(pubID string, responseTime time.Duration, success bool) {}
+func (st *StatsTCP) RecordRequest(labels metrics.Labels)                                      {}
+func (st *StatsTCP) RecordLurlSent(labels metrics.LurlStatusLabels)                           {}
+func (st *StatsTCP) RecordLurlBatchSent(labels metrics.LurlBatchStatusLabels)                 {}
+func (st *StatsTCP) RecordBids(pubid, profileid, biddder, deal string)                        {}
+func (st *StatsTCP) RecordPartnerTimeoutRequests(pubid, profileid, bidder string)             {}
+func (st *StatsTCP) RecordCtvUaAccuracy(pubId, status string)                                 {}
+func (st *StatsTCP) RecordSendLoggerDataTime(sendTime time.Duration)                          {}
+func (st *StatsTCP) RecordRequestTime(requestType string, requestTime time.Duration)          {}
+func (st *StatsTCP) RecordOWServerPanic(endpoint, methodName, nodeName, podName string)       {}
+func (st *StatsTCP) RecordAmpVideoRequests(pubid, profileid string)                           {}
+func (st *StatsTCP) RecordAmpVideoResponses(pubid, profileid string)                          {}
+func (st *StatsTCP) RecordUnwrapRequestStatus(accountId, bidder, status string)               {}
+func (st *StatsTCP) RecordUnwrapWrapperCount(accountId, bidder, wrapper_count string)         {}
+func (st *StatsTCP) RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration) {}
+func (st *StatsTCP) RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration) {}
+func (st *StatsTCP) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)  {}
+func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                                 {}
+func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                       {}
+func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)               {}
+func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}
+func (st *StatsTCP) RecordBidRecoveryStatus(pubID string, profile string, success bool)       {}
+func (st *StatsTCP) RecordBidRecoveryResponseTime(pubID string, profile string, responseTime time.Duration) {
+}

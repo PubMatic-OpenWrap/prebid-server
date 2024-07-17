@@ -524,8 +524,15 @@ func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalTyp
 }
 
 // RecordBidRecoveryStatus across all engines
-func (me *MultiMetricsEngine) RecordBidRecoveryStatus(publisher string, responseTime time.Duration, success bool) {
+func (me *MultiMetricsEngine) RecordBidRecoveryStatus(publisher, profile string, success bool) {
 	for _, thisME := range *me {
-		thisME.RecordBidRecoveryStatus(publisher, responseTime, success)
+		thisME.RecordBidRecoveryStatus(publisher, profile, success)
+	}
+}
+
+// RecordBidRecoveryResponseTime across all engines
+func (me *MultiMetricsEngine) RecordBidRecoveryResponseTime(publisher, profile string, responseTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordBidRecoveryResponseTime(publisher, profile, responseTime)
 	}
 }

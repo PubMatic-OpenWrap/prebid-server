@@ -377,16 +377,25 @@ func TestRecordAdruleValidationFailure(t *testing.T) {
 func TestRecordBidRecoveryStatus(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordBidRecoveryStatus("5890", time.Duration(70)*time.Millisecond, true)
-	m.RecordBidRecoveryStatus("5890", time.Duration(130)*time.Millisecond, false)
-	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryStatus,
-		pubIDLabel, "5890", successLabel, "true")
-	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 1, 70)
+	m.RecordBidRecoveryStatus("5890", "123", true)
 
-	resultingHistogram = getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryStatus,
-		pubIDLabel, "5890", successLabel, "false")
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "bid_recovery_response_status", m.pubBidRecoveryStatus,
+		expectedCount, prometheus.Labels{
+			pubIDLabel:     "5890",
+			profileIDLabel: "123",
+			successLabel:   "true",
+		})
+}
 
-	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 1, 130)
+func TestRecordBidRecoveryResponseTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordBidRecoveryResponseTime("5890", "12345", time.Duration(70)*time.Millisecond)
+	m.RecordBidRecoveryResponseTime("5890", "12345", time.Duration(130)*time.Millisecond)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryTime,
+		pubIDLabel, "5890", profileIDLabel, "12345")
+	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 2, 200)
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
