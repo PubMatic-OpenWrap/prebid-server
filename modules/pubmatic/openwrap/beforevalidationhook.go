@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
@@ -167,6 +168,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
 			result.Errors = append(result.Errors, "owRedirectURL is missing")
 			return result, nil
+		}
+	}
+
+	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
+	if len(videoAdDuration) > 0 {
+		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+			AdserverCreativeDurationMatchingPolicy: policy,
 		}
 	}
 
@@ -395,14 +405,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			//Adding default durations for CTV Test requests
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
-				adpodConfig.VideoAdDuration = []int{5, 10}
-			}
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
-				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              []int{5, 10},
+					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+				}
 			}
 
-			if err := adpod.Validate(adpodConfig); err != nil {
+			if err := adpod.Validate(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)

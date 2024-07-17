@@ -25,14 +25,12 @@ type ExtRequestAdPod struct {
 
 // AdPod holds Video AdPod specific extension parameters at impression level
 type AdPod struct {
-	MinAds                      int    `json:"minads,omitempty"`                  //Default 1 if not specified
-	MaxAds                      int    `json:"maxads,omitempty"`                  //Default 1 if not specified
-	MinDuration                 int    `json:"adminduration,omitempty"`           // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
-	MaxDuration                 int    `json:"admaxduration,omitempty"`           // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
-	AdvertiserExclusionPercent  *int   `json:"excladv,omitempty"`                 // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
-	IABCategoryExclusionPercent *int   `json:"excliabcat,omitempty"`              // Percent value 0 means all ads should be of different IAB categories.
-	VideoAdDuration             []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
-	VideoAdDurationMatching     string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
+	MinAds                      int  `json:"minads,omitempty"`        //Default 1 if not specified
+	MaxAds                      int  `json:"maxads,omitempty"`        //Default 1 if not specified
+	MinDuration                 int  `json:"adminduration,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
+	MaxDuration                 int  `json:"admaxduration,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
+	AdvertiserExclusionPercent  *int `json:"excladv,omitempty"`       // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
+	IABCategoryExclusionPercent *int `json:"excliabcat,omitempty"`    // Percent value 0 means all ads should be of different IAB categories.
 }
 
 // ImpExtension - Impression Extension

@@ -118,6 +118,12 @@ type RequestCtx struct {
 	WakandaDebug           wakanda.WakandaDebug
 	PriceGranularity       *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled     bool
+	AdpodProfileConfig     *AdpodProfileConfig
+}
+
+type AdpodProfileConfig struct {
+	AdserverCreativeDurations              []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
+	AdserverCreativeDurationMatchingPolicy string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 type OwBid struct {
