@@ -66,6 +66,7 @@ func (a *ConnectAdAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *a
 		Uri:     a.endpoint,
 		Body:    data,
 		Headers: headers,
+		ImpIDs:  openrtb_ext.GetImpIDs(request.Imp),
 	}}, errs
 }
 
@@ -145,8 +146,6 @@ func addImpInfo(imp *openrtb2.Imp, secure *int8, cadExt *openrtb_ext.ExtImpConne
 		imp.BidFloor = cadExt.Bidfloor
 		imp.BidFloorCur = "USD"
 	}
-
-	return
 }
 
 func addHeaderIfNonEmpty(headers http.Header, headerName string, headerValue string) {

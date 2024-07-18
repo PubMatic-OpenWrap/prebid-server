@@ -1,5 +1,7 @@
 package models
 
+import "github.com/golang/glog"
+
 const (
 	PARTNER_ID                  = "partnerId"
 	ADAPTER_ID                  = "adapterId"
@@ -592,6 +594,7 @@ const (
 	FeatureAMPMultiFormat    = 3
 	FeatureAnalyticsThrottle = 4
 	FeatureMaxFloors         = 5
+	FeatureBidRecovery       = 6
 )
 
 // constants for applovinmax requests
@@ -603,4 +606,9 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+)
+
+// constants for log level
+const (
+	LogLevelDebug glog.Level = 3
 )

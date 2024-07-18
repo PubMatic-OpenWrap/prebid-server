@@ -83,6 +83,6 @@ func (uw Unwrap) Unwrap(accountID, bidder string, bid *adapters.TypedBid, userAg
 		bid.Bid.AdM = string(respBody)
 	}
 
-	glog.V(3).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] wrapper_cnt:[%v] httpRespCode= [%v] statsEnabled:[%v]",
+	glog.V(models.LogLevelDebug).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] wrapper_cnt:[%v] httpRespCode= [%v] statsEnabled:[%v]",
 		accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, respStatus, wrapperCnt, httpResp.Code, isStatsEnabled)
 }

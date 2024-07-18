@@ -1949,6 +1949,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 	defer ctrl.Finish()
 	me := &metrics.MetricsEngineMock{}
 
+	type expFloorDetails struct {
+		bidFloor    float64
+		bidFloorCur string
+	}
 	type args struct {
 		extFloorRules *openrtb_ext.PriceFloorRules
 		request       *openrtb_ext.RequestWrapper
@@ -1958,9 +1962,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
-		args  args
-		setup func()
+		name     string
+		args     args
+		expFloor expFloorDetails
+		setup    func()
 	}{
 		{
 			name: "test record floor status with no failures",
@@ -2003,6 +2008,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 					},
 				},
 				accountID: "5890",
+			},
+			expFloor: expFloorDetails{
+				bidFloor:    7,
+				bidFloorCur: "USD",
 			},
 		},
 		{
@@ -2051,6 +2060,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "request", "4").Return()
 			},
+			expFloor: expFloorDetails{
+				bidFloor:    0,
+				bidFloorCur: "",
+			},
 		},
 		{
 			name: "test record floor status with negative floor value, rule matched",
@@ -2096,6 +2109,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "request", "5").Return()
+			},
+			expFloor: expFloorDetails{
+				bidFloor:    -7,
+				bidFloorCur: "USD",
 			},
 		},
 		{
@@ -2143,6 +2160,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "request", "6").Return()
 			},
+			expFloor: expFloorDetails{
+				bidFloor:    201,
+				bidFloorCur: "USD",
+			},
 		},
 		{
 			name: "test record floor status with high floor value ih the request, rule not matched",
@@ -2189,6 +2210,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "request", "6").Return()
 			},
+			expFloor: expFloorDetails{
+				bidFloor:    201,
+				bidFloorCur: "USD",
+			},
 		},
 		{
 			name: "setmax floor disabled, and imp.bidfloor > floor value",
@@ -2233,6 +2258,10 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			},
 
 			setup: func() {
+			},
+			expFloor: expFloorDetails{
+				bidFloor:    21,
+				bidFloorCur: "USD",
 			},
 		},
 		{
@@ -2281,6 +2310,62 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			setup: func() {
 				me.On("RecordFloorStatus", "5890", "request", "7").Return()
 			},
+			expFloor: expFloorDetails{
+				bidFloor:    50,
+				bidFloorCur: "USD",
+			},
+		},
+		{
+			name: "setmax floor enabled, and imp.bidfloor < floor Min value",
+			args: args{
+				extFloorRules: &openrtb_ext.PriceFloorRules{
+					Enabled:            getTrue(),
+					FloorMin:           25,
+					FloorMinCur:        "USD",
+					SetMaxFloor:        true,
+					PriceFloorLocation: openrtb_ext.RequestLocation,
+					Enforcement: &openrtb_ext.PriceFloorEnforcement{
+						EnforcePBS:  getTrue(),
+						EnforceRate: 100,
+						FloorDeals:  getTrue(),
+					},
+
+					Data: &openrtb_ext.PriceFloorData{
+						Currency: "USD",
+						ModelGroups: []openrtb_ext.PriceFloorModelGroup{
+							{
+								ModelVersion: "model 1 from req",
+								Currency:     "USD",
+								Values: map[string]float64{
+									"banner|300x600|www.website5.com": 5,
+									"*|*|*":                           21,
+								},
+								Schema: openrtb_ext.PriceFloorSchema{
+									Fields:    []string{"mediaType", "size", "domain"},
+									Delimiter: "|",
+								},
+							},
+						},
+					}},
+				request: &openrtb_ext.RequestWrapper{
+					BidRequest: &openrtb2.BidRequest{
+						Site: &openrtb2.Site{
+							Publisher: &openrtb2.Publisher{Domain: "www.website.com"},
+						},
+						Imp: []openrtb2.Imp{{ID: "1234", BidFloor: 5, BidFloorCur: "USD", Banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}}}},
+						Ext: json.RawMessage(`{"prebid":{"floors":{"data":{"currency":"USD","modelgroups":[{"modelversion":"model 1 from req","currency":"USD","values":{"banner|300x600|www.website5.com":5,"*|*|*":0},"schema":{"fields":["mediaType","size","domain"],"delimiter":"|"}}]},"enabled":true,"enforcement":{"enforcepbs":true,"floordeals":true,"enforcerate":100}}}}`),
+					},
+				},
+				accountID: "5890",
+			},
+
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "request", "7").Return()
+			},
+			expFloor: expFloorDetails{
+				bidFloor:    25,
+				bidFloorCur: "USD",
+			},
 		},
 	}
 	for _, test := range tests {
@@ -2288,6 +2373,8 @@ func TestUpdateBidRequestWithFloors(t *testing.T) {
 			test.setup()
 		}
 		updateBidRequestWithFloors(test.args.extFloorRules, test.args.request, test.args.conversions, me, test.args.accountID)
+		assert.Equal(t, test.args.request.Imp[0].BidFloor, test.expFloor.bidFloor, test.name)
+		assert.Equal(t, test.args.request.Imp[0].BidFloorCur, test.expFloor.bidFloorCur, test.name)
 		assert.True(t, me.AssertExpectations(t))
 	}
 }

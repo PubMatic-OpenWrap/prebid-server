@@ -38,9 +38,7 @@ format:
 formatcheck:
 	./scripts/format.sh -f false
 
-mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature mockgenwakanda
-
-mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature mockgenprofilemetadata
+mockgen: mockgeninstall mockgendb mockgencache mockgenmetrics mockgenlogger mockgenpublisherfeature mockgenprofilemetadata mockgenwakanda
 
 # export GOPATH=~/go ; GOBIN=~/go/bin; export PATH=$PATH:$GOBIN
 mockgeninstall:
