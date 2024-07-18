@@ -704,3 +704,29 @@ func builderPGAMSSP(params BidderParameters) (json.RawMessage, error) {
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
+
+func builderAidem(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+
+	fields := []string{BidderParamAidemPublisherId, BidderParamAidemSiteId, BidderParamAidemPlacementId}
+	mandatoryFields := map[string]bool{BidderParamAidemPublisherId: true, BidderParamAidemSiteId: true}
+
+	for _, field := range fields {
+		if value, ok := getString(params.FieldMap[field]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s",`, field, value)
+		} else if mandatoryFields[field] {
+			return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, field)
+		}
+	}
+
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'publisherId' and 'siteId'")
+	}
+
+	trimComma(&jsonStr)
+	jsonStr.WriteByte('}')
+
+	return jsonStr.Bytes(), nil
+}
