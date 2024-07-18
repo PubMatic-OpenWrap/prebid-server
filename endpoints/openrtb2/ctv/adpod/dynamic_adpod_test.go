@@ -80,7 +80,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 15,
-				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
+				nbr:      exchange.ResponseRejectedInvalidCreative.Ptr(),
 			},
 		},
 		{
@@ -131,7 +131,7 @@ func TestGetDurationBasedOnDurationMatchingPolicy(t *testing.T) {
 			},
 			want: want{
 				duration: 45,
-				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
+				nbr:      exchange.ResponseRejectedInvalidCreative.Ptr(),
 			},
 		},
 
@@ -309,7 +309,7 @@ func TestGetBidDuration(t *testing.T) {
 			},
 			want: want{
 				duration: 35,
-				nbr:      ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative),
+				nbr:      exchange.ResponseRejectedInvalidCreative.Ptr(),
 			},
 		},
 	}
@@ -343,7 +343,7 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 					Bids: []*types.Bid{
 						{
 							Bid:  &openrtb2.Bid{},
-							Nbr:  ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions),
+							Nbr:  exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
 							Seat: "pubmatic",
 						},
 						{
@@ -352,7 +352,7 @@ func TestRecordAdPodRejectedBids(t *testing.T) {
 						},
 						{
 							Bid:  &openrtb2.Bid{},
-							Nbr:  ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
+							Nbr:  nbr.LossBidLostToHigherBid.Ptr(),
 							Seat: "pubmatic",
 						},
 						{
@@ -487,7 +487,7 @@ func TestGetAdPodBidCreative(t *testing.T) {
 	}
 }
 
-func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
+func TestDynamicAdpodCollectSeatNonBids(t *testing.T) {
 	type fields struct {
 		AdpodBid *types.AdPodBid
 	}
@@ -519,7 +519,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 							},
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
-							Nbr:               ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
+							Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 						},
 						{
 							Bid: &openrtb2.Bid{
@@ -563,7 +563,7 @@ func TestDynamicAdpodGetSeatNonBid(t *testing.T) {
 			da := &dynamicAdpod{
 				AdpodBid: tt.fields.AdpodBid,
 			}
-			snb := da.GetSeatNonBid()
+			snb := da.CollectSeatNonBids()
 			assert.Equal(t, snb, tt.want)
 		})
 	}

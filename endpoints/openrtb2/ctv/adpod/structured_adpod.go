@@ -10,7 +10,6 @@ import (
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 type structuredAdpod struct {
@@ -82,7 +81,7 @@ func (sa *structuredAdpod) HoldAuction() {
 		util.SortBids(bids)
 		for _, bid := range bids {
 			if bid.Nbr == nil {
-				bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
+				bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 			}
 		}
 	}
@@ -140,7 +139,7 @@ func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return seatBid
 }
 
-func (sa *structuredAdpod) GetSeatNonBid() openrtb_ext.NonBidCollection {
+func (sa *structuredAdpod) CollectSeatNonBids() openrtb_ext.NonBidCollection {
 	for _, bids := range sa.ImpBidMap {
 		return addSeatNonBids(bids)
 	}
@@ -184,7 +183,7 @@ func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.Cat {
 		if _, ok := sa.SelectedCategories[bid.Cat[i]]; ok {
-			bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
+			bid.Nbr = exchange.ResponseRejectedCreativeCategoryExclusions.Ptr()
 			return true
 		}
 	}
@@ -203,7 +202,7 @@ func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.ADomain {
 		if _, ok := sa.SelectedDomains[bid.ADomain[i]]; ok {
-			bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
+			bid.Nbr = exchange.ResponseRejectedCreativeAdvertiserExclusions.Ptr()
 			return true
 		}
 	}
@@ -246,11 +245,11 @@ func (sa *structuredAdpod) isOverlap(bid *types.Bid, catMap map[string]bool, dom
 	var overlap bool
 	if sa.isDomainOverlap(bid.ADomain, domainMap) {
 		overlap = true
-		bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
+		bid.Nbr = exchange.ResponseRejectedCreativeAdvertiserExclusions.Ptr()
 	}
 	if sa.isCatOverlap(bid.Cat, catMap) {
 		overlap = true
-		bid.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
+		bid.Nbr = exchange.ResponseRejectedCreativeCategoryExclusions.Ptr()
 	}
 	return overlap
 }

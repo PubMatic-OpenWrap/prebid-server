@@ -8,7 +8,6 @@ import (
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -865,7 +864,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 	}
 }
 
-func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
+func TestStructuredAdpodCollectSeatNonBids(t *testing.T) {
 	type fields struct {
 		ImpBidMap map[string][]*types.Bid
 	}
@@ -897,7 +896,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 							},
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
-							Nbr:               ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
+							Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 						},
 						{
 							Bid: &openrtb2.Bid{
@@ -940,7 +939,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 			sa := &structuredAdpod{
 				ImpBidMap: tt.fields.ImpBidMap,
 			}
-			snb := sa.GetSeatNonBid()
+			snb := sa.CollectSeatNonBids()
 			assert.Equal(t, snb, tt.want)
 		})
 	}

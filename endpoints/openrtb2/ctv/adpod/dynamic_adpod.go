@@ -183,7 +183,7 @@ func (da *dynamicAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return da.getBidResponseSeatBids()
 }
 
-func (da *dynamicAdpod) GetSeatNonBid() openrtb_ext.NonBidCollection {
+func (da *dynamicAdpod) CollectSeatNonBids() openrtb_ext.NonBidCollection {
 	if da.AdpodBid != nil && len(da.AdpodBid.Bids) > 0 {
 		return addSeatNonBids(da.AdpodBid.Bids)
 	}
@@ -310,14 +310,14 @@ func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext
 	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp != duration {
-			return duration, ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative)
+			return duration, exchange.ResponseRejectedInvalidCreative.Ptr()
 		}
 		//its and valid duration return it with StatusOK
 
 	case openrtb_ext.OWRoundupVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp == -1 {
-			return duration, ptrutil.ToPtr(exchange.ResponseRejectedInvalidCreative)
+			return duration, exchange.ResponseRejectedInvalidCreative.Ptr()
 		}
 		//update duration with nearest one duration
 		duration = tmp

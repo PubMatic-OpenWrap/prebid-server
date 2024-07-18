@@ -668,7 +668,7 @@ func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse) 
 
 	for _, adpod := range deps.podCtx {
 		seatbids = append(seatbids, adpod.GetAdpodSeatBids()...)
-		seatNonBid.Append(adpod.GetSeatNonBid())
+		seatNonBid.Append(adpod.CollectSeatNonBids())
 	}
 
 	bidResp := &openrtb2.BidResponse{

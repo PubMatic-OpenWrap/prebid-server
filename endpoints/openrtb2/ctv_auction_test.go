@@ -327,7 +327,7 @@ func TestCreateAdPodBidResponseSeatNonBid(t *testing.T) {
 				},
 				DealTierSatisfied: false,
 				Seat:              "pubmatic",
-				Nbr:               ptrutil.ToPtr(nbr.LossBidLostToHigherBid),
+				Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 			},
 			{
 				Bid: &openrtb2.Bid{

@@ -13,7 +13,6 @@ import (
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 /********************* AdPodGenerator Functions *********************/
@@ -366,7 +365,7 @@ func evaluate(bids [][]*types.Bid, indices [][]int, totalBids int, maxCategorySc
 			for _, cat := range bid.Cat {
 				hbc.categoryScore[cat]++
 				if hbc.categoryScore[cat] > 1 && (hbc.categoryScore[cat]*100/totalBids) > maxCategoryScore {
-					return nil, inext, jnext, ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
+					return nil, inext, jnext, exchange.ResponseRejectedCreativeCategoryExclusions.Ptr()
 				}
 			}
 
@@ -374,7 +373,7 @@ func evaluate(bids [][]*types.Bid, indices [][]int, totalBids int, maxCategorySc
 			for _, domain := range bid.ADomain {
 				hbc.domainScore[domain]++
 				if hbc.domainScore[domain] > 1 && (hbc.domainScore[domain]*100/totalBids) > maxDomainScore {
-					return nil, inext, jnext, ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
+					return nil, inext, jnext, exchange.ResponseRejectedCreativeAdvertiserExclusions.Ptr()
 				}
 			}
 		}
