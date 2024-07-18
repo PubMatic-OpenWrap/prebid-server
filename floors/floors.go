@@ -115,7 +115,7 @@ func updateBidRequestWithFloors(extFloorRules *openrtb_ext.PriceFloorRules, requ
 				}
 
 				if extFloorRules.SetMaxFloor {
-					floorVal, floorCur, floorLoc := GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, floorVal, floorCur, conversions)
+					floorVal, floorCur, floorLoc := GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, bidFloor, floorCur, conversions)
 					imp.BidFloor = floorVal
 					imp.BidFloorCur = floorCur
 					if floorLoc != "" {

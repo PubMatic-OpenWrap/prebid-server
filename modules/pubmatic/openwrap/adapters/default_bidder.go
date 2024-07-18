@@ -54,11 +54,21 @@ func addBidParam(bidParams map[string]interface{}, name string, paramType string
 	switch dataType {
 	case models.DataTypeInteger:
 		//DataTypeInteger
-		intVal, err := strconv.Atoi(fmt.Sprintf("%v", value))
-		if err != nil {
-			return err
+		switch v := value.(type) {
+		case string:
+			intVal, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return err
+			}
+			bidParams[name] = intVal
+		case float64:
+			bidParams[name] = int64(v)
+		case int:
+			bidParams[name] = int64(v)
+		default:
+			errMsg := fmt.Sprintf("unknown type %T!\n", v)
+			return errors.New(errMsg)
 		}
-		bidParams[name] = intVal
 	case models.DataTypeFloat:
 		//DataTypeFloat
 		floatVal, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
