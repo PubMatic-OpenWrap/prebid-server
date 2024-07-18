@@ -709,8 +709,8 @@ func builderAidem(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
 
-	fields := []string{"publisherId", "siteId", "placementId"}
-	mandatoryFields := map[string]bool{"publisherId": true, "siteId": true}
+	fields := []string{BidderParamAidemPublisherId, BidderParamAidemSiteId, BidderParamAidemPlacementId}
+	mandatoryFields := map[string]bool{BidderParamAidemPublisherId: true, BidderParamAidemSiteId: true}
 
 	for _, field := range fields {
 		if value, ok := getString(params.FieldMap[field]); ok {
