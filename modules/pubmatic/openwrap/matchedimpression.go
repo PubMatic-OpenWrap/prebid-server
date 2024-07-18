@@ -23,7 +23,7 @@ func getMatchedImpression(rctx models.RequestCtx) map[string]int {
 
 		syncer := syncerMap[syncerCode]
 		if syncer == nil {
-			glog.V(3).Infof("Invalid bidder code passed to ParseRequestCookies: %s ", partnerName)
+			glog.V(models.LogLevelDebug).Infof("Invalid bidder code passed to ParseRequestCookies: %s ", partnerName)
 		} else {
 			uid, _, _ := rctx.ParsedUidCookie.GetUID(syncer.Key())
 

@@ -54,6 +54,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderApacdex,
 	BidderAppnexus,
 	BidderAppush,
+	BidderAso,
 	BidderAudienceNetwork,
 	BidderAutomatad,
 	BidderAvocet,
@@ -133,6 +134,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderLockerDome,
 	BidderLogan,
 	BidderLogicad,
+	BidderLoyal,
 	BidderLunaMedia,
 	BidderMabidder,
 	BidderMadvertise,
@@ -159,14 +161,17 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderOwnAdx,
 	BidderPangle,
 	BidderPGAMSsp,
+	BidderPlaydigo,
 	BidderPubmatic,
 	BidderPubnative,
 	BidderPulsepoint,
 	BidderPWBid,
+	BidderReadpeak,
 	BidderRelevantDigital,
 	BidderRevcontent,
 	BidderRichaudience,
 	BidderRise,
+	BidderRoulax,
 	BidderRTBHouse,
 	BidderRubicon,
 	BidderSeedingAlliance,
@@ -182,6 +187,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderSmartx,
 	BidderSmartyAds,
 	BidderSmileWanted,
+	BidderSmrtconnect,
 	BidderSonobi,
 	BidderSovrn,
 	BidderSovrnXsp,
@@ -192,10 +198,12 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderTappx,
 	BidderTeads,
 	BidderTelaria,
+	BidderTheadx,
 	BidderTpmn,
 	BidderTrafficGate,
 	BidderTriplelift,
 	BidderTripleliftNative,
+	BidderTrustedstack,
 	BidderUcfunnel,
 	BidderUndertone,
 	BidderUnicorn,
@@ -338,6 +346,7 @@ const (
 	BidderApacdex           BidderName = "apacdex"
 	BidderAppnexus          BidderName = "appnexus"
 	BidderAppush            BidderName = "appush"
+	BidderAso               BidderName = "aso"
 	BidderAudienceNetwork   BidderName = "audienceNetwork"
 	BidderAutomatad         BidderName = "automatad"
 	BidderAvocet            BidderName = "avocet"
@@ -417,6 +426,7 @@ const (
 	BidderLockerDome        BidderName = "lockerdome"
 	BidderLogan             BidderName = "logan"
 	BidderLogicad           BidderName = "logicad"
+	BidderLoyal             BidderName = "loyal"
 	BidderLunaMedia         BidderName = "lunamedia"
 	BidderMabidder          BidderName = "mabidder"
 	BidderMadvertise        BidderName = "madvertise"
@@ -441,14 +451,17 @@ const (
 	BidderOwnAdx            BidderName = "ownadx"
 	BidderPangle            BidderName = "pangle"
 	BidderPGAMSsp           BidderName = "pgamssp"
+	BidderPlaydigo          BidderName = "playdigo"
 	BidderPubmatic          BidderName = "pubmatic"
 	BidderPubnative         BidderName = "pubnative"
 	BidderPulsepoint        BidderName = "pulsepoint"
 	BidderPWBid             BidderName = "pwbid"
+	BidderReadpeak          BidderName = "readpeak"
 	BidderRelevantDigital   BidderName = "relevantdigital"
 	BidderRevcontent        BidderName = "revcontent"
 	BidderRichaudience      BidderName = "richaudience"
 	BidderRise              BidderName = "rise"
+	BidderRoulax            BidderName = "roulax"
 	BidderRTBHouse          BidderName = "rtbhouse"
 	BidderRubicon           BidderName = "rubicon"
 	BidderSeedingAlliance   BidderName = "seedingAlliance"
@@ -464,6 +477,7 @@ const (
 	BidderSmartx            BidderName = "smartx"
 	BidderSmartyAds         BidderName = "smartyads"
 	BidderSmileWanted       BidderName = "smilewanted"
+	BidderSmrtconnect       BidderName = "smrtconnect"
 	BidderSonobi            BidderName = "sonobi"
 	BidderSovrn             BidderName = "sovrn"
 	BidderSovrnXsp          BidderName = "sovrnXsp"
@@ -474,10 +488,12 @@ const (
 	BidderTappx             BidderName = "tappx"
 	BidderTeads             BidderName = "teads"
 	BidderTelaria           BidderName = "telaria"
+	BidderTheadx            BidderName = "theadx"
 	BidderTpmn              BidderName = "tpmn"
 	BidderTrafficGate       BidderName = "trafficgate"
 	BidderTriplelift        BidderName = "triplelift"
 	BidderTripleliftNative  BidderName = "triplelift_native"
+	BidderTrustedstack      BidderName = "trustedstack"
 	BidderUcfunnel          BidderName = "ucfunnel"
 	BidderUndertone         BidderName = "undertone"
 	BidderUnicorn           BidderName = "unicorn"
@@ -652,6 +668,38 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 		parsedSchemas:  schemas,
 	}, nil
 }
+
+// type OWBidderParamsValidator struct {
+// 	prebid BidderParamValidator
+// 	ow     bidderParamValidator
+// 	mutex  sync.RWMutex
+// }
+
+// func NewOWBidderParamsValidator(schemaDirectory string) (BidderParamValidator, error) {
+// 	obj := &OWBidderParamsValidator{}
+// 	obj.prebid, _ = NewBidderParamsValidator(schemaDirectory)
+// 	return obj, nil
+// }
+
+// func (o *OWBidderParamsValidator) Validate(name BidderName, ext json.RawMessage) error {
+// 	error := o.prebid.Validate(name, ext)
+// 	if error != nil {
+// 		o.ow.Validate(name, ext)
+// 	}
+// 	return nil
+// }
+
+// func (o *OWBidderParamsValidator) Schema(name BidderName) string {
+// 	return ""
+// }
+
+// func (o *OWBidderParamsValidator) Add(schema json.RawMessage) {
+
+// }
+
+// type RTBBidder struct {
+// 	OWBidderParamsValidator
+// }
 
 type bidderParamValidator struct {
 	schemaContents map[BidderName]string

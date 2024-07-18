@@ -7,7 +7,6 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -423,7 +422,7 @@ func TestValidateVASTTag(t *testing.T) {
 				videoMinDuration: 25,
 				adpod:            &models.AdPod{},
 			},
-			wantErr: nil,
+			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:101, tag.duration:25, adpod.maxduration:0`),
 		},
 		{
 			name: `adpod_min_duration_check`,
@@ -435,7 +434,7 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				adpod: &models.AdPod{
-					MinDuration: ptrutil.ToPtr(10),
+					MinDuration: 10,
 				},
 			},
 			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration < adpod.minduration' vastTagID:101, tag.duration:5, adpod.minduration:10`),
@@ -450,7 +449,7 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				adpod: &models.AdPod{
-					MaxDuration: ptrutil.ToPtr(10),
+					MaxDuration: 10,
 				},
 			},
 			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:101, tag.duration:15, adpod.maxduration:10`),
@@ -465,8 +464,8 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				adpod: &models.AdPod{
-					MinDuration: ptrutil.ToPtr(15),
-					MaxDuration: ptrutil.ToPtr(15),
+					MinDuration: 15,
+					MaxDuration: 15,
 				},
 			},
 			wantErr: nil,
@@ -482,8 +481,8 @@ func TestValidateVASTTag(t *testing.T) {
 				videoMaxDuration: 25,
 				videoMinDuration: 5,
 				adpod: &models.AdPod{
-					MinDuration: ptrutil.ToPtr(15),
-					MaxDuration: ptrutil.ToPtr(15),
+					MinDuration: 15,
+					MaxDuration: 15,
 				},
 			},
 			wantErr: nil,
@@ -499,8 +498,8 @@ func TestValidateVASTTag(t *testing.T) {
 				videoMaxDuration: 25,
 				videoMinDuration: 15,
 				adpod: &models.AdPod{
-					MinDuration: ptrutil.ToPtr(10),
-					MaxDuration: ptrutil.ToPtr(10),
+					MinDuration: 10,
+					MaxDuration: 10,
 				},
 			},
 			wantErr: nil,

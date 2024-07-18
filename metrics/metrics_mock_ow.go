@@ -1,6 +1,10 @@
 package metrics
 
-import "time"
+import (
+	"time"
+
+	"github.com/prebid/openrtb/v20/openrtb3"
+)
 
 // RecordAdapterDuplicateBidID mock
 func (me *MetricsEngineMock) RecordAdapterDuplicateBidID(adaptor string, collisions int) {
@@ -44,4 +48,24 @@ func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
 // RecordVASTTagType mock
 func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
 	me.Called(bidder, vastTagType)
+}
+
+// RecordPanic mock
+func (me *MetricsEngineMock) RecordPanic(hostname, method string) {
+	me.Called(hostname, method)
+}
+
+// RecordPanic mock
+func (me *MetricsEngineMock) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	me.Called(endpoint, pubId, nbr)
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	me.Called(parser, method, bidder, respTime)
+}
+
+// RecordXMLParserResponseMismatch mock
+func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+	me.Called(method, bidder, isMismatch)
 }

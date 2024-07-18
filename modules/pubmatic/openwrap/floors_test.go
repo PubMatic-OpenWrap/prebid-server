@@ -13,8 +13,9 @@ func TestSetFloorsExt(t *testing.T) {
 	disable := false
 
 	type args struct {
-		requestExt *models.RequestExt
-		configMap  map[int]map[string]string
+		requestExt  *models.RequestExt
+		configMap   map[int]map[string]string
+		setMaxFloor bool
 	}
 	tests := []struct {
 		name string
@@ -348,10 +349,39 @@ func TestSetFloorsExt(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "SetMaxFloor true",
+			args: args{
+				requestExt: &models.RequestExt{},
+				configMap: map[int]map[string]string{
+					-1: {
+						"floorType": "Hard",
+					},
+				},
+				setMaxFloor: true,
+			},
+			want: func() *models.RequestExt {
+				enable := true
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled:     &enable,
+								SetMaxFloor: enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setFloorsExt(tt.args.requestExt, tt.args.configMap)
+			setFloorsExt(tt.args.requestExt, tt.args.configMap, tt.args.setMaxFloor)
 			assert.Equal(t, tt.want, tt.args.requestExt)
 		})
 	}

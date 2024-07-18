@@ -83,4 +83,8 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
+
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPResponseWriter(w)
+	}
 }

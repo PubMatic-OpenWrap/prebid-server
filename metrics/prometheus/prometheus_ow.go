@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,6 +17,11 @@ const (
 	profileLabel     = "profileid"
 	dealLabel        = "deal"
 	vastTagTypeLabel = "type"
+	hostNameLabel    = "host"
+	methodLabel      = "method"
+	endpointLabel    = "endpoint"
+	nbrLabel         = "nbr"
+	xmlParserLabel   = "parser"
 )
 
 type OWMetrics struct {
@@ -45,6 +51,26 @@ type OWMetrics struct {
 	// podCompExclTimer indicates time taken by compititve exclusion
 	// algorithm to generate final pod response based on bid response and ad pod request
 	podCompExclTimer *prometheus.HistogramVec
+	httpCounter      prometheus.Counter
+
+	panics *prometheus.CounterVec
+
+	// Requests
+	badRequests *prometheus.CounterVec
+
+	// podImpGenTimer indicates time taken by impression generator
+	// algorithm to generate impressions for given ad pod request
+	xmlParserResponseTime *prometheus.HistogramVec
+	xmlParserMismatch     *prometheus.CounterVec
+}
+
+func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
+	httpCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Number of http requests.",
+	})
+	registry.MustRegister(httpCounter)
+	return httpCounter
 }
 
 // RecordAdapterDuplicateBidID captures the  bid.ID collisions when adaptor
@@ -145,6 +171,7 @@ func (m *OWMetrics) RecordVASTTagType(bidder, vastTagType string) {
 		vastTagTypeLabel: vastTagType,
 	}).Inc()
 }
+
 func (m *Metrics) RecordRejectedBidsForAccount(pubId string) {
 	if pubId != metrics.PublisherUnknown {
 		m.accountRejectedBid.With(prometheus.Labels{
@@ -160,6 +187,7 @@ func (m *Metrics) RecordFloorsRequestForAccount(pubId string) {
 		}).Inc()
 	}
 }
+
 func (m *Metrics) RecordFloorStatus(pubId, source, code string) {
 	if pubId != metrics.PublisherUnknown {
 		m.dynamicFetchFailure.With(prometheus.Labels{
@@ -168,6 +196,49 @@ func (m *Metrics) RecordFloorStatus(pubId, source, code string) {
 			codeLabel:    code,
 		}).Inc()
 	}
+}
+
+func (m *OWMetrics) RecordPanic(hostname, method string) {
+	m.panics.With(prometheus.Labels{
+		hostNameLabel: hostname,
+		methodLabel:   method,
+	}).Inc()
+}
+
+func (m *OWMetrics) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	if pubId != "0" && pubId != metrics.PublisherUnknown {
+		m.badRequests.With(prometheus.Labels{
+			endpointLabel: endpoint,
+			pubIDLabel:    pubId,
+			nbrLabel:      strconv.Itoa(int(nbr.Val())),
+		}).Inc()
+	}
+}
+
+func (m *Metrics) RecordHttpCounter() {
+	m.httpCounter.Inc()
+}
+
+// RecordXMLParserResponseTime records xml parser response time
+func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	m.xmlParserResponseTime.With(prometheus.Labels{
+		xmlParserLabel: parser,
+		methodLabel:    method,
+		adapterLabel:   bidder,
+	}).Observe(respTime.Seconds())
+}
+
+// RecordVastVersion record the count of vast version labelled by bidder and vast version
+func (m *OWMetrics) RecordXMLParserResponseMismatch(method, bidder string, isMismatch bool) {
+	status := requestSuccessful
+	if isMismatch {
+		status = requestFailed
+	}
+	m.xmlParserMismatch.With(prometheus.Labels{
+		methodLabel:  method,
+		adapterLabel: bidder,
+		statusLabel:  status,
+	}).Inc()
 }
 
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
@@ -243,4 +314,25 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		//[]float64{0.000200000, 0.000250000, 0.000275000, 0.000300000})
 		[]float64{0.000100000, 0.000200000, 0.000300000, 0.000400000, 0.000500000, 0.000600000})
 
+	m.panics = newCounter(cfg, reg,
+		"pbs_panics",
+		"Count of prebid server panics",
+		[]string{hostNameLabel, methodLabel})
+
+	m.badRequests = newCounter(cfg, reg,
+		"pbs_bad_requests",
+		"Count of bad requests from a publisher to a particular endpoint with nbr code",
+		[]string{endpointLabel, pubIDLabel, nbrLabel})
+
+	//XML Parser Response Time
+	m.xmlParserResponseTime = newHistogramVec(cfg, reg,
+		"xml_parser_response_time",
+		"Time taken by xml parser", []string{xmlParserLabel, methodLabel, adapterLabel},
+		//0.01ms, 0.5ms, 1ms, 5ms, 10ms
+		[]float64{0.0001, 0.0005, 0.001, 0.005, 0.01})
+
+	m.xmlParserMismatch = newCounter(cfg, reg,
+		"etree_fastxml_resp_mismatch",
+		"Count of no of bids for which fast xml and etree response mismatch",
+		[]string{methodLabel, adapterLabel, statusLabel})
 }

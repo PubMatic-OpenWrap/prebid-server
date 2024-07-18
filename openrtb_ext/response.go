@@ -2,6 +2,7 @@ package openrtb_ext
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -31,6 +32,13 @@ type ExtBidResponse struct {
 	OwSendAllBids       int             `json:"sendallbids,omitempty"`
 	OwLogInfo           *OwLogInfo      `json:"loginfo,omitempty"`
 	OwLogger            string          `json:"owlogger,omitempty"`
+	Wrapper             *ExtWrapper     `json:"wrapper,omitempty"`
+}
+
+type ExtWrapper struct {
+	ResponseFormat   string            `json:"responseformat,omitempty"`
+	RedirectURL      string            `json:"redirecturl,omitempty"`
+	ImpToAdServerURL map[string]string `json:"imptoadserverurl,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug
@@ -58,6 +66,12 @@ type ExtResponsePrebid struct {
 	// SeatNonBid holds the array of Bids which are either rejected, no bids inside bidresponse.ext.prebid.seatnonbid
 	SeatNonBid []SeatNonBid     `json:"seatnonbid,omitempty"`
 	Floors     *PriceFloorRules `json:"floors,omitempty"`
+}
+
+type FastXMLMetrics struct {
+	XMLParserTime   time.Duration `json:"xmlparsertime,omitempty"`
+	EtreeParserTime time.Duration `json:"etreeparsertime,omitempty"`
+	IsRespMismatch  bool          `json:"isrespmismatch,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
