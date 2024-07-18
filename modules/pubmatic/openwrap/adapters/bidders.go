@@ -709,28 +709,15 @@ func builderAidem(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
 
-	//publisherID
-	if publisherID, ok := getString(params.FieldMap["publisherId"]); ok {
-		fmt.Fprintf(&jsonStr, `"publisherId":"%s",`, publisherID)
-	} else {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'publisherId'")
-	}
+	fields := []string{"publisherId", "siteId", "placementId"}
+	mandatoryFields := map[string]bool{"publisherId": true, "siteId": true}
 
-	//siteId
-	if siteId, ok := getString(params.FieldMap["siteId"]); ok {
-		fmt.Fprintf(&jsonStr, `"siteId":"%s",`, siteId)
-	} else {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "'siteId'")
-	}
-
-	//placementId
-	if placementId, ok := getString(params.FieldMap["placementId"]); ok {
-		fmt.Fprintf(&jsonStr, `"placementId":"%s",`, placementId)
-	}
-
-	//rateLimit
-	if _, ok := getString(params.FieldMap["rateLimit"]); ok {
-		delete(params.FieldMap, "rateLimit")
+	for _, field := range fields {
+		if value, ok := getString(params.FieldMap[field]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s",`, field, value)
+		} else if mandatoryFields[field] {
+			return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, field)
+		}
 	}
 
 	//  len=0 (no mandatory params present)

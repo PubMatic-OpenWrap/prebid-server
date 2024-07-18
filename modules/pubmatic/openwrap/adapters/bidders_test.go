@@ -3101,6 +3101,12 @@ func Test_builderAidem(t *testing.T) {
 			want:    json.RawMessage(``),
 			wantErr: true,
 		},
+		{
+			name:    "Invalid Scenerio (Only placementId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "abcd"}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
