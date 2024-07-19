@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/beevik/etree"
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
@@ -242,7 +243,6 @@ func TestGetVideoEventTracking(t *testing.T) {
 		accountId        string
 		timestamp        int64
 		req              *openrtb2.BidRequest
-		doc              *etree.Document
 	}
 	type want struct {
 		trackerURLMap map[string]string
@@ -549,7 +549,7 @@ func TestGetVideoEventTracking(t *testing.T) {
 				impMap[imp.ID] = &imp
 			}
 
-			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.gen_bidid, tc.args.requestingBidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, tc.args.doc, impMap)
+			eventURLMap := GetVideoEventTracking(tc.args.trackerURL, tc.args.bid, tc.args.gen_bidid, tc.args.requestingBidder, tc.args.bidderCoreName, tc.args.accountId, tc.args.timestamp, tc.args.req, impMap)
 
 			for event, eurl := range tc.want.trackerURLMap {
 
@@ -631,6 +631,59 @@ func TestExtractDomain(t *testing.T) {
 			domain, err := extractDomain(test.url)
 			assert.Equal(t, test.expectedDomain, domain)
 			assert.Equal(t, test.expectedErr, err)
+		})
+	}
+}
+
+func Test_injectVideoEvents(t *testing.T) {
+	type args struct {
+		vastXML     string
+		eventURLMap map[string]string
+		nurl        bool
+		linearity   adcom1.LinearityMode
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: `test`,
+			args: args{
+				vastXML: `<VAST version="3.0"><Ad><Wrapper>` +
+					`<AdSystem>prebid.org wrapper</AdSystem>` +
+					`<VASTAdTagURI><![CDATA[http://testurl.com]]></VASTAdTagURI>` +
+					`<Impression>http://test.url</Impression><Impression></Impression><Creatives><Creative></Creative></Creatives>` +
+					`</Wrapper></Ad></VAST>`,
+				eventURLMap: map[string]string{
+					`start`:         `http://start.url`,
+					`firstQuartile`: `http://firstQuartile.url`,
+				},
+				nurl:      true,
+				linearity: 0,
+			},
+			want: `<VAST version="3.0"><Ad><Wrapper>` +
+				`<AdSystem><![CDATA[prebid.org wrapper]]></AdSystem>` +
+				`<VASTAdTagURI><![CDATA[http://testurl.com]]></VASTAdTagURI>` +
+				`<Impression><![CDATA[http://test.url]]></Impression><Impression/><Creatives><Creative>` +
+				`<Linear><TrackingEvents><Tracking event="start"><![CDATA[http://start.url]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://firstQuartile.url]]></Tracking></TrackingEvents></Linear>` +
+				`<NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://start.url]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://firstQuartile.url]]></Tracking></TrackingEvents></NonLinearAds>` +
+				`</Creative></Creatives></Wrapper></Ad></VAST>`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//got, err := injectVideoEventsETree(tt.args.vastXML, tt.args.eventURLMap, tt.args.nurl, tt.args.linearity)
+			got, err := injectVideoEventsFastXML(tt.args.vastXML, tt.args.eventURLMap, tt.args.nurl, tt.args.linearity)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("injectVideoEvents() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("injectVideoEvents() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
