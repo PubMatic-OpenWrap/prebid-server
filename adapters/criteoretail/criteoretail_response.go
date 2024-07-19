@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
+	
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -133,7 +133,7 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 							delete(productDetails, CLICK_BEACON)
 						}
 
-						bidExt := &openrtb_ext.ExtBidCommerce{
+						bidExt := &openrtb_ext.ExtBidCMSponsored{
 							ProductId:      productID,
 							ClickUrl:       clickURL,
 							ProductDetails: productDetails,
@@ -142,7 +142,7 @@ func (a *CriteoRetailAdapter) getBidderResponse(request *openrtb2.BidRequest, cr
 						bid := &openrtb2.Bid{
 							ID:    bidID,
 							ImpID: impID,
-							IURL:  impressionURL,
+							NURL:  impressionURL,
 						}
 
 						adapters.AddDefaultFieldsComm(bid)
@@ -193,4 +193,6 @@ func (a *CriteoRetailAdapter) countSponsoredProducts(adResponse *CriteoResponse)
 
 	return count
 }
+
+
 

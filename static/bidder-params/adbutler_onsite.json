@@ -1,0 +1,6 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "AdButler Adapter Params",
+	"description": "A schema which validates params accepted by the AdButler adapter",
+	"type": "object"
+}

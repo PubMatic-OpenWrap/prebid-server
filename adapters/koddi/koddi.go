@@ -29,7 +29,7 @@ func GetRequestSlotCount(internalRequest *openrtb2.BidRequest)int {
 	impArray := internalRequest.Imp
 	reqCount := 0
 	for _, eachImp := range impArray {
-		var commerceExt openrtb_ext.ExtImpCommerce
+		var commerceExt openrtb_ext.ExtImpCMSponsored
 		json.Unmarshal(eachImp.Ext, &commerceExt)
 		reqCount += commerceExt.ComParams.SlotsRequested
 	}
@@ -68,7 +68,7 @@ func GetRandomClickPrice() float64 {
 func GetHostName(internalRequest *openrtb2.BidRequest) string {
 	var extension map[string]json.RawMessage
 	var preBidExt openrtb_ext.ExtRequestPrebid
-	var commerceExt openrtb_ext.ExtImpCommerce
+	var commerceExt openrtb_ext.ExtImpCMSponsored
 
 	json.Unmarshal(internalRequest.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
@@ -91,7 +91,7 @@ func GetDummyBids(impUrl , clickUrl , conversionUrl, seatName string, requestCou
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := ImpID + "_" + strconv.Itoa(i)
 
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:  productid,
 			ClickPrice: clickPrice,
 		}
@@ -139,7 +139,7 @@ func GetDummyBids_NoBid(impUrl , clickUrl , conversionUrl, seatName string, requ
 		newCurl := clickUrl + "_ImpID=" +bidID
 		newPurl := conversionUrl + "_ImpID=" +bidID
 
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:  productid,
 			ClickUrl: newCurl,
 			ConversionUrl: newPurl,
@@ -181,7 +181,7 @@ func (a *KoddiAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapt
 	host := "localhost"
 	var extension map[string]json.RawMessage
 	var preBidExt openrtb_ext.ExtRequestPrebid
-	var commerceExt openrtb_ext.ExtImpCommerce
+	var commerceExt openrtb_ext.ExtImpCMSponsored
 	json.Unmarshal(request.Ext, &extension)
 	json.Unmarshal(extension["prebid"], &preBidExt)
 	json.Unmarshal(request.Imp[0].Ext, &commerceExt)
@@ -278,4 +278,6 @@ func (a *KoddiAdapter) buildConversionURL(hostName string) (string, error) {
 	endpointParams := macros.EndpointTemplateParams{ Host: hostName}
 	return macros.ResolveMacros(a.conversionurl, endpointParams)
 }
+
+
 

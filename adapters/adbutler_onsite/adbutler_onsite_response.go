@@ -1,0 +1,245 @@
+package adbutler_onsite
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"sort"
+	"strconv"
+
+	"bytes"
+
+	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
+	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/openrtb_ext"
+)
+
+type AdButlerBeacon struct {
+	Type        string `json:"type,omitempty"`
+	TrackingUrl string `json:"url,omitempty"`
+}
+
+type Placement struct {
+	BannerID             string `json:"banner_id,omitempty"`
+	Width                string `json:"width,omitempty"`
+	Height               string `json:"height,omitempty"`
+	AltText              string `json:"alt_text,omitempty"`
+	AccompaniedHTML      string `json:"accompanied_html,omitempty"`
+	Target               string `json:"target,omitempty"`
+	TrackingPixel        string `json:"tracking_pixel,omitempty"`
+	Body                 string `json:"body,omitempty"`
+	RedirectURL          string `json:"redirect_url,omitempty"`
+	RefreshURL           string `json:"refresh_url,omitempty"`
+	Rct                  string `json:"rct,omitempty"`
+	Rcb                  string `json:"rcb,omitempty"`
+	RefreshTime          string `json:"refresh_time,omitempty"`
+	PlacementID          string `json:"placement_id,omitempty"`
+	UserFrequencyViews   string `json:"user_frequency_views,omitempty"`
+	UserFrequencyStart   string `json:"user_frequency_start,omitempty"`
+	UserFrequencyExpiry  string `json:"user_frequency_expiry,omitempty"`
+	ViewableURL          string `json:"viewable_url,omitempty"`
+	EligibleURL          string `json:"eligible_url,omitempty"`
+	ImageURL             string `json:"image_url,omitempty"`
+	ImpressionsRemaining int    `json:"impressions_remaining,omitempty"`
+	HasQuota             bool   `json:"has_quota,omitempty"`
+}
+
+type AdSet struct {
+	Status     string       `json:"status,omitempty"`
+	Placements []*Placement `json:"placements,omitempty"`
+}
+
+type AdButlerOnsiteResponse map[string]AdSet
+
+func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+
+	var errors []error
+
+	if response.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
+
+	if response.StatusCode == http.StatusBadRequest {
+		err := &errortypes.BadInput{
+			Message: "Unexpected status code: 400. Bad request from Adbutler.",
+		}
+		return nil, []error{err}
+	}
+
+	if response.StatusCode != http.StatusOK {
+		err := &errortypes.BadServerResponse{
+			Message: fmt.Sprintf("Unexpected status code: %d", response.StatusCode),
+		}
+		return nil, []error{err}
+	}
+
+	//Temporarily for Debugging
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, response.Body, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to parse JSON:", err)
+		return nil, []error{err}
+	}
+	fmt.Println(prettyJSON.String())
+
+	var adButlerResp AdButlerOnsiteResponse
+	if err := json.Unmarshal(response.Body, &adButlerResp); err != nil {
+		return nil, []error{&errortypes.BadServerResponse{
+			Message: "Bad Server Response",
+		}}
+	}
+
+	if len(adButlerResp) <= 0 {
+		return nil, []error{&errortypes.NoBidPrice{
+			Message: "No Bid For the given Request",
+		}}
+	}
+
+	noOfPlacements := 0
+
+	for _, adSetObject := range adButlerResp {
+		if adSetObject.Status == RESPONSE_SUCCESS {
+			noOfPlacements += len(adSetObject.Placements)
+		}
+	}
+
+	if noOfPlacements == 0 {
+		return nil, []error{&errortypes.NoValidBid{
+			Message: "No Valid Bid For the given Request",
+		}}
+	}
+
+	responseF := a.GetBidderResponse(internalRequest, &adButlerResp, noOfPlacements)
+	if len(responseF.Bids) <= 0 {
+		return nil, []error{&errortypes.NoValidBid{
+			Message: "No Valid Bid For the given Request",
+		}}
+	}
+	return responseF, errors
+
+}
+
+func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfBids int) *adapters.BidderResponse {
+
+	impIDMap := getImpIDMap(request)
+
+	bidResponse := adapters.NewBidderResponseWithBidsCapacity(noOfBids)
+
+	for zoneID, adSetObject := range *adButlerResp {
+
+		for _, adButlerBid := range adSetObject.Placements {
+
+			var impID string
+			_, ok := impIDMap[zoneID]
+			if ok {
+				impID = impIDMap[zoneID][0]
+				impIDMap[zoneID] = impIDMap[zoneID][1:]
+			} else {
+				continue
+			}
+
+			bidID := adapters.GenerateUniqueBidIDComm()
+			width, _ := strconv.Atoi(adButlerBid.Width)
+			height, _ := strconv.Atoi(adButlerBid.Height)
+
+			adm, adType := getADM(adButlerBid)
+
+			if adType == Adtype_Invalid {
+				continue
+			}
+
+			bidExt := &openrtb_ext.ExtBidCMOnsite{
+				AdType:   adType,
+				ViewUrl:  adButlerBid.ViewableURL,
+				ClickUrl: adButlerBid.RedirectURL,
+			}
+
+			bid := &openrtb2.Bid{
+				ID:    bidID,
+				ImpID: impID,
+				NURL:  adButlerBid.EligibleURL,
+				W:     int64(width),
+				H:     int64(height),
+				AdM:   adm,
+			}
+
+			adapters.AddDefaultFieldsComm(bid)
+
+			bidExtJSON, err1 := json.Marshal(bidExt)
+			if nil == err1 {
+				bid.Ext = json.RawMessage(bidExtJSON)
+			}
+
+			typedbid := &adapters.TypedBid{
+				Bid:  bid,
+				Seat: openrtb_ext.BidderName(Seat_AdbutlerOnsite),
+			}
+
+			bidResponse.Bids = append(bidResponse.Bids, typedbid)
+		}
+	}
+	return bidResponse
+}
+
+func getADM(adButlerBid *Placement) (string, int) {
+
+	if adButlerBid.Body != "" {
+		return adButlerBid.Body, Adtype_Custom_Banner
+	}
+
+	if adButlerBid.ImageURL != "" {
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), Adtype_Banner
+	}
+
+	return "", Adtype_Invalid
+}
+
+func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
+
+	_, requestExt, errors := adapters.ValidateCMOnsiteRequest(request)
+
+	if len(errors) > 0 {
+		return nil
+	}
+
+	if requestExt == nil {
+		return nil
+	}
+
+	inventoryDetails, _, _ := adapters.GetInventoryAndAccountDetailsCMOnsite(requestExt)
+
+	impIDMap := make(map[string][]string)
+
+	for _, imp := range request.Imp {
+		inventory, ok := inventoryDetails[InventoryIDOnsite_Prefix+imp.TagID]
+		if ok {
+			zoneID := strconv.Itoa(inventory.AdbulterZoneID)
+			impIDArray, ok := impIDMap[zoneID]
+			var impID string
+			if imp.Banner.Pos != nil {
+				impID = strconv.Itoa(int(imp.Banner.Pos.Ptr().Val())) + imp.ID
+			} else {
+				impID = strconv.Itoa(0) + imp.ID
+			}
+			if ok {
+				impIDArray = append(impIDArray, impID)
+				impIDMap[zoneID] = impIDArray
+			} else {
+				impIDArray := make([]string, 0)
+				impIDArray = append(impIDArray, impID)
+				impIDMap[zoneID] = impIDArray
+			}
+		}
+	}
+
+	//Sorting according pos and then trimming the position
+	for _, val := range impIDMap {
+		sort.Strings(val)
+		for i := 0; i < len(val); i++ {
+			val[i] = val[i][1:]
+		}
+	}
+
+	return impIDMap
+}

@@ -14,7 +14,7 @@ type ExtImpFiltering struct {
 
 // ExtImpTargeting - Impression Targeting Extension
 type ExtImpTargeting struct {
-	Name  string `json:"name,omitempty"`
+	Name  string      `json:"name,omitempty"`
 	Value interface{} `json:"value,omitempty"`
 }
 
@@ -25,24 +25,25 @@ type ExtCustomConfig struct {
 }
 
 // ImpExtensionCommerce - Impression Commerce Extension
-type CommerceParams struct {
+type CMSponsoredParams struct {
 	SlotsRequested int                `json:"slots_requested,omitempty"`
 	TestRequest    bool               `json:"test_request,omitempty"`
 	SearchTerm     string             `json:"search_term,omitempty"`
 	SearchType     string             `json:"search_type,omitempty"`
 	Preferred      []*ExtImpPreferred `json:"preferred,omitempty"`
-	Filtering      []*ExtImpFiltering   `json:"filtering,omitempty"`
+	Filtering      []*ExtImpFiltering `json:"filtering,omitempty"`
 	Targeting      []*ExtImpTargeting `json:"targeting,omitempty"`
 }
 
 // ImpExtensionCommerce - Impression Commerce Extension
-type ExtImpCommerce struct {
-	ComParams *CommerceParams `json:"commerce,omitempty"`
-	Bidder *ExtBidderCommerce          `json:"bidder,omitempty"`
+type ExtImpCMSponsored struct {
+	ComParams *CMSponsoredParams `json:"commerce,omitempty"`
+	Bidder    *ExtBidderCommerce `json:"bidder,omitempty"`
 }
+
 // UserExtensionCommerce - User Commerce Extension
-type ExtUserCommerce struct {
-	IsAuthenticated bool    `json:"is_authenticated,omitempty"`
+type ExtUserCMSponsored struct {
+	IsAuthenticated bool   `json:"is_authenticated,omitempty"`
 	Consent         string `json:"consent,omitempty"`
 }
 
@@ -62,12 +63,11 @@ type ExtBidderCommerce struct {
 	CustomConfig     []*ExtCustomConfig `json:"config,omitempty"`
 }
 
-type ExtBidCommerce struct {
-	ProductId        string               `json:"productid,omitempty"`
-	ClickUrl         string               `json:"curl,omitempty"`
-	ConversionUrl    string               `json:"purl,omitempty"`
-	ClickPrice       float64              `json:"clickprice,omitempty"`
-	Rate             float64              `json:"rate,omitempty"`
-	ProductDetails   map[string]interface{}  `json:"productdetails,omitempty"`
+type ExtBidCMSponsored struct {
+	ProductId      string                 `json:"productid,omitempty"`
+	ClickUrl       string                 `json:"curl,omitempty"`
+	ConversionUrl  string                 `json:"purl,omitempty"`
+	ClickPrice     float64                `json:"clickprice,omitempty"`
+	Rate           float64                `json:"rate,omitempty"`
+	ProductDetails map[string]interface{} `json:"productdetails,omitempty"`
 }
-

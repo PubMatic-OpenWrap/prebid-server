@@ -52,7 +52,7 @@ func GetRequestSlotCount(internalRequest *openrtb2.BidRequest) int {
 	impArray := internalRequest.Imp
 	reqCount := 0
 	for _, eachImp := range impArray {
-		var commerceExt openrtb_ext.ExtImpCommerce
+		var commerceExt openrtb_ext.ExtImpCMSponsored
 		json.Unmarshal(eachImp.Ext, &commerceExt)
 		reqCount += commerceExt.ComParams.SlotsRequested
 	}
@@ -101,13 +101,12 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 		productid := GetRandomProductID()
 		bidID := adapters.GenerateUniqueBidIDComm()
 		impID := ImpID + "_" + strconv.Itoa(i)
-
 		mockProductDetails := make(map[string]interface{})
 		if bidderExtendedDetails {
 			mockProductDetails = MockProductDetails
 		}
 		
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:  productid,
 			ClickUrl: CLICK_URL,
 			ProductDetails: mockProductDetails,
@@ -116,7 +115,7 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 		bid := &openrtb2.Bid{
 			ID:    bidID,
 			ImpID: impID,
-			IURL: IMP_URL,
+			NURL: IMP_URL,
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -138,4 +137,6 @@ func GetMockBids(requestCount int, ImpID string, configValueMap map[string]strin
 	}
 	return responseF
 }
+
+
 

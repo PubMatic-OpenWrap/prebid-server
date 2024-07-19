@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
+	
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -114,7 +114,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 			delete(productDetails, TRACKING_ID)
 		}
 
-		bidExt := &openrtb_ext.ExtBidCommerce{
+		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:      productID,
 			ClickUrl:       clickURL,
 			ProductDetails: productDetails,
@@ -123,7 +123,7 @@ func (a *CitrusAdapter) getBidderResponse(request *openrtb2.BidRequest, citrusRe
 		bid := &openrtb2.Bid{
 			ID:    bidID,
 			ImpID: impID,
-			IURL:  impressionURL,
+			NURL:  impressionURL,
 		}
 
 		adapters.AddDefaultFieldsComm(bid)
@@ -172,4 +172,6 @@ func countSponsoredProducts(adResponse *CitrusResponse) int {
 	}
 	return count
 }
+
+
 
