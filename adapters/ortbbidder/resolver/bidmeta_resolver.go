@@ -15,11 +15,11 @@ type bidMetaResolver struct {
 func (b *bidMetaResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta]", path)
 	}
 	bidMeta, err := validateBidMeta(value)
 	if err != nil {
-		return nil, util.NewWarning("failed to map response-param:[bidMeta] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta]", path)
 	}
 	return bidMeta, nil
 }
@@ -58,12 +58,12 @@ type bidMetaAdvDomainsResolver struct {
 func (b *bidMetaAdvDomainsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, ok := util.GetValueFromLocation(responseNode, path)
 	if !ok {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserDomains]", path)
 	}
 
 	adomains, ok := validateDataTypeSlice[string](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserDomains] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserDomains]", path)
 	}
 	return adomains, nil
 }
@@ -81,11 +81,11 @@ type bidMetaAdvIDResolver struct {
 func (b *bidMetaAdvIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserId]", path)
 	}
 	advId, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserId] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserId]", path)
 	}
 	return advId, nil
 }
@@ -103,11 +103,12 @@ type bidMetaAdvNameResolver struct {
 func (b *bidMetaAdvNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserName]", path)
 	}
 	advName, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaAdvertiserName] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.advertiserName]", path)
+
 	}
 	return advName, nil
 }
@@ -125,11 +126,12 @@ type bidMetaAgencyIDResolver struct {
 func (b *bidMetaAgencyIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.agencyID]", path)
 	}
 	agencyId, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaAgencyId] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.agencyID]", path)
+
 	}
 	return agencyId, nil
 }
@@ -147,11 +149,12 @@ type bidMetaAgencyNameResolver struct {
 func (b *bidMetaAgencyNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.agencyName]", path)
 	}
 	agencyName, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaAgencyName] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.agencyName]", path)
+
 	}
 	return agencyName, nil
 }
@@ -169,11 +172,12 @@ type bidMetaBrandIDResolver struct {
 func (b *bidMetaBrandIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.brandID]", path)
 	}
 	brandId, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaBrandId] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.brandID]", path)
+
 	}
 	return brandId, nil
 }
@@ -191,11 +195,12 @@ type bidMetaBrandNameResolver struct {
 func (b *bidMetaBrandNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.brandName]", path)
 	}
 	brandName, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaBrandName] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.brandName]", path)
+
 	}
 	return brandName, nil
 }
@@ -213,11 +218,12 @@ type bidMetaDChainResolver struct {
 func (b *bidMetaDChainResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.dchain]", path)
 	}
 	dChain, ok := validateMap(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaDchain] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.dchain]", path)
+
 	}
 	return dChain, nil
 }
@@ -235,11 +241,12 @@ type bidMetaDemandSourceResolver struct {
 func (b *bidMetaDemandSourceResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.demandSource]", path)
 	}
 	demandSource, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaDemandSource] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.demandSource]", path)
+
 	}
 	return demandSource, nil
 }
@@ -257,11 +264,12 @@ type bidMetaMediaTypeResolver struct {
 func (b *bidMetaMediaTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.mediaType]", path)
 	}
 	mediaType, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaMediaType] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.mediaType]", path)
+
 	}
 	return mediaType, nil
 }
@@ -279,11 +287,12 @@ type bidMetaNetworkIDResolver struct {
 func (b *bidMetaNetworkIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.networkId]", path)
 	}
 	networkId, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaNetworkId] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.networkId]", path)
+
 	}
 	return networkId, nil
 }
@@ -301,11 +310,12 @@ type bidMetaNetworkNameResolver struct {
 func (b *bidMetaNetworkNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.networkName]", path)
 	}
 	networkName, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaNetworkName] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.networkName]", path)
+
 	}
 	return networkName, nil
 }
@@ -323,11 +333,12 @@ type bidMetaPrimaryCategoryIDResolver struct {
 func (b *bidMetaPrimaryCategoryIDResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.primaryCategory]", path)
 	}
 	categoryId, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaPrimaryCatId] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.primaryCategory]", path)
+
 	}
 	return categoryId, nil
 }
@@ -345,11 +356,12 @@ type bidMetaRendererNameResolver struct {
 func (b *bidMetaRendererNameResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererName]", path)
 	}
 	rendererName, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererName] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererName]", path)
+
 	}
 	return rendererName, nil
 }
@@ -367,11 +379,12 @@ type bidMetaRendererVersionResolver struct {
 func (b *bidMetaRendererVersionResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererVersion]", path)
 	}
 	rendererVersion, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererVersion] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererVersion]", path)
+
 	}
 	return rendererVersion, nil
 }
@@ -389,11 +402,12 @@ type bidMetaRendererDataResolver struct {
 func (b *bidMetaRendererDataResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererData]", path)
 	}
 	rendererData, ok := validateMap(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererData] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererData]", path)
+
 	}
 	return rendererData, nil
 }
@@ -411,11 +425,12 @@ type bidMetaRendererUrlResolver struct {
 func (b *bidMetaRendererUrlResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererUrl]", path)
 	}
 	rendererUrl, ok := validateString(value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaRendererUrl] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.rendererUrl]", path)
+
 	}
 	return rendererUrl, nil
 }
@@ -433,11 +448,12 @@ type bidMetaSecondaryCategoryIDsResolver struct {
 func (b *bidMetaSecondaryCategoryIDsResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.meta.secondaryCategoryIds]", path)
 	}
 	secondaryCategories, ok := validateDataTypeSlice[string](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidMetaSecondaryCatIds] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.meta.secondaryCategoryIds]", path)
+
 	}
 	return secondaryCategories, nil
 }
@@ -456,7 +472,7 @@ func setKeyValueInBidMeta(adapterBid map[string]any, key string, value any) erro
 	}
 	typedMeta, ok := meta.(map[string]any)
 	if !ok || typedMeta == nil {
-		return util.NewWarning("failed to set key:[%s] in BidMeta, value:[%+v] error:[incorrect data type]", key, value)
+		return NewValidationFailedError("failed to set key:[%s] in BidMeta, error:[incorrect data type]", key)
 	}
 	typedMeta[key] = value
 	return nil

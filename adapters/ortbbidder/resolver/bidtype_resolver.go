@@ -25,32 +25,32 @@ type bidTypeResolver struct {
 func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, error) {
 	value, ok := bid[ortbFieldMtype]
 	if !ok {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 	}
 
 	mtype, ok := value.(float64)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 	}
 
 	if mtype == 0 {
-		return nil, nil
+		return nil, NewDefaultValueError("default value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 	}
 
 	if bidType := convertToBidType(openrtb2.MarkupType(mtype)); bidType != openrtb_ext.BidType("") {
 		return bidType, nil
 	}
-	return nil, util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[%v]", value)
+	return nil, NewValidationFailedError("invalid value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 }
 
 func (r *bidTypeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.type]", path)
 	}
 	bidType, ok := value.(string)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidType] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.type]", path)
 	}
 	return openrtb_ext.BidType(bidType), nil
 }
@@ -62,10 +62,10 @@ func (r *bidTypeResolver) autoDetect(request *openrtb2.BidRequest, bid map[strin
 	}
 	impId, ok := bid[ortbFieldImpId].(string)
 	if !ok {
-		return nil, util.ErrBidTypeMissingImpID
+		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.impid] for [bid.ext.prebid.type]")
 	}
 	// Adm is not present, get media type from imp
-	return getMediaTypeFromImp(request.Imp, impId), nil
+	return getMediaTypeFromImp(request.Imp, impId)
 }
 
 func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) error {
@@ -87,7 +87,7 @@ func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {
 	return openrtb_ext.BidTypeBanner
 }
 
-func getMediaTypeFromImp(imps []openrtb2.Imp, impID string) openrtb_ext.BidType {
+func getMediaTypeFromImp(imps []openrtb2.Imp, impID string) (openrtb_ext.BidType, error) {
 	for _, imp := range imps {
 		if imp.ID != impID {
 			continue
@@ -95,10 +95,10 @@ func getMediaTypeFromImp(imps []openrtb2.Imp, impID string) openrtb_ext.BidType 
 		return getMediaTypes(imp)
 	}
 
-	return openrtb_ext.BidType("")
+	return openrtb_ext.BidType(""), NewValidationFailedError("invalid value sent by bidder at [bid.impid], unable to auto detect value for [bid.ext.prebid.type]")
 }
 
-func getMediaTypes(imp openrtb2.Imp) openrtb_ext.BidType {
+func getMediaTypes(imp openrtb2.Imp) (openrtb_ext.BidType, error) {
 	var (
 		multiFormatCount int
 		mediaType        openrtb_ext.BidType
@@ -118,10 +118,10 @@ func getMediaTypes(imp openrtb2.Imp) openrtb_ext.BidType {
 	}
 	// imp has multiple format, set mediaType to empty
 	if multiFormatCount > 1 {
-		return openrtb_ext.BidType("")
+		return openrtb_ext.BidType(""), NewValidationFailedError("found multi-format request, unable to auto detect value for [bid.ext.prebid.type]")
 	}
 
-	return mediaType
+	return mediaType, nil
 }
 
 func convertToBidType(mtype openrtb2.MarkupType) openrtb_ext.BidType { // change name

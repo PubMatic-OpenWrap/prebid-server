@@ -13,11 +13,11 @@ type bidDealPriorityResolver struct {
 func (b *bidDealPriorityResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.dealpriority]", path)
 	}
 	val, ok := validateNumber[int](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidDealPriority] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.dealpriority]", path)
 	}
 	return val, nil
 }

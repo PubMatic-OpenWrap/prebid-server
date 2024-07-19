@@ -15,11 +15,11 @@ type bidVideoResolver struct {
 func (b *bidVideoResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.video]", path)
 	}
 	video, err := validateBidVideo(value)
 	if err != nil {
-		return nil, util.NewWarning("failed to map response-param:[bidVideo] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.video]", path)
 	}
 	return video, nil
 }
@@ -59,12 +59,16 @@ type bidVideoDurationResolver struct {
 
 func (b *bidVideoDurationResolver) getFromORTBObject(bid map[string]any) (any, error) {
 	value, ok := bid[ortbFieldDuration]
-	if !ok || value == 0 {
-		return nil, nil
+	if !ok {
+		return nil, NewDefaultValueError("no value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
 	}
+	if value == 0 {
+		return nil, NewDefaultValueError("default value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
+	}
+
 	duration, ok := validateNumber[int64](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidVideoDuration] method:[standard_oRTB_param] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
 	}
 	return duration, nil
 }
@@ -72,11 +76,11 @@ func (b *bidVideoDurationResolver) getFromORTBObject(bid map[string]any) (any, e
 func (b *bidVideoDurationResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.video.duration]", path)
 	}
 	duration, ok := validateNumber[int64](value)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidVideoDuration] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.video.duration]", path)
 	}
 	return duration, nil
 }
@@ -96,21 +100,21 @@ type bidVideoPrimaryCategoryResolver struct {
 func (b *bidVideoPrimaryCategoryResolver) getFromORTBObject(bid map[string]any) (any, error) {
 	value, found := bid[ortbFieldCategory]
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [bid.cat] for [bid.ext.prebid.video.primary_category]")
 	}
 
 	categories, ok := value.([]any)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidVideoPrimaryCategory] method:[standard_oRTB_param] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.cat] for [bid.ext.prebid.video.primary_category]")
 	}
 
 	if len(categories) == 0 {
-		return nil, nil
+		return nil, NewDefaultValueError("default value sent by bidder at [bid.cat] for [bid.ext.prebid.video.primary_category]")
 	}
 
 	category, _ := categories[0].(string)
 	if len(category) == 0 {
-		return nil, util.NewWarning("failed to map response-param:[bidVideoPrimaryCategory] method:[standard_oRTB_param] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.cat[0]] for [bid.ext.prebid.video.primary_category]")
 	}
 
 	return category, nil
@@ -119,11 +123,11 @@ func (b *bidVideoPrimaryCategoryResolver) getFromORTBObject(bid map[string]any) 
 func (b *bidVideoPrimaryCategoryResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [bid.ext.prebid.video.primary_category]", path)
 	}
 	category, ok := value.(string)
 	if !ok {
-		return nil, util.NewWarning("failed to map response-param:[bidVideoPrimaryCategory] method:[response_param_location] value:[%v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [bid.ext.prebid.video.primary_category]", path)
 	}
 	return category, nil
 }
@@ -140,7 +144,7 @@ func setKeyValueInBidVideo(adapterBid map[string]any, key string, value any) err
 	}
 	videoTyped, ok := video.(map[string]any)
 	if !ok || videoTyped == nil {
-		return util.NewWarning("failed to set key:[%s] in BidVideo, value:[%v] error:[incorrect data type]", key, value)
+		return NewValidationFailedError("failed to set key:[%s] in BidVideo, error:[incorrect data type]", key)
 	}
 	videoTyped[key] = value
 	return nil

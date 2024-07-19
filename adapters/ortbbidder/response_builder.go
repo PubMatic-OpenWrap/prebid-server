@@ -43,7 +43,9 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 	for _, param := range resolver.ResponseParams {
 		bidderParam := rb.responseParams[param.String()]
 		resolverErrors := paramResolver.Resolve(rb.bidderResponse, adapterResponse, bidderParam.Location, param)
-		errs = append(errs, resolverErrors...)
+		if resolver.ContainsWarning(resolverErrors) {
+			errs = append(errs, util.NewWarning("failed to set the [%s]", param.String()))
+		}
 	}
 	// Extract the seat bids from the bidder response.
 	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
@@ -71,11 +73,13 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 				typedbidKey: bid,
 			}
 			// Resolve the typed bid level parameters.
-			for _, params := range resolver.TypedBidParams {
-				paramMapper := rb.responseParams[params.String()]
+			for _, param := range resolver.TypedBidParams {
+				paramMapper := rb.responseParams[param.String()]
 				location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
-				resolverErrors := paramResolver.Resolve(bid, typedBid, location, params)
-				errs = append(errs, resolverErrors...)
+				resolverErrors := paramResolver.Resolve(bid, typedBid, location, param)
+				if resolver.ContainsWarning(resolverErrors) {
+					errs = append(errs, util.NewWarning("failed to set the [%s]", param.String()))
+				}
 			}
 			// Add the type bid to the list of typed bids.
 			typedBids = append(typedBids, typedBid)

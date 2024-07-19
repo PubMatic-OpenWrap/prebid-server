@@ -15,11 +15,11 @@ type fledgeResolver struct {
 func (f *fledgeResolver) retrieveFromBidderParamLocation(responseNode map[string]any, path string) (any, error) {
 	value, found := util.GetValueFromLocation(responseNode, path)
 	if !found {
-		return nil, nil
+		return nil, NewDefaultValueError("no value sent by bidder at [%s] for [response.ext.fledgeAuctionConfig]", path)
 	}
 	fledgeCfg, err := validateFledgeConfig(value)
 	if err != nil {
-		return nil, util.NewWarning("failed to map response-param:[fledgeAuctionConfig] method:[response_param_location] value:[%+v]", value)
+		return nil, NewValidationFailedError("invalid value sent by bidder at [%s] for [response.ext.fledgeAuctionConfig]", path)
 	}
 	return fledgeCfg, nil
 }
