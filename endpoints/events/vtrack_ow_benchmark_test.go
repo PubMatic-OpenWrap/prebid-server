@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/adcom1"
-	"github.com/stretchr/testify/assert"
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 var benchMarkVAST, testVAST string
@@ -35,8 +35,34 @@ func BenchmarkFastXMLVideoInjector(b *testing.B) {
 	}
 }
 
-func TestCompare(t *testing.T) {
-	etreeXML, _ := injectVideoEventsETree(benchMarkVAST, eventURLMap, false, adcom1.LinearityLinear)
-	fastXML, _ := injectVideoEventsFastXML(benchMarkVAST, eventURLMap, false, adcom1.LinearityLinear)
-	assert.Equal(t, fastXML, etreeXML)
+// BenchmarkInjectVideoEventTrackers
+// nilesh@9fc43242aec1: git checkout origin/ci
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee old1.txt
+// nilesh@9fc43242aec1: git checkout origin/UOE-8632-ci-1
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ go test -bench=BenchmarkInjectVideoEventTrackers -count 200 -run=^# | tee new1.txt
+// nilesh@9fc43242aec1:~/go/src/github.com/PubMatic-OpenWrap/prebid-server/endpoints/events$ benchstat old1.txt new1.txt
+// goos: linux
+// goarch: arm64
+// pkg: github.com/PubMatic-OpenWrap/prebid-server/endpoints/events
+//
+//	│   old1.txt   │          new1.txt           │
+//	│    sec/op    │   sec/op     vs base        │
+//
+// InjectVideoEventTrackers-8   107.83µ ± 1%   97.62µ ± 1%  -9.47% (n=200)
+func BenchmarkInjectVideoEventTrackers(b *testing.B) {
+	trackerURL := "http://company.tracker.com?eventId=[EVENT_ID]&appbundle=[DOMAIN]"
+	vastXML := `<VAST version="3.0"><Ad><InLine><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></InLine><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></Wrapper></Ad></VAST>`
+	bid := &openrtb2.Bid{
+		AdM: `<VAST version="3.0"><Ad><InLine><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></InLine><Wrapper><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company1.tracker.com?eventId=2&appbundle=abc]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company1.tracker.com?eventId=4&appbundle=abc]]></Tracking><Tracking event="midpoint"><![CDATA[http://company1.tracker.com?eventId=3&appbundle=abc]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company1.tracker.com?eventId=5&appbundle=abc]]></Tracking><Tracking event="complete"><![CDATA[http://company1.tracker.com?eventId=6&appbundle=abc]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression></Impression></Wrapper></Ad></VAST>`,
+	}
+	req := &openrtb2.BidRequest{
+		App: &openrtb2.App{Bundle: "abc"},
+		Imp: []openrtb2.Imp{{ID: "123", Video: &openrtb2.Video{}}},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// no need to validate, using vast from test TestInjectVideoEventTrackers/all_inline_wrapper_liner_and_non_linear_creative
+		_, _, _ = InjectVideoEventTrackers(req, bid, vastXML, trackerURL, "", "test_bidder", "test_core_bidder", int64(0), false)
+	}
 }

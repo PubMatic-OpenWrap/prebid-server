@@ -493,7 +493,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 		}
 
-		evTracking := getEventTracking(requestExtPrebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL)
+		evTracking := getEventTracking(requestExtPrebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL,
+			OpenWrapEventTracking{
+				enabledVideoEvents: requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
+				enableFastXML:      e.server.EnableFastXML,
+				me:                 e.me,
+			})
 		adapterBids = evTracking.modifyBidsForEvents(adapterBids, r.BidRequestWrapper.BidRequest, e.trakerURL)
 
 		r.HookExecutor.ExecuteAllProcessedBidResponsesStage(adapterBids)

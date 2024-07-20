@@ -101,13 +101,13 @@ func (a *VASTBidder) fastXMLTesting(handler *responseHandler, responseData *adap
 		}
 	}
 
-	vastBidderInfo := &openrtb_ext.FastXMLMetrics{
+	xmlParsingMetrics := &openrtb_ext.FastXMLMetrics{
 		XMLParserTime:   handlerTime,
 		EtreeParserTime: etreeParserTime,
 		IsRespMismatch:  isVASTMismatch,
 	}
 
-	responseData.FastXMLMetrics = vastBidderInfo
+	responseData.FastXMLMetrics = xmlParsingMetrics
 }
 
 // NewTagBidder is an constructor for TagBidder
