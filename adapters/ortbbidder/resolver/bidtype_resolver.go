@@ -28,7 +28,7 @@ func (r *bidTypeResolver) getFromORTBObject(bid map[string]any) (any, error) {
 		return nil, NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 	}
 
-	mtype, ok := value.(float64)
+	mtype, ok := validateNumber[float64](value)
 	if !ok {
 		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]")
 	}

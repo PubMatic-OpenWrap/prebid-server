@@ -186,7 +186,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			name:                "Valid bidder respone, no bidder params",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
 			responseParams:      map[string]bidderparams.BidderParamMapper{},
-			expectedError:       []error{util.ErrBidTypeMissingImpID},
+			expectedError:       []error{util.NewWarning("failed to set the [bidType]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -244,6 +244,35 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			},
 		},
 		{
+			name:                "failed to set the adapter-response level param - fledgeConfig",
+			bidderResponseBytes: []byte(`{"fledge":"","id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123","ext": {"bidtype": "video"}}]}]}`),
+			responseParams: map[string]bidderparams.BidderParamMapper{
+				"currency": {
+					Location: "cur",
+				},
+				"fledgeAuctionConfig": {
+					Location: "fledge",
+				},
+			},
+			expectedError: []error{
+				util.NewWarning("failed to set the [fledgeAuctionConfig]"),
+				util.NewWarning("failed to set the [bidType]"),
+			},
+			expectedResponse: map[string]any{
+				"Currency": "USD",
+				"Bids": []any{
+					map[string]any{
+						"Bid": map[string]any{
+							"id": "123",
+							"ext": map[string]any{
+								"bidtype": "video",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "Valid bidder respone, with multiple bidder params",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","ext":{"dp":2},"bid":[{"id":"123","cat":["music"],"ext":{"bidtype":"video","advertiserId":"5"` +
 				`,"networkId":5,"duration":10,"meta_object":{"advertiserDomains":["xyz.com"],"mediaType":"video"}}}]}]}`),
@@ -256,7 +285,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 				"bidMetaAdvertiserId": {Location: "seatbid.#.bid.#.ext.advertiserId"},
 				"bidMetaNetworkId":    {Location: "seatbid.#.bid.#.ext.networkId"},
 			},
-			expectedError: []error{util.NewWarning("failed to map response-param:[bidMetaAdvertiserId] method:[response_param_location] value:[5]")},
+			expectedError: []error{util.NewWarning("failed to set the [bidMetaAdvertiserId]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{

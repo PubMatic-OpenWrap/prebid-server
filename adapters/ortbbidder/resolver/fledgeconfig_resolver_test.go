@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +15,7 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 		responseNode  map[string]any
 		path          string
 		expectedValue any
-		expectedError error
+		expectedError bool
 	}{
 		{
 			name: "Found fledgeConfig in location",
@@ -42,7 +41,7 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 					Config: json.RawMessage(`{"key":"value"}`),
 				},
 			},
-			expectedError: nil,
+			expectedError: false,
 		},
 		{
 			name: "Found  invalid fledgeConfig in location",
@@ -62,21 +61,21 @@ func TestFledgeConfigRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.fledgeCfg",
 			expectedValue: nil,
-			expectedError: util.NewWarning("failed to map response-param:[fledgeAuctionConfig] method:[response_param_location] value:[[map[bidder:magnite config:map[key:value] impid:1]]]"),
+			expectedError: true,
 		},
 		{
 			name:          "Not found fledge config in location",
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedError: nil,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			value, err := resolver.retrieveFromBidderParamLocation(tc.responseNode, tc.path)
 			assert.Equal(t, tc.expectedValue, value)
-			assert.Equal(t, tc.expectedError, err)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }

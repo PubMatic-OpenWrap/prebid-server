@@ -78,7 +78,7 @@ func TestBidVideoRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.video",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -188,7 +188,7 @@ func TestBidVideoDurationGetFromORTBObject(t *testing.T) {
 			name:          "Not found dur in location",
 			responseNode:  map[string]any{},
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 		{
 			name: "Found dur in location",
@@ -197,6 +197,14 @@ func TestBidVideoDurationGetFromORTBObject(t *testing.T) {
 			},
 			expectedValue: int64(11),
 			expectedError: false,
+		},
+		{
+			name: "Found default value for dur",
+			responseNode: map[string]any{
+				"dur": 0.0,
+			},
+			expectedValue: nil,
+			expectedError: true,
 		},
 		{
 			name: "Found dur in location but type is invalid",
@@ -264,7 +272,7 @@ func TestBidVideoDurarionRetrieveFromLocation(t *testing.T) {
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -297,7 +305,7 @@ func TestSetValueBidVideoDuration(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name: "Set videoduration when video is present",
+			name: "Set video duration when video is present",
 			adapterBid: map[string]any{
 				"BidVideo": map[string]any{
 					bidVideoPrimaryCategoryKey: "IAB-1",
@@ -354,7 +362,7 @@ func TestBidVideoPrimaryCategoryRetrieveFromLocation(t *testing.T) {
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -388,7 +396,7 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 				"cat": []any{},
 			},
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 		{
 			name: "Not found category in location",
@@ -396,7 +404,7 @@ func TestBidVideoPrimaryCategoryGetFromORTBObject(t *testing.T) {
 				"field": []any{},
 			},
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 		{
 			name: "Found category in location but type is invalid",

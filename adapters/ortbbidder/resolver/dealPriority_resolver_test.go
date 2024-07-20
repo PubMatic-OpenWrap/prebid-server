@@ -40,7 +40,7 @@ func TestBidDealPriorityFromLocation(t *testing.T) {
 			responseNode:  map[string]any{},
 			path:          "seat",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {

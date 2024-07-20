@@ -62,13 +62,14 @@ func (b *bidVideoDurationResolver) getFromORTBObject(bid map[string]any) (any, e
 	if !ok {
 		return nil, NewDefaultValueError("no value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
 	}
-	if value == 0 {
-		return nil, NewDefaultValueError("default value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
-	}
 
 	duration, ok := validateNumber[int64](value)
 	if !ok {
 		return nil, NewValidationFailedError("invalid value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
+	}
+
+	if duration == 0 {
+		return nil, NewDefaultValueError("default value sent by bidder at [bid.dur] for [bid.ext.prebid.video.duration]")
 	}
 	return duration, nil
 }

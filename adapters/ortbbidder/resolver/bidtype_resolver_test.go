@@ -32,7 +32,7 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 					"mtype": 0.0,
 				},
 				expectedValue: nil,
-				expectedError: false,
+				expectedError: true,
 			},
 			{
 				name: "mtype found in bid - invalid type",
@@ -54,7 +54,7 @@ func TestBidtypeResolverGetFromORTBObject(t *testing.T) {
 				name:          "mtype not found in bid",
 				bid:           map[string]any{},
 				expectedValue: nil,
-				expectedError: false,
+				expectedError: true,
 			},
 		}
 
@@ -138,7 +138,7 @@ func TestBidTypeResolverRetrieveFromBidderParamLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidTypeResolver{}
@@ -229,7 +229,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 					},
 				},
 				expectedValue: openrtb_ext.BidType(""),
-				expectedError: false,
+				expectedError: true,
 			},
 			{
 				name: "Auto detect with Video Adm",
@@ -285,6 +285,7 @@ func TestGetMediaTypeFromImp(t *testing.T) {
 		impressions       []openrtb2.Imp
 		impID             string
 		expectedMediaType openrtb_ext.BidType
+		expectedError     bool
 	}{
 		{
 			name: "Found matching impID",
@@ -303,19 +304,22 @@ func TestGetMediaTypeFromImp(t *testing.T) {
 			},
 			impID:             "imp3",
 			expectedMediaType: openrtb_ext.BidType(""),
+			expectedError:     true,
 		},
 		{
 			name:              "Empty impressions slice",
 			impressions:       nil,
 			impID:             "imp1",
 			expectedMediaType: openrtb_ext.BidType(""),
+			expectedError:     true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mediaType := getMediaTypeFromImp(tc.impressions, tc.impID)
+			mediaType, err := getMediaTypeFromImp(tc.impressions, tc.impID)
 			assert.Equal(t, tc.expectedMediaType, mediaType)
+			assert.Equal(t, tc.expectedError, err != nil)
 		})
 	}
 }

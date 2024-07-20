@@ -1,6 +1,6 @@
 package resolver
 
-func validateNumber[T int | int64](value any) (T, bool) {
+func validateNumber[T int | int64 | float64](value any) (T, bool) {
 	v, ok := value.(float64)
 	if !ok {
 		var zero T

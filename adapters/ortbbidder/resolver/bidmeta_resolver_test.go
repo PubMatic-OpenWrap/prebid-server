@@ -84,7 +84,7 @@ func TestBidMetaRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaResolver{}
@@ -248,7 +248,7 @@ func TestBidMetaAdvDomainsRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaAdvDomainsResolver{}
@@ -358,7 +358,7 @@ func TestBidMetaAdvIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaAdvIDResolver{}
@@ -437,7 +437,7 @@ func TestBidMetaAdvNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaAdvNameResolver{}
@@ -519,7 +519,7 @@ func TestBidMetaAgencyIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaAgencyIDResolver{}
@@ -600,7 +600,7 @@ func TestBidMetaAgencyNameRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -708,7 +708,7 @@ func TestBidMetaBrandIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	resolver := &bidMetaBrandIDResolver{}
@@ -792,7 +792,7 @@ func TestBidMetaBrandNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -883,7 +883,7 @@ func TestBidMetaDChainRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 
@@ -995,7 +995,7 @@ func TestBidMetaDemandSourceRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1106,7 +1106,7 @@ func TestBidMetaMediaTypeRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1210,7 +1210,7 @@ func TestBidMetaNetworkIDRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1298,7 +1298,7 @@ func TestBidMetaNetworkNameRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1376,7 +1376,7 @@ func TestBidMetaPrimaryCatIdRetrieveFromLocation(t *testing.T) {
 			},
 			path:          "nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1457,7 +1457,7 @@ func TestBidMetaRendererNameRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1537,7 +1537,7 @@ func TestBidMetaRendererVersionRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1617,7 +1617,7 @@ func TestBidMetaRendererDataRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1697,7 +1697,7 @@ func TestBidMetaRendererUrlRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "seatbid.0.bid.0.ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {
@@ -1777,7 +1777,7 @@ func TestBidMetaSecCatIdsRetrieveFromLocation(t *testing.T) {
 			ortbResponse:  map[string]any{},
 			path:          "ext.nonexistent",
 			expectedValue: nil,
-			expectedError: false,
+			expectedError: true,
 		},
 	}
 	for _, tc := range testCases {

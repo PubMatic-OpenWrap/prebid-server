@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -169,7 +168,7 @@ func TestResolveTypeBid(t *testing.T) {
 				"BidType": openrtb_ext.BidType("banner"),
 			},
 			expectedErrs: []error{
-				util.NewWarning("failed to map response-param:[bidType] method:[standard_oRTB_param] value:[a]"),
+				NewValidationFailedError("invalid value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]"),
 			},
 		},
 		{
@@ -214,6 +213,9 @@ func TestResolveTypeBid(t *testing.T) {
 				},
 				"BidType": openrtb_ext.BidType("video"),
 			},
+			expectedErrs: []error{
+				NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]"),
+			},
 		},
 		{
 			name: "fail to detect from location, fallback to Auto detect",
@@ -251,7 +253,8 @@ func TestResolveTypeBid(t *testing.T) {
 				"BidType": openrtb_ext.BidType("video"),
 			},
 			expectedErrs: []error{
-				util.NewWarning("failed to map response-param:[bidType] method:[response_param_location] value:[1]"),
+				NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]"),
+				NewValidationFailedError("invalid value sent by bidder at [bidtype] for [bid.ext.prebid.type]"),
 			},
 		},
 		{
@@ -288,6 +291,10 @@ func TestResolveTypeBid(t *testing.T) {
 				},
 				"BidType": openrtb_ext.BidType("video"),
 			},
+			expectedErrs: []error{
+				NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]"),
+				NewDefaultValueError("no value sent by bidder at [seatbid.0.bid.0.ext.bidtype] for [bid.ext.prebid.type]"),
+			},
 		},
 		{
 			name: "Failed to Auto detect",
@@ -319,7 +326,9 @@ func TestResolveTypeBid(t *testing.T) {
 				},
 			},
 			expectedErrs: []error{
-				util.NewWarning("failed to map response-param:[bidType] method:[auto_detect] error:[bid.impid is missing]"),
+				NewDefaultValueError("no value sent by bidder at [bid.mtype] for [bid.ext.prebid.type]"),
+				NewDefaultValueError("no value sent by bidder at [seatbid.0.bid.0.ext.bidtype] for [bid.ext.prebid.type]"),
+				NewValidationFailedError("invalid value sent by bidder at [bid.impid] for [bid.ext.prebid.type]"),
 			},
 		},
 	}

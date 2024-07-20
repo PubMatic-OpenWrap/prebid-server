@@ -9,9 +9,8 @@ import (
 
 // list of constant errors
 var (
-	ErrImpMissing          error = errors.New("imp object not found in request")
-	ErrNilBidderParamCfg   error = errors.New("found nil bidderParamsConfig")
-	ErrBidTypeMissingImpID error = NewWarning("failed to map response-param:[bidType] method:[auto_detect] error:[bid.impid is missing]")
+	ErrImpMissing        error = errors.New("imp object not found in request")
+	ErrNilBidderParamCfg error = errors.New("found nil bidderParamsConfig")
 )
 
 func NewBadInputError(message string, args ...any) error {
