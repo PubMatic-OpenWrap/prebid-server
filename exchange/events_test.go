@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -201,13 +200,10 @@ func TestModifyBidVAST(t *testing.T) {
 		bidReq             *openrtb2.BidRequest
 		bid                *openrtb2.Bid
 	}
-	type want struct {
-		tags []string
-	}
 	tests := []struct {
-		name string
-		args args
-		want want
+		name    string
+		args    args
+		wantAdM string
 	}{
 		{
 			name: "empty_adm", // expect adm contain vast tag with tracking events and  VASTAdTagURI nurl contents
@@ -222,24 +218,7 @@ func TestModifyBidVAST(t *testing.T) {
 					ImpID: "123",
 				},
 			},
-			want: want{
-				tags: []string{
-					// `<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=firstQuartile]]></Tracking>`,
-					// `<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=midpoint]]></Tracking>`,
-					// `<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=thirdQuartile]]></Tracking>`,
-					// `<Tracking event="complete"><![CDATA[http://company.tracker.com?e=complete]]></Tracking>`,
-					// "<Wrapper>",
-					// "</Wrapper>",
-					// "<VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI>",
-					`<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking>`,
-					`<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking>`,
-					`<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking>`,
-					`<Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking>`,
-					"<Wrapper>",
-					"</Wrapper>",
-					"<VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI>",
-				},
-			},
+			wantAdM: `<VAST version="3.0"><Ad><Wrapper><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[nurl_contents]]></VASTAdTagURI><Impression/><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company.tracker.com?e=2]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking><Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking><Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company.tracker.com?e=2]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking><Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking><Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives></Wrapper></Ad></VAST>`,
 		},
 		{
 			name: "adm_containing_url", // expect adm contain vast tag with tracking events and  VASTAdTagURI adm url (previous value) contents
@@ -254,24 +233,7 @@ func TestModifyBidVAST(t *testing.T) {
 					ImpID: "123",
 				},
 			},
-			want: want{
-				tags: []string{
-					// `<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=firstQuartile]]></Tracking>`,
-					// `<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=midpoint]]></Tracking>`,
-					// `<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=thirdQuartile]]></Tracking>`,
-					// `<Tracking event="complete"><![CDATA[http://company.tracker.com?e=complete]]></Tracking>`,
-					// "<Wrapper>",
-					// "</Wrapper>",
-					// "<VASTAdTagURI><![CDATA[http://vast_tag_inline.xml]]></VASTAdTagURI>",
-					`<Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking>`,
-					`<Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking>`,
-					`<Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking>`,
-					`<Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking>`,
-					"<Wrapper>",
-					"</Wrapper>",
-					"<VASTAdTagURI><![CDATA[http://vast_tag_inline.xml]]></VASTAdTagURI>",
-				},
-			},
+			wantAdM: `<VAST version="3.0"><Ad><Wrapper><AdSystem><![CDATA[prebid.org wrapper]]></AdSystem><VASTAdTagURI><![CDATA[http://vast_tag_inline.xml]]></VASTAdTagURI><Impression/><Creatives><Creative><Linear><TrackingEvents><Tracking event="start"><![CDATA[http://company.tracker.com?e=2]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking><Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking><Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking></TrackingEvents></Linear><NonLinearAds><TrackingEvents><Tracking event="start"><![CDATA[http://company.tracker.com?e=2]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://company.tracker.com?e=4]]></Tracking><Tracking event="midpoint"><![CDATA[http://company.tracker.com?e=3]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://company.tracker.com?e=5]]></Tracking><Tracking event="complete"><![CDATA[http://company.tracker.com?e=6]]></Tracking></TrackingEvents></NonLinearAds></Creative></Creatives></Wrapper></Ad></VAST>`,
 		},
 	}
 	for _, tc := range tests {
@@ -288,18 +250,7 @@ func TestModifyBidVAST(t *testing.T) {
 				Bid:     tc.args.bid,
 				BidType: openrtb_ext.BidTypeVideo,
 			}, "somebidder", "coreBidder", tc.args.bidReq, "http://company.tracker.com?e=[EVENT_ID]")
-			validator(t, tc.args.bid, tc.want.tags)
+			assert.Equal(t, tc.wantAdM, tc.args.bid.AdM)
 		})
-	}
-}
-
-func validator(t *testing.T, b *openrtb2.Bid, expectedTags []string) {
-	adm := b.AdM
-	assert.NotNil(t, adm)
-	assert.NotEmpty(t, adm)
-	// check tags are present
-
-	for _, tag := range expectedTags {
-		assert.True(t, strings.Contains(adm, tag), "expected '"+tag+"' tag in Adm")
 	}
 }
