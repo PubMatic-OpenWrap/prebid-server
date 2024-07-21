@@ -10,7 +10,7 @@ import (
 
 // GetPublisherVASTTags - Method to get vast tags associated with publisher id from giym DB
 func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, error) {
-	getActiveVASTTagsQuery := fmt.Sprintf(db.cfg.Queries.GetPublisherVASTTagsQuery, pubID)
+	getActiveVASTTagsQuery := fmt.Sprintf(db.cfg.Queries.GetPublisherVASTTagsQuery, db.cfg.MaxQueryExecution, pubID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()

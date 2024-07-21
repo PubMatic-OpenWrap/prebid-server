@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -13,7 +14,8 @@ func (db *mySqlDB) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData,
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetPublisherFeatureMapQuery)
+	getPublisherFeatureMapQuery := fmt.Sprintf(db.cfg.Queries.GetPublisherFeatureMapQuery, db.cfg.MaxQueryExecution)
+	rows, err := db.conn.QueryContext(ctx, getPublisherFeatureMapQuery)
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
+					MaxQueryExecution: 2,
 				},
 			},
 			args: args{
@@ -80,6 +81,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:        "^SELECT (.+) FROM ad_pod (.+)",
 						LiveVersionInnerQuery: "^SELECT (.+) FROM version (.+) LIVE",
 					},
+					MaxQueryExecution: 2,
 				},
 			},
 			args: args{
@@ -120,6 +122,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
+					MaxQueryExecution: 2,
 				},
 			},
 			args: args{
@@ -159,6 +162,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
+					MaxQueryExecution: 2,
 				},
 			},
 			args: args{
@@ -221,6 +225,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
+					MaxQueryExecution: 2,
 				},
 			},
 			args: args{
