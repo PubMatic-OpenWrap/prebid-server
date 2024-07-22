@@ -697,11 +697,18 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			if err != nil {
 				glog.Errorf("failed to unmarshal imp.ext: %s", err.Error())
 			}
-			wrapperExt := tmpExt.Wrapper
-			if wrapperExt != nil {
-				wrapperExt.AppLovinFloors = []float64{1.1, 2.2, 3.4}
+			bidderExt := tmpExt.Prebid.Bidder
+			for bidder, ext := range bidderExt {
+				if bidder == "pubmatic" && ext != nil {
+					pubmaticExt := &openrtb_ext.ExtImpPubmatic{}
+					if err := json.Unmarshal(ext, pubmaticExt); err != nil {
+						glog.Errorf("failed to unmarshal pubmatic ext: %s", err.Error())
+					}
+					pubmaticExt.AppLovinFloors = []float64{1.1, 2.2, 3.2}
+					bidderExt[bidder], _ = json.Marshal(pubmaticExt)
+				}
 			}
-			tmpExt.Wrapper = wrapperExt
+			tmpExt.Prebid.Bidder = bidderExt
 			jsonExt, _ := json.Marshal(tmpExt)
 			bidRequest.Imp[i].Ext = jsonExt
 		}
