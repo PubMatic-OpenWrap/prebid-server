@@ -54,8 +54,7 @@ type pubmaticWrapperExt struct {
 	ProfileID int `json:"profile,omitempty"`
 	VersionID int `json:"version,omitempty"`
 
-	WrapperImpID   string    `json:"wiid,omitempty"`
-	AppLovinFloors []float64 `json:"applovin_floors,omitempty"`
+	WrapperImpID string `json:"wiid,omitempty"`
 }
 
 type pubmaticBidExtVideo struct {
@@ -263,14 +262,22 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}}, errs
 }
 
-func splitAppLovinImps(imp *openrtb2.Imp, floors []float64) []openrtb2.Imp {
+func splitAppLovinImps(imp *openrtb2.Imp, floors []float64, extMap map[string]any) []openrtb2.Imp {
 	splitImps := make([]openrtb2.Imp, 0, 3)
 	for _, floor := range floors {
 		impCopy := *imp
 		impCopy.BidFloor = floor
 		impCopy.ID = fmt.Sprintf("%s_%d", imp.ID, int(floor*100))
+		impCopy.Ext = nil
+		if len(extMap) > 0 {
+			ext, err := json.Marshal(extMap)
+			if err == nil {
+				impCopy.Ext = ext
+			}
+		}
 		splitImps = append(splitImps, impCopy)
 	}
+	imp = nil
 	return splitImps
 }
 
@@ -435,8 +442,8 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 
 	var splitImps []openrtb2.Imp
-	if wrapExt != nil && len(wrapExt.AppLovinFloors) > 0 {
-		splitImps = splitAppLovinImps(imp, wrapExt.AppLovinFloors)
+	if len(pubmaticExt.AppLovinFloors) > 0 {
+		splitImps = splitAppLovinImps(imp, pubmaticExt.AppLovinFloors, extMap)
 
 	}
 
