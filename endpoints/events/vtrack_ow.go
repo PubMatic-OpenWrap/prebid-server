@@ -197,7 +197,7 @@ func getTrackingEvents(createTrackingEvents bool, eventURLMap map[string]string)
 
 	for _, event := range trackingEvents {
 		if url, ok := eventURLMap[event]; ok {
-			tracking := fastxml.CreateElement("Tracking").AddAttribute("", "event", event).SetText(url, true)
+			tracking := fastxml.CreateElement("Tracking").AddAttribute("", "event", event).SetText(url, true, fastxml.NoEscaping)
 			te.AddChild(tracking)
 		}
 	}

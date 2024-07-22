@@ -317,8 +317,8 @@ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240721064252-bb63229a1baa h1:3tRjI/7/JkTX2tnIvjEbOUTgJJ4rq4oz2hWSU8jvjH8=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240721064252-bb63229a1baa/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240721125938-3fd9462c19b9 h1:lqnm56ir2Xa3ADfydpBAWIpS8wihgre+/TcLbQpxs7w=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240721125938-3fd9462c19b9/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240722150002-da003a1106cd h1:+EQI7RJGMpKkhdACJ9/i9gE3+cgXz/ahxybfoulPGHg=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240722150002-da003a1106cd/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

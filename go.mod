@@ -51,7 +51,7 @@ require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240721125938-3fd9462c19b9
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240722150002-da003a1106cd
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
