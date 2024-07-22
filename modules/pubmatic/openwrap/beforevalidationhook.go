@@ -690,11 +690,17 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
-		bidRequest.Imp[i].Ext = append(bidRequest.Imp[i].Ext, []byte(`{  "applovin_floors": [
-                            1.0,
-                            2.2,
-                            3.0
-                        ]}`)...)
+
+		tmpExt := &models.ImpExtension{}
+		if len(bidRequest.Imp[i].Ext) != 0 {
+			err := json.Unmarshal(bidRequest.Imp[i].Ext, tmpExt)
+			if err != nil {
+				glog.Errorf("failed to unmarshal imp.ext: %s", err.Error())
+			}
+			tmpExt.AppLovinFloors = []float64{2, 3.2, 4.3}
+			jsonExt, _ := json.Marshal(tmpExt)
+			bidRequest.Imp[i].Ext = jsonExt
+		}
 	}
 
 	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
