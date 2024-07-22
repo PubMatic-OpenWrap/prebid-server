@@ -690,6 +690,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
+		bidRequest.Imp[i].Ext = append(bidRequest.Imp[i].Ext, []byte(`{  "applovin_floors": [
+                            1.0,
+                            2.2,
+                            3.0
+                        ]}`)...)
 	}
 
 	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
