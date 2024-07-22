@@ -42,11 +42,10 @@ type ImpExtension struct {
 
 	Bidder map[string]*BidderExtension `json:"bidder,omitempty"`
 
-	SKAdnetwork    json.RawMessage          `json:"skadn,omitempty"`
-	Data           openrtb_ext.ExtImpData   `json:"data,omitempty"`
-	GpId           string                   `json:"gpid,omitempty"`
-	Prebid         openrtb_ext.ExtImpPrebid `json:"prebid,omitempty"`
-	AppLovinFloors []float64                `json:"applovin_floors,omitempty"`
+	SKAdnetwork json.RawMessage          `json:"skadn,omitempty"`
+	Data        openrtb_ext.ExtImpData   `json:"data,omitempty"`
+	GpId        string                   `json:"gpid,omitempty"`
+	Prebid      openrtb_ext.ExtImpPrebid `json:"prebid,omitempty"`
 }
 
 // BidderExtension - Bidder specific items
@@ -57,8 +56,9 @@ type BidderExtension struct {
 
 // ExtImpWrapper - Impression wrapper Extension
 type ExtImpWrapper struct {
-	AdServerURL string `json:"adserverurl,omitempty"`
-	Div         string `json:"div,omitempty"`
+	AdServerURL    string    `json:"adserverurl,omitempty"`
+	Div            string    `json:"div,omitempty"`
+	AppLovinFloors []float64 `json:"applovin_floors,omitempty"`
 }
 
 // ExtVideo structure to accept video specific more parameters like adpod
