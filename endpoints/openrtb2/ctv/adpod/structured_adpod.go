@@ -22,6 +22,7 @@ type Slot struct {
 	ImpId     string
 	Index     int
 	TotalBids int
+	NoBid     bool
 }
 
 func NewStructuredAdpod(podId string, pubId string, metricsEngine metrics.MetricsEngine, reqAdpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
@@ -97,8 +98,16 @@ func (sa *structuredAdpod) HoldAuction() {
 	// Select Winning bids
 	for i := range slots {
 		bids := sa.ImpBidMap[slots[i].ImpId]
-		// Add validations on len of array and index chosen
-		sa.WinningBid[slots[i].ImpId] = *bids[slots[i].Index]
+		if len(bids) == 0 {
+			continue
+		}
+
+		slot := slots[i]
+		if slot.NoBid {
+			continue
+		}
+
+		sa.WinningBid[slot.ImpId] = *bids[slot.Index]
 	}
 
 }
@@ -238,13 +247,18 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
+			noBidSlot := true
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {
 					selectedSlot.Index = i
+					noBidSlot = false
 					break
 				}
 			}
+
+			// Update no bid status
+			selectedSlot.NoBid = noBidSlot
 
 			// Update selected Slot in slots array
 			slots[slotIndex] = selectedSlot
