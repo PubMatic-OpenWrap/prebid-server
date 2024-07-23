@@ -27,6 +27,7 @@ type feature struct {
 	ampMultiformat   ampMultiformat
 	maxFloors        maxFloors
 	bidRecovery      bidRecovery
+	applovinABTest   applovinABTest
 }
 
 var fe *feature
@@ -55,6 +56,9 @@ func New(config Config) *feature {
 			ant: analyticsThrottle{
 				vault: newPubThrottling(config.AnalyticsThrottleList),
 				db:    newPubThrottling(config.AnalyticsThrottleList),
+			},
+			applovinABTest: applovinABTest{
+				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 		}
 	})
@@ -112,6 +116,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
+	fe.updateAdunitConfigFeature()
 
 	if err != nil {
 		glog.Error(err.Error())

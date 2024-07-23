@@ -219,7 +219,17 @@ type FeatureData struct {
 }
 
 type AppLovinMax struct {
-	Reject bool
+	Reject       bool
+	ABTestConfig ABTestConfig
+}
+
+type ABTestConfig struct {
+	Enabled bool
+	Config  ApplovinAdUnitFloors
+}
+
+type ApplovinAdUnitFloors struct {
+	AdUnitFloors map[string][]float64
 }
 
 type WinningBids map[string][]*OwBid
