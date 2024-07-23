@@ -140,12 +140,14 @@ func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 }
 
 func (sa *structuredAdpod) CollectSeatNonBids() openrtb_ext.NonBidCollection {
-	for _, bids := range sa.ImpBidMap {
-		return addSeatNonBids(bids)
-	}
-	return openrtb_ext.NonBidCollection{}
-}
+	nonBidCollection := openrtb_ext.NonBidCollection{}
 
+	for _, bids := range sa.ImpBidMap {
+		nonBidCollection.Append(addSeatNonBids(bids))
+	}
+
+	return nonBidCollection
+}
 func (sa *structuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
 	return nil
 }

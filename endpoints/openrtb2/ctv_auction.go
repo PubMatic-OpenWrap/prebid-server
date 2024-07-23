@@ -695,7 +695,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 		}
 		winningBids = append(winningBids, adpodCtx.GetWinningBids()...)
 	}
-	resp.SeatBid = winningBids
+	resp.SeatBid = deps.combineBidsSeatWise(winningBids)
 	adpodExt.Response = *resp
 
 	//Remove extension parameter
