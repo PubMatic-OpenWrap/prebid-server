@@ -160,6 +160,10 @@ func (sa *structuredAdpod) addDomains(domains []string) {
 }
 
 func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
+	if !sa.Exclusion.IABCategoryExclusion {
+		return false
+	}
+
 	if bid == nil || bid.Cat == nil {
 		return false
 	}
@@ -178,6 +182,10 @@ func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
 }
 
 func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
+	if !sa.Exclusion.AdvertiserDomainExclusion {
+		return false
+	}
+
 	if bid == nil || bid.ADomain == nil {
 		return false
 	}
