@@ -159,6 +159,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	if len(splitImpsMap) > 0 {
+		request.Imp = []openrtb2.Imp{}
 		for impID, splitImps := range splitImpsMap {
 			request.Imp = append(request.Imp, splitImps...)
 			delete(splitImpsMap, impID)
@@ -260,25 +261,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Headers: headers,
 		ImpIDs:  openrtb_ext.GetImpIDs(request.Imp),
 	}}, errs
-}
-
-func splitAppLovinImps(imp *openrtb2.Imp, floors []float64, extMap map[string]any) []openrtb2.Imp {
-	splitImps := make([]openrtb2.Imp, 0, 3)
-	for _, floor := range floors {
-		impCopy := *imp
-		impCopy.BidFloor = floor
-		impCopy.ID = fmt.Sprintf("%s_%d", imp.ID, int(floor*100))
-		impCopy.Ext = nil
-		if len(extMap) > 0 {
-			ext, err := json.Marshal(extMap)
-			if err == nil {
-				impCopy.Ext = ext
-			}
-		}
-		splitImps = append(splitImps, impCopy)
-	}
-	imp = nil
-	return splitImps
 }
 
 // validateAdslot validate the optional adslot string
@@ -444,7 +426,7 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	var splitImps []openrtb2.Imp
 	if len(pubmaticExt.AppLovinFloors) > 0 {
 		splitImps = splitAppLovinImps(imp, pubmaticExt.AppLovinFloors, extMap)
-
+		return wrapExt, pubID, splitImps, nil
 	}
 
 	imp.Ext = nil
@@ -456,6 +438,25 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 
 	return wrapExt, pubID, splitImps, nil
+}
+
+// splitimponfloors
+func splitAppLovinImps(imp *openrtb2.Imp, floors []float64, extMap map[string]any) []openrtb2.Imp {
+	splitImps := make([]openrtb2.Imp, 0, 3)
+	for _, floor := range floors {
+		impCopy := *imp
+		impCopy.BidFloor = floor
+		impCopy.ID = fmt.Sprintf("%s_%d", imp.ID, int(floor*100)) //better name
+		impCopy.Ext = nil
+		if len(extMap) > 0 {
+			ext, err := json.Marshal(extMap)
+			if err == nil {
+				impCopy.Ext = ext
+			}
+		}
+		splitImps = append(splitImps, impCopy)
+	}
+	return splitImps
 }
 
 // roundToFourDecimals retuns given value to 4 decimal points
