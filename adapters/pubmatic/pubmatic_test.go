@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/adapterstest"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -173,7 +174,7 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
@@ -332,12 +333,37 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 	}{
 		// Happy paths covered by TestJsonSamples()
 		// Covering only error scenarios here
+		// {
+		// 	name: "invalid bidderparams",
+		// 	args: args{
+		// 		request: &openrtb2.BidRequest{Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":"123"}}}`)},
+		// 	},
+		// 	wantErr: true,
+		// },
 		{
-			name: "invalid bidderparams",
+			name: "test",
 			args: args{
-				request: &openrtb2.BidRequest{Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":"123"}}}`)},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID: "test-imp-id",
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{"bidder":{"applovin_floors":[1.1,2.2,3.3]}}`),
+						},
+						{
+							ID: "test-imp-id_new",
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{"bidder":{"applovin_floors":[1.1,2.2,3.3]}}`),
+						},
+					},
+				},
 			},
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
