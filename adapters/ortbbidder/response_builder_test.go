@@ -129,6 +129,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 		name                string
 		bidderResponse      map[string]any
 		bidderResponseBytes []byte
+		isDebugEnabled      bool
 		responseParams      map[string]bidderparams.BidderParamMapper
 		expectedError       []error
 		expectedResponse    map[string]any
@@ -184,10 +185,27 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			expectedError: []error{&errortypes.BadServerResponse{Message: "invalid bid found in bids array, bid:[invalid]"}},
 		},
 		{
-			name:                "Valid bidder respone, no bidder params",
+			name:                "Valid bidder respone, no bidder params, debug is disabled in request",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
 			responseParams:      map[string]bidderparams.BidderParamMapper{},
 			expectedError:       []error{util.NewWarning("Potential issue encountered while setting the response parameter [bidType]")},
+			expectedResponse: map[string]any{
+				"Currency": "USD",
+				"Bids": []any{
+					map[string]any{
+						"Bid": map[string]any{
+							"id": "123",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                "Valid bidder respone, no bidder params, debug is enabled in request",
+			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
+			responseParams:      map[string]bidderparams.BidderParamMapper{},
+			isDebugEnabled:      true,
+			expectedError:       []error{util.NewWarning("invalid value sent by bidder at [bid.impid] for [bid.ext.prebid.type]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -326,6 +344,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			rb := &responseBuilder{
 				bidderResponse: tc.bidderResponse,
 				responseParams: tc.responseParams,
+				isDebugEnabled: tc.isDebugEnabled,
 			}
 			err := rb.setPrebidBidderResponse(tc.bidderResponseBytes)
 			assert.Equal(t, tc.expectedError, err)
