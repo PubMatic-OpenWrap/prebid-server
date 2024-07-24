@@ -1,9 +1,11 @@
 package events
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
@@ -427,16 +429,61 @@ func TestInjectVideoEventTrackers(t *testing.T) {
 	}
 }
 
-func TestCompareXMLParsers(t *testing.T) {
-	bytesRead, err := os.ReadFile("./creatives.txt")
-	assert.NoError(t, err)
+func quoteUnescape[T []byte | string](s T) string {
+	buf := bytes.Buffer{}
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch == '\\' {
+			if i+1 < len(s) {
+				nextCh := s[i+1]
+				if nextCh == '\\' || nextCh == '"' || nextCh == '\'' {
+					i++
+					ch = nextCh
+				}
+			}
+		}
+		buf.WriteByte(ch)
+	}
+	return buf.String()
+}
 
-	vastXMLs := strings.Split(string(bytesRead), "\n")
-	for i, vast := range vastXMLs {
-		t.Run(fmt.Sprintf("vast_%d", i+1), func(t *testing.T) {
+func TestCompareXMLParsers(t *testing.T) {
+	//file, err := os.Open("/Users/viral/Desktop/vast64.txt")
+	base64Decode := false
+
+	file, err := os.Open("./creatives.txt")
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	defer file.Close()
+	var mismatched []int
+	line := 0
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	for scanner.Scan() {
+		line++
+		vast := scanner.Text()
+		if base64Decode {
+			data, err := base64.StdEncoding.DecodeString(vast)
+			if !assert.Nil(t, err) {
+				continue
+			}
+			vast = quoteUnescape(data)
+		}
+		t.Run(fmt.Sprintf("vast_%d", line), func(t *testing.T) {
 			etreeXML, _ := injectVideoEventsETree(vast, eventURLMap, false, adcom1.LinearityLinear)
 			fastXML, _ := injectVideoEventsFastXML(vast, eventURLMap, false, adcom1.LinearityLinear)
-			assert.Equal(t, etreeXML, fastXML)
+			//fastXML = strings.ReplaceAll(fastXML, " >", ">")
+
+			if etreeXML != fastXML {
+				assert.Equal(t, etreeXML, fastXML)
+				mismatched = append(mismatched, line)
+			}
 		})
 	}
+	fmt.Printf("\n total:[%v] mismatched:[%v] lines:[%v]", line, len(mismatched), mismatched)
+	assert.Equal(t, 0, len(mismatched))
+	assert.Nil(t, scanner.Err())
 }
