@@ -205,7 +205,7 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 		recordFastXMLMetrics(bidder.me, "vastbidder", string(bidder.BidderName), bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
-			glog.V(2).Infof("\n[VAST_BIDDER] Response Mismatch for Creative : %s", string(resp))
+			glog.V(2).Infof("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", resp)
 		}
 	}
 
