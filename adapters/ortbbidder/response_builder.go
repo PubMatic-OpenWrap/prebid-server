@@ -3,6 +3,7 @@ package ortbbidder
 import (
 	"encoding/json"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
@@ -16,12 +17,18 @@ type responseBuilder struct {
 	adapterRespone map[string]any                            // Response in the prebid format.
 	responseParams map[string]bidderparams.BidderParamMapper // Bidder response parameters.
 	request        *openrtb2.BidRequest                      // Bid request.
+	isDebugEnabled bool                                      // flag to determine if requestExt.prebid.debug is enabled.
 }
 
 func newResponseBuilder(responseParams map[string]bidderparams.BidderParamMapper, request *openrtb2.BidRequest) *responseBuilder {
+	var isDebugEnabled bool
+	if request != nil {
+		isDebugEnabled, _ = jsonparser.GetBoolean(request.Ext, "prebid", "debug")
+	}
 	return &responseBuilder{
 		responseParams: responseParams,
 		request:        request,
+		isDebugEnabled: isDebugEnabled,
 	}
 }
 
@@ -43,9 +50,7 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 	for _, param := range resolver.ResponseParams {
 		bidderParam := rb.responseParams[param.String()]
 		resolverErrors := paramResolver.Resolve(rb.bidderResponse, adapterResponse, bidderParam.Location, param)
-		if resolver.ContainsWarning(resolverErrors) {
-			errs = append(errs, util.NewWarning("failed to set the [%s]", param.String()))
-		}
+		errs = collectWarningMessages(errs, resolverErrors, param.String(), rb.isDebugEnabled)
 	}
 	// Extract the seat bids from the bidder response.
 	seatBids, ok := rb.bidderResponse[seatBidKey].([]any)
@@ -77,9 +82,7 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 				paramMapper := rb.responseParams[param.String()]
 				location := util.ReplaceLocationMacro(paramMapper.Location, []int{seatIndex, bidIndex})
 				resolverErrors := paramResolver.Resolve(bid, typedBid, location, param)
-				if resolver.ContainsWarning(resolverErrors) {
-					errs = append(errs, util.NewWarning("failed to set the [%s]", param.String()))
-				}
+				errs = collectWarningMessages(errs, resolverErrors, param.String(), rb.isDebugEnabled)
 			}
 			// Add the type bid to the list of typed bids.
 			typedBids = append(typedBids, typedBid)
@@ -106,4 +109,19 @@ func (rb *responseBuilder) buildAdapterResponse() (resp *adapters.BidderResponse
 		return nil, util.NewBadServerResponseError(err.Error())
 	}
 	return
+}
+
+// collectWarningMessages appends warning messages from resolverErrors to the errs slice.
+// If debugging is disabled, it appends a generic warning message and returns immediately.
+func collectWarningMessages(errs, resolverErrors []error, parameter string, isDebugEnabled bool) []error {
+	for _, err := range resolverErrors {
+		if resolver.IsWarning(err) {
+			if !isDebugEnabled {
+				errs = append(errs, util.NewWarning("Potential issue encountered while setting the response parameter [%s]", parameter))
+				return errs
+			}
+			errs = append(errs, util.NewWarning(err.Error()))
+		}
+	}
+	return errs
 }

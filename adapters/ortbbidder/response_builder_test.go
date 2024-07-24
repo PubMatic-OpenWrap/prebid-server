@@ -1,6 +1,7 @@
 package ortbbidder
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -186,7 +187,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 			name:                "Valid bidder respone, no bidder params",
 			bidderResponseBytes: []byte(`{"id":"bid-resp-id","cur":"USD","seatbid":[{"seat":"test_bidder","bid":[{"id":"123"}]}]}`),
 			responseParams:      map[string]bidderparams.BidderParamMapper{},
-			expectedError:       []error{util.NewWarning("failed to set the [bidType]")},
+			expectedError:       []error{util.NewWarning("Potential issue encountered while setting the response parameter [bidType]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -255,8 +256,8 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 				},
 			},
 			expectedError: []error{
-				util.NewWarning("failed to set the [fledgeAuctionConfig]"),
-				util.NewWarning("failed to set the [bidType]"),
+				util.NewWarning("Potential issue encountered while setting the response parameter [fledgeAuctionConfig]"),
+				util.NewWarning("Potential issue encountered while setting the response parameter [bidType]"),
 			},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
@@ -285,7 +286,7 @@ func TestSetPrebidBidderResponse(t *testing.T) {
 				"bidMetaAdvertiserId": {Location: "seatbid.#.bid.#.ext.advertiserId"},
 				"bidMetaNetworkId":    {Location: "seatbid.#.bid.#.ext.networkId"},
 			},
-			expectedError: []error{util.NewWarning("failed to set the [bidMetaAdvertiserId]")},
+			expectedError: []error{util.NewWarning("Potential issue encountered while setting the response parameter [bidMetaAdvertiserId]")},
 			expectedResponse: map[string]any{
 				"Currency": "USD",
 				"Bids": []any{
@@ -368,5 +369,78 @@ func TestBidderResponseFields(t *testing.T) {
 	err := resolver.ValidateStructFields(expectedFields, structType)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestCollectWarningMessages(t *testing.T) {
+	type args struct {
+		errs           []error
+		resolverErrors []error
+		parameter      string
+		isDebugEnabled bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want []error
+	}{
+		{
+			name: "No resolver errors",
+			args: args{
+				errs:           []error{},
+				resolverErrors: []error{},
+				parameter:      "param1",
+				isDebugEnabled: false,
+			},
+			want: []error{},
+		},
+		{
+			name: "Resolver errors with warnings and debugging enabled",
+			args: args{
+				errs: []error{},
+				resolverErrors: []error{
+					resolver.NewValidationFailedError("Warning 1"),
+					resolver.NewValidationFailedError("Warning 2"),
+				},
+				parameter:      "param2",
+				isDebugEnabled: true,
+			},
+			want: []error{
+				util.NewWarning("Warning 1"),
+				util.NewWarning("Warning 2"),
+			},
+		},
+		{
+			name: "Resolver errors with warnings and debugging disabled",
+			args: args{
+				errs: []error{},
+				resolverErrors: []error{
+					resolver.NewValidationFailedError("Warning 1"),
+				},
+				parameter:      "param3",
+				isDebugEnabled: false,
+			},
+			want: []error{
+				util.NewWarning("Potential issue encountered while setting the response parameter [param3]"),
+			},
+		},
+		{
+			name: "Resolver errors without warnings",
+			args: args{
+				errs: []error{},
+				resolverErrors: []error{
+					errors.New("Non-warning error"),
+				},
+				parameter:      "param4",
+				isDebugEnabled: false,
+			},
+			want: []error{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := collectWarningMessages(tt.args.errs, tt.args.resolverErrors, tt.args.parameter, tt.args.isDebugEnabled)
+			assert.Equal(t, tt.want, got)
+		})
 	}
 }

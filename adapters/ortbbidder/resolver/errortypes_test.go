@@ -8,23 +8,23 @@ import (
 
 func TestValidationFailedError(t *testing.T) {
 	t.Run("validationFailedError", func(t *testing.T) {
-		err := ValidationFailedError{Message: "any validation message"}
+		err := validationFailedError{Message: "any validation message"}
 		assert.Equal(t, "any validation message", err.Error())
-		assert.Equal(t, SeverityWarning, err.Severity())
+		assert.Equal(t, severityWarning, err.Severity())
 	})
 }
 
 func TestDefaultValueError(t *testing.T) {
 	t.Run("defaultValueError", func(t *testing.T) {
-		err := DefaultValueError{Message: "any validation message"}
+		err := defaultValueError{Message: "any validation message"}
 		assert.Equal(t, "any validation message", err.Error())
-		assert.Equal(t, SeverityDebug, err.Severity())
+		assert.Equal(t, severityIgnore, err.Severity())
 	})
 }
 
-func TestContainsWarning(t *testing.T) {
+func TestIsWarning(t *testing.T) {
 	type args struct {
-		errors []error
+		err error
 	}
 	tests := []struct {
 		name string
@@ -32,29 +32,24 @@ func TestContainsWarning(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "error list contains warning",
+			name: "input err  is of severity warning",
 			args: args{
-				errors: []error{
-					NewDefaultValueError("default value error"),
-					NewValidationFailedError("validation failed"),
-				},
+				err: NewValidationFailedError("error"),
 			},
 			want: true,
 		},
 		{
-			name: "error list not contains warning",
+			name: "input err is of severity ignore",
 			args: args{
-				errors: []error{
-					NewDefaultValueError("default value error"),
-				},
+				err: NewDefaultValueError("error"),
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ContainsWarning(tt.args.errors); got != tt.want {
-				t.Errorf("ContainsWarning() = %v, want %v", got, tt.want)
+			if got := IsWarning(tt.args.err); got != tt.want {
+				t.Errorf("IsWarning() = %v, want %v", got, tt.want)
 			}
 		})
 	}
