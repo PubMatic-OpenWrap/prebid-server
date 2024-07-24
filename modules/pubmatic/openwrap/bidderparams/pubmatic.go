@@ -37,7 +37,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	if rctx.IsTestRequest == 1 {
-		matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotForTestValue(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
+		matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 		params, err := json.Marshal(extImpPubMatic)
 		return matchedSlot, matchedPattern, isRegexSlot, params, err
 	} else if rctx.IsTestRequest > 0 {
@@ -49,7 +49,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	// simple+regex key match
-	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotForTestValue(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
+	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
 		if matchedPattern == "" {
@@ -120,7 +120,7 @@ func getImpExtPubMaticKeyWords(impExt models.ImpExtension, bidderCode string) []
 	return nil
 }
 
-func getMatchingSlotForTestValue(rctx models.RequestCtx, cache cache.Cache, slots []string, slotMap map[string]models.SlotMapping, slotMappingInfo models.SlotMappingInfo, isRegexKGP, isRegexSlot bool, partnerID int, extImpPubMatic *openrtb_ext.ExtImpPubmatic, imp openrtb2.Imp) (string, string, bool) {
+func getMatchingSlotAndPattern(rctx models.RequestCtx, cache cache.Cache, slots []string, slotMap map[string]models.SlotMapping, slotMappingInfo models.SlotMappingInfo, isRegexKGP, isRegexSlot bool, partnerID int, extImpPubMatic *openrtb_ext.ExtImpPubmatic, imp openrtb2.Imp) (string, string, bool) {
 
 	hash := ""
 	var matchedSlot, matchedPattern string

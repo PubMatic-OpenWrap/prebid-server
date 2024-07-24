@@ -1076,7 +1076,7 @@ func createSlotMapping(slotName string, mappings map[string]interface{}) models.
 	}
 }
 
-func TestGetMatchingSlotForTestValue(t *testing.T) {
+func TestGetMatchingSlotAndPattern(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
@@ -1144,13 +1144,46 @@ func TestGetMatchingSlotForTestValue(t *testing.T) {
 				isRegexSlot:    true,
 			},
 		},
+		{
+			name: "not_found_matced_regex_slot",
+			args: args{
+				rctx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 123,
+					DisplayID: 1,
+				},
+				partnerID: 1,
+				slots:     []string{"AU123@Div1@728x90"},
+				slotMap: map[string]models.SlotMapping{
+					"AU123@Div1@728x90": {
+						SlotMappings: map[string]interface{}{
+							"site":  "123123",
+							"adtag": "45343",
+						},
+					},
+				},
+				cache:          mockCache,
+				isRegexKGP:     true,
+				isRegexSlot:    false,
+				extImpPubMatic: &openrtb_ext.ExtImpPubmatic{},
+				imp:            openrtb2.Imp{},
+			},
+			setup: func() {
+				mockCache.EXPECT().Get("psregex_5890_123_1_1_AU123@Div1@728x90").Return(nil, false)
+			},
+			want: want{
+				matchedSlot:    "",
+				matchedPattern: "",
+				isRegexSlot:    false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			matchedSlot, matchedPattern, isRegexSlot := getMatchingSlotForTestValue(tt.args.rctx, tt.args.cache, tt.args.slots, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.isRegexKGP, tt.args.isRegexSlot, tt.args.partnerID, tt.args.extImpPubMatic, tt.args.imp)
+			matchedSlot, matchedPattern, isRegexSlot := getMatchingSlotAndPattern(tt.args.rctx, tt.args.cache, tt.args.slots, tt.args.slotMap, tt.args.slotMappingInfo, tt.args.isRegexKGP, tt.args.isRegexSlot, tt.args.partnerID, tt.args.extImpPubMatic, tt.args.imp)
 			assert.Equal(t, tt.want.matchedSlot, matchedSlot)
 			assert.Equal(t, tt.want.matchedPattern, matchedPattern)
 			assert.Equal(t, tt.want.isRegexSlot, isRegexSlot)
