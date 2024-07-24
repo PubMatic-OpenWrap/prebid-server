@@ -690,6 +690,28 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
+
+		tmpExt := &models.ImpExtension{}
+		if len(bidRequest.Imp[i].Ext) != 0 {
+			err := json.Unmarshal(bidRequest.Imp[i].Ext, tmpExt)
+			if err != nil {
+				glog.Errorf("failed to unmarshal imp.ext: %s", err.Error())
+			}
+			bidderExt := tmpExt.Prebid.Bidder
+			for bidder, ext := range bidderExt {
+				if bidder == "pubmatic" && ext != nil {
+					pubmaticExt := &openrtb_ext.ExtImpPubmatic{}
+					if err := json.Unmarshal(ext, pubmaticExt); err != nil {
+						glog.Errorf("failed to unmarshal pubmatic ext: %s", err.Error())
+					}
+					pubmaticExt.AppLovinFloors = []float64{1.1, 2.2, 3.2}
+					bidderExt[bidder], _ = json.Marshal(pubmaticExt)
+				}
+			}
+			tmpExt.Prebid.Bidder = bidderExt
+			jsonExt, _ := json.Marshal(tmpExt)
+			bidRequest.Imp[i].Ext = jsonExt
+		}
 	}
 
 	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
