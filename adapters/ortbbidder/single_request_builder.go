@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
@@ -30,7 +31,7 @@ func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err 
 
 	imps, ok := rb.newRequest[impKey].([]any)
 	if !ok {
-		return errImpMissing
+		return util.ErrImpMissing
 	}
 	for index, imp := range imps {
 		imp, ok := imp.(map[string]any)
@@ -51,7 +52,7 @@ func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err 
 // it create single RequestData object for all impressions.
 func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestData, errs []error) {
 	if len(rb.imps) == 0 {
-		errs = append(errs, newBadInputError(errImpMissing.Error()))
+		errs = append(errs, util.NewBadInputError(util.ErrImpMissing.Error()))
 		return
 	}
 
@@ -62,8 +63,8 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 
 	//step 1: get endpoint
 	if endpoint, err = rb.getEndpoint(getImpExtBidderParams(rb.imps[0])); err != nil {
-		errs = append(errs, newBadInputError(err.Error()))
-		return nil, errs
+		errs = append(errs, util.NewBadInputError(err.Error()))
+		return
 	}
 
 	//step 2: replace parameters
@@ -75,7 +76,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 
 	//step 3: append new request data
 	if requestData, err = appendRequestData(requestData, rb.newRequest, endpoint, rb.impIDs); err != nil {
-		errs = append(errs, newBadInputError(err.Error()))
+		errs = append(errs, util.NewBadInputError(err.Error()))
 	}
-	return requestData, errs
+	return
 }
