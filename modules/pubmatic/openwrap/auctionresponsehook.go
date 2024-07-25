@@ -3,6 +3,7 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -81,6 +82,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	anyDealTierSatisfyingBid := false
 	winningBids := make(models.WinningBids)
+
+	payload.BidResponse = updateMultiFloorResponse(payload.BidResponse)
+
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
@@ -403,6 +407,46 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
 	return result, nil
+}
+
+func updateMultiFloorResponse(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	pubMaticResponseMap := map[string][]openrtb2.Bid{}
+	for _, seatBid := range bidResponse.SeatBid {
+		if seatBid.Seat == "pubmatic" {
+			for _, bid := range seatBid.Bid {
+				if bid.Price == 0 {
+					continue
+				}
+				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+				pubMaticResponseMap[bid.ImpID] = append(pubMaticResponseMap[bid.ImpID], bid)
+			}
+		}
+	}
+	winningBids := []openrtb2.Bid{}
+	for _, bid := range pubMaticResponseMap {
+		if len(bid) == 0 {
+			continue
+		}
+		winningBid := bid[0]
+		for i := 1; i < len(bid); i++ {
+			if bid[i].Price > winningBid.Price {
+				winningBid = bid[i]
+			}
+		}
+		winningBids = append(winningBids, winningBid)
+	}
+
+	for i, seatBid := range bidResponse.SeatBid {
+		if seatBid.Seat == "pubmatic" {
+			bidResponse.SeatBid[i].Bid = winningBids
+		}
+	}
+	return bidResponse
+}
+
+func trimSuffixWithPattern(input string) string {
+	re := regexp.MustCompile(models.AppLovinMaxImpressionPattern)
+	return re.ReplaceAllString(input, "")
 }
 
 func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {

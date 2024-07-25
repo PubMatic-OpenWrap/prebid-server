@@ -351,7 +351,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 								W: ptrutil.ToPtr[int64](300),
 								H: ptrutil.ToPtr[int64](250),
 							},
-							Ext: json.RawMessage(`{"bidder":{"applovin_floors":[1.1,2.2,3.3]}}`),
+							Ext: json.RawMessage(`{}`),
 						},
 						{
 							ID: "test-imp-id_new",
@@ -359,7 +359,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 								W: ptrutil.ToPtr[int64](300),
 								H: ptrutil.ToPtr[int64](250),
 							},
-							Ext: json.RawMessage(`{"bidder":{"applovin_floors":[1.1,2.2,3.3]}}`),
+							Ext: json.RawMessage(`{"bidder":{}}`),
 						},
 					},
 				},

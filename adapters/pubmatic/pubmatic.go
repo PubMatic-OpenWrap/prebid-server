@@ -115,20 +115,23 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		extractWrapperExtFromImp = false
 	}
 
-	var floors []float64
+	floorsImpMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
 		var wrapperExtFromImp *pubmaticWrapperExt
 		var pubIDFromImp string
 		var err error
-		wrapperExtFromImp, pubIDFromImp, floors, err = parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
-
+		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
 			request.Imp = append(request.Imp[:i], request.Imp[i+1:]...)
 			i--
 			continue
+		}
+
+		if len(floors) > 0 {
+			floorsImpMap[request.Imp[i].ID] = floors
 		}
 
 		if extractWrapperExtFromImp {
@@ -235,17 +238,25 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		request.Device.DNT = request.Device.Lmt
 	}
 
-	if len(floors) > 0 {
-		requestData := make([]*adapters.RequestData, 0, len(floors))
-		for i, floor := range floors {
+	if len(floorsImpMap) > 0 {
+		requestData := make([]*adapters.RequestData, 0, 3)
+		for i := 0; i < 3; i++ {
 			for j := range request.Imp {
+				floors, ok := floorsImpMap[request.Imp[j].ID]
+				if !ok || len(floors) <= i {
+					continue
+				}
 				impcopy := &request.Imp[j]
-				impcopy.BidFloor = floor
-				impcopy.ID = fmt.Sprintf("%s_%d", impcopy.ID, i+1)
+				impcopy.BidFloor = floors[i]
+				impcopy.ID = fmt.Sprintf("%s_mf%d", impcopy.ID, i+1)
 			}
 			newRequestData, newErrData := a.buildAdapterRequest(request, cookies)
 			errs = append(errs, newErrData...)
 			requestData = append(requestData, newRequestData...)
+			for j := range request.Imp {
+				impcopy := &request.Imp[j]
+				impcopy.ID = strings.TrimSuffix(impcopy.ID, fmt.Sprintf("_mf%d", i+1))
+			}
 		}
 		return requestData, errs
 	}

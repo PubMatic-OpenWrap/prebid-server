@@ -395,6 +395,8 @@ const (
 	AppPlatformKey        = "appPlatform"
 	IntegrationPathKey    = "integrationPath"
 	SubIntegrationPathKey = "subIntegrationPath"
+
+	AppLovinMaxImpressionPattern = `_mf.*`
 )
 
 const (
