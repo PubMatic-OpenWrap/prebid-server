@@ -116,7 +116,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
-	fe.updateAdunitConfigFeature()
+	fe.updateApplovinABTestFeature()
 
 	if err != nil {
 		glog.Error(err.Error())

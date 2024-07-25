@@ -318,3 +318,14 @@ func modifyRequestBody(requestBody []byte) []byte {
 	}
 	return requestBody
 }
+
+// getApplovinABTestFloors fetches adunitwise floors for pub-profile
+func (m OpenWrap) getApplovinABTestFloors(rctx models.RequestCtx) models.ABTestConfig {
+	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinABTestEnabled(rctx.PubID, rctx.ProfileIDStr) {
+		return models.ABTestConfig{
+			Enabled: true,
+			Config:  m.pubFeatures.GetApplovinABTestFloors(rctx.PubID, rctx.ProfileIDStr),
+		}
+	}
+	return models.ABTestConfig{Enabled: false}
+}

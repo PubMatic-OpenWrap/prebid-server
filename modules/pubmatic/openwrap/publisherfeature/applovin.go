@@ -11,22 +11,25 @@ type applovinABTest struct {
 	enabledPublisherProfile map[int]map[string]models.ApplovinAdUnitFloors
 }
 
-func (fe *feature) updateAdunitConfigFeature() {
+func (fe *feature) updateApplovinABTestFeature() {
 	if fe.publisherFeature == nil {
 		return
 	}
 
 	enabledPublisherProfile := make(map[int]map[string]models.ApplovinAdUnitFloors)
 	for pubID, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureAdUnitConfig]; ok && val.Enabled == 1 && len(val.Value) > 0 {
-			var profileAdUnitConfig map[string]models.ApplovinAdUnitFloors
-			if err := json.Unmarshal([]byte(val.Value), &profileAdUnitConfig); err != nil {
-				glog.Errorf("ErrJSONUnmarshalFailed Applovin ABTest Feature: pubid: %d profileadunitconfig: %s err: %s", pubID, val.Value, err.Error())
+		if val, ok := feature[models.FeatureApplovinABTest]; ok && val.Enabled == 1 && len(val.Value) > 0 {
+			var profileAdUnitFloors map[string]models.ApplovinAdUnitFloors
+			if err := json.Unmarshal([]byte(val.Value), &profileAdUnitFloors); err != nil {
+				glog.Errorf("ErrJSONUnmarshalFailed Applovin ABTest Feature: pubid: %d profileAdUnitFloors: %s err: %s", pubID, val.Value, err.Error())
 				continue
 			}
 
-			for profileID, adUnitConfig := range profileAdUnitConfig {
-				enabledPublisherProfile[pubID][profileID] = adUnitConfig
+			if _, pubIDPresent := enabledPublisherProfile[pubID]; !pubIDPresent {
+				enabledPublisherProfile[pubID] = make(map[string]models.ApplovinAdUnitFloors)
+			}
+			for profileID, adUnitFloors := range profileAdUnitFloors {
+				enabledPublisherProfile[pubID][profileID] = adUnitFloors
 			}
 		}
 	}
@@ -42,7 +45,7 @@ func (fe *feature) IsApplovinABTestEnabled(pubID int, profileID string) bool {
 	return isPresent
 }
 
-func (fe *feature) GetApplovinMaxFloors(pubID int, profileID string) models.ApplovinAdUnitFloors {
+func (fe *feature) GetApplovinABTestFloors(pubID int, profileID string) models.ApplovinAdUnitFloors {
 	fe.RLock()
 	defer fe.RUnlock()
 	if adunitfloors, isPresent := fe.applovinABTest.enabledPublisherProfile[pubID][profileID]; isPresent {

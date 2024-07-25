@@ -613,3 +613,81 @@ func TestGetRegexMatchingSlot(t *testing.T) {
 		})
 	}
 }
+
+func TestGetApplovinBidFloors(t *testing.T) {
+	type args struct {
+		rctx models.RequestCtx
+		imp  openrtb2.Imp
+	}
+	tests := []struct {
+		name string
+		args args
+		want []float64
+	}{
+		{
+			name: "endpoint is not of applovinmax",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "endpoint is applovinmax but abtest disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						ABTestConfig: models.ABTestConfig{
+							Enabled: false,
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "endpoint is applovinmax, abtest enabled but adunitname not matched",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						ABTestConfig: models.ABTestConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit_name": {1.5, 1.2, 2.2},
+							},
+						},
+					},
+				},
+				imp: openrtb2.Imp{TagID: "tagid"},
+			},
+			want: nil,
+		},
+		{
+			name: "endpoint is applovinmax, abtest enabled but adunitname is matched",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						ABTestConfig: models.ABTestConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit_name": {1.5, 1.2, 2.2},
+							},
+						},
+					},
+				},
+				imp: openrtb2.Imp{TagID: "adunit_name"},
+			},
+			want: []float64{1.5, 1.2, 2.2},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getApplovinBidFloors(tt.args.rctx, tt.args.imp)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

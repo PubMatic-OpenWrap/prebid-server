@@ -228,9 +228,7 @@ type ABTestConfig struct {
 	Config  ApplovinAdUnitFloors
 }
 
-type ApplovinAdUnitFloors struct {
-	AdUnitFloors map[string][]float64
-}
+type ApplovinAdUnitFloors map[string][]float64
 
 type WinningBids map[string][]*OwBid
 

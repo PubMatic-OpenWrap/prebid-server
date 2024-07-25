@@ -11,16 +11,6 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func getBidFloors(rctx models.RequestCtx, imp openrtb2.Imp) []float64 {
-	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.ABTestConfig.Enabled {
-		return nil
-	}
-	if applovinFloors, ok := rctx.AppLovinMax.ABTestConfig.Config.AdUnitFloors[imp.TagID]; ok {
-		return applovinFloors
-	}
-	return nil
-}
-
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
 
@@ -30,10 +20,10 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
-		PublisherId: strconv.Itoa(rctx.PubID),
-		WrapExt:     json.RawMessage(wrapExt),
-		Keywords:    getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
-		BidFloors:   getBidFloors(rctx, imp),
+		PublisherId:    strconv.Itoa(rctx.PubID),
+		WrapExt:        json.RawMessage(wrapExt),
+		Keywords:       getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
+		AppLovinFloors: getApplovinBidFloors(rctx, imp),
 	}
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)

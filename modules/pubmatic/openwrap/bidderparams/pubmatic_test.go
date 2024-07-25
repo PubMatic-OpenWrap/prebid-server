@@ -1041,6 +1041,83 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				wantErr:        false,
 			},
 		},
+		{
+			name: "exact_matched_slot_found_adslot_and_applovin_floors_updated",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					ProfileID:     123,
+					ProfileIDStr:  "123",
+					DisplayID:     1,
+					Endpoint:      models.EndpointAppLovinMax,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+							models.KEY_PROFILE_ID:      "1323",
+						},
+					},
+					AppLovinMax: models.AppLovinMax{
+						ABTestConfig: models.ABTestConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"/Test_Adunit1234": {1.5, 1.2, 2.2},
+							},
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234", true, false),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@div1@200x300": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@Div1@200x300",
+						SlotMappings: map[string]interface{}{
+							"site":     "12313",
+							"adtag":    "45343",
+							"slotName": "/Test_Adunit1234@DIV1@200x300",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"applovin_floors":[1.5,1.2,2.2]}`),
+				wantErr:        false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

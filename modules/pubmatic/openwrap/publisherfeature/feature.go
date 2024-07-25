@@ -10,5 +10,5 @@ type Feature interface {
 	IsAnalyticsTrackingThrottled(pubID, profileID int) (bool, bool)
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
 	IsApplovinABTestEnabled(pubID int, profileID string) bool
-	GetApplovinMaxFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
+	GetApplovinABTestFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
 }

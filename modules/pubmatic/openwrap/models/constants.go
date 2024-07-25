@@ -595,7 +595,7 @@ const (
 	FeatureAnalyticsThrottle = 4
 	FeatureMaxFloors         = 5
 	FeatureBidRecovery       = 6
-	FeatureAdUnitConfig      = 7
+	FeatureApplovinABTest    = 7
 )
 
 // constants for applovinmax requests

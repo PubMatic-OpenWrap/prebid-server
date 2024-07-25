@@ -98,12 +98,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
-	if rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinABTestEnabled(rCtx.PubID, rCtx.ProfileIDStr) {
-		rCtx.AppLovinMax.ABTestConfig = models.ABTestConfig{
-			Enabled: true,
-			Config:  m.pubFeatures.GetApplovinMaxFloors(rCtx.PubID, rCtx.ProfileIDStr),
-		}
-	}
 
 	if rCtx.IsCTVRequest {
 		m.metricEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
