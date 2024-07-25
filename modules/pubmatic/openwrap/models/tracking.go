@@ -37,6 +37,7 @@ const (
 	TRKAdPodExist            = "aps"
 	TRKFloorType             = "ft"
 	TRKFloorModelVersion     = "fmv"
+	TRKFloorProvider         = "fp"
 	TRKFloorSkippedFlag      = "fskp"
 	TRKFloorSource           = "fsrc"
 	TRKFloorValue            = "fv"
