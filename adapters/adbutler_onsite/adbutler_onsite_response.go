@@ -40,6 +40,7 @@ type Placement struct {
 	UserFrequencyExpiry  string `json:"user_frequency_expiry,omitempty"`
 	ViewableURL          string `json:"viewable_url,omitempty"`
 	EligibleURL          string `json:"eligible_url,omitempty"`
+	AccupixelURL         string `json:"accupixel_url,omitempty"`
 	ImageURL             string `json:"image_url,omitempty"`
 	ImpressionsRemaining int    `json:"impressions_remaining,omitempty"`
 	HasQuota             bool   `json:"has_quota,omitempty"`
@@ -155,10 +156,18 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				ClickUrl: adButlerBid.RedirectURL,
 			}
 
+			var nURL string
+
+			if adButlerBid.EligibleURL != "" {
+				nURL = adButlerBid.EligibleURL
+			} else {
+				nURL = adButlerBid.AccupixelURL
+			}
+
 			bid := &openrtb2.Bid{
 				ID:    bidID,
 				ImpID: impID,
-				NURL:  adButlerBid.EligibleURL,
+				NURL:  nURL,
 				W:     int64(width),
 				H:     int64(height),
 				AdM:   adm,
