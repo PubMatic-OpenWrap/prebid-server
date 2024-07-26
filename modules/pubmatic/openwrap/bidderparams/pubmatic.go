@@ -40,7 +40,9 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 		params, err := json.Marshal(extImpPubMatic)
 		return matchedSlot, matchedPattern, isRegexSlot, params, err
-	} else if rctx.IsTestRequest > 0 {
+	}
+
+	if rctx.IsTestRequest > 0 {
 		if len(slots) > 0 {
 			extImpPubMatic.AdSlot = slots[0]
 		}
