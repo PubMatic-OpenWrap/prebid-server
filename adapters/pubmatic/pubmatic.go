@@ -21,6 +21,7 @@ import (
 )
 
 const MAX_IMPRESSIONS_PUBMATIC = 30
+const MAX_MULTIFLOORS_PUBMATIC = 3
 
 const (
 	ae                  = "ae"
@@ -34,6 +35,7 @@ const (
 	AdServerKey         = "adserver"
 	PBAdslotKey         = "pbadslot"
 	bidViewability      = "bidViewability"
+	multFloors          = "_mf"
 )
 
 type PubmaticAdapter struct {
@@ -115,7 +117,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		extractWrapperExtFromImp = false
 	}
 
-	floorsImpMap := map[string][]float64{}
+	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
 		var wrapperExtFromImp *pubmaticWrapperExt
@@ -131,7 +133,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		}
 
 		if len(floors) > 0 {
-			floorsImpMap[request.Imp[i].ID] = floors
+			impFloorsMap[request.Imp[i].ID] = floors
 		}
 
 		if extractWrapperExtFromImp {
@@ -238,38 +240,65 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		request.Device.DNT = request.Device.Lmt
 	}
 
-	if len(floorsImpMap) > 0 {
-		requestData := make([]*adapters.RequestData, 0, 3)
-		for i := 0; i < 3; i++ {
-			for j := range request.Imp {
-				floors, ok := floorsImpMap[request.Imp[j].ID]
-				if !ok || len(floors) <= i {
-					continue
-				}
-				impcopy := &request.Imp[j]
-				impcopy.BidFloor = floors[i]
-				impcopy.ID = fmt.Sprintf("%s_mf%d", impcopy.ID, i+1)
-			}
-			newRequestData, newErrData := a.buildAdapterRequest(request, cookies)
-			errs = append(errs, newErrData...)
-			requestData = append(requestData, newRequestData...)
-			for j := range request.Imp {
-				impcopy := &request.Imp[j]
-				impcopy.ID = strings.TrimSuffix(impcopy.ID, fmt.Sprintf("_mf%d", i+1))
-			}
+	//Build the multi-floor requests if multiple floors are present
+	if len(impFloorsMap) > 0 {
+		requestData, errData := a.buildMultiFloorRequests(request, impFloorsMap, cookies)
+		if errData != nil {
+			errs = append(errs, errData...)
 		}
 		return requestData, errs
 	}
-	return a.buildAdapterRequest(request, cookies)
+
+	requestData, errData := a.buildAdapterRequest(request, cookies)
+	if errData != nil {
+		errs = append(errs, errData)
+	}
+	return requestData, errs
 }
 
-func (a *PubmaticAdapter) buildAdapterRequest(request *openrtb2.BidRequest, cookies []string) ([]*adapters.RequestData, []error) {
-	errs := make([]error, 0, len(request.Imp))
+// buildMultiFloorRequests builds multiple requests for each floor value
+func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, impFloorsMap map[string][]float64, cookies []string) ([]*adapters.RequestData, []error) {
+	requestData := []*adapters.RequestData{}
+	errs := make([]error, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
 
+	for i := 0; i < MAX_MULTIFLOORS_PUBMATIC; i++ {
+		isFloorsUpdated := false
+		newImps := make([]openrtb2.Imp, len(request.Imp))
+		copy(newImps, request.Imp)
+
+		for j := range newImps {
+			floors, ok := impFloorsMap[request.Imp[j].ID]
+			if !ok || len(floors) <= i {
+				continue
+			}
+			isFloorsUpdated = true
+			newImps[j].BidFloor = floors[i]
+			newImps[j].ID = fmt.Sprintf("%s"+multFloors+"%d", newImps[j].ID, i+1)
+		}
+
+		if !isFloorsUpdated {
+			continue
+		}
+
+		newRequest := *request
+		newRequest.Imp = newImps
+
+		newRequestData, errData := a.buildAdapterRequest(&newRequest, cookies)
+		if errData != nil {
+			errs = append(errs, errData)
+		}
+		if len(newRequestData) > 0 {
+			requestData = append(requestData, newRequestData...)
+		}
+	}
+	return requestData, errs
+}
+
+// buildAdapterRequest builds the request for Pubmatic
+func (a *PubmaticAdapter) buildAdapterRequest(request *openrtb2.BidRequest, cookies []string) ([]*adapters.RequestData, error) {
 	reqJSON, err := json.Marshal(request)
 	if err != nil {
-		errs = append(errs, err)
-		return nil, errs
+		return nil, err
 	}
 
 	headers := http.Header{}
@@ -284,7 +313,7 @@ func (a *PubmaticAdapter) buildAdapterRequest(request *openrtb2.BidRequest, cook
 		Body:    reqJSON,
 		Headers: headers,
 		ImpIDs:  openrtb_ext.GetImpIDs(request.Imp),
-	}}, errs
+	}}, err
 }
 
 // validateAdslot validate the optional adslot string
@@ -355,11 +384,11 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, []float64, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
-	var Floors []float64
+	var floors []float64
 
 	// PubMatic supports banner and video impressions.
 	if imp.Banner == nil && imp.Video == nil && imp.Native == nil {
-		return wrapExt, pubID, Floors, fmt.Errorf("invalid MediaType. PubMatic only supports Banner, Video and Native. Ignoring ImpID=%s", imp.ID)
+		return wrapExt, pubID, floors, fmt.Errorf("invalid MediaType. PubMatic only supports Banner, Video and Native. Ignoring ImpID=%s", imp.ID)
 	}
 
 	if imp.Audio != nil {
@@ -368,12 +397,12 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	var bidderExt ExtImpBidderPubmatic
 	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
-		return wrapExt, pubID, Floors, err
+		return wrapExt, pubID, floors, err
 	}
 
 	var pubmaticExt openrtb_ext.ExtImpPubmatic
 	if err := json.Unmarshal(bidderExt.Bidder, &pubmaticExt); err != nil {
-		return wrapExt, pubID, Floors, err
+		return wrapExt, pubID, floors, err
 	}
 
 	if extractPubIDFromImp {
@@ -384,18 +413,18 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	if extractWrapperExtFromImp && len(pubmaticExt.WrapExt) != 0 {
 		err := json.Unmarshal([]byte(pubmaticExt.WrapExt), &wrapExt)
 		if err != nil {
-			return wrapExt, pubID, Floors, fmt.Errorf("Error in Wrapper Parameters = %v  for ImpID = %v WrapperExt = %v", err.Error(), imp.ID, string(pubmaticExt.WrapExt))
+			return wrapExt, pubID, floors, fmt.Errorf("Error in Wrapper Parameters = %v  for ImpID = %v WrapperExt = %v", err.Error(), imp.ID, string(pubmaticExt.WrapExt))
 		}
 	}
 
 	if err := validateAdSlot(strings.TrimSpace(pubmaticExt.AdSlot), imp); err != nil {
-		return wrapExt, pubID, Floors, err
+		return wrapExt, pubID, floors, err
 	}
 
 	if imp.Banner != nil {
 		bannerCopy, err := assignBannerSize(imp.Banner)
 		if err != nil {
-			return wrapExt, pubID, Floors, err
+			return wrapExt, pubID, floors, err
 		}
 		imp.Banner = bannerCopy
 	}

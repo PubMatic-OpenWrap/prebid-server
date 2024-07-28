@@ -83,7 +83,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 	anyDealTierSatisfyingBid := false
 	winningBids := make(models.WinningBids)
 
-	payload.BidResponse = updateMultiFloorResponse(payload.BidResponse)
+	//update the multi floor response for pubmatic in case of AppLovinMax
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		payload.BidResponse = updateMultiFloorResponse(payload.BidResponse)
+	}
 
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -410,23 +413,19 @@ func (m OpenWrap) handleAuctionResponseHook(
 }
 
 func updateMultiFloorResponse(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	pubMaticResponseMap := map[string][]openrtb2.Bid{}
+	pubMaticBidResponseMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
-		if seatBid.Seat == "pubmatic" {
+		if seatBid.Seat == models.BidderPubMatic {
 			for _, bid := range seatBid.Bid {
-				if bid.Price == 0 {
-					continue
-				}
 				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
-				pubMaticResponseMap[bid.ImpID] = append(pubMaticResponseMap[bid.ImpID], bid)
+				pubMaticBidResponseMap[bid.ImpID] = append(pubMaticBidResponseMap[bid.ImpID], bid)
 			}
 		}
 	}
-	winningBids := []openrtb2.Bid{}
-	for _, bid := range pubMaticResponseMap {
-		if len(bid) == 0 {
-			continue
-		}
+
+	// get the winning bid for each impid
+	winningBids := make([]openrtb2.Bid, 0)
+	for _, bid := range pubMaticBidResponseMap {
 		winningBid := bid[0]
 		for i := 1; i < len(bid); i++ {
 			if bid[i].Price > winningBid.Price {
@@ -436,8 +435,9 @@ func updateMultiFloorResponse(bidResponse *openrtb2.BidResponse) *openrtb2.BidRe
 		winningBids = append(winningBids, winningBid)
 	}
 
+	// update the bid response with winning bids per impid
 	for i, seatBid := range bidResponse.SeatBid {
-		if seatBid.Seat == "pubmatic" {
+		if seatBid.Seat == models.BidderPubMatic {
 			bidResponse.SeatBid[i].Bid = winningBids
 		}
 	}

@@ -395,8 +395,6 @@ const (
 	AppPlatformKey        = "appPlatform"
 	IntegrationPathKey    = "integrationPath"
 	SubIntegrationPathKey = "subIntegrationPath"
-
-	AppLovinMaxImpressionPattern = `_mf.*`
 )
 
 const (
@@ -601,13 +599,14 @@ const (
 
 // constants for applovinmax requests
 const (
-	Agent            = "agent"
-	AppLovinMaxAgent = "max"
-	TypeRewarded     = "rewarded"
-	SignalData       = "signaldata"
-	OwSspBurl        = "owsspburl"
-	MissingSignal    = "missing"
-	InvalidSignal    = "invalid"
+	Agent                        = "agent"
+	AppLovinMaxAgent             = "max"
+	TypeRewarded                 = "rewarded"
+	SignalData                   = "signaldata"
+	OwSspBurl                    = "owsspburl"
+	MissingSignal                = "missing"
+	InvalidSignal                = "invalid"
+	AppLovinMaxImpressionPattern = `_mf.*`
 )
 
 // constants for log level
