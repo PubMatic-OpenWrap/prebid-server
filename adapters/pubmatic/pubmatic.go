@@ -120,9 +120,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		var wrapperExtFromImp *pubmaticWrapperExt
-		var pubIDFromImp string
-		var err error
 		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {

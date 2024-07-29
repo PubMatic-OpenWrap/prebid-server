@@ -19,6 +19,8 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
+var re = regexp.MustCompile(models.AppLovinMaxImpressionPattern)
+
 func (m OpenWrap) handleAuctionResponseHook(
 	ctx context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -445,7 +447,6 @@ func updateMultiFloorResponse(bidResponse *openrtb2.BidResponse) *openrtb2.BidRe
 }
 
 func trimSuffixWithPattern(input string) string {
-	re := regexp.MustCompile(models.AppLovinMaxImpressionPattern)
 	return re.ReplaceAllString(input, "")
 }
 
