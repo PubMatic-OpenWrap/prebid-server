@@ -182,6 +182,8 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 			switch beacon.Type {
 			case BEACONTYPE_IMP:
 				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl)
+			case BEACONTYPE_ELG_IMP:
+				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl)
 			case BEACONTYPE_CLICK:
 				clickUrl = CLICK_KEY + adapters.EncodeURL(beacon.TrackingUrl)
 			}
@@ -254,5 +256,3 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
-
-
