@@ -1,6 +1,8 @@
 package adapters
 
 import (
+	"encoding/base64"
+
 	"github.com/google/uuid"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 )
@@ -32,4 +34,9 @@ func AddDefaultFieldsComm(bid *openrtb2.Bid) {
 func GenerateUniqueBidIDComm() string {
 	id := uuid.New()
 	return id.String()
+}
+
+func EncodeURL(url string) string {
+	str := base64.StdEncoding.EncodeToString([]byte(url))
+	return str
 }
