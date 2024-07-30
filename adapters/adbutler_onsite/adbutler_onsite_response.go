@@ -9,9 +9,9 @@ import (
 
 	"bytes"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -40,7 +40,6 @@ type Placement struct {
 	UserFrequencyExpiry  string `json:"user_frequency_expiry,omitempty"`
 	ViewableURL          string `json:"viewable_url,omitempty"`
 	EligibleURL          string `json:"eligible_url,omitempty"`
-	AccupixelURL         string `json:"accupixel_url,omitempty"`
 	ImageURL             string `json:"image_url,omitempty"`
 	ImpressionsRemaining int    `json:"impressions_remaining,omitempty"`
 	HasQuota             bool   `json:"has_quota,omitempty"`
@@ -92,7 +91,7 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	if len(adButlerResp) <= 0 {
-		return nil, []error{&errortypes.NoBidPrice{
+		return nil, []error{&errortypes.NoValidBid{
 			Message: "No Bid For the given Request",
 		}}
 	}
@@ -106,8 +105,8 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	if noOfPlacements == 0 {
-		return nil, []error{&errortypes.NoValidBid{
-			Message: "No Valid Bid For the given Request",
+		return nil, []error{&errortypes.NoBidPrice{
+			Message: "No Bid For the given Request",
 		}}
 	}
 
@@ -156,18 +155,10 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				ClickUrl: adButlerBid.RedirectURL,
 			}
 
-			var nURL string
-
-			if adButlerBid.EligibleURL != "" {
-				nURL = adButlerBid.EligibleURL
-			} else {
-				nURL = adButlerBid.AccupixelURL
-			}
-
 			bid := &openrtb2.Bid{
 				ID:    bidID,
 				ImpID: impID,
-				NURL:  nURL,
+				NURL:  adButlerBid.EligibleURL,
 				W:     int64(width),
 				H:     int64(height),
 				AdM:   adm,
@@ -252,3 +243,4 @@ func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
 
 	return impIDMap
 }
+
