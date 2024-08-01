@@ -1047,7 +1047,7 @@ func TestModifyRequestBody(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
+func TestOpenWrap_getApplovinMultiFloors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)

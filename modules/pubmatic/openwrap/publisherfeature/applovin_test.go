@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_feature_GetApplovinABTestFloors(t *testing.T) {
+func Test_feature_GetApplovinMultiFloors(t *testing.T) {
 	type fields struct {
 		publisherFeature    map[int]map[int]models.FeatureData
 		appLovinMultiFloors appLovinMultiFloors
@@ -114,6 +114,18 @@ func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 							Value:   `{"4322":{"adunit_12323":[4.2,5.6,5.8],"adunit_dmdemo1":[4.2,5.6,5.8]}}`,
 						},
 					},
+					15123: {
+						3: models.FeatureData{
+							Enabled: 1,
+						},
+						1: models.FeatureData{
+							Enabled: 1,
+						},
+						7: models.FeatureData{
+							Enabled: 1,
+							Value:   `{}`,
+						},
+					},
 				},
 				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
@@ -132,6 +144,7 @@ func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 						"adunit_dmdemo1": {4.2, 5.6, 5.8},
 					},
 				},
+				15123: {},
 			},
 		},
 	}
