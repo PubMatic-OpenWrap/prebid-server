@@ -301,8 +301,12 @@ func getAppPublisherID(requestBody []byte) string {
 
 func getProfileID(requestBody []byte) string {
 	if profileId, err := jsonparser.GetInt(requestBody, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
-		a := strconv.Itoa(int(profileId))
-		return a
+		profIDStr := strconv.Itoa(int(profileId))
+		return profIDStr
+	}
+	if profileId, err := jsonparser.GetInt(requestBody, "app", "id"); err == nil {
+		profIDStr := strconv.Itoa(int(profileId))
+		return profIDStr
 	}
 	return ""
 }
