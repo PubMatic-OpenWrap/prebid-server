@@ -219,11 +219,11 @@ type FeatureData struct {
 }
 
 type AppLovinMax struct {
-	Reject       bool
-	ABTestConfig ABTestConfig
+	Reject            bool
+	MultiFloorsConfig MultiFloorsConfig
 }
 
-type ABTestConfig struct {
+type MultiFloorsConfig struct {
 	Enabled bool
 	Config  ApplovinAdUnitFloors
 }

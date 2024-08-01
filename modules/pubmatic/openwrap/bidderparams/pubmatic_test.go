@@ -1062,7 +1062,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						},
 					},
 					AppLovinMax: models.AppLovinMax{
-						ABTestConfig: models.ABTestConfig{
+						MultiFloorsConfig: models.MultiFloorsConfig{
 							Enabled: true,
 							Config: models.ApplovinAdUnitFloors{
 								"/Test_Adunit1234": {1.5, 1.2, 2.2},

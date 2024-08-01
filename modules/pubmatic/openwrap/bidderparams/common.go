@@ -181,10 +181,10 @@ func GetRegexMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string
 
 // getApplovinBidFloors return adunit floors at pub-profile level
 func getApplovinBidFloors(rctx models.RequestCtx, imp openrtb2.Imp) []float64 {
-	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.ABTestConfig.Enabled {
+	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
 		return nil
 	}
-	if applovinFloors, ok := rctx.AppLovinMax.ABTestConfig.Config[imp.TagID]; ok {
+	if applovinFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[imp.TagID]; ok {
 		return applovinFloors
 	}
 	return nil

@@ -586,7 +586,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                   "POST",
 						WakandaDebug:             &wakanda.Debug{},
 						AppLovinMax: models.AppLovinMax{
-							ABTestConfig: models.ABTestConfig{
+							MultiFloorsConfig: models.MultiFloorsConfig{
 								Enabled: true,
 								Config: models.ApplovinAdUnitFloors{
 									"adunit_name": {5.1, 2.1, 4, 4.3},

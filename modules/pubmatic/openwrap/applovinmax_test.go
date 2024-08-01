@@ -1058,7 +1058,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
-		want  models.ABTestConfig
+		want  models.MultiFloorsConfig
 		setup func()
 	}{
 		{
@@ -1068,7 +1068,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 					Endpoint: models.EndpointV25,
 				},
 			},
-			want: models.ABTestConfig{
+			want: models.MultiFloorsConfig{
 				Enabled: false,
 			},
 			setup: func() {},
@@ -1082,7 +1082,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 					ProfileIDStr: "1234",
 				},
 			},
-			want: models.ABTestConfig{
+			want: models.MultiFloorsConfig{
 				Enabled: false,
 			},
 			setup: func() {
@@ -1098,7 +1098,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 					ProfileIDStr: "1234",
 				},
 			},
-			want: models.ABTestConfig{
+			want: models.MultiFloorsConfig{
 				Enabled: true,
 				Config: models.ApplovinAdUnitFloors{
 					"adunit_name": {1.5, 1.2, 2.2},

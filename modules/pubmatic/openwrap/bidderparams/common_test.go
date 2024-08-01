@@ -639,7 +639,7 @@ func TestGetApplovinBidFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint: models.EndpointAppLovinMax,
 					AppLovinMax: models.AppLovinMax{
-						ABTestConfig: models.ABTestConfig{
+						MultiFloorsConfig: models.MultiFloorsConfig{
 							Enabled: false,
 						},
 					},
@@ -653,7 +653,7 @@ func TestGetApplovinBidFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint: models.EndpointAppLovinMax,
 					AppLovinMax: models.AppLovinMax{
-						ABTestConfig: models.ABTestConfig{
+						MultiFloorsConfig: models.MultiFloorsConfig{
 							Enabled: true,
 							Config: models.ApplovinAdUnitFloors{
 								"adunit_name": {1.5, 1.2, 2.2},
@@ -671,7 +671,7 @@ func TestGetApplovinBidFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint: models.EndpointAppLovinMax,
 					AppLovinMax: models.AppLovinMax{
-						ABTestConfig: models.ABTestConfig{
+						MultiFloorsConfig: models.MultiFloorsConfig{
 							Enabled: true,
 							Config: models.ApplovinAdUnitFloors{
 								"adunit_name": {1.5, 1.2, 2.2},
