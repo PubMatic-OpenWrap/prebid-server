@@ -20,10 +20,10 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
-		PublisherId:    strconv.Itoa(rctx.PubID),
-		WrapExt:        json.RawMessage(wrapExt),
-		Keywords:       getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
-		AppLovinFloors: getApplovinBidFloors(rctx, imp),
+		PublisherId: strconv.Itoa(rctx.PubID),
+		WrapExt:     json.RawMessage(wrapExt),
+		Keywords:    getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
+		Floors:      getApplovinBidFloors(rctx, imp),
 	}
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)

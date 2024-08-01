@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-type applovinABTest struct {
+type appLovinMultiFloors struct {
 	enabledPublisherProfile map[int]map[string]models.ApplovinAdUnitFloors
 }
 
@@ -34,21 +34,21 @@ func (fe *feature) updateApplovinABTestFeature() {
 		}
 	}
 	fe.Lock()
-	fe.applovinABTest.enabledPublisherProfile = enabledPublisherProfile
+	fe.appLovinMultiFloors.enabledPublisherProfile = enabledPublisherProfile
 	fe.Unlock()
 }
 
-func (fe *feature) IsApplovinABTestEnabled(pubID int, profileID string) bool {
+func (fe *feature) IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool {
 	fe.RLock()
 	defer fe.RUnlock()
-	_, isPresent := fe.applovinABTest.enabledPublisherProfile[pubID][profileID]
+	_, isPresent := fe.appLovinMultiFloors.enabledPublisherProfile[pubID][profileID]
 	return isPresent
 }
 
 func (fe *feature) GetApplovinABTestFloors(pubID int, profileID string) models.ApplovinAdUnitFloors {
 	fe.RLock()
 	defer fe.RUnlock()
-	if adunitfloors, isPresent := fe.applovinABTest.enabledPublisherProfile[pubID][profileID]; isPresent {
+	if adunitfloors, isPresent := fe.appLovinMultiFloors.enabledPublisherProfile[pubID][profileID]; isPresent {
 		return adunitfloors
 	}
 	return models.ApplovinAdUnitFloors{}

@@ -9,6 +9,6 @@ type Feature interface {
 	IsTBFFeatureEnabled(pubid int, profid int) bool
 	IsAnalyticsTrackingThrottled(pubID, profileID int) (bool, bool)
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
-	IsApplovinABTestEnabled(pubID int, profileID string) bool
+	IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool
 	GetApplovinABTestFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
 }

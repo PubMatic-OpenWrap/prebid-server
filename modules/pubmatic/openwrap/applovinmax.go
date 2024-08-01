@@ -243,16 +243,16 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 }
 
 func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
-	maxAppLovin := models.AppLovinMax{Reject: false}
+	rctx.AppLovinMax.Reject = false
 
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
-			maxAppLovin.Reject = true
+			rctx.AppLovinMax.Reject = true
 		}
 	} else if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
-		maxAppLovin.Reject = true
+		rctx.AppLovinMax.Reject = true
 	}
-	return maxAppLovin
+	return rctx.AppLovinMax
 }
 
 func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
@@ -321,7 +321,7 @@ func modifyRequestBody(requestBody []byte) []byte {
 
 // getApplovinABTestFloors fetches adunitwise floors for pub-profile
 func (m OpenWrap) getApplovinABTestFloors(rctx models.RequestCtx) models.ABTestConfig {
-	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinABTestEnabled(rctx.PubID, rctx.ProfileIDStr) {
+	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinMultiFloorsEnabled(rctx.PubID, rctx.ProfileIDStr) {
 		return models.ABTestConfig{
 			Enabled: true,
 			Config:  m.pubFeatures.GetApplovinABTestFloors(rctx.PubID, rctx.ProfileIDStr),

@@ -547,7 +547,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					mockFeature.EXPECT().GetApplovinABTestFloors(5890, "12929").Return(models.ApplovinAdUnitFloors{
 						"adunit_name": {5.1, 2.1, 4, 4.3},
 					})
-					mockFeature.EXPECT().IsApplovinABTestEnabled(5890, "12929").Return(true)
+					mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "12929").Return(true)
 				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{

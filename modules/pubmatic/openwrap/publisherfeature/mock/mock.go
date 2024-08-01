@@ -76,18 +76,18 @@ func (mr *MockFeatureMockRecorder) IsAnalyticsTrackingThrottled(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAnalyticsTrackingThrottled", reflect.TypeOf((*MockFeature)(nil).IsAnalyticsTrackingThrottled), arg0, arg1)
 }
 
-// IsApplovinABTestEnabled mocks base method
-func (m *MockFeature) IsApplovinABTestEnabled(arg0 int, arg1 string) bool {
+// IsApplovinMultiFloorsEnabled mocks base method
+func (m *MockFeature) IsApplovinMultiFloorsEnabled(arg0 int, arg1 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsApplovinABTestEnabled", arg0, arg1)
+	ret := m.ctrl.Call(m, "IsApplovinMultiFloorsEnabled", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsApplovinABTestEnabled indicates an expected call of IsApplovinABTestEnabled
-func (mr *MockFeatureMockRecorder) IsApplovinABTestEnabled(arg0, arg1 interface{}) *gomock.Call {
+// IsApplovinMultiFloorsEnabled indicates an expected call of IsApplovinMultiFloorsEnabled
+func (mr *MockFeatureMockRecorder) IsApplovinMultiFloorsEnabled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsApplovinABTestEnabled", reflect.TypeOf((*MockFeature)(nil).IsApplovinABTestEnabled), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsApplovinMultiFloorsEnabled", reflect.TypeOf((*MockFeature)(nil).IsApplovinMultiFloorsEnabled), arg0, arg1)
 }
 
 // IsBidRecoveryEnabled mocks base method

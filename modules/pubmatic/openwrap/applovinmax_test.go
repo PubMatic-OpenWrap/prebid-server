@@ -1086,7 +1086,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 				Enabled: false,
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsApplovinABTestEnabled(5890, "1234").Return(false)
+				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(false)
 			},
 		},
 		{
@@ -1105,7 +1105,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsApplovinABTestEnabled(5890, "1234").Return(true)
+				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(true)
 				mockFeature.EXPECT().GetApplovinABTestFloors(5890, "1234").Return(models.ApplovinAdUnitFloors{
 					"adunit_name": {1.5, 1.2, 2.2},
 				})

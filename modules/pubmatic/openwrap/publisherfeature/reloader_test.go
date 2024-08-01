@@ -122,11 +122,11 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 		cache cache.Cache
 	}
 	type want struct {
-		fsc            fsc
-		tbf            tbf
-		ampMultiformat ampMultiformat
-		bidRecovery    bidRecovery
-		applovinABTest applovinABTest
+		fsc                 fsc
+		tbf                 tbf
+		ampMultiformat      ampMultiformat
+		bidRecovery         bidRecovery
+		appLovinMultiFloors appLovinMultiFloors
 	}
 	tests := []struct {
 		name   string
@@ -199,7 +199,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				},
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
 				},
 				bidRecovery: bidRecovery{
@@ -253,7 +253,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 				bidRecovery: bidRecovery{
 					enabledPublisherProfile: map[int]map[int]struct{}{},
 				},
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
 				},
 			},
@@ -317,7 +317,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				},
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{
 						5890: {
 							"1232": models.ApplovinAdUnitFloors{
@@ -355,7 +355,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
 			assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)
-			assert.Equal(t, tt.want.applovinABTest, fe.applovinABTest, tt.name)
+			assert.Equal(t, tt.want.appLovinMultiFloors, fe.appLovinMultiFloors, tt.name)
 		})
 	}
 }

@@ -9,8 +9,8 @@ import (
 
 func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 	type fields struct {
-		publisherFeature map[int]map[int]models.FeatureData
-		applovinABTest   applovinABTest
+		publisherFeature    map[int]map[int]models.FeatureData
+		appLovinMultiFloors appLovinMultiFloors
 	}
 	type args struct {
 		pubID     int
@@ -25,7 +25,7 @@ func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 		{
 			name: "applovin adunitfloors not found",
 			fields: fields{
-				applovinABTest: applovinABTest{},
+				appLovinMultiFloors: appLovinMultiFloors{},
 			},
 			args: args{
 				pubID:     5890,
@@ -36,7 +36,7 @@ func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 		{
 			name: "applovin adunitfloors found",
 			fields: fields{
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{
 						5890: {
 							"1232": models.ApplovinAdUnitFloors{
@@ -64,8 +64,8 @@ func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fe := &feature{
-				publisherFeature: tt.fields.publisherFeature,
-				applovinABTest:   tt.fields.applovinABTest,
+				publisherFeature:    tt.fields.publisherFeature,
+				appLovinMultiFloors: tt.fields.appLovinMultiFloors,
 			}
 			got := fe.GetApplovinABTestFloors(tt.args.pubID, tt.args.profileID)
 			assert.Equal(t, tt.want, got, tt.name)
@@ -75,8 +75,8 @@ func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 
 func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 	type fields struct {
-		publisherFeature map[int]map[int]models.FeatureData
-		applovinABTest   applovinABTest
+		publisherFeature    map[int]map[int]models.FeatureData
+		appLovinMultiFloors appLovinMultiFloors
 	}
 	tests := []struct {
 		name   string
@@ -115,7 +115,7 @@ func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 						},
 					},
 				},
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 				},
 			},
@@ -138,18 +138,18 @@ func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fe := &feature{
-				publisherFeature: tt.fields.publisherFeature,
-				applovinABTest:   tt.fields.applovinABTest,
+				publisherFeature:    tt.fields.publisherFeature,
+				appLovinMultiFloors: tt.fields.appLovinMultiFloors,
 			}
 			fe.updateApplovinABTestFeature()
-			assert.Equal(t, tt.want, fe.applovinABTest.enabledPublisherProfile, tt.name)
+			assert.Equal(t, tt.want, fe.appLovinMultiFloors.enabledPublisherProfile, tt.name)
 		})
 	}
 }
 
-func Test_feature_IsApplovinABTestEnabled(t *testing.T) {
+func Test_feature_IsApplovinMultiFloorsEnabled(t *testing.T) {
 	type fields struct {
-		applovinABTest applovinABTest
+		appLovinMultiFloors appLovinMultiFloors
 	}
 	type args struct {
 		pubID     int
@@ -164,7 +164,7 @@ func Test_feature_IsApplovinABTestEnabled(t *testing.T) {
 		{
 			name: "feature disabled",
 			fields: fields{
-				applovinABTest: applovinABTest{},
+				appLovinMultiFloors: appLovinMultiFloors{},
 			},
 			args: args{
 				pubID:     5890,
@@ -175,7 +175,7 @@ func Test_feature_IsApplovinABTestEnabled(t *testing.T) {
 		{
 			name: "feature disabled for profile",
 			fields: fields{
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{
 						5890: {
 							"1234": models.ApplovinAdUnitFloors{},
@@ -192,7 +192,7 @@ func Test_feature_IsApplovinABTestEnabled(t *testing.T) {
 		{
 			name: "feature enabled for pub-profile",
 			fields: fields{
-				applovinABTest: applovinABTest{
+				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{
 						5890: {
 							"4345": models.ApplovinAdUnitFloors{},
@@ -210,9 +210,9 @@ func Test_feature_IsApplovinABTestEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fe := &feature{
-				applovinABTest: tt.fields.applovinABTest,
+				appLovinMultiFloors: tt.fields.appLovinMultiFloors,
 			}
-			got := fe.IsApplovinABTestEnabled(tt.args.pubID, tt.args.profileID)
+			got := fe.IsApplovinMultiFloorsEnabled(tt.args.pubID, tt.args.profileID)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
