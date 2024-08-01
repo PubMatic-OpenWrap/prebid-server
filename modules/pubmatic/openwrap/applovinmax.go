@@ -304,8 +304,7 @@ func getProfileID(requestBody []byte) string {
 		profIDStr := strconv.Itoa(int(profileId))
 		return profIDStr
 	}
-	if profileId, err := jsonparser.GetInt(requestBody, "app", "id"); err == nil {
-		profIDStr := strconv.Itoa(int(profileId))
+	if profIDStr, err := jsonparser.GetString(requestBody, "app", "id"); err == nil {
 		return profIDStr
 	}
 	return ""
