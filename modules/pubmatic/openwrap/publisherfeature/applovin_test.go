@@ -67,7 +67,7 @@ func Test_feature_GetApplovinABTestFloors(t *testing.T) {
 				publisherFeature:    tt.fields.publisherFeature,
 				appLovinMultiFloors: tt.fields.appLovinMultiFloors,
 			}
-			got := fe.GetApplovinABTestFloors(tt.args.pubID, tt.args.profileID)
+			got := fe.GetApplovinMultiFloors(tt.args.pubID, tt.args.profileID)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

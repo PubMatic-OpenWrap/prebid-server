@@ -1106,7 +1106,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 			},
 			setup: func() {
 				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(true)
-				mockFeature.EXPECT().GetApplovinABTestFloors(5890, "1234").Return(models.ApplovinAdUnitFloors{
+				mockFeature.EXPECT().GetApplovinMultiFloors(5890, "1234").Return(models.ApplovinAdUnitFloors{
 					"adunit_name": {1.5, 1.2, 2.2},
 				})
 			},
@@ -1118,7 +1118,7 @@ func TestOpenWrap_getApplovinABTestFloors(t *testing.T) {
 			m := OpenWrap{
 				pubFeatures: mockFeature,
 			}
-			got := m.getApplovinABTestFloors(tt.args.rctx)
+			got := m.getApplovinMultiFloors(tt.args.rctx)
 			assert.Equal(t, tt.want, got)
 		})
 	}

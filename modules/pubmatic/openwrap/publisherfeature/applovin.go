@@ -45,7 +45,7 @@ func (fe *feature) IsApplovinMultiFloorsEnabled(pubID int, profileID string) boo
 	return isPresent
 }
 
-func (fe *feature) GetApplovinABTestFloors(pubID int, profileID string) models.ApplovinAdUnitFloors {
+func (fe *feature) GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors {
 	fe.RLock()
 	defer fe.RUnlock()
 	if adunitfloors, isPresent := fe.appLovinMultiFloors.enabledPublisherProfile[pubID][profileID]; isPresent {

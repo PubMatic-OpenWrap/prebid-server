@@ -33,18 +33,18 @@ func (m *MockFeature) EXPECT() *MockFeatureMockRecorder {
 	return m.recorder
 }
 
-// GetApplovinABTestFloors mocks base method
-func (m *MockFeature) GetApplovinABTestFloors(arg0 int, arg1 string) models.ApplovinAdUnitFloors {
+// GetApplovinMultiFloors mocks base method
+func (m *MockFeature) GetApplovinMultiFloors(arg0 int, arg1 string) models.ApplovinAdUnitFloors {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetApplovinABTestFloors", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetApplovinMultiFloors", arg0, arg1)
 	ret0, _ := ret[0].(models.ApplovinAdUnitFloors)
 	return ret0
 }
 
-// GetApplovinABTestFloors indicates an expected call of GetApplovinABTestFloors
-func (mr *MockFeatureMockRecorder) GetApplovinABTestFloors(arg0, arg1 interface{}) *gomock.Call {
+// GetApplovinMultiFloors indicates an expected call of GetApplovinMultiFloors
+func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinABTestFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinABTestFloors), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
 // IsAmpMultiformatEnabled mocks base method
