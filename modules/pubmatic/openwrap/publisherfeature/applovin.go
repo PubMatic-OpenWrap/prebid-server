@@ -11,14 +11,14 @@ type appLovinMultiFloors struct {
 	enabledPublisherProfile map[int]map[string]models.ApplovinAdUnitFloors
 }
 
-func (fe *feature) updateApplovinABTestFeature() {
+func (fe *feature) updateApplovinMultiFloorsFeature() {
 	if fe.publisherFeature == nil {
 		return
 	}
 
 	enabledPublisherProfile := make(map[int]map[string]models.ApplovinAdUnitFloors)
 	for pubID, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureApplovinABTest]; ok && val.Enabled == 1 && len(val.Value) > 0 {
+		if val, ok := feature[models.FeatureApplovinMultiFloors]; ok && val.Enabled == 1 && len(val.Value) > 0 {
 			var profileAdUnitFloors map[string]models.ApplovinAdUnitFloors
 			if err := json.Unmarshal([]byte(val.Value), &profileAdUnitFloors); err != nil {
 				glog.Errorf("ErrJSONUnmarshalFailed Applovin ABTest Feature: pubid: %d profileAdUnitFloors: %s err: %s", pubID, val.Value, err.Error())

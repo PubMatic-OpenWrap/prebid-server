@@ -589,13 +589,13 @@ const (
 
 // constants for feature id
 const (
-	FeatureFSC               = 1
-	FeatureTBF               = 2
-	FeatureAMPMultiFormat    = 3
-	FeatureAnalyticsThrottle = 4
-	FeatureMaxFloors         = 5
-	FeatureBidRecovery       = 6
-	FeatureApplovinABTest    = 7
+	FeatureFSC                 = 1
+	FeatureTBF                 = 2
+	FeatureAMPMultiFormat      = 3
+	FeatureAnalyticsThrottle   = 4
+	FeatureMaxFloors           = 5
+	FeatureBidRecovery         = 6
+	FeatureApplovinMultiFloors = 7
 )
 
 // constants for applovinmax requests

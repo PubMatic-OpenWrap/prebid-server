@@ -73,7 +73,7 @@ func Test_feature_GetApplovinMultiFloors(t *testing.T) {
 	}
 }
 
-func Test_feature_updateApplovinABTestFeature(t *testing.T) {
+func Test_feature_updateApplovinMultiFloorsFeature(t *testing.T) {
 	type fields struct {
 		publisherFeature    map[int]map[int]models.FeatureData
 		appLovinMultiFloors appLovinMultiFloors
@@ -154,7 +154,7 @@ func Test_feature_updateApplovinABTestFeature(t *testing.T) {
 				publisherFeature:    tt.fields.publisherFeature,
 				appLovinMultiFloors: tt.fields.appLovinMultiFloors,
 			}
-			fe.updateApplovinABTestFeature()
+			fe.updateApplovinMultiFloorsFeature()
 			assert.Equal(t, tt.want, fe.appLovinMultiFloors.enabledPublisherProfile, tt.name)
 		})
 	}

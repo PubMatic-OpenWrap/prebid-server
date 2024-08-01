@@ -280,7 +280,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 							Enabled: 1,
 							Value:   `[1234,3212]`,
 						},
-						models.FeatureApplovinABTest: {
+						models.FeatureApplovinMultiFloors: {
 							Enabled: 1,
 							Value:   `{"1232":{"adunit_123":[4.2,5.6,5.8],"adunit_dmdemo":[4.2,5.6,5.8]},"4322":{"adunit_12323":[4.2,5.6,5.8],"adunit_dmdemo1":[4.2,5.6,5.8]}}`,
 						},
