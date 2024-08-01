@@ -1046,7 +1046,7 @@ func TestModifyRequestBody(t *testing.T) {
 	}
 }
 
-func Test_getProfileID(t *testing.T) {
+func TestGetProfileID(t *testing.T) {
 	type args struct {
 		requestBody []byte
 	}
