@@ -4,10 +4,125 @@
     "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
     "type": "object",
     "properties": {
-      "bidtype": {
+      "fledgeAuctionConfig": {
+        "type": "object",
+        "description": "Specifies fledge auction configurations",
+        "location": "ext.fledge"
+      },
+      "bidType": {
         "type": "string",
-        "description": "bidtype",
-        "location": "seat.#.bid.#.ext.bidtype"
+        "description": "type of the bid. banner, video, audio and native are the only supported values.",
+        "location": "seatbid.#.bid.#.ext.bidtype"
+      },
+      "bidDealPriority": {
+        "type": "integer",
+        "description": "priority of the deal bid",
+        "location": "seatbid.#.bid.#.dp"
+      },
+      "bidVideo": {
+        "type": "object",
+        "description": "Specifies primary category and duration of the video bid",
+        "location": "seatbid.#.bid.#.ext.bidvideo"
+      },
+      "bidVideoDuration": {
+        "type": "integer",
+        "description": "video duration of the bid",
+        "location": "seatbid.#.bid.#.ext.video.duration"
+      },
+      "bidVideoPrimaryCategory": {
+        "type": "string",
+        "description": "primary IAB category of the bid",
+        "location": "seatbid.#.bid.#.ext.bidcategory.0"
+      },
+      "bidMeta": {
+        "type": "object",
+        "description": "meta information of the bid",
+        "location": "seatbid.#.bid.#.ext.metaobject"
+      },
+      "bidMetaAdvertiserDomains": {
+        "type": "string",
+        "description": "Domains for the landing page(s) aligning with the OpenRTB adomain field",
+        "location": "seatbid.#.bid.#.meta.domains"
+      },
+      "bidMetaAdvertiserId": {
+        "type": "integer",
+        "description": "Bidder-specific advertiser id",
+        "location": "seatbid.#.bid.#.ext.advID"
+      },
+      "bidMetaAdvertiserName" : {
+        "type": "string",
+        "description": "Bidder-specific advertiser name",
+        "location": "seatbid.#.bid.#.ext.advname"
+      },
+      "bidMetaAgencyId" : {
+        "type": "integer",
+        "description": "Bidder-specific agency id",
+        "location": "seatbid.#.bid.#.ext.agency.id"
+      },
+      "bidMetaAgencyName" : {
+        "type": "string",
+        "description": "Bidder-specific agency name",
+        "location": "seatbid.#.bid.#.ext.agency.name"
+      },
+      "bidMetaBrandId": {
+        "type": "integer",
+        "description": "Bidder-specific brand id for advertisers with multiple brands",
+        "location": "seatbid.#.bid.#.ext.brandid"
+      },
+      "bidMetaDchain": {
+        "type": "string",
+        "description": "Demand chain object",
+        "location": "seatbid.#.bid.#.ext.dchain"
+      },
+      "bidMetaDemandSource": {
+        "type": "string",
+        "description": "Bidder-specific demand source",
+        "location": "seatbid.#.bid.#.ext.demand.source"
+      },
+      "bidMetaMediaType": {
+        "type": "string",
+        "description": "media type of bid, either banner, audio, video, or native",
+        "location": "seatbid.#.bid.#.ext.bidtype"
+      },
+      "bidMetaNetworkId": {
+        "type": "integer",
+        "description": "Bidder-specific network/DSP id",
+        "location": "seatbid.#.bid.#.ext.networkID"
+      },
+      "bidMetaNetworkName": {
+        "type": "string",
+        "description": "Bidder-specific network/DSP name",
+        "location": "seatbid.#.bid.#.ext.networkName"
+      },
+      "bidMetaPrimaryCatId": {
+        "type": "string",
+        "description": "Primary IAB category id",
+        "location": "seatbid.#.bid.#.cat.0"
+      },
+      "bidMetaRendererName": {
+        "type": "string",
+        "description": "Name of the desired renderer for the creative",
+        "location": "seatbid.#.bid.#.renderer.name"
+      },
+      "bidMetaRendererVersion": {
+        "type": "string",
+        "description": "Version of the desired renderer for the creative",
+        "location": "seatbid.#.bid.#.ext.renderer.version"
+      },
+      "bidMetaRendererData": {
+        "type": "string",
+        "description": "Data of the custom renderer",
+        "location": "seatbid.#.bid.#.ext.renderer.data"
+      },
+      "bidMetaRendererUrl": {
+        "type": "string",
+        "description": "Dynamic renderer URL for use in outstream rendering",
+        "location": "seatbid.#.bid.#.ext.renderer.url"
+      },
+      "bidMetaSecondaryCatIds": {
+        "type": "array",
+        "description": "Secondary IAB category ids",
+        "location": "seatbid.#.bid.#.ext.meta.categories"
       }
     }
   }

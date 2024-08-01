@@ -270,6 +270,10 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(tracker.FloorModelVersion) > 0 {
 		v.Set(models.TRKFloorModelVersion, tracker.FloorModelVersion)
 	}
+	if len(tracker.LoggerData.FloorProvider) > 0 {
+		v.Set(models.TRKFloorProvider, tracker.LoggerData.FloorProvider)
+	}
+
 	if tracker.FloorSource != nil {
 		v.Set(models.TRKFloorSource, strconv.Itoa(*tracker.FloorSource))
 	}
