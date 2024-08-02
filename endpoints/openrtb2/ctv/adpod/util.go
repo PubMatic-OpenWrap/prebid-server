@@ -83,3 +83,29 @@ func createMapFromSlice(slice []string) map[string]bool {
 	}
 	return resultMap
 }
+
+func getExclusionConfigs(podId string, adpodExt *openrtb_ext.ExtRequestAdPod) Exclusion {
+	var exclusion Exclusion
+
+	if adpodExt != nil && adpodExt.Exclusion != nil {
+		var iabCategory, advertiserDomain bool
+		for i := range adpodExt.Exclusion.IABCategory {
+			if adpodExt.Exclusion.IABCategory[i] == podId {
+				iabCategory = true
+				break
+			}
+		}
+
+		for i := range adpodExt.Exclusion.AdvertiserDomain {
+			if adpodExt.Exclusion.AdvertiserDomain[i] == podId {
+				advertiserDomain = true
+				break
+			}
+		}
+
+		exclusion.IABCategoryExclusion = iabCategory
+		exclusion.AdvertiserDomainExclusion = advertiserDomain
+	}
+
+	return exclusion
+}

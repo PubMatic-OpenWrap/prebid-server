@@ -37,4 +37,7 @@ const (
 	BidderParamRisePublisherID      = "publisher_id"
 	BidderKaroPlacementID           = "placementId"
 	BidderKargoAdSlotID             = "adSlotID"
+	BidderParamAidemPublisherId     = "publisherId"
+	BidderParamAidemSiteId          = "siteId"
+	BidderParamAidemPlacementId     = "placementId"
 )

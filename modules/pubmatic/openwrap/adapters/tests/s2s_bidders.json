@@ -120,5 +120,21 @@
                 "placementId": "123456"
             }
         }
+    },
+    {
+        "name": "aidem - publisherId&siteId",
+        "args" : {
+            "adapterName": "aidem",
+            "requestJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"
+            }
+        }
     }
 ]

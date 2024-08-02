@@ -1116,7 +1116,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerA",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1131,7 +1131,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerA",
 			},
 		},
 		{
@@ -1148,7 +1148,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerB",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1163,7 +1163,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerB",
 			},
 		},
 		{
@@ -1180,7 +1180,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerC",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1195,7 +1195,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerC",
 				FloorFetchStatus:  ptrutil.ToPtr(2),
 			},
 		},
