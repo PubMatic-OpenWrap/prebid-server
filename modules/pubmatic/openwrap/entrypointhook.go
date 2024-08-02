@@ -206,7 +206,9 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		if requestExtWrapper.ProfileId == 0 {
 			profileIDStr := getProfileID(payload.Body)
 			if profileIDStr != "" {
-				requestExtWrapper.ProfileId, _ = strconv.Atoi(profileIDStr)
+				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
+					requestExtWrapper.ProfileId = ProfileId
+				}
 			}
 		}
 	case models.EndpointWebS2S:
