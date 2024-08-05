@@ -266,7 +266,7 @@ func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, 
 		isFloorsUpdated := false
 		newImps := make([]openrtb2.Imp, len(request.Imp))
 		copy(newImps, request.Imp)
-
+		//TODO-AK: Remove the imp from the request if the floor is not present except for the first floor
 		for j := range newImps {
 			floors, ok := impFloorsMap[request.Imp[j].ID]
 			if !ok || len(floors) <= i {

@@ -1038,7 +1038,7 @@ func TestPubmaticAdapter_buildMultiFloorRequests(t *testing.T) {
 			wantError: []error{},
 		},
 		{
-			name: "request with multipe imp and single floor",
+			name: "request with multiple imp and single floor",
 			fields: fields{
 				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
 				bidderName: "pubmatic",

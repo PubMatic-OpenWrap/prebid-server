@@ -81,7 +81,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	anyDealTierSatisfyingBid := false
 	winningBids := make(models.WinningBids)
-
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			m.metricEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)
@@ -405,37 +404,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 	// }, hookstage.MutationUpdate, "response-body-with-sshb-format")
 	return result, nil
 }
-
-// func updateMultiFloorResponse(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-// 	pubMaticBidResponseMap := make(map[string][]openrtb2.Bid)
-// 	for _, seatBid := range bidResponse.SeatBid {
-// 		if seatBid.Seat == models.BidderPubMatic {
-// 			for _, bid := range seatBid.Bid {
-// 				pubMaticBidResponseMap[bid.ImpID] = append(pubMaticBidResponseMap[bid.ImpID], bid)
-// 			}
-// 		}
-// 	}
-
-// 	// get the winning bid for each impid
-// 	winningBids := make([]openrtb2.Bid, 0)
-// 	for _, bid := range pubMaticBidResponseMap {
-// 		winningBid := bid[0]
-// 		for i := 1; i < len(bid); i++ {
-// 			if bid[i].Price > winningBid.Price {
-// 				winningBid = bid[i]
-// 			}
-// 		}
-// 		winningBids = append(winningBids, winningBid)
-// 	}
-
-// 	// update the bid response with winning bids per impid
-// 	for i, seatBid := range bidResponse.SeatBid {
-// 		if seatBid.Seat == models.BidderPubMatic {
-// 			bidResponse.SeatBid[i].Bid = winningBids
-// 		}
-// 	}
-// 	return bidResponse
-// }
 
 func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
 	if len(bidResponse.SeatBid) == 0 {
