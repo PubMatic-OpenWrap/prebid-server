@@ -24,15 +24,17 @@ type Slot struct {
 	ImpId     string
 	Index     int
 	TotalBids int
+	NoBid     bool
 }
 
-func NewStructuredAdpod(pubId string, metricsEngine metrics.MetricsEngine, reqAdpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
+func NewStructuredAdpod(podId string, pubId string, metricsEngine metrics.MetricsEngine, reqAdpodExt *openrtb_ext.ExtRequestAdPod) *structuredAdpod {
 	adpod := structuredAdpod{
 		AdpodCtx: AdpodCtx{
 			PubId:         pubId,
 			Type:          Structured,
 			ReqAdpodExt:   reqAdpodExt,
 			MetricsEngine: metricsEngine,
+			Exclusion:     getExclusionConfigs(podId, reqAdpodExt),
 		},
 		ImpBidMap:  make(map[string][]*types.Bid),
 		WinningBid: make(map[string]types.Bid),
@@ -103,13 +105,16 @@ func (sa *structuredAdpod) HoldAuction() {
 	// Select Winning bids
 	for i := range slots {
 		bids := sa.ImpBidMap[slots[i].ImpId]
-		// Add validations on len of array and index chosen
-		// Validate the array length and index chosen
-		if len(bids) > slots[i].Index {
-			selectedBid := bids[slots[i].Index]
-			selectedBid.Nbr = nil
-			sa.WinningBid[slots[i].ImpId] = *selectedBid
+		if len(bids) == 0 {
+			continue
 		}
+
+		slot := slots[i]
+		if slot.NoBid {
+			continue
+		}
+		bids[slot.Index].Nbr = nil
+		sa.WinningBid[slot.ImpId] = *bids[slot.Index]
 
 	}
 }
@@ -175,6 +180,10 @@ func (sa *structuredAdpod) addDomains(domains []string) {
 }
 
 func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
+	if !sa.Exclusion.IABCategoryExclusion {
+		return false
+	}
+
 	if bid == nil || bid.Cat == nil {
 		return false
 	}
@@ -194,6 +203,10 @@ func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
 }
 
 func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
+	if !sa.Exclusion.AdvertiserDomainExclusion {
+		return false
+	}
+
 	if bid == nil || bid.ADomain == nil {
 		return false
 	}
@@ -273,13 +286,18 @@ func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {
 			selectedSlot.Index = bidIndex
 			slots[slotIndex] = selectedSlot
 		} else if sa.isCategoryAlreadySelected(selectedBid) || sa.isDomainAlreadySelected(selectedBid) {
+			noBidSlot := true
 			// Get bid for current slot for which category is not overlapping
 			for i := selectedSlot.Index + 1; i < len(slotBids); i++ {
 				if !sa.isCategoryAlreadySelected(slotBids[i]) && !sa.isDomainAlreadySelected(slotBids[i]) {
 					selectedSlot.Index = i
+					noBidSlot = false
 					break
 				}
 			}
+
+			// Update no bid status
+			selectedSlot.NoBid = noBidSlot
 
 			// Update selected Slot in slots array
 			slots[slotIndex] = selectedSlot
