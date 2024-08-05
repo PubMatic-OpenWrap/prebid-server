@@ -873,7 +873,70 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "price_based_auction_with_one_slot_no_bid",
+			fields: fields{
+				AdpodCtx: AdpodCtx{
+					Type: Structured,
+					Exclusion: Exclusion{
+						IABCategoryExclusion:      true,
+						AdvertiserDomainExclusion: true,
+					},
+				},
+				ImpBidMap: map[string][]*types.Bid{
+					"imp1": {
+						{
+							Bid: &openrtb2.Bid{
+								Price: 6,
+								Cat:   []string{"IAB-1"},
+							},
+							DealTierSatisfied: false,
+							Seat:              "pubmatic",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								Price: 4,
+								Cat:   []string{"IAB-1"},
+							},
+							DealTierSatisfied: false,
+							Seat:              "appnexux",
+						},
+					},
+					"imp2": {
+						{
+							Bid: &openrtb2.Bid{
+								Price: 4,
+								Cat:   []string{"IAB-1"},
+							},
+							DealTierSatisfied: false,
+							Seat:              "index",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								Price: 2,
+								Cat:   []string{"IAB-1"},
+							},
+							DealTierSatisfied: false,
+							Seat:              "pubmatic",
+						},
+					},
+				},
+				WinningBid: make(map[string]types.Bid),
+			},
+			wantWinningBid: map[string]types.Bid{
+				"imp1": {
+					Bid: &openrtb2.Bid{
+						Price: 6,
+						Cat:   []string{"IAB-1"},
+					},
+					DealTierSatisfied: false,
+					Seat:              "pubmatic",
+					Status:            constant.StatusWinningBid,
+				},
+			},
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sa := &structuredAdpod{

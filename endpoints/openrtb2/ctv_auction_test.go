@@ -297,7 +297,7 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 }
 
 func TestCreateAdPodBidResponseSeatNonBid(t *testing.T) {
-	structuredAdpod := adpod.NewStructuredAdpod("test-pub", &metrics.MetricsEngineMock{}, nil)
+	structuredAdpod := adpod.NewStructuredAdpod("test-pod", "test-pub", &metrics.MetricsEngineMock{}, nil)
 	structuredAdpod.WinningBid = map[string]types.Bid{
 		"imp1": {
 			Bid: &openrtb2.Bid{

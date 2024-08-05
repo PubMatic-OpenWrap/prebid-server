@@ -89,6 +89,79 @@ func TestConvertToV25VideoRequest(t *testing.T) {
 	}
 }
 
+func TestGetExclusionConfigs(t *testing.T) {
+	tests := []struct {
+		name     string
+		podId    string
+		adpodExt *openrtb_ext.ExtRequestAdPod
+		expected Exclusion
+	}{
+		{
+			name:     "Nil_adpodExt",
+			podId:    "testPodId",
+			adpodExt: nil,
+			expected: Exclusion{},
+		},
+		{
+			name:  "Nil_Exclusion",
+			podId: "testPodId",
+			adpodExt: &openrtb_ext.ExtRequestAdPod{
+				Exclusion: nil,
+			},
+			expected: Exclusion{},
+		},
+		{
+			name:  "IABCategory_exclusion_present",
+			podId: "testPodId",
+			adpodExt: &openrtb_ext.ExtRequestAdPod{
+				Exclusion: &openrtb_ext.AdpodExclusion{
+					IABCategory:      []string{"testPodId"},
+					AdvertiserDomain: []string{"otherPodId"},
+				},
+			},
+			expected: Exclusion{
+				IABCategoryExclusion:      true,
+				AdvertiserDomainExclusion: false,
+			},
+		},
+		{
+			name:  "AdvertiserDomain_exclusion_present",
+			podId: "testPodId",
+			adpodExt: &openrtb_ext.ExtRequestAdPod{
+				Exclusion: &openrtb_ext.AdpodExclusion{
+					IABCategory:      []string{"otherPodId"},
+					AdvertiserDomain: []string{"testPodId"},
+				},
+			},
+			expected: Exclusion{
+				IABCategoryExclusion:      false,
+				AdvertiserDomainExclusion: true,
+			},
+		},
+		{
+			name:  "No_exclusion_config_provided",
+			podId: "testPodId",
+			adpodExt: &openrtb_ext.ExtRequestAdPod{
+				Exclusion: &openrtb_ext.AdpodExclusion{
+					IABCategory:      []string{"otherPodId"},
+					AdvertiserDomain: []string{"anotherPodId"},
+				},
+			},
+			expected: Exclusion{
+				IABCategoryExclusion:      false,
+				AdvertiserDomainExclusion: false,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getExclusionConfigs(tt.podId, tt.adpodExt)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestConvertNBRCTOAPRC(t *testing.T) {
 	type args struct {
 		noBidReason *openrtb3.NoBidReason

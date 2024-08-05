@@ -27,15 +27,6 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 
-	if rctx.IsTestRequest > 0 {
-		if len(slots) > 0 {
-			extImpPubMatic.AdSlot = slots[0]
-		}
-		params, err := json.Marshal(extImpPubMatic)
-		return extImpPubMatic.AdSlot, "", false, params, err
-	}
-
-	hash := ""
 	var err error
 	var matchedSlot, matchedPattern string
 	var isRegexSlot, isRegexKGP bool
@@ -45,27 +36,22 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		isRegexKGP = true
 	}
 
-	// simple+regex key match
-	for _, slot := range slots {
-		matchedSlot, matchedPattern = GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
-		if matchedSlot != "" {
-			extImpPubMatic.AdSlot = matchedSlot
-
-			if matchedPattern != "" {
-				isRegexSlot = true
-				// imp.TagID = hash
-				// TODO: handle kgpv case sensitivity in hashvaluemap
-				if slotMappingInfo.HashValueMap != nil {
-					if v, ok := slotMappingInfo.HashValueMap[matchedPattern]; ok {
-						extImpPubMatic.AdSlot = v
-						imp.TagID = hash // TODO, make imp pointer. But do other bidders accept hash as TagID?
-					}
-				}
-			}
-
-			break
-		}
+	if rctx.IsTestRequest == 1 {
+		matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
+		params, err := json.Marshal(extImpPubMatic)
+		return matchedSlot, matchedPattern, isRegexSlot, params, err
 	}
+
+	if rctx.IsTestRequest > 0 {
+		if len(slots) > 0 {
+			extImpPubMatic.AdSlot = slots[0]
+		}
+		params, err := json.Marshal(extImpPubMatic)
+		return extImpPubMatic.AdSlot, "", false, params, err
+	}
+
+	// simple+regex key match
+	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
 		if matchedPattern == "" {
@@ -134,4 +120,30 @@ func getImpExtPubMaticKeyWords(impExt models.ImpExtension, bidderCode string) []
 		}
 	}
 	return nil
+}
+
+func getMatchingSlotAndPattern(rctx models.RequestCtx, cache cache.Cache, slots []string, slotMap map[string]models.SlotMapping, slotMappingInfo models.SlotMappingInfo, isRegexKGP, isRegexSlot bool, partnerID int, extImpPubMatic *openrtb_ext.ExtImpPubmatic, imp openrtb2.Imp) (string, string, bool) {
+
+	hash := ""
+	var matchedSlot, matchedPattern string
+	for _, slot := range slots {
+		matchedSlot, matchedPattern = GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
+		if matchedSlot != "" {
+			extImpPubMatic.AdSlot = matchedSlot
+
+			if matchedPattern != "" {
+				isRegexSlot = true
+				// imp.TagID = hash
+				// TODO: handle kgpv case sensitivity in hashvaluemap
+				if slotMappingInfo.HashValueMap != nil {
+					if v, ok := slotMappingInfo.HashValueMap[matchedPattern]; ok {
+						extImpPubMatic.AdSlot = v
+						imp.TagID = hash // TODO, make imp pointer. But do other bidders accept hash as TagID?
+					}
+				}
+			}
+			break
+		}
+	}
+	return matchedSlot, matchedPattern, isRegexSlot
 }

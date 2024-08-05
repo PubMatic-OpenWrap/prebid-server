@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -148,7 +149,7 @@ func TestMakeRequests(t *testing.T) {
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
-				errors: []error{newBadInputError(errImpMissing.Error())},
+				errors: []error{util.NewBadInputError(util.ErrImpMissing.Error())},
 			},
 		},
 		{
@@ -162,7 +163,7 @@ func TestMakeRequests(t *testing.T) {
 				bidderCfg:   nil,
 			},
 			want: want{
-				errors: []error{newBadInputError("found nil bidderParamsConfig")},
+				errors: []error{util.NewBadInputError("found nil bidderParamsConfig")},
 			},
 		},
 		{
@@ -619,7 +620,7 @@ func TestMakeBids(t *testing.T) {
 				bc := bidderparams.NewBidderConfig()
 				bc.BidderConfigMap["owortb_testbidder"] = &bidderparams.Config{
 					ResponseParams: map[string]bidderparams.BidderParamMapper{
-						"bidtype":  {Location: "seatbid.#.bid.#.ext.bidtype"},
+						"bidType":  {Location: "seatbid.#.bid.#.ext.bidtype"},
 						"currency": {Location: "ext.currency"},
 					},
 				}
