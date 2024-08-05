@@ -599,14 +599,13 @@ const (
 
 // constants for applovinmax requests
 const (
-	Agent                        = "agent"
-	AppLovinMaxAgent             = "max"
-	TypeRewarded                 = "rewarded"
-	SignalData                   = "signaldata"
-	OwSspBurl                    = "owsspburl"
-	MissingSignal                = "missing"
-	InvalidSignal                = "invalid"
-	AppLovinMaxImpressionPattern = `_mf.*`
+	Agent            = "agent"
+	AppLovinMaxAgent = "max"
+	TypeRewarded     = "rewarded"
+	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
+	MissingSignal    = "missing"
+	InvalidSignal    = "invalid"
 )
 
 // constants for log level

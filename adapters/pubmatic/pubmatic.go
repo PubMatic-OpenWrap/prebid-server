@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -23,19 +24,22 @@ import (
 const MAX_IMPRESSIONS_PUBMATIC = 30
 const MAX_MULTIFLOORS_PUBMATIC = 3
 
+var re = regexp.MustCompile(appLovinMaxImpressionPattern)
+
 const (
-	ae                  = "ae"
-	PUBMATIC            = "[PUBMATIC]"
-	buyId               = "buyid"
-	buyIdTargetingKey   = "hb_buyid_"
-	skAdnetworkKey      = "skadn"
-	rewardKey           = "reward"
-	dctrKeywordName     = "dctr"
-	urlEncodedEqualChar = "%3D"
-	AdServerKey         = "adserver"
-	PBAdslotKey         = "pbadslot"
-	bidViewability      = "bidViewability"
-	multFloors          = "_mf"
+	ae                           = "ae"
+	PUBMATIC                     = "[PUBMATIC]"
+	buyId                        = "buyid"
+	buyIdTargetingKey            = "hb_buyid_"
+	skAdnetworkKey               = "skadn"
+	rewardKey                    = "reward"
+	dctrKeywordName              = "dctr"
+	urlEncodedEqualChar          = "%3D"
+	AdServerKey                  = "adserver"
+	PBAdslotKey                  = "pbadslot"
+	bidViewability               = "bidViewability"
+	multiFloors                  = "_mf"
+	appLovinMaxImpressionPattern = "_mf.*"
 )
 
 type PubmaticAdapter struct {
@@ -270,7 +274,7 @@ func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, 
 			}
 			isFloorsUpdated = true
 			newImps[j].BidFloor = floors[i]
-			newImps[j].ID = fmt.Sprintf("%s"+multFloors+"%d", newImps[j].ID, i+1)
+			newImps[j].ID = fmt.Sprintf("%s"+multiFloors+"%d", newImps[j].ID, i+1)
 		}
 
 		if !isFloorsUpdated {
@@ -482,7 +486,7 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		}
 	}
 
-	return wrapExt, pubID, pubmaticExt.AppLovinFloors, nil
+	return wrapExt, pubID, pubmaticExt.Floors, nil
 }
 
 // roundToFourDecimals retuns given value to 4 decimal points
@@ -625,6 +629,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		targets := getTargetingKeys(sb.Ext, string(externalRequest.BidderName))
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
+			bid.ImpID = trimSuffixWithPattern(bid.ImpID)
 
 			// Copy SeatBid Ext to Bid.Ext
 			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
@@ -685,6 +690,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		}
 	}
 	return bidResponse, errs
+}
+
+func trimSuffixWithPattern(input string) string {
+	return re.ReplaceAllString(input, "")
 }
 
 func getNativeAdm(adm string) (string, error) {

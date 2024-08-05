@@ -361,7 +361,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 								W: ptrutil.ToPtr[int64](300),
 								H: ptrutil.ToPtr[int64](250),
 							},
-							Ext: json.RawMessage(`{"bidder":{"applovin_floors":[1.2,1.3,1.4]}}`),
+							Ext: json.RawMessage(`{"bidder":{"floors":[1.2,1.3,1.4]}}`),
 						},
 					},
 				},
@@ -1398,6 +1398,59 @@ func TestPubmaticAdapter_buildAdapterRequest(t *testing.T) {
 				t.Errorf("buildAdapterRequest() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestTrimSuffixWithPattern(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "input string is empty",
+			args: args{
+				input: "",
+			},
+			want: "",
+		},
+		{
+			name: "input string does not contain pattern",
+			args: args{
+				input: "div123456789",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern",
+			args: args{
+				input: "div123456789_mf1",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern at the end",
+			args: args{
+				input: "div123456789_mf1_mf2",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern at the start",
+			args: args{
+				input: "mf1_mf2_div123456789",
+			},
+			want: "mf1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := trimSuffixWithPattern(tt.args.input)
 			assert.Equal(t, tt.want, got)
 		})
 	}
