@@ -5,6 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
@@ -17,7 +18,7 @@ type multiRequestBuilder struct {
 // parseRequest parse the incoming request and populates intermediate fields required for building requestData object
 func (rb *multiRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err error) {
 	if len(request.Imp) == 0 {
-		return errImpMissing
+		return util.ErrImpMissing
 	}
 
 	//get rawrequests without impression objects
@@ -56,7 +57,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		//step 1: clone request
 		if requestCloneRequired {
 			if newRequest, err = cloneRequest(rb.rawRequest); err != nil {
-				errs = append(errs, newBadInputError(err.Error()))
+				errs = append(errs, util.NewBadInputError(err.Error()))
 				continue
 			}
 		}
@@ -67,7 +68,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 
 		//step 3: get endpoint
 		if endpoint, err = rb.getEndpoint(bidderParams); err != nil {
-			errs = append(errs, newBadInputError(err.Error()))
+			errs = append(errs, util.NewBadInputError(err.Error()))
 			continue
 		}
 
@@ -81,7 +82,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		}
 		//step 5: append new request data
 		if requestData, err = appendRequestData(requestData, newRequest, endpoint, []string{imp[idKey].(string)}); err != nil {
-			errs = append(errs, newBadInputError(err.Error()))
+			errs = append(errs, util.NewBadInputError(err.Error()))
 		}
 	}
 	return requestData, errs

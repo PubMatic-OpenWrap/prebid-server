@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/config"
+	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
@@ -62,7 +63,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
 func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if o.bidderParamsConfig == nil {
-		return nil, []error{newBadInputError(errNilBidderParamCfg.Error())}
+		return nil, []error{util.NewBadInputError(util.ErrNilBidderParamCfg.Error())}
 	}
 
 	requestBuilder := newRequestBuilder(
@@ -72,7 +73,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
 
 	if err := requestBuilder.parseRequest(request); err != nil {
-		return nil, []error{newBadInputError(err.Error())}
+		return nil, []error{util.NewBadInputError(err.Error())}
 	}
 
 	return requestBuilder.makeRequest()
@@ -88,25 +89,24 @@ func (o *adapter) MakeBids(request *openrtb2.BidRequest, requestData *adapters.R
 		return nil, []error{err}
 	}
 
-	response, err := o.makeBids(request, responseData.Body)
-	if err != nil {
-		return nil, []error{newBadServerResponseError(err.Error())}
-	}
-
-	return response, nil
+	return o.makeBids(request, responseData.Body)
 }
 
 // makeBids converts the bidderResponseBytes to a BidderResponse
 // It retrieves response parameters, creates a response builder, parses the response, and builds the response.
 // Finally, it converts the response builder's internal representation to an AdapterResponse and returns it.
-func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, error) {
+func (o *adapter) makeBids(request *openrtb2.BidRequest, bidderResponseBytes json.RawMessage) (*adapters.BidderResponse, []error) {
 	responseParmas := o.bidderParamsConfig.GetResponseParams(o.bidderName.String())
 	rb := newResponseBuilder(responseParmas, request)
 
-	err := rb.setPrebidBidderResponse(bidderResponseBytes)
-	if err != nil {
-		return nil, err
+	errs := rb.setPrebidBidderResponse(bidderResponseBytes)
+	if errortypes.ContainsFatalError(errs) {
+		return nil, errs
 	}
 
-	return rb.buildAdapterResponse()
+	bidderResponse, err := rb.buildAdapterResponse()
+	if err != nil {
+		errs = append(errs, err)
+	}
+	return bidderResponse, errs
 }
