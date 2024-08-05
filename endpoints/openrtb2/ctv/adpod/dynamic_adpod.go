@@ -43,6 +43,8 @@ func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodExt openrtb_ext.ExtVid
 	minPodDuration := imp.Video.MinDuration
 	maxPodDuration := imp.Video.MaxDuration
 
+	exclusion := getExclusionConfigs(imp.Video.PodID, reqAdpodExt)
+
 	if adpodExt.AdPod == nil {
 		adpodExt = openrtb_ext.ExtVideoAdPod{
 			Offset: ptrutil.ToPtr(0),
@@ -55,6 +57,15 @@ func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodExt openrtb_ext.ExtVid
 				IABCategoryExclusionPercent: ptrutil.ToPtr(100),
 			},
 		}
+
+		if exclusion.AdvertiserDomainExclusion {
+			adpodExt.AdPod.AdvertiserExclusionPercent = ptrutil.ToPtr(0)
+		}
+
+		if exclusion.IABCategoryExclusion {
+			adpodExt.AdPod.IABCategoryExclusionPercent = ptrutil.ToPtr(0)
+		}
+
 		maxPodDuration = imp.Video.PodDur
 	}
 
@@ -64,6 +75,7 @@ func NewDynamicAdpod(pubId string, imp openrtb2.Imp, adpodExt openrtb_ext.ExtVid
 			Type:          Dynamic,
 			ReqAdpodExt:   reqAdpodExt,
 			MetricsEngine: metricsEngine,
+			Exclusion:     exclusion,
 		},
 		Imp:            imp,
 		VideoExt:       &adpodExt,
