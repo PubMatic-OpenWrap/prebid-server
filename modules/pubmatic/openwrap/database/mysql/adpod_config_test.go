@@ -36,10 +36,9 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
 					Queries: config.Queries{
-						GetAdpodConfig:           "^SELECT (.+) FROM  ad_pod (.+)",
-						DisplayVersionInnerQuery: "^SELECT (.+) FROM  version (.+)",
+						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
+						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
-					MaxQueryExecutionTimeout: 500,
 				},
 			},
 			args: args{
@@ -53,8 +52,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 
-				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform", "type"}).
-					AddRow("4444", "4", "ctv", "1")
+				rowsWrapperVersion := sqlmock.NewRows([]string{"versionId", "displayVersionId", "platform", "type"}).AddRow("4444", "4", "ctv", "1")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM version (.+)")).WithArgs(123, 4, 5890).WillReturnRows(rowsWrapperVersion)
 
 				rows := sqlmock.NewRows([]string{"pod_type", "s2s_ad_slots_config"}).AddRow("DYNAMIC", `[{"maxduration":60,"maxseq":5,"poddur":180,"minduration":1}]`)
@@ -82,7 +80,6 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:        "^SELECT (.+) FROM ad_pod (.+)",
 						LiveVersionInnerQuery: "^SELECT (.+) FROM version (.+) LIVE",
 					},
-					MaxQueryExecutionTimeout: 500,
 				},
 			},
 			args: args{
@@ -123,7 +120,6 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
-					MaxQueryExecutionTimeout: 500,
 				},
 			},
 			args: args{
@@ -163,7 +159,6 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
-					MaxQueryExecutionTimeout: 500,
 				},
 			},
 			args: args{
@@ -226,7 +221,6 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						GetAdpodConfig:           "^SELECT (.+) FROM ad_pod (.+)",
 						DisplayVersionInnerQuery: "^SELECT (.+) FROM version (.+)",
 					},
-					MaxQueryExecutionTimeout: 500,
 				},
 			},
 			args: args{

@@ -26,7 +26,7 @@ func New(conn *sql.DB, cfg config.Database) *mySqlDB {
 }
 
 func updateQueriesWithMaxQueryExecutionTimeout(cfg config.Database) config.Queries {
-	queries := config.Queries{
+	return config.Queries{
 		GetParterConfig:                   fmt.Sprintf(cfg.Queries.GetParterConfig, cfg.MaxQueryExecutionTimeout),
 		DisplayVersionInnerQuery:          fmt.Sprintf(cfg.Queries.DisplayVersionInnerQuery, cfg.MaxQueryExecutionTimeout),
 		LiveVersionInnerQuery:             fmt.Sprintf(cfg.Queries.LiveVersionInnerQuery, cfg.MaxQueryExecutionTimeout),
@@ -45,5 +45,4 @@ func updateQueriesWithMaxQueryExecutionTimeout(cfg config.Database) config.Queri
 		GetAppIntegrationPathMapQuery:     fmt.Sprintf(cfg.Queries.GetAppIntegrationPathMapQuery, cfg.MaxQueryExecutionTimeout),
 		GetAppSubIntegrationPathMapQuery:  fmt.Sprintf(cfg.Queries.GetAppSubIntegrationPathMapQuery, cfg.MaxQueryExecutionTimeout),
 	}
-	return queries
 }
