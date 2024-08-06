@@ -10,6 +10,7 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -1087,6 +1088,83 @@ func TestGetProfileID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getProfileID(tt.args.requestBody)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestOpenWrap_getApplovinMultiFloors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	type args struct {
+		rctx models.RequestCtx
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  models.MultiFloorsConfig
+		setup func()
+	}{
+		{
+			name: "endpoint is not of applovinmax",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointV25,
+				},
+			},
+			want: models.MultiFloorsConfig{
+				Enabled: false,
+			},
+			setup: func() {},
+		},
+		{
+			name: "AB test disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:     models.EndpointAppLovinMax,
+					PubID:        5890,
+					ProfileIDStr: "1234",
+				},
+			},
+			want: models.MultiFloorsConfig{
+				Enabled: false,
+			},
+			setup: func() {
+				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(false)
+			},
+		},
+		{
+			name: "AB test enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:     models.EndpointAppLovinMax,
+					PubID:        5890,
+					ProfileIDStr: "1234",
+				},
+			},
+			want: models.MultiFloorsConfig{
+				Enabled: true,
+				Config: models.ApplovinAdUnitFloors{
+					"adunit_name": {1.5, 1.2, 2.2},
+				},
+			},
+			setup: func() {
+				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(true)
+				mockFeature.EXPECT().GetApplovinMultiFloors(5890, "1234").Return(models.ApplovinAdUnitFloors{
+					"adunit_name": {1.5, 1.2, 2.2},
+				})
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup()
+			m := OpenWrap{
+				pubFeatures: mockFeature,
+			}
+			got := m.getApplovinMultiFloors(tt.args.rctx)
 			assert.Equal(t, tt.want, got)
 		})
 	}
