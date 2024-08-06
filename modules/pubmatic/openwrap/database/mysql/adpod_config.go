@@ -20,7 +20,7 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, db.cfg.MaxQueryExecutionTimeout, versionID)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, versionID)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetPublisherVASTTagsQuery, db.cfg.MaxQueryExecutionTimeout, pubID)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetPublisherVASTTagsQuery, pubID)
 	if err != nil {
 		return nil, err
 	}

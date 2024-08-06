@@ -11,7 +11,7 @@ func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetProfileTypePlatformMapQuery, db.cfg.MaxQueryExecutionTimeout)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetProfileTypePlatformMapQuery)
 	if err != nil {
 		return nil, err
 	}

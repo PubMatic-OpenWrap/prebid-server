@@ -97,10 +97,9 @@ func (db *mySqlDB) formWrapperSlotMappingQuery(profileID, displayVersion int, pa
 		query = strings.Replace(db.cfg.Queries.GetWrapperLiveVersionSlotMappings, profileIdKey, strconv.Itoa(profileID), -1)
 		query = strings.Replace(query, partnerIdKey, partnerIDStr, -1)
 	}
-	query = fmt.Sprintf(query, db.cfg.MaxQueryExecutionTimeout)
 	return query
 }
 
 func (db *mySqlDB) formSlotNameHashQuery(pubID int) (query string) {
-	return fmt.Sprintf(db.cfg.Queries.GetSlotNameHash, db.cfg.MaxQueryExecutionTimeout, pubID)
+	return fmt.Sprintf(db.cfg.Queries.GetSlotNameHash, pubID)
 }
