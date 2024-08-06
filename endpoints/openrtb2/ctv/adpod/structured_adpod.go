@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -80,6 +81,11 @@ func (sa *structuredAdpod) HoldAuction() {
 	// Sort Bids impression wise
 	for _, bids := range sa.ImpBidMap {
 		util.SortBids(bids)
+		for _, bid := range bids {
+			if bid.Nbr == nil {
+				bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
+			}
+		}
 	}
 
 	// Create Slots
@@ -107,8 +113,9 @@ func (sa *structuredAdpod) HoldAuction() {
 		if slot.NoBid {
 			continue
 		}
-		bids[slot.Index].Status = constant.StatusWinningBid
+		bids[slot.Index].Nbr = nil
 		sa.WinningBid[slot.ImpId] = *bids[slot.Index]
+
 	}
 }
 
@@ -137,13 +144,15 @@ func (sa *structuredAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return seatBid
 }
 
-func (sa *structuredAdpod) GetSeatNonBid() openrtb_ext.NonBidCollection {
-	for _, bids := range sa.ImpBidMap {
-		return addSeatNonBids(bids)
-	}
-	return openrtb_ext.NonBidCollection{}
-}
+func (sa *structuredAdpod) CollectSeatNonBids() openrtb_ext.NonBidCollection {
+	nonBidCollection := openrtb_ext.NonBidCollection{}
 
+	for _, bids := range sa.ImpBidMap {
+		nonBidCollection.Append(addSeatNonBids(bids))
+	}
+
+	return nonBidCollection
+}
 func (sa *structuredAdpod) GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData {
 	return nil
 }
@@ -185,6 +194,7 @@ func (sa *structuredAdpod) isCategoryAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.Cat {
 		if _, ok := sa.SelectedCategories[bid.Cat[i]]; ok {
+			bid.Nbr = exchange.ResponseRejectedCreativeCategoryExclusions.Ptr()
 			return true
 		}
 	}
@@ -207,6 +217,7 @@ func (sa *structuredAdpod) isDomainAlreadySelected(bid *types.Bid) bool {
 
 	for i := range bid.ADomain {
 		if _, ok := sa.SelectedDomains[bid.ADomain[i]]; ok {
+			bid.Nbr = exchange.ResponseRejectedCreativeAdvertiserExclusions.Ptr()
 			return true
 		}
 	}
@@ -246,7 +257,16 @@ func isDealBid(bid *types.Bid) bool {
 }
 
 func (sa *structuredAdpod) isOverlap(bid *types.Bid, catMap map[string]bool, domainMap map[string]bool) bool {
-	return sa.isCatOverlap(bid.Cat, catMap) || sa.isDomainOverlap(bid.ADomain, domainMap)
+	var overlap bool
+	if sa.isDomainOverlap(bid.ADomain, domainMap) {
+		overlap = true
+		bid.Nbr = exchange.ResponseRejectedCreativeAdvertiserExclusions.Ptr()
+	}
+	if sa.isCatOverlap(bid.Cat, catMap) {
+		overlap = true
+		bid.Nbr = exchange.ResponseRejectedCreativeCategoryExclusions.Ptr()
+	}
+	return overlap
 }
 
 func (sa *structuredAdpod) selectBidForSlot(slots []Slot) {

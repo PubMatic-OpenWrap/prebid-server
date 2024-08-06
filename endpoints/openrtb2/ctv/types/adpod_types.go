@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -11,7 +11,7 @@ type Bid struct {
 	*openrtb2.Bid
 	openrtb_ext.ExtBid
 	Duration          int
-	Status            constant.BidStatus
+	Nbr               *openrtb3.NoBidReason
 	DealTierSatisfied bool
 	Seat              string
 }

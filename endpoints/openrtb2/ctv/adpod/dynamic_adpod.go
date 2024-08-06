@@ -13,6 +13,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/endpoints/events"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
@@ -20,6 +21,7 @@ import (
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/response"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -122,12 +124,12 @@ func (da *dynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
 	}
 
 	//get duration of creative
-	duration, status := getBidDuration(bid, da.ReqAdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
+	duration, nbr := getBidDuration(bid, da.ReqAdpodExt, da.ImpConfigs, da.ImpConfigs[sequence-1].MaxDuration)
 
 	da.AdpodBid.Bids = append(da.AdpodBid.Bids, &types.Bid{
 		Bid:               bid,
 		ExtBid:            ext,
-		Status:            status,
+		Nbr:               nbr,
 		Duration:          int(duration),
 		DealTierSatisfied: util.GetDealTierSatisfied(&ext),
 		Seat:              seat,
@@ -193,7 +195,7 @@ func (da *dynamicAdpod) GetAdpodSeatBids() []openrtb2.SeatBid {
 	return da.getBidResponseSeatBids()
 }
 
-func (da *dynamicAdpod) GetSeatNonBid() openrtb_ext.NonBidCollection {
+func (da *dynamicAdpod) CollectSeatNonBids() openrtb_ext.NonBidCollection {
 	if da.AdpodBid != nil && len(da.AdpodBid.Bids) > 0 {
 		return addSeatNonBids(da.AdpodBid.Bids)
 	}
@@ -296,13 +298,13 @@ it will try to get the actual ad duration returned by the bidder using prebid.vi
 if prebid.video.duration not present then uses defaultDuration passed as an argument
 if video lengths matching policy is present for request then it will validate and update duration based on policy
 */
-func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, config []*types.ImpAdPodConfig, defaultDuration int64) (int64, constant.BidStatus) {
+func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, config []*types.ImpAdPodConfig, defaultDuration int64) (int64, *openrtb3.NoBidReason) {
 
 	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
 	if nil != err || duration <= 0 {
 		// incase if duration is not present use impression duration directly as it is
-		return defaultDuration, constant.StatusOK
+		return defaultDuration, nil
 	}
 
 	// C2: Based on video lengths matching policy validate and return duration
@@ -311,30 +313,30 @@ func getBidDuration(bid *openrtb2.Bid, reqExt *openrtb_ext.ExtRequestAdPod, conf
 	}
 
 	//default return duration which is present in bid.ext.prebid.vide.duration field
-	return duration, constant.StatusOK
+	return duration, nil
 }
 
 // getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*types.ImpAdPodConfig) (int64, constant.BidStatus) {
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*types.ImpAdPodConfig) (int64, *openrtb3.NoBidReason) {
 	switch policy {
 	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp != duration {
-			return duration, constant.StatusDurationMismatch
+			return duration, exchange.ResponseRejectedInvalidCreative.Ptr()
 		}
 		//its and valid duration return it with StatusOK
 
 	case openrtb_ext.OWRoundupVideoAdDurationMatching:
 		tmp := util.GetNearestDuration(duration, config)
 		if tmp == -1 {
-			return duration, constant.StatusDurationMismatch
+			return duration, exchange.ResponseRejectedInvalidCreative.Ptr()
 		}
 		//update duration with nearest one duration
 		duration = tmp
 		//its and valid duration return it with StatusOK
 	}
 
-	return duration, constant.StatusOK
+	return duration, nil
 }
 
 /***************************Bid Response Processing************************/
@@ -512,7 +514,7 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 		bidExt.Prebid.Video.Duration += int(bid.Duration)
 
 		//setting bid status as winning bid
-		bid.Status = constant.StatusWinningBid
+		bid.Nbr = nil
 	}
 	rawExt, _ := json.Marshal(bidExt)
 	return rawExt
@@ -522,12 +524,8 @@ func getAdPodBidExtension(adpod *types.AdPodBid) json.RawMessage {
 func (da *dynamicAdpod) recordRejectedAdPodBids(pubID string) {
 	if da.AdpodBid != nil && len(da.AdpodBid.Bids) > 0 {
 		for _, bid := range da.AdpodBid.Bids {
-			if bid.Status != constant.StatusWinningBid {
-				reason := ConvertAPRCToNBRC(bid.Status)
-				if reason == nil {
-					continue
-				}
-				rejReason := strconv.FormatInt(int64(*reason), 10)
+			if bid.Nbr != nil {
+				rejReason := strconv.FormatInt(int64(*bid.Nbr), 10)
 				da.MetricsEngine.RecordRejectedBids(pubID, bid.Seat, rejReason)
 			}
 		}
@@ -544,12 +542,6 @@ func (da *dynamicAdpod) setBidExtParams() {
 
 			//add duration value
 			raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Itoa(int(bid.Duration))), "prebid", "video", "duration")
-			if nil == err {
-				bid.Ext = raw
-			}
-
-			//add bid filter reason value
-			raw, err = jsonparser.Set(bid.Ext, []byte(strconv.FormatInt(bid.Status, 10)), "adpod", "aprc")
 			if nil == err {
 				bid.Ext = raw
 			}

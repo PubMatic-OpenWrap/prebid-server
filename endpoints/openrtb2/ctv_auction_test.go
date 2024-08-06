@@ -12,9 +12,9 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/adpod"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -327,6 +327,7 @@ func TestCreateAdPodBidResponseSeatNonBid(t *testing.T) {
 				},
 				DealTierSatisfied: false,
 				Seat:              "pubmatic",
+				Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 			},
 			{
 				Bid: &openrtb2.Bid{
@@ -340,7 +341,6 @@ func TestCreateAdPodBidResponseSeatNonBid(t *testing.T) {
 						},
 					},
 				},
-				Status:            constant.StatusWinningBid,
 				DealTierSatisfied: false,
 				Seat:              "pubmatic",
 			},

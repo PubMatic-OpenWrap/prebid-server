@@ -668,7 +668,7 @@ func (deps *ctvEndpointDeps) createAdPodBidResponse(resp *openrtb2.BidResponse) 
 
 	for _, adpod := range deps.podCtx {
 		seatbids = append(seatbids, adpod.GetAdpodSeatBids()...)
-		seatNonBid.Append(adpod.GetSeatNonBid())
+		seatNonBid.Append(adpod.CollectSeatNonBids())
 	}
 
 	bidResp := &openrtb2.BidResponse{
@@ -695,7 +695,7 @@ func (deps *ctvEndpointDeps) getBidResponseExt(resp *openrtb2.BidResponse) (data
 		}
 		winningBids = append(winningBids, adpodCtx.GetWinningBids()...)
 	}
-	resp.SeatBid = winningBids
+	resp.SeatBid = deps.combineBidsSeatWise(winningBids)
 	adpodExt.Response = *resp
 
 	//Remove extension parameter

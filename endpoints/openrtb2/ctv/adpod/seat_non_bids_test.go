@@ -3,11 +3,11 @@ package adpod
 import (
 	"testing"
 
-	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAddSeatNonBids(t *testing.T) {
@@ -48,6 +48,7 @@ func TestAddSeatNonBids(t *testing.T) {
 						},
 						DealTierSatisfied: false,
 						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 					},
 					{
 						Bid: &openrtb2.Bid{
@@ -61,7 +62,6 @@ func TestAddSeatNonBids(t *testing.T) {
 								},
 							},
 						},
-						Status:            constant.StatusWinningBid,
 						DealTierSatisfied: false,
 						Seat:              "pubmatic",
 					},

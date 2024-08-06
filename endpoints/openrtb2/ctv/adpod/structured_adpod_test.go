@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v2/exchange"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,6 +22,7 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 		name           string
 		fields         fields
 		wantWinningBid map[string]types.Bid
+		wantImpBidMap  map[string][]*types.Bid
 	}{
 		{
 			name: "only_price_based_auction_with_no_exclusion",
@@ -80,6 +82,59 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 5,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 2,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+						},
+						DealTierSatisfied: false,
+						Seat:              "index",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 10,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -87,7 +142,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -95,7 +149,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -103,7 +156,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -188,7 +240,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -196,7 +247,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -205,7 +255,71 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
+				},
+			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 10,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
 				},
 			},
 		},
@@ -278,6 +392,71 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "index",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 10,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -285,7 +464,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -294,7 +472,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "index",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -303,7 +480,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -380,6 +556,71 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 10,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -388,7 +629,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -396,7 +636,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -405,7 +644,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -490,6 +728,80 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 8,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 9,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -498,7 +810,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -507,7 +818,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -515,7 +825,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -608,6 +917,89 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 8,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 9,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -616,7 +1008,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -625,7 +1016,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -633,7 +1023,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -726,6 +1115,89 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 8,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 9,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -734,7 +1206,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -742,7 +1213,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -751,7 +1221,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -844,6 +1313,89 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 1,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-2"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 3,
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp3": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 8,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: true,
+						Seat:              "god",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 10,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 9,
+						},
+						DealTierSatisfied: false,
+						Seat:              "god",
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -852,7 +1404,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: true,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp2": {
 					Bid: &openrtb2.Bid{
@@ -861,7 +1412,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 				"imp3": {
 					Bid: &openrtb2.Bid{
@@ -869,7 +1419,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "god",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -923,6 +1472,47 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				},
 				WinningBid: make(map[string]types.Bid),
 			},
+			wantImpBidMap: map[string][]*types.Bid{
+				"imp1": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 6,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "appnexux",
+						Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+					},
+				},
+				"imp2": {
+					{
+						Bid: &openrtb2.Bid{
+							Price: 4,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "index",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+					{
+						Bid: &openrtb2.Bid{
+							Price: 2,
+							Cat:   []string{"IAB-1"},
+						},
+						DealTierSatisfied: false,
+						Seat:              "pubmatic",
+						Nbr:               exchange.ResponseRejectedCreativeCategoryExclusions.Ptr(),
+					},
+				},
+			},
 			wantWinningBid: map[string]types.Bid{
 				"imp1": {
 					Bid: &openrtb2.Bid{
@@ -931,7 +1521,6 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 					},
 					DealTierSatisfied: false,
 					Seat:              "pubmatic",
-					Status:            constant.StatusWinningBid,
 				},
 			},
 		},
@@ -945,13 +1534,13 @@ func TestStructuredAdpodPerformAuctionAndExclusion(t *testing.T) {
 				WinningBid: tt.fields.WinningBid,
 			}
 			sa.HoldAuction()
-
-			assert.Equal(t, sa.WinningBid, tt.wantWinningBid, "Auction failed")
+			assert.Equal(t, tt.wantImpBidMap, sa.ImpBidMap)
+			assert.Equal(t, tt.wantWinningBid, sa.WinningBid)
 		})
 	}
 }
 
-func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
+func TestStructuredAdpodCollectSeatNonBids(t *testing.T) {
 	type fields struct {
 		ImpBidMap map[string][]*types.Bid
 	}
@@ -983,6 +1572,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 							},
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
+							Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
 						},
 						{
 							Bid: &openrtb2.Bid{
@@ -996,7 +1586,6 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 									},
 								},
 							},
-							Status:            constant.StatusWinningBid,
 							DealTierSatisfied: false,
 							Seat:              "pubmatic",
 						},
@@ -1026,7 +1615,7 @@ func TestStructuredAdpodGetSeatNonBid(t *testing.T) {
 			sa := &structuredAdpod{
 				ImpBidMap: tt.fields.ImpBidMap,
 			}
-			snb := sa.GetSeatNonBid()
+			snb := sa.CollectSeatNonBids()
 			assert.Equal(t, snb, tt.want)
 		})
 	}
@@ -1058,7 +1647,7 @@ func TestStructuredAdpodGetAdpodSeatBids(t *testing.T) {
 						},
 						DealTierSatisfied: false,
 						Seat:              "pubmatic",
-						Status:            constant.StatusWinningBid,
+						Nbr:               nil,
 					},
 				},
 			},
