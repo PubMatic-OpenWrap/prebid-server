@@ -9,9 +9,9 @@ import (
 
 	"bytes"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/errortypes"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
@@ -92,7 +92,7 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	if len(adButlerResp) <= 0 {
-		return nil, []error{&errortypes.NoBidPrice{
+		return nil, []error{&errortypes.NoValidBid{
 			Message: "No Bid For the given Request",
 		}}
 	}
@@ -106,11 +106,11 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	if noOfPlacements == 0 {
-		return nil, []error{&errortypes.NoValidBid{
-			Message: "No Valid Bid For the given Request",
+		return nil, []error{&errortypes.NoBidPrice{
+			Message: "No Bid For the given Request",
 		}}
 	}
-
+	
 	responseF := a.GetBidderResponse(internalRequest, &adButlerResp, noOfPlacements)
 	if len(responseF.Bids) <= 0 {
 		return nil, []error{&errortypes.NoValidBid{
