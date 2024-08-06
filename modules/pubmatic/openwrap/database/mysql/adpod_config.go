@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -21,8 +20,7 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	getAdpodConfig := fmt.Sprintf(db.cfg.Queries.GetAdpodConfig, db.cfg.MaxQueryExecution)
-	rows, err := db.conn.QueryContext(ctx, getAdpodConfig, versionID)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, db.cfg.MaxQueryExecutionTimeout, versionID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -12,8 +11,7 @@ func (db *mySqlDB) GetAppSubIntegrationPaths() (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	getAppSubIntegrationPathMapQuery := fmt.Sprintf(db.cfg.Queries.GetAppSubIntegrationPathMapQuery, db.cfg.MaxQueryExecution)
-	rows, err := db.conn.QueryContext(ctx, getAppSubIntegrationPathMapQuery)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAppSubIntegrationPathMapQuery, db.cfg.MaxQueryExecutionTimeout)
 	if err != nil {
 		return nil, err
 	}

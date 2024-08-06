@@ -87,11 +87,9 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubID int) (int, int, string, int, error) {
 	var row *sql.Row
 	if displayVersion == 0 {
-		liveVersionInnerQuery := fmt.Sprintf(db.cfg.Queries.LiveVersionInnerQuery, db.cfg.MaxQueryExecution)
-		row = db.conn.QueryRow(liveVersionInnerQuery, profileID, pubID)
+		row = db.conn.QueryRow(db.cfg.Queries.LiveVersionInnerQuery, db.cfg.MaxQueryExecutionTimeout, profileID, pubID)
 	} else {
-		displayVersionInnerQuery := fmt.Sprintf(db.cfg.Queries.DisplayVersionInnerQuery, db.cfg.MaxQueryExecution)
-		row = db.conn.QueryRow(displayVersionInnerQuery, profileID, displayVersion, pubID)
+		row = db.conn.QueryRow(db.cfg.Queries.DisplayVersionInnerQuery, db.cfg.MaxQueryExecutionTimeout, profileID, displayVersion, pubID)
 	}
 
 	var platform sql.NullString

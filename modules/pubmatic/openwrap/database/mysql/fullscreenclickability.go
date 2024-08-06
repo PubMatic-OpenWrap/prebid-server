@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -13,8 +12,7 @@ func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	getAllDspFscPcntQuery := fmt.Sprintf(db.cfg.Queries.GetAllDspFscPcntQuery, db.cfg.MaxQueryExecution)
-	rows, err := db.conn.QueryContext(ctx, getAllDspFscPcntQuery)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAllDspFscPcntQuery, db.cfg.MaxQueryExecutionTimeout)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -10,12 +9,10 @@ import (
 
 // GetPublisherVASTTags - Method to get vast tags associated with publisher id from giym DB
 func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, error) {
-	getActiveVASTTagsQuery := fmt.Sprintf(db.cfg.Queries.GetPublisherVASTTagsQuery, db.cfg.MaxQueryExecution, pubID)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, getActiveVASTTagsQuery)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetPublisherVASTTagsQuery, db.cfg.MaxQueryExecutionTimeout, pubID)
 	if err != nil {
 		return nil, err
 	}
