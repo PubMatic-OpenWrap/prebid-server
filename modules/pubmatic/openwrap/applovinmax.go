@@ -215,11 +215,15 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 
 func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidRequest) {
 	clientConfigFlag, err := jsonparser.GetInt(signalExt, "wrapper", "clientconfig")
-	if err != nil || clientConfigFlag != 1 {
-		return
+	if err != nil {
+		clientConfigFlag = 0
 	}
 
-	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, []byte(`1`), "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
+	if len(maxRequest.Ext) == 0 {
+		maxRequest.Ext = []byte(`{}`)
+	}
+
+	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, []byte(strconv.FormatInt(clientConfigFlag, 10)), "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
 		maxRequest.Ext = maxReqExt
 	}
 }
