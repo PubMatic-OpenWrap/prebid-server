@@ -38,3 +38,53 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateQueriesWithMaxDbContextTimeout(t *testing.T) {
+	cfg := config.Database{
+		MaxDbContextTimeout: 30,
+		Queries: config.Queries{
+			GetParterConfig:                   "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			DisplayVersionInnerQuery:          "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			LiveVersionInnerQuery:             "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetWrapperSlotMappingsQuery:       "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetWrapperLiveVersionSlotMappings: "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetPMSlotToMappings:               "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAdunitConfigQuery:              "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAdunitConfigForLiveVersion:     "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetSlotNameHash:                   "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetPublisherVASTTagsQuery:         "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAllDspFscPcntQuery:             "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetPublisherFeatureMapQuery:       "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAnalyticsThrottlingQuery:       "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAdpodConfig:                    "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetProfileTypePlatformMapQuery:    "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAppIntegrationPathMapQuery:     "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+			GetAppSubIntegrationPathMapQuery:  "SELECT /*+ MAX_EXECUTION_TIME(%d) */ data FROM some_table ",
+		},
+	}
+
+	actualQueries := updateQueriesWithMaxDbContextTimeout(cfg)
+
+	expectedQueries := config.Queries{
+		GetParterConfig:                   "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		DisplayVersionInnerQuery:          "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		LiveVersionInnerQuery:             "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetWrapperSlotMappingsQuery:       "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetWrapperLiveVersionSlotMappings: "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetPMSlotToMappings:               "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAdunitConfigQuery:              "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAdunitConfigForLiveVersion:     "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetSlotNameHash:                   "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetPublisherVASTTagsQuery:         "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAllDspFscPcntQuery:             "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetPublisherFeatureMapQuery:       "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAnalyticsThrottlingQuery:       "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAdpodConfig:                    "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetProfileTypePlatformMapQuery:    "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAppIntegrationPathMapQuery:     "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+		GetAppSubIntegrationPathMapQuery:  "SELECT /*+ MAX_EXECUTION_TIME(30) */ data FROM some_table ",
+	}
+
+	// Compare the results
+	assert.Equal(t, expectedQueries, actualQueries)
+}

@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -15,12 +14,10 @@ import (
 func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error) {
 	nameHashMap := make(map[string]string)
 
-	query := db.formSlotNameHashQuery(pubID)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
-	rows, err := db.conn.QueryContext(ctx, query)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetSlotNameHash, pubID)
 	if err != nil {
 		return nameHashMap, err
 	}
@@ -98,8 +95,4 @@ func (db *mySqlDB) formWrapperSlotMappingQuery(profileID, displayVersion int, pa
 		query = strings.Replace(query, partnerIdKey, partnerIDStr, -1)
 	}
 	return query
-}
-
-func (db *mySqlDB) formSlotNameHashQuery(pubID int) (query string) {
-	return fmt.Sprintf(db.cfg.Queries.GetSlotNameHash, pubID)
 }

@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -35,11 +34,9 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 }
 
 func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map[int]map[string]string, error) {
-	getActivePartnersQuery := fmt.Sprintf(db.cfg.Queries.GetParterConfig, db.cfg.MaxDbContextTimeout, versionID, profileID, versionID, versionID)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
-	rows, err := db.conn.QueryContext(ctx, getActivePartnersQuery)
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetParterConfig, versionID, profileID, versionID, versionID)
 	if err != nil {
 		return nil, err
 	}
