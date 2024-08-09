@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/adapterstest"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -173,7 +174,7 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
@@ -339,6 +340,66 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "request with multi floor",
+			fields: fields{
+				URI: "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{"bidder":{"floors":[1.2,1.3,1.4]}}`),
+						},
+					},
+				},
+			},
+			expectedReqData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf3"},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -457,6 +518,40 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
+			},
+			wantErr: nil,
+			wantResp: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "7706636740145184841",
+							ImpID:   "test-imp-id",
+							Price:   0.500000,
+							AdID:    "29681110",
+							AdM:     "some-test-ad",
+							ADomain: []string{"pubmatic.com"},
+							CrID:    "29681110",
+							H:       250,
+							W:       300,
+							DealID:  "testdeal",
+							Ext:     json.RawMessage(`null`),
+						},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
+					},
+				},
+				Currency: "USD",
+			},
+		},
+		{
+			name: "response impid has suffix(mf1)",
+			args: args{
+				response: &adapters.ResponseData{
+					StatusCode: http.StatusOK,
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id_mf1", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
@@ -784,6 +879,613 @@ func TestGetMapFromJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getMapFromJSON(tt.input)
 			assert.Equal(t, tt.output, got)
+		})
+	}
+}
+
+func TestPubmaticAdapter_buildMultiFloorRequests(t *testing.T) {
+	type fields struct {
+		URI        string
+		bidderName string
+	}
+	type args struct {
+		request      *openrtb2.BidRequest
+		impFloorsMap map[string][]float64
+		cookies      []string
+	}
+	tests := []struct {
+		name            string
+		fields          fields
+		args            args
+		wantRequestData []*adapters.RequestData
+		wantError       []error
+	}{
+		{
+			name: "request with single imp and single floor",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id": {1.2},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1"},
+				},
+			},
+			wantError: []error{},
+		},
+		{
+			name: "request with single imp and two floors",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id": {1.2, 1.3},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2"},
+				},
+			},
+			wantError: []error{},
+		},
+		{
+			name: "request with single imp and max multi floors(3)",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id": {1.2, 1.3, 1.4},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf3"},
+				},
+			},
+			wantError: []error{},
+		},
+		{
+			name: "request with multiple imp and single floor",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+						{
+							ID:       "test-imp-id2",
+							BidFloor: 0.13,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id":  {1.2},
+					"test-imp-id2": {1.3},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}},{"id":"test-imp-id2_mf1","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1", "test-imp-id2_mf1"},
+				},
+			},
+			wantError: []error{},
+		},
+		{
+			name: "request with multiple imp and 3 floors (max) for only one imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+						{
+							ID:       "test-imp-id2",
+							BidFloor: 0.34,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id": {1.2, 1.3, 1.4},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1", "test-imp-id2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2", "test-imp-id2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4,"ext":{}},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf3", "test-imp-id2"},
+				},
+			},
+			wantError: []error{},
+		},
+		{
+			name: "request with multiple imp with 3 floors for one imp and 2 floors for another imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+						{
+							ID:       "test-imp-id2",
+							BidFloor: 0.34,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				impFloorsMap: map[string][]float64{
+					"test-imp-id":  {1.2, 1.3, 1.4},
+					"test-imp-id2": {1.2, 1.3},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			wantRequestData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}},{"id":"test-imp-id2_mf1","banner":{"w":300,"h":250},"bidfloor":1.2,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1", "test-imp-id2_mf1"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}},{"id":"test-imp-id2_mf2","banner":{"w":300,"h":250},"bidfloor":1.3,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2", "test-imp-id2_mf2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4,"ext":{}},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id_mf3", "test-imp-id2"},
+				},
+			},
+			wantError: []error{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &PubmaticAdapter{
+				URI:        tt.fields.URI,
+				bidderName: tt.fields.bidderName,
+			}
+			gotRequestData, gotError := a.buildMultiFloorRequests(tt.args.request, tt.args.impFloorsMap, tt.args.cookies)
+			assert.Equal(t, tt.wantRequestData, gotRequestData)
+			assert.Equal(t, tt.wantError, gotError)
+		})
+	}
+}
+
+func TestPubmaticAdapter_buildAdapterRequest(t *testing.T) {
+	type fields struct {
+		URI        string
+		bidderName string
+	}
+	type args struct {
+		request *openrtb2.BidRequest
+		cookies []string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []*adapters.RequestData
+		wantErr bool
+	}{
+		{
+			name: "failed to marshal request",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{`),
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "request with single imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "request with multiple imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+						},
+						{
+							ID:       "test-imp-id2",
+							BidFloor: 0.34,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+						},
+					},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id", "test-imp-id2"},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &PubmaticAdapter{
+				URI:        tt.fields.URI,
+				bidderName: tt.fields.bidderName,
+			}
+			got, err := a.buildAdapterRequest(tt.args.request, tt.args.cookies)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("buildAdapterRequest() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestTrimSuffixWithPattern(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "input string is empty",
+			args: args{
+				input: "",
+			},
+			want: "",
+		},
+		{
+			name: "input string does not contain pattern",
+			args: args{
+				input: "div123456789",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern",
+			args: args{
+				input: "div123456789_mf1",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern at the end",
+			args: args{
+				input: "div123456789_mf1_mf2",
+			},
+			want: "div123456789",
+		},
+		{
+			name: "input string contains pattern at the start",
+			args: args{
+				input: "mf1_mf2_div123456789",
+			},
+			want: "mf1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := trimSuffixWithPattern(tt.args.input)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
