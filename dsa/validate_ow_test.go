@@ -7,6 +7,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,6 +102,60 @@ func TestValidateDSA(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantBid, tt.giveBid, "mismatched bid")
+		})
+	}
+}
+
+func Test_dropDSA(t *testing.T) {
+	type args struct {
+		reqDSA *openrtb_ext.ExtRegsDSA
+		bidDSA *openrtb_ext.ExtBidDSA
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Nil bidDSA",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{}, bidDSA: nil},
+			want: false,
+		},
+		{
+			name: "Nil reqDSA",
+			args: args{reqDSA: nil, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: true,
+		},
+		{
+			name: "Nil reqDSA.Required",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{Required: nil}, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: true,
+		},
+		{
+			name: "reqDSA.Required Supported",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{Required: ptrutil.ToPtr(Supported)}, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: false,
+		},
+		{
+			name: "reqDSA.Required Required",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{Required: ptrutil.ToPtr(Required)}, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: false,
+		},
+		{
+			name: "reqDSA.Required RequiredOnlinePlatform",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{Required: ptrutil.ToPtr(RequiredOnlinePlatform)}, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: false,
+		},
+		{
+			name: "reqDSA.Required Other Value",
+			args: args{reqDSA: &openrtb_ext.ExtRegsDSA{Required: ptrutil.ToPtr[int8](5)}, bidDSA: &openrtb_ext.ExtBidDSA{}},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dropDSA(tt.args.reqDSA, tt.args.bidDSA)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
