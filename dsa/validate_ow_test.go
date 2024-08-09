@@ -71,6 +71,25 @@ func TestValidateDSA(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "dsa_present_in_bid_but_and_empty_dsa_present_in_req",
+			giveRequest: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Regs: &openrtb2.Regs{},
+				},
+			},
+			giveBid: &entities.PbsOrtbBid{
+				Bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{"dsa": {}}`),
+				},
+			},
+			wantError: nil,
+			wantBid: &entities.PbsOrtbBid{
+				Bid: &openrtb2.Bid{
+					Ext: json.RawMessage(`{}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

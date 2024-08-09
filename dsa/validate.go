@@ -47,7 +47,7 @@ func Validate(req *openrtb_ext.RequestWrapper, bid *entities.PbsOrtbBid) error {
 	reqDSA := getReqDSA(req)
 	bidDSA := getBidDSA(bid)
 
-	if reqDSA == nil && bidDSA != nil {
+	if (reqDSA == nil || reqDSA.Required == nil) && bidDSA != nil {
 		bid.Bid.Ext = jsonparser.Delete(bid.Bid.Ext, "dsa")
 		return nil
 	}
