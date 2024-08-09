@@ -11,6 +11,7 @@ import (
 
 // Required values representing whether a DSA object is required
 const (
+	Supported              int8 = 1 // bid responses with or without DSA object will be accepted
 	Required               int8 = 2 // bid responses without DSA object will not be accepted
 	RequiredOnlinePlatform int8 = 3 // bid responses without DSA object will not be accepted, Publisher is Online Platform
 )
@@ -47,7 +48,7 @@ func Validate(req *openrtb_ext.RequestWrapper, bid *entities.PbsOrtbBid) error {
 	reqDSA := getReqDSA(req)
 	bidDSA := getBidDSA(bid)
 
-	if (reqDSA == nil || reqDSA.Required == nil) && bidDSA != nil {
+	if dropDSA(reqDSA, bidDSA) {
 		bid.Bid.Ext = jsonparser.Delete(bid.Bid.Ext, "dsa")
 		return nil
 	}
