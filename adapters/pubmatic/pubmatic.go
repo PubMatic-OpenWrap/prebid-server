@@ -159,6 +159,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		return nil, errs
 	}
 
+	logDeviceDetails(request, wrapperExt)
+
 	newReqExt.Wrapper = wrapperExt
 	rawExt, err := json.Marshal(newReqExt)
 	if err != nil {

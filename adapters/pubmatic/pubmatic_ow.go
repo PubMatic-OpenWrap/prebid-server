@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -73,4 +74,27 @@ func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *o
 	// meta.DChain = bidExt.DChain;
 
 	return meta
+}
+
+func logDeviceDetails(rtbReq *openrtb2.BidRequest, wrapperExt *pubmaticWrapperExt) {
+	if rtbReq == nil ||
+		rtbReq.App == nil || rtbReq.App.Publisher == nil || rtbReq.Device == nil || wrapperExt == nil {
+		return
+	}
+
+	ip := rtbReq.Device.IP
+	if len(ip) == 0 {
+		ip = rtbReq.Device.IPv6
+	}
+
+	glog.Infof("TET-22947:PB:%v:%v:%v:%v:%v:%v:%v:%v:%v",
+		rtbReq.App.Publisher.ID,
+		wrapperExt.ProfileID,
+		rtbReq.ID,
+		rtbReq.Device.Make,
+		rtbReq.Device.Model,
+		rtbReq.App.Bundle,
+		rtbReq.Device.DeviceType,
+		rtbReq.Device.IFA,
+		ip)
 }

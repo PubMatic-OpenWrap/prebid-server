@@ -186,6 +186,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.SendAllBids = isSendAllBids(rCtx)
 
+	logDeviceDetails(rCtx, payload.BidRequest)
 	m.metricEngine.RecordPublisherRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Platform)
 
 	if newPartnerConfigMap, ok := ABTestProcessing(rCtx); ok {
@@ -1060,6 +1061,29 @@ func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUn
 	}
 
 	return videoEnabled || bannerEnabled || nativeEnabled
+}
+
+func logDeviceDetails(rctx models.RequestCtx, rtbReq *openrtb2.BidRequest) {
+	if rtbReq == nil ||
+		rtbReq.App == nil || rtbReq.App.Publisher == nil || rtbReq.Device == nil {
+		return
+	}
+
+	ip := rtbReq.Device.IP
+	if len(ip) == 0 {
+		ip = rtbReq.Device.IPv6
+	}
+
+	glog.Infof("TET-22947:PBM:%v:%v:%v:%v:%v:%v:%v:%v:%v",
+		rtbReq.App.Publisher.ID,
+		rctx.ProfileID,
+		rtbReq.ID,
+		rtbReq.Device.Make,
+		rtbReq.Device.Model,
+		rtbReq.App.Bundle,
+		rtbReq.Device.DeviceType,
+		rtbReq.Device.IFA,
+		ip)
 }
 
 func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
