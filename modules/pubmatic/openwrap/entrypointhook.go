@@ -105,7 +105,6 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
 		DisplayVersionID:          requestExtWrapper.VersionId,
-		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
 		SSAuction:                 requestExtWrapper.SSAuctionFlag,

@@ -28,7 +28,6 @@ type RequestCtx struct {
 
 	SSAuction          int
 	SummaryDisable     int
-	LogInfoFlag        int
 	SSAI               string
 	PartnerConfigMap   map[int]map[string]string
 	SupportDeals       bool
