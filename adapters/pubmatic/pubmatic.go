@@ -631,6 +631,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			bid := sb.Bid[i]
 			bid.ImpID = trimSuffixWithPattern(bid.ImpID)
 
+			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
 			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
 

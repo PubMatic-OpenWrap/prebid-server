@@ -3,6 +3,7 @@ package dsa
 import (
 	"errors"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
@@ -46,6 +47,10 @@ func Validate(req *openrtb_ext.RequestWrapper, bid *entities.PbsOrtbBid) error {
 	reqDSA := getReqDSA(req)
 	bidDSA := getBidDSA(bid)
 
+	if (reqDSA == nil || reqDSA.Required == nil) && bidDSA != nil {
+		bid.Bid.Ext = jsonparser.Delete(bid.Bid.Ext, "dsa")
+		return nil
+	}
 	if dsaRequired(reqDSA) && bidDSA == nil {
 		return ErrDsaMissing
 	}
