@@ -6,6 +6,7 @@ package mock_publisherfeature
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	models "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	reflect "reflect"
 )
 
@@ -30,6 +31,20 @@ func NewMockFeature(ctrl *gomock.Controller) *MockFeature {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockFeature) EXPECT() *MockFeatureMockRecorder {
 	return m.recorder
+}
+
+// GetApplovinMultiFloors mocks base method
+func (m *MockFeature) GetApplovinMultiFloors(arg0 int, arg1 string) models.ApplovinAdUnitFloors {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApplovinMultiFloors", arg0, arg1)
+	ret0, _ := ret[0].(models.ApplovinAdUnitFloors)
+	return ret0
+}
+
+// GetApplovinMultiFloors indicates an expected call of GetApplovinMultiFloors
+func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
 // IsAmpMultiformatEnabled mocks base method
@@ -59,6 +74,20 @@ func (m *MockFeature) IsAnalyticsTrackingThrottled(arg0, arg1 int) (bool, bool) 
 func (mr *MockFeatureMockRecorder) IsAnalyticsTrackingThrottled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAnalyticsTrackingThrottled", reflect.TypeOf((*MockFeature)(nil).IsAnalyticsTrackingThrottled), arg0, arg1)
+}
+
+// IsApplovinMultiFloorsEnabled mocks base method
+func (m *MockFeature) IsApplovinMultiFloorsEnabled(arg0 int, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsApplovinMultiFloorsEnabled", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsApplovinMultiFloorsEnabled indicates an expected call of IsApplovinMultiFloorsEnabled
+func (mr *MockFeatureMockRecorder) IsApplovinMultiFloorsEnabled(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsApplovinMultiFloorsEnabled", reflect.TypeOf((*MockFeature)(nil).IsApplovinMultiFloorsEnabled), arg0, arg1)
 }
 
 // IsBidRecoveryEnabled mocks base method
