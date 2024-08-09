@@ -15,7 +15,9 @@ import (
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
 var (
@@ -31,8 +33,9 @@ func GetDurationWiseBidsBucket(bids []*types.Bid) types.BidsBuckets {
 	result := types.BidsBuckets{}
 
 	for i, bid := range bids {
-		if constant.StatusOK == bid.Status {
+		if bid.Nbr == nil {
 			result[bid.Duration] = append(result[bid.Duration], bids[i])
+			bid.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
 		}
 	}
 
