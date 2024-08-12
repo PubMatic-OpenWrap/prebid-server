@@ -246,7 +246,8 @@ func (v *vtrackEndpoint) cachePutObjects(ctx context.Context, req *BidCacheReque
 			Key:        c.Key,
 		}
 
-		if _, ok := biddersAllowingVastUpdate[c.Bidder]; ok && nc.Data != nil {
+		if true && nc.Data != nil {
+			// if _, ok := biddersAllowingVastUpdate[c.Bidder]; ok && nc.Data != nil {
 			nc.Data = ModifyVastXmlJSON(v.Cfg.ExternalURL, nc.Data, c.BidID, c.Bidder, accountId, c.Timestamp, integration)
 		}
 

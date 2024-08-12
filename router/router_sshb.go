@@ -13,6 +13,7 @@ import (
 	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/endpoints"
+	"github.com/prebid/prebid-server/v2/endpoints/events"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2"
 	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/gdpr"
@@ -78,6 +79,13 @@ func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	ortbAuctionEndpoint(w, r, nil)
+	return nil
+}
+
+func VtrackEndPointWrapper(w http.ResponseWriter, r *http.Request) error {
+	// cfg, accounts, cacheClient, cfg.BidderInfos, r.MetricsEngine
+	vtrackEndpoint := events.NewVTrackEndpoint(g_cfg, *g_accounts, *g_cacheClient, g_cfg.BidderInfos, g_metrics)
+	vtrackEndpoint(w, r, nil)
 	return nil
 }
 

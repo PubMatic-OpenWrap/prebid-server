@@ -179,7 +179,9 @@ func encodeValueToBuffer(value Cacheable, leadingComma bool, buffer *bytes.Buffe
 	} else {
 		buffer.WriteString(`","value":`)
 	}
-	buffer.Write(value.Data)
+	// buffer.Write(value.Data)
+	tmp := strings.ReplaceAll(string(value.Data), `"`, `\"`)
+	buffer.Write([]byte(`"` + tmp + `"`))
 	if len(value.Key) > 0 {
 		buffer.WriteString(`,"key":"`)
 		buffer.WriteString(string(value.Key))
