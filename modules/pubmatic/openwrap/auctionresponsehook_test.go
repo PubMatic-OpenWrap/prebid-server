@@ -1599,7 +1599,6 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
-				// mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
