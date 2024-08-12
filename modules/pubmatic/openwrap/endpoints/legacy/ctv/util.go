@@ -1,9 +1,11 @@
 package ctv
 
 import (
+	"encoding/json"
 	"net/url"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 func GetPubIdFromQueryParams(params url.Values) string {
@@ -30,4 +32,37 @@ func ValidateEIDs(eids []openrtb2.EID) []openrtb2.EID {
 		}
 	}
 	return validEIDs
+}
+
+func UpdateUserEidsWithValidValues(user *openrtb2.User) {
+	if user == nil {
+		return
+	}
+
+	if user.Ext != nil {
+		var userExt openrtb_ext.ExtUser
+		err := json.Unmarshal(user.Ext, &userExt)
+		if err != nil {
+			return
+		}
+
+		eids := ValidateEIDs(userExt.Eids)
+		userExt.Eids = nil
+		if len(eids) > 0 {
+			userExt.Eids = eids
+		}
+
+		userExtjson, err := json.Marshal(userExt)
+		if err == nil {
+			user.Ext = userExtjson
+		}
+	}
+
+	if len(user.EIDs) > 0 {
+		eids := ValidateEIDs(user.EIDs)
+		user.EIDs = nil
+		if len(eids) > 0 {
+			user.EIDs = eids
+		}
+	}
 }
