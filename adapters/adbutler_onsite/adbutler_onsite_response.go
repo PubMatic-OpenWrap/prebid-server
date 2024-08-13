@@ -110,7 +110,7 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 			Message: "No Bid For the given Request",
 		}}
 	}
-	
+
 	responseF := a.GetBidderResponse(internalRequest, &adButlerResp, noOfPlacements)
 	if len(responseF.Bids) <= 0 {
 		return nil, []error{&errortypes.NoValidBid{
