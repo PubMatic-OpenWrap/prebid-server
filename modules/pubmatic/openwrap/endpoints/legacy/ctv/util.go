@@ -3,10 +3,13 @@ package ctv
 import (
 	"encoding/json"
 	"net/url"
+	"regexp"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
+
+var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
 func GetPubIdFromQueryParams(params url.Values) string {
 	pubId := params.Get(ORTBSitePublisherID)
