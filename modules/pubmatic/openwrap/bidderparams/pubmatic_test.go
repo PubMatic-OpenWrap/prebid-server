@@ -298,7 +298,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 						SlotMappings: map[string]interface{}{
 							"site":     "12313",
 							"adtag":    "45343",
-							"slotName": "/Test_Adunit1234@DIV1@200x300",
+							"slotName": "/Test_Adunit1234@Div1@200x300",
 						},
 					},
 				})
