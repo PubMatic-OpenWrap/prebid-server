@@ -833,58 +833,46 @@ func TestGetEndpoint(t *testing.T) {
 
 func Test_getSendBurl(t *testing.T) {
 	type args struct {
-		request  []byte
-		endpoint string
+		request []byte
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
+
 		{
-			name: "other than appLovinMax request",
+			name: "request with sendburl true",
 			args: args{
-				endpoint: models.EndpointV25,
-				request:  []byte(``),
-			},
-			want: false,
-		},
-		{
-			name: "appLovinMax request with sendburl true",
-			args: args{
-				endpoint: models.EndpointAppLovinMax,
-				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
 			},
 			want: true,
 		},
 		{
 			name: "appLovinMax request with sendburl false",
 			args: args{
-				endpoint: models.EndpointAppLovinMax,
-				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":false,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":false,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
 			},
 			want: false,
 		},
 		{
 			name: "appLovinMax request with no sendburl key",
 			args: args{
-				endpoint: models.EndpointAppLovinMax,
-				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
 			},
 			want: false,
 		},
 		{
 			name: "no ext object in request",
 			args: args{
-				endpoint: models.EndpointAppLovinMax,
-				request:  []byte(``),
+				request: []byte(``),
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getSendBurl(tt.args.request, tt.args.endpoint)
+			got := getSendBurl(tt.args.request)
 			assert.Equal(t, tt.want, got)
 		})
 	}

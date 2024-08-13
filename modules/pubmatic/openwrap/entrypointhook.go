@@ -134,7 +134,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl: getSendBurl(payload.Body, endpoint),
+		SendBurl: endpoint == models.EndpointAppLovinMax && getSendBurl(payload.Body),
 	}
 
 	// SSAuction will be always 1 for CTV request
@@ -255,10 +255,7 @@ func GetEndpoint(path, source string, agent string) string {
 	return ""
 }
 
-func getSendBurl(request []byte, endpoint string) bool {
-	if endpoint != models.EndpointAppLovinMax {
-		return false
-	}
+func getSendBurl(request []byte) bool {
 	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl
