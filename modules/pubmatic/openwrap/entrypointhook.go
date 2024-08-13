@@ -73,7 +73,6 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
-		rCtx.Sendburl = getSendBurl(payload.Body)
 		// updating body locally to access updated fields from signal
 		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
@@ -135,6 +134,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
+		SendBurl: getSendBurl(payload.Body, endpoint),
 	}
 
 	// SSAuction will be always 1 for CTV request
@@ -255,7 +255,11 @@ func GetEndpoint(path, source string, agent string) string {
 	return ""
 }
 
-func getSendBurl(request []byte) bool {
+func getSendBurl(request []byte, endpoint string) bool {
+	if endpoint != models.EndpointAppLovinMax {
+		return false
+	}
+	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl
 }
