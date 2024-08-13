@@ -73,6 +73,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
+		rCtx.Sendburl = getSendBurl(payload.Body)
 		// updating body locally to access updated fields from signal
 		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
@@ -252,4 +253,9 @@ func GetEndpoint(path, source string, agent string) string {
 		return models.EndpointJson
 	}
 	return ""
+}
+
+func getSendBurl(request []byte) bool {
+	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
+	return sendBurl
 }

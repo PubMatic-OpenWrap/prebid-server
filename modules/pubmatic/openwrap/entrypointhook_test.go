@@ -829,3 +829,36 @@ func TestGetEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func Test_getSendBurl(t *testing.T) {
+	type args struct {
+		request []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// {
+		// 	name: "test",
+		// 	args: args{
+		// 		request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+		// 	},
+		// 	want: true,
+		// },
+		{
+			name: "test",
+			args: args{
+				request: []byte(``),
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSendBurl(tt.args.request); got != tt.want {
+				t.Errorf("getSendBurl() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
