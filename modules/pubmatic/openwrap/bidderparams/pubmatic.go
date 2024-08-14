@@ -37,10 +37,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		isRegexKGP = true
 	}
 
-	if rctx.IsTestRequest > 1 {
-		if len(slots) > 0 {
-			extImpPubMatic.AdSlot = slots[0]
-		}
+	if rctx.IsTestRequest == 2 {
 		params, err := json.Marshal(extImpPubMatic)
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
