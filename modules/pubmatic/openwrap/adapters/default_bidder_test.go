@@ -264,6 +264,21 @@ func Test_addBidParam(t *testing.T) {
 			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "[]string", value: 5},
 			wantErr: true,
 		},
+		{
+			name:    "valid integer input for paramType and interface type float64",
+			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: float64(3128755)},
+			wantErr: false,
+		},
+		{
+			name:    "valid integer input for paramType and interface type int",
+			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: 3128755},
+			wantErr: false,
+		},
+		{
+			name:    "valid integer input for paramType and interface type string",
+			args:    args{bidParams: map[string]interface{}{"test": "test1"}, name: "test", paramType: "integer", value: "3128755"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

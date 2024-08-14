@@ -31,6 +31,6 @@ const (
 // constants to set values in adapter response
 const (
 	currencyKey = "Currency"
-	typeBidKey  = "Bid"
+	typedbidKey = "Bid"
 	bidsKey     = "Bids"
 )

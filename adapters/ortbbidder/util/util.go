@@ -107,21 +107,20 @@ func getNode(requestNode map[string]any, key string) any {
 }
 
 // getValueFromLocation retrieves a value from a map based on a specified location.
-// getValueFromLocation retrieves a value from a map based on a specified location.
-func GetValueFromLocation(souce interface{}, path string) (interface{}, bool) {
+func GetValueFromLocation(souce any, path string) (any, bool) {
 	location := strings.Split(path, ".")
 	var (
 		ok   bool
-		next interface{} = souce
+		next any = souce
 	)
 	for _, loc := range location {
 		switch nxt := next.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			next, ok = nxt[loc]
 			if !ok {
 				return nil, false
 			}
-		case []interface{}:
+		case []any:
 			index, err := strconv.Atoi(loc)
 			if err != nil {
 				return nil, false

@@ -105,7 +105,6 @@ func (m OpenWrap) handleEntrypointHook(
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
 		DisplayVersionID:          requestExtWrapper.VersionId,
-		LogInfoFlag:               requestExtWrapper.LogInfoFlag,
 		SupportDeals:              requestExtWrapper.SupportDeals,
 		ABTestConfig:              requestExtWrapper.ABTestConfig,
 		SSAuction:                 requestExtWrapper.SSAuctionFlag,
@@ -134,6 +133,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
+		SendBurl: endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
 	}
 
 	// SSAuction will be always 1 for CTV request
@@ -171,6 +171,7 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubIDStr = pubIdStr
+	rCtx.AppLovinMax.MultiFloorsConfig = m.getApplovinMultiFloors(rCtx)
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
@@ -201,7 +202,17 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 		fallthrough
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
-	case models.EndpointWebS2S, models.EndpointAppLovinMax:
+	case models.EndpointAppLovinMax:
+		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+		if requestExtWrapper.ProfileId == 0 {
+			profileIDStr := getProfileID(payload.Body)
+			if profileIDStr != "" {
+				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
+					requestExtWrapper.ProfileId = ProfileId
+				}
+			}
+		}
+	case models.EndpointWebS2S:
 		fallthrough
 	default:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
@@ -241,4 +252,10 @@ func GetEndpoint(path, source string, agent string) string {
 		return models.EndpointJson
 	}
 	return ""
+}
+
+func getSendBurl(request []byte) bool {
+	//ignore error, default is false
+	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
+	return sendBurl
 }
