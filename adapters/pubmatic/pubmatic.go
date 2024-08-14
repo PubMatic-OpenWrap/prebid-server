@@ -103,6 +103,7 @@ const (
 	AdServerGAM              = "gam"
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
+	sendBurlKey              = "sendburl"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -448,6 +449,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	if pubmaticExt.PmZoneID != "" {
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
+	}
+
+	if pubmaticExt.SendBurl {
+		extMap[sendBurlKey] = pubmaticExt.SendBurl
 	}
 
 	if bidderExt.SKAdnetwork != nil {

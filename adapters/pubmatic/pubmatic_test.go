@@ -171,6 +171,16 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			expectedImpExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
 		},
+		{
+			name: "sendburl set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"sendburl":true}}`),
+				},
+			},
+			expectedImpExt: json.RawMessage(`{"sendburl":true}`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
