@@ -117,6 +117,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// We can respect timeouts more accurately if we note the *real* start time, and use it
 	// to compute the auction timeout.
 	start := time.Now()
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAmp, deps.metricsEngine)
 
@@ -137,6 +138,12 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	activityControl := privacy.ActivityControl{}
 
 	defer func() {
+		// if AmpObject.AuctionResponse is nil then collect nonbids from all stage outcomes and set it in the AmpObject.SeatNonBid
+		// Nil AmpObject.AuctionResponse indicates the occurrence of a fatal error.
+		if ao.AuctionResponse == nil {
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		deps.metricsEngine.RecordRequest(labels)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAmpObject(&ao, activityControl)
@@ -155,6 +162,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	w.Header().Set("AMP-Access-Control-Allow-Source-Origin", origin)
 	w.Header().Set("Access-Control-Expose-Headers", "AMP-Access-Control-Allow-Source-Origin")
 	w.Header().Set("X-Prebid", version.BuildXPrebidHeader(version.Ver))
+	setBrowsingTopicsHeader(w, r)
 
 	// There is no body for AMP requests, so we pass a nil body and ignore the return value.
 	_, rejectErr := hookExecutor.ExecuteEntrypointStage(r, nilBody)
@@ -163,7 +171,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	// Process reject after parsing amp request, so we can use reqWrapper.
 	// There is no body for AMP requests, so we pass a nil body and ignore the return value.
 	if rejectErr != nil {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, *seatNonBid)
 		return
 	}
 
@@ -176,7 +184,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	if errortypes.ContainsFatalError(errL) {
 		w.WriteHeader(http.StatusBadRequest)
 		for _, err := range errortypes.FatalOnly(errL) {
-			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
+			fmt.Fprintf(w, "Invalid request: %s\n", err.Error())
 		}
 		labels.RequestStatus = metrics.RequestStatusBadInput
 		return
@@ -229,10 +237,15 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		w.WriteHeader(httpStatus)
 		labels.RequestStatus = metricsStatus
 		for _, err := range errortypes.FatalOnly(errL) {
-			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
+			fmt.Fprintf(w, "Invalid request: %s\n", err.Error())
 		}
 		ao.Errors = append(ao.Errors, acctIDErrs...)
 		return
+	}
+
+	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
+	if errs := deps.setFieldsImplicitly(r, reqWrapper, account); len(errs) > 0 {
+		errL = append(errL, errs...)
 	}
 
 	hasStoredResponses := len(storedAuctionResponses) > 0
@@ -242,7 +255,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	if errortypes.ContainsFatalError(errs) {
 		w.WriteHeader(http.StatusBadRequest)
 		for _, err := range errortypes.FatalOnly(errs) {
-			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
+			fmt.Fprintf(w, "Invalid request: %s\n", err.Error())
 		}
 		labels.RequestStatus = metrics.RequestStatusBadInput
 		return
@@ -285,8 +298,8 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
-	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
 	ao.AuctionResponse = response
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
@@ -306,15 +319,21 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		glog.Errorf("/openrtb2/amp Critical error: %v", err)
 		ao.Status = http.StatusInternalServerError
 		ao.Errors = append(ao.Errors, err)
+		if ao.AuctionResponse != nil {
+			// this check ensures that we collect nonBids from stageOutcomes only once.
+			// there could be a case where ao.AuctionResponse nil and reqWrapper.RebuildRequest returns error
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		return
 	}
 
 	if isRejectErr {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, account, labels, ao, errL, *seatNonBid)
 		return
 	}
 
-	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL)
+	labels, ao = sendAmpResponse(w, hookExecutor, auctionResponse, reqWrapper, account, labels, ao, errL, *seatNonBid)
 }
 
 func rejectAmpRequest(
@@ -326,12 +345,13 @@ func rejectAmpRequest(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
 	ao.AuctionResponse = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
-	return sendAmpResponse(w, hookExecutor, &exchange.AuctionResponse{BidResponse: response}, reqWrapper, account, labels, ao, errs)
+	return sendAmpResponse(w, hookExecutor, &exchange.AuctionResponse{BidResponse: response}, reqWrapper, account, labels, ao, errs, seatNonBid)
 }
 
 func sendAmpResponse(
@@ -343,6 +363,7 @@ func sendAmpResponse(
 	labels metrics.Labels,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AmpObject) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
@@ -370,6 +391,8 @@ func sendAmpResponse(
 						glog.Errorf("/openrtb2/amp Critical error unpacking targets: %v", err)
 						ao.Errors = append(ao.Errors, fmt.Errorf("Critical error while unpacking AMP targets: %v", err))
 						ao.Status = http.StatusInternalServerError
+						seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+						ao.SeatNonBid = seatNonBid.Get()
 						return labels, ao
 					}
 					for key, value := range bidExt.Prebid.Targeting {
@@ -398,13 +421,18 @@ func sendAmpResponse(
 	}
 	// Now JSONify the targets for the AMP response.
 	ampResponse := AmpResponse{Targeting: targets}
-	ao, ampResponse.ORTB2.Ext = getExtBidResponse(hookExecutor, auctionResponse, reqWrapper, account, ao, errs)
+	ao, ampResponse.ORTB2.Ext = getExtBidResponse(hookExecutor, auctionResponse, reqWrapper, account, ao, errs, seatNonBid)
 
 	ao.AmpTargetingValues = targets
 
 	// Fixes #231
-	enc := json.NewEncoder(w)
+	enc := json.NewEncoder(w) // nosemgrep: json-encoder-needs-type
 	enc.SetEscapeHTML(false)
+	// Explicitly set content type to text/plain, which had previously been
+	// the implied behavior from the time the project was launched.
+	// It's unclear why text/plain was chosen or if it was an oversight,
+	// nevertheless we will keep it as such for compatibility reasons.
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
 	// If an error happens when encoding the response, there isn't much we can do.
 	// If we've sent _any_ bytes, then Go would have sent the 200 status code first.
@@ -424,6 +452,7 @@ func getExtBidResponse(
 	account *config.Account,
 	ao analytics.AmpObject,
 	errs []error,
+	seatNonBid openrtb_ext.NonBidCollection,
 ) (analytics.AmpObject, openrtb_ext.ExtBidResponse) {
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
@@ -441,6 +470,9 @@ func getExtBidResponse(
 		warnings = make(map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage)
 	}
 	for _, v := range errortypes.WarningOnly(errs) {
+		if errortypes.ReadScope(v) == errortypes.ScopeDebug && !(reqWrapper != nil && reqWrapper.Test == 1) {
+			continue
+		}
 		bidderErr := openrtb_ext.ExtBidderMessage{
 			Code:    errortypes.ReadCode(v),
 			Message: v.Error(),
@@ -453,6 +485,7 @@ func getExtBidResponse(
 		Warnings: warnings,
 	}
 
+	stageOutcomes := hookExecutor.GetOutcomes()
 	// add debug information if requested
 	if reqWrapper != nil {
 		if reqWrapper.Test == 1 && eRErr == nil {
@@ -464,7 +497,6 @@ func getExtBidResponse(
 			}
 		}
 
-		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
 		modules, warns, err := hookexecution.GetModulesJSON(stageOutcomes, reqWrapper.BidRequest, account)
 		if err != nil {
@@ -480,8 +512,12 @@ func getExtBidResponse(
 		}
 	}
 
-	setSeatNonBid(&extBidResponse, reqWrapper, auctionResponse)
-
+	// collect seatNonBid from all stage-outcomes and set in the response.ext.prebid
+	seatNonBid.Append(getNonBidsFromStageOutcomes(stageOutcomes))
+	ao.SeatNonBid = seatNonBid.Get()
+	if returnAllBidStatus(reqWrapper) {
+		setSeatNonBid(&extBidResponse, ao.SeatNonBid)
+	}
 	return ao, extBidResponse
 }
 
@@ -500,9 +536,6 @@ func (deps *endpointDeps) parseAmpRequest(httpRequest *http.Request) (req *openr
 
 	// move to using the request wrapper
 	req = &openrtb_ext.RequestWrapper{BidRequest: reqNormal}
-
-	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
-	deps.setFieldsImplicitly(httpRequest, req)
 
 	// Need to ensure cache and targeting are turned on
 	e = initAmpTargetingAndCache(req)
@@ -528,7 +561,7 @@ func (deps *endpointDeps) loadRequestJSONForAmp(httpRequest *http.Request) (req 
 		return nil, nil, nil, nil, []error{err}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(storedRequestTimeoutMillis)*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deps.cfg.StoredRequestsTimeout)*time.Millisecond)
 	defer cancel()
 
 	// TODO: setup stored request fetcher for AMP
@@ -857,24 +890,4 @@ func setTrace(req *openrtb2.BidRequest, value string) error {
 	req.Ext = ext
 
 	return nil
-}
-
-// setSeatNonBid populates bidresponse.ext.prebid.seatnonbid if bidrequest.ext.prebid.returnallbidstatus is true
-func setSeatNonBid(finalExtBidResponse *openrtb_ext.ExtBidResponse, request *openrtb_ext.RequestWrapper, auctionResponse *exchange.AuctionResponse) bool {
-	if finalExtBidResponse == nil || auctionResponse == nil || request == nil {
-		return false
-	}
-	reqExt, err := request.GetRequestExt()
-	if err != nil {
-		return false
-	}
-	prebid := reqExt.GetPrebid()
-	if prebid == nil || !prebid.ReturnAllBidStatus {
-		return false
-	}
-	if finalExtBidResponse.Prebid == nil {
-		finalExtBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
-	}
-	finalExtBidResponse.Prebid.SeatNonBid = auctionResponse.GetSeatNonBid()
-	return true
 }

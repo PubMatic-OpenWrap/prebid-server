@@ -75,5 +75,66 @@
                 "placement_id": "1234"
             }
         }
+    },
+    {
+        "name": "rise_json_OneOf - org/publisher_id",
+        "args" : {
+            "adapterName": "rise",
+            "requestJSON": {
+                "org": "1",
+                "publisher_id":"1"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "org": "1"
+            }
+        }
+    },
+    {
+        "name": "kargo_json_OneOf - placementId/adSlotID",
+        "args" : {
+            "adapterName": "kargo",
+            "requestJSON": {
+                "placementId": "sjdsdkh",
+                "adSlotID":"sjsdkj"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "sjdsdkh"
+            }
+        }
+    },
+    {
+        "name": "pgamssp_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "pgamssp",
+            "requestJSON": {
+                "placementId": "123456",
+                "endpointId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "123456"
+            }
+        }
+    },
+    {
+        "name": "aidem - publisherId&siteId",
+        "args" : {
+            "adapterName": "aidem",
+            "requestJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"
+            }
+        }
     }
 ]

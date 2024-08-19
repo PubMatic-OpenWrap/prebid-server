@@ -33,4 +33,11 @@ const (
 	BidderParamColossusgroupID      = "groupId"
 	BidderNextmillenniumPlacementID = "placement_id"
 	BidderNextmillenniumgroupID     = "group_id"
+	BidderParamRiseOrg              = "org"
+	BidderParamRisePublisherID      = "publisher_id"
+	BidderKaroPlacementID           = "placementId"
+	BidderKargoAdSlotID             = "adSlotID"
+	BidderParamAidemPublisherId     = "publisherId"
+	BidderParamAidemSiteId          = "siteId"
+	BidderParamAidemPlacementId     = "placementId"
 )

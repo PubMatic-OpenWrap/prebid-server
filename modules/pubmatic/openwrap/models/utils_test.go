@@ -420,7 +420,7 @@ func TestGetSizeForPlatform(t *testing.T) {
 				height:   10,
 				platform: PLATFORM_VIDEO,
 			},
-			size: "100x10v",
+			size: "100x10",
 		},
 	}
 	for _, tt := range tests {
@@ -458,6 +458,18 @@ func TestGenerateSlotName(t *testing.T) {
 			want: "/15671365/Test_Adunit",
 		},
 		{
+			name: "_RE_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_RE_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit",
+		},
+		{
 			name: "_DIV_",
 			args: args{
 				h:     100,
@@ -487,6 +499,18 @@ func TestGenerateSlotName(t *testing.T) {
 				h:     100,
 				w:     200,
 				kgp:   "_AU_@_W_x_H_",
+				tagid: "/15671365/Test_Adunit",
+				div:   "Div1",
+				src:   "test.com",
+			},
+			want: "/15671365/Test_Adunit@200x100",
+		},
+		{
+			name: "_RE_@_W_x_H_",
+			args: args{
+				h:     100,
+				w:     200,
+				kgp:   "_RE_@_W_x_H_",
 				tagid: "/15671365/Test_Adunit",
 				div:   "Div1",
 				src:   "test.com",
@@ -539,7 +563,7 @@ func TestGenerateSlotName(t *testing.T) {
 				div:   "Div1",
 				src:   "test.com",
 			},
-			want: "/15671365/Test_Adunit@test.com@_VASTTAG_",
+			want: "/15671365/Test_Adunit@test.com@",
 		},
 		{
 			name: "empty_kgp",
@@ -1092,7 +1116,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerA",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1107,7 +1131,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerA",
 			},
 		},
 		{
@@ -1124,7 +1148,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerB",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1139,7 +1163,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerB",
 			},
 		},
 		{
@@ -1156,7 +1180,7 @@ func Test_getFloorsDetails(t *testing.T) {
 										ModelVersion: "version 1",
 									},
 								},
-								FloorProvider: "provider",
+								FloorProvider: "providerC",
 							},
 							PriceFloorLocation: openrtb_ext.FetchLocation,
 							Enforcement: &openrtb_ext.PriceFloorEnforcement{
@@ -1171,7 +1195,7 @@ func Test_getFloorsDetails(t *testing.T) {
 				FloorType:         HardFloor,
 				FloorSource:       ptrutil.ToPtr(2),
 				FloorModelVersion: "version 1",
-				FloorProvider:     "provider",
+				FloorProvider:     "providerC",
 				FloorFetchStatus:  ptrutil.ToPtr(2),
 			},
 		},
@@ -1187,6 +1211,7 @@ func Test_getFloorsDetails(t *testing.T) {
 func TestGetKGPSV(t *testing.T) {
 	type args struct {
 		bid        openrtb2.Bid
+		bidExt     *BidExt
 		bidderMeta PartnerData
 		adformat   string
 		tagId      string
@@ -1321,7 +1346,7 @@ func TestGetKGPSV(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
+			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidExt, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
 			if got != tt.kgpv {
 				t.Errorf("GetKGPSV() got = %v, want %v", got, tt.kgpv)
 			}

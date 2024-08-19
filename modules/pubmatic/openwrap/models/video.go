@@ -7,6 +7,8 @@ const (
 	VideoVASTVersion = "version"
 	//VideoVASTVersion2_0 video version 2.0 parameter constant
 	VideoVASTVersion2_0 = "2.0"
+	//VideoVASTVersion3_0 video version 3.0 parameter constant
+	VideoVASTVersion3_0 = "3.0"
 	//VideoVASTAdWrapperTag video ad/wrapper element constant
 	VideoVASTAdWrapperTag = "./Ad/Wrapper"
 	//VideoVASTAdInLineTag video ad/inline element constant

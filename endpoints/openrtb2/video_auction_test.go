@@ -1162,6 +1162,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 	testCases := []struct {
 		description     string
 		givenTestFile   string
+		givenHeader     map[string]string
 		expectedStatus  int
 		expectedHeaders func(http.Header)
 	}{
@@ -1173,12 +1174,34 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
-		}, {
+		},
+		{
 			description:    "Failure Response",
 			givenTestFile:  "sample-requests/video/video_invalid_sample.json",
 			expectedStatus: 500,
 			expectedHeaders: func(h http.Header) {
 				h.Set("X-Prebid", "owpbs-go/unknown")
+			},
+		},
+		{
+			description:    "Success Response with header Observe-Browsing-Topics",
+			givenTestFile:  "sample-requests/video/video_valid_sample.json",
+			givenHeader:    map[string]string{secBrowsingTopics: "anyValue"},
+			expectedStatus: 200,
+			expectedHeaders: func(h http.Header) {
+				h.Set("X-Prebid", "owpbs-go/unknown")
+				h.Set("Content-Type", "application/json")
+				h.Set("Observe-Browsing-Topics", "?1")
+			},
+		},
+		{
+			description:    "Failure Response with header Observe-Browsing-Topics",
+			givenTestFile:  "sample-requests/video/video_invalid_sample.json",
+			givenHeader:    map[string]string{secBrowsingTopics: "anyValue"},
+			expectedStatus: 500,
+			expectedHeaders: func(h http.Header) {
+				h.Set("X-Prebid", "owpbs-go/unknown")
+				h.Set("Observe-Browsing-Topics", "?1")
 			},
 		},
 	}
@@ -1190,6 +1213,9 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 		requestBody := readVideoTestFile(t, test.givenTestFile)
 
 		httpReq := httptest.NewRequest("POST", "/openrtb2/video", strings.NewReader(requestBody))
+		for k, v := range test.givenHeader {
+			httpReq.Header.Add(k, v)
+		}
 		recorder := httptest.NewRecorder()
 
 		endpoint.VideoAuctionEndpoint(recorder, httpReq, nil)
@@ -1363,6 +1389,7 @@ func (cf mockVideoStoredReqFetcher) FetchResponses(ctx context.Context, ids []st
 type mockExchangeVideo struct {
 	lastRequest *openrtb2.BidRequest
 	cache       *mockCacheClient
+	seatNonBid  openrtb_ext.NonBidCollection
 }
 
 func (m *mockExchangeVideo) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
@@ -1397,7 +1424,9 @@ func (m *mockExchangeVideo) HoldAuction(ctx context.Context, r *exchange.Auction
 				{ID: "16", ImpID: "5_2", Ext: ext},
 			},
 		}},
-	}}, nil
+	},
+		SeatNonBid: m.seatNonBid}, nil
+
 }
 
 type mockExchangeAppendBidderNames struct {
@@ -1471,4 +1500,121 @@ func readVideoTestFile(t *testing.T, filename string) string {
 	}
 
 	return string(getRequestPayload(t, requestData))
+}
+
+func TestVideoRequestValidationFailed(t *testing.T) {
+	ex := &mockExchangeVideo{}
+	reqBody := readVideoTestFile(t, "sample-requests/video/video_invalid_sample_negative_tmax.json")
+	req := httptest.NewRequest("POST", "/openrtb2/video", strings.NewReader(reqBody))
+	recorder := httptest.NewRecorder()
+
+	deps := mockDeps(t, ex)
+	deps.VideoAuctionEndpoint(recorder, req, nil)
+
+	errorMessage := recorder.Body.String()
+
+	assert.Equal(t, 500, recorder.Code, "Should catch error in request")
+	assert.Equal(t, "Critical error while running the video endpoint:  request.tmax must be nonnegative. Got -2", errorMessage, "Incorrect request validation message")
+}
+
+func TestSeatNonBidInVideoAuction(t *testing.T) {
+	bidRequest := openrtb_ext.BidRequestVideo{
+		Test:            1,
+		StoredRequestId: "80ce30c53c16e6ede735f123ef6e32361bfc7b22",
+		PodConfig: openrtb_ext.PodConfig{
+			DurationRangeSec:     []int{30, 50},
+			RequireExactDuration: true,
+			Pods: []openrtb_ext.Pod{
+				{PodId: 1, AdPodDurationSec: 30, ConfigId: "fba10607-0c12-43d1-ad07-b8a513bc75d6"},
+			},
+		},
+		App: &openrtb2.App{Bundle: "pbs.com"},
+		Video: &openrtb2.Video{
+			MIMEs:     []string{"mp4"},
+			Protocols: []adcom1.MediaCreativeSubtype{1},
+		},
+	}
+
+	type args struct {
+		nonBidsFromHoldAuction openrtb_ext.NonBidCollection
+	}
+	type want struct {
+		seatNonBid []openrtb_ext.SeatNonBid
+	}
+	testCases := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "holdAuction returns seatNonBid",
+			args: args{
+				nonBidsFromHoldAuction: getNonBids(map[string][]openrtb_ext.NonBidParams{
+					"pubmatic": {
+						{
+							Bid:          &openrtb2.Bid{ImpID: "imp"},
+							NonBidReason: 100,
+						},
+					},
+				}),
+			},
+			want: want{
+				seatNonBid: []openrtb_ext.SeatNonBid{
+					{
+						Seat: "pubmatic",
+						NonBid: []openrtb_ext.NonBid{
+							{
+								ImpId:      "imp",
+								StatusCode: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "holdAuction does not return seatNonBid",
+			args: args{
+				nonBidsFromHoldAuction: openrtb_ext.NonBidCollection{},
+			},
+			want: want{
+				seatNonBid: nil,
+			},
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			ex := &mockExchangeVideo{seatNonBid: test.args.nonBidsFromHoldAuction}
+			analyticsModule := mockAnalyticsModule{}
+			deps := &endpointDeps{
+				fakeUUIDGenerator{},
+				ex,
+				mockBidderParamValidator{},
+				&mockVideoStoredReqFetcher{},
+				&mockVideoStoredReqFetcher{},
+				&mockAccountFetcher{data: mockVideoAccountData},
+				&config.Configuration{MaxRequestSize: maxSize},
+				&metricsConfig.NilMetricsEngine{},
+				&analyticsModule,
+				map[string]string{},
+				false,
+				[]byte{},
+				openrtb_ext.BuildBidderMap(),
+				ex.cache,
+				regexp.MustCompile(`[<>]`),
+				hardcodedResponseIPValidator{response: true},
+				empty_fetcher.EmptyFetcher{},
+				hooks.EmptyPlanBuilder{},
+				nil,
+				openrtb_ext.NormalizeBidderName,
+			}
+
+			reqBody, _ := json.Marshal(bidRequest)
+			req := httptest.NewRequest("POST", "/openrtb2/video", strings.NewReader(string(reqBody)))
+			recorder := httptest.NewRecorder()
+			deps.VideoAuctionEndpoint(recorder, req, nil)
+
+			assert.Equal(t, test.want.seatNonBid, analyticsModule.videoObjects[0].SeatNonBid, "mismatched seatnonbid.")
+		})
+	}
 }

@@ -1,6 +1,9 @@
 package config
 
 import (
+	"time"
+
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
@@ -22,6 +25,19 @@ func NewMetricsRegistry() MetricsRegistry {
 	}
 }
 
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserResponseTime(parser, method, bidder, respTime)
+	}
+}
+
+func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserResponseMismatch(method, bidder, isMismatch)
+	}
+}
+
 func (me *MultiMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 	for _, thisME := range *me {
 		thisME.RecordVASTTagType(biddder, vastTag)
@@ -39,8 +55,6 @@ func (me *MultiMetricsEngine) RecordBids(pubid, profileid, biddder, deal string)
 		thisME.RecordBids(pubid, profileid, biddder, deal)
 	}
 }
-func (me *MultiMetricsEngine) RecordHttpCounter() {
-}
 
 func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 	for _, thisME := range *me {
@@ -55,19 +69,41 @@ func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.Bid
 	}
 }
 
-// RecordDynamicFetchFailure across all engines
-func (me *MultiMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+// RecordFloorStatus across all engines
+func (me *MultiMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 	for _, thisME := range *me {
-		thisME.RecordDynamicFetchFailure(pubId, code)
+		thisME.RecordFloorStatus(pubId, source, code)
 	}
+}
+
+// RecordPanic across all engines
+func (me *MultiMetricsEngine) RecordPanic(hostname, method string) {
+	for _, thisME := range *me {
+		thisME.RecordPanic(hostname, method)
+	}
+}
+
+// RecordBadRequest across all engines
+func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+	for _, thisME := range *me {
+		thisME.RecordBadRequest(endpoint, pubId, nbr)
+	}
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+}
+
+// RecordXMLParserResponseMismatch as a noop
+func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
 }
 
 // RecordVASTTagType as a noop
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
 
-// RecordDynamicFetchFailure as a noop
-func (me *NilMetricsEngine) RecordDynamicFetchFailure(pubId, code string) {
+// RecordFloorStatus as a noop
+func (me *NilMetricsEngine) RecordFloorStatus(pubId, source, code string) {
 }
 
 // RecordRejectedBids as a noop
@@ -82,9 +118,14 @@ func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 }
 
-func (m *NilMetricsEngine) RecordHttpCounter() {
-}
-
 // RecordRejectedBidsForBidder as a noop
 func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
+}
+
+// RecordPanic as a noop
+func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
+}
+
+// RecordBadRequest as a noop
+func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }

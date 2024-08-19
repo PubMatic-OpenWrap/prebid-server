@@ -43,7 +43,7 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 
 // GetFeature Temporary function to expose feature to SSHB
 func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
-	return ow.featureConfig
+	return ow.pubFeatures
 }
 
 // getVastUnwrapperEnable checks for Vast unwrp is enabled in given context

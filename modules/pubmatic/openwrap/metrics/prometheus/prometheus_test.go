@@ -325,14 +325,19 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
-func TestRecordHTTPCounter(t *testing.T) {
+func TestRecordSignalDataStatus(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordHTTPCounter()
+	m.RecordSignalDataStatus("5890", "1234", models.MissingSignal)
 
 	expectedCount := float64(1)
-	assertCounterVecValue(t, "", "httpCounter", m.httpCounter,
-		expectedCount, nil)
+	assertCounterVecValue(t, "", "signal_status", m.signalStatus,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:      "5890",
+			profileIDLabel:  "1234",
+			signalTypeLabel: models.MissingSignal,
+		})
 }
 
 func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
@@ -341,6 +346,32 @@ func getHistogramFromHistogram(histogram prometheus.Histogram) dto.Histogram {
 		result = *m.GetHistogram()
 	})
 	return result
+}
+
+func TestRecordAdruleEnabled(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleEnabled("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleEnabled", m.pubProfAdruleEnabled,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
+}
+
+func TestRecordAdruleValidationFailure(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordAdruleValidationFailure("5890", "123")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "pubProfAdruleValidationfailure", m.pubProfAdruleValidationfailure,
+		expectedCount, prometheus.Labels{
+			pubIdLabel:   "5890",
+			profileLabel: "123",
+		})
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
@@ -394,7 +425,7 @@ func assertHistogram(t *testing.T, name string, histogram dto.Histogram, expecte
 	assert.Equal(t, expectedSum, histogram.GetSampleSum(), name+":sum")
 }
 
-func assertCounterValue(t *testing.T, description, name string, counter prometheus.Counter, expected float64) {
+func assertCounterValue(t *testing.T, description string, counter prometheus.Counter, expected float64) {
 	m := dto.Metric{}
 	counter.Write(&m)
 	actual := *m.GetCounter().Value
@@ -404,5 +435,5 @@ func assertCounterValue(t *testing.T, description, name string, counter promethe
 
 func assertCounterVecValue(t *testing.T, description, name string, counterVec *prometheus.CounterVec, expected float64, labels prometheus.Labels) {
 	counter := counterVec.With(labels)
-	assertCounterValue(t, description, name, counter, expected)
+	assertCounterValue(t, description, counter, expected)
 }

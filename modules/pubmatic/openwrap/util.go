@@ -1,20 +1,26 @@
 package openwrap
 
 import (
+	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 var (
@@ -29,6 +35,18 @@ var (
 	openRTBDeviceOsIosRegex     *regexp.Regexp
 	mobileDeviceUARegex         *regexp.Regexp
 	ctvRegex                    *regexp.Regexp
+	accountIdSearchPath         = [...]struct {
+		isApp  bool
+		isDOOH bool
+		key    []string
+	}{
+		{true, false, []string{"app", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{true, false, []string{"app", "publisher", "id"}},
+		{false, false, []string{"site", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, false, []string{"site", "publisher", "id"}},
+		{false, true, []string{"dooh", "publisher", "ext", openrtb_ext.PrebidExtKey, "parentAccount"}},
+		{false, true, []string{"dooh", "publisher", "id"}},
+	}
 )
 
 const (
@@ -103,7 +121,11 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 		if bidRequest != nil && bidRequest.Site != nil {
 			//Its web; now determine mobile or desktop
-			if isMobile(bidRequest.Device.DeviceType, userAgentString) {
+			var deviceType adcom1.DeviceType
+			if bidRequest.Device != nil {
+				deviceType = bidRequest.Device.DeviceType
+			}
+			if isMobile(deviceType, userAgentString) {
 				return models.DevicePlatformMobileWeb
 			}
 			return models.DevicePlatformDesktop
@@ -209,26 +231,28 @@ func getSourceAndOrigin(bidRequest *openrtb2.BidRequest) (string, string) {
 
 // getHostName Generates server name from node and pod name in K8S  environment
 func GetHostName() string {
-	var (
-		nodeName string
-		podName  string
-	)
 
+	var nodeName string
 	if nodeName, _ = os.LookupEnv(models.ENV_VAR_NODE_NAME); nodeName == "" {
 		nodeName = models.DEFAULT_NODENAME
 	} else {
 		nodeName = strings.Split(nodeName, ".")[0]
 	}
 
+	podName := getPodName()
+
+	return nodeName + ":" + podName
+}
+
+func getPodName() string {
+
+	var podName string
 	if podName, _ = os.LookupEnv(models.ENV_VAR_POD_NAME); podName == "" {
 		podName = models.DEFAULT_PODNAME
 	} else {
 		podName = strings.TrimPrefix(podName, "ssheaderbidding-")
 	}
-
-	serverName := nodeName + ":" + podName
-
-	return serverName
+	return podName
 }
 
 // RecordPublisherPartnerNoCookieStats parse request cookies and records the stats if cookie is not found for partner
@@ -257,7 +281,7 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InvalidPublisherID:
 		return 604 // ErrMissingPublisherID
 
-	case nbr.InvalidRequestExt:
+	case nbr.InvalidRequestExt, openrtb3.NoBidInvalidRequest:
 		return 18 // ErrBadRequest
 
 	case nbr.InvalidProfileID:
@@ -278,6 +302,8 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 	case nbr.InternalError:
 		return 17 // ErrInvalidImpression
 
+	case nbr.AllPartnersFiltered:
+		return 26
 	}
 
 	return -1
@@ -298,14 +324,31 @@ func getUserAgent(bidRequest *openrtb2.BidRequest, defaultUA string) string {
 
 func getIP(bidRequest *openrtb2.BidRequest, defaultIP string) string {
 	ip := defaultIP
-	if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.IP) > 0 {
-		ip = bidRequest.Device.IP
+	if bidRequest != nil && bidRequest.Device != nil {
+		if len(bidRequest.Device.IP) > 0 {
+			ip = bidRequest.Device.IP
+		} else if len(bidRequest.Device.IPv6) > 0 {
+			ip = bidRequest.Device.IPv6
+		}
 	}
 	return ip
 }
 
+func getCountry(bidRequest *openrtb2.BidRequest) string {
+	if bidRequest.Device != nil && bidRequest.Device.Geo != nil && bidRequest.Device.Geo.Country != "" {
+		return bidRequest.Device.Geo.Country
+	}
+	if bidRequest.User != nil && bidRequest.User.Geo != nil && bidRequest.User.Geo.Country != "" {
+		return bidRequest.User.Geo.Country
+	}
+	return ""
+}
+
 func getPlatformFromRequest(request *openrtb2.BidRequest) string {
 	var platform string
+	if request == nil {
+		return platform
+	}
 	if request.Site != nil {
 		return models.PLATFORM_DISPLAY
 	}
@@ -341,4 +384,105 @@ func GetRequestUserAgent(body []byte, request *http.Request) string {
 		return string(uaBytes)
 	}
 	return request.Header.Get("User-Agent")
+}
+
+func getProfileType(partnerConfigMap map[int]map[string]string) int {
+	if profileTypeStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.ProfileTypeKey]; ok {
+		ProfileType, _ := strconv.Atoi(profileTypeStr)
+		return ProfileType
+	}
+	return 0
+}
+
+func getProfileTypePlatform(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
+	if profileTypePlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.PLATFORM_KEY]; ok {
+		if ProfileTypePlatform, ok := profileMetaData.GetProfileTypePlatform(profileTypePlatformStr); ok {
+			return ProfileTypePlatform
+		}
+	}
+	return 0
+}
+
+func getAppPlatform(partnerConfigMap map[int]map[string]string) int {
+	if appPlatformStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AppPlatformKey]; ok {
+		AppPlatform, _ := strconv.Atoi(appPlatformStr)
+		return AppPlatform
+	}
+	return 0
+}
+
+func getAppIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
+	if appIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.IntegrationPathKey]; ok {
+		if appIntegrationPath, ok := profileMetaData.GetAppIntegrationPath(appIntegrationPathStr); ok {
+			return appIntegrationPath
+		}
+	}
+	return -1
+}
+
+func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
+	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
+		if appSubIntegrationPath, ok := profileMetaData.GetAppSubIntegrationPath(appSubIntegrationPathStr); ok {
+			return appSubIntegrationPath
+		}
+	}
+	if adserverStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.AdserverKey]; ok {
+		if adserver, ok := profileMetaData.GetAppSubIntegrationPath(adserverStr); ok {
+			return adserver
+		}
+	}
+	return -1
+}
+
+func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest, originalRequest json.RawMessage) (string, bool, bool, []error) {
+	request := originalRequest
+	if hasStoredRequest {
+		request = storedRequest
+	}
+
+	accountId, isAppReq, isDOOHReq, err := searchAccountId(request)
+	if err != nil {
+		return "", isAppReq, isDOOHReq, []error{err}
+	}
+
+	// In case the stored request did not have account data we specifically search it in the original request
+	if accountId == "" && hasStoredRequest {
+		accountId, _, _, err = searchAccountId(originalRequest)
+		if err != nil {
+			return "", isAppReq, isDOOHReq, []error{err}
+		}
+	}
+
+	if accountId == "" {
+		return metrics.PublisherUnknown, isAppReq, isDOOHReq, nil
+	}
+
+	return accountId, isAppReq, isDOOHReq, nil
+}
+
+func searchAccountId(request []byte) (string, bool, bool, error) {
+	for _, path := range accountIdSearchPath {
+		accountId, exists, err := getStringValueFromRequest(request, path.key)
+		if err != nil {
+			return "", path.isApp, path.isDOOH, err
+		}
+		if exists {
+			return accountId, path.isApp, path.isDOOH, nil
+		}
+	}
+	return "", false, false, nil
+}
+
+func getStringValueFromRequest(request []byte, key []string) (string, bool, error) {
+	val, dataType, _, err := jsonparser.Get(request, key...)
+	if dataType == jsonparser.NotExist {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	if dataType != jsonparser.String {
+		return "", true, fmt.Errorf("%s must be a string", strings.Join(key, "."))
+	}
+	return string(val), true, nil
 }

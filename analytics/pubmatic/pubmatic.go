@@ -54,19 +54,26 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	if rCtx.LoggerDisabled {
+		// logger disabled explicitly for publisher,profile request
+		return
+	}
+
 	err := RestoreBidResponse(rCtx, *ao)
 	if err != nil {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
 	}
 
-	url, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
-	if url == "" {
+	loggerURL, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
+	if loggerURL == "" {
 		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 		return
 	}
 
-	go send(rCtx, url, headers, mhttp.NewMultiHttpContext())
+	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
+
+	setWakandaObject(rCtx, ao, loggerURL)
 }
 
 // Writes VideoObject to file

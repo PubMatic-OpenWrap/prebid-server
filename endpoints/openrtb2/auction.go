@@ -29,6 +29,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks"
 	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/privacy"
+	"github.com/prebid/prebid-server/v2/privacysandbox"
 	"golang.org/x/net/publicsuffix"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
@@ -57,10 +58,12 @@ import (
 	"github.com/prebid/prebid-server/v2/version"
 )
 
-const storedRequestTimeoutMillis = 50
 const ampChannel = "amp"
 const appChannel = "app"
 const secCookieDeprecation = "Sec-Cookie-Deprecation"
+const secBrowsingTopics = "Sec-Browsing-Topics"
+const observeBrowsingTopics = "Observe-Browsing-Topics"
+const observeBrowsingTopicsValue = "?1"
 
 var (
 	dntKey      string = http.CanonicalHeaderKey("DNT")
@@ -165,6 +168,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	// We can respect timeouts more accurately if we note the *real* start time, and use it
 	// to compute the auction timeout.
 	start := time.Now()
+	seatNonBid := &openrtb_ext.NonBidCollection{}
 
 	hookExecutor := hookexecution.NewHookExecutor(deps.hookExecutionPlanBuilder, hookexecution.EndpointAuction, deps.metricsEngine)
 
@@ -184,6 +188,12 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	activityControl := privacy.ActivityControl{}
 	defer func() {
+		// if AuctionObject.Response is nil then collect nonbids from all stage outcomes and set it in the AuctionObject.
+		// Nil AuctionObject.Response indicates the occurrence of a fatal error.
+		if ao.Response == nil {
+			seatNonBid.Append(getNonBidsFromStageOutcomes(hookExecutor.GetOutcomes()))
+			ao.SeatNonBid = seatNonBid.Get()
+		}
 		deps.metricsEngine.RecordRequest(labels)
 		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
@@ -191,6 +201,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}()
 
 	w.Header().Set("X-Prebid", version.BuildXPrebidHeader(version.Ver))
+	setBrowsingTopicsHeader(w, r)
 
 	req, impExtInfoMap, storedAuctionResponses, storedBidResponses, bidderImpReplaceImp, account, errL := deps.parseRequest(r, &labels, hookExecutor)
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &labels) {
@@ -199,7 +210,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 
 	if rejectErr := hookexecution.FindFirstRejectOrNil(errL); rejectErr != nil {
 		ao.RequestWrapper = req
-		labels, ao = rejectAuctionRequest(*rejectErr, w, hookExecutor, req.BidRequest, account, labels, ao)
+		labels, ao = rejectAuctionRequest(*rejectErr, w, hookExecutor, req.BidRequest, account, labels, ao, seatNonBid)
 		return
 	}
 
@@ -272,9 +283,9 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
+		seatNonBid.Append(auctionResponse.SeatNonBid)
 	}
 	ao.Response = response
-	ao.SeatNonBid = auctionResponse.GetSeatNonBid()
 	rejectErr, isRejectErr := hookexecution.CastRejectErr(err)
 	if err != nil && !isRejectErr {
 		if errortypes.ReadCode(err) == errortypes.BadInputErrorCode {
@@ -289,15 +300,11 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		ao.Errors = append(ao.Errors, err)
 		return
 	} else if isRejectErr {
-		labels, ao = rejectAuctionRequest(*rejectErr, w, hookExecutor, req.BidRequest, account, labels, ao)
+		labels, ao = rejectAuctionRequest(*rejectErr, w, hookExecutor, req.BidRequest, account, labels, ao, seatNonBid)
 		return
 	}
 
-	err = setSeatNonBidRaw(req, auctionResponse)
-	if err != nil {
-		glog.Errorf("Error setting seat non-bid: %v", err)
-	}
-	labels, ao = sendAuctionResponse(w, hookExecutor, response, req.BidRequest, account, labels, ao)
+	labels, ao = sendAuctionResponse(w, hookExecutor, response, req.BidRequest, account, labels, ao, seatNonBid)
 }
 
 // setSeatNonBidRaw is transitional function for setting SeatNonBid inside bidResponse.Ext
@@ -305,18 +312,20 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 // 1. today exchange.HoldAuction prepares and marshals some piece of response.Ext which is then used by auction.go, amp_auction.go and video_auction.go
 // 2. As per discussion with Prebid Team we are planning to move away from - HoldAuction building openrtb2.BidResponse. instead respective auction modules will build this object
 // 3. So, we will need this method to do first,  unmarshalling of response.Ext
-func setSeatNonBidRaw(request *openrtb_ext.RequestWrapper, auctionResponse *exchange.AuctionResponse) error {
-	if auctionResponse == nil || auctionResponse.BidResponse == nil {
+func setSeatNonBidRaw(request *openrtb_ext.RequestWrapper, response *openrtb2.BidResponse, nonBids []openrtb_ext.SeatNonBid) error {
+	if response == nil || !returnAllBidStatus(request) {
 		return nil
+	}
+	if response.Ext == nil {
+		response.Ext = json.RawMessage(`{}`)
 	}
 	// unmarshalling is required here, until we are moving away from bidResponse.Ext, which is populated
 	// by HoldAuction
-	response := auctionResponse.BidResponse
 	respExt := &openrtb_ext.ExtBidResponse{}
 	if err := jsonutil.Unmarshal(response.Ext, &respExt); err != nil {
 		return err
 	}
-	if setSeatNonBid(respExt, request, auctionResponse) {
+	if setSeatNonBid(respExt, nonBids) {
 		if respExtJson, err := json.Marshal(respExt); err == nil {
 			response.Ext = respExtJson
 			return nil
@@ -335,6 +344,7 @@ func rejectAuctionRequest(
 	account *config.Account,
 	labels metrics.Labels,
 	ao analytics.AuctionObject,
+	seatNonBid *openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AuctionObject) {
 	response := &openrtb2.BidResponse{NBR: openrtb3.NoBidReason(rejectErr.NBR).Ptr()}
 	if request != nil {
@@ -349,7 +359,21 @@ func rejectAuctionRequest(
 	ao.Response = response
 	ao.Errors = append(ao.Errors, rejectErr)
 
-	return sendAuctionResponse(w, hookExecutor, response, request, account, labels, ao)
+	return sendAuctionResponse(w, hookExecutor, response, request, account, labels, ao, seatNonBid)
+}
+
+func getNonBidsFromStageOutcomes(stageOutcomes []hookexecution.StageOutcome) openrtb_ext.NonBidCollection {
+	seatNonBid := openrtb_ext.NonBidCollection{}
+	for _, stageOutcome := range stageOutcomes {
+		for _, groups := range stageOutcome.Groups {
+			for _, result := range groups.InvocationResults {
+				if result.Status == hookexecution.StatusSuccess {
+					seatNonBid.Append(result.SeatNonBid)
+				}
+			}
+		}
+	}
+	return seatNonBid
 }
 
 func sendAuctionResponse(
@@ -360,13 +384,21 @@ func sendAuctionResponse(
 	account *config.Account,
 	labels metrics.Labels,
 	ao analytics.AuctionObject,
+	seatNonBid *openrtb_ext.NonBidCollection,
 ) (metrics.Labels, analytics.AuctionObject) {
 	hookExecutor.ExecuteAuctionResponseStage(response)
 
+	stageOutcomes := hookExecutor.GetOutcomes()
+	seatNonBid.Append(getNonBidsFromStageOutcomes(stageOutcomes))
+	ao.SeatNonBid = seatNonBid.Get()
+
 	if response != nil {
-		stageOutcomes := hookExecutor.GetOutcomes()
 		ao.HookExecutionOutcome = stageOutcomes
 		UpdateResponseExtOW(w, response, ao)
+		err := setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
+		if err != nil {
+			glog.Errorf("Error setting seatNonBid in responseExt: %v", err)
+		}
 
 		ext, warns, err := hookexecution.EnrichExtBidResponse(response.Ext, stageOutcomes, request, account)
 		if err != nil {
@@ -399,6 +431,13 @@ func sendAuctionResponse(
 	return labels, ao
 }
 
+// setBrowsingTopicsHeader always set the Observe-Browsing-Topics header to a value of ?1 if the Sec-Browsing-Topics is present in request
+func setBrowsingTopicsHeader(w http.ResponseWriter, r *http.Request) {
+	if value := r.Header.Get(secBrowsingTopics); value != "" {
+		w.Header().Set(observeBrowsingTopics, observeBrowsingTopicsValue)
+	}
+}
+
 // parseRequest turns the HTTP request into an OpenRTB request. This is guaranteed to return:
 //
 //   - A context which times out appropriately, given the request.
@@ -412,6 +451,7 @@ func sendAuctionResponse(
 func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metrics.Labels, hookExecutor hookexecution.HookStageExecutor) (req *openrtb_ext.RequestWrapper, impExtInfoMap map[string]exchange.ImpExtInfo, storedAuctionResponses stored_responses.ImpsWithBidResponses, storedBidResponses stored_responses.ImpBidderStoredResp, bidderImpReplaceImpId stored_responses.BidderImpReplaceImpID, account *config.Account, errs []error) {
 	errs = nil
 	var err error
+	var errL []error
 	var r io.ReadCloser = httpRequest.Body
 	reqContentEncoding := httputil.ContentEncoding(httpRequest.Header.Get("Content-Encoding"))
 	if reqContentEncoding != "" {
@@ -462,7 +502,7 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		return
 	}
 
-	timeout := parseTimeout(requestJson, time.Duration(storedRequestTimeoutMillis)*time.Millisecond)
+	timeout := parseTimeout(requestJson, time.Duration(deps.cfg.StoredRequestsTimeout)*time.Millisecond)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -543,7 +583,9 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	}
 
 	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
-	deps.setFieldsImplicitly(httpRequest, req)
+	if errsL := deps.setFieldsImplicitly(httpRequest, req, account); len(errsL) > 0 {
+		errs = append(errs, errsL...)
+	}
 
 	if err := ortb.SetDefaults(req); err != nil {
 		errs = []error{err}
@@ -558,13 +600,14 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	lmt.ModifyForIOS(req.BidRequest)
 
 	//Stored auction responses should be processed after stored requests due to possible impression modification
-	storedAuctionResponses, storedBidResponses, bidderImpReplaceImpId, errs = stored_responses.ProcessStoredResponses(ctx, req, deps.storedRespFetcher)
-	if len(errs) > 0 {
+	storedAuctionResponses, storedBidResponses, bidderImpReplaceImpId, errL = stored_responses.ProcessStoredResponses(ctx, req, deps.storedRespFetcher)
+	if len(errL) > 0 {
+		errs = append(errs, errL...)
 		return nil, nil, nil, nil, nil, nil, errs
 	}
 
 	hasStoredResponses := len(storedAuctionResponses) > 0
-	errL := deps.validateRequest(account, httpRequest, req, false, hasStoredResponses, storedBidResponses, hasStoredBidRequest)
+	errL = deps.validateRequest(account, httpRequest, req, false, hasStoredResponses, storedBidResponses, hasStoredBidRequest)
 	if len(errL) > 0 {
 		errs = append(errs, errL...)
 	}
@@ -887,7 +930,7 @@ func (deps *endpointDeps) validateRequest(account *config.Account, httpReq *http
 		return append(errL, err)
 	}
 
-	if err := validateOrFillCDep(httpReq, req, account); err != nil {
+	if err := validateOrFillCookieDeprecation(httpReq, req, account); err != nil {
 		errL = append(errL, err)
 	}
 
@@ -981,7 +1024,6 @@ func validateAndFillSourceTID(req *openrtb_ext.RequestWrapper, generateRequestID
 			impWrapper.RebuildImp()
 		}
 	}
-
 	return nil
 }
 
@@ -1712,36 +1754,28 @@ func validateRequestExt(req *openrtb_ext.RequestWrapper) []error {
 }
 
 func validateTargeting(t *openrtb_ext.ExtRequestTargeting) error {
-	if t == nil {
-		return nil
-	}
-
-	if (t.IncludeWinners == nil || !*t.IncludeWinners) && (t.IncludeBidderKeys == nil || !*t.IncludeBidderKeys) {
-		return errors.New("ext.prebid.targeting: At least one of includewinners or includebidderkeys must be enabled to enable targeting support")
-	}
-
-	if t.PriceGranularity != nil {
-		if err := validatePriceGranularity(t.PriceGranularity); err != nil {
-			return err
+	if t != nil {
+		if t.PriceGranularity != nil {
+			if err := validatePriceGranularity(t.PriceGranularity); err != nil {
+				return err
+			}
+		}
+		if t.MediaTypePriceGranularity.Video != nil {
+			if err := validatePriceGranularity(t.MediaTypePriceGranularity.Video); err != nil {
+				return err
+			}
+		}
+		if t.MediaTypePriceGranularity.Banner != nil {
+			if err := validatePriceGranularity(t.MediaTypePriceGranularity.Banner); err != nil {
+				return err
+			}
+		}
+		if t.MediaTypePriceGranularity.Native != nil {
+			if err := validatePriceGranularity(t.MediaTypePriceGranularity.Native); err != nil {
+				return err
+			}
 		}
 	}
-
-	if t.MediaTypePriceGranularity.Video != nil {
-		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Video); err != nil {
-			return err
-		}
-	}
-	if t.MediaTypePriceGranularity.Banner != nil {
-		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Banner); err != nil {
-			return err
-		}
-	}
-	if t.MediaTypePriceGranularity.Native != nil {
-		if err := validatePriceGranularity(t.MediaTypePriceGranularity.Native); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -1840,6 +1874,7 @@ func (deps *endpointDeps) validateUser(req *openrtb_ext.RequestWrapper, aliases 
 	if err != nil {
 		return append(errL, fmt.Errorf("request.user.ext object is not valid: %v", err))
 	}
+
 	// Check if the buyeruids are valid
 	prebid := userExt.GetPrebid()
 	if prebid != nil {
@@ -1856,19 +1891,15 @@ func (deps *endpointDeps) validateUser(req *openrtb_ext.RequestWrapper, aliases 
 			}
 		}
 	}
+
 	// Check Universal User ID
 	eids := userExt.GetEid()
 	if eids != nil {
 		eidsValue := *eids
-		uniqueSources := make(map[string]struct{}, len(eidsValue))
 		for eidIndex, eid := range eidsValue {
 			if eid.Source == "" {
 				return append(errL, fmt.Errorf("request.user.ext.eids[%d] missing required field: \"source\"", eidIndex))
 			}
-			if _, ok := uniqueSources[eid.Source]; ok {
-				return append(errL, errors.New("request.user.ext.eids must contain unique sources"))
-			}
-			uniqueSources[eid.Source] = struct{}{}
 
 			if len(eid.UIDs) == 0 {
 				return append(errL, fmt.Errorf("request.user.ext.eids[%d].uids must contain at least one element or be undefined", eidIndex))
@@ -1942,7 +1973,7 @@ func validateDevice(device *openrtb2.Device) error {
 	return nil
 }
 
-func validateOrFillCDep(httpReq *http.Request, req *openrtb_ext.RequestWrapper, account *config.Account) error {
+func validateOrFillCookieDeprecation(httpReq *http.Request, req *openrtb_ext.RequestWrapper, account *config.Account) error {
 	if account == nil || !account.Privacy.PrivacySandbox.CookieDeprecation.Enabled {
 		return nil
 	}
@@ -2052,7 +2083,7 @@ func sanitizeRequest(r *openrtb_ext.RequestWrapper, ipValidator iputil.IPValidat
 // OpenRTB properties from the headers and other implicit info.
 //
 // This function _should not_ override any fields which were defined explicitly by the caller in the request.
-func (deps *endpointDeps) setFieldsImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
+func (deps *endpointDeps) setFieldsImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper, account *config.Account) []error {
 	sanitizeRequest(r, deps.privateNetworkIPValidator)
 
 	setDeviceImplicitly(httpReq, r, deps.privateNetworkIPValidator)
@@ -2064,6 +2095,9 @@ func (deps *endpointDeps) setFieldsImplicitly(httpReq *http.Request, r *openrtb_
 	}
 
 	setAuctionTypeImplicitly(r)
+
+	errs := setSecBrowsingTopicsImplicitly(httpReq, r, account)
+	return errs
 }
 
 // setDeviceImplicitly uses implicit info from httpReq to populate bidReq.Device
@@ -2071,7 +2105,6 @@ func setDeviceImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper, i
 	setIPImplicitly(httpReq, r, ipValidtor)
 	setUAImplicitly(httpReq, r)
 	setDoNotTrackImplicitly(httpReq, r)
-
 }
 
 // setAuctionTypeImplicitly sets the auction type to 1 if it wasn't on the request,
@@ -2080,6 +2113,31 @@ func setAuctionTypeImplicitly(r *openrtb_ext.RequestWrapper) {
 	if r.AT == 0 {
 		r.AT = 1
 	}
+}
+
+// setSecBrowsingTopicsImplicitly updates user.data with data from request header 'Sec-Browsing-Topics'
+func setSecBrowsingTopicsImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper, account *config.Account) []error {
+	secBrowsingTopics := httpReq.Header.Get(secBrowsingTopics)
+	if secBrowsingTopics == "" {
+		return nil
+	}
+
+	// host must configure privacy sandbox
+	if account == nil || account.Privacy.PrivacySandbox.TopicsDomain == "" {
+		return nil
+	}
+
+	topics, errs := privacysandbox.ParseTopicsFromHeader(secBrowsingTopics)
+	if len(topics) == 0 {
+		return errs
+	}
+
+	if r.User == nil {
+		r.User = &openrtb2.User{}
+	}
+
+	r.User.Data = privacysandbox.UpdateUserDataWithTopics(r.User.Data, topics, account.Privacy.PrivacySandbox.TopicsDomain)
+	return errs
 }
 
 func setSiteImplicitly(httpReq *http.Request, r *openrtb_ext.RequestWrapper) {
@@ -2303,8 +2361,8 @@ func (deps *endpointDeps) processStoredRequests(requestJson []byte, impInfo []Im
 // parseImpInfo parses the request JSON and returns impression and unmarshalled imp.ext.prebid
 func parseImpInfo(requestJson []byte) (impData []ImpExtPrebidData, errs []error) {
 	if impArray, dataType, _, err := jsonparser.Get(requestJson, "imp"); err == nil && dataType == jsonparser.Array {
-		_, err = jsonparser.ArrayEach(impArray, func(imp []byte, _ jsonparser.ValueType, _ int, err error) {
-			impExtData, _, _, err := jsonparser.Get(imp, "ext", "prebid")
+		_, _ = jsonparser.ArrayEach(impArray, func(imp []byte, _ jsonparser.ValueType, _ int, _ error) {
+			impExtData, _, _, _ := jsonparser.Get(imp, "ext", "prebid")
 			var impExtPrebid openrtb_ext.ExtImpPrebid
 			if impExtData != nil {
 				if err := jsonutil.Unmarshal(impExtData, &impExtPrebid); err != nil {
@@ -2424,7 +2482,7 @@ func writeError(errs []error, w http.ResponseWriter, labels *metrics.Labels) boo
 		w.WriteHeader(httpStatus)
 		labels.RequestStatus = metricsStatus
 		for _, err := range errs {
-			w.Write([]byte(fmt.Sprintf("Invalid request: %s\n", err.Error())))
+			fmt.Fprintf(w, "Invalid request: %s\n", err.Error())
 		}
 		rc = true
 	}
@@ -2580,4 +2638,32 @@ func (deps *endpointDeps) validateStoredBidRespAndImpExtBidders(prebid *openrtb_
 
 func generateStoredBidResponseValidationError(impID string) error {
 	return fmt.Errorf("request validation failed. Stored bid responses are specified for imp %s. Bidders specified in imp.ext should match with bidders specified in imp.ext.prebid.storedbidresponse", impID)
+}
+
+// setSeatNonBid populates bidresponse.ext.prebid.seatnonbid
+func setSeatNonBid(finalExtBidResponse *openrtb_ext.ExtBidResponse, seatNonBid []openrtb_ext.SeatNonBid) bool {
+	if finalExtBidResponse == nil || len(seatNonBid) == 0 {
+		return false
+	}
+	if finalExtBidResponse.Prebid == nil {
+		finalExtBidResponse.Prebid = &openrtb_ext.ExtResponsePrebid{}
+	}
+	finalExtBidResponse.Prebid.SeatNonBid = seatNonBid
+	return true
+}
+
+// returnAllBidStatus function returns the value of bidrequest.ext.prebid.returnallbidstatus flag
+func returnAllBidStatus(request *openrtb_ext.RequestWrapper) bool {
+	if request == nil {
+		return false
+	}
+	reqExt, err := request.GetRequestExt()
+	if err != nil {
+		return false
+	}
+	prebid := reqExt.GetPrebid()
+	if prebid == nil {
+		return false
+	}
+	return prebid.ReturnAllBidStatus
 }

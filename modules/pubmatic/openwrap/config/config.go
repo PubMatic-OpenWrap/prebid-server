@@ -4,7 +4,9 @@ import (
 	"time"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
+	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
 
 // Config contains the values read from the config file at boot time
@@ -19,11 +21,21 @@ type Config struct {
 	Log           Log
 	Stats         stats.Stats
 	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
+	Wakanda       wakanda.Wakanda
+	GeoDB         GeoDB
+	BidCache      BidCache
+}
+
+type BidCache struct {
+	CacheClient config.HTTPClient    `mapstructure:"http_client_cache" json:"http_client_cache"`
+	CacheURL    config.Cache         `mapstructure:"cache" json:"cache"`
+	ExtCacheURL config.ExternalCache `mapstructure:"external_cache" json:"external_cache"`
 }
 
 type Server struct {
 	HostName string
 	DCName   string //Name of the data center
+	Endpoint string
 }
 
 type Database struct {
@@ -57,13 +69,19 @@ type Queries struct {
 	GetPublisherVASTTagsQuery         string
 	GetAllDspFscPcntQuery             string
 	GetPublisherFeatureMapQuery       string
+	GetAnalyticsThrottlingQuery       string
+	GetAdpodConfig                    string
+	GetProfileTypePlatformMapQuery    string
+	GetAppIntegrationPathMapQuery     string
+	GetAppSubIntegrationPathMapQuery  string
 }
 
 type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
-	CacheDefaultExpiry int // in seconds
-	VASTTagCacheExpiry int // in seconds
+	CacheDefaultExpiry         int // in seconds
+	VASTTagCacheExpiry         int // in seconds
+	ProfileMetaDataCacheExpiry int // in seconds
 }
 
 type Timeout struct {
@@ -82,8 +100,9 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
-	VASTUnwrapPercent      int
-	VASTUnwrapStatsPercent int
+	VASTUnwrapPercent             int
+	VASTUnwrapStatsPercent        int
+	AnalyticsThrottlingPercentage string
 }
 
 type Log struct { //Log Details
@@ -94,4 +113,8 @@ type Log struct { //Log Details
 	LogRotationTime    time.Duration
 	DebugLogUpdateTime time.Duration
 	DebugAuthKey       string
+}
+
+type GeoDB struct {
+	Location string
 }

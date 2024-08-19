@@ -134,7 +134,7 @@ func (tag *BidderMacro) LoadVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 // GetBidderKeys will set bidder level keys
 func (tag *BidderMacro) GetBidderKeys() map[string]string {
 	//Adding VAST Tag Bidder Parameters
-	keys := NormalizeJSON(tag.VASTTag.Params)
+	keys := normalizeJSON(tag.VASTTag.Params)
 
 	//Adding VAST Tag Standard Params
 	keys["dur"] = strconv.Itoa(tag.VASTTag.Duration)
@@ -408,7 +408,7 @@ func (tag *BidderMacro) MacroVideoMaximumDuration(key string) string {
 func (tag *BidderMacro) MacroVideoProtocols(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Protocols
-		return ObjectArrayToString(len(value), comma, func(i int) string {
+		return arrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -491,7 +491,7 @@ func (tag *BidderMacro) MacroVideoSequence(key string) string {
 func (tag *BidderMacro) MacroVideoBlockedAttribute(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.BAttr
-		return ObjectArrayToString(len(value), comma, func(i int) string {
+		return arrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -534,7 +534,7 @@ func (tag *BidderMacro) MacroVideoBoxing(key string) string {
 func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.PlaybackMethod
-		return ObjectArrayToString(len(value), comma, func(i int) string {
+		return arrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -545,7 +545,7 @@ func (tag *BidderMacro) MacroVideoPlaybackMethod(key string) string {
 func (tag *BidderMacro) MacroVideoDelivery(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.Delivery
-		return ObjectArrayToString(len(value), comma, func(i int) string {
+		return arrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}
@@ -564,7 +564,7 @@ func (tag *BidderMacro) MacroVideoPosition(key string) string {
 func (tag *BidderMacro) MacroVideoAPI(key string) string {
 	if nil != tag.Imp.Video {
 		value := tag.Imp.Video.API
-		return ObjectArrayToString(len(value), comma, func(i int) string {
+		return arrayToString(len(value), comma, func(i int) string {
 			return strconv.FormatInt(int64(value[i]), intBase)
 		})
 	}

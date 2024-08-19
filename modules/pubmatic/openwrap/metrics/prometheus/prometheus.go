@@ -13,8 +13,7 @@ import (
 type Metrics struct {
 
 	// general metrics
-	panics      *prometheus.CounterVec
-	httpCounter *prometheus.CounterVec
+	panics *prometheus.CounterVec
 
 	// publisher-partner level metrics
 	pubPartnerNoCookie            *prometheus.CounterVec
@@ -70,29 +69,52 @@ type Metrics struct {
 	owRequestTime         *prometheus.HistogramVec
 	ampVideoRequests      *prometheus.CounterVec
 	ampVideoResponses     *prometheus.CounterVec
+	analyticsThrottle     *prometheus.CounterVec
+	signalStatus          *prometheus.CounterVec
+	pbsAuctionResponse    *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
 	wrapperCount   *prometheus.CounterVec
 	requestTime    *prometheus.HistogramVec
 	unwrapRespTime *prometheus.HistogramVec
+
+	//CTV
+	ctvRequests                    *prometheus.CounterVec
+	ctvHTTPMethodRequests          *prometheus.CounterVec
+	ctvInvalidReasonCount          *prometheus.CounterVec
+	ctvReqImpsWithDbConfigCount    *prometheus.CounterVec
+	ctvReqImpsWithReqConfigCount   *prometheus.CounterVec
+	adPodGeneratedImpressionsCount *prometheus.CounterVec
+	ctvReqCountWithAdPod           *prometheus.CounterVec
+	cacheWriteTime                 *prometheus.HistogramVec
+
+	//VMAP adrule
+	pubProfAdruleEnabled           *prometheus.CounterVec
+	pubProfAdruleValidationfailure *prometheus.CounterVec
 }
 
 const (
-	pubIDLabel     = "pub_id"
-	profileIDLabel = "profile_id"
-	partnerLabel   = "partner"
-	platformLabel  = "platform"
-	endpointLabel  = "endpoint" // TODO- apiTypeLabel ?
-	apiTypeLabel   = "api_type"
-	impFormatLabel = "imp_format" //TODO -confirm ?
-	adFormatLabel  = "ad_format"
-	sourceLabel    = "source" //TODO -confirm ?
-	nbrLabel       = "nbr"    // TODO - errcode ?
-	errorLabel     = "error"
-	hostLabel      = "host" // combination of node:pod
-	methodLabel    = "method"
-	queryTypeLabel = "query_type"
+	pubIDLabel         = "pub_id"
+	profileIDLabel     = "profile_id"
+	partnerLabel       = "partner"
+	platformLabel      = "platform"
+	endpointLabel      = "endpoint" // TODO- apiTypeLabel ?
+	apiTypeLabel       = "api_type"
+	impFormatLabel     = "imp_format" //TODO -confirm ?
+	adFormatLabel      = "ad_format"
+	sourceLabel        = "source" //TODO -confirm ?
+	nbrLabel           = "nbr"    // TODO - errcode ?
+	errorLabel         = "error"
+	hostLabel          = "host" // combination of node:pod
+	methodLabel        = "method"
+	queryTypeLabel     = "query_type"
+	analyticsTypeLabel = "an_type"
+	signalTypeLabel    = "signal_status"
+	successLabel       = "success"
+	adpodImpCountLabel = "adpod_imp_count"
+	bidderCodeLabel    = "bidder_code"
+	adapterCodeLabel   = "adapter_code"
 )
 
 var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
@@ -109,18 +131,13 @@ func NewMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 
 func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry) *Metrics {
 	metrics := Metrics{}
+	cacheWriteTimeBuckets := []float64{10, 25, 50, 100}
 
 	// general metrics
 	metrics.panics = newCounter(cfg, promRegistry,
 		"panics",
 		"Count of prebid server panics in openwrap module.",
 		[]string{hostLabel, methodLabel},
-	)
-
-	metrics.httpCounter = newCounter(cfg, promRegistry,
-		"total_http_request",
-		"Count of total http requests",
-		[]string{},
 	)
 
 	// publisher-partner level metrics
@@ -147,6 +164,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"inject_tracker_errors",
 		"Count of errors while injecting trackers at publisher, partner level.",
 		[]string{pubIDLabel, partnerLabel, adFormatLabel},
+	)
+
+	metrics.pbsAuctionResponse = newCounter(cfg, promRegistry,
+		"pbs_auction_response",
+		"Count of errors while injecting trackers at publisher, partner level.",
+		[]string{pubIDLabel, partnerLabel, bidderCodeLabel, adapterCodeLabel},
 	)
 
 	metrics.pubPartnerResponseTimeSecs = newHistogramVec(cfg, promRegistry,
@@ -257,11 +280,27 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{queryTypeLabel, pubIDLabel, profileIDLabel},
 	)
 
+	metrics.cacheWriteTime = newHistogramVec(cfg, promRegistry,
+		"cache_write_time",
+		"Seconds to write to Prebid Cache labeled by success or failure. Failure timing is limited by Prebid Server enforced timeouts.",
+		[]string{successLabel},
+		cacheWriteTimeBuckets)
+
 	metrics.loggerFailure = newCounter(cfg, promRegistry,
 		"logger_send_failed",
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
 		[]string{pubIDLabel, profileIDLabel},
 	)
+	metrics.analyticsThrottle = newCounter(cfg, promRegistry,
+		"analytics_throttle",
+		"Count of throttled analytics logger and tracker requestss",
+		[]string{pubIDLabel, profileIDLabel, analyticsTypeLabel})
+
+	metrics.signalStatus = newCounter(cfg, promRegistry,
+		"signal_status",
+		"Count signal status for applovinmax requests",
+		[]string{pubIDLabel, profileIDLabel, signalTypeLabel})
+
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
 		"Count of vast unwrap requests labeled by status",
@@ -278,6 +317,48 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"vastunwrap_resp_time",
 		"Time taken to serve the vast unwrap request in Milliseconds at wrapper count level", []string{pubIdLabel, wrapperCountLabel},
 		[]float64{50, 100, 150, 200})
+
+	metrics.ctvRequests = newCounter(cfg, promRegistry,
+		"ctv_requests",
+		"Count of ctv requests",
+		[]string{endpointLabel, platformLabel},
+	)
+
+	metrics.ctvHTTPMethodRequests = newCounter(cfg, promRegistry,
+		"ctv_http_method_requests",
+		"Count of ctv requests specific to http methods",
+		[]string{endpointLabel, pubIDLabel, methodLabel},
+	)
+
+	metrics.ctvInvalidReasonCount = newCounter(cfg, promRegistry,
+		"ctv_invalid_reason",
+		"Count of bad ctv requests with code",
+		[]string{pubIdLabel, nbrLabel},
+	)
+
+	metrics.ctvReqImpsWithDbConfigCount = newCounter(cfg, promRegistry,
+		"ctv_imps_db_config",
+		"Count of ctv requests having adpod configs from database",
+		[]string{pubIdLabel},
+	)
+
+	metrics.ctvReqImpsWithReqConfigCount = newCounter(cfg, promRegistry,
+		"ctv_imps_req_config",
+		"Count of ctv requests having adpod configs from request",
+		[]string{pubIdLabel},
+	)
+
+	metrics.adPodGeneratedImpressionsCount = newCounter(cfg, promRegistry,
+		"adpod_imps",
+		"Count of impressions generated from adpod configs",
+		[]string{pubIdLabel, adpodImpCountLabel},
+	)
+
+	metrics.ctvReqCountWithAdPod = newCounter(cfg, promRegistry,
+		"ctv_requests_with_adpod",
+		"Count of ctv request with adpod object",
+		[]string{pubIdLabel, profileIDLabel},
+	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
@@ -326,6 +407,15 @@ func (m *Metrics) RecordOpenWrapServerPanicStats(hostName, method string) {
 	m.panics.With(prometheus.Labels{
 		hostLabel:   hostName,
 		methodLabel: method,
+	}).Inc()
+}
+
+func (m *Metrics) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
+	m.pbsAuctionResponse.With(prometheus.Labels{
+		pubIDLabel:       publisher,
+		partnerLabel:     partnerName,
+		bidderCodeLabel:  bidderCode,
+		adapterCodeLabel: adapterCode,
 	}).Inc()
 }
 
@@ -491,8 +581,22 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, versio
 	}).Inc()
 }
 
-func (m *Metrics) RecordHTTPCounter() {
-	m.httpCounter.With(nil).Inc()
+// RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
+func (m *Metrics) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
+	m.analyticsThrottle.With(prometheus.Labels{
+		pubIDLabel:         pubid,
+		profileIDLabel:     profileid,
+		analyticsTypeLabel: analyticsType,
+	}).Inc()
+}
+
+// RecordSignalDataStatus record signaldata status(invalid,missing) at publisher level
+func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
+	m.signalStatus.With(prometheus.Labels{
+		pubIDLabel:      pubid,
+		profileIDLabel:  profileid,
+		signalTypeLabel: signalType,
+	}).Inc()
 }
 
 // TODO - really need ?
@@ -516,16 +620,63 @@ func (m *Metrics) RecordCacheErrorRequests(endpoint string, publisherID string, 
 func (m *Metrics) RecordPublisherResponseEncodingErrorStats(publisherID string)                   {}
 
 // CTV_specific metrics
-func (m *Metrics) RecordCTVRequests(endpoint string, platform string)                              {}
-func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string)  {}
-func (m *Metrics) RecordCTVInvalidReasonCount(errorCode int, publisherID string)                   {}
-func (m *Metrics) RecordCTVReqImpsWithDbConfigCount(publisherID string)                            {}
-func (m *Metrics) RecordCTVReqImpsWithReqConfigCount(publisherID string)                           {}
-func (m *Metrics) RecordAdPodGeneratedImpressionsCount(impCount int, publisherID string)           {}
+func (m *Metrics) RecordCTVRequests(endpoint string, platform string) {
+	m.ctvRequests.With(prometheus.Labels{
+		endpointLabel: endpoint,
+		platformLabel: platform,
+	}).Inc()
+}
+
+func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string) {
+	m.ctvHTTPMethodRequests.With(prometheus.Labels{
+		endpointLabel: endpoint,
+		pubIDLabel:    publisherID,
+		methodLabel:   method,
+	}).Inc()
+}
+
+func (m *Metrics) RecordCTVInvalidReasonCount(errorCode int, publisherID string) {
+	m.ctvInvalidReasonCount.With(prometheus.Labels{
+		pubIDLabel: publisherID,
+		nbrLabel:   strconv.Itoa(errorCode),
+	}).Inc()
+}
+
+func (m *Metrics) RecordCTVReqImpsWithDbConfigCount(publisherID string) {
+	m.ctvReqImpsWithDbConfigCount.With(prometheus.Labels{
+		pubIdLabel: publisherID,
+	}).Inc()
+}
+
+func (m *Metrics) RecordCTVReqImpsWithReqConfigCount(publisherID string) {
+	m.ctvReqImpsWithReqConfigCount.With(prometheus.Labels{
+		pubIdLabel: publisherID,
+	}).Inc()
+}
+
+func (m *Metrics) RecordAdPodGeneratedImpressionsCount(impCount int, publisherID string) {
+	m.adPodGeneratedImpressionsCount.With(prometheus.Labels{
+		pubIDLabel:         publisherID,
+		adpodImpCountLabel: strconv.Itoa(impCount),
+	}).Inc()
+}
+
+func (m *Metrics) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
+	m.ctvReqCountWithAdPod.With(prometheus.Labels{
+		pubIdLabel:     publisherID,
+		profileIDLabel: profileID,
+	}).Inc()
+}
+
 func (m *Metrics) RecordRequestAdPodGeneratedImpressionsCount(impCount int, publisherID string)    {}
 func (m *Metrics) RecordAdPodImpressionYield(maxDuration int, minDuration int, publisherID string) {}
-func (m *Metrics) RecordCTVReqCountWithAdPod(publisherID, profileID string)                        {}
 func (m *Metrics) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisherID string, profile string) {
 }
 
 func (m *Metrics) Shutdown() {}
+
+func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duration) {
+	m.cacheWriteTime.With(prometheus.Labels{
+		successLabel: strconv.FormatBool(success),
+	}).Observe(float64(length.Milliseconds()))
+}

@@ -20,9 +20,12 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
 )
@@ -32,12 +35,14 @@ const (
 )
 
 type OpenWrap struct {
-	cfg                config.Config
-	cache              cache.Cache
-	metricEngine       metrics.MetricsEngine
-	currencyConversion currency.Conversions
-	featureConfig      publisherfeature.Feature
-	unwrap             unwrap.Unwrap
+	cfg             config.Config
+	cache           cache.Cache
+	metricEngine    metrics.MetricsEngine
+	rateConvertor   *currency.RateConverter
+	geoInfoFetcher  geodb.Geography
+	pubFeatures     publisherfeature.Feature
+	unwrap          unwrap.Unwrap
+	profileMetaData profilemetadata.ProfileMetaData
 }
 
 var ow *OpenWrap
@@ -78,24 +83,51 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	owCache := ow_gocache.New(cache, db, cfg.Cache, &metricEngine)
 
 	// Init Feature reloader service
-	featureConfig := publisherfeature.New(owCache, cfg.Cache.CacheDefaultExpiry)
-	featureConfig.Start()
+	pubFeatures := publisherfeature.New(publisherfeature.Config{
+		Cache:                 owCache,
+		DefaultExpiry:         cfg.Cache.CacheDefaultExpiry,
+		AnalyticsThrottleList: cfg.Features.AnalyticsThrottlingPercentage,
+	})
+	pubFeatures.Start()
+
+	// Init ProfileMetaData reloader service
+	profileMetaData := profilemetadata.New(profilemetadata.Config{
+		Cache:                 owCache,
+		ProfileMetaDataExpiry: cfg.Cache.ProfileMetaDataCacheExpiry,
+	})
+	if err = profileMetaData.Start(); err != nil {
+		glog.Error("Failed to load profileMetaData from DB")
+		return OpenWrap{}, fmt.Errorf("error while initializing profile-metadata: %v", err)
+	}
+	glog.Info("Initialized profileMetaData reloader")
 
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
+	initOpenWrapServer(&cfg)
+
+	// init geoDBClient
+	geoDBClient := netacuity.NetAcuity{}
+	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
+	if err != nil {
+		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
+	}
+
 	once.Do(func() {
 		ow = &OpenWrap{
-			cfg:                cfg,
-			cache:              owCache,
-			metricEngine:       &metricEngine,
-			currencyConversion: moduleDeps.CurrencyConversion,
-			featureConfig:      featureConfig,
-			unwrap:             uw,
+			cfg:             cfg,
+			cache:           owCache,
+			metricEngine:    &metricEngine,
+			rateConvertor:   moduleDeps.RateConvertor,
+			geoInfoFetcher:  geoDBClient,
+			pubFeatures:     pubFeatures,
+			unwrap:          uw,
+			profileMetaData: profileMetaData,
 		}
 	})
+
 	return *ow, nil
 }
 

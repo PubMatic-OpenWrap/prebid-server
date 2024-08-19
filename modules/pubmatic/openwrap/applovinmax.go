@@ -9,14 +9,20 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func getSignalData(requestBody []byte) *openrtb2.BidRequest {
+func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
+		signalType := models.InvalidSignal
+		if err == jsonparser.KeyPathNotFoundError {
+			signalType = models.MissingSignal
+		}
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), signalType)
 		return nil
 	}
 
 	signalData := &openrtb2.BidRequest{}
 	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), models.InvalidSignal)
 		return nil
 	}
 	return signalData
@@ -209,19 +215,23 @@ func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 
 func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidRequest) {
 	clientConfigFlag, err := jsonparser.GetInt(signalExt, "wrapper", "clientconfig")
-	if err != nil || clientConfigFlag != 1 {
-		return
+	if err != nil {
+		clientConfigFlag = 0
 	}
 
-	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, []byte(`1`), "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
+	if len(maxRequest.Ext) == 0 {
+		maxRequest.Ext = []byte(`{}`)
+	}
+
+	if maxReqExt, err := jsonparser.Set(maxRequest.Ext, []byte(strconv.FormatInt(clientConfigFlag, 10)), "prebid", "bidderparams", "pubmatic", "wrapper", "clientconfig"); err == nil {
 		maxRequest.Ext = maxReqExt
 	}
 }
 
-func updateAppLovinMaxRequest(requestBody []byte) []byte {
-	signalData := getSignalData(requestBody)
+func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
+	signalData := getSignalData(requestBody, rctx)
 	if signalData == nil {
-		return requestBody
+		return modifyRequestBody(requestBody)
 	}
 
 	maxRequest := &openrtb2.BidRequest{}
@@ -237,16 +247,16 @@ func updateAppLovinMaxRequest(requestBody []byte) []byte {
 }
 
 func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
-	maxAppLovin := models.AppLovinMax{Reject: false}
+	rctx.AppLovinMax.Reject = false
 
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
-			maxAppLovin.Reject = true
+			rctx.AppLovinMax.Reject = true
 		}
 	} else if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
-		maxAppLovin.Reject = true
+		rctx.AppLovinMax.Reject = true
 	}
-	return maxAppLovin
+	return rctx.AppLovinMax
 }
 
 func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
@@ -284,4 +294,45 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 		},
 	}
 	return bidResponse
+}
+
+func getAppPublisherID(requestBody []byte) string {
+	if pubId, err := jsonparser.GetString(requestBody, "app", "publisher", "id"); err == nil && len(pubId) > 0 {
+		return pubId
+	}
+	return ""
+}
+
+func getProfileID(requestBody []byte) string {
+	if profileId, err := jsonparser.GetInt(requestBody, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
+		profIDStr := strconv.Itoa(int(profileId))
+		return profIDStr
+	}
+	if profIDStr, err := jsonparser.GetString(requestBody, "app", "id"); err == nil {
+		return profIDStr
+	}
+	return ""
+}
+
+// modifyRequestBody modifies displaymanger and banner object in req if signal is missing/invalid
+func modifyRequestBody(requestBody []byte) []byte {
+	if body, err := jsonparser.Set(requestBody, []byte(strconv.Quote("PubMatic_OpenWrap_SDK")), "imp", "[0]", "displaymanager"); err == nil {
+		requestBody = jsonparser.Delete(body, "imp", "[0]", "displaymanagerver")
+	}
+
+	if bannertype, err := jsonparser.GetString(requestBody, "imp", "[0]", "banner", "ext", "bannertype"); err == nil && bannertype == models.TypeRewarded {
+		requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "banner")
+	}
+	return requestBody
+}
+
+// getApplovinMultiFloors fetches adunitwise floors for pub-profile
+func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFloorsConfig {
+	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinMultiFloorsEnabled(rctx.PubID, rctx.ProfileIDStr) {
+		return models.MultiFloorsConfig{
+			Enabled: true,
+			Config:  m.pubFeatures.GetApplovinMultiFloors(rctx.PubID, rctx.ProfileIDStr),
+		}
+	}
+	return models.MultiFloorsConfig{Enabled: false}
 }

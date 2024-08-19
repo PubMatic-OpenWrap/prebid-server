@@ -14,6 +14,8 @@ import (
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -442,6 +444,308 @@ func TestRestoreBidResponse(t *testing.T) {
 				assert.Equal(t, tt.wantErr, err.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, tt.args.ao.Response, tt.name)
+		})
+	}
+}
+
+func TestWloggerRecord_logProfileMetaData(t *testing.T) {
+	type fields struct {
+		record record
+	}
+	type args struct {
+		rctx *models.RequestCtx
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantRecord record
+	}{
+		{
+			name: "all feilds are empty",
+			args: args{
+				rctx: &models.RequestCtx{},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{},
+		},
+		{
+			name: "all feilds are set",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    ptrutil.ToPtr(4),
+					AppSubIntegrationPath: ptrutil.ToPtr(5),
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    ptrutil.ToPtr(4),
+				AppSubIntegrationPath: ptrutil.ToPtr(5),
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are nil",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    nil,
+					AppSubIntegrationPath: nil,
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
+			},
+		},
+		{
+			name: "appIntegrationPath and appSubIntegrationPath are not nil but less than 0",
+			args: args{
+				rctx: &models.RequestCtx{
+					ProfileType:           1,
+					ProfileTypePlatform:   2,
+					AppPlatform:           3,
+					AppIntegrationPath:    ptrutil.ToPtr(-1),
+					AppSubIntegrationPath: ptrutil.ToPtr(-1),
+				},
+			},
+			fields: fields{
+				record: record{},
+			},
+			wantRecord: record{
+				ProfileType:           1,
+				ProfileTypePlatform:   2,
+				AppPlatform:           3,
+				AppIntegrationPath:    nil,
+				AppSubIntegrationPath: nil,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{
+				record: tt.fields.record,
+			}
+			wlog.logProfileMetaData(tt.args.rctx)
+			assert.Equal(t, tt.wantRecord, wlog.record, tt.name)
+		})
+	}
+}
+
+func TestSetWakandaWinningBidFlag(t *testing.T) {
+	type args struct {
+		wakandaDebug wakanda.WakandaDebug
+		response     *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want wakanda.WakandaDebug
+	}{
+		{
+			name: "all_empty_parameters",
+			args: args{},
+			want: nil,
+		},
+		{
+			name: "only_wakanda_empty",
+			args: args{
+				wakandaDebug: nil,
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									Price: 5,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "only_response_empty",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response:     nil,
+			},
+			want: &wakanda.Debug{},
+		},
+		{
+			name: "no_seatbid",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response:     &openrtb2.BidResponse{},
+			},
+			want: &wakanda.Debug{},
+		},
+		{
+			name: "no_bid",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{},
+					},
+				},
+			},
+			want: &wakanda.Debug{},
+		},
+		{
+			name: "no_price",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{},
+							},
+						},
+					},
+				},
+			},
+			want: &wakanda.Debug{},
+		},
+		{
+			name: "non_zero_price",
+			args: args{
+				wakandaDebug: &wakanda.Debug{},
+				response: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									Price: 5,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &wakanda.Debug{DebugData: wakanda.DebugData{WinningBid: true}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setWakandaWinningBidFlag(tt.args.wakandaDebug, tt.args.response)
+			assert.Equal(t, tt.want, tt.args.wakandaDebug)
+		})
+	}
+}
+
+func TestSetWakandaObject(t *testing.T) {
+	type args struct {
+		rCtx      *models.RequestCtx
+		ao        *analytics.AuctionObject
+		loggerURL string
+	}
+	testCases := []struct {
+		name string
+		args args
+		want *models.RequestCtx
+	}{
+		{
+			name: "rctx is empty",
+			args: args{
+				rCtx:      &models.RequestCtx{},
+				ao:        &analytics.AuctionObject{},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{},
+		},
+		{
+			name: "wakanda is disabled",
+			args: args{
+				rCtx:      &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
+				ao:        &analytics.AuctionObject{},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: false}},
+		},
+		{
+			name: "wakanda is enabled",
+			args: args{
+				rCtx: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+				ao: &analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{},
+					},
+					Response: &openrtb2.BidResponse{},
+				},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true, DebugData: wakanda.DebugData{WinningBid: false, HTTPResponseBody: "{\"id\":\"\"}", OpenRTB: &openrtb2.BidRequest{}, Logger: json.RawMessage{}}}},
+		},
+		{
+			name: "wakanda enabled with valid flow",
+			args: args{
+				rCtx: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true}},
+				ao: &analytics.AuctionObject{
+					RequestWrapper: &openrtb_ext.RequestWrapper{
+						BidRequest: &openrtb2.BidRequest{
+							Imp: []openrtb2.Imp{
+								{
+									ID: "imp_1",
+								},
+							},
+						},
+					},
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp_1",
+										Price: 5,
+										Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":5}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\",\"ext\":{\"matchedimpression\":{\"appnexus\":50,\"pubmatic\":50}}}\r\n"}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				loggerURL: "",
+			},
+			want: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true, DebugData: wakanda.DebugData{WinningBid: true, HTTPResponseBody: "{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"bid-id-1\",\"impid\":\"imp_1\",\"price\":5,\"ext\":{\"signaldata\":\"{\\\"id\\\":\\\"123\\\",\\\"seatbid\\\":[{\\\"bid\\\":[{\\\"id\\\":\\\"bid-id-1\\\",\\\"impid\\\":\\\"imp_1\\\",\\\"price\\\":5}],\\\"seat\\\":\\\"pubmatic\\\"}],\\\"bidid\\\":\\\"bid-id-1\\\",\\\"cur\\\":\\\"USD\\\",\\\"ext\\\":{\\\"matchedimpression\\\":{\\\"appnexus\\\":50,\\\"pubmatic\\\":50}}}\\r\\n\"}}],\"seat\":\"pubmatic\"}],\"bidid\":\"bid-id-1\",\"cur\":\"USD\"}",
+				Logger: json.RawMessage{},
+				OpenRTB: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID: "imp_1",
+						},
+					},
+				}}}},
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			setWakandaObject(tt.args.rCtx, tt.args.ao, tt.args.loggerURL)
+			assert.Equal(t, tt.want, tt.args.rCtx)
 		})
 	}
 }

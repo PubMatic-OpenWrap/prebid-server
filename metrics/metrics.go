@@ -468,6 +468,7 @@ type MetricsEngine interface {
 	RecordRequestQueueTime(success bool, requestType RequestType, length time.Duration)
 	RecordTimeoutNotice(success bool)
 	RecordRequestPrivacy(privacy PrivacyLabels)
+	RecordAdapterBuyerUIDScrubbed(adapterName openrtb_ext.BidderName)
 	RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.BidderName)
 	RecordDebugRequest(debugEnabled bool, pubId string)
 	RecordStoredResponse(pubId string)
@@ -519,8 +520,8 @@ type MetricsEngine interface {
 	//RecordAdapterVideoBidDuration records actual ad duration returned by the bidder
 	RecordAdapterVideoBidDuration(labels AdapterLabels, videoBidDuration int)
 
-	//RecordDynamicFetchFailure records the dynamic fetch failure labeled by pubid and reason code
-	RecordDynamicFetchFailure(pubId, code string)
+	//RecordFloorStatus records the floor validation status labeled by pubid, source and reason code
+	RecordFloorStatus(pubId, source, code string)
 
 	//RecordRejectedBids records the rejected bids labeled by pubid, bidder and reason code
 	RecordRejectedBids(pubid, bidder, code string)

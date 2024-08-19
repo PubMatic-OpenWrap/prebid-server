@@ -13,7 +13,10 @@ import (
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 )
+
+const parseUrlFormat = "json"
 
 // PrepareLoggerURL returns the url for OW logger call
 func PrepareLoggerURL(wlog *WloggerRecord, loggerURL string, gdprEnabled int) string {
@@ -102,4 +105,48 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 
 	*ao.Response = *orignalResponse
 	return nil
+}
+
+func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
+	wlog.ProfileType = rctx.ProfileType
+	wlog.ProfileTypePlatform = rctx.ProfileTypePlatform
+	wlog.AppPlatform = rctx.AppPlatform
+	if rctx.AppIntegrationPath != nil && *rctx.AppIntegrationPath >= 0 {
+		wlog.AppIntegrationPath = rctx.AppIntegrationPath
+	}
+	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
+		wlog.AppSubIntegrationPath = rctx.AppSubIntegrationPath
+	}
+}
+
+func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
+		setWakandaWinningBidFlag(rCtx.WakandaDebug, ao.Response)
+		parseURL, err := url.Parse(loggerURL)
+		if err != nil {
+			glog.Errorf("Failed to parse loggerURL while setting wakanda object err: %s", err.Error())
+		}
+		if parseURL != nil {
+			jsonParam := parseURL.Query().Get(parseUrlFormat)
+			rCtx.WakandaDebug.SetLogger(json.RawMessage(jsonParam))
+		}
+		bytes, err := json.Marshal(ao.Response)
+		if err != nil {
+			glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
+		}
+		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
+		rCtx.WakandaDebug.SetOpenRTB(ao.RequestWrapper.BidRequest)
+		rCtx.WakandaDebug.WriteLogToFiles()
+	}
+}
+
+// setWakandaWinningBidFlag will set WinningBid flag to true if we are getting any positive bid in response
+func setWakandaWinningBidFlag(wakandaDebug wakanda.WakandaDebug, response *openrtb2.BidResponse) {
+	if wakandaDebug != nil && response != nil {
+		if len(response.SeatBid) > 0 &&
+			len(response.SeatBid[0].Bid) > 0 &&
+			response.SeatBid[0].Bid[0].Price > 0 {
+			wakandaDebug.SetWinningBid(true)
+		}
+	}
 }

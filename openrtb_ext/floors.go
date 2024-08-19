@@ -32,6 +32,7 @@ type PriceFloorRules struct {
 	Enforcement        *PriceFloorEnforcement `json:"enforcement,omitempty"`
 	Enabled            *bool                  `json:"enabled,omitempty"`
 	Skipped            *bool                  `json:"skipped,omitempty"`
+	SetMaxFloor        bool                   `json:"setmaxfloor,omitempty"`
 	FloorProvider      string                 `json:"floorprovider,omitempty"`
 	FetchStatus        string                 `json:"fetchstatus,omitempty"`
 	PriceFloorLocation string                 `json:"location,omitempty"`

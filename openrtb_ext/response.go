@@ -2,6 +2,7 @@ package openrtb_ext
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -29,8 +30,14 @@ type ExtBidResponse struct {
 
 	OwMatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
 	OwSendAllBids       int             `json:"sendallbids,omitempty"`
-	OwLogInfo           *OwLogInfo      `json:"loginfo,omitempty"`
 	OwLogger            string          `json:"owlogger,omitempty"`
+	Wrapper             *ExtWrapper     `json:"wrapper,omitempty"`
+}
+
+type ExtWrapper struct {
+	ResponseFormat   string            `json:"responseformat,omitempty"`
+	RedirectURL      string            `json:"redirecturl,omitempty"`
+	ImpToAdServerURL map[string]string `json:"imptoadserverurl,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug
@@ -58,6 +65,12 @@ type ExtResponsePrebid struct {
 	// SeatNonBid holds the array of Bids which are either rejected, no bids inside bidresponse.ext.prebid.seatnonbid
 	SeatNonBid []SeatNonBid     `json:"seatnonbid,omitempty"`
 	Floors     *PriceFloorRules `json:"floors,omitempty"`
+}
+
+type FastXMLMetrics struct {
+	XMLParserTime   time.Duration `json:"xmlparsertime,omitempty"`
+	EtreeParserTime time.Duration `json:"etreeparsertime,omitempty"`
+	IsRespMismatch  bool          `json:"isrespmismatch,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
@@ -112,10 +125,10 @@ const (
 	UserSyncPixel  UserSyncType = "pixel"
 )
 
-// NonBidObject is subset of Bid object with exact json signature
+// ExtNonBidPrebidBid is subset of Bid object with exact json signature
+// defined at https://github.com/prebid/openrtb/blob/v19.0.0/openrtb2/bid.go
 // It also contains the custom fields
-type NonBidObject struct {
-	// SubSet
+type ExtNonBidPrebidBid struct {
 	Price   float64                 `json:"price,omitempty"`
 	ADomain []string                `json:"adomain,omitempty"`
 	CatTax  adcom1.CategoryTaxonomy `json:"cattax,omitempty"`
@@ -131,7 +144,7 @@ type NonBidObject struct {
 	OriginalBidCur string  `json:"origbidcur,omitempty"`
 
 	//OW specific fields
-	ID                string              `json:"id"`
+	ID                string              `json:"id,omitempty"` // need to check
 	DealPriority      int                 `json:"dealpriority,omitempty"`
 	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
 	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
@@ -143,22 +156,21 @@ type NonBidObject struct {
 	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
 }
 
-// ExtResponseNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
-type ExtResponseNonBidPrebid struct {
-	Bid NonBidObject `json:"bid"`
+// ExtNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
+type ExtNonBidPrebid struct {
+	Bid ExtNonBidPrebidBid `json:"bid"`
 }
 
-type NonBidExt struct {
-	Prebid  ExtResponseNonBidPrebid `json:"prebid"`
-	IsAdPod *bool                   `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
-
+type ExtNonBid struct {
+	Prebid  ExtNonBidPrebid `json:"prebid"`
+	IsAdPod *bool           `json:"-"` // OW specific Flag to determine if it is Ad-Pod specific nonbid
 }
 
 // NonBid represnts the Non Bid Reason (statusCode) for given impression ID
 type NonBid struct {
 	ImpId      string    `json:"impid"`
 	StatusCode int       `json:"statuscode"`
-	Ext        NonBidExt `json:"ext"`
+	Ext        ExtNonBid `json:"ext"`
 }
 
 // SeatNonBid is collection of NonBid objects with seat information

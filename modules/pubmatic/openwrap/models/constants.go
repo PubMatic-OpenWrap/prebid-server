@@ -1,5 +1,7 @@
 package models
 
+import "github.com/golang/glog"
+
 const (
 	PARTNER_ID                  = "partnerId"
 	ADAPTER_ID                  = "adapterId"
@@ -7,6 +9,7 @@ const (
 	ADAPTER_NAME                = "adapterName"
 	PREBID_PARTNER_NAME         = "prebidPartnerName"
 	BidderCode                  = "bidderCode"
+	BidderFilters               = "bidderFilters"
 	IsAlias                     = "isAlias"
 	PROTOCOL                    = "protocol"
 	SERVER_SIDE_FLAG            = "serverSideEnabled"
@@ -141,6 +144,7 @@ const (
 	PwtPb          = "pwtpb"
 	PwtCat         = "pwtcat"
 	PwtPbCatDur    = "pwtpb_cat_dur"
+	PwtDT          = "pwtdt"
 
 	//constants for query params in AMP request
 	PUBID_KEY         = "pubId"
@@ -239,9 +243,6 @@ const (
 	ResponseTime       = "responsetimemillis"
 	ResponseExtAdPod   = "adpod"
 	MatchedImpression  = "matchedimpression"
-	LogInfoKey         = "loginfo"
-	LogInfoLoggerKey   = "logger"
-	LogInfoTrackerKey  = "tracker"
 	SendAllBidsFlagKey = "sendallbids"
 	LoggerKey          = "owlogger"
 	QADebug            = "qadebug"
@@ -303,6 +304,8 @@ const (
 	SoftFloorType      = "soft"
 	HardFloorType      = "hard"
 
+	OwRedirectURL = "owRedirectURL"
+
 	//include brand categories values
 	IncludeNoCategory            = 0
 	IncludeIABBranchCategory     = 1
@@ -356,6 +359,12 @@ const (
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
 
+	DealIDNotApplicable   = "na"
+	DealTierNotApplicable = "na"
+	PwtDealTier           = "pwtdealtier"
+	DealTierLineItemSetup = "dealTierLineItemSetup"
+	DealIDLineItemSetup   = "dealIdLineItemSetup"
+
 	//floor types
 	SoftFloor = 0
 	HardFloor = 1
@@ -379,6 +388,12 @@ const (
 	CreativeID         = "unwrap-ucrid"
 	PubID              = "pub_id"
 	ImpressionID       = "imr_id"
+
+	//Constants for new SDK reporting
+	ProfileTypeKey        = "type"
+	AppPlatformKey        = "appPlatform"
+	IntegrationPathKey    = "integrationPath"
+	SubIntegrationPathKey = "subIntegrationPath"
 )
 
 const (
@@ -392,6 +407,7 @@ const (
 	MACRO_VASTTAG       = "_VASTTAG_"
 
 	ADUNIT_SIZE_KGP           = "_AU_@_W_x_H_"
+	ADUNIT_SIZE_REGEX_KGP     = "_RE_@_W_x_H_"
 	REGEX_KGP                 = "_AU_@_DIV_@_W_x_H_"
 	DIV_SIZE_KGP              = "_DIV_@_W_x_H_"
 	ADUNIT_SOURCE_VASTTAG_KGP = "_AU_@_SRC_@_VASTTAG_"
@@ -438,6 +454,11 @@ const (
 )
 
 const (
+	AnanlyticsThrottlingLoggerType  = "wl"
+	AnanlyticsThrottlingTrackerType = "wt"
+)
+
+const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
 )
@@ -474,21 +495,56 @@ const (
 	PartnerErrMisConfig            //1
 )
 
+const (
+	ArraySeparator = ","
+)
+
+const (
+	OWExactVideoAdDurationMatching   = `exact`
+	OWRoundupVideoAdDurationMatching = `roundup`
+)
+
+const (
+	// MaximizeForDuration algorithm tends towards Ad Pod Maximum Duration, Ad Slot Maximum Duration
+	// and Maximum number of Ads. Accordingly it computes the number of impressions
+	MaximizeForDuration = iota
+	// MinMaxAlgorithm algorithm ensures all possible impression breaks are plotted by considering
+	// minimum as well as maxmimum durations and ads received in the ad pod request.
+	// It computes number of impressions with following steps
+	//  1. Passes input configuration as it is (Equivalent of MaximizeForDuration algorithm)
+	//	2. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = max ads
+	//	3. Ad Pod Duration = Ad Pod Max Duration, Number of Ads = min ads
+	//	4. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = max ads
+	//	5. Ad Pod Duration = Ad Pod Min Duration, Number of Ads = min ads
+	MinMaxAlgorithm
+	// ByDurationRanges algorithm plots the impression objects based on expected video duration
+	// ranges reveived in the input prebid-request. Based on duration matching policy
+	// it will generate the impression objects. in case 'exact' duration matching impression
+	// min duration = max duration. In case 'round up' this algorithm will not be executed.Instead
+	ByDurationRanges
+)
+
 // constants for query_type label in stats
 const (
-	PartnerConfigQuery             = "GetPartnerConfig"
-	WrapperSlotMappingsQuery       = "GetWrapperSlotMappingsQuery"
-	WrapperLiveVersionSlotMappings = "GetWrapperLiveVersionSlotMappings"
-	AdunitConfigQuery              = "GetAdunitConfigQuery"
-	AdunitConfigForLiveVersion     = "GetAdunitConfigForLiveVersion"
-	SlotNameHash                   = "GetSlotNameHash"
-	PublisherVASTTagsQuery         = "GetPublisherVASTTagsQuery"
-	AllDspFscPcntQuery             = "GetAllDspFscPcntQuery"
-	AdUnitFailUnmarshal            = "GetAdUnitUnmarshal"
-	PublisherFeatureMapQuery       = "GetPublisherFeatureMapQuery"
+	PartnerConfigQuery                 = "GetPartnerConfig"
+	WrapperSlotMappingsQuery           = "GetWrapperSlotMappingsQuery"
+	WrapperLiveVersionSlotMappings     = "GetWrapperLiveVersionSlotMappings"
+	AdunitConfigQuery                  = "GetAdunitConfigQuery"
+	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
+	SlotNameHash                       = "GetSlotNameHash"
+	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
+	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
+	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
+	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
+	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
+	GetAdpodConfig                     = "GetAdpodConfig"
 	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
 	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
+	TestQuery                     = "TestQuery"
+	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
+	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
+	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
 )
 
 // constants for owlogger Integration Type
@@ -513,18 +569,32 @@ const (
 	Failure = "failure"
 )
 
+const (
+	AdPodEnabled = 1
+)
+
 // constants for imp.Ext.Data fields
 const (
 	Pbadslot    = "pbadslot"
 	GamAdServer = "gam"
 )
 
-// constants for feature id
-
+// constants for adpod type
 const (
-	FeatureFSC            = 1
-	FeatureTBF            = 2
-	FeatureAMPMultiFormat = 3
+	AdPodTypeDynamic    = "dynamic"
+	AdPodTypeStructured = "structured"
+	AdPodTypeHybrid     = "hybrid"
+)
+
+// constants for feature id
+const (
+	FeatureFSC                 = 1
+	FeatureTBF                 = 2
+	FeatureAMPMultiFormat      = 3
+	FeatureAnalyticsThrottle   = 4
+	FeatureMaxFloors           = 5
+	FeatureBidRecovery         = 6
+	FeatureApplovinMultiFloors = 7
 )
 
 // constants for applovinmax requests
@@ -533,4 +603,12 @@ const (
 	AppLovinMaxAgent = "max"
 	TypeRewarded     = "rewarded"
 	SignalData       = "signaldata"
+	OwSspBurl        = "owsspburl"
+	MissingSignal    = "missing"
+	InvalidSignal    = "invalid"
+)
+
+// constants for log level
+const (
+	LogLevelDebug glog.Level = 3
 )

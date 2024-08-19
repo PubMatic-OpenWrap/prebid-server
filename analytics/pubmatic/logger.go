@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
@@ -30,11 +31,18 @@ var GetUUID = func() string {
 	return uuid.NewV4().String()
 }
 
+var blockListedNBR = map[openrtb3.NoBidReason]struct{}{
+	nbr.RequestBlockedPartnerThrottle: {},
+	nbr.RequestBlockedPartnerFiltered: {},
+}
+
 // GetLogAuctionObjectAsURL will form the owlogger-url and http-headers
 func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCtx, logInfo, forRespExt bool) (string, http.Header) {
-	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 {
+	if ao.RequestWrapper == nil || ao.RequestWrapper.BidRequest == nil || rCtx == nil || rCtx.PubID == 0 || rCtx.LoggerDisabled {
 		return "", nil
 	}
+	// Get Updated Floor values using floor rules from updated request
+	getFloorValueFromUpdatedRequest(ao.RequestWrapper, rCtx)
 
 	wlog := WloggerRecord{
 		record: record{
@@ -52,6 +60,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			CachePutMiss:      rCtx.CachePutMiss,
 		},
 	}
+
+	wlog.logProfileMetaData(rCtx)
 
 	wlog.logIntegrationType(rCtx.Endpoint)
 
@@ -86,11 +96,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 	// parent bidder could in one of the above and we need them by prebid's bidderCode and not seat(could be alias)
 	slots := make([]SlotRecord, 0)
-	for _, imp := range ao.RequestWrapper.Imp {
-		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
-		if !ok {
-			continue
-		}
+	for impId, impCtx := range rCtx.ImpBidCtx {
 		reward := 0
 		if impCtx.IsRewardInventory != nil {
 			reward = int(*impCtx.IsRewardInventory)
@@ -98,8 +104,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 
 		// to keep existing response intact
 		partnerData := make([]PartnerRecord, 0)
-		if ipr[imp.ID] != nil {
-			partnerData = ipr[imp.ID]
+		if ipr[impId] != nil {
+			partnerData = ipr[impId]
 		}
 
 		slots = append(slots, SlotRecord{
@@ -109,7 +115,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			Adunit:            impCtx.AdUnitName,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
-			// AdPodSlot:         getAdPodSlot(imp, responseMap.AdPodBidsExt),
+			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
 		})
 	}
 
@@ -189,6 +195,19 @@ func GetRequestCtx(hookExecutionOutcome []hookexecution.StageOutcome) *models.Re
 		}
 	}
 	return nil
+}
+
+// getFloorValueFromUpdatedRequest gets updated floor values by floor module
+func getFloorValueFromUpdatedRequest(reqWrapper *openrtb_ext.RequestWrapper, rCtx *models.RequestCtx) {
+	for _, imp := range reqWrapper.BidRequest.Imp {
+		if impCtx, ok := rCtx.ImpBidCtx[imp.ID]; ok {
+			if imp.BidFloor > 0 && impCtx.BidFloor != imp.BidFloor {
+				impCtx.BidFloor = imp.BidFloor
+				impCtx.BidFloorCur = imp.BidFloorCur
+				rCtx.ImpBidCtx[imp.ID] = impCtx
+			}
+		}
+	}
 }
 
 func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
@@ -301,7 +320,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
+			var sequence int
+			impId := bid.ImpID
+			if rCtx.IsCTVRequest {
+				impId, sequence = models.GetImpressionID(impId)
+			}
+			impCtx, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}
@@ -355,7 +379,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			kgpv = tracker.Tracker.PartnerInfo.KGPV
 			kgpsv = tracker.Tracker.LoggerData.KGPSV
 			if kgpv == "" || kgpsv == "" {
-				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
+				kgpv, kgpsv = models.GetKGPSV(*bid.Bid, &bidExt, bidderMeta, adFormat, impCtx.TagID, impCtx.Div, rCtx.Source)
 			}
 
 			price := bid.Price
@@ -368,7 +392,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if seat == models.BidderPubMatic {
-				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
+				pmMkt[impId] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,
@@ -378,6 +402,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			nbr := bid.Nbr // only for seat-non-bids this will present at bid level
 			if nbr == nil {
 				nbr = bidExt.Nbr // valid-bids + default-bids + dropped-bids
+			}
+
+			if nbr != nil {
+				if _, ok := blockListedNBR[*nbr]; ok {
+					continue
+				}
 			}
 
 			pr := PartnerRecord{
@@ -427,7 +457,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// WinningBids contains map of imp.id against bid.id+::+uuid
-			if b, ok := rCtx.WinningBids[bid.ImpID]; ok && b.ID == bidIDForLookup {
+			if rCtx.WinningBids.IsWinningBid(impId, bidIDForLookup) {
 				pr.WinningBidStaus = 1
 			}
 
@@ -466,7 +496,23 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				}
 			}
 
-			ipr[bid.ImpID] = append(ipr[bid.ImpID], pr)
+			if len(bid.Cat) > 0 {
+				pr.Cat = append(pr.Cat, bid.Cat...)
+			}
+
+			// Adpod parameters
+			if impCtx.AdpodConfig != nil {
+				pr.AdPodSequenceNumber = &sequence
+				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
+				pr.NoBidReason = &aprc
+			}
+
+			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
+			if !models.IsDefaultBid(bid.Bid) && pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
+				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
+			}
+
+			ipr[impId] = append(ipr[impId], pr)
 		}
 	}
 
@@ -500,4 +546,21 @@ func getDefaultPartnerRecordsByImp(rCtx *models.RequestCtx) map[string][]Partner
 		}}
 	}
 	return ipr
+}
+
+func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
+	if adPodConfig == nil {
+		return nil
+	}
+
+	adPodSlot := AdPodSlot{
+		MinAds:                      adPodConfig.MinAds,
+		MaxAds:                      adPodConfig.MaxAds,
+		MinDuration:                 adPodConfig.MinDuration,
+		MaxDuration:                 adPodConfig.MaxDuration,
+		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
+		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
+	}
+
+	return &adPodSlot
 }

@@ -26,6 +26,7 @@ var ignoreKeys = map[string]bool{
 	models.BidderCode:           true,
 	models.IsAlias:              true,
 	models.VENDORID:             true,
+	models.BidderFilters:        true,
 }
 
 func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
@@ -176,4 +177,15 @@ func GetRegexMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string
 	}
 
 	return "", ""
+}
+
+// getApplovinBidFloors return adunit floors at pub-profile level
+func getApplovinBidFloors(rctx models.RequestCtx, imp openrtb2.Imp) []float64 {
+	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+		return nil
+	}
+	if applovinFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[imp.TagID]; ok {
+		return applovinFloors
+	}
+	return nil
 }

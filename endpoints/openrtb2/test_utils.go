@@ -847,9 +847,15 @@ func (cf mockStoredReqFetcher) FetchResponses(ctx context.Context, ids []string)
 // mockExchange implements the Exchange interface
 type mockExchange struct {
 	lastRequest *openrtb2.BidRequest
+	seatNonBid  openrtb_ext.NonBidCollection
+	returnError error
 }
 
 func (m *mockExchange) HoldAuction(ctx context.Context, auctionRequest *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
+	if m.returnError != nil {
+		return nil, m.returnError
+	}
+
 	r := auctionRequest.BidRequestWrapper
 	m.lastRequest = r.BidRequest
 	return &exchange.AuctionResponse{
@@ -860,6 +866,7 @@ func (m *mockExchange) HoldAuction(ctx context.Context, auctionRequest *exchange
 				}},
 			}},
 		},
+		SeatNonBid: m.seatNonBid,
 	}, nil
 }
 
@@ -942,6 +949,7 @@ type mockBidderHandler struct {
 	Currency   string  `json:"currency"`
 	Price      float64 `json:"price"`
 	DealID     string  `json:"dealid"`
+	Seat       string  `json:"seat"`
 }
 
 func (b mockBidderHandler) bid(w http.ResponseWriter, req *http.Request) {
@@ -1000,6 +1008,7 @@ func (b mockBidderHandler) bid(w http.ResponseWriter, req *http.Request) {
 type mockAdapter struct {
 	mockServerURL string
 	Server        config.Server
+	seat          string
 }
 
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
@@ -1065,6 +1074,9 @@ func (a mockAdapter) MakeBids(request *openrtb2.BidRequest, requestData *adapter
 						Bid:     &seatBid.Bid[i],
 						BidType: openrtb_ext.BidTypeBanner,
 					}
+					if len(a.seat) > 0 {
+						b.Seat = openrtb_ext.BidderName(a.seat)
+					}
 					rv.Bids = append(rv.Bids, b)
 				}
 			}
@@ -1090,6 +1102,24 @@ func getBidderInfos(disabledAdapters []string, biddersNames []openrtb_ext.Bidder
 		biddersInfos[string(name)] = newBidderInfo(isDisabled)
 	}
 	return biddersInfos
+}
+
+func enableBidders(bidderInfos config.BidderInfos) {
+	for name, bidderInfo := range bidderInfos {
+		if bidderInfo.Disabled {
+			bidderInfo.Disabled = false
+			bidderInfos[name] = bidderInfo
+		}
+	}
+}
+
+func disableBidders(disabledAdapters []string, bidderInfos config.BidderInfos) {
+	for _, disabledAdapter := range disabledAdapters {
+		if bidderInfo, ok := bidderInfos[disabledAdapter]; ok {
+			bidderInfo.Disabled = true
+			bidderInfos[disabledAdapter] = bidderInfo
+		}
+	}
 }
 
 func newBidderInfo(isDisabled bool) config.BidderInfo {
@@ -1180,7 +1210,7 @@ func buildTestExchange(testCfg *testConfigValues, adapterMap map[openrtb_ext.Bid
 	}
 	for _, mockBidder := range testCfg.MockBidders {
 		bidServer := httptest.NewServer(http.HandlerFunc(mockBidder.bid))
-		bidderAdapter := mockAdapter{mockServerURL: bidServer.URL}
+		bidderAdapter := mockAdapter{mockServerURL: bidServer.URL, seat: mockBidder.Seat}
 		bidderName := openrtb_ext.BidderName(mockBidder.BidderName)
 
 		adapterMap[bidderName] = exchange.AdaptBidder(bidderAdapter, bidServer.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, bidderName, nil, "")
@@ -1232,7 +1262,9 @@ func buildTestEndpoint(test testCase, cfg *config.Configuration) (httprouter.Han
 		paramValidator = mockBidderParamValidator{}
 	}
 
-	bidderInfos := getBidderInfos(test.Config.DisabledAdapters, openrtb_ext.CoreBidderNames())
+	bidderInfos, _ := config.LoadBidderInfoFromDisk("../../static/bidder-info")
+	enableBidders(bidderInfos)
+	disableBidders(test.Config.DisabledAdapters, bidderInfos)
 	bidderMap := exchange.GetActiveBidders(bidderInfos)
 	disabledBidders := exchange.GetDisabledBidderWarningMessages(bidderInfos)
 	met := &metricsConfig.NilMetricsEngine{}
@@ -1268,8 +1300,9 @@ func buildTestEndpoint(test testCase, cfg *config.Configuration) (httprouter.Han
 
 	accountFetcher := &mockAccountFetcher{
 		data: map[string]json.RawMessage{
-			"malformed_acct": json.RawMessage(`{"disabled":"invalid type"}`),
-			"disabled_acct":  json.RawMessage(`{"disabled":true}`),
+			"malformed_acct":             json.RawMessage(`{"disabled":"invalid type"}`),
+			"disabled_acct":              json.RawMessage(`{"disabled":true}`),
+			"alternate_bidder_code_acct": json.RawMessage(`{"disabled":false,"alternatebiddercodes":{"enabled":true,"bidders":{"appnexus":{"enabled":true,"allowedbiddercodes":["groupm"]}}}}`),
 		},
 	}
 
@@ -1528,6 +1561,76 @@ func (m mockRejectionHook) HandleRawBidderResponseHook(
 	}
 
 	return result, nil
+}
+
+// mockSeatNonBidHook can be used to return seatNonBid from hook stage
+type mockSeatNonBidHook struct {
+	rejectEntrypointHook        bool
+	rejectRawAuctionHook        bool
+	rejectProcessedAuctionHook  bool
+	rejectBidderRequestHook     bool
+	rejectRawBidderResponseHook bool
+	returnError                 error
+}
+
+func (m mockSeatNonBidHook) HandleEntrypointHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.EntrypointPayload,
+) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	if m.rejectEntrypointHook {
+		return hookstage.HookResult[hookstage.EntrypointPayload]{NbrCode: 10, Reject: true}, m.returnError
+	}
+	result := hookstage.HookResult[hookstage.EntrypointPayload]{}
+	result.SeatNonBid = openrtb_ext.NonBidCollection{}
+	nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: "imp"}, NonBidReason: 100})
+	result.SeatNonBid.AddBid(nonBid, "pubmatic")
+
+	return result, m.returnError
+}
+
+func (m mockSeatNonBidHook) HandleRawAuctionHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.RawAuctionRequestPayload,
+) (hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
+	if m.rejectRawAuctionHook {
+		return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{NbrCode: 10, Reject: true}, m.returnError
+	}
+	return hookstage.HookResult[hookstage.RawAuctionRequestPayload]{Reject: false, NbrCode: 0}, m.returnError
+}
+
+func (m mockSeatNonBidHook) HandleProcessedAuctionHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	_ hookstage.ProcessedAuctionRequestPayload,
+) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
+	if m.rejectProcessedAuctionHook {
+		return hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{NbrCode: 10, Reject: true}, m.returnError
+	}
+	return hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{Reject: true, NbrCode: 0}, m.returnError
+}
+
+func (m mockSeatNonBidHook) HandleBidderRequestHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	payload hookstage.BidderRequestPayload,
+) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
+	if m.rejectBidderRequestHook {
+		return hookstage.HookResult[hookstage.BidderRequestPayload]{NbrCode: 10, Reject: true}, m.returnError
+	}
+	return hookstage.HookResult[hookstage.BidderRequestPayload]{}, m.returnError
+}
+
+func (m mockSeatNonBidHook) HandleRawBidderResponseHook(
+	_ context.Context,
+	_ hookstage.ModuleInvocationContext,
+	payload hookstage.RawBidderResponsePayload,
+) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+	if m.rejectRawBidderResponseHook {
+		return hookstage.HookResult[hookstage.RawBidderResponsePayload]{NbrCode: 10, Reject: true}, m.returnError
+	}
+	return hookstage.HookResult[hookstage.RawBidderResponsePayload]{}, m.returnError
 }
 
 var entryPointHookUpdateWithErrors = hooks.HookWrapper[hookstage.Entrypoint]{

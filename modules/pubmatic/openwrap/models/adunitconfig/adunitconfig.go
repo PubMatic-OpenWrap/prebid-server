@@ -56,6 +56,7 @@ type Video struct {
 	Enabled              *bool        `json:"enabled,omitempty"`
 	AmpTrafficPercentage *int         `json:"amptrafficpercentage,omitempty"`
 	Config               *VideoConfig `json:"config,omitempty"`
+	UsePodConfig         *bool        `json:"usepodconfig,omitempty"`
 }
 
 // Struct for UniversalPixel
@@ -73,14 +74,25 @@ type AdConfig struct {
 	BidFloorCur *string                      `json:"bidfloorcur,omitempty"`
 	Floors      *openrtb_ext.PriceFloorRules `json:"floors,omitempty"`
 
-	Exp                *int             `json:"exp,omitempty"`
-	Banner             *Banner          `json:"banner,omitempty"`
-	Native             *Native          `json:"native,omitempty"`
-	Video              *Video           `json:"video,omitempty"`
-	App                *openrtb2.App    `json:"app,omitempty"`
-	Device             *openrtb2.Device `json:"device,omitempty"`
-	Transparency       *Transparency    `json:"transparency,omitempty"`
-	Regex              *bool            `json:"regex,omitempty"`
-	UniversalPixel     []UniversalPixel `json:"universalpixel,omitempty"`
-	EnableGAMUrlLookup bool             `json:"enablegamurllookup,omitempty"`
+	Exp                *int              `json:"exp,omitempty"`
+	Banner             *Banner           `json:"banner,omitempty"`
+	Native             *Native           `json:"native,omitempty"`
+	Video              *Video            `json:"video,omitempty"`
+	App                *openrtb2.App     `json:"app,omitempty"`
+	Device             *openrtb2.Device  `json:"device,omitempty"`
+	Transparency       *Transparency     `json:"transparency,omitempty"`
+	Regex              *bool             `json:"regex,omitempty"`
+	UniversalPixel     []UniversalPixel  `json:"universalpixel,omitempty"`
+	EnableGAMUrlLookup bool              `json:"enablegamurllookup,omitempty"`
+	Adrule             []*openrtb2.Video `json:"adrule,omitempty"`
+	BidderFilter       *BidderFilter     `json:"bidderFilter,omitempty"`
+}
+
+type BidderFilter struct {
+	Filters []Filter `json:"filterConfig,omitempty"`
+}
+
+type Filter struct {
+	Bidders           []string        `json:"bidders,omitempty"`
+	BiddingConditions json.RawMessage `json:"biddingConditions,omitempty"`
 }

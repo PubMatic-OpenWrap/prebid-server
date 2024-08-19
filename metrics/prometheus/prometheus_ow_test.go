@@ -3,6 +3,7 @@ package prometheusmetrics
 import (
 	"testing"
 
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -164,6 +165,107 @@ func TestRecordVASTTagType(t *testing.T) {
 				prometheus.Labels{
 					bidderLabel:      tt.args.bidder,
 					vastTagTypeLabel: tt.args.vastTagType,
+				})
+		})
+	}
+}
+
+func TestRecordFloorStatus(t *testing.T) {
+	type args struct {
+		code, account, source string
+	}
+	type want struct {
+		expCount int
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "record_floor_status",
+			args: args{
+				account: "5890",
+				code:    "1",
+				source:  openrtb_ext.FetchLocation,
+			},
+			want: want{
+				expCount: 1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			pm := createMetricsForTesting()
+			pm.RecordFloorStatus(tt.args.account, tt.args.source, tt.args.code)
+			assertCounterVecValue(t,
+				"",
+				"record dynamic fetch failure",
+				pm.dynamicFetchFailure,
+				float64(tt.want.expCount),
+				prometheus.Labels{
+					accountLabel: tt.args.account,
+					sourceLabel:  tt.args.source,
+					codeLabel:    tt.args.code,
+				})
+		})
+	}
+}
+
+func TestRecordXMLParserResponseMismatch(t *testing.T) {
+	type args struct {
+		method, bidder string
+		isMismatch     bool
+	}
+	type want struct {
+		expCount int
+		status   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "mismatch found",
+			args: args{
+				method:     "xml",
+				bidder:     "bidder",
+				isMismatch: true,
+			},
+			want: want{
+				expCount: 1,
+				status:   requestFailed,
+			},
+		},
+		{
+			name: "mismatch not found",
+			args: args{
+				method:     "xml",
+				bidder:     "bidder",
+				isMismatch: false,
+			},
+			want: want{
+				expCount: 1,
+				status:   requestSuccessful,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			pm := createMetricsForTesting()
+			pm.RecordXMLParserResponseMismatch(tt.args.method, tt.args.bidder, tt.args.isMismatch)
+			assertCounterVecValue(t,
+				"",
+				"record dynamic fetch failure",
+				pm.xmlParserMismatch,
+				float64(tt.want.expCount),
+				prometheus.Labels{
+					methodLabel:  tt.args.method,
+					adapterLabel: tt.args.bidder,
+					statusLabel:  tt.want.status,
 				})
 		})
 	}

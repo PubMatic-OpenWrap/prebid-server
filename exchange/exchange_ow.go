@@ -19,6 +19,7 @@ import (
 	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/ortb"
+	"github.com/prebid/prebid-server/v2/util/jsonutil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"golang.org/x/net/publicsuffix"
 )
@@ -97,7 +98,7 @@ func normalizeDomain(domain string) (string, error) {
 // applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 // the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 // it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBids *nonBids) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBids *openrtb_ext.NonBidCollection) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}
 	nBadvs := []string{}
@@ -141,7 +142,10 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 					}
 					if rejectBid {
 						// Add rejected bid in seatNonBid.
-						seatNonBids.addBid(bid, int(ResponseRejectedCreativeAdvertiserBlocking), seatBid.Seat)
+						nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, seatBid.Seat)
+						nonBidParams.NonBidReason = int(ResponseRejectedCreativeAdvertiserBlocking)
+						seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seatBid.Seat)
+
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
 						rejections = updateRejections(rejections, bid.Bid.ID, fmt.Sprintf("Bid (From '%s') belongs to blocked advertiser '%s'", bidderName, bAdv))
@@ -192,6 +196,28 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
+func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapters.BidderResponse) {
+	if bidResponse == nil {
+		return
+	}
+
+	if bidResponse.FastXMLMetrics != nil {
+		recordFastXMLMetrics(bidder.me, "vastbidder", string(bidder.BidderName), bidResponse.FastXMLMetrics)
+		if bidResponse.FastXMLMetrics.IsRespMismatch {
+			resp, _ := jsonutil.Marshal(bidResponse)
+			glog.V(2).Infof("\n[VAST_BIDDER] Response Mismatch for Creative : %s", string(resp))
+		}
+	}
+
+	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
+}
+
+func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, bidder string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, bidder, vastBidderInfo.XMLParserTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, bidder, vastBidderInfo.EtreeParserTime)
+	metricsEngine.RecordXMLParserResponseMismatch(method, bidder, vastBidderInfo.IsRespMismatch)
+}
+
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
 	for _, adapterBid := range adapterBids.Bids {
 		if adapterBid.BidType == openrtb_ext.BidTypeVideo {
@@ -223,14 +249,16 @@ func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
 }
 
 // updateSeatNonBidsFloors updates seatnonbid with rejectedBids due to floors
-func updateSeatNonBidsFloors(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
+func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
 			var rejectionReason = ResponseRejectedBelowFloor
 			if pbsRejBid.Bid.DealID != "" {
 				rejectionReason = ResponseRejectedBelowDealFloor
 			}
-			seatNonBids.addBid(pbsRejBid, int(rejectionReason), pbsRejSeatBid.Seat)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
+			nonBidParams.NonBidReason = int(rejectionReason)
+			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }
@@ -338,14 +366,15 @@ func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 			ExtHttpCall: httpCalls,
 		})
 		glog.Error("owbidrejected due to price threshold:", string(jsonBytes), err)
-		fmt.Println("owbidrejected due to price threshold:", string(jsonBytes), err)
 	}
 }
 
-func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *nonBids, rejectedBids []*entities.PbsOrtbSeatBid) {
+func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			seatNonBids.addBid(pbsRejBid, int(ResponseRejectedBidPriceTooHigh), pbsRejSeatBid.Seat)
+			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
+			nonBidParams.NonBidReason = int(ResponseRejectedBidPriceTooHigh)
+			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }

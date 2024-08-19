@@ -25,10 +25,10 @@ type MetricsEngine interface {
 	RecordPublisherRequests(endpoint string, publisher string, platform string)
 	RecordReqImpsWithContentCount(publisher, contentType string)
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
-	RecordHTTPCounter()
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
+	RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string)
 	RecordInvalidCreativeStats(publisher, partner string)
 
 	// not implemented in openwrap module yet
@@ -73,12 +73,23 @@ type MetricsEngine interface {
 	RecordSendLoggerDataTime(sendTime time.Duration)
 	RecordRequestTime(requestType string, requestTime time.Duration)
 	RecordOWServerPanic(endpoint, methodName, nodeName, podName string)
+
+	// prebid metrics
+	RecordPrebidCacheRequestTime(success bool, length time.Duration)
+
+	// AMP metrics
 	RecordAmpVideoRequests(pubid, profileid string)
 	RecordAmpVideoResponses(pubid, profileid string)
+	RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string)
+	RecordSignalDataStatus(pubid, profileid, signalType string)
 
 	// VAST Unwrap metrics
 	RecordUnwrapRequestStatus(accountId, bidder, status string)
 	RecordUnwrapWrapperCount(accountId, bidder string, wrapper_count string)
 	RecordUnwrapRequestTime(accountId, bidder string, respTime time.Duration)
 	RecordUnwrapRespTime(accountId, wraperCnt string, respTime time.Duration)
+
+	//VMAP-adrule
+	RecordAdruleEnabled(pubId, profId string)
+	RecordAdruleValidationFailure(pubId, profId string)
 }

@@ -1,6 +1,8 @@
 package openwrap
 
 import (
+	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"testing"
@@ -15,6 +17,8 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
+	mock_profilemetadata "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata/mock"
 	"github.com/prebid/prebid-server/v2/usersync"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1297,5 +1301,484 @@ func TestGetRequestUserAgent(t *testing.T) {
 				t.Errorf("GetRequestUserAgent() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGetProfileType(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid profile type",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.ProfileTypeKey: "1",
+					},
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "partnerConfigMap with invalid profile type",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					1: {
+						models.ProfileTypeKey: "invalid",
+					},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getProfileType(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetProfileTypePlatform(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		setup func()
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.PLATFORM_KEY: "in-app",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform("in-app").Return(4, true)
+			},
+			want: 4,
+		},
+		{
+			name: "partnerConfigMap with invalid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.PLATFORM_KEY: "invalid",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform("invalid").Return(0, false)
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getProfileTypePlatform(tt.args.partnerConfigMap, tt.args.profileMetaData)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetAppPlatform(t *testing.T) {
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+			},
+			want: 0,
+		},
+		{
+			name: "partnerConfigMap with valid AppPlatform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.AppPlatformKey: "5",
+					},
+				},
+			},
+			want: 5,
+		},
+		{
+			name: "partnerConfigMap with invalid platform",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-11: {
+						models.AppPlatformKey: "invalid",
+					},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getAppPlatform(tt.args.partnerConfigMap)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetAppIntegrationPath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		setup func()
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with valid AppIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.IntegrationPathKey: "React Native Plugin",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppIntegrationPath("React Native Plugin").Return(3, true)
+
+			},
+			want: 3,
+		},
+		{
+			name: "partnerConfigMap with invalid AppIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.IntegrationPathKey: "invalid",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppIntegrationPath("invalid").Return(0, false)
+
+			},
+			want: -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getAppIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestGetAppSubIntegrationPath(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+
+	type args struct {
+		partnerConfigMap map[int]map[string]string
+		profileMetaData  profilemetadata.ProfileMetaData
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  int
+		setup func()
+	}{
+		{
+			name: "Empty partnerConfigMap",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{},
+				profileMetaData:  mockProfileMetaData,
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with valid AppSubIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "AppLovin Max SDK Bidding",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(8, true)
+			},
+			want: 8,
+		},
+		{
+			name: "partnerConfigMap with invalid AppSubIntegrationPath",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "invalid",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
+			},
+			want: -1,
+		},
+		{
+			name: "partnerConfigMap with inavalid AppSubIntegrationPath but valid adserver",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.SubIntegrationPathKey: "invalid",
+						models.AdserverKey:           "DFP",
+					},
+				},
+				profileMetaData: mockProfileMetaData,
+			},
+			setup: func() {
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(1, true)
+			},
+			want: 1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+			got := getAppSubIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+func TestSearchAccountID(t *testing.T) {
+	// Correctness for lookup within Publisher object left to TestGetAccountID
+	// This however tests the expected lookup paths in outer site, app and dooh
+	testCases := []struct {
+		description       string
+		request           []byte
+		expectedAccID     string
+		expectedError     error
+		expectedIsAppReq  bool
+		expectedIsSiteReq bool
+		expectedIsDOOHReq bool
+	}{
+		{
+			description:       "No publisher available",
+			request:           []byte(`{}`),
+			expectedAccID:     "",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID doesn't exist",
+			request:           []byte(`{"site":{"publisher":{}}}`),
+			expectedAccID:     "",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID not a string",
+			request:           []byte(`{"site":{"publisher":{"id":42}}}`),
+			expectedAccID:     "",
+			expectedError:     errors.New("site.publisher.id must be a string"),
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher available in request.site",
+			request:           []byte(`{"site":{"publisher":{"id":"42"}}}`),
+			expectedAccID:     "42",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher available in request.app",
+			request:           []byte(`{"app":{"publisher":{"id":"42"}}}`),
+			expectedAccID:     "42",
+			expectedError:     nil,
+			expectedIsAppReq:  true,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher available in request.dooh",
+			request:           []byte(`{"dooh":{"publisher":{"id":"42"}}}`),
+			expectedAccID:     "42",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: true,
+		},
+	}
+
+	for _, test := range testCases {
+		accountId, isAppReq, isDOOHReq, err := searchAccountId(test.request)
+		assert.Equal(t, test.expectedAccID, accountId, "searchAccountID should return expected account ID for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsAppReq, isAppReq, "searchAccountID should return expected isAppReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsDOOHReq, isDOOHReq, "searchAccountID should return expected isDOOHReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedError, err, "searchAccountID should return expected error for test case: %s", test.description)
+	}
+
+}
+
+func TestGetAccountIdFromRawRequest(t *testing.T) {
+	testCases := []struct {
+		description       string
+		hasStoredRequest  bool
+		storedRequest     json.RawMessage
+		originalRequest   []byte
+		expectedAccID     string
+		expectedIsAppReq  bool
+		expectedIsDOOHReq bool
+		expectedError     []error
+	}{
+		{
+			description:       "hasStoredRequest is false",
+			hasStoredRequest:  false,
+			storedRequest:     []byte(`{"app":{"publisher":{"id":"42"}}}`),
+			originalRequest:   []byte(`{"app":{"publisher":{"id":"50"}}}`),
+			expectedAccID:     "50",
+			expectedError:     nil,
+			expectedIsAppReq:  true,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID doesn't exist in storedrequest",
+			hasStoredRequest:  true,
+			storedRequest:     []byte(`{"site":{"publisher":{}}}`),
+			expectedAccID:     "unknown",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+		{
+			description:       "Publisher.ID as string in original request",
+			originalRequest:   []byte(`{"site":{"publisher":{"id":"42"}}}`),
+			expectedAccID:     "42",
+			expectedError:     nil,
+			expectedIsAppReq:  false,
+			expectedIsDOOHReq: false,
+		},
+	}
+	for _, test := range testCases {
+		accountId, isAppReq, isDOOHReq, err := getAccountIdFromRawRequest(test.hasStoredRequest, test.storedRequest, test.originalRequest)
+		assert.Equal(t, test.expectedAccID, accountId, "getAccountIdFromRawRequest should return expected account ID for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsAppReq, isAppReq, "getAccountIdFromRawRequest should return expected isAppReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedIsDOOHReq, isDOOHReq, "getAccountIdFromRawRequest should return expected isDOOHReq for test case: %s", test.description)
+		assert.Equal(t, test.expectedError, err, "getAccountIdFromRawRequest should return expected error for test case: %s", test.description)
+	}
+
+}
+
+func TestGetStringValueFromRequest(t *testing.T) {
+	testCases := []struct {
+		description   string
+		request       []byte
+		key           []string
+		expectedAccID string
+		expectedError error
+		expectedExist bool
+	}{
+		{
+			description:   "Both input are nil",
+			request:       nil,
+			key:           nil,
+			expectedAccID: "",
+			expectedError: nil,
+			expectedExist: false,
+		},
+		{
+			description:   "key is nil",
+			request:       []byte(`{}`),
+			key:           nil,
+			expectedAccID: "",
+			expectedError: errors.New(" must be a string"),
+			expectedExist: true,
+		},
+		{
+			description:   "Invalid request",
+			request:       []byte(`{"dooh":{"publisher":{"id":42}}}`),
+			key:           []string{"dooh", "publisher", "id"},
+			expectedAccID: "",
+			expectedError: errors.New("dooh.publisher.id must be a string"),
+			expectedExist: true,
+		},
+		{
+			description:   "Correct input from request",
+			request:       []byte(`{"dooh":{"publisher":{"id":"42"}}}`),
+			key:           []string{"dooh", "publisher", "id"},
+			expectedAccID: "42",
+			expectedError: nil,
+			expectedExist: true,
+		},
+	}
+	for _, test := range testCases {
+		accountId, exists, err := getStringValueFromRequest(test.request, test.key)
+		assert.Equal(t, test.expectedAccID, accountId, "getStringValueFromRequest should return expected account ID for test case: %s", test.description)
+		assert.Equal(t, test.expectedExist, exists, "getStringValueFromRequest should return expected exists for test case: %s", test.description)
+		assert.Equal(t, test.expectedError, err, "getStringValueFromRequest should return expected error for test case: %s", test.description)
 	}
 }

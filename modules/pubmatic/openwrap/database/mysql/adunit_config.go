@@ -1,10 +1,12 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
@@ -19,8 +21,11 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, profileIdKey, strconv.Itoa(profileID), -1)
 	adunitConfigQuery = strings.Replace(adunitConfigQuery, displayVersionKey, strconv.Itoa(displayVersion), -1)
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
+	defer cancel()
+
 	var adunitConfigJSON string
-	err := db.conn.QueryRow(adunitConfigQuery).Scan(&adunitConfigJSON)
+	err := db.conn.QueryRowContext(ctx, adunitConfigQuery).Scan(&adunitConfigJSON)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -53,6 +58,5 @@ func (db *mySqlDB) GetAdunitConfig(profileID, displayVersion int) (*adunitconfig
 	if _, ok := adunitConfig.Config["default"]; !ok {
 		adunitConfig.Config["default"] = &adunitconfig.AdConfig{}
 	}
-
 	return adunitConfig, err
 }

@@ -17,20 +17,22 @@ type ExtRegs struct {
 // ExtRequestAdPod holds AdPod specific extension parameters at request level
 type ExtRequestAdPod struct {
 	AdPod
-	CrossPodAdvertiserExclusionPercent  *int `json:"crosspodexcladv,omitempty"`    //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
-	CrossPodIABCategoryExclusionPercent *int `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
-	IABCategoryExclusionWindow          *int `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
-	AdvertiserExclusionWindow           *int `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
+	CrossPodAdvertiserExclusionPercent  int `json:"crosspodexcladv,omitempty"`    //Percent Value - Across multiple impression there will be no ads from same advertiser. Note: These cross pod rule % values can not be more restrictive than per pod
+	CrossPodIABCategoryExclusionPercent int `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
+	IABCategoryExclusionWindow          int `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
+	AdvertiserExclusionWindow           int `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
 }
 
 // AdPod holds Video AdPod specific extension parameters at impression level
 type AdPod struct {
-	MinAds                      *int `json:"minads,omitempty"`        //Default 1 if not specified
-	MaxAds                      *int `json:"maxads,omitempty"`        //Default 1 if not specified
-	MinDuration                 *int `json:"adminduration,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
-	MaxDuration                 *int `json:"admaxduration,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
-	AdvertiserExclusionPercent  *int `json:"excladv,omitempty"`       // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
-	IABCategoryExclusionPercent *int `json:"excliabcat,omitempty"`    // Percent value 0 means all ads should be of different IAB categories.
+	MinAds                      int    `json:"minads,omitempty"`                  //Default 1 if not specified
+	MaxAds                      int    `json:"maxads,omitempty"`                  //Default 1 if not specified
+	MinDuration                 int    `json:"adminduration,omitempty"`           // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
+	MaxDuration                 int    `json:"admaxduration,omitempty"`           // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
+	AdvertiserExclusionPercent  *int   `json:"excladv,omitempty"`                 // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
+	IABCategoryExclusionPercent *int   `json:"excliabcat,omitempty"`              // Percent value 0 means all ads should be of different IAB categories.
+	VideoAdDuration             []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
+	VideoAdDurationMatching     string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 // ImpExtension - Impression Extension
@@ -54,12 +56,13 @@ type BidderExtension struct {
 
 // ExtImpWrapper - Impression wrapper Extension
 type ExtImpWrapper struct {
-	Div string `json:"div,omitempty"`
+	AdServerURL string `json:"adserverurl,omitempty"`
+	Div         string `json:"div,omitempty"`
 }
 
 // ExtVideo structure to accept video specific more parameters like adpod
 type ExtVideo struct {
-	Offset *int   `json:"offset,omitempty"` // Minutes from start where this ad is intended to show
+	Offset int    `json:"offset,omitempty"` // Minutes from start where this ad is intended to show
 	AdPod  *AdPod `json:"adpod,omitempty"`
 }
 
@@ -95,21 +98,20 @@ type KeyVal struct {
 
 // RequestExtWrapper holds wrapper specific extension parameters
 type RequestExtWrapper struct {
-	ProfileId            int    `json:"profileid,omitempty"`
-	VersionId            int    `json:"versionid,omitempty"`
-	SSAuctionFlag        int    `json:"ssauction,omitempty"`
-	SumryDisableFlag     int    `json:"sumry_disable,omitempty"`
-	ClientConfigFlag     int    `json:"clientconfig,omitempty"`
-	LogInfoFlag          int    `json:"loginfo,omitempty"`
-	SupportDeals         bool   `json:"supportdeals,omitempty"`
-	IncludeBrandCategory int    `json:"includebrandcategory,omitempty"`
-	ABTestConfig         int    `json:"abtest,omitempty"`
-	LoggerImpressionID   string `json:"wiid,omitempty"`
-	SSAI                 string `json:"ssai,omitempty"`
-
-	// for amp
-	PubId                int    `json:"-"`
-	Debug                bool    `json:"-"`
+	ProfileId            int                    `json:"profileid,omitempty"`
+	VersionId            int                    `json:"versionid,omitempty"`
+	SSAuctionFlag        int                    `json:"ssauction,omitempty"`
+	SumryDisableFlag     int                    `json:"sumry_disable,omitempty"`
+	ClientConfigFlag     int                    `json:"clientconfig,omitempty"`
+	LogInfoFlag          int                    `json:"loginfo,omitempty"`
+	SupportDeals         bool                   `json:"supportdeals,omitempty"`
+	IncludeBrandCategory int                    `json:"includebrandcategory,omitempty"`
+	ABTestConfig         int                    `json:"abtest,omitempty"`
+	LoggerImpressionID   string                 `json:"wiid,omitempty"`
+	SSAI                 string                 `json:"ssai,omitempty"`
+	KeyValues            map[string]interface{} `json:"kv,omitempty"`
+	PubId                int                    `json:"-"`
+	Debug                bool                   `json:"-"`
 }
 
 type BidderWrapper struct {

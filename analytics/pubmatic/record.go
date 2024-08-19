@@ -47,6 +47,11 @@ type record struct {
 	PDC               string           `json:"pdc,omitempty"`
 	CustomDimensions  string           `json:"cds,omitempty"`
 	//Geo             GeoRecord    	`json:"geo,omitempty"`
+	ProfileType           int  `json:"pt,omitempty"`
+	ProfileTypePlatform   int  `json:"ptp,omitempty"`
+	AppPlatform           int  `json:"ap,omitempty"`
+	AppIntegrationPath    *int `json:"aip,omitempty"`
+	AppSubIntegrationPath *int `json:"asip,omitempty"`
 }
 
 // Device struct for storing device information
@@ -83,12 +88,12 @@ type Content struct {
 
 // AdPodSlot of adpod object logging
 type AdPodSlot struct {
-	MinAds                      *int `json:"mnad,omitempty"` //Default 1 if not specified
-	MaxAds                      *int `json:"mxad,omitempty"` //Default 1 if not specified
-	MinDuration                 *int `json:"amnd,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
-	MaxDuration                 *int `json:"amxd,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
-	AdvertiserExclusionPercent  *int `json:"exap,omitempty"` // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
-	IABCategoryExclusionPercent *int `json:"exip,omitempty"` // Percent value 0 means all ads should be of different IAB categories.
+	MinAds                      int `json:"mnad,omitempty"` //Default 1 if not specified
+	MaxAds                      int `json:"mxad,omitempty"` //Default 1 if not specified
+	MinDuration                 int `json:"amnd,omitempty"` // (adpod.adminduration * adpod.minads) should be greater than or equal to video.minduration
+	MaxDuration                 int `json:"amxd,omitempty"` // (adpod.admaxduration * adpod.maxads) should be less than or equal to video.maxduration + video.maxextended
+	AdvertiserExclusionPercent  int `json:"exap,omitempty"` // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
+	IABCategoryExclusionPercent int `json:"exip,omitempty"` // Percent value 0 means all ads should be of different IAB categories.
 }
 
 // SlotRecord structure for storing slot level information
@@ -140,7 +145,7 @@ type PartnerRecord struct {
 	FloorValue     float64               `json:"fv,omitempty"`
 	FloorRuleValue float64               `json:"frv,omitempty"`
 	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
-
+	PriceBucket    string                `json:"pb,omitempty"`
 }
 
 type MetaData struct {

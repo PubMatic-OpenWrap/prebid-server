@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
 )
@@ -26,16 +28,15 @@ type RequestCtx struct {
 
 	SSAuction          int
 	SummaryDisable     int
-	LogInfoFlag        int
 	SSAI               string
 	PartnerConfigMap   map[int]map[string]string
 	SupportDeals       bool
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-
-	IP   string
-	TMax int64
+	Country            string
+	IP                 string
+	TMax               int64
 
 	//NYC_TODO: use enum?
 	IsTestRequest                     int8
@@ -73,13 +74,14 @@ type RequestCtx struct {
 	MarketPlaceBidders map[string]struct{}
 
 	AdapterThrottleMap map[string]struct{}
+	AdapterFilteredMap map[string]struct{}
 
 	AdUnitConfig *adunitconfig.AdUnitConfig
 
 	Source, Origin string
 
 	SendAllBids bool
-	WinningBids map[string]OwBid
+	WinningBids WinningBids
 	DroppedBids map[string][]openrtb2.Bid
 	DefaultBids map[string]map[string][]openrtb2.Bid
 	SeatNonBids map[string][]openrtb_ext.NonBid // map of bidder to list of nonbids
@@ -91,10 +93,9 @@ type RequestCtx struct {
 	MetricsEngine          metrics.MetricsEngine
 	ReturnAllBidStatus     bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
-
 	DCName                 string
-	CachePutMiss           int                                                          // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	CurrencyConversion     func(from string, to string, value float64) (float64, error) `json:"-"`
+	CachePutMiss           int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion     func(from string, to string, value float64) (float64, error)
 	MatchedImpression      map[string]int
 	CustomDimensions       map[string]CustomDimension
 	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
@@ -102,6 +103,21 @@ type RequestCtx struct {
 	VastUnwrapEnabled      bool
 	VastUnwrapStatsEnabled bool
 	AppLovinMax            AppLovinMax
+	LoggerDisabled         bool
+	TrackerDisabled        bool
+	ProfileType            int
+	ProfileTypePlatform    int
+	AppPlatform            int
+	AppIntegrationPath     *int
+	AppSubIntegrationPath  *int
+	Method                 string
+	Errors                 []error
+	RedirectURL            string
+	ResponseFormat         string
+	WakandaDebug           wakanda.WakandaDebug
+	PriceGranularity       *openrtb_ext.PriceGranularity
+	IsMaxFloorsEnabled     bool
+	SendBurl               bool
 	AmpParams              AmpParams
 }
 
@@ -158,16 +174,21 @@ type ImpCtx struct {
 	Type              string // banner, video, native, etc
 	Bidders           map[string]PartnerData
 	NonMapped         map[string]struct{}
-
-	NewExt json.RawMessage
-	BidCtx map[string]BidCtx
-
-	BannerAdUnitCtx AdUnitCtx
-	VideoAdUnitCtx  AdUnitCtx
+	NewExt            json.RawMessage
+	BidCtx            map[string]BidCtx
+	BannerAdUnitCtx   AdUnitCtx
+	VideoAdUnitCtx    AdUnitCtx
 
 	//temp
-	BidderError    string
+	BidderError string
+
+	// CTV
 	IsAdPodRequest bool
+	AdpodConfig    *AdPod
+	ImpAdPodCfg    []*ImpAdPodConfig
+	BidIDToAPRC    map[string]int64
+	AdserverURL    string
+	BidIDToDur     map[string]int64
 }
 
 type PartnerData struct {
@@ -178,7 +199,6 @@ type PartnerData struct {
 	KGPV             string
 	IsRegex          bool
 	Params           json.RawMessage
-	VASTTagFlag      bool
 	VASTTagFlags     map[string]bool
 }
 
@@ -213,5 +233,66 @@ type FeatureData struct {
 }
 
 type AppLovinMax struct {
-	Reject bool
+	Reject            bool
+	MultiFloorsConfig MultiFloorsConfig
+}
+
+type MultiFloorsConfig struct {
+	Enabled bool
+	Config  ApplovinAdUnitFloors
+}
+
+type ApplovinAdUnitFloors map[string][]float64
+
+type WinningBids map[string][]*OwBid
+
+func (w WinningBids) IsWinningBid(impId, bidId string) bool {
+	var isWinningBid bool
+
+	wbids, ok := w[impId]
+	if !ok {
+		return isWinningBid
+	}
+
+	for i := range wbids {
+		if bidId == wbids[i].ID {
+			isWinningBid = true
+			break
+		}
+	}
+
+	return isWinningBid
+}
+
+func (w WinningBids) AppendBid(impId string, bid *OwBid) {
+	wbid, ok := w[impId]
+	if !ok {
+		wbid = make([]*OwBid, 0)
+	}
+
+	wbid = append(wbid, bid)
+	w[impId] = wbid
+}
+
+// isNewWinningBid calculates if the new bid (nbid) will win against the current winning bid (wbid) given preferDeals.
+func IsNewWinningBid(bid, wbid *OwBid, preferDeals bool) bool {
+	if preferDeals {
+		//only wbid has deal
+		if wbid.BidDealTierSatisfied && !bid.BidDealTierSatisfied {
+			bid.Nbr = nbr.LossBidLostToDealBid.Ptr()
+			return false
+		}
+		//only bid has deal
+		if !wbid.BidDealTierSatisfied && bid.BidDealTierSatisfied {
+			wbid.Nbr = nbr.LossBidLostToDealBid.Ptr()
+			return true
+		}
+	}
+	//both have deal or both do not have deal
+	if bid.NetEcpm > wbid.NetEcpm {
+		wbid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
+		return true
+	}
+	bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
+	return false
 }

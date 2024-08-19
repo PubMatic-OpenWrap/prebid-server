@@ -45,6 +45,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 					Queries: config.Queries{
 						GetPublisherVASTTagsQuery: "^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{
@@ -75,6 +76,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 					Queries: config.Queries{
 						GetPublisherVASTTagsQuery: "^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)",
 					},
+					MaxDbContextTimeout: 1000,
 				},
 			},
 			args: args{

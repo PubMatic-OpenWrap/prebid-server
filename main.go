@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"math/rand"
 	"net/http"
 	"path/filepath"
 	"runtime"
@@ -22,7 +21,6 @@ import (
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
 	jsoniter.RegisterExtension(&jsonutil.RawMessageExtension{})
 }
 
@@ -43,6 +41,7 @@ func main() {
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
+	main_ow()
 
 	// Create a soft memory limit on the total amount of memory that PBS uses to tune the behavior
 	// of the Go garbage collector. In summary, `cfg.GarbageCollectorThreshold` serves as a fixed cost
@@ -81,7 +80,9 @@ func serve(cfg *config.Configuration) error {
 	}
 
 	corsRouter := router.SupportCORS(r)
-	server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(currencyConverter, fetchingInterval), r.MetricsEngine)
+	if err := server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(currencyConverter, fetchingInterval), r.MetricsEngine); err != nil {
+		glog.Fatalf("prebid-server returned an error: %v", err)
+	}
 
 	r.Shutdown()
 	return nil

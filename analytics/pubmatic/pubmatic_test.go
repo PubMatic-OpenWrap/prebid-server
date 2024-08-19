@@ -106,6 +106,7 @@ func TestLogAuctionObject(t *testing.T) {
 						},
 					},
 				},
+
 				Response: &openrtb2.BidResponse{
 					ID:    "123",
 					BidID: "bid-id-1",
@@ -140,6 +141,38 @@ func TestLogAuctionObject(t *testing.T) {
 					},
 				},
 				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
+			},
+		},
+		{
+			name: "logger_disabled",
+			ao: &analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	LoggerDisabled: true,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}

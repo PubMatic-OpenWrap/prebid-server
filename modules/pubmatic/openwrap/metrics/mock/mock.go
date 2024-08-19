@@ -59,6 +59,30 @@ func (mr *MockMetricsEngineMockRecorder) RecordAdPodImpressionYield(arg0, arg1, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdPodImpressionYield", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdPodImpressionYield), arg0, arg1, arg2)
 }
 
+// RecordAdruleEnabled mocks base method.
+func (m *MockMetricsEngine) RecordAdruleEnabled(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAdruleEnabled", arg0, arg1)
+}
+
+// RecordAdruleEnabled indicates an expected call of RecordAdruleEnabled.
+func (mr *MockMetricsEngineMockRecorder) RecordAdruleEnabled(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdruleEnabled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdruleEnabled), arg0, arg1)
+}
+
+// RecordAdruleValidationFailure mocks base method.
+func (m *MockMetricsEngine) RecordAdruleValidationFailure(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAdruleValidationFailure", arg0, arg1)
+}
+
+// RecordAdruleValidationFailure indicates an expected call of RecordAdruleValidationFailure.
+func (mr *MockMetricsEngineMockRecorder) RecordAdruleValidationFailure(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAdruleValidationFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAdruleValidationFailure), arg0, arg1)
+}
+
 // RecordAmpVideoRequests mocks base method.
 func (m *MockMetricsEngine) RecordAmpVideoRequests(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -81,6 +105,18 @@ func (m *MockMetricsEngine) RecordAmpVideoResponses(arg0, arg1 string) {
 func (mr *MockMetricsEngineMockRecorder) RecordAmpVideoResponses(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAmpVideoResponses", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAmpVideoResponses), arg0, arg1)
+}
+
+// RecordAnalyticsTrackingThrottled mocks base method.
+func (m *MockMetricsEngine) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAnalyticsTrackingThrottled", arg0, arg1, arg2)
+}
+
+// RecordAnalyticsTrackingThrottled indicates an expected call of RecordAnalyticsTrackingThrottled.
+func (mr *MockMetricsEngineMockRecorder) RecordAnalyticsTrackingThrottled(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAnalyticsTrackingThrottled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAnalyticsTrackingThrottled), arg0, arg1, arg2)
 }
 
 // RecordBadRequests mocks base method.
@@ -249,18 +285,6 @@ func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0)
-}
-
-// RecordHTTPCounter mocks base method.
-func (m *MockMetricsEngine) RecordHTTPCounter() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordHTTPCounter")
-}
-
-// RecordHTTPCounter indicates an expected call of RecordHTTPCounter.
-func (mr *MockMetricsEngineMockRecorder) RecordHTTPCounter() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordHTTPCounter", reflect.TypeOf((*MockMetricsEngine)(nil).RecordHTTPCounter))
 }
 
 // RecordImpDisabledViaConfigStats mocks base method.
@@ -479,6 +503,30 @@ func (mr *MockMetricsEngineMockRecorder) RecordPreProcessingTimeStats(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPreProcessingTimeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPreProcessingTimeStats), arg0, arg1)
 }
 
+// RecordPrebidAuctionBidResponse mocks base method.
+func (m *MockMetricsEngine) RecordPrebidAuctionBidResponse(arg0, arg1, arg2, arg3 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPrebidAuctionBidResponse", arg0, arg1, arg2, arg3)
+}
+
+// RecordPrebidAuctionBidResponse indicates an expected call of RecordPrebidAuctionBidResponse.
+func (mr *MockMetricsEngineMockRecorder) RecordPrebidAuctionBidResponse(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPrebidAuctionBidResponse", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPrebidAuctionBidResponse), arg0, arg1, arg2, arg3)
+}
+
+// RecordPrebidCacheRequestTime mocks base method.
+func (m *MockMetricsEngine) RecordPrebidCacheRequestTime(arg0 bool, arg1 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPrebidCacheRequestTime", arg0, arg1)
+}
+
+// RecordPrebidCacheRequestTime indicates an expected call of RecordPrebidCacheRequestTime.
+func (mr *MockMetricsEngineMockRecorder) RecordPrebidCacheRequestTime(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPrebidCacheRequestTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPrebidCacheRequestTime), arg0, arg1)
+}
+
 // RecordPrebidTimeoutRequests mocks base method.
 func (m *MockMetricsEngine) RecordPrebidTimeoutRequests(arg0, arg1 string) {
 	m.ctrl.T.Helper()
@@ -657,6 +705,18 @@ func (m *MockMetricsEngine) RecordSendLoggerDataTime(arg0 time.Duration) {
 func (mr *MockMetricsEngineMockRecorder) RecordSendLoggerDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSendLoggerDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSendLoggerDataTime), arg0)
+}
+
+// RecordSignalDataStatus mocks base method.
+func (m *MockMetricsEngine) RecordSignalDataStatus(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordSignalDataStatus", arg0, arg1, arg2)
+}
+
+// RecordSignalDataStatus indicates an expected call of RecordSignalDataStatus.
+func (mr *MockMetricsEngineMockRecorder) RecordSignalDataStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSignalDataStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordSignalDataStatus), arg0, arg1, arg2)
 }
 
 // RecordStatsKeyCTVPrebidFailedImpression mocks base method.
