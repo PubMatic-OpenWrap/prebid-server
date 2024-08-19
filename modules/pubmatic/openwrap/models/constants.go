@@ -243,9 +243,6 @@ const (
 	ResponseTime       = "responsetimemillis"
 	ResponseExtAdPod   = "adpod"
 	MatchedImpression  = "matchedimpression"
-	LogInfoKey         = "loginfo"
-	LogInfoLoggerKey   = "logger"
-	LogInfoTrackerKey  = "tracker"
 	SendAllBidsFlagKey = "sendallbids"
 	LoggerKey          = "owlogger"
 
