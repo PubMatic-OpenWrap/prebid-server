@@ -86,9 +86,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
-						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-						},
+						Features: config.FeatureToggle{},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
 							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
@@ -131,8 +129,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -183,8 +180,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -228,8 +224,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -290,8 +285,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -352,8 +346,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -403,8 +396,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -450,11 +442,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					Ext: openrtb_ext.ExtNonBid{
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price: 2.1,
-								ID:    "Bid-123",
-								W:     100,
-								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
+								Price:          2.1,
+								ID:             "Bid-123",
+								W:              100,
+								H:              50,
+								Type:           openrtb_ext.BidTypeVideo,
+								OriginalBidCPM: 2.1,
 							},
 						},
 					},
@@ -468,8 +461,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapStatsPercent: 2,
-							VASTUnwrapPercent:      50,
+							VASTUnwrapPercent: 50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -515,11 +507,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					Ext: openrtb_ext.ExtNonBid{
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price: 2.1,
-								ID:    "Bid-123",
-								W:     100,
-								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
+								Price:          2.1,
+								ID:             "Bid-123",
+								W:              100,
+								H:              50,
+								Type:           openrtb_ext.BidTypeVideo,
+								OriginalBidCPM: 2.1,
 							},
 						},
 					},

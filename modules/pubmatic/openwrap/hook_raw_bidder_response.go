@@ -53,20 +53,14 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		if rejectBid(unwrappedBid.unwrapStatus) {
 			seatNonBid.AddBid(
 				openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:          unwrappedBid.bid.Bid,
-					NonBidReason: int(nbr.LossBidLostInVastUnwrap),
-					DealPriority: unwrappedBid.bid.DealPriority,
-					BidMeta:      unwrappedBid.bid.BidMeta,
-					BidType:      unwrappedBid.bid.BidType,
-					BidVideo:     unwrappedBid.bid.BidVideo,
-					// OriginalBidCPM: 0,
-					// OriginalBidCur: "USD",
-					// DealTierSatisfied: unwrappedBid.bid.D
-					// GeneratedBidID
-					// TargetBidderCode
-					// OriginalBidCPMUSD
-					// BidEvents:
-					// BidFloors:
+					Bid:            unwrappedBid.bid.Bid,
+					NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
+					DealPriority:   unwrappedBid.bid.DealPriority,
+					BidMeta:        unwrappedBid.bid.BidMeta,
+					BidType:        unwrappedBid.bid.BidType,
+					BidVideo:       unwrappedBid.bid.BidVideo,
+					OriginalBidCPM: unwrappedBid.bid.Bid.Price,
+					// TODO - need to set correct values for price, originalBidCur considering response-currency and bidAdjustment values
 				}), payload.Bidder,
 			)
 		} else {
@@ -79,8 +73,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	result.ChangeSet = changeSet
 	result.SeatNonBid = seatNonBid
 	result.DebugMessages = append(result.DebugMessages,
-		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] VastUnwrapStatsEnabled:[%v] ",
-			vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, vastRequestContext.VastUnwrapStatsEnabled))
+		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled))
 
 	return result, nil
 }
