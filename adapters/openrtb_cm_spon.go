@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
@@ -20,11 +19,6 @@ const (
 	CLICK_KEY               = "tps_clkurl="
 	MOCKURL                 = "http://127.0.0.1:8001/MockResponse"
 )
-
-func EncodeURL(url string) string {
-	str := base64.StdEncoding.EncodeToString([]byte(url))
-	return str
-}
 
 func GetImpressionExtComm(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMSponsored, error) {
 	var commerceExt openrtb_ext.ExtImpCMSponsored
@@ -48,9 +42,7 @@ func GetSiteExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtSiteCommerce,
 			}
 		}
 	}
-
 	return &siteExt, nil
-
 }
 
 func GetRequestExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, error) {

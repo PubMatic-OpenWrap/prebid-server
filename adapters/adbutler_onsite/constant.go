@@ -17,4 +17,8 @@ const (
 	Adtype_Invalid       = 0
 	Adtype_Banner        = 1
 	Adtype_Custom_Banner = 2
+
+	IMP_KEY   = "tps_impurl="
+	CLICK_KEY = "tps_clkurl="
+	VIEW_KEY  = "tps_vwurl="
 )
