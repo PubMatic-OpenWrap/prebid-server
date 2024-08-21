@@ -1242,6 +1242,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							},
 						},
 					},
+					SendBurl: true,
 				},
 				cache: mockCache,
 				impExt: models.ImpExtension{
@@ -1287,7 +1288,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2]}`),
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2],"sendburl":true}`),
 				wantErr:        false,
 			},
 		},
