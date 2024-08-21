@@ -41,16 +41,6 @@ func TestUnwrap_Unwrap(t *testing.T) {
 		expectedUnwrapStatus string
 	}{
 		{
-			name: "Found empty AdM in bid",
-			args: args{
-				bid: &adapters.TypedBid{
-					Bid: &openrtb2.Bid{AdM: ""},
-				},
-			},
-			expectedAdm:          "",
-			expectedUnwrapStatus: "",
-		},
-		{
 			name:   "Unwrap enabled with valid adm",
 			fields: fields{endpoint: "http://localhost:8001/unwrap"},
 			args: args{

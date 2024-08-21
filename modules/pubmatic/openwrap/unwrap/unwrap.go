@@ -43,10 +43,6 @@ func NewUnwrap(Endpoint string, DefaultTime int, handler http.HandlerFunc, Metri
 func (uw Unwrap) Unwrap(bid *adapters.TypedBid, accountID, bidder, userAgent, ip string) (unwrapStatus string) {
 	startTime := time.Now()
 	var wrapperCnt int64
-
-	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
-		return
-	}
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))

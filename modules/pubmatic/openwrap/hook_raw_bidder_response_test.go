@@ -39,7 +39,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		args           args
 		wantResult     hookstage.HookResult[hookstage.RawBidderResponsePayload]
 		setup          func()
-		wantErr        bool
 		wantSeatNonBid openrtb_ext.NonBidCollection
 		mockHandler    http.HandlerFunc
 	}{
@@ -49,7 +48,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
-			wantErr:    false,
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context with type video",
@@ -79,7 +77,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			wantErr:    false,
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context with type video, stats enabled true",
@@ -121,7 +118,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
 			},
-			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context with invalid vast xml",
@@ -166,7 +162,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
-			wantErr: true,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context with type video",
@@ -216,7 +211,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
 			},
-			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
@@ -277,7 +271,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).Times(2)
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).Times(2)
 			},
-			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
@@ -338,7 +331,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any())
 			},
-			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context with type video and source owsdk",
@@ -388,7 +380,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
 			},
-			wantErr: false,
 		},
 		{
 			name: "bid with InvalidVAST should be discarded and should be present in seatNonBid",
@@ -433,7 +424,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", models.UnwrapInvalidVASTStatus)
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
-			wantErr: true,
 			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				seatNonBid.AddBid(openrtb_ext.NonBid{
@@ -498,7 +488,6 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", models.UnwrapEmptyVASTStatus)
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
-			wantErr: true,
 			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				seatNonBid.AddBid(openrtb_ext.NonBid{
@@ -529,19 +518,16 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 
 			m := tt.args.module
 			m.unwrap = unwrap.NewUnwrap("http://localhost:8001/unwrap", 200, tt.mockHandler, m.metricEngine)
-			hookResult, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload)
-			if !assert.NoError(t, err, tt.wantErr) {
-				return
-			}
+			hookResult, _ := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload)
 			if tt.args.moduleInvocationCtx.ModuleContext != nil && tt.args.isAdmUpdated {
 				assert.Equal(t, inlineXMLAdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
-			assert.Equal(t, tt.wantSeatNonBid, hookResult.SeatNonBid)
+			assert.Equal(t, tt.wantSeatNonBid, hookResult.SeatNonBid, "mismatched seatNonBids")
 		})
 	}
 }
 
-func TestNotEligibleForUnwrap(t *testing.T) {
+func TestIsEligibleForUnwrap(t *testing.T) {
 	type args struct {
 		bid *adapters.TypedBid
 	}
@@ -553,32 +539,32 @@ func TestNotEligibleForUnwrap(t *testing.T) {
 		{
 			name: "Bid is nil",
 			args: args{bid: nil},
-			want: true,
+			want: false,
 		},
 		{
 			name: "Bid.Bid is nil",
 			args: args{bid: &adapters.TypedBid{Bid: nil}},
-			want: true,
+			want: false,
 		},
 		{
 			name: "AdM is empty",
 			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}},
-			want: true,
+			want: false,
 		},
 		{
 			name: "BidType is not video",
 			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeBanner}},
-			want: true,
+			want: false,
 		},
 		{
 			name: "Bid is eligible for unwrap",
 			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeVideo}},
-			want: false,
+			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := notEligibleForUnwrap(tt.args.bid)
+			got := isEligibleForUnwrap(tt.args.bid)
 			assert.Equal(t, tt.want, got)
 		})
 	}

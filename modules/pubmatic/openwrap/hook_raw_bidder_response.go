@@ -37,7 +37,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 	// send bids for unwrap
 	for _, bid := range payload.Bids {
-		if notEligibleForUnwrap(bid) {
+		if !isEligibleForUnwrap(bid) {
 			continue
 		}
 		unwrappedBidsCnt++
@@ -78,8 +78,8 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	return result, nil
 }
 
-func notEligibleForUnwrap(bid *adapters.TypedBid) bool {
-	return bid == nil || bid.Bid == nil || bid.Bid.AdM == "" || bid.BidType != openrtb_ext.BidTypeVideo
+func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
+	return bid != nil && bid.Bid != nil && bid.Bid.AdM != "" && bid.BidType == openrtb_ext.BidTypeVideo
 }
 
 func rejectBid(unwrapStatus string) bool {
