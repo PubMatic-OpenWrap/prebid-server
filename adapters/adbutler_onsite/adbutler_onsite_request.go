@@ -204,6 +204,11 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		}
 	}
 	
+	if(adButlerReq.ZoneIDs == nil || len(adButlerReq.ZoneIDs) == 0) {
+		return nil, []error{&errortypes.BidderFailedSchemaValidation{
+			Message: "No valid ZoneID's Present",
+		}}
+	}
 	adButlerReq.Limit = limitMap
 	
 	reqJSON, err := json.Marshal(adButlerReq)
