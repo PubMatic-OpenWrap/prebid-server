@@ -39,6 +39,9 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	if rctx.IsTestRequest == models.TestValueTwo {
+		if len(slots) > 0 {
+			extImpPubMatic.AdSlot = slots[0]
+		}
 		params, err := json.Marshal(extImpPubMatic)
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
