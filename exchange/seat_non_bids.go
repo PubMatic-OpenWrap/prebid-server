@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -37,7 +36,7 @@ func (b SeatNonBidBuilder) rejectBid(bid *entities.PbsOrtbBid, nonBidReason int,
 }
 
 // rejectImps appends a non bid object to the builder for every specified imp
-func (b SeatNonBidBuilder) rejectImps(impIds []string, nonBidReason openrtb3.NoBidReason, seat string) {
+func (b SeatNonBidBuilder) rejectImps(impIds []string, nonBidReason NonBidReason, seat string) {
 	nonBids := []openrtb_ext.NonBid{}
 	for _, impId := range impIds {
 		nonBid := openrtb_ext.NonBid{
