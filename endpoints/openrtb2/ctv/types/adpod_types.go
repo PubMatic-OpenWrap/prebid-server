@@ -55,7 +55,7 @@ type ImpAdPodConfig struct {
 // ImpData example
 type ImpData struct {
 	//AdPodGenerator
-	ImpID           string                        `json:"-"`
+	ImpID           string                        `json:"impid"`
 	Bid             *AdPodBid                     `json:"-"`
 	VideoExt        *openrtb_ext.ExtVideoAdPod    `json:"vidext,omitempty"`
 	Config          []*ImpAdPodConfig             `json:"imp,omitempty"`
