@@ -50,7 +50,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	// collect bids after unwrap
 	for i := 0; i < unwrappedBidsCnt; i++ {
 		unwrappedBid := <-unwrappedBidsChan
-		if rejectBid(unwrappedBid.unwrapStatus) {
+		if unwrappedBid.unwrapStatus == models.UnwrapEmptyVASTStatus || unwrappedBid.unwrapStatus == models.UnwrapInvalidVASTStatus {
 			seatNonBid.AddBid(
 				openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:            unwrappedBid.bid.Bid,
@@ -80,12 +80,4 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
 	return bid != nil && bid.Bid != nil && bid.Bid.AdM != "" && bid.BidType == openrtb_ext.BidTypeVideo
-}
-
-func rejectBid(unwrapStatus string) bool {
-	switch unwrapStatus {
-	case models.UnwrapEmptyVASTStatus, models.UnwrapInvalidVASTStatus:
-		return true
-	}
-	return false
 }
