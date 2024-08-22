@@ -28,7 +28,6 @@ type RequestCtx struct {
 
 	SSAuction          int
 	SummaryDisable     int
-	LogInfoFlag        int
 	SSAI               string
 	PartnerConfigMap   map[int]map[string]string
 	SupportDeals       bool
@@ -118,6 +117,7 @@ type RequestCtx struct {
 	WakandaDebug           wakanda.WakandaDebug
 	PriceGranularity       *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled     bool
+	SendBurl               bool
 }
 
 type OwBid struct {

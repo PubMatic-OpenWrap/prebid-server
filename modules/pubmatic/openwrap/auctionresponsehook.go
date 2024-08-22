@@ -341,13 +341,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		responseExt.OwSendAllBids = 1
 	}
 
-	if rctx.LogInfoFlag == 1 {
-		responseExt.OwLogInfo = &openrtb_ext.OwLogInfo{
-			// Logger:  openwrap.GetLogAuctionObjectAsURL(ao, true, true), updated done later
-			Tracker: tracker.GetTrackerInfo(rctx, responseExt),
-		}
-	}
-
 	result.SeatNonBid = prepareSeatNonBids(rctx)
 
 	if rctx.Debug {
