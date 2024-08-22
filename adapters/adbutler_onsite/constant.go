@@ -21,4 +21,6 @@ const (
 	IMP_KEY   = "tps_impurl="
 	CLICK_KEY = "tps_clkurl="
 	VIEW_KEY  = "tps_vwurl="
+
+	Pattern_Click_URL = `href="(https?://[^\s]+/redirect\.spark\?[^"]+)"`
 )

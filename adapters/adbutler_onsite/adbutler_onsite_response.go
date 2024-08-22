@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 
@@ -146,6 +147,8 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 
 			adm, adType := getADM(adButlerBid)
 
+			adm = encodeRedirectURL(adm, Pattern_Click_URL, CLICK_KEY)
+
 			if adType == Adtype_Invalid {
 				continue
 			}
@@ -258,4 +261,21 @@ func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
 	}
 
 	return impIDMap
+}
+
+func encodeRedirectURL(phrase, urlToSearch, preString string) string {
+	regex := regexp.MustCompile(urlToSearch)
+	matches := regex.FindAllStringSubmatch(phrase, -1)
+	if len(matches) == 0 {
+		return phrase
+	}
+	modifiedPhrase := phrase
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		encodedURL := preString + adapters.EncodeURL(match[1])
+		modifiedPhrase = string.Replace(modifiedPhrase, match[1], encodedURL, 1)
+	}
+	return modifiedPhrase
 }
