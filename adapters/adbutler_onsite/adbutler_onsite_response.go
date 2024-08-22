@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 
 	"bytes"
 
@@ -275,7 +276,7 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 			continue
 		}
 		encodedURL := preString + adapters.EncodeURL(match[1])
-		modifiedPhrase = string.Replace(modifiedPhrase, match[1], encodedURL, 1)
+		modifiedPhrase = strings.Replace(modifiedPhrase, match[1], encodedURL, 1)
 	}
 	return modifiedPhrase
 }
