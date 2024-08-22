@@ -4318,7 +4318,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			assert.Equal(t, tt.want.hookResult.Reject, got.Reject)
 			assert.Equal(t, tt.want.hookResult.NbrCode, got.NbrCode)
 			assert.Equal(t, tt.want.hookResult.SeatNonBid, got.SeatNonBid)
-			// fmt.Println(got.DebugMessages)
 			for i := 0; i < len(got.DebugMessages); i++ {
 				gotDebugMessage, _ := json.Marshal(got.DebugMessages[i])
 				wantDebugMessage, _ := json.Marshal(tt.want.hookResult.DebugMessages[i])
@@ -4339,7 +4338,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					result, err := mut.Apply(tt.args.payload)
 					assert.Nil(t, err, tt.name)
 					gotBidRequest, _ := json.Marshal(result.BidRequest)
-					// fmt.Println(string(gotBidRequest))
 					assert.JSONEq(t, string(tt.want.bidRequest), string(gotBidRequest))
 				}
 			}
