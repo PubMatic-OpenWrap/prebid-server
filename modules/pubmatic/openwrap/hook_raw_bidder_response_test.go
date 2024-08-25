@@ -61,19 +61,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   "<div>This is an Ad</div>",
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
-							},
-							BidType: "video",
-						}}},
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "<div>This is an Ad</div>",
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}}}},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -92,19 +93,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
-							},
-							BidType: "video",
-						}},
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}}},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
@@ -135,18 +137,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   invalidVastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   invalidVastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -185,18 +189,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -228,31 +234,33 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
-						},
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-456",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-789",
-								W:     100,
-								H:     50,
-							},
-							BidType: "video",
-						}},
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}},
+					},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
@@ -288,31 +296,33 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
-						},
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-456",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   "This is banner creative",
-								CrID:  "Cr-789",
-								W:     100,
-								H:     50,
-							},
-							BidType: "banner",
-						}},
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "banner",
+							}},
+					},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
@@ -348,18 +358,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   vastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -397,18 +409,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   invalidVastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   invalidVastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -432,12 +446,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					Ext: openrtb_ext.ExtNonBid{
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price:          2.1,
-								ID:             "Bid-123",
-								W:              100,
-								H:              50,
-								Type:           openrtb_ext.BidTypeVideo,
-								OriginalBidCPM: 2.1,
+								Price: 2.1,
+								ID:    "Bid-123",
+								W:     100,
+								H:     50,
+								Type:  openrtb_ext.BidTypeVideo,
 							},
 						},
 					},
@@ -461,18 +474,20 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					Bids: []*adapters.TypedBid{
-						{
-							Bid: &openrtb2.Bid{
-								ID:    "Bid-123",
-								ImpID: fmt.Sprintf("div-adunit-%d", 123),
-								Price: 2.1,
-								AdM:   invalidVastXMLAdM,
-								CrID:  "Cr-234",
-								W:     100,
-								H:     50,
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   invalidVastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
 							},
-							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -496,12 +511,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					Ext: openrtb_ext.ExtNonBid{
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price:          2.1,
-								ID:             "Bid-123",
-								W:              100,
-								H:              50,
-								Type:           openrtb_ext.BidTypeVideo,
-								OriginalBidCPM: 2.1,
+								Price: 2.1,
+								ID:    "Bid-123",
+								W:     100,
+								H:     50,
+								Type:  openrtb_ext.BidTypeVideo,
 							},
 						},
 					},
@@ -520,7 +534,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			m.unwrap = unwrap.NewUnwrap("http://localhost:8001/unwrap", 200, tt.mockHandler, m.metricEngine)
 			hookResult, _ := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload)
 			if tt.args.moduleInvocationCtx.ModuleContext != nil && tt.args.isAdmUpdated {
-				assert.Equal(t, inlineXMLAdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+				assert.Equal(t, inlineXMLAdM, tt.args.payload.BidderResponse.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
 			}
 			assert.Equal(t, tt.wantSeatNonBid, hookResult.SeatNonBid, "mismatched seatNonBids")
 		})

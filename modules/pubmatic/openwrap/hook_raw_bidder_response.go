@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
-type bidInfo struct {
+type BidUnwrapInfo struct {
 	bid          *adapters.TypedBid
 	unwrapStatus string
 }
@@ -31,19 +31,20 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	}
 
 	seatNonBid := openrtb_ext.NonBidCollection{}
-	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.Bids))
-	unwrappedBidsChan := make(chan bidInfo, len(payload.Bids))
-	unwrappedBidsCnt := 0
+	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.BidderResponse.Bids))
+	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
+	defer close(unwrappedBidsChan)
 
+	unwrappedBidsCnt := 0
 	// send bids for unwrap
-	for _, bid := range payload.Bids {
+	for _, bid := range payload.BidderResponse.Bids {
 		if !isEligibleForUnwrap(bid) {
 			continue
 		}
 		unwrappedBidsCnt++
 		go func(bid adapters.TypedBid) {
 			unwrapStatus := m.unwrap.Unwrap(&bid, miCtx.AccountID, payload.Bidder, vastRequestContext.UA, vastRequestContext.IP)
-			unwrappedBidsChan <- bidInfo{&bid, unwrapStatus}
+			unwrappedBidsChan <- BidUnwrapInfo{&bid, unwrapStatus}
 		}(*bid)
 	}
 
@@ -59,8 +60,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 					BidMeta:        unwrappedBid.bid.BidMeta,
 					BidType:        unwrappedBid.bid.BidType,
 					BidVideo:       unwrappedBid.bid.BidVideo,
-					OriginalBidCPM: unwrappedBid.bid.Bid.Price,
-					// TODO - need to set correct values for price, originalBidCur considering response-currency and bidAdjustment values
+					OriginalBidCur: payload.BidderResponse.Currency,
 				}), payload.Bidder,
 			)
 		} else {
