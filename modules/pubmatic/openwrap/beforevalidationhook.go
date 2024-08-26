@@ -111,7 +111,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	m.metricEngine.RecordPublisherProfileRequests(rCtx.PubIDStr, rCtx.ProfileIDStr)
 
 	requestExt, err := models.GetRequestExt(payload.BidRequest.Ext)
-	if err != nil {
+	if err != nil && rCtx.Endpoint != models.EndpointAMP {
 		result.NbrCode = int(nbr.InvalidRequestExt)
 		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
 		return result, nil
@@ -289,6 +289,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		slotType := "banner"
 		imp := payload.BidRequest.Imp[i]
 
+		if rCtx.AmpParams.ImpID != "" {
+			imp.ID = rCtx.AmpParams.ImpID
+			imp.BidFloor = rCtx.AmpParams.BidFloor
+			imp.BidFloorCur = rCtx.AmpParams.BidFloorCur
+		}
+
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
@@ -300,9 +306,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, err
 			}
 		}
-		if rCtx.Endpoint == models.EndpointWebS2S {
+
+		switch rCtx.Endpoint {
+		case models.EndpointAMP:
+			imp.TagID = rCtx.AmpParams.Slot
+		case models.EndpointWebS2S:
 			imp.TagID = getTagID(imp, impExt)
 		}
+
 		if imp.TagID == "" {
 			result.NbrCode = int(nbr.InvalidImpressionTagID)
 			err = errors.New("tagid missing for imp: " + imp.ID)
@@ -661,6 +672,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
 func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
+	m.applyAmpChanges(rctx, bidRequest)
+
 	if rctx.IsTestRequest > 0 {
 		bidRequest.Test = 1
 	}

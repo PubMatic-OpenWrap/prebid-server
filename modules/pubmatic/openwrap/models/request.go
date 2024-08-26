@@ -103,6 +103,7 @@ type RequestExtWrapper struct {
 	SSAuctionFlag        int                    `json:"ssauction,omitempty"`
 	SumryDisableFlag     int                    `json:"sumry_disable,omitempty"`
 	ClientConfigFlag     int                    `json:"clientconfig,omitempty"`
+	LogInfoFlag          int                    `json:"loginfo,omitempty"`
 	SupportDeals         bool                   `json:"supportdeals,omitempty"`
 	IncludeBrandCategory *int                   `json:"includebrandcategory,omitempty"`
 	ABTestConfig         int                    `json:"abtest,omitempty"`
@@ -110,6 +111,7 @@ type RequestExtWrapper struct {
 	SSAI                 string                 `json:"ssai,omitempty"`
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
 	PubId                int                    `json:"-"`
+	Debug                bool                   `json:"-"`
 }
 
 type BidderWrapper struct {

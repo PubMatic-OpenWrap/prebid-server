@@ -118,6 +118,23 @@ type RequestCtx struct {
 	PriceGranularity       *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled     bool
 	SendBurl               bool
+	AmpParams              AmpParams
+}
+
+type AmpParams struct {
+	Slot          string
+	Width         string
+	Height        string
+	Multisize     string
+	ImpID         string
+	BidFloor      float64
+	BidFloorCur   string
+	Origin        string
+	Curl          string
+	Purl          string
+	GDPR          int
+	ConsentString string
+	ConsentType   ConsentType
 }
 
 type OwBid struct {

@@ -175,6 +175,12 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 		return
 	}
 
+	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(reqWrapper.BidRequest)
+	if rejectErr != nil {
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, *seatNonBid)
+		return
+	}
+
 	if errortypes.ContainsFatalError(errL) {
 		w.WriteHeader(http.StatusBadRequest)
 		for _, err := range errortypes.FatalOnly(errL) {
@@ -558,7 +564,9 @@ func (deps *endpointDeps) loadRequestJSONForAmp(httpRequest *http.Request) (req 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(deps.cfg.StoredRequestsTimeout)*time.Millisecond)
 	defer cancel()
 
-	storedRequests, _, errs := deps.storedReqFetcher.FetchRequests(ctx, []string{ampParams.StoredRequestID}, nil)
+	// TODO: setup stored request fetcher for AMP
+	storedRequests := map[string]json.RawMessage{ampParams.StoredRequestID: json.RawMessage(`{"id":"{{UUID}}","imp":[{}],"ext":{}}`)}
+	// storedRequests, _, errs := deps.storedReqFetcher.FetchRequests(ctx, []string{ampParams.StoredRequestID}, nil)
 	if len(errs) > 0 {
 		return nil, nil, nil, nil, errs
 	}
@@ -575,8 +583,7 @@ func (deps *endpointDeps) loadRequestJSONForAmp(httpRequest *http.Request) (req 
 	}
 
 	storedAuctionResponses, storedBidResponses, bidderImpReplaceImp, errs = stored_responses.ProcessStoredResponses(ctx, &openrtb_ext.RequestWrapper{BidRequest: req}, deps.storedRespFetcher)
-	if err != nil {
-		errs = []error{err}
+	if len(errs) > 0 {
 		return
 	}
 
