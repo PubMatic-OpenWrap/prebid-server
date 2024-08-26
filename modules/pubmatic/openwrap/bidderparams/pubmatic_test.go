@@ -464,7 +464,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							models.TIMEOUT:             "200",
 							models.KEY_GEN_PATTERN:     "_RE_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
-							models.KEY_PROFILE_ID:      "1323",
 							models.IsAlias:             "1",
 							models.PubID:               "301",
 						},
