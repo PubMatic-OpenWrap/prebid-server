@@ -177,7 +177,7 @@ func (deps *endpointDeps) AmpAuction(w http.ResponseWriter, r *http.Request, _ h
 
 	rejectErr = hookExecutor.ExecuteBeforeRequestValidationStage(reqWrapper.BidRequest)
 	if rejectErr != nil {
-		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil)
+		labels, ao = rejectAmpRequest(*rejectErr, w, hookExecutor, reqWrapper, nil, labels, ao, nil, *seatNonBid)
 		return
 	}
 

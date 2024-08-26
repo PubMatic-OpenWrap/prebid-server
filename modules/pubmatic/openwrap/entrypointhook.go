@@ -265,14 +265,23 @@ func GetEndpoint(path, source string, agent string) string {
 
 func processOWAmpParams(r *http.Request, rctx *models.RequestCtx) {
 	rctx.AmpParams = models.AmpParams{
-		Slot:      r.URL.Query().Get("auId"),
-		Width:     r.URL.Query().Get("w"),
-		Height:    r.URL.Query().Get("h"),
-		Multisize: r.URL.Query().Get("ms"),
-		Origin:    r.URL.Query().Get("__amp_source_origin"),
-		Purl:      r.URL.Query().Get("purl"),
-		Curl:      r.URL.Query().Get("curl"),
-		ImpID:     uuid.NewV4().String(),
+		Slot:          r.URL.Query().Get(models.ADUNIT_KEY),
+		Width:         r.URL.Query().Get(models.WIDTH_KEY),
+		Height:        r.URL.Query().Get(models.HEIGHT_KEY),
+		Multisize:     r.URL.Query().Get(models.MULTISIZE_KEY),
+		Origin:        r.URL.Query().Get(models.AMP_ORIGIN),
+		Purl:          r.URL.Query().Get(models.PAGEURL_KEY),
+		Curl:          r.URL.Query().Get(models.CanonicalUrl),
+		ImpID:         uuid.NewV4().String(),
+		ConsentString: r.URL.Query().Get(models.ConsentStringKey),
+	}
+
+	consentTypeInt, _ := strconv.Atoi(r.URL.Query().Get(models.ConsentTypeKey))
+	rctx.AmpParams.ConsentType = parseConsentType(consentTypeInt)
+
+	gdprAppliesBool, _ := strconv.ParseBool(r.URL.Query().Get(models.GDPRAppliesKey))
+	if gdprAppliesBool {
+		rctx.AmpParams.GDPR = 1
 	}
 
 	bidfloor, err := strconv.ParseFloat(r.URL.Query().Get(models.FloorValue), 64)
@@ -286,4 +295,17 @@ func getSendBurl(request []byte) bool {
 	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl
+}
+
+func parseConsentType(intVal int) models.ConsentType {
+	switch intVal {
+	case 1:
+		return models.TCF_V1
+	case 2:
+		return models.TCF_V2
+	case 3:
+		return models.CCPA
+	default:
+		return models.Unknown
+	}
 }

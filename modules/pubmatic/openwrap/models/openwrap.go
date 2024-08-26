@@ -122,16 +122,19 @@ type RequestCtx struct {
 }
 
 type AmpParams struct {
-	Slot        string
-	Width       string
-	Height      string
-	Multisize   string
-	ImpID       string
-	BidFloor    float64
-	BidFloorCur string
-	Origin      string
-	Curl        string
-	Purl        string
+	Slot          string
+	Width         string
+	Height        string
+	Multisize     string
+	ImpID         string
+	BidFloor      float64
+	BidFloorCur   string
+	Origin        string
+	Curl          string
+	Purl          string
+	GDPR          int
+	ConsentString string
+	ConsentType   ConsentType
 }
 
 type OwBid struct {
