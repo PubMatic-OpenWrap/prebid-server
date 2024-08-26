@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSeatNonBidsAdd(t *testing.T) {
+func TestRejectBid(t *testing.T) {
 	type fields struct {
 		seatNonBidsMap SeatNonBidBuilder
 	}
@@ -45,10 +45,6 @@ func TestSeatNonBidsAdd(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// snb := &SeatNonBidBuilder{
-			// 	// seatNonBidsMap: tt.fields.seatNonBidsMap,
-			// }
-
 			snb := tt.fields.seatNonBidsMap
 			snb.rejectBid(tt.args.bid, tt.args.nonBidReason, tt.args.seat)
 			assert.Equalf(t, tt.want, snb, "expected seatNonBidsMap not nil")
