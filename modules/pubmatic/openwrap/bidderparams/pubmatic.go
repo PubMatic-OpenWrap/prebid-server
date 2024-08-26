@@ -166,7 +166,9 @@ func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessag
 
 	//Pubmatic alias flow do not send wrapExt
 	if isAlias, ok := rctx.PartnerConfigMap[partnerID][models.IsAlias]; ok && isAlias == "1" {
-		return nil
+		if pubID, ok := rctx.PartnerConfigMap[partnerID][models.PubID]; ok && pubID != rctx.PubIDStr {
+			return nil
+		}
 	}
 	return json.RawMessage(wrapExt)
 }
