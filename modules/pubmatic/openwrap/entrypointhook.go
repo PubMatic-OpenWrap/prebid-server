@@ -133,7 +133,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl: endpoint == models.EndpointAppLovinMax && getSendBurl(payload.Body),
+		SendBurl: endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
 	}
 
 	// SSAuction will be always 1 for CTV request
