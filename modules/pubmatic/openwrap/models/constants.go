@@ -243,9 +243,6 @@ const (
 	ResponseTime       = "responsetimemillis"
 	ResponseExtAdPod   = "adpod"
 	MatchedImpression  = "matchedimpression"
-	LogInfoKey         = "loginfo"
-	LogInfoLoggerKey   = "logger"
-	LogInfoTrackerKey  = "tracker"
 	SendAllBidsFlagKey = "sendallbids"
 	LoggerKey          = "owlogger"
 
@@ -589,12 +586,13 @@ const (
 
 // constants for feature id
 const (
-	FeatureFSC               = 1
-	FeatureTBF               = 2
-	FeatureAMPMultiFormat    = 3
-	FeatureAnalyticsThrottle = 4
-	FeatureMaxFloors         = 5
-	FeatureBidRecovery       = 6
+	FeatureFSC                 = 1
+	FeatureTBF                 = 2
+	FeatureAMPMultiFormat      = 3
+	FeatureAnalyticsThrottle   = 4
+	FeatureMaxFloors           = 5
+	FeatureBidRecovery         = 6
+	FeatureApplovinMultiFloors = 7
 )
 
 // constants for applovinmax requests

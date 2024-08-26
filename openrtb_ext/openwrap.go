@@ -79,6 +79,13 @@ type ExtRequestAdPod struct {
 	AdvertiserExclusionWindow           *int                            `json:"excladvwindow,omitempty"`           //Duration in minute between pods where exclusive advertiser rule needs to be applied
 	VideoAdDuration                     []int                           `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
 	VideoAdDurationMatching             OWVideoAdDurationMatchingPolicy `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
+	Exclusion                           *AdpodExclusion                 `json:"exclusion,omitempty"`               //Exclusion parameters
+}
+
+// AdpodExclusion holds AdPod specific exclusion parameters
+type AdpodExclusion struct {
+	IABCategory      []string `json:"iabcategory,omitempty"`
+	AdvertiserDomain []string `json:"advertiserdomain,omitempty"`
 }
 
 // VideoAdPod holds Video AdPod specific extension parameters at impression level

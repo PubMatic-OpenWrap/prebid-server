@@ -73,6 +73,7 @@ type Metrics struct {
 	ampVideoResponses     *prometheus.CounterVec
 	analyticsThrottle     *prometheus.CounterVec
 	signalStatus          *prometheus.CounterVec
+	pbsAuctionResponse    *prometheus.CounterVec
 
 	// VAST Unwrap
 	requests       *prometheus.CounterVec
@@ -114,6 +115,8 @@ const (
 	signalTypeLabel    = "signal_status"
 	successLabel       = "success"
 	adpodImpCountLabel = "adpod_imp_count"
+	bidderCodeLabel    = "bidder_code"
+	adapterCodeLabel   = "adapter_code"
 )
 
 var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
@@ -163,6 +166,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"inject_tracker_errors",
 		"Count of errors while injecting trackers at publisher, partner level.",
 		[]string{pubIDLabel, partnerLabel, adFormatLabel},
+	)
+
+	metrics.pbsAuctionResponse = newCounter(cfg, promRegistry,
+		"pbs_auction_response",
+		"Count of errors while injecting trackers at publisher, partner level.",
+		[]string{pubIDLabel, partnerLabel, bidderCodeLabel, adapterCodeLabel},
 	)
 
 	metrics.pubPartnerResponseTimeSecs = newHistogramVec(cfg, promRegistry,
@@ -413,6 +422,15 @@ func (m *Metrics) RecordOpenWrapServerPanicStats(hostName, method string) {
 	m.panics.With(prometheus.Labels{
 		hostLabel:   hostName,
 		methodLabel: method,
+	}).Inc()
+}
+
+func (m *Metrics) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
+	m.pbsAuctionResponse.With(prometheus.Labels{
+		pubIDLabel:       publisher,
+		partnerLabel:     partnerName,
+		bidderCodeLabel:  bidderCode,
+		adapterCodeLabel: adapterCode,
 	}).Inc()
 }
 

@@ -320,6 +320,13 @@ func (me *MultiMetricsEngine) RecordReqImpsWithContentCount(publisher, contentTy
 	}
 }
 
+// RecordPrebidAuctionBidResponse across all engines
+func (me *MultiMetricsEngine) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
+	for _, thisME := range *me {
+		thisME.RecordPrebidAuctionBidResponse(publisher, partnerName, bidderCode, adapterCode)
+	}
+}
+
 // RecordPBSAuctionRequestsStats across all engines
 func (me *MultiMetricsEngine) RecordPBSAuctionRequestsStats() {
 	for _, thisME := range *me {

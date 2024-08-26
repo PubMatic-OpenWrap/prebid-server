@@ -18,6 +18,8 @@ type ExtImpPubmatic struct {
 	Kadfloor            string                  `json:"kadfloor,omitempty"`
 	BidViewabilityScore map[string]interface{}  `json:"bidViewability,omitempty"`
 	DealTier            *DealTier               `json:"dealtier,omitempty"`
+	Floors              []float64               `json:"floors,omitempty"`
+	SendBurl            bool                    `json:"sendburl,omitempty"`
 }
 
 // ExtImpPubmaticKeyVal defines the contract for bidrequest.imp[i].ext.prebid.bidder.pubmatic.keywords[i]

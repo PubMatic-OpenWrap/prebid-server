@@ -30,6 +30,7 @@ type MetricsEngine interface {
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
+	RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string)
 	RecordInvalidCreativeStats(publisher, partner string)
 
 	// not implemented in openwrap module yet
