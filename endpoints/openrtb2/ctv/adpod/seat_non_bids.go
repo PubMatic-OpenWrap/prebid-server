@@ -11,6 +11,9 @@ func GetNonBidParamsFromTypesBid(bid *types.Bid, seat string) openrtb_ext.NonBid
 	if bid.ExtBid.Prebid == nil {
 		bid.ExtBid.Prebid = &openrtb_ext.ExtBidPrebid{}
 	}
+	if bid.ExtBid.Prebid.Video != nil && bid.ExtBid.Prebid.Video.Duration == 0 && bid.Duration > 0 {
+		bid.ExtBid.Prebid.Video.Duration = bid.Duration
+	}
 	pbsOrtbBid := entities.PbsOrtbBid{
 		Bid:               bid.Bid,
 		BidMeta:           bid.ExtBid.Prebid.Meta,

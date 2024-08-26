@@ -458,7 +458,7 @@ func TestGetAdPodExt(t *testing.T) {
 				},
 			},
 			want: want{
-				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"impid":"imp1","vidext":{"adpod":{}}}}}}`),
 			},
 		},
 		{
@@ -483,7 +483,7 @@ func TestGetAdPodExt(t *testing.T) {
 				},
 			},
 			want: want{
-				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"impid":"imp1","vidext":{"adpod":{}}}}}}`),
 			},
 		},
 	}
