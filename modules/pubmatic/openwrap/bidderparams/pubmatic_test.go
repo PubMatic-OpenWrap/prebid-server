@@ -255,6 +255,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -321,6 +322,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -389,6 +391,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -520,6 +523,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -583,6 +587,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -652,6 +657,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -718,6 +724,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -790,6 +797,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -856,6 +864,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -922,6 +931,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -988,6 +998,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1054,6 +1065,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1120,6 +1132,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1191,6 +1204,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 2,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1240,6 +1254,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 2,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1289,6 +1304,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					ProfileIDStr:  "123",
 					DisplayID:     1,
@@ -1528,7 +1544,8 @@ func TestGetPubMaticPublisherID(t *testing.T) {
 							models.PubID:               "5890",
 						},
 					},
-					PubID: 5890,
+					PubID:    5890,
+					PubIDStr: "5890",
 				},
 			},
 			want: "5890",
@@ -1546,7 +1563,8 @@ func TestGetPubMaticPublisherID(t *testing.T) {
 							models.PubID:               "5890",
 						},
 					},
-					PubID: 5890,
+					PubID:    5890,
+					PubIDStr: "5890",
 				},
 			},
 			want: "301",
@@ -1564,7 +1582,8 @@ func TestGetPubMaticPublisherID(t *testing.T) {
 							models.IsAlias:             "1",
 						},
 					},
-					PubID: 5890,
+					PubID:    5890,
+					PubIDStr: "5890",
 				},
 			},
 			want: "301",

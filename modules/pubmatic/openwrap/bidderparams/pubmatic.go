@@ -3,7 +3,6 @@ package bidderparams
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
@@ -153,7 +152,7 @@ func getPubMaticPublisherID(rctx models.RequestCtx, partnerID int) string {
 		return pubID
 	}
 	//PubMatic primary flow
-	return strconv.Itoa(rctx.PubID)
+	return rctx.PubIDStr
 }
 
 func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessage {
