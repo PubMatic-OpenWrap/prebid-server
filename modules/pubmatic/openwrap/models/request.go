@@ -107,7 +107,12 @@ type RequestExtWrapper struct {
 	LoggerImpressionID   string                 `json:"wiid,omitempty"`
 	SSAI                 string                 `json:"ssai,omitempty"`
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
+	Video                ExtRequestWrapperVideo `json:"video,omitempty"`
 	PubId                int                    `json:"-"`
+}
+
+type ExtRequestWrapperVideo struct {
+	AdruleFlag bool `json:"adrule,omitempty"`
 }
 
 type BidderWrapper struct {
