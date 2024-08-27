@@ -79,5 +79,5 @@ func (m OpenWrap) handleRawBidderResponseHook(
 }
 
 func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
-	return bid != nil && bid.Bid != nil && bid.Bid.AdM != "" && bid.BidType == openrtb_ext.BidTypeVideo
+	return bid != nil && bid.BidType == openrtb_ext.BidTypeVideo && bid.Bid != nil && bid.Bid.AdM != ""
 }
