@@ -719,7 +719,7 @@ func (e *exchange) getAllBids(
 	adapterBids := make(map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, len(bidderRequests))
 	adapterExtra := make(map[openrtb_ext.BidderName]*seatResponseExtra, len(bidderRequests))
 	chBids := make(chan *bidResponseWrapper, len(bidderRequests))
-	extraRespInfo := extraAuctionResponseInfo{}
+	extraRespInfo := extraAuctionResponseInfo{seatNonBidBuilder: SeatNonBidBuilder{}}
 
 	e.me.RecordOverheadTime(metrics.MakeBidderRequests, time.Since(pbsRequestStartTime))
 
