@@ -143,8 +143,15 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			}
 
 			bidID := adapters.GenerateUniqueBidIDComm()
-			width, _ := strconv.Atoi(adButlerBid.Width)
-			height, _ := strconv.Atoi(adButlerBid.Height)
+			width, err := strconv.Atoi(adButlerBid.Width)
+			if err != nil {
+				width = -1
+			}
+
+			height, err := strconv.Atoi(adButlerBid.Height)
+			if err != nil {
+				height = -1
+			}
 
 			adm, adType := getADM(adButlerBid)
 
@@ -184,6 +191,10 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				AdM:   adm,
 			}
 
+			if !areMandatoryFieldsPresent(bidExt, bid) {
+				continue
+			}
+
 			adapters.AddDefaultFieldsComm(bid)
 
 			bidExtJSON, err1 := json.Marshal(bidExt)
@@ -200,6 +211,19 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 		}
 	}
 	return bidResponse
+}
+
+func areMandatoryFieldsPresent(bidExt *openrtb_ext.ExtBidCMOnsite, bid *openrtb2.Bid) bool {
+
+	if bid.AdM == "" || bid.NURL == "" || bid.W == -1 || bid.H == -1 {
+		return false
+	}
+
+	if bidExt.ClickUrl == "" || bidExt.AdType == Adtype_Invalid {
+		return false
+	}
+
+	return true
 }
 
 func getADM(adButlerBid *Placement) (string, int) {
