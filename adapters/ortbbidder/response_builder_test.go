@@ -109,7 +109,7 @@ func TestBuildAdapterResponse(t *testing.T) {
 				},
 			},
 			expectedResponse: nil,
-			expectedError:    &errortypes.BadServerResponse{Message: "chan int is unsupported type"},
+			expectedError:    &errortypes.BadServerResponse{Message: "json: unsupported type: chan int"},
 		},
 	}
 	for _, tc := range testCases {
