@@ -27,7 +27,7 @@ func (rb *multiRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err e
 	if rb.rawRequest, err = jsonutil.Marshal(request); err != nil {
 		return err
 	}
-	// request.Imp = tmpImp[0:] //resetting is not required
+	request.Imp = tmpImp[0:]
 
 	//cache impression from request
 	data, err := jsonutil.Marshal(tmpImp)
