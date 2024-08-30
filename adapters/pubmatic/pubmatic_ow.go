@@ -1,11 +1,24 @@
 package pubmatic
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+)
+
+const (
+	dsaKey          = "dsa"
+	transparencyKey = "transparency"
+)
+
+var (
+	paramKey    = []byte(`"params"`)
+	dsaParamKey = []byte(`"dsaparams"`)
 )
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
@@ -73,4 +86,19 @@ func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *o
 	// meta.DChain = bidExt.DChain;
 
 	return meta
+}
+
+// renameTransparencyParamsKey renames the bid.ext.dsa.transparency.params key to bid.ext.dsa.transparency.dsaparams
+func renameTransparencyParamsKey(bidExt []byte) []byte {
+	transparencyObjectCnt := 0
+	jsonparser.ArrayEach(bidExt, func(transparencyObject []byte, dataType jsonparser.ValueType, offset int, err error) {
+		transparencyObject = bytes.Replace(transparencyObject, paramKey, dsaParamKey, 1)
+		bidExt, err = jsonparser.Set(bidExt, transparencyObject, dsaKey, transparencyKey, fmt.Sprintf("[%d]", transparencyObjectCnt))
+		if err != nil {
+			return
+		}
+		transparencyObjectCnt++
+	}, dsaKey, transparencyKey)
+
+	return bidExt
 }

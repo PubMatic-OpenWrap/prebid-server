@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,7 @@ func TestSingleRequestBuilderParseRequest(t *testing.T) {
 				},
 			},
 			want: want{
-				err:        errImpMissing,
+				err:        util.ErrImpMissing,
 				rawRequest: json.RawMessage(`{"id":"id","imp":null}`),
 				imps:       nil,
 				newRequest: map[string]any{
@@ -111,7 +112,7 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 			},
 			want: want{
 				requestData: nil,
-				errs:        []error{newBadInputError(errImpMissing.Error())},
+				errs:        []error{util.NewBadInputError(util.ErrImpMissing.Error())},
 			},
 		},
 		{
@@ -213,7 +214,7 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 			},
 			want: want{
 				requestData: nil,
-				errs: []error{newBadInputError("failed to replace macros in endpoint, err:template: endpointTemplate:1:2: " +
+				errs: []error{util.NewBadInputError("failed to replace macros in endpoint, err:template: endpointTemplate:1:2: " +
 					"executing \"endpointTemplate\" at <errorFunc>: error calling errorFunc: intentional error")},
 			},
 		},

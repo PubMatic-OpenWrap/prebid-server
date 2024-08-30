@@ -351,7 +351,7 @@ func (deps *ctvEndpointDeps) createStructuredAdpodCtx(imp openrtb2.Imp) {
 
 	podContext, ok := deps.podCtx[imp.Video.PodID]
 	if !ok {
-		podContext = adpod.NewStructuredAdpod(deps.labels.PubID, deps.metricsEngine, deps.reqExt)
+		podContext = adpod.NewStructuredAdpod(imp.Video.PodID, deps.labels.PubID, deps.metricsEngine, deps.reqExt)
 	}
 
 	podContext.AddImpressions(imp)

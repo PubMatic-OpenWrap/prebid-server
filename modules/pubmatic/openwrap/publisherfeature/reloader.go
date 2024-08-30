@@ -19,13 +19,15 @@ type feature struct {
 	cache       cache.Cache
 	serviceStop chan struct{}
 	sync.RWMutex
-	defaultExpiry    int
-	publisherFeature map[int]map[int]models.FeatureData
-	fsc              fsc
-	tbf              tbf
-	ant              analyticsThrottle
-	ampMultiformat   ampMultiformat
-	maxFloors        maxFloors
+	defaultExpiry       int
+	publisherFeature    map[int]map[int]models.FeatureData
+	fsc                 fsc
+	tbf                 tbf
+	ant                 analyticsThrottle
+	ampMultiformat      ampMultiformat
+	maxFloors           maxFloors
+	bidRecovery         bidRecovery
+	appLovinMultiFloors appLovinMultiFloors
 }
 
 var fe *feature
@@ -54,6 +56,9 @@ func New(config Config) *feature {
 			ant: analyticsThrottle{
 				vault: newPubThrottling(config.AnalyticsThrottleList),
 				db:    newPubThrottling(config.AnalyticsThrottleList),
+			},
+			appLovinMultiFloors: appLovinMultiFloors{
+				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 		}
 	})
@@ -110,6 +115,8 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAmpMutiformatEnabledPublishers()
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
+	fe.updateBidRecoveryEnabledPublishers()
+	fe.updateApplovinMultiFloorsFeature()
 
 	if err != nil {
 		glog.Error(err.Error())

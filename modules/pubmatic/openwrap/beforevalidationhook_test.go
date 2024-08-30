@@ -1210,6 +1210,565 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Request_with_User_Ext_Eids",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]},{"source":"liveramp.com","uids":[{"id":""}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]}]}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Valid_EIDs_in_User_object",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						EIDs: []openrtb2.EID{
+							{
+								Source: "uidapi.com",
+								UIDs: []openrtb2.UID{
+									{ID: "UID2:testUID"},
+									{ID: "testUID2"},
+									{ID: "UID2:"},
+								},
+							},
+							{
+								Source: "euid.eu",
+								UIDs: []openrtb2.UID{
+									{ID: "euid:testeuid"}},
+							},
+							{
+								Source: "liveramp.com",
+								UIDs: []openrtb2.UID{
+									{ID: "IDL:"}},
+							},
+						},
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					EIDs: []openrtb2.EID{
+						{
+							Source: "uidapi.com",
+							UIDs: []openrtb2.UID{
+								{ID: "testUID"},
+								{ID: "testUID2"},
+							},
+						},
+						{
+							Source: "euid.eu",
+							UIDs: []openrtb2.UID{
+								{ID: "testeuid"},
+							},
+						},
+					},
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Valid_EIDs_in_User_object_and_User_Ext",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]}]}`),
+						EIDs: []openrtb2.EID{
+							{
+								Source: "uidapi.com",
+								UIDs: []openrtb2.UID{
+									{ID: "UID2:testUID"},
+									{ID: "testUID2"},
+								},
+							},
+							{
+								Source: "euid.eu",
+								UIDs: []openrtb2.UID{
+									{ID: "euid:testeuid"}},
+							},
+						},
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]}]}`),
+					EIDs: []openrtb2.EID{
+						{
+							Source: "uidapi.com",
+							UIDs: []openrtb2.UID{
+								{ID: "testUID"},
+								{ID: "testUID2"},
+							},
+						},
+						{
+							Source: "euid.eu",
+							UIDs: []openrtb2.UID{
+								{ID: "testeuid"},
+							},
+						},
+					},
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid_EIDs_in_User_object",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						EIDs: []openrtb2.EID{
+							{
+								Source: "uidapi.com",
+								UIDs: []openrtb2.UID{
+									{ID: "UID2:"},
+									{ID: ""},
+								},
+							},
+							{
+								Source: "euid.eu",
+								UIDs: []openrtb2.UID{
+									{ID: "euid:"}},
+							},
+							{
+								Source: "liveramp.com",
+								UIDs: []openrtb2.UID{
+									{ID: "IDL:"}},
+							},
+						},
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Request_with_User_Ext_Eids_Invalid",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency: "USD",
+							models.SChainDBKey:      "1",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3408,6 +3967,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.BidderCode:          "pub2-alias",
 						models.IsAlias:             "1",
 						models.TIMEOUT:             "200",
+						models.PubID:               "301",
 						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
 						models.SERVER_SIDE_FLAG:    "1",
 						models.VENDORID:            "130",
@@ -3452,10 +4012,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					Reject:        false,
 					NbrCode:       0,
 					ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
-					DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"Native":null,"IncomingSlots":["700x900","728x90","300x250","640x480"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null},"dm-alias":{"PartnerID":3,"PrebidBidderCode":"districtm","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null},"pub2-alias":{"PartnerID":1,"PrebidBidderCode":"pubmatic2","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pub2-alias":{"wiid":""},"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+					DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"Native":null,"IncomingSlots":["700x900","728x90","300x250","640x480"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"adtag":"45343","site":"12313"},"VASTTagFlags":null},"dm-alias":{"PartnerID":3,"PrebidBidderCode":"districtm","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null},"pub2-alias":{"PartnerID":1,"PrebidBidderCode":"pubmatic2","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"publisherId":"301","adSlot":"adunit@700x900"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"301","adSlot":"adunit@700x900"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pub2-alias":{"wiid":""},"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 					AnalyticsTags: hookanalytics.Analytics{},
 				},
-				bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"adtag":"45343","site":"12313"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"5890","adSlot":"adunit@700x900","wrapper":{"version":1,"profile":1234}}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pubmatic":{"wiid":""},"pub2-alias":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"},"dm-alias":{"placementId":0,"site":"12313","adtag":"45343"},"pub2-alias":{"publisherId":"301","adSlot":"adunit@700x900"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"aliases":{"dm-alias":"appnexus","pub2-alias":"pubmatic"},"aliasgvlids":{"dm-alias":99,"pub2-alias":130},"bidadjustmentfactors":{"appnexus":1,"dm-alias":1,"pub2-alias":1},"bidderparams":{"pub2-alias":{"wiid":""},"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 				error:                 false,
 				doMutate:              true,
 				nilCurrencyConversion: false,
