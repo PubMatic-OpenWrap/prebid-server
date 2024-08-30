@@ -1241,7 +1241,7 @@ func TestGetKGPSV(t *testing.T) {
 				bidderMeta: PartnerData{
 					KGPV:    "kgpv",
 					IsRegex: true,
-					KGP:     "_AU_@_W_x_H_",
+					KGP:     "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
@@ -1253,7 +1253,7 @@ func TestGetKGPSV(t *testing.T) {
 				bidderMeta: PartnerData{
 					MatchedSlot: "kgpsv",
 					IsRegex:     true,
-					KGP:         "_AU_@_W_x_H_",
+					KGP:         "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpsv",
@@ -1272,7 +1272,7 @@ func TestGetKGPSV(t *testing.T) {
 					KGPV:        "kgpv",
 					MatchedSlot: "kgpsv",
 					IsRegex:     true,
-					KGP:         "_AU_@_W_x_H_",
+					KGP:         "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
@@ -1296,24 +1296,6 @@ func TestGetKGPSV(t *testing.T) {
 			},
 			kgpv:  "kgpv",
 			kgpsv: "kgpv",
-		},
-		{
-			name: "KGPV not present in partnerData, regex false and adformat is video",
-			args: args{
-				bid: openrtb2.Bid{
-					Price:  1,
-					DealID: "deal",
-					W:      250,
-					H:      300,
-				},
-				adformat: Video,
-				bidderMeta: PartnerData{
-					KGP: "_AU_@_W_x_H_",
-				},
-				tagId: "adunit",
-			},
-			kgpv:  "adunit@0x0",
-			kgpsv: "adunit@0x0",
 		},
 		{
 			name: "KGPV not present in partnerData, regex false and adformat is video",
