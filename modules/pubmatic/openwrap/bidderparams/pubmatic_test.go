@@ -1,6 +1,7 @@
 package bidderparams
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -254,6 +255,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -320,23 +322,25 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
-							models.PREBID_PARTNER_NAME: "pubmatic",
-							models.BidderCode:          "pubmatic",
+							models.PREBID_PARTNER_NAME: "pubmatic2",
+							models.BidderCode:          "pubmatic2",
 							models.TIMEOUT:             "200",
 							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
 							models.KEY_PROFILE_ID:      "1323",
+							models.KEY_PUBLISHER_ID:    "301",
 						},
 					},
 				},
 				cache: mockCache,
 				impExt: models.ImpExtension{
 					Bidder: map[string]*models.BidderExtension{
-						"pubmatic": {
+						"pubmatic2": {
 							KeyWords: []models.KeyVal{
 								{
 									Key:    "test_key1",
@@ -377,7 +381,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				params:         []byte(`{"publisherId":"301","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
 				wantErr:        false,
 			},
 		},
@@ -387,23 +391,25 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
-							models.PREBID_PARTNER_NAME: "pubmatic",
-							models.BidderCode:          "pubmatic",
+							models.PREBID_PARTNER_NAME: "pubmatic2",
+							models.BidderCode:          "pubmatic2",
 							models.TIMEOUT:             "200",
 							models.KEY_GEN_PATTERN:     "_RE_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
 							models.KEY_PROFILE_ID:      "1323",
+							models.KEY_PUBLISHER_ID:    "301",
 						},
 					},
 				},
 				cache: mockCache,
 				impExt: models.ImpExtension{
 					Bidder: map[string]*models.BidderExtension{
-						"pubmatic": {
+						"pubmatic2": {
 							KeyWords: []models.KeyVal{
 								{
 									Key:    "test_key1",
@@ -441,7 +447,73 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				params:         []byte(`{"publisherId":"301","adSlot":"/Test_Adunit1234@200x300","wrapper":{"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				wantErr:        false,
+			},
+		},
+		{
+			name: "exact_matched_slot_found_adslot_updated_from_PubMatic_alias_flow_for_prebids2s_regex",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 0,
+					PubID:         5890,
+					PubIDStr:      "5890",
+					ProfileID:     123,
+					DisplayID:     1,
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic_alias",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_RE_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+							models.IsAlias:             "1",
+							models.PubID:               "301",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Bidder: map[string]*models.BidderExtension{
+						"pubmatic_alias": {
+							KeyWords: []models.KeyVal{
+								{
+									Key:    "test_key1",
+									Values: []string{"test_value1", "test_value2"},
+								},
+								{
+									Key:    "test_key2",
+									Values: []string{"test_value1", "test_value2"},
+								},
+							},
+						},
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234", true, false),
+				partnerID: 1,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"/test_adunit1234@200x300": {
+						PartnerId: 1,
+						AdapterId: 1,
+						SlotName:  "/Test_Adunit1234@200x300",
+						SlotMappings: map[string]interface{}{
+							"site":     "12313",
+							"adtag":    "45343",
+							"slotName": "/Test_Adunit1234@200x300",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"test", "test1"},
+				})
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@200x300",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"301","adSlot":"/Test_Adunit1234@200x300","keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
 				wantErr:        false,
 			},
 		},
@@ -451,6 +523,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -514,6 +587,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -583,6 +657,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -649,6 +724,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -721,6 +797,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -787,6 +864,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -853,6 +931,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -919,6 +998,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -985,6 +1065,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1051,6 +1132,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1122,6 +1204,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 2,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1171,6 +1254,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 2,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1220,6 +1304,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 0,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					ProfileIDStr:  "123",
 					DisplayID:     1,
@@ -1231,7 +1316,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							models.TIMEOUT:             "200",
 							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
-							models.KEY_PROFILE_ID:      "1323",
 						},
 					},
 					AppLovinMax: models.AppLovinMax{
@@ -1288,7 +1372,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2],"sendburl":true}`),
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2],"sendburl":true}`),
 				wantErr:        false,
 			},
 		},
@@ -1434,6 +1518,199 @@ func TestGetMatchingSlotAndPattern(t *testing.T) {
 			assert.Equal(t, tt.want.matchedSlot, matchedSlot)
 			assert.Equal(t, tt.want.matchedPattern, matchedPattern)
 			assert.Equal(t, tt.want.isRegexSlot, isRegexSlot)
+		})
+	}
+}
+
+func TestGetPubMaticPublisherID(t *testing.T) {
+	type args struct {
+		rctx      models.RequestCtx
+		partnerID int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "pubmatic partner",
+			args: args{
+				partnerID: 789,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						789: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.PubID:               "5890",
+						},
+					},
+					PubID:    5890,
+					PubIDStr: "5890",
+				},
+			},
+			want: "5890",
+		},
+		{
+			name: "pubmatic secondary partner",
+			args: args{
+				partnerID: 123,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						123: {
+							models.PREBID_PARTNER_NAME: "pubmatic2",
+							models.BidderCode:          "pubmatic2",
+							models.KEY_PUBLISHER_ID:    "301",
+							models.PubID:               "5890",
+						},
+					},
+					PubID:    5890,
+					PubIDStr: "5890",
+				},
+			},
+			want: "301",
+		},
+		{
+			name: "pubmatic alias partner",
+			args: args{
+				partnerID: 456,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						456: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubm_alias",
+							models.PubID:               "301",
+							models.IsAlias:             "1",
+						},
+					},
+					PubID:    5890,
+					PubIDStr: "5890",
+				},
+			},
+			want: "301",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getPubMaticPublisherID(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetPubMaticWrapperExt(t *testing.T) {
+	type args struct {
+		rctx      models.RequestCtx
+		partnerID int
+	}
+	tests := []struct {
+		name string
+		args args
+		want json.RawMessage
+	}{
+		{
+			name: "pubmatic partner",
+			args: args{
+				partnerID: 789,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						789: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.PubID:               "5890",
+						},
+					},
+					DisplayID: 1,
+					ProfileID: 1234,
+					PubID:     5890,
+				},
+			},
+			want: json.RawMessage(`{"version":1,"profile":1234}`),
+		},
+		{
+			name: "pubmatic secondary partner",
+			args: args{
+				partnerID: 123,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						123: {
+							models.PREBID_PARTNER_NAME: "pubmatic2",
+							models.BidderCode:          "pubmatic2",
+							models.KEY_PROFILE_ID:      "222",
+						},
+					},
+					DisplayID: 1,
+					ProfileID: 1234,
+				},
+			},
+			want: json.RawMessage(`{"profile":222}`),
+		},
+		{
+			name: "pubmatic alias partner with pubID different from incoming request pubID",
+			args: args{
+				partnerID: 456,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						456: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubm_alias",
+							models.PubID:               "301",
+							models.IsAlias:             "1",
+						},
+					},
+					DisplayID: 1,
+					ProfileID: 1234,
+					PubID:     5890,
+					PubIDStr:  "5890",
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "pubmatic alias partner with pubID same as incoming request pubID",
+			args: args{
+				partnerID: 456,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						456: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubm_alias",
+							models.PubID:               "5890",
+							models.IsAlias:             "1",
+						},
+					},
+					DisplayID: 1,
+					ProfileID: 1234,
+					PubID:     5890,
+					PubIDStr:  "5890",
+				},
+			},
+			want: json.RawMessage(`{"version":1,"profile":1234}`),
+		},
+		{
+			name: "pubmatic alias partner with no pubID in partner config",
+			args: args{
+				partnerID: 456,
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						456: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubm_alias",
+							models.IsAlias:             "1",
+						},
+					},
+					DisplayID: 1,
+					ProfileID: 1234,
+					PubID:     5890,
+					PubIDStr:  "5890",
+				},
+			},
+			want: json.RawMessage(`{"version":1,"profile":1234}`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getPubMaticWrapperExt(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
