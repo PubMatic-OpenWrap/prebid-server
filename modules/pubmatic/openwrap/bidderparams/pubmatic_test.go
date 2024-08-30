@@ -802,6 +802,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1281,6 +1282,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1347,6 +1349,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1357,6 +1360,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
 							models.KEY_PROFILE_ID:      "1323",
+							models.KEY_PUBLISHER_ID:    "301",
 						},
 					},
 				},
@@ -1404,7 +1408,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				params:         []byte(`{"publisherId":"301","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
 				wantErr:        false,
 			},
 		},
@@ -1414,6 +1418,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				rctx: models.RequestCtx{
 					IsTestRequest: 1,
 					PubID:         5890,
+					PubIDStr:      "5890",
 					ProfileID:     123,
 					DisplayID:     1,
 					PartnerConfigMap: map[int]map[string]string{
@@ -1424,6 +1429,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
 							models.SERVER_SIDE_FLAG:    "1",
 							models.KEY_PROFILE_ID:      "1323",
+							models.KEY_PUBLISHER_ID:    "301",
 						},
 					},
 				},
@@ -1471,7 +1477,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"pubmatic2-slot","wrapper":{"version":0,"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
+				params:         []byte(`{"publisherId":"301","adSlot":"pubmatic2-slot","wrapper":{"profile":1323},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}]}`),
 				wantErr:        false,
 			},
 		},
