@@ -384,18 +384,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			price := bid.Price
 			// If bids are rejected before setting bidExt.OriginalBidCPM, calculate the price and ocpm values based on the currency and revshare.
-			if price != 0 && bidExt.OriginalBidCPM == 0 {
-				if len(bidExt.OriginalBidCur) == 0 {
-					bidExt.OriginalBidCur = models.USD
-				}
-				bidExt.OriginalBidCPM = price
-				price = price * models.GetBidAdjustmentValue(revShare)
-				if cpmUSD, err := rCtx.CurrencyConversion(bidExt.OriginalBidCur, models.USD, price); err == nil {
-					bidExt.OriginalBidCPMUSD = cpmUSD
-				}
-				price = GetBidPriceAfterCurrencyConversion(price, ao.RequestWrapper.Cur, bidExt.OriginalBidCur, rCtx.CurrencyConversion)
-			}
-
+			price = computeBidPriceForBidsRejectedBeforeSettingOCPM(rCtx, &bidExt, price, revShare, ao)
 			if ao.Response.Cur != models.USD {
 				if bidCtx.EN != 0 { // valid-bids + dropped-bids+ default-bids
 					price = bidCtx.EN
@@ -589,4 +578,20 @@ func GetBidPriceAfterCurrencyConversion(price float64, requestCurrencies []strin
 		}
 	}
 	return 0 // in case of error, send 0 value to make it consistent with prebid
+}
+
+func computeBidPriceForBidsRejectedBeforeSettingOCPM(rCtx *models.RequestCtx, bidExt *models.BidExt,
+	price, revshare float64, ao analytics.AuctionObject) float64 {
+	if price != 0 && bidExt.OriginalBidCPM == 0 {
+		if len(bidExt.OriginalBidCur) == 0 {
+			bidExt.OriginalBidCur = models.USD
+		}
+		bidExt.OriginalBidCPM = price
+		price = price * models.GetBidAdjustmentValue(revshare)
+		if cpmUSD, err := rCtx.CurrencyConversion(bidExt.OriginalBidCur, models.USD, price); err == nil {
+			bidExt.OriginalBidCPMUSD = cpmUSD
+		}
+		price = GetBidPriceAfterCurrencyConversion(price, ao.RequestWrapper.Cur, bidExt.OriginalBidCur, rCtx.CurrencyConversion)
+	}
+	return price
 }

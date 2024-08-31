@@ -51,21 +51,20 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	// collect bids after unwrap
 	for i := 0; i < unwrappedBidsCnt; i++ {
 		unwrappedBid := <-unwrappedBidsChan
-		if unwrappedBid.unwrapStatus == models.UnwrapEmptyVASTStatus || unwrappedBid.unwrapStatus == models.UnwrapInvalidVASTStatus {
-			seatNonBid.AddBid(
-				openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:            unwrappedBid.bid.Bid,
-					NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
-					DealPriority:   unwrappedBid.bid.DealPriority,
-					BidMeta:        unwrappedBid.bid.BidMeta,
-					BidType:        unwrappedBid.bid.BidType,
-					BidVideo:       unwrappedBid.bid.BidVideo,
-					OriginalBidCur: payload.BidderResponse.Currency,
-				}), payload.Bidder,
-			)
-		} else {
+		if !rejectBid(unwrappedBid.unwrapStatus) {
 			unwrappedBids = append(unwrappedBids, unwrappedBid.bid)
+			continue
 		}
+		seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+			Bid:            unwrappedBid.bid.Bid,
+			NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
+			DealPriority:   unwrappedBid.bid.DealPriority,
+			BidMeta:        unwrappedBid.bid.BidMeta,
+			BidType:        unwrappedBid.bid.BidType,
+			BidVideo:       unwrappedBid.bid.BidVideo,
+			OriginalBidCur: payload.BidderResponse.Currency,
+		}), payload.Bidder,
+		)
 	}
 
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
@@ -80,4 +79,8 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
 	return bid != nil && bid.BidType == openrtb_ext.BidTypeVideo && bid.Bid != nil && bid.Bid.AdM != ""
+}
+
+func rejectBid(bidUnwrapStatus string) bool {
+	return bidUnwrapStatus == models.UnwrapEmptyVASTStatus || bidUnwrapStatus == models.UnwrapInvalidVASTStatus
 }
