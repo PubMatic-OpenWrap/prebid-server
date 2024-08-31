@@ -3206,9 +3206,9 @@ func TestSeatNonBid(t *testing.T) {
 				BidderName: openrtb_ext.BidderName(test.args.Seat),
 			}, nil, &adapters.ExtraRequestInfo{}, &MockSigner{}, bidRequestOptions{}, openrtb_ext.ExtAlternateBidderCodes{}, hookexecution.EmptyHookExecutor{}, nil)
 			assert.Equal(t, test.expect.seatBids, seatBids)
-			assert.Equal(t, test.expect.seatNonBids, responseExtra.adapterNonBids)
+			assert.Equal(t, test.expect.seatNonBids, responseExtra.seatNonBidBuilder)
 			assert.Equal(t, test.expect.errors, errors)
-			for _, nonBids := range responseExtra.adapterNonBids {
+			for _, nonBids := range responseExtra.seatNonBidBuilder {
 				for _, nonBid := range nonBids {
 					for _, seatBid := range seatBids {
 						for _, bid := range seatBid.Bids {
