@@ -12,6 +12,7 @@ type wakandaRule struct {
 	FolderPath string
 	DebugLevel int
 	StartTime  time.Time
+	Filters    string
 }
 
 type rulesMap struct {
@@ -55,7 +56,7 @@ func (rm *rulesMap) IsEmpty() bool {
 }
 
 // AddIfNotPresent returns true if added; returns false if already present
-func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) bool {
+func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string, filters string) bool {
 	rm.lock.Lock()
 	defer rm.lock.Unlock()
 	aWakandaRule := rm.rules[key]
@@ -72,6 +73,7 @@ func (rm *rulesMap) AddIfNotPresent(key string, debugLevel int, dcName string) b
 		FolderPath: dcName + "__" + key, // this should be in sync with UI
 		DebugLevel: debugLevel,
 		StartTime:  time.Now(),
+		Filters:    filters,
 	}
 	rm.rules[key] = aWakandaRule
 	return true

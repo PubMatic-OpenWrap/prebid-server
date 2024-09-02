@@ -21,6 +21,7 @@ type DebugData struct {
 	PrebidHTTPResponse *httptest.ResponseRecorder
 	Logger             json.RawMessage
 	WinningBid         bool
+	isBadRequest       bool
 }
 
 type request struct {

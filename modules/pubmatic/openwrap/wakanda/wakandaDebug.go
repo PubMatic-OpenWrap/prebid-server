@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -19,6 +20,7 @@ type Debug struct {
 	DebugLevel  int
 	DebugData   DebugData
 	Config      Wakanda
+	FilePrefix  map[string]string // This will contain encodedFilters value received in the wakanda request
 }
 
 type WakandaDebug interface {
@@ -31,6 +33,7 @@ type WakandaDebug interface {
 	SetWinningBid(WinningBid bool)
 	EnableIfRequired(pubIDStr string, profIDStr string)
 	WriteLogToFiles()
+	SetBadRequest()
 }
 
 func (wD *Debug) IsEnable() bool {
@@ -62,6 +65,10 @@ func (wD *Debug) SetWinningBid(WinningBid bool) {
 	wD.DebugData.WinningBid = WinningBid
 }
 
+func (wD *Debug) SetBadRequest() {
+	wD.DebugData.isBadRequest = true
+}
+
 // EnableIfRequired will check if rule is applicable or not
 // Arguments:
 //
@@ -76,6 +83,7 @@ func (wD *Debug) SetWinningBid(WinningBid bool) {
 //			increment the count wakandaRulesMap entry; consider maxTraceCount
 func (wD *Debug) EnableIfRequired(pubIDStr string, profIDStr string) {
 	if !wakandaRulesMap.IsEmpty() {
+		wD.FilePrefix = make(map[string]string)
 		for _, key := range generateKeysFromHBRequest(pubIDStr, profIDStr) {
 			if wakandaRulesMap.IsRulePresent(key) {
 				aWakandaRule := wakandaRulesMap.Incr(key)
@@ -85,6 +93,7 @@ func (wD *Debug) EnableIfRequired(pubIDStr string, profIDStr string) {
 					wD.Enabled = true
 					wD.FolderPaths = append(wD.FolderPaths, aWakandaRule.FolderPath)
 					wD.DebugLevel = aWakandaRule.DebugLevel
+					wD.FilePrefix[aWakandaRule.FolderPath] = aWakandaRule.Filters
 				}
 			}
 		}
@@ -107,14 +116,45 @@ func (wD *Debug) WriteLogToFiles() {
 			glog.Flush()
 			// <POD_NAME>-<UNIX_TIME_NANO_SEC>.json
 			var sftpDestinationFile string
-			if wD.DebugData.WinningBid {
-				sftpDestinationFile = fmt.Sprintf("%s-%d.json.winningbid", wD.Config.PodName, time.Now().UnixNano())
-			} else {
-				sftpDestinationFile = fmt.Sprintf("%s-%d.json", wD.Config.PodName, time.Now().UnixNano())
+
+			if filePrefix, ok := wD.FilePrefix[logDir]; ok {
+				sftpDestinationFile = generateDestinationFile(filePrefix, wD.DebugData, logDir)
 			}
-			if err := send(sftpDestinationFile, logDir, recordBytes, wD.Config.SFTP); err != nil {
-				logger.Error("Wakanda '%s' SFTP Error : %s", sftpDestinationFile, err.Error())
+			if sftpDestinationFile != "" {
+				if err := send(sftpDestinationFile, logDir, recordBytes, wD.Config.SFTP); err != nil {
+					logger.Error("Wakanda '%s' SFTP Error : %s", sftpDestinationFile, err.Error())
+				}
 			}
+
 		}
 	}
+}
+
+func generateDestinationFile(filePrefix string, debugData DebugData, logDir string) string {
+	if debugData.isBadRequest {
+		if strings.Contains(logDir, "FILTERS:badrequest") {
+			return filePrefix + "_" + fmt.Sprint(time.Now().UnixNano())
+		}
+		return ""
+	}
+	if strings.Contains(logDir, "FILTERS:winningbidandzerobid") {
+		if debugData.WinningBid {
+			return filePrefix + "_" + fmt.Sprint(time.Now().UnixNano()) + ".winningbid"
+		}
+		return filePrefix + "_" + fmt.Sprint(time.Now().UnixNano())
+	}
+	return ""
+}
+
+func (wD *Debug) SetBadRequestFlag() {
+	wD.DebugData.isBadRequest = true
+}
+
+// TrimFilters trims the "__FILTERS" substring from the given filter string
+func TrimFilters(filter string) string {
+	index := strings.Index(filter, "__FILTERS")
+	if index != -1 {
+		return filter[:index]
+	}
+	return ""
 }

@@ -48,6 +48,7 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
+			rCtx.WakandaDebug.SetBadRequest()
 			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			if glog.V(models.LogLevelDebug) {
 				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
@@ -89,6 +90,31 @@ func (m OpenWrap) handleEntrypointHook(
 		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
 		result.Errors = append(result.Errors, err.Error())
 		return result, err
+	}
+	// temp, for AMP, etc
+	if pubid != 0 {
+		rCtx.PubID = pubid
+	}
+
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
+	}
+	rCtx.PubIDStr = pubIdStr
+
+	// here profile id is missing still we are loging this request in wakanda  badrequest
+	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, strconv.Itoa(requestExtWrapper.ProfileId))
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
 	}
 
 	if requestExtWrapper.ProfileId <= 0 {
@@ -152,31 +178,7 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
 	}
 
-	// temp, for AMP, etc
-	if pubid != 0 {
-		rCtx.PubID = pubid
-	}
-
-	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
-	if len(errs) > 0 {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, errs[0].Error())
-		return result, errs[0]
-	}
-
-	rCtx.PubID, err = strconv.Atoi(pubIdStr)
-	if err != nil {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-		return result, fmt.Errorf("invalid publisher id : %v", err)
-	}
-	rCtx.PubIDStr = pubIdStr
 	rCtx.AppLovinMax.MultiFloorsConfig = m.getApplovinMultiFloors(rCtx)
-
-	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
-	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
-	}
 
 	result.Reject = false
 

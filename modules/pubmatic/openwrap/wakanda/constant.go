@@ -19,4 +19,5 @@ const (
 	cAPIProfileID = "profId"
 	//cRuleKeyPubProfile rule format ,same is used for folder name with "__DC"
 	cRuleKeyPubProfile = "PUB:%s__PROF:%s"
+	cAPIFilters        = "filters"
 )

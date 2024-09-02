@@ -52,6 +52,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
+			rCtx.WakandaDebug.SetBadRequest()
+			// now check how we can enabled wakanda for the badrequest as well
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
