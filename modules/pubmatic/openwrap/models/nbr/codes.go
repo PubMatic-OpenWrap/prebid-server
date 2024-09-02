@@ -9,6 +9,7 @@ const (
 	RequestBlockedSlotNotMapped   openrtb3.NoBidReason = 503
 	RequestBlockedPartnerThrottle openrtb3.NoBidReason = 504
 	RequestBlockedPartnerFiltered openrtb3.NoBidReason = 505
+	LossBidLostInVastUnwrap       openrtb3.NoBidReason = 506
 )
 
 // Openwrap module specific codes
