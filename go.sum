@@ -319,6 +319,8 @@ github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240721064252-bb63229a1baa h1:3tRjI
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240721064252-bb63229a1baa/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
 github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240823084925-e25a796a41bd h1:5IlcLRGtf1EPaVF+ySv7QidGzcwE3xKALhQxMLXOKus=
 github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240823084925-e25a796a41bd/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2 h1:4zaGImZVnKCJudxKfsVNJAqGhCPxbjApAo0QvEThwpw=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
