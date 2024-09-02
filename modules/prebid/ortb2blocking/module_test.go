@@ -614,9 +614,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 	}{
 		{
 			description: "Payload not changed when empty account config and empty module contexts are provided. Analytic tags have successful records",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
+					},
 				},
 			}},
 			expectedBids: []*adapters.TypedBid{
@@ -643,9 +645,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Catch error if wrong data has been passed from previous hook. Payload not changed",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
+					},
 				},
 			}},
 			expectedBids: []*adapters.TypedBid{
@@ -658,12 +662,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by badv attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true}}}`),
@@ -701,12 +707,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid not blocked because blocking conditions for current bidder do not exist. Payload not updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true}}}`),
@@ -742,12 +750,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid not blocked because enforce blocking is disabled by account config. Payload not updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": false}}}`),
@@ -783,12 +793,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid not blocked because enforce blocking overridden for given bidder. Payload not updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {"bidders": ["appnexus"]}, "override": false}]}}}}`),
@@ -824,12 +836,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by badv attribute check (block unknown attributes). Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "block_unknown_adomain": true}}}`),
@@ -867,12 +881,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid not blocked because block unknown overridden for given bidder. Payload not updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "block_unknown_adomain": true, "action_overrides": {"block_unknown_adomain": [{"conditions": {"bidders": ["appnexus"]}, "override": false}]}}}}`),
@@ -908,12 +924,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid not blocked due to deal exception. Payload not updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1, DealID: "acceptDealID"},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, ImpID: impID1, DealID: "acceptDealID"},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "action_overrides": {"allowed_adomain_for_deals": [{"conditions": {"deal_ids": ["acceptDealID"]}, "override": ["forbidden_domain"]}]}}}}`),
@@ -949,9 +967,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing enforce blocks overrides for badv attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
@@ -974,9 +994,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing block unknown domains overrides for badv attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"block_unknown_adomain": [{"conditions": {}}]}}}}`),
@@ -999,9 +1021,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if deal_ids not defined in config override conditions for badv attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, DealID: "acceptDealID"},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, DealID: "acceptDealID"},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"allowed_adomain_for_deals": [{"conditions": {}}]}}}}`),
@@ -1024,12 +1048,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by bcat attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", Cat: []string{"moto"}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", Cat: []string{"moto"}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
@@ -1067,9 +1093,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing enforce blocks overrides for bcat attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
@@ -1092,9 +1120,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing block unknown domains overrides for bcat attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"block_unknown_adv_cat": [{"conditions": {}}]}}}}`),
@@ -1117,9 +1147,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if deal_ids not defined in config override conditions for bcat attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1, DealID: "acceptDealID"},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1, DealID: "acceptDealID"},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"allowed_adv_cat_for_deals": [{"conditions": {}}]}}}}`),
@@ -1142,12 +1174,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by cattax attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", CatTax: 1, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", CatTax: 1, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
@@ -1185,12 +1219,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by cattax attribute check (the default value used if no blocking attribute passed). Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", CatTax: 1, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", CatTax: 1, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
@@ -1227,12 +1263,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by bapp attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", Bundle: "allowed_bundle", ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", Bundle: "allowed_bundle", ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"bapp":{"enforce_blocks": true}}}`),
@@ -1270,9 +1308,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing enforce blocks overrides for bapp attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"bapp": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
@@ -1295,9 +1335,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if deal_ids not defined in config override conditions for bapp attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1, DealID: "acceptDealID"},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1, DealID: "acceptDealID"},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"bapp": {"enforce_blocks": true, "action_overrides": {"allowed_app_for_deals": [{"conditions": {}}]}}}}`),
@@ -1320,12 +1362,14 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by battr attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1},
-				},
-				{
-					Bid: &openrtb2.Bid{ID: "2", Attr: []adcom1.CreativeAttribute{2}, ImpID: impID2},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1},
+					},
+					{
+						Bid: &openrtb2.Bid{ID: "2", Attr: []adcom1.CreativeAttribute{2}, ImpID: impID2},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes":{"battr":{"enforce_blocks": true}}}`),
@@ -1363,9 +1407,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if there is an issue processing enforce blocks overrides for battr attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"battr": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
@@ -1388,9 +1434,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Expect error if deal_ids not defined in config override conditions for battr attribute. Analytics should have error status tag",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1, DealID: "acceptDealID"},
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1, DealID: "acceptDealID"},
+					},
 				},
 			}},
 			config: json.RawMessage(`{"attributes": {"battr": {"enforce_blocks": true, "action_overrides": {"allowed_banner_attr_for_deals": [{"conditions": {}}]}}}}`),
@@ -1413,27 +1461,29 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		},
 		{
 			description: "Bid blocked by multiple attribute check. Payload updated. Analytic tags successfully collected",
-			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, Bids: []*adapters.TypedBid{
-				{
-					Bid: &openrtb2.Bid{
-						ID:      "1",
-						ADomain: []string{"forbidden_domain"},
-						Cat:     []string{"fishing"},
-						CatTax:  1,
-						Bundle:  "forbidden_bundle",
-						Attr:    []adcom1.CreativeAttribute{1},
-						ImpID:   impID1,
+			payload: hookstage.RawBidderResponsePayload{Bidder: bidder, BidderResponse: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "1",
+							ADomain: []string{"forbidden_domain"},
+							Cat:     []string{"fishing"},
+							CatTax:  1,
+							Bundle:  "forbidden_bundle",
+							Attr:    []adcom1.CreativeAttribute{1},
+							ImpID:   impID1,
+						},
 					},
-				},
-				{
-					Bid: &openrtb2.Bid{
-						ID:      "2",
-						ADomain: []string{"allowed_domain"},
-						Cat:     []string{"moto"},
-						CatTax:  2,
-						Bundle:  "allowed_bundle",
-						Attr:    []adcom1.CreativeAttribute{2},
-						ImpID:   impID2,
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "2",
+							ADomain: []string{"allowed_domain"},
+							Cat:     []string{"moto"},
+							CatTax:  2,
+							Bundle:  "allowed_bundle",
+							Attr:    []adcom1.CreativeAttribute{2},
+							ImpID:   impID2,
+						},
 					},
 				},
 			}},
@@ -1514,7 +1564,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				assert.NoError(t, err)
 				test.payload = newPayload
 			}
-			assert.Equal(t, test.expectedBids, test.payload.Bids, "Invalid Bids returned after executing RawBidderResponse hook.")
+			assert.Equal(t, test.expectedBids, test.payload.BidderResponse.Bids, "Invalid Bids returned after executing RawBidderResponse hook.")
 
 			// reset ChangeSet not to break hookResult assertion, we validated ChangeSet separately
 			hookResult.ChangeSet = hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
