@@ -16,10 +16,10 @@ import (
 
 // eventTracking has configuration fields needed for adding event tracking to an auction response
 type eventTracking struct {
+	OpenWrapEventTracking
 	accountID          string
 	enabledForAccount  bool
 	enabledForRequest  bool
-	enabledVideoEvents bool //TODO: OPENWRAP Video Events Flag
 	auctionTimestampMs int64
 	integrationType    string
 	bidderInfos        config.BidderInfos
@@ -27,16 +27,16 @@ type eventTracking struct {
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, owEventTracking OpenWrapEventTracking) *eventTracking {
 	return &eventTracking{
-		accountID:          account.ID,
-		enabledForAccount:  account.Events.Enabled,
-		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
-		enabledVideoEvents: requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
-		auctionTimestampMs: ts.UnixNano() / 1e+6,
-		integrationType:    getIntegrationType(requestExtPrebid),
-		bidderInfos:        bidderInfos,
-		externalURL:        externalURL,
+		accountID:             account.ID,
+		enabledForAccount:     account.Events.Enabled,
+		enabledForRequest:     requestExtPrebid != nil && requestExtPrebid.Events != nil,
+		auctionTimestampMs:    ts.UnixNano() / 1e+6,
+		integrationType:       getIntegrationType(requestExtPrebid),
+		bidderInfos:           bidderInfos,
+		externalURL:           externalURL,
+		OpenWrapEventTracking: owEventTracking,
 	}
 }
 
@@ -81,12 +81,7 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 		}
 	}
 
-	if ev.enabledVideoEvents {
-		// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-		if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
-			bid.AdM = string(newVastXML)
-		}
-	}
+	ev.injectVideoEvents(req, bid, vastXML, trackerURL, bidID, bidderName.String(), bidderCoreName.String())
 }
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json
