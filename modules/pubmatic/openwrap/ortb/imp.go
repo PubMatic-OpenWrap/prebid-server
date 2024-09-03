@@ -1,8 +1,8 @@
 package ortb
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/util/ptrutil"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/prebid/prebid-server/v2/util/sliceutil"
 )
 
