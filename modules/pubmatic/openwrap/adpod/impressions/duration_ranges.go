@@ -12,14 +12,19 @@ type DurRangeConfig struct { //IImpressions interface
 }
 
 // newByDurationRanges will create new object ob byDurRangeConfig for creating impressions for adpod request
-func newByDurationRanges(policy string, durations []int, maxAds, adMinDuration, adMaxDuration int) DurRangeConfig {
-	return DurRangeConfig{
-		policy:        policy,
-		durations:     durations,
+func newByDurationRanges(adpodProfileCfg *models.AdpodProfileConfig, maxAds, adMinDuration, adMaxDuration int) DurRangeConfig {
+	cfg := DurRangeConfig{
 		maxAds:        maxAds,
 		adMinDuration: adMinDuration,
 		adMaxDuration: adMaxDuration,
 	}
+
+	if adpodProfileCfg != nil {
+		cfg.durations = adpodProfileCfg.AdserverCreativeDurations
+		cfg.policy = adpodProfileCfg.AdserverCreativeDurationMatchingPolicy
+	}
+
+	return cfg
 }
 
 // Get function returns lists of min,max duration ranges ganerated based on durations

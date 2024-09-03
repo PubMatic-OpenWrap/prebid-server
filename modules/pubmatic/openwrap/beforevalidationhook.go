@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
@@ -167,6 +168,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
 			result.Errors = append(result.Errors, "owRedirectURL is missing")
 			return result, nil
+		}
+	}
+
+	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
+	if len(videoAdDuration) > 0 {
+		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+			AdserverCreativeDurationMatchingPolicy: policy,
 		}
 	}
 
@@ -386,7 +396,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -395,18 +405,38 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			//Adding default durations for CTV Test requests
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
-				adpodConfig.VideoAdDuration = []int{5, 10}
-			}
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
-				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              []int{5, 10},
+					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+				}
 			}
 
-			if err := adpod.Validate(adpodConfig); err != nil {
+			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
+			}
+
+			podConfigs, err := adpod.GetAdpodConfigs(rCtx, m.cache, videoAdUnitCtx.AppliedSlotAdUnitConfig)
+			if err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
+
+			err = adpod.ValidateAdpodConfigs(podConfigs)
+			if err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
+
+			if len(podConfigs) > 0 {
+				rCtx.ImpAdPodConfig[imp.ID] = podConfigs
 			}
 		}
 
@@ -632,6 +662,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		defer func() {
+			moduleCtx.ModuleContext["rctx"] = rctx
+		}()
+
 		var err error
 		if rctx.IsCTVRequest && ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
 			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
@@ -651,6 +685,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil {
 				result.Errors = append(result.Errors, err.Error())
 			}
+
+			ep.BidRequest = adpod.ApplyAdpodConfigs(rctx, ep.BidRequest)
 		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
