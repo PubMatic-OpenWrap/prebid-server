@@ -23,8 +23,8 @@ import (
 	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adpodconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	mock_profilemetadata "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata/mock"
 	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
@@ -4362,6 +4362,278 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				nilCurrencyConversion: false,
 			},
 		},
+		{
+			name: "Read_adpod_configs_from_UI_and_update_request_impressions_with_configs",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							PubID:        5890,
+							PubIDStr:     "5890",
+							ProfileID:    4444,
+							ProfileIDStr: "4444",
+							DisplayID:    1,
+							SSAuction:    1,
+							Platform:     "video",
+							Debug:        true,
+							UA:           "go-test",
+							IP:           "127.0.0.1",
+							IsCTVRequest: true,
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Endpoint:                 models.EndpointJson,
+							Method:                   "POST",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+							AdruleFlag:               false,
+							AdpodProfileConfig:       nil,
+							ImpAdPodConfig:           make(map[string][]models.PodConfig),
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"1559039248176","test":0,"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"imp":[{"id":"28635736ddc2bb2","ext":{"bidder":{"appnexus":{"keywords":[],"dealtier":{"prefix":"apnx","mindealtier":4}}}},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"video":{"mimes":["video/3gpp","video/mp4"],"minduration":10,"maxduration":40,"protocols":[2,3,5,6],"w":280,"h":360,"startdelay":1,"placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3],"playbackend":1}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6&appnexus_video_fixedbid=10&videobid=4&cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"keywords":"Cloths","publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1,"producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"}}},"device":{"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","dnt":0,"lmt":0,"ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"wrapper":{"profileid":4444,"versionid":1,"ssauction":1,"sumry_disable":0,"clientconfig":1,"supportdeals":true}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@0x0": {
+						SlotName: "adunit@0x0",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@0x0"},
+					HashValueMap: map[string]string{
+						"adunit@0x0": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_VIDEO,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
+					ConfigPattern: "_AU_",
+					Config: map[string]*adunitconfig.AdConfig{
+						"adunit": {
+							Video: &adunitconfig.Video{
+								Enabled: ptrutil.ToPtr(true),
+								Config: &adunitconfig.VideoConfig{
+									Video: openrtb2.Video{
+										MIMEs: []string{"video/mp4", "video/mpeg"},
+										W:     ptrutil.ToPtr[int64](640),
+										H:     ptrutil.ToPtr[int64](480),
+									},
+								},
+								UsePodConfig: ptrutil.ToPtr(true),
+							},
+						},
+					},
+				})
+				mockCache.EXPECT().GetAdpodConfig(gomock.Any(), gomock.Any(), gomock.Any()).Return(&adpodconfig.AdpodConfig{
+					Dynamic: []adpodconfig.Dynamic{
+						{
+							PodDur:      60,
+							MaxSeq:      3,
+							MinDuration: 20,
+							MaxDuration: 30,
+						},
+					},
+					Structured: []adpodconfig.Structured{
+						{
+							MinDuration: 15,
+							MaxDuration: 15,
+						},
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "4444")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointJson, "5890", "video")
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("video", "5890", "appnexus")
+				mockEngine.EXPECT().RecordCTVRequests("json", models.PLATFORM_DISPLAY)
+				mockEngine.EXPECT().RecordCTVHTTPMethodRequests("json", "5890", "POST")
+				mockEngine.EXPECT().RecordVideoInstlImpsStats("5890", "4444")
+				mockEngine.EXPECT().RecordReqImpsWithContentCount("5890", models.ContentTypeSite)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+			},
+			want: want{
+				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+					Reject:        false,
+					NbrCode:       0,
+					ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
+					DebugMessages: []string{`new imp: {"28635736ddc2bb2":{"ImpID":"28635736ddc2bb2","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":1,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":false,"Video":{"mimes":["video/3gpp","video/mp4"],"minduration":10,"maxduration":40,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"Native":null,"IncomingSlots":["280x360"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@0x0","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+					AnalyticsTags: hookanalytics.Analytics{},
+				},
+				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				error:                 false,
+				nilCurrencyConversion: false,
+				doMutate:              true,
+			},
+		},
+		{
+			name: "Read_adpod_configs_from_Adrule_and_update_request_impressions_with_configs",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							PubID:        5890,
+							PubIDStr:     "5890",
+							ProfileID:    4444,
+							ProfileIDStr: "4444",
+							DisplayID:    1,
+							SSAuction:    1,
+							Platform:     "video",
+							Debug:        true,
+							UA:           "go-test",
+							IP:           "127.0.0.1",
+							IsCTVRequest: true,
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Endpoint:                 models.EndpointJson,
+							Method:                   "POST",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							MetricsEngine:            mockEngine,
+							AdruleFlag:               true,
+							AdpodProfileConfig:       nil,
+							ImpAdPodConfig:           make(map[string][]models.PodConfig),
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"1559039248176","test":0,"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"imp":[{"id":"28635736ddc2bb2","ext":{"bidder":{"appnexus":{"keywords":[],"dealtier":{"prefix":"apnx","mindealtier":4}}}},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"video":{"mimes":["video/3gpp","video/mp4"],"minduration":10,"maxduration":40,"protocols":[2,3,5,6],"w":280,"h":360,"startdelay":1,"placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3],"playbackend":1}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6&appnexus_video_fixedbid=10&videobid=4&cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"keywords":"Cloths","publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1,"producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"}}},"device":{"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","dnt":0,"lmt":0,"ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"wrapper":{"profileid":4444,"versionid":1,"ssauction":1,"sumry_disable":0,"clientconfig":1,"supportdeals":true}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@0x0": {
+						SlotName: "adunit@0x0",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@0x0"},
+					HashValueMap: map[string]string{
+						"adunit@0x0": "1232433543534543",
+					},
+				})
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.DisplayVersionID: "1",
+						models.PLATFORM_KEY:     models.PLATFORM_VIDEO,
+					},
+				}, nil)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
+					ConfigPattern: "_AU_",
+					Config: map[string]*adunitconfig.AdConfig{
+						"adunit": {
+							Video: &adunitconfig.Video{
+								Enabled: ptrutil.ToPtr(true),
+								Config: &adunitconfig.VideoConfig{
+									Video: openrtb2.Video{
+										MIMEs: []string{"video/mp4", "video/mpeg"},
+										W:     ptrutil.ToPtr[int64](640),
+										H:     ptrutil.ToPtr[int64](480),
+									},
+								},
+							},
+							Adrule: []*openrtb2.Video{
+								{
+									PodID:       "dynamic-1",
+									PodDur:      60,
+									MaxSeq:      3,
+									MinDuration: 20,
+									MaxDuration: 30,
+								},
+								{
+									PodID:       "structured-1",
+									MinDuration: 15,
+									MaxDuration: 15,
+								},
+							},
+						},
+					},
+				})
+				mockCache.EXPECT().GetAdpodConfig(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "4444")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointJson, "5890", "video")
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("video", "5890", "appnexus")
+				mockEngine.EXPECT().RecordCTVRequests("json", models.PLATFORM_DISPLAY)
+				mockEngine.EXPECT().RecordCTVHTTPMethodRequests("json", "5890", "POST")
+				mockEngine.EXPECT().RecordVideoInstlImpsStats("5890", "4444")
+				mockEngine.EXPECT().RecordReqImpsWithContentCount("5890", models.ContentTypeSite)
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+			},
+			want: want{
+				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+					Reject:        false,
+					NbrCode:       0,
+					ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
+					DebugMessages: []string{`new imp: {"28635736ddc2bb2":{"AdpodConfig":null,"AdserverURL":"","AdUnitName":"adunit","Banner":false,"BannerAdUnitCtx":{"AllowedConnectionTypes":null,"AppliedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"IsRegex":false,"MatchedRegex":"","MatchedSlot":"adunit","SelectedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"UsingDefaultConfig":false},"BidCtx":{},"BidderError":"","Bidders":{"appnexus":{"IsRegex":false,"KGP":"_AU_@_W_x_H_","KGPV":"","MatchedSlot":"adunit@0x0","Params":{"adtag":"45343","placementId":0,"site":"12313"},"PartnerID":2,"PrebidBidderCode":"appnexus","VASTTagFlags":null}},"BidFloor":1,"BidFloorCur":"USD","BidIDToAPRC":null,"BidIDToDur":null,"Div":"","ImpAdPodCfg":null,"ImpID":"28635736ddc2bb2","IncomingSlots":["280x360"],"IsAdPodRequest":false,"IsRewardInventory":null,"Native":null,"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"adtag":"45343","placementId":0,"site":"12313"}}}},"NonMapped":{},"Secure":0,"SlotName":"adunit","TagID":"adunit","Type":"video","Video":{"api":[1,2],"battr":[5,6,7],"companiontype":[1,2,3],"delivery":[2],"h":360,"linearity":1,"maxbitrate":2000,"maxduration":40,"maxextended":10,"mimes":["video/3gpp","video/mp4"],"minbitrate":1000,"minduration":10,"placement":5,"playbackend":1,"playbackmethod":[1],"pos":7,"protocols":[2,3,5,6],"sequence":1,"skip":1,"skipafter":10,"skipmin":5,"startdelay":1,"w":280},"VideoAdUnitCtx":{"AllowedConnectionTypes":null,"AppliedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"IsRegex":false,"MatchedRegex":"","MatchedSlot":"adunit","SelectedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"UsingDefaultConfig":false}}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+					AnalyticsTags: hookanalytics.Analytics{},
+				},
+				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				error:                 false,
+				nilCurrencyConversion: false,
+				doMutate:              true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -5735,7 +6007,7 @@ func TestGetTagID(t *testing.T) {
 func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 	type args struct {
 		imp                    *openrtb2.Imp
-		configObjInVideoConfig *modelsAdunitConfig.VideoConfig
+		configObjInVideoConfig *adunitconfig.VideoConfig
 	}
 	tests := []struct {
 		name         string
@@ -5749,7 +6021,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 					ID:    "123",
 					Video: &openrtb2.Video{},
 				},
-				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+				configObjInVideoConfig: &adunitconfig.VideoConfig{
 					Video: openrtb2.Video{
 						W:              ptrutil.ToPtr[int64](300),
 						H:              ptrutil.ToPtr[int64](250),
@@ -5818,7 +6090,7 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 					},
 				},
 
-				configObjInVideoConfig: &modelsAdunitConfig.VideoConfig{
+				configObjInVideoConfig: &adunitconfig.VideoConfig{
 					Video: openrtb2.Video{
 						W:              ptrutil.ToPtr[int64](400),
 						H:              ptrutil.ToPtr[int64](300),
@@ -6226,7 +6498,7 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 func TestSetImpBidFloorParams(t *testing.T) {
 	type args struct {
 		rCtx        models.RequestCtx
-		adUnitCfg   *modelsAdunitConfig.AdConfig
+		adUnitCfg   *adunitconfig.AdConfig
 		imp         *openrtb2.Imp
 		conversions currency.Conversions
 	}
@@ -6242,7 +6514,7 @@ func TestSetImpBidFloorParams(t *testing.T) {
 				rCtx: models.RequestCtx{
 					IsMaxFloorsEnabled: false,
 				},
-				adUnitCfg: &modelsAdunitConfig.AdConfig{
+				adUnitCfg: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr(2.0),
 					BidFloorCur: ptrutil.ToPtr("USD"),
 				},
@@ -6260,7 +6532,7 @@ func TestSetImpBidFloorParams(t *testing.T) {
 				rCtx: models.RequestCtx{
 					IsMaxFloorsEnabled: true,
 				},
-				adUnitCfg: &modelsAdunitConfig.AdConfig{
+				adUnitCfg: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr(2.0),
 					BidFloorCur: ptrutil.ToPtr("USD"),
 				},
@@ -6278,7 +6550,7 @@ func TestSetImpBidFloorParams(t *testing.T) {
 				rCtx: models.RequestCtx{
 					IsMaxFloorsEnabled: true,
 				},
-				adUnitCfg: &modelsAdunitConfig.AdConfig{
+				adUnitCfg: &adunitconfig.AdConfig{
 					BidFloor:    ptrutil.ToPtr(2.0),
 					BidFloorCur: ptrutil.ToPtr("USD"),
 				},
