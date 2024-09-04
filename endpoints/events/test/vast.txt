@@ -1,0 +1,66 @@
+<VAST version="4.0">
+<Ad id="IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv">
+<InLine>
+<AdSystem version="2.0" />
+<AdTitle><![CDATA[IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv]]></AdTitle>
+<Error><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&er=[ERRORCODE]&pfi=5&it=10&vadFmt=8&vapi=7&sURL=com.callapp.contacts]]></Error>
+<Error><![CDATA[https://image8.pubmatic.com/AdServer/ImgSync?&fp=1&mpc=10&p=162990&gdpr=0&gdpr_consent=&pmc=-1&gpp=&gpp_sid=&gpmc=-1&pu=https%3A%2F%2Fimage4.pubmatic.com%2FAdServer%2FSPug%3Fpmc%3D-1%26gpmc%3D-1%26partnerID%3D162990%26partnerUID%3D%28null%29]]></Error>
+<Impression><![CDATA[https://st.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId=162990&siteId=1048739&adId=4973907&imprId=B388B594-F982-48EE-938E-CAC86095E08C&cksum=B7C3179D41888710&adType=23&adServerId=243&kefact=0.572555&kaxefact=0.572555&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=97&kltstamp=1725458507&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=0.572555&dcId=4&tldId=0&passback=0&svr=BIDSG40142&adsver=_1850566310&adsabzcid=0&cls=BID&i0=0x3100101112100111&i1=0x5110&ekefact=S2jYZsgCCgBjbD_HPOiUE3dV7Ht3Mi-FE13yzFIR0o6s3x2W&ekaxefact=S2jYZs8CCgCADWIX3GSa9l7SmiDhVx4HapNg-kUJFFbV2Lyd&ekpbmtpfact=S2jYZtQCCgBDDh9H116DEpbhkTpqQQXRYHBdhJRxqpz0hI8z&enpp=S2jYZtkCCgD3S-lkBH1mNrtKSn7ygo48tybB9FtoSD5cPGuq&pmr_m=S2jYZt4CCgCL9gVB-GpkMwvQrofLdpC3w5GTBteZcIaZqvzh&mdsp=S2jYZuMCCgCNz2Uj2--0uN7b6vMUfi2XTyqUBfrMb-nHlQza&pfi=5&domId=1553584777532463358&dc=sg4&crID=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&lpu=zupee.com&ucrid=13474425573685380623&wAdType=13&campaignId=23495&creativeId=0&pctr=0.000000&wDspId=1208&wbId=5&wrId=0&wAdvID=1493869&wDspCampId=uMq2RpXWwRlzruX2&isRTB=1&rtbId=EA221C90-270D-4463-B433-FECD53EEDDE4V&ver=23&dateHr=2024090414&usrgen=0&usryob=0&layeringebl=1&usrip=157.49.99.160&gctry=in&greg=tn&uid=0&mid=1&vph=480&wccookied=0&qpsladszid=97&oid=B388B594-F982-48EE-938E-CAC86095E08C&mobflag=1&ismobileapp=1&modelid=15974&osid=179&udidtype=1&carrierid=732&cntryId=107&sec=1&pAuSt=3&wops=5&sURL=com.callapp.contacts&BrID=5&oiabdvt=4&te=1&tpb=0]]></Impression>
+<Impression><![CDATA[https://image8.pubmatic.com/AdServer/ImgSync?&fp=1&mpc=10&p=162990&gdpr=0&gdpr_consent=&pmc=-1&gpp=&gpp_sid=&gpmc=-1&pu=https%3A%2F%2Fimage4.pubmatic.com%2FAdServer%2FSPug%3Fpmc%3D-1%26gpmc%3D-1%26partnerID%3D162990%26partnerUID%3D%28null%29]]></Impression>
+<Impression id="IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&campaign_name=uMq2RpXWwRlzruX2&imp_id=EA221C90-270D-4463-B433-FECD53EEDDE4V&price=0.572555]]></Impression>
+<Impression id="IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_fwd?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&price=0.572555]]></Impression>
+<Creatives>
+<Creative>
+<Linear>
+<Duration>00:00:26</Duration>
+<TrackingEvents>
+<Tracking event="start"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=start]]></Tracking>
+<Tracking event="firstQuartile"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=play_1q]]></Tracking>
+<Tracking event="midpoint"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=play_2q]]></Tracking>
+<Tracking event="thirdQuartile"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=play_3q]]></Tracking>
+<Tracking event="complete"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=play_4q]]></Tracking>
+<Tracking event="creativeView"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=1]]></Tracking>
+<Tracking event="start"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=2&pfi=5&vps=2&it=10&vadFmt=8&vapi=7&sURL=com.callapp.contacts]]></Tracking>
+<Tracking event="midpoint"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=3&pfi=5&vps=2&sURL=com.callapp.contacts]]></Tracking>
+<Tracking event="firstQuartile"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=4&pfi=5&vps=2&sURL=com.callapp.contacts]]></Tracking>
+<Tracking event="thirdQuartile"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=5&pfi=5&vps=2&sURL=com.callapp.contacts]]></Tracking>
+<Tracking event="complete"><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=6&pfi=5&vps=2&sURL=com.callapp.contacts]]></Tracking>
+</TrackingEvents>
+<VideoClicks>
+<ClickThrough><![CDATA[https://www.zupee.com/downloads/ls15/?advertising_id=b1d51b37-c9cc-4f89-910f-432a6d7bdad5&af_ad=9.+Safe+and+secure.mp4&af_ad_id=SmEtjPkYKbl5OHgt%3Aa%3AbYvZYW5drGzILJlv&af_ad_type=video&af_c_id=uMq2RpXWwRlzruX2&af_channel=PUBMATIC&af_click_lookback=7d&af_cost_currency=&af_cost_model=&af_cost_value=&af_exchange=PUBMATIC&af_ip=157.49.99.160&af_model=Moto+E+%284%29+Plus&af_os_version=7.1.1&af_siteid=com.callapp.contacts&af_sub2=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&af_sub4=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&af_ua=&c=Zupee_ua_FTD_ls15_0808_Control&clickid=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&pid=moloco_int]]></ClickThrough>
+<ClickTracking><![CDATA[https://st.pubmatic.com/track?operId=7&p=162990&s=1048739&a=4973907&wa=243&ts=1725458507&wc=23495&crId=SmEtjPkYKbl5OHgt:a:bYvZYW5drGzILJlv&ucrid=13474425573685380623&impid=B388B594-F982-48EE-938E-CAC86095E08C&advertiser_id=1493869&ecpm=0.572555&mkid=14&plmt=5&instl=1&abzcid=0&gcoid=107&ch=3&e=99]]></ClickTracking>
+<ClickTracking><![CDATA[https://tr-asia.adsmoloco.com/rtb/click?exchange=PUBMATIC&imp_id=EA221C90-270D-4463-B433-FECD53EEDDE4V&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&campaign_name=uMq2RpXWwRlzruX2&dcr=]]></ClickTracking>
+</VideoClicks>
+<MediaFiles>
+<MediaFile id="IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv" delivery="progressive" type="video/mp4" bitrate="1500" width="720" height="900"><![CDATA[https://cdn-f.adsmoloco.com/SmEtjPkYKbl5OHgt/creative/lstokevs_th6jhje_dhhtrwtqhfesdxng_720p.mp4]]></MediaFile>
+</MediaFiles>
+</Linear>
+<CreativeExtensions />
+</Creative>
+<Creative>
+<CompanionAds>
+<Companion id="IMI4Jl5aJHiboQEt.a.bYvZYW5drGzILJlv" width="360" height="640" assetWidth="0" assetHeight="0" expandedWidth="0" expandedHeight="0">
+<CompanionClickThrough><![CDATA[https://www.zupee.com/downloads/ls15/?advertising_id=b1d51b37-c9cc-4f89-910f-432a6d7bdad5&af_ad=9.+Safe+and+secure.mp4&af_ad_id=SmEtjPkYKbl5OHgt%3Aa%3AbYvZYW5drGzILJlv&af_ad_type=video&af_c_id=uMq2RpXWwRlzruX2&af_channel=PUBMATIC&af_click_lookback=7d&af_cost_currency=&af_cost_model=&af_cost_value=&af_exchange=PUBMATIC&af_ip=157.49.99.160&af_model=Moto+E+%284%29+Plus&af_os_version=7.1.1&af_siteid=com.callapp.contacts&af_sub2=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&af_sub4=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&af_ua=&c=Zupee_ua_FTD_ls15_0808_Control&clickid=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&pid=moloco_int]]></CompanionClickThrough>
+<CompanionClickTracking><![CDATA[https://tr-asia.adsmoloco.com/rtb/click?exchange=PUBMATIC&imp_id=EA221C90-270D-4463-B433-FECD53EEDDE4V&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&campaign_name=uMq2RpXWwRlzruX2&dcr=&asset=VIDEO_ENDCARD]]></CompanionClickTracking>
+<TrackingEvents>
+<Tracking event="creativeView"><![CDATA[https://tr-asia.adsmoloco.com/rtb/imp_extra?exchange=PUBMATIC&info=ChAlPqhki3tAoKYZR7GxKOjAEMvQ4bYGGhQIARoQsdUbN8nMT4mRD0MqbXva1SACKgAyAA&event_type=endcard]]></Tracking>
+</TrackingEvents>
+<StaticResource creativeType="image/png"><![CDATA[https://cdn-f.adsmoloco.com/SmEtjPkYKbl5OHgt/creative/llusgz8i_mp0wgyz_tnsr1jsiefcchsmt.png]]></StaticResource>
+</Companion>
+</CompanionAds>
+<CreativeExtensions />
+</Creative>
+</Creatives>
+<Description />
+<Survey />
+<Extensions>
+<Extension>
+<Meta><![CDATA[name=pm-forcepixel;ver=1.0]]></Meta>
+<Pixel loc="0">
+<Code type="1"><![CDATA[https://ads.pubmatic.com/AdServer/js/showad.js#PIX&ptask=DSP&SPug=1&fp=1&mpc=10&u=&p=162990&s=1048739&d=4&cp=0&sc=1&rs=0&os=1&gdpr=0&gdpr_consent=&gpp=&gpp_sid=]]></Code>
+</Pixel>
+</Extension>
+</Extensions>
+</InLine>
+</Ad>
+</VAST>

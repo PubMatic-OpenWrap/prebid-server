@@ -202,7 +202,7 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 	}
 
 	if bidResponse.FastXMLMetrics != nil {
-		recordFastXMLMetrics(bidder.me, "vastbidder", string(bidder.BidderName), bidResponse.FastXMLMetrics)
+		recordFastXMLMetrics(bidder.me, "vastbidder", bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
 			glog.V(2).Infof("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", resp)
@@ -212,10 +212,10 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
 }
 
-func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, bidder string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, bidder, vastBidderInfo.XMLParserTime)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, bidder, vastBidderInfo.EtreeParserTime)
-	metricsEngine.RecordXMLParserResponseMismatch(method, bidder, vastBidderInfo.IsRespMismatch)
+func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, vastBidderInfo.XMLParserTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, vastBidderInfo.EtreeParserTime)
+	metricsEngine.RecordXMLParserResponseMismatch(method, vastBidderInfo.IsRespMismatch)
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
