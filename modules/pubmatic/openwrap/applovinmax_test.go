@@ -289,6 +289,22 @@ func TestUpdateRegs(t *testing.T) {
 			},
 			want: &openrtb2.Regs{Ext: json.RawMessage(`{"gpp":"sdfewe3cer","gdpr":1,"gpp_sid":[6],"us_privacy":"uspConsentString"}`)},
 		},
+		{
+			name: "signalRegsExt has dsa",
+			args: args{
+				signalRegs: &openrtb2.Regs{Ext: json.RawMessage(`{"dsa":{"dsarequired":3,"pubrender":2,"datatopub":1,"transparency":[{"domain":"params.com","params":[1,2]},{"domain":"dsaicon2.com","params":[2,3]}]}}`)},
+				maxRequest: &openrtb2.BidRequest{},
+			},
+			want: &openrtb2.Regs{Ext: json.RawMessage(`{"dsa":{"dsarequired":3,"pubrender":2,"datatopub":1,"transparency":[{"domain":"params.com","params":[1,2]},{"domain":"dsaicon2.com","params":[2,3]}]}}`)},
+		},
+		{
+			name: "signalRegsExt has gdpr, gpp, gp_sid, us_privacy, dsa and maxRegsExt has gpp",
+			args: args{
+				signalRegs: &openrtb2.Regs{Ext: json.RawMessage(`{"gdpr":1,"gpp":"sdfewe3cer","gpp_sid":[6],"us_privacy":"uspConsentString","dsa":{"dsarequired":3,"pubrender":2,"datatopub":1,"transparency":[{"domain":"params.com","params":[1,2]},{"domain":"dsaicon2.com","params":[2,3]}]}`)},
+				maxRequest: &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: json.RawMessage(`{"gpp":"gpp_string"}`)}},
+			},
+			want: &openrtb2.Regs{Ext: json.RawMessage(`{"gpp":"sdfewe3cer","gdpr":1,"gpp_sid":[6],"us_privacy":"uspConsentString","dsa":{"dsarequired":3,"pubrender":2,"datatopub":1,"transparency":[{"domain":"params.com","params":[1,2]},{"domain":"dsaicon2.com","params":[2,3]}]}}`)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
