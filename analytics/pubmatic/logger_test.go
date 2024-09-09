@@ -1297,6 +1297,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 	}
 }
 func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
+	pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
 	type args struct {
 		ao   analytics.AuctionObject
 		rCtx *models.RequestCtx
@@ -1464,6 +1465,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
+					PriceGranularity: &pg,
 					CurrencyConversion: func(from, to string, value float64) (float64, error) {
 						if from == "USD" && to == "EUR" {
 							return value * 1.2, nil
@@ -1522,6 +1524,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 						OriginalCur:    "EUR",
 						FloorValue:     10.5,
 						FloorRuleValue: 10.5,
+						PriceBucket:    "8.00",
 						Nbr:            ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
 					},
 				},
@@ -1561,6 +1564,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 					},
 				},
 				rCtx: &models.RequestCtx{
+					PriceGranularity: &pg,
 					CurrencyConversion: func(from, to string, value float64) (float64, error) {
 						if from == "USD" && to == "EUR" {
 							return value * 1.2, nil
@@ -1611,6 +1615,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 						PartnerSize:    "10x50",
 						GrossECPM:      8,
 						NetECPM:        4,
+						PriceBucket:    "4.00",
 						BidID:          "bid-id-1",
 						OrigBidID:      "bid-id-1",
 						DealID:         "-1",
