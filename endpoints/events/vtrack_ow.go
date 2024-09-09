@@ -2,12 +2,15 @@ package events
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
+	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -60,10 +63,19 @@ func InjectVideoEventTrackers(
 			fastXMLResponse = strings.ReplaceAll(fastXMLResponse, " >", ">")
 		}
 
+		isResponseMismatch := (response != fastXMLResponse)
+
+		if isResponseMismatch {
+			random := rand.Int()
+			glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] creative:[%s]", random, base64.StdEncoding.EncodeToString([]byte(vastXML)))
+			//glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] etree:[%s]", random, base64.StdEncoding.EncodeToString([]byte(response)))
+			//glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] fastxml:[%s]", random, base64.StdEncoding.EncodeToString([]byte(fastXMLResponse)))
+		}
+
 		metrics = &openrtb_ext.FastXMLMetrics{
 			XMLParserTime:   fastXMLParserTime,
 			EtreeParserTime: etreeParserTime,
-			IsRespMismatch:  (response != fastXMLResponse),
+			IsRespMismatch:  isResponseMismatch,
 		}
 	}
 
