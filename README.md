@@ -3,6 +3,7 @@
 ![Go Version](https://img.shields.io/github/go-mod/go-version/prebid/prebid-server?style=flat-square)
 
 <br />
+
 <br />
 <p align="center"><img alt="Prebid Server Logo" src="/static/pbs-logo.svg" style="width:80%; max-width:600px;"></p>
 <br />
