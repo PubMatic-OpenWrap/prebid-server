@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -205,7 +206,7 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 		recordFastXMLMetrics(bidder.me, "vastbidder", bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
-			glog.V(2).Infof("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", resp)
+			log.Printf("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", resp)
 		}
 	}
 
