@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/endpoints/events"
 	"github.com/prebid/prebid-server/v2/metrics"
@@ -29,9 +28,6 @@ func (ev *eventTracking) injectVideoEvents(
 	}
 
 	if metrics != nil && ev.me != nil {
-		recordFastXMLMetrics(ev.me, "vast_events_injection", requestingBidder, metrics)
-		if metrics.IsRespMismatch {
-			glog.V(2).Infof("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", vastXML)
-		}
+		recordFastXMLMetrics(ev.me, "vcr", metrics)
 	}
 }

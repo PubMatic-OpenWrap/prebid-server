@@ -490,13 +490,30 @@ func TestCompareXMLParsers(t *testing.T) {
 				fastXML = strings.ReplaceAll(fastXML, " >", ">")
 			}
 
-			if etreeXML != fastXML {
-				assert.Equal(t, etreeXML, fastXML)
+			if !assert.Equal(t, etreeXML, fastXML) {
 				mismatched = append(mismatched, line)
 			}
 		})
 	}
-	fmt.Printf("\n total:[%v] mismatched:[%v] lines:[%v]", line, len(mismatched), mismatched)
+	t.Logf("\n total:[%v] mismatched:[%v] lines:[%v]", line, len(mismatched), mismatched)
 	assert.Equal(t, 0, len(mismatched))
 	assert.Nil(t, scanner.Err())
+}
+
+func TestCompare(t *testing.T) {
+	vastBytes, err := os.ReadFile(`./test/vast.txt`)
+	assert.NoError(t, err)
+
+	vast := string(vastBytes)
+	etreeXML, err := injectVideoEventsETree(vast, eventURLMap, false, adcom1.LinearityLinear)
+	assert.NoError(t, err)
+
+	fastXML, err := injectVideoEventsFastXML(vast, eventURLMap, false, adcom1.LinearityLinear)
+	assert.NoError(t, err)
+
+	if vast != fastXML {
+		//replace only if trackers are injected
+		fastXML = strings.ReplaceAll(fastXML, " >", ">")
+	}
+	assert.Equal(t, etreeXML, fastXML)
 }
