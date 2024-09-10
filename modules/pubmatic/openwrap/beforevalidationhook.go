@@ -346,7 +346,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
 				}
 			}
-			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
+
+			var connectionType *adcom1.ConnectionType
+			if payload.BidRequest.Device != nil && payload.BidRequest.Device.ConnectionType != nil {
+				connectionType = payload.BidRequest.Device.ConnectionType
+			}
+
+			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, connectionType)
 			if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
 				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
 				rCtx.AmpVideoEnabled = true
