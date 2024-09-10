@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
-	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -60,16 +58,13 @@ func InjectVideoEventTrackers(
 
 		//temporary
 		if fastXMLResponse != vastXML {
-			fastXMLResponse = strings.ReplaceAll(fastXMLResponse, " >", ">")
+			fastXMLResponse = tmpFastXMLProcessing(fastXMLResponse)
 		}
 
 		isResponseMismatch := (response != fastXMLResponse)
 
 		if isResponseMismatch {
-			random := rand.Int()
-			glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] creative:[%s]", random, base64.StdEncoding.EncodeToString([]byte(vastXML)))
-			//glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] etree:[%s]", random, base64.StdEncoding.EncodeToString([]byte(response)))
-			//glog.V(2).Infof("[XML_PARSER_TEST] method:[vcr] rand:[%v] fastxml:[%s]", random, base64.StdEncoding.EncodeToString([]byte(fastXMLResponse)))
+			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
 		}
 
 		metrics = &openrtb_ext.FastXMLMetrics{
@@ -80,6 +75,17 @@ func InjectVideoEventTrackers(
 	}
 
 	return response, metrics, err
+}
+
+func tmpFastXMLProcessing(vast string) string {
+	//replace only if trackers are injected
+	vast = strings.ReplaceAll(vast, " >", ">")
+	// if strings.Contains(vast, "'") {
+	// 	if index := strings.Index(vast, "<VAST"); index != -1 {
+	// 		vast = vast[0:index] + strings.ReplaceAll(vast[index:], "'", "\"")
+	// 	}
+	// }
+	return vast
 }
 
 func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (string, error) {
