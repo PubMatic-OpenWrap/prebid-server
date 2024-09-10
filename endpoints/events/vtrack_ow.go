@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"log"
 	"strings"
 	"time"
 
@@ -65,7 +64,7 @@ func InjectVideoEventTrackers(
 		isResponseMismatch := (response != fastXMLResponse)
 
 		if isResponseMismatch {
-			log.Printf("[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
 		}
 
 		metrics = &openrtb_ext.FastXMLMetrics{
