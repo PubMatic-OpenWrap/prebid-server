@@ -4,12 +4,13 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/endpoints/events"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 type OpenWrapEventTracking struct {
-	enabledVideoEvents bool
-	enableFastXML      bool
-	me                 metrics.MetricsEngine
+	enabledVideoEvents       bool
+	fastXMLEnabledPercentage int
+	me                       metrics.MetricsEngine
 }
 
 func (ev *eventTracking) injectVideoEvents(
@@ -22,7 +23,7 @@ func (ev *eventTracking) injectVideoEvents(
 	}
 
 	// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-	newVastXML, metrics, err := events.InjectVideoEventTrackers(bidRequest, bid, vastXML, trackerURL, bidID, requestingBidder, bidderCoreName, ev.auctionTimestampMs, ev.enableFastXML)
+	newVastXML, metrics, err := events.InjectVideoEventTrackers(bidRequest, bid, vastXML, trackerURL, bidID, requestingBidder, bidderCoreName, ev.auctionTimestampMs, openrtb_ext.IsFastXMLEnabled(ev.fastXMLEnabledPercentage))
 	if err == nil {
 		bid.AdM = newVastXML
 	}

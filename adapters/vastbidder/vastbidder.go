@@ -12,9 +12,9 @@ import (
 // VASTBidder is default implementation of ITagBidder
 type VASTBidder struct {
 	adapters.Bidder
-	bidderName        openrtb_ext.BidderName
-	adapterConfig     *config.Adapter
-	fastXMLExperiment bool
+	bidderName               openrtb_ext.BidderName
+	adapterConfig            *config.Adapter
+	fastXMLEnabledPercentage int
 }
 
 // MakeRequests will contains default definition for processing queries
@@ -76,7 +76,7 @@ func (a *VASTBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequ
 
 	responseData, errs := handler.MakeBids()
 
-	if a.fastXMLExperiment && len(errs) == 0 {
+	if openrtb_ext.IsFastXMLEnabled(a.fastXMLEnabledPercentage) && len(errs) == 0 {
 		a.fastXMLTesting(
 			newResponseHandler(internalRequest, externalRequest, response, getXMLParser(fastXMLParserType)),
 			responseData,
@@ -111,16 +111,16 @@ func (a *VASTBidder) fastXMLTesting(handler *responseHandler, responseData *adap
 }
 
 // NewTagBidder is an constructor for TagBidder
-func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter, enableFastXML bool) *VASTBidder {
+func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter, enableFastXML int) *VASTBidder {
 	obj := &VASTBidder{
-		bidderName:        bidderName,
-		adapterConfig:     &config,
-		fastXMLExperiment: enableFastXML,
+		bidderName:               bidderName,
+		adapterConfig:            &config,
+		fastXMLEnabledPercentage: enableFastXML,
 	}
 	return obj
 }
 
 // Builder builds a new instance of the 33Across adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, serverConfig config.Server) (adapters.Bidder, error) {
-	return NewTagBidder(bidderName, config, serverConfig.EnableFastXML), nil
+	return NewTagBidder(bidderName, config, serverConfig.FastXMLEnabledPercentage), nil
 }
