@@ -385,6 +385,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			price := bid.Price
 			// If bids are rejected before setting bidExt.OriginalBidCPM, calculate the price and ocpm values based on the currency and revshare.
 			price = computeBidPriceForBidsRejectedBeforeSettingOCPM(rCtx, &bidExt, price, revShare, ao)
+			bid.Price = price
 			if ao.Response.Cur != models.USD {
 				if bidCtx.EN != 0 { // valid-bids + dropped-bids+ default-bids
 					price = bidCtx.EN
