@@ -144,7 +144,7 @@ func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 	if signalRegs.COPPA != 0 {
 		maxRequest.Regs.COPPA = signalRegs.COPPA
 	}
-	maxRequest.Regs.Ext = setIfKeysExists(signalRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
+	maxRequest.Regs.Ext = setIfKeysExists(signalRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy", "dsa")
 }
 
 func updateSource(signalSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
