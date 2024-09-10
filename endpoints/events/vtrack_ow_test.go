@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -449,8 +450,8 @@ func quoteUnescape[T []byte | string](s T) string {
 }
 
 func TestCompareXMLParsers(t *testing.T) {
-	//fileName := `./test/base64_vast.txt`
 	fileName := `./test/raw_vast.txt`
+	//fileName = `../../base64_vast.txt`
 
 	base64Decode := strings.Contains(fileName, "base64")
 
@@ -460,21 +461,21 @@ func TestCompareXMLParsers(t *testing.T) {
 	}
 
 	defer file.Close()
-	var mismatched []int
-	var debugLines map[int]bool
+	var mismatched, debugLines []int
 	line := 0
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-	//debugLines = map[int]bool{29: true, 30: true, 33: true, 50: true, 93: true}
+
+	//debugLines = []int{19, 24, 25, 29, 58, 80, 83, 84, 86, 93, 128, 147, 151, 155, 159, 168, 184, 190, 199, 200, 225, 226, 243, 249, 254, 261, 272, 281, 291, 298, 310, 312, 320, 323, 328, 340, 350, 358, 362, 373, 376, 384}
+	sort.Ints(debugLines)
 
 	for scanner.Scan() {
 		line++
 		vast := scanner.Text()
-		if len(debugLines) > 0 {
-			if debugLines[line] == false {
-				continue
-			}
+		if len(debugLines) > 0 && sort.SearchInts(debugLines, line) == len(debugLines) {
+			continue
 		}
+
 		if base64Decode {
 			data, err := base64.StdEncoding.DecodeString(vast)
 			if !assert.Nil(t, err) {
@@ -486,8 +487,7 @@ func TestCompareXMLParsers(t *testing.T) {
 			etreeXML, _ := injectVideoEventsETree(vast, eventURLMap, false, adcom1.LinearityLinear)
 			fastXML, _ := injectVideoEventsFastXML(vast, eventURLMap, false, adcom1.LinearityLinear)
 			if vast != fastXML {
-				//replace only if trackers are injected
-				fastXML = strings.ReplaceAll(fastXML, " >", ">")
+				fastXML = tmpFastXMLProcessing(fastXML)
 			}
 
 			if !assert.Equal(t, etreeXML, fastXML) {
@@ -495,25 +495,51 @@ func TestCompareXMLParsers(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("\n total:[%v] mismatched:[%v] lines:[%v]", line, len(mismatched), mismatched)
+	t.Logf("\ntotal:[%v] mismatched:[%v] lines:[%v]", line, len(mismatched), mismatched)
 	assert.Equal(t, 0, len(mismatched))
 	assert.Nil(t, scanner.Err())
 }
 
-func TestCompare(t *testing.T) {
-	vastBytes, err := os.ReadFile(`./test/vast.txt`)
-	assert.NoError(t, err)
+func TestBase64(t *testing.T) {
+	fileName := `./test/ow_failed.txt`
 
-	vast := string(vastBytes)
-	etreeXML, err := injectVideoEventsETree(vast, eventURLMap, false, adcom1.LinearityLinear)
-	assert.NoError(t, err)
-
-	fastXML, err := injectVideoEventsFastXML(vast, eventURLMap, false, adcom1.LinearityLinear)
-	assert.NoError(t, err)
-
-	if vast != fastXML {
-		//replace only if trackers are injected
-		fastXML = strings.ReplaceAll(fastXML, " >", ">")
+	file, err := os.Open(fileName)
+	if !assert.Nil(t, err) {
+		return
 	}
-	assert.Equal(t, etreeXML, fastXML)
+
+	defer file.Close()
+	var mismatched, errored, debugLines []int
+	var line, singleQuotePresent, maxLength int
+
+	maxLength = 14884
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	//debugLines = []int{19, 24, 25, 29, 58, 80, 83, 84, 86, 93, 128, 147, 151, 155, 159, 168, 184, 190, 199, 200, 225, 226, 243, 249, 254, 261, 272, 281, 291, 298, 310, 312, 320, 323, 328, 340, 350, 358, 362, 373, 376, 384}
+	sort.Ints(debugLines)
+
+	for scanner.Scan() {
+		line++
+		value := scanner.Text()
+
+		if len(debugLines) > 0 && sort.SearchInts(debugLines, line) == len(debugLines) {
+			continue
+		}
+
+		vast, err := base64.RawStdEncoding.DecodeString(value[0:maxLength])
+
+		if err != nil {
+			errored = append(errored, line)
+			continue
+		}
+
+		if bytes.Contains(vast, []byte("'")) {
+			singleQuotePresent++
+		} else {
+			mismatched = append(mismatched, line)
+		}
+	}
+	assert.Empty(t, mismatched)
+	assert.Empty(t, errored)
 }

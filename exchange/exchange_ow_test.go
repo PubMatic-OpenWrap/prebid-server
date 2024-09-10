@@ -680,7 +680,7 @@ func TestNormalizeDomain(t *testing.T) {
 
 func newTestTagAdapter(name string) *bidderAdapter {
 	return &bidderAdapter{
-		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}, false),
+		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}, 0),
 		BidderName: openrtb_ext.BidderName(name),
 	}
 }
