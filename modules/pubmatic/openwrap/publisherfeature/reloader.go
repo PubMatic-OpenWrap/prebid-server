@@ -28,6 +28,7 @@ type feature struct {
 	maxFloors           maxFloors
 	bidRecovery         bidRecovery
 	appLovinMultiFloors appLovinMultiFloors
+	impCountingMethod   impCountingMethod
 }
 
 var fe *feature
@@ -59,6 +60,9 @@ func New(config Config) *feature {
 			},
 			appLovinMultiFloors: appLovinMultiFloors{
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
+			},
+			impCountingMethod: impCountingMethod{
+				enabledBidders: make(map[string]struct{}),
 			},
 		}
 	})
@@ -117,6 +121,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
+	fe.updateImpCountingMethodEnabledBidders()
 
 	if err != nil {
 		glog.Error(err.Error())
