@@ -34,9 +34,9 @@ func (fe *feature) updateImpCountingMethodEnabledBidders() {
 }
 
 func (fe *feature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
-	enabledBidders := make(map[string]struct{})
 	fe.RLock()
 	defer fe.RUnlock()
+	enabledBidders := make(map[string]struct{}, len(fe.impCountingMethod.enabledBidders))
 	for bidder := range fe.impCountingMethod.enabledBidders {
 		enabledBidders[bidder] = struct{}{}
 	}
