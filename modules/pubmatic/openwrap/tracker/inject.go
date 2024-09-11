@@ -21,9 +21,11 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
-			var errMsg string
-			var err error
-			var impCountingMethodEnabled bool
+			var (
+				errMsg                   string
+				err                      error
+				impCountingMethodEnabled bool
+			)
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {

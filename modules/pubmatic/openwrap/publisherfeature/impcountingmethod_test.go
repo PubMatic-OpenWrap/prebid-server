@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFeature_updateImpCountingMethodEnabledBidders(t *testing.T) {
+func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 	type fields struct {
 		cache             cache.Cache
 		publisherFeature  map[int]map[int]models.FeatureData
@@ -66,20 +66,54 @@ func TestFeature_updateImpCountingMethodEnabledBidders(t *testing.T) {
 				"rubicon":  {},
 			},
 		},
+		{
+			name: "update imp counting method with feature disabled",
+			fields: fields{
+				cache: nil,
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureImpCountingMethod: {
+							Enabled: 0,
+							Value:   `appnexus,rubicon`,
+						},
+					},
+				},
+			},
+			wantImpCoutingMethodEnabledBidders: map[string]struct{}{},
+		},
+		{
+			name: "update imp counting method with feature enabled but empty value",
+			fields: fields{
+				cache: nil,
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureImpCountingMethod: {
+							Enabled: 1,
+							Value:   ``,
+						},
+					},
+				},
+			},
+			wantImpCoutingMethodEnabledBidders: map[string]struct{}{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			var fe *feature
+			fe = &feature{
 				publisherFeature:  tt.fields.publisherFeature,
 				impCountingMethod: tt.fields.impCountingMethod,
 			}
+			defer func() {
+				fe = nil
+			}()
 			fe.updateImpCountingMethodEnabledBidders()
 			assert.Equal(t, tt.wantImpCoutingMethodEnabledBidders, fe.impCountingMethod.enabledBidders)
 		})
 	}
 }
 
-func TestFeature_GetImpCountingMethodEnabledBidders(t *testing.T) {
+func TestFeatureGetImpCountingMethodEnabledBidders(t *testing.T) {
 	type fields struct {
 		impCountingMethod impCountingMethod
 	}
