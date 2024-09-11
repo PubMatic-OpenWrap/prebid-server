@@ -26,15 +26,15 @@ func NewMetricsRegistry() MetricsRegistry {
 }
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserResponseTime(parser, method, bidder, respTime)
+		thisME.RecordXMLParserResponseTime(parser, method, respTime)
 	}
 }
 
-func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserResponseMismatch(method, bidder, isMismatch)
+		thisME.RecordXMLParserResponseMismatch(method, isMismatch)
 	}
 }
 
@@ -90,14 +90,6 @@ func (me *MultiMetricsEngine) RecordBadRequest(endpoint string, pubId string, nb
 	}
 }
 
-// RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
-}
-
-// RecordXMLParserResponseMismatch as a noop
-func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
-}
-
 // RecordVASTTagType as a noop
 func (me *NilMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 }
@@ -128,4 +120,12 @@ func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
 
 // RecordBadRequest as a noop
 func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+}
+
+// RecordXMLParserResponseMismatch as a noop
+func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
 }

@@ -2,6 +2,7 @@ package events
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
@@ -57,17 +58,34 @@ func InjectVideoEventTrackers(
 
 		//temporary
 		if fastXMLResponse != vastXML {
-			fastXMLResponse = strings.ReplaceAll(fastXMLResponse, " >", ">")
+			fastXMLResponse = tmpFastXMLProcessing(fastXMLResponse)
+		}
+
+		isResponseMismatch := (response != fastXMLResponse)
+
+		if isResponseMismatch {
+			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
 		}
 
 		metrics = &openrtb_ext.FastXMLMetrics{
 			XMLParserTime:   fastXMLParserTime,
 			EtreeParserTime: etreeParserTime,
-			IsRespMismatch:  (response != fastXMLResponse),
+			IsRespMismatch:  isResponseMismatch,
 		}
 	}
 
 	return response, metrics, err
+}
+
+func tmpFastXMLProcessing(vast string) string {
+	//replace only if trackers are injected
+	vast = strings.ReplaceAll(vast, " >", ">")
+	// if strings.Contains(vast, "'") {
+	// 	if index := strings.Index(vast, "<VAST"); index != -1 {
+	// 		vast = vast[0:index] + strings.ReplaceAll(vast[index:], "'", "\"")
+	// 	}
+	// }
+	return vast
 }
 
 func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (string, error) {
