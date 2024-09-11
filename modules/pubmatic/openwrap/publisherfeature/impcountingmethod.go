@@ -1,10 +1,9 @@
 package publisherfeature
 
 import (
-	"encoding/json"
+	"strings"
 
 	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/golang/glog"
 )
 
 type impCountingMethod struct {
@@ -19,13 +18,12 @@ func (fe *feature) updateImpCountingMethodEnabledBidders() {
 	enabledBidders := make(map[string]struct{})
 	for _, feature := range fe.publisherFeature {
 		if val, ok := feature[models.FeatureImpCountingMethod]; ok && val.Enabled == 1 {
-			var bidders []string
-			if err := json.Unmarshal([]byte(val.Value), &bidders); err != nil {
-				glog.Errorf("Error in unmarshalling imp counting method enabled bidders: %v", err)
-				continue
-			}
+			bidders := strings.Split(val.Value, ",")
 			for _, bidder := range bidders {
-				enabledBidders[bidder] = struct{}{}
+				bidder = strings.TrimSpace(bidder)
+				if bidder != "" {
+					enabledBidders[bidder] = struct{}{}
+				}
 			}
 		}
 	}
