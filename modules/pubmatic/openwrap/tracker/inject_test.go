@@ -3,6 +3,7 @@ package tracker
 import (
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/openrtb_ext"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
@@ -400,6 +401,7 @@ func TestInjectTrackers(t *testing.T) {
 								{
 									ID:  "12345",
 									AdM: `sample_creative`,
+									Ext: []byte(`{"key":"value"}`),
 								},
 							},
 							Seat: models.BidderPubMatic,
@@ -414,6 +416,7 @@ func TestInjectTrackers(t *testing.T) {
 							{
 								ID:  "12345",
 								AdM: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`,
+								Ext: []byte(`{"key":"value","imp_ct_mthd":1}`),
 							},
 						},
 						Seat: models.BidderPubMatic,
@@ -906,6 +909,54 @@ func TestInjectTrackers(t *testing.T) {
 								Price: 15.7,
 							},
 						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "platform_is_app_with_imp_counting_method_enabled_ix",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:    "banner",
+							TrackerURL: `Tracking URL`,
+							ErrorURL:   `Error URL`,
+							DspId:      models.DspId_DV360,
+						},
+					},
+					ImpCountingMethodEnabledBidders: map[string]struct{}{
+						string(openrtb_ext.BidderIx): {},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:  "12345",
+									AdM: `sample_creative`,
+									Ext: []byte(`{"key":"value"}`),
+								},
+							},
+							Seat: string(openrtb_ext.BidderIx),
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "12345",
+								AdM: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="https://sample.com/AdServer/js/owpubomverification.js"></script>`,
+								Ext: []byte(`{"key":"value","imp_ct_mthd":1}`),
+							},
+						},
+						Seat: string(openrtb_ext.BidderIx),
 					},
 				},
 			},

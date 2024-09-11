@@ -348,6 +348,11 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.DebugMessages = append(result.DebugMessages, string(rCtxBytes))
 	}
 
+	//Impression counting method enabled bidders
+	if rctx.Endpoint == models.EndpointV25 {
+		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
+	}
+
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {

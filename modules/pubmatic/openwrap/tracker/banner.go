@@ -9,19 +9,21 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
+func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string, bool) {
 	if rctx.Endpoint == models.EndpointAppLovinMax {
-		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
+		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL), false
 	}
 
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
-	if trackerWithOM(tracker, rctx.Platform, seat) {
+	impCountingMethodEnabled := false
+	if trackerWithOM(rctx, tracker, seat) {
 		trackerFormat = models.TrackerCallWrapOMActive
+		impCountingMethodEnabled = true
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
 	adm := applyTBFFeature(rctx, bid, replacedTrackerStr)
-	return appendUPixelinBanner(adm, pixels), bid.BURL
+	return appendUPixelinBanner(adm, pixels), bid.BURL, impCountingMethodEnabled
 }
 
 // append universal pixels in creative based on conditions
@@ -40,14 +42,20 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 	return adm
 }
 
-// TrackerWithOM checks for OM active condition for DV360
-func trackerWithOM(tracker models.OWTracker, platform, bidderCode string) bool {
-	if platform == models.PLATFORM_APP && bidderCode == string(openrtb_ext.BidderPubmatic) {
-		if tracker.DspId == models.DspId_DV360 {
-			return true
-		}
+// TrackerWithOM checks for OM active condition for DV360 with Pubmatic and other bidders
+func trackerWithOM(rctx models.RequestCtx, tracker models.OWTracker, bidderCode string) bool {
+	if rctx.Platform != models.PLATFORM_APP {
+		return false
 	}
-	return false
+
+	// check for OM active for DV360 with Pubmatic
+	if bidderCode == string(openrtb_ext.BidderPubmatic) && tracker.DspId == models.DspId_DV360 {
+		return true
+	}
+
+	// check for OM active for other bidders
+	_, isPresent := rctx.ImpCountingMethodEnabledBidders[bidderCode]
+	return isPresent
 }
 
 // applyTBFFeature adds the tracker before or after the actual bid.Adm
