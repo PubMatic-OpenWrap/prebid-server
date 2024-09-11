@@ -38,7 +38,25 @@ func TestFeature_updateImpCountingMethodEnabledBidders(t *testing.T) {
 					0: {
 						models.FeatureImpCountingMethod: {
 							Enabled: 1,
-							Value:   `["appnexus","rubicon"]`,
+							Value:   `appnexus,rubicon`,
+						},
+					},
+				},
+			},
+			wantImpCoutingMethodEnabledBidders: map[string]struct{}{
+				"appnexus": {},
+				"rubicon":  {},
+			},
+		},
+		{
+			name: "update imp counting method enabled bidders with space in value",
+			fields: fields{
+				cache: nil,
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureImpCountingMethod: {
+							Enabled: 1,
+							Value:   `  appnexus,rubicon  `,
 						},
 					},
 				},
