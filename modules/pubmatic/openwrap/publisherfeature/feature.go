@@ -11,4 +11,5 @@ type Feature interface {
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
 	IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool
 	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
+	GetImpCountingMethodEnabledBidders() map[string]struct{}
 }
