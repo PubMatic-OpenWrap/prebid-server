@@ -4722,7 +4722,7 @@ func (o *OpenRTB) ORTBAdrule() (err error) {
 	}
 
 	video[ORTBExtAdrule] = val
-
+	wrapperExt[ORTBVideo] = video
 	reqExt[ORTBExtWrapper] = wrapperExt
 	data, err := json.Marshal(reqExt)
 	if err != nil {
