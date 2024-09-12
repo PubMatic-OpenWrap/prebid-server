@@ -871,7 +871,10 @@ func TestParseORTBRequest(t *testing.T) {
 			"ssauction": 0,
 			"sumry_disable": 0,
 			"supportdeals": true,
-			"versionid": 2
+			"versionid": 2,
+			"video":{
+				"adrule": true
+			}
 		  }
 		}
 	  }`
