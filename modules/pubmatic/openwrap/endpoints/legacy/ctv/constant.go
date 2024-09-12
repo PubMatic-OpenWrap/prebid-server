@@ -396,6 +396,10 @@ const (
 	ORTBExtPrebidFloorsEnforcement          = "req.ext.prebid.floors.enforcement"   //ORTBExtPrebidFloorsEnforcement get api parameter for enforcement
 	ORTBExtPrebidReturnAllBidStatus         = "req.ext.prebid.returnallbidstatus"   //ORTBExtPrebidReturnAllBidStatus get api parameter for returnallbidstatus
 	ReturnAllBidStatus                      = "returnallbidstatus"
+
+	ORTBExtAdrule = "adrule" ////ORTBExtAdrule get api parameter adrule
+	ORTBVideo     = "video"
+	ORTBAdrule    = "req.ext.wrapper.video.adrule"
 )
 
 const (
