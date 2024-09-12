@@ -4697,7 +4697,6 @@ func (o *OpenRTB) ORTBRegsGppSid() error {
 
 // ORTBAdrule will read and set ortb Adrule parameter
 func (o *OpenRTB) ORTBAdrule() (err error) {
-
 	val, ok, err := o.values.GetBoolean(ORTBAdrule)
 	if !ok || err != nil {
 		return
@@ -4730,5 +4729,5 @@ func (o *OpenRTB) ORTBAdrule() (err error) {
 	}
 
 	o.ortb.Ext = data
-	return nil
+	return
 }
