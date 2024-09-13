@@ -4704,8 +4704,7 @@ func (o *OpenRTB) ORTBAdrule() (err error) {
 
 	reqExt := map[string]interface{}{}
 	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
+		if err = json.Unmarshal(o.ortb.Ext, &reqExt); err != nil {
 			return
 		}
 	}
