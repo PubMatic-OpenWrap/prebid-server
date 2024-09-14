@@ -2,7 +2,6 @@ package vastbidder
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -70,7 +69,7 @@ func (p *etreeXMLParser) GetPricingDetails() (price float64, currency string) {
 		return 0.0, ""
 	}
 
-	priceValue, err := strconv.ParseFloat(strings.TrimSpace(node.Text()), 64)
+	priceValue, err := strconv.ParseFloat(node.TrimmedText(), 64)
 	if nil != err {
 		return 0.0, ""
 	}
@@ -89,7 +88,7 @@ func (p *etreeXMLParser) GetAdvertiser() (advertisers []string) {
 			if ext.SelectAttrValue("type", "") == "advertiser" {
 				ele := ext.SelectElement("Advertiser")
 				if ele != nil {
-					if value := strings.TrimSpace(ele.Text()); len(value) > 0 {
+					if value := ele.TrimmedText(); len(value) > 0 {
 						advertisers = append(advertisers, value)
 					}
 				}
@@ -98,7 +97,7 @@ func (p *etreeXMLParser) GetAdvertiser() (advertisers []string) {
 
 	case vastVersion4x:
 		if ele := p.adElement.SelectElement("Advertiser"); ele != nil {
-			if value := strings.TrimSpace(ele.Text()); len(value) > 0 {
+			if value := ele.TrimmedText(); len(value) > 0 {
 				advertisers = append(advertisers, value)
 			}
 		}
@@ -126,7 +125,7 @@ func (p *etreeXMLParser) GetDuration() (int, error) {
 	if node == nil {
 		return 0, errEmptyVideoDuration
 	}
-	return parseDuration(strings.TrimSpace(node.Text()))
+	return parseDuration(node.TrimmedText())
 }
 
 func (p *etreeXMLParser) getAdElement(vast *etree.Element) *etree.Element {
