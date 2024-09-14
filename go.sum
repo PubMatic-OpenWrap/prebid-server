@@ -71,8 +71,8 @@ github.com/IABTechLab/adscert v0.34.0/go.mod h1:pCLd3Up1kfTrH6kYFUGGeavxIc1f6Tvv
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240909135535-5d3df9e9a959 h1:UM0zl3LogmkLc7/ttGDw+UmuWaVUQHcxUop4c/g6yto=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240909135535-5d3df9e9a959/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240914050009-a916f68552f5 h1:qNRDZVW/TJI0O4hPVdk5YCl+WxD6alYdaCG0im73lNo=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240914050009-a916f68552f5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
 github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2 h1:4zaGImZVnKCJudxKfsVNJAqGhCPxbjApAo0QvEThwpw=
 github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
