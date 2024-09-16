@@ -57,6 +57,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 				if element == nil {
 					element = adElement.FindElement(models.AdInlineElement)
 				}
+
 				if element == nil {
 					return bid.AdM, bid.BURL, errors.New("video creative not in required VAST format")
 				}
