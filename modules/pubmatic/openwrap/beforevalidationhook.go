@@ -142,40 +142,47 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 
-	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
-		if len(rCtx.ResponseFormat) > 0 {
-			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
-				result.NbrCode = int(nbr.InvalidResponseFormat)
-				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+	if rCtx.IsCTVRequest {
+		if rCtx.Endpoint == models.EndpointJson {
+			if len(rCtx.ResponseFormat) > 0 {
+				if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
+					result.NbrCode = int(nbr.InvalidResponseFormat)
+					result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+					return result, nil
+				}
+			}
+
+			if len(rCtx.RedirectURL) == 0 {
+				rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
+			}
+
+			if len(rCtx.RedirectURL) > 0 {
+				rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
+				if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
+					result.NbrCode = int(nbr.InvalidRedirectURL)
+					result.Errors = append(result.Errors, "Invalid redirect URL")
+					return result, nil
+				}
+			}
+
+			if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
+				result.NbrCode = int(nbr.MissingOWRedirectURL)
+				result.Errors = append(result.Errors, "owRedirectURL is missing")
 				return result, nil
 			}
 		}
-
-		if len(rCtx.RedirectURL) == 0 {
-			rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
-		}
-
-		if len(rCtx.RedirectURL) > 0 {
-			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
-			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
-				result.NbrCode = int(nbr.InvalidRedirectURL)
-				result.Errors = append(result.Errors, "Invalid redirect URL")
-				return result, nil
+		videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+		if len(videoAdDuration) > 0 {
+			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+				AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+				AdserverCreativeDurationMatchingPolicy: models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey),
 			}
-		}
-
-		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
-			result.NbrCode = int(nbr.MissingOWRedirectURL)
-			result.Errors = append(result.Errors, "owRedirectURL is missing")
-			return result, nil
-		}
-	}
-
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	if len(videoAdDuration) > 0 {
-		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey),
+		} else if rCtx.IsTestRequest > 0 {
+			//Adding default durations for CTV Test requests
+			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+				AdserverCreativeDurations:              []int{5, 10},
+				AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+			}
 		}
 	}
 
@@ -401,20 +408,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
-			}
-
-			//Adding default durations for CTV Test requests
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
-				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-					AdserverCreativeDurations:              []int{5, 10},
-					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
-				}
 			}
 
 			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
