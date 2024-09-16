@@ -350,5 +350,8 @@ func (st *StatsTCP) RecordAdruleEnabled(pubId, profId string)                   
 func (st *StatsTCP) RecordAdruleValidationFailure(pubId, profId string)                       {}
 func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string)               {}
 func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}
+func (st *StatsTCP) RecordBidRecoveryStatus(pubID string, profile string, success bool)       {}
+func (st *StatsTCP) RecordBidRecoveryResponseTime(pubID string, profile string, responseTime time.Duration) {
+}
 func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
 }
