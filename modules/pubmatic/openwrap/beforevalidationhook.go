@@ -172,11 +172,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
 	if len(videoAdDuration) > 0 {
 		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
 			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: policy,
+			AdserverCreativeDurationMatchingPolicy: models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey),
 		}
 	}
 
