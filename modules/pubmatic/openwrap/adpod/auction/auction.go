@@ -186,7 +186,7 @@ it will try to get the actual ad duration returned by the bidder using prebid.vi
 if prebid.video.duration not present then uses defaultDuration passed as an argument
 if video lengths matching policy is present for request then it will validate and update duration based on policy
 */
-func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []*models.ImpAdPodConfig, sequence int) (int64, int64) {
+func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []*models.GeneratedSlotConfig, sequence int) (int64, int64) {
 
 	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
@@ -211,7 +211,7 @@ func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg
 }
 
 // getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*models.ImpAdPodConfig) (int64, int64) {
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*models.GeneratedSlotConfig) (int64, int64) {
 	switch policy {
 	case openrtb_ext.OWExactVideoAdDurationMatching:
 		tmp := GetNearestDuration(duration, config)
@@ -240,7 +240,7 @@ func GetDealTierSatisfied(ext *openrtb_ext.ExtBid) bool {
 
 // GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
 // it will return -1 if it doesn't found any match
-func GetNearestDuration(duration int64, config []*models.ImpAdPodConfig) int64 {
+func GetNearestDuration(duration int64, config []*models.GeneratedSlotConfig) int64 {
 	tmp := int64(-1)
 	diff := int64(math.MaxInt64)
 	for _, c := range config {

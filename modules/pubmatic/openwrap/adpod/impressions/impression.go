@@ -1,131 +1,23 @@
 package impressions
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"math"
 
-	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // Value use to compute Ad Slot Durations and Pod Durations for internal computation
 // Right now this value is set to 5, based on passed data observations
 // Observed that typically video impression contains contains minimum and maximum duration in multiples of  5
 const (
-	multipleOf         = 5
-	impressionIDFormat = `%v` + models.ImpressionIDSeparator + `%v`
+	MultipleOf         = 5
+	ImpressionIDFormat = `%v` + models.ImpressionIDSeparator + `%v`
 )
 
 // ImpGenerator ...
 type ImpGenerator interface {
 	Get() [][2]int64
 	// Algorithm() int // returns algorithm used for computing number of impressions
-}
-
-func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig, pubId string, me metrics.MetricsEngine) ([]*openrtb_ext.ImpWrapper, []error) {
-	var imps []*openrtb_ext.ImpWrapper
-	var errs []error
-
-	for _, impWrapper := range request.GetImp() {
-		eachImpCtx := impCtx[impWrapper.ID]
-
-		impAdpodConfig, err := getAdPodImpConfig(impWrapper.Imp, eachImpCtx.AdpodConfig, adpodProfileCfg)
-		if impAdpodConfig == nil {
-			imps = append(imps, impWrapper)
-			if err != nil {
-				errs = append(errs, err)
-			}
-			continue
-		}
-
-		me.RecordAdPodGeneratedImpressionsCount(len(impAdpodConfig), pubId)
-		eachImpCtx.ImpAdPodCfg = impAdpodConfig
-		impCtx[impWrapper.ID] = eachImpCtx
-
-		err = impWrapper.RebuildImp()
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		for i := range impAdpodConfig {
-			video := *impWrapper.Video
-			video.MinDuration = impAdpodConfig[i].MinDuration
-			video.MaxDuration = impAdpodConfig[i].MaxDuration
-			video.Sequence = impAdpodConfig[i].SequenceNumber
-			video.MaxExtended = 0
-
-			// Remove adpod Extension
-			var videoExt map[string]interface{}
-			err := json.Unmarshal(video.Ext, &videoExt)
-			if err != nil {
-				glog.Warningf("error while unmarshalling video extension for impression: %s", impAdpodConfig[i].ImpID)
-			}
-			delete(videoExt, "adpod")
-			delete(videoExt, "offset")
-			if len(videoExt) == 0 {
-				video.Ext = nil
-			} else {
-				video.Ext, _ = json.Marshal(videoExt)
-			}
-
-			newImp := *impWrapper.Imp
-			newImp.ID = impAdpodConfig[i].ImpID
-			newImp.Video = &video
-
-			newImpWrapper := &openrtb_ext.ImpWrapper{Imp: &newImp}
-			newImpWrapper.GetImpExt()
-
-			imps = append(imps, newImpWrapper)
-		}
-
-	}
-
-	return imps, errs
-
-}
-
-func generateImpressionID(impID string, seqNo int) string {
-	return fmt.Sprintf(impressionIDFormat, impID, seqNo)
-}
-
-// getAdPodImpsConfigs will return number of impressions configurations within adpod
-func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) ([]*models.ImpAdPodConfig, error) {
-	// This case for non adpod video impression
-	if adpod == nil {
-		return nil, nil
-	}
-	selectedAlgorithm := SelectAlgorithm(adpod, adpodProfileCfg)
-	impGen := NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, adpodProfileCfg, selectedAlgorithm)
-	impRanges := impGen.Get()
-
-	// labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
-
-	// //log number of impressions in stats
-	// *labels.NoOfImpressions = len(impRanges)
-	// deps.metricsEngine.RecordPodImpGenTime(labels, start)
-
-	// check if algorithm has generated impressions
-	if len(impRanges) == 0 {
-		return nil, errors.New("unable to generate impressions for adpod for impression: " + imp.ID)
-	}
-
-	config := make([]*models.ImpAdPodConfig, len(impRanges))
-	for i, value := range impRanges {
-		eachConfig := models.ImpAdPodConfig{
-			ImpID:          generateImpressionID(imp.ID, i+1),
-			MinDuration:    value[0],
-			MaxDuration:    value[1],
-			SequenceNumber: int8(i + 1), /* Must be starting with 1 */
-		}
-		config[i] = &eachConfig
-	}
-	return config, nil
 }
 
 // SelectAlgorithm is factory function which will return valid Algorithm based on adpod parameters
@@ -280,7 +172,6 @@ func getClosestFactorForMaxDuration(maxduration, multipleOf int64) int64 {
 
 // Returns Maximum number out off 2 input numbers
 func max(num1, num2 int64) int64 {
-
 	if num1 >= num2 {
 		return num1
 	}

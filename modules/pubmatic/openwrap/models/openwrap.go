@@ -9,7 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/ortb"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils/ortb"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
@@ -127,6 +127,8 @@ type RequestCtx struct {
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+	AdpodCtx           map[string]Adpod
+	ImpToPodId         map[string]string
 }
 
 type AdpodProfileConfig struct {
@@ -185,7 +187,7 @@ type ImpCtx struct {
 	// Adpod
 	IsAdPodRequest bool
 	AdpodConfig    *AdPod
-	ImpAdPodCfg    []*ImpAdPodConfig
+	ImpAdPodCfg    []*GeneratedSlotConfig
 	BidIDToAPRC    map[string]int64
 	AdserverURL    string
 	BidIDToDur     map[string]int64

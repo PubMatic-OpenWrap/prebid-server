@@ -139,7 +139,7 @@ func (g generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority bool) 
 			// then set config.SlotMinDuration as min value for this slot
 			// TestCase #16
 			//if timeForEachSlot == maxPodDurationMatchUpTime {
-			if timeForEachSlot < multipleOf {
+			if timeForEachSlot < MultipleOf {
 				// override existing value of slot[0] here
 				slot[0] = g.requested.slotMinDuration
 			}
@@ -310,11 +310,11 @@ func computeTimeForEachAdSlot(cfg *generator, totalAds int64) int64 {
 	}
 
 	// ensure timeForEachSlot is multipleof given number
-	if cfg.internal.slotDurationComputed && !isMultipleOf(timeForEachSlot, multipleOf) {
+	if cfg.internal.slotDurationComputed && !isMultipleOf(timeForEachSlot, MultipleOf) {
 		// get close to value of multiple
 		// here we muse get either cfg.SlotMinDuration or cfg.SlotMaxDuration
 		// these values are already pre-computed in multiples of given number
-		timeForEachSlot = getClosestFactor(timeForEachSlot, multipleOf)
+		timeForEachSlot = getClosestFactor(timeForEachSlot, MultipleOf)
 		// util.Logf("Computed closet factor %v, in multiples of %v for timeForEachSlot\n", timeForEachSlot, multipleOf)
 	}
 	// util.Logf("Computed Final timeForEachSlot = %v  [%v <= %v <= %v]\n", timeForEachSlot, cfg.requested.slotMinDuration, timeForEachSlot, cfg.requested.slotMaxDuration)
@@ -332,7 +332,7 @@ func computeTimeLeastValue(time int64, leastTimeRequiredByEachSlot int64) int64 
 	// 1. multiple of x - get smallest factor N of multiple of x for time
 	// 2. not multiple of x - try to obtain smallet no N multipe of x
 	// ensure N <= timeForEachSlot
-	leastFactor := multipleOf
+	leastFactor := MultipleOf
 	if int64(leastFactor) < time {
 		time = int64(leastFactor)
 	}
