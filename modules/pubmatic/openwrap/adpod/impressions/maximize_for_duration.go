@@ -11,7 +11,7 @@ type ForDuration struct {
 // newMaximizeForDuration Constucts the generator object from openrtb_ext.VideoAdPod
 // It computes durations for Ad Slot and Ad Pod in multiple of X
 func newMaximizeForDuration(podMinDuration, podMaxDuration int64, vPod *models.AdPod) ForDuration {
-	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, vPod, multipleOf)
+	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, vPod, MultipleOf)
 
 	// util.Logf("Computed podMinDuration = %v in multiples of %v (requestedPodMinDuration = %v)\n", config.requested.podMinDuration, multipleOf, config.requested.podMinDuration)
 	// util.Logf("Computed podMaxDuration = %v in multiples of %v (requestedPodMaxDuration = %v)\n", config.requested.podMaxDuration, multipleOf, config.requested.podMaxDuration)

@@ -612,3 +612,48 @@ const (
 const (
 	LogLevelDebug glog.Level = 3
 )
+
+type PodType int8
+
+const (
+	Structured PodType = 0
+	Dynamic    PodType = 1
+	Hybrid     PodType = 2
+	NotAdpod   PodType = -1
+)
+
+const (
+	//BidderOWPrebidCTV for prebid adpod response
+	BidderOWPrebidCTV string = "prebid_ctv"
+)
+
+const (
+	DefaultMinAds                      = 1
+	DefaultMaxAds                      = 3
+	DefaultAdvertiserExclusionPercent  = 100
+	DefaultIABCategoryExclusionPercent = 100
+)
+
+const (
+	ConstAdpod = "adpod"
+)
+
+const (
+	// MinDuration represents index value where we can get minimum duration of given impression object
+	MinDuration = iota
+	// MaxDuration represents index value where we can get maximum duration of given impression object
+	MaxDuration
+)
+
+const (
+	//StatusOK ...
+	StatusOK int64 = 0
+	//StatusWinningBid ...
+	StatusWinningBid int64 = 1
+	//StatusCategoryExclusion ...
+	StatusCategoryExclusion int64 = 2
+	//StatusDomainExclusion ...
+	StatusDomainExclusion int64 = 3
+	//StatusDurationMismatch ...
+	StatusDurationMismatch int64 = 4
+)

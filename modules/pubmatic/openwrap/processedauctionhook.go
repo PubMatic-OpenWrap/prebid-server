@@ -5,7 +5,7 @@ import (
 
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -36,15 +36,61 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		moduleCtx.ModuleContext["rctx"] = rctx
 	}()
 
-	var imps []*openrtb_ext.ImpWrapper
-	var errs []error
+	// Create Adpod Context
 	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.Request, rctx.ImpBidCtx, rctx.AdpodProfileConfig, rctx.PubIDStr, m.metricEngine)
-		if len(errs) > 0 {
-			for i := range errs {
-				result.Warnings = append(result.Warnings, errs[i].Error())
+		for _, imp := range payload.Request.Imp {
+			impCtx, ok := rctx.ImpBidCtx[imp.ID]
+			if !ok {
+				continue
+			}
+
+			if imp.Video != nil {
+				switch adpod.GetPodType(impCtx) {
+				case models.Dynamic:
+					podId := imp.Video.PodID
+					if impCtx.AdpodConfig != nil {
+						podId = imp.ID
+					}
+					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, impCtx, rctx.AdpodProfileConfig)
+				case models.Structured:
+					if _, ok := rctx.AdpodCtx[imp.Video.PodID]; !ok {
+						rctx.AdpodCtx[imp.Video.PodID] = adpod.NewStructuredAdpod(imp.Video.PodID, impCtx, rctx.AdpodProfileConfig)
+					}
+				}
 			}
 		}
+	}
+
+	var imps []*openrtb_ext.ImpWrapper
+	if rctx.IsCTVRequest {
+		for _, impWrapper := range payload.Request.GetImp() {
+			impCtx, ok := rctx.ImpBidCtx[impWrapper.ID]
+			if !ok {
+				continue
+			}
+
+			if impWrapper.Video != nil {
+				switch adpod.GetPodType(impCtx) {
+				case models.Dynamic:
+					podId := impWrapper.Video.PodID
+					if impCtx.AdpodConfig != nil {
+						podId = impWrapper.ID
+					}
+					dynamicAdpod := rctx.AdpodCtx[podId].(*adpod.DynamicAdpod)
+					generatedImps := dynamicAdpod.GetImpressions()
+					for i := range generatedImps {
+						rctx.ImpToPodId[generatedImps[i].ID] = podId
+					}
+					imps = append(imps, generatedImps...)
+				case models.Structured:
+					structuredAdpod := rctx.AdpodCtx[impWrapper.Video.PodID].(*adpod.StructuredAdpod)
+					structuredAdpod.AddImpressions(*impWrapper.Imp)
+					rctx.ImpToPodId[impWrapper.ID] = impWrapper.Video.PodID
+					imps = append(imps, impWrapper)
+				}
+			}
+		}
+		//TODO: Check if we require this for structured adpod
 		adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
 	}
 

@@ -1,43 +1,25 @@
 package models
 
-const (
-	//BidderOWPrebidCTV for prebid adpod response
-	BidderOWPrebidCTV string = "prebid_ctv"
-)
+import "github.com/prebid/openrtb/v20/openrtb2"
 
-const (
-	DefaultMinAds                      = 1
-	DefaultMaxAds                      = 3
-	DefaultAdvertiserExclusionPercent  = 100
-	DefaultIABCategoryExclusionPercent = 100
-)
+type Adpod interface{}
 
-const (
-	Adpod = "adpod"
-)
+// AdpodCtx context for adpod
+type AdpodCtx struct {
+	PodId          string
+	Type           PodType
+	Imps           []openrtb2.Imp
+	Exclusion      Exclusion
+	ProfileConfigs *AdpodProfileConfig
+}
 
-const (
-	// MinDuration represents index value where we can get minimum duration of given impression object
-	MinDuration = iota
-	// MaxDuration represents index value where we can get maximum duration of given impression object
-	MaxDuration
-)
+// Exclusion config for adpod
+type Exclusion struct {
+	AdvertiserDomainExclusion bool
+	IABCategoryExclusion      bool
+}
 
-const (
-	//StatusOK ...
-	StatusOK int64 = 0
-	//StatusWinningBid ...
-	StatusWinningBid int64 = 1
-	//StatusCategoryExclusion ...
-	StatusCategoryExclusion int64 = 2
-	//StatusDomainExclusion ...
-	StatusDomainExclusion int64 = 3
-	//StatusDurationMismatch ...
-	StatusDurationMismatch int64 = 4
-)
-
-// ImpAdPodConfig configuration for creating ads in adpod
-type ImpAdPodConfig struct {
+type GeneratedSlotConfig struct {
 	ImpID          string `json:"id,omitempty"`
 	SequenceNumber int8   `json:"seq,omitempty"`
 	MinDuration    int64  `json:"minduration,omitempty"`
