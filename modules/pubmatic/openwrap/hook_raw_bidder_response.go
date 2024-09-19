@@ -39,6 +39,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	// send bids for unwrap
 	for _, bid := range payload.BidderResponse.Bids {
 		if !isEligibleForUnwrap(bid) {
+			unwrappedBids = append(unwrappedBids, bid)
 			continue
 		}
 		unwrappedBidsCnt++
