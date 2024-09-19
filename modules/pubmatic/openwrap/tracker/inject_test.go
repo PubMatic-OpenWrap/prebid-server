@@ -551,7 +551,7 @@ func TestInjectTrackers(t *testing.T) {
 						Bid: []openrtb2.Bid{
 							{
 								ID:   "12345",
-								BURL: `Tracking URL&owsspburl=http://burl.com`,
+								BURL: `Tracking URL&owsspburl=http%3A%2F%2Fburl.com`,
 								AdM:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 							},
 						},
@@ -594,7 +594,7 @@ func TestInjectTrackers(t *testing.T) {
 						Bid: []openrtb2.Bid{
 							{
 								ID:   "12345",
-								BURL: `Tracking URL&owsspburl=http://burl.com`,
+								BURL: `Tracking URL&owsspburl=http%3A%2F%2Fburl.com`,
 								AdM:  `<VAST version="3.0"><Ad><Wrapper><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
 							},
 						},
@@ -646,7 +646,7 @@ func TestInjectTrackers(t *testing.T) {
 							{
 								ID:    "12345",
 								ImpID: "imp123",
-								BURL:  `Tracking URL&owsspburl=http://burl.com`,
+								BURL:  `Tracking URL&owsspburl=http%3A%2F%2Fburl.com`,
 								AdM:   `{"assets":[{"id":0,"img":{"type":3,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":1,"data":{"type":1,"value":"Sponsored By PubMatic"}},{"id":2,"img":{"type":1,"url":"//sample.com/AdTag/native/728x90.png","w":728,"h":90}},{"id":3,"title":{"text":"Native Test Title"}},{"id":4,"data":{"type":2,"value":"Sponsored By PubMatic"}}],"link":{"url":"//www.sample.com","clicktrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"fallback":"http://www.sample.com"},"imptrackers":["http://sampletracker.com/AdTag/9bde02d0-6017-11e4-9df7-005056967c35"],"jstracker":"\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e\u003cscript src='\\/\\/sample.com\\/AdTag\\/native\\/tempReseponse.js'\u003e","eventtrackers":[{"event":1,"method":1,"url":"http://sample.com/AdServer/AdDisplayTrackerServlet"}]}`,
 							},
 						},
@@ -1189,10 +1189,10 @@ func Test_getBurlAppLovinMax(t *testing.T) {
 		{
 			name: "valid_burl_and_tracker_url",
 			args: args{
-				burl:       `sampleBurl.com`,
+				burl:       `https://abc.xyz.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId=161527&siteId=991727&adId=4695996&imprId=B430AE6F-4768-41D0-BC55-8CF9D5DD4DA6&cksum=41C0F6460C2ACF7F&adType=10&adServerId=243&kefact=0.095500&kaxefact=0.095500&kadNetFrequecy=0&kadwidth=300&kadheight=250&kadsizeid=9&kltstamp=1721827593&indirectAdId=0`,
 				TrackerURL: `sampleTracker.com?id=123`,
 			},
-			want: `sampleTracker.com?id=123&owsspburl=sampleBurl.com`,
+			want: `sampleTracker.com?id=123&owsspburl=https%3A%2F%2Fabc.xyz.com%2FAdServer%2FAdDisplayTrackerServlet%3FoperId%3D1%26pubId%3D161527%26siteId%3D991727%26adId%3D4695996%26imprId%3DB430AE6F-4768-41D0-BC55-8CF9D5DD4DA6%26cksum%3D41C0F6460C2ACF7F%26adType%3D10%26adServerId%3D243%26kefact%3D0.095500%26kaxefact%3D0.095500%26kadNetFrequecy%3D0%26kadwidth%3D300%26kadheight%3D250%26kadsizeid%3D9%26kltstamp%3D1721827593%26indirectAdId%3D0`,
 		},
 	}
 	for _, tt := range tests {

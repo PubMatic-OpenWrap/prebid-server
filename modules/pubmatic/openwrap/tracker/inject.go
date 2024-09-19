@@ -3,6 +3,7 @@ package tracker
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -97,5 +98,6 @@ func getBURL(burl, trackerURL string) string {
 		return trackerURL
 	}
 
-	return trackerURL + "&" + models.OwSspBurl + "=" + burl
+	escapedBurl := url.QueryEscape(burl)
+	return trackerURL + "&" + models.OwSspBurl + "=" + escapedBurl
 }
