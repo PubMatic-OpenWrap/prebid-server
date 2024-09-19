@@ -61,9 +61,7 @@ func New(config Config) *feature {
 			appLovinMultiFloors: appLovinMultiFloors{
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
-			impCountingMethod: impCountingMethod{
-				enabledBidders: make(map[string]struct{}),
-			},
+			impCountingMethod: newImpCountingMethod(),
 		}
 	})
 	return fe

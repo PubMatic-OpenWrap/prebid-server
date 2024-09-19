@@ -75,8 +75,8 @@ func TestInjectBannerTracker(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
-					DspId:      -1,
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: false,
 				},
 				bid: openrtb2.Bid{
 					AdM: `sample_creative`,
@@ -95,8 +95,8 @@ func TestInjectBannerTracker(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
-					DspId:      models.DspId_DV360,
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: `sample_creative`,
@@ -137,7 +137,8 @@ func TestInjectBannerTracker(t *testing.T) {
 					},
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: `sample_creative`,
@@ -184,9 +185,9 @@ func TestInjectBannerTracker(t *testing.T) {
 
 func TestTrackerWithOM(t *testing.T) {
 	type args struct {
-		rctx       models.RequestCtx
-		tracker    models.OWTracker
-		bidderCode string
+		rctx              models.RequestCtx
+		prebidPartnerName string
+		dspID             int
 	}
 	tests := []struct {
 		name string
@@ -194,93 +195,80 @@ func TestTrackerWithOM(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "in-app_partner_otherthan_pubmatic",
+			name: "in-app_partner_other_than_pubmatic",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
-				},
+
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_APP,
 				},
-				bidderCode: "test",
+				prebidPartnerName: "test",
 			},
 			want: false,
 		},
 		{
 			name: "in-app_partner_pubmatic_other_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: -1,
-				},
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_APP,
 				},
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             -1,
 			},
 			want: false,
 		},
 		{
 			name: "display_partner_pubmatic_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
-				},
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_DISPLAY,
 				},
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
 			},
 			want: false,
 		},
 		{
 			name: "in-app_partner_pubmatic_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
-				},
+
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_APP,
 				},
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
 			},
 			want: true,
 		},
 		{
 			name: "in-app_partner_other_than_pubmatic_imp_counting_method_enabled",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: -1,
-				},
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_APP,
 					ImpCountingMethodEnabledBidders: map[string]struct{}{
 						"ix": {},
 					},
 				},
-				bidderCode: "ix",
+				prebidPartnerName: "ix",
 			},
 			want: true,
 		},
 		{
 			name: "in-app_partner_other_than_pubmatic_imp_counting_method_disabled",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: -1,
-				},
 				rctx: models.RequestCtx{
 					Platform: models.PLATFORM_APP,
 					ImpCountingMethodEnabledBidders: map[string]struct{}{
 						"ix": {},
 					},
 				},
-				bidderCode: "magnite",
+				prebidPartnerName: "magnite",
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trackerWithOM(tt.args.rctx, tt.args.tracker, tt.args.bidderCode); got != tt.want {
+			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID); got != tt.want {
 				assert.Equal(t, tt.want, got)
 			}
 		})

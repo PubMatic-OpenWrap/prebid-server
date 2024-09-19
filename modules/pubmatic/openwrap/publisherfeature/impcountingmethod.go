@@ -7,7 +7,18 @@ import (
 )
 
 type impCountingMethod struct {
-	enabledBidders map[string]struct{}
+	enabledBidders [2]map[string]struct{}
+	index          int32
+}
+
+func newImpCountingMethod() impCountingMethod {
+	return impCountingMethod{
+		enabledBidders: [2]map[string]struct{}{
+			make(map[string]struct{}),
+			make(map[string]struct{}),
+		},
+		index: 0,
+	}
 }
 
 func (fe *feature) updateImpCountingMethodEnabledBidders() {
@@ -16,8 +27,8 @@ func (fe *feature) updateImpCountingMethodEnabledBidders() {
 	}
 
 	enabledBidders := make(map[string]struct{})
-	for _, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureImpCountingMethod]; ok && val.Enabled == 1 {
+	for pubID, feature := range fe.publisherFeature {
+		if val, ok := feature[models.FeatureImpCountingMethod]; ok && pubID == 0 && val.Enabled == 1 {
 			bidders := strings.Split(val.Value, ",")
 			for _, bidder := range bidders {
 				bidder = strings.TrimSpace(bidder)
@@ -28,17 +39,10 @@ func (fe *feature) updateImpCountingMethodEnabledBidders() {
 		}
 	}
 
-	fe.Lock()
-	fe.impCountingMethod.enabledBidders = enabledBidders
-	fe.Unlock()
+	fe.impCountingMethod.enabledBidders[fe.impCountingMethod.index^1] = enabledBidders
+	fe.impCountingMethod.index ^= 1
 }
 
 func (fe *feature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
-	fe.RLock()
-	defer fe.RUnlock()
-	enabledBidders := make(map[string]struct{}, len(fe.impCountingMethod.enabledBidders))
-	for bidder := range fe.impCountingMethod.enabledBidders {
-		enabledBidders[bidder] = struct{}{}
-	}
-	return enabledBidders
+	return fe.impCountingMethod.enabledBidders[fe.impCountingMethod.index]
 }
