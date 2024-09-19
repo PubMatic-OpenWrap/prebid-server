@@ -486,4 +486,3 @@ func getStringValueFromRequest(request []byte, key []string) (string, bool, erro
 	}
 	return string(val), true, nil
 }
-

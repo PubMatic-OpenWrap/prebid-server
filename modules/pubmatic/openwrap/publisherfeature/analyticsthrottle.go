@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
@@ -116,7 +115,6 @@ func getKeyParts(key string) (int, int, int, int, error) {
 }
 
 type analyticsThrottle struct {
-	sync.RWMutex
 	vault, db pubThrottling
 }
 
