@@ -344,10 +344,10 @@ func TestInjectTrackers(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 					Trackers: map[string]models.OWTracker{
 						"12345": {
-							BidType:    "banner",
-							TrackerURL: `Tracking URL`,
-							ErrorURL:   `Error URL`,
-							DspId:      -1,
+							BidType:     "banner",
+							TrackerURL:  `Tracking URL`,
+							ErrorURL:    `Error URL`,
+							IsOMEnabled: false,
 						},
 					},
 				},
@@ -387,10 +387,10 @@ func TestInjectTrackers(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 					Trackers: map[string]models.OWTracker{
 						"12345": {
-							BidType:    "banner",
-							TrackerURL: `Tracking URL`,
-							ErrorURL:   `Error URL`,
-							DspId:      models.DspId_DV360,
+							BidType:     "banner",
+							TrackerURL:  `Tracking URL`,
+							ErrorURL:    `Error URL`,
+							IsOMEnabled: true,
 						},
 					},
 				},
@@ -921,10 +921,10 @@ func TestInjectTrackers(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 					Trackers: map[string]models.OWTracker{
 						"12345": {
-							BidType:    "banner",
-							TrackerURL: `Tracking URL`,
-							ErrorURL:   `Error URL`,
-							DspId:      models.DspId_DV360,
+							BidType:     "banner",
+							TrackerURL:  `Tracking URL`,
+							ErrorURL:    `Error URL`,
+							IsOMEnabled: true,
 						},
 					},
 					ImpCountingMethodEnabledBidders: map[string]struct{}{

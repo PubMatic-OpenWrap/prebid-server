@@ -17,7 +17,7 @@ func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid o
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
 	impCountingMethodEnabled := false
-	if trackerWithOM(rctx, tracker, seat) {
+	if tracker.IsOMEnabled {
 		trackerFormat = models.TrackerCallWrapOMActive
 		impCountingMethodEnabled = true
 	}
@@ -43,18 +43,18 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 }
 
 // TrackerWithOM checks for OM active condition for DV360 with Pubmatic and other bidders
-func trackerWithOM(rctx models.RequestCtx, tracker models.OWTracker, bidderCode string) bool {
+func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int) bool {
 	if rctx.Platform != models.PLATFORM_APP {
 		return false
 	}
 
 	// check for OM active for DV360 with Pubmatic
-	if bidderCode == string(openrtb_ext.BidderPubmatic) && tracker.DspId == models.DspId_DV360 {
+	if prebidPartnerName == string(openrtb_ext.BidderPubmatic) && dspID == models.DspId_DV360 {
 		return true
 	}
 
 	// check for OM active for other bidders
-	_, isPresent := rctx.ImpCountingMethodEnabledBidders[bidderCode]
+	_, isPresent := rctx.ImpCountingMethodEnabledBidders[prebidPartnerName]
 	return isPresent
 }
 
