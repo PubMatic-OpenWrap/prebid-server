@@ -9,21 +9,19 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string, bool) {
+func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
 	if rctx.Endpoint == models.EndpointAppLovinMax {
-		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL), false
+		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
 	}
 
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
-	impCountingMethodEnabled := false
 	if tracker.IsOMEnabled {
 		trackerFormat = models.TrackerCallWrapOMActive
-		impCountingMethodEnabled = true
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
 	adm := applyTBFFeature(rctx, bid, replacedTrackerStr)
-	return appendUPixelinBanner(adm, pixels), bid.BURL, impCountingMethodEnabled
+	return appendUPixelinBanner(adm, pixels), bid.BURL
 }
 
 // append universal pixels in creative based on conditions

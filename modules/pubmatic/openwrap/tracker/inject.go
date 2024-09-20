@@ -23,9 +23,8 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
 			var (
-				errMsg                   string
-				err                      error
-				impCountingMethodEnabled bool
+				errMsg string
+				err    error
 			)
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
@@ -36,7 +35,8 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 
 			switch adformat {
 			case models.Banner:
-				if bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, impCountingMethodEnabled = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels); impCountingMethodEnabled {
+				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
+				if tracker.IsOMEnabled {
 					bidResponse.SeatBid[i].Bid[j].Ext, err = jsonparser.Set(bid.Ext, []byte(`1`), models.ImpCountingMethod)
 				}
 			case models.Video:
