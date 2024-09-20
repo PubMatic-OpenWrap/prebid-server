@@ -134,10 +134,7 @@ func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if signalApp.Domain != "" {
 		maxRequest.App.Domain = signalApp.Domain
 	}
-
-	if signalApp.StoreURL != "" {
-		maxRequest.App.StoreURL = signalApp.StoreURL
-	}
+	maxRequest.App.StoreURL = signalApp.StoreURL
 }
 
 func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
