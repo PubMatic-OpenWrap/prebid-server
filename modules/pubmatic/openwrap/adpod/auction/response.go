@@ -2,7 +2,7 @@ package auction
 
 import "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 
-func GetWinningBidsIds(adpodBids []*AdPodBid, impCtxMap map[string]models.ImpCtx) (map[string][]string, error) {
+func GetWinningBidsIds(adpodBids []*models.AdPodBid, impCtxMap map[string]models.ImpCtx) (map[string][]string, error) {
 	var winningBidIds map[string][]string
 	if len(adpodBids) == 0 {
 		return winningBidIds, nil

@@ -51,7 +51,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 					if impCtx.AdpodConfig != nil {
 						podId = imp.ID
 					}
-					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, impCtx, rctx.AdpodProfileConfig)
+					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
 				case models.Structured:
 					if _, ok := rctx.AdpodCtx[imp.Video.PodID]; !ok {
 						rctx.AdpodCtx[imp.Video.PodID] = adpod.NewStructuredAdpod(imp.Video.PodID, impCtx, rctx.AdpodProfileConfig)

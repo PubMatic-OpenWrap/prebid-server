@@ -11,16 +11,16 @@ import (
 
 // IAdPodGenerator interface for generating AdPod from Ads
 type IAdPodGenerator interface {
-	GetAdPodBids() *AdPodBid
+	GetAdPodBids() *models.AdPodBid
 }
 
 type filteredBid struct {
-	bid    *Bid
+	bid    *models.Bid
 	status int64
 }
 
 type highestCombination struct {
-	bids              []*Bid
+	bids              []*models.Bid
 	bidIDs            []string
 	durations         []int
 	price             float64
@@ -52,7 +52,7 @@ func NewAdPodGenerator(buckets BidsBuckets, comb CombinationGenerator, adpod *mo
 }
 
 // GetAdPodBids will return Adpod based on configurations
-func (ag *AdPodGenerator) GetAdPodBids() *AdPodBid {
+func (ag *AdPodGenerator) GetAdPodBids() *models.AdPodBid {
 	// defer util.TimeTrack(time.Now(), fmt.Sprintf("Tid:%v ImpId:%v adpodgenerator", o.request.ID, o.request.Imp[o.impIndex].ID))
 
 	results := ag.getAdPodBids(10 * time.Millisecond)
@@ -167,7 +167,7 @@ func (ag *AdPodGenerator) getAdPodBids(timeout time.Duration) []*highestCombinat
 	return results
 }
 
-func (ag *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *AdPodBid {
+func (ag *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *models.AdPodBid {
 	if len(results) == 0 {
 		// util.Logf("Tid:%v ImpId:%v NoBid", o.request.ID, o.request.Imp[o.impIndex].ID)
 		return nil
@@ -197,7 +197,7 @@ func (ag *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *AdPodBi
 		return nil
 	}
 
-	adpodBid := &AdPodBid{
+	adpodBid := &models.AdPodBid{
 		Bids:    maxResult.bids[:],
 		Price:   maxResult.price,
 		ADomain: make([]string, 0),
@@ -221,7 +221,7 @@ func (ag *AdPodGenerator) getMaxAdPodBid(results []*highestCombination) *AdPodBi
 
 func (ag *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombination {
 	startTime := time.Now()
-	data := [][]*Bid{}
+	data := [][]*models.Bid{}
 	combinations := []int{}
 
 	// defer util.TimeTrack(startTime, fmt.Sprintf("Tid:%v ImpId:%v getUniqueBids:%v", o.request.ID, o.request.Imp[o.impIndex].ID, durationSequence))
@@ -243,7 +243,7 @@ func (ag *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombinat
 	return hbc
 }
 
-func findUniqueCombinations(data [][]*Bid, combination []int, maxCategoryScore, maxDomainScore int) *highestCombination {
+func findUniqueCombinations(data [][]*models.Bid, combination []int, maxCategoryScore, maxDomainScore int) *highestCombination {
 	// number of arrays
 	n := len(combination)
 	totalBids := 0
@@ -338,10 +338,10 @@ func findUniqueCombinations(data [][]*Bid, combination []int, maxCategoryScore, 
 	return hc
 }
 
-func evaluate(bids [][]*Bid, indices [][]int, totalBids int, maxCategoryScore, maxDomainScore int) (*highestCombination, int, int, int64) {
+func evaluate(bids [][]*models.Bid, indices [][]int, totalBids int, maxCategoryScore, maxDomainScore int) (*highestCombination, int, int, int64) {
 
 	hbc := &highestCombination{
-		bids:          make([]*Bid, totalBids),
+		bids:          make([]*models.Bid, totalBids),
 		bidIDs:        make([]string, totalBids),
 		price:         0,
 		categoryScore: make(map[string]int),

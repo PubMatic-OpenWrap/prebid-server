@@ -25,7 +25,7 @@ type ImpGenerator interface {
 //   - MinMaxAlgorithm (default)
 //   - ByDurationRanges: if reqAdPod extension has VideoAdDuration and VideoAdDurationMatchingPolicy is "exact" algorithm
 func SelectAlgorithm(reqAdPod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) int {
-	if reqAdPod != nil {
+	if reqAdPod != nil { // TODO: Check if this is required or not as adpodProfileCfg should apply irrespective of v25 or v26
 		if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurations) > 0 &&
 			(models.OWExactVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy || models.OWRoundupVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) {
 			return models.ByDurationRanges

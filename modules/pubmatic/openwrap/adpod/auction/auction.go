@@ -14,24 +14,6 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-type Bid struct {
-	*openrtb2.Bid
-	openrtb_ext.ExtBid
-	Duration          int
-	Status            int64
-	DealTierSatisfied bool
-	Seat              string
-}
-
-type AdPodBid struct {
-	Bids          []*Bid
-	Price         float64
-	Cat           []string
-	ADomain       []string
-	OriginalImpID string
-	SeatName      string
-}
-
 func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx) (map[string][]string, []error) {
 	var errs []error
 
@@ -77,8 +59,8 @@ func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value stri
 	return err
 }
 
-func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig) (map[string]*AdPodBid, []openrtb2.SeatBid) {
-	impAdpodBidsMap := make(map[string]*AdPodBid)
+func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig) (map[string]*models.AdPodBid, []openrtb2.SeatBid) {
+	impAdpodBidsMap := make(map[string]*models.AdPodBid)
 	videoSeatBids := make([]openrtb2.SeatBid, 0)
 
 	for i := range seatBids {
@@ -140,7 +122,7 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 			eachImpCtx.BidIDToDur[bid.ID] = duration
 			impCtx[impId] = eachImpCtx
 
-			eachImpBid := Bid{
+			eachImpBid := models.Bid{
 				Bid:               bid,
 				ExtBid:            ext,
 				Status:            status,
@@ -152,7 +134,7 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 			//Adding adpod bids
 			impBids, ok := impAdpodBidsMap[impId]
 			if !ok {
-				impBids = &AdPodBid{
+				impBids = &models.AdPodBid{
 					OriginalImpID: impId,
 					SeatName:      string(models.BidderOWPrebidCTV),
 				}

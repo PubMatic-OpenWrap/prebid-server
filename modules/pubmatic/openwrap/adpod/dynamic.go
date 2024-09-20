@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/util/ptrutil"
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils/ortb"
@@ -21,14 +21,56 @@ type DynamicAdpod struct {
 	Imp                  openrtb2.Imp
 	AdpodV25             *models.AdPod
 	GeneratedSlotConfigs []models.GeneratedSlotConfig
-	AdpodBid             *auction.AdPodBid
-	WinningBids          *auction.AdPodBid
+	AdpodBid             *models.AdPodBid
+	WinningBids          *models.AdPodBid
 	Error                error
 }
 
-func NewDynamicAdpod(podId string, impCtx models.ImpCtx, profileConfigs *models.AdpodProfileConfig) *DynamicAdpod {
-	dynamic := &DynamicAdpod{}
-	return dynamic
+// TODO: Set exclusion config using request configs.
+// TODO: Set ReqDurs config using request configs.
+// TODO: Different execlusion config handling
+func NewDynamicAdpod(podId string, impCtx models.ImpCtx, profileConfigs *models.AdpodProfileConfig, requestAdPodExt *models.ExtRequestAdPod) *DynamicAdpod {
+	var (
+		maxPodDuration int64
+		adpodCfgV25    *models.AdPod
+	)
+	exclusion := getExclusionConfigs(podId, requestAdPodExt)
+	video := impCtx.Video
+
+	if video.PodDur > 0 {
+		maxPodDuration = video.PodDur
+		adpodCfgV25 = &models.AdPod{
+			MinAds:                      1,
+			MaxAds:                      int(video.MaxSeq),
+			MinDuration:                 int(video.MinDuration),
+			MaxDuration:                 int(video.MaxDuration),
+			AdvertiserExclusionPercent:  ptrutil.ToPtr(0),
+			IABCategoryExclusionPercent: ptrutil.ToPtr(0),
+		}
+		if exclusion.AdvertiserDomainExclusion {
+			adpodCfgV25.AdvertiserExclusionPercent = ptrutil.ToPtr(100)
+		}
+		if exclusion.IABCategoryExclusion {
+			adpodCfgV25.IABCategoryExclusionPercent = ptrutil.ToPtr(100)
+		}
+	} else {
+		maxPodDuration = video.MaxDuration
+		adpodCfgV25 = impCtx.AdpodConfig
+	}
+
+	return &DynamicAdpod{
+		MinPodDuration: video.MinDuration,
+		MaxPodDuration: maxPodDuration,
+		AdpodCtx: models.AdpodCtx{
+			PodId:          podId,
+			Type:           models.Dynamic,
+			ProfileConfigs: profileConfigs,
+			Exclusion:      exclusion,
+		},
+		AdpodV25:    adpodCfgV25,
+		AdpodBid:    &models.AdPodBid{},
+		WinningBids: &models.AdPodBid{},
+	}
 }
 
 func (da *DynamicAdpod) GetPodType() models.PodType {
@@ -93,4 +135,30 @@ func (da *DynamicAdpod) getAdPodImpConfigs() error {
 
 	da.GeneratedSlotConfigs = config
 	return nil
+}
+
+func getExclusionConfigs(podId string, adpodExt *models.ExtRequestAdPod) models.Exclusion {
+	var exclusion models.Exclusion
+
+	if adpodExt != nil && adpodExt.Exclusion != nil {
+		var iabCategory, advertiserDomain bool
+		for i := range adpodExt.Exclusion.IABCategory {
+			if adpodExt.Exclusion.IABCategory[i] == podId {
+				iabCategory = true
+				break
+			}
+		}
+
+		for i := range adpodExt.Exclusion.AdvertiserDomain {
+			if adpodExt.Exclusion.AdvertiserDomain[i] == podId {
+				advertiserDomain = true
+				break
+			}
+		}
+
+		exclusion.IABCategoryExclusion = iabCategory
+		exclusion.AdvertiserDomainExclusion = advertiserDomain
+	}
+
+	return exclusion
 }

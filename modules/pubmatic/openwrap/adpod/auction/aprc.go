@@ -7,7 +7,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 )
 
-func collectAPRC(impAdpodBidsMap map[string]*AdPodBid, impCtxMap map[string]models.ImpCtx) {
+func collectAPRC(impAdpodBidsMap map[string]*models.AdPodBid, impCtxMap map[string]models.ImpCtx) {
 	for impId, adpodBid := range impAdpodBidsMap {
 		if len(adpodBid.Bids) == 0 {
 			continue

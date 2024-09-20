@@ -8,12 +8,12 @@ import (
 )
 
 // BidsBuckets bids bucket
-type BidsBuckets map[int][]*Bid
+type BidsBuckets map[int][]*models.Bid
 
 // doAdPodExclusions
-func doAdPodExclusions(impBidMap map[string]*AdPodBid, impCtx map[string]models.ImpCtx) ([]*AdPodBid, []error) {
+func doAdPodExclusions(impBidMap map[string]*models.AdPodBid, impCtx map[string]models.ImpCtx) ([]*models.AdPodBid, []error) {
 
-	result := []*AdPodBid{}
+	result := []*models.AdPodBid{}
 	var errs []error
 	for impId, bid := range impBidMap {
 		if bid != nil && len(bid.Bids) > 0 {
@@ -51,7 +51,7 @@ func doAdPodExclusions(impBidMap map[string]*AdPodBid, impCtx map[string]models.
 	return result, errs
 }
 
-func GetDurationWiseBidsBucket(bids []*Bid) BidsBuckets {
+func GetDurationWiseBidsBucket(bids []*models.Bid) BidsBuckets {
 	result := BidsBuckets{}
 
 	for i, bid := range bids {
@@ -69,7 +69,7 @@ func GetDurationWiseBidsBucket(bids []*Bid) BidsBuckets {
 	return result
 }
 
-func sortBids(bids []*Bid) {
+func sortBids(bids []*models.Bid) {
 	sort.Slice(bids, func(i, j int) bool {
 		if bids[i].DealTierSatisfied == bids[j].DealTierSatisfied {
 			return bids[i].Price > bids[j].Price

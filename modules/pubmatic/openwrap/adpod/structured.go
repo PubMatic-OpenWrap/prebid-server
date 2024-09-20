@@ -2,14 +2,13 @@ package adpod
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 type StructuredAdpod struct {
 	models.AdpodCtx
-	ImpBidMap          map[string][]*auction.Bid
-	WinningBid         map[string]auction.Bid
+	ImpBidMap          map[string][]*models.Bid
+	WinningBid         map[string]*models.Bid
 	SelectedCategories map[string]bool
 	SelectedDomains    map[string]bool
 }

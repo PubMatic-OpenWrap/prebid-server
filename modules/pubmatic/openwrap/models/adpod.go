@@ -1,6 +1,9 @@
 package models
 
-import "github.com/prebid/openrtb/v20/openrtb2"
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+)
 
 type Adpod interface{}
 
@@ -33,4 +36,22 @@ type PodConfig struct {
 	MinDuration int64
 	MaxDuration int64
 	RqdDurs     []int64
+}
+
+type Bid struct {
+	*openrtb2.Bid
+	openrtb_ext.ExtBid
+	Duration          int
+	Status            int64
+	DealTierSatisfied bool
+	Seat              string
+}
+
+type AdPodBid struct {
+	Bids          []*Bid
+	Price         float64
+	Cat           []string
+	ADomain       []string
+	OriginalImpID string
+	SeatName      string
 }
