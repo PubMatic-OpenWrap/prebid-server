@@ -21,7 +21,7 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 		wantImpCoutingMethodIndex          int32
 	}{
 		{
-			name: "publisherFeature map is nil",
+			name: "publisherFeature_map_is_nil",
 			fields: fields{
 				cache:             nil,
 				publisherFeature:  nil,
@@ -34,7 +34,20 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 			wantImpCoutingMethodIndex: 0,
 		},
 		{
-			name: "update imp counting method enabled bidders",
+			name: "publisherFeature_map_is_present_but_impCountingMethod_is_not_present_in_DB",
+			fields: fields{
+				cache:             nil,
+				publisherFeature:  map[int]map[int]models.FeatureData{},
+				impCountingMethod: newImpCountingMethod(),
+			},
+			wantImpCoutingMethodEnabledBidders: [2]map[string]struct{}{
+				{},
+				{},
+			},
+			wantImpCoutingMethodIndex: 1,
+		},
+		{
+			name: "update _imp_counting_method_enabled_bidders",
 			fields: fields{
 				cache: nil,
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -57,7 +70,45 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 			wantImpCoutingMethodIndex: 1,
 		},
 		{
-			name: "update imp counting method enabled bidders with space in value",
+			name: "update _imp_counting_method_enabled_bidders_with_bidders_in_flip_map",
+			fields: fields{
+				cache: nil,
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureImpCountingMethod: {
+							Enabled: 1,
+							Value:   `appnexus,rubicon`,
+						},
+					},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{
+							"magnite": {},
+							"ix":      {},
+						},
+						{
+							"pgam": {},
+							"ix":   {},
+						},
+					},
+					index: 0,
+				},
+			},
+			wantImpCoutingMethodEnabledBidders: [2]map[string]struct{}{
+				{
+					"magnite": {},
+					"ix":      {},
+				},
+				{
+					"appnexus": {},
+					"rubicon":  {},
+				},
+			},
+			wantImpCoutingMethodIndex: 1,
+		},
+		{
+			name: "update_imp_counting_method_enabled_bidders_with_space_in_value",
 			fields: fields{
 				cache: nil,
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -80,7 +131,7 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 			wantImpCoutingMethodIndex: 1,
 		},
 		{
-			name: "update imp counting method with feature disabled",
+			name: "update_imp_counting_method_with_feature_disabled",
 			fields: fields{
 				cache: nil,
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -100,7 +151,7 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 			wantImpCoutingMethodIndex: 1,
 		},
 		{
-			name: "update imp counting method with feature disabled",
+			name: "update_imp_counting_method_with_feature_disabled",
 			fields: fields{
 				cache: nil,
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -120,7 +171,7 @@ func TestFeatureUpdateImpCountingMethodEnabledBidders(t *testing.T) {
 			wantImpCoutingMethodIndex: 1,
 		},
 		{
-			name: "update imp counting method with feature enabled but empty value",
+			name: "update_imp_counting_method_with_feature_enabled_but_empty_value",
 			fields: fields{
 				cache: nil,
 				publisherFeature: map[int]map[int]models.FeatureData{
@@ -167,7 +218,7 @@ func TestFeatureGetImpCountingMethodEnabledBidders(t *testing.T) {
 		want   map[string]struct{}
 	}{
 		{
-			name: "get imp counting method enabled bidders when index is 0",
+			name: "get_imp_counting_method_enabled_bidders_when_index_is_0",
 			fields: fields{
 				impCountingMethod: impCountingMethod{
 					enabledBidders: [2]map[string]struct{}{
@@ -185,7 +236,7 @@ func TestFeatureGetImpCountingMethodEnabledBidders(t *testing.T) {
 			},
 		},
 		{
-			name: "get imp counting method enabled bidders when index is 1",
+			name: "get_imp_counting_method_enabled_bidders_when_index_is_1",
 			fields: fields{
 				impCountingMethod: impCountingMethod{
 					enabledBidders: [2]map[string]struct{}{

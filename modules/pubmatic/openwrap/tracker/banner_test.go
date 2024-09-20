@@ -19,9 +19,8 @@ func TestInjectBannerTracker(t *testing.T) {
 		pixels  []adunitconfig.UniversalPixel
 	}
 	type want struct {
-		adm                   string
-		burl                  string
-		impCountMethodEnabled bool
+		adm  string
+		burl string
 	}
 	tests := []struct {
 		name string
@@ -83,8 +82,7 @@ func TestInjectBannerTracker(t *testing.T) {
 				seat: models.BidderPubMatic,
 			},
 			want: want{
-				adm:                   `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
-				impCountMethodEnabled: false,
+				adm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 			},
 		},
 		{
@@ -103,8 +101,7 @@ func TestInjectBannerTracker(t *testing.T) {
 				seat: models.BidderPubMatic,
 			},
 			want: want{
-				adm:                   `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
-				impCountMethodEnabled: true,
+				adm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
 			},
 		},
 		{
@@ -145,8 +142,7 @@ func TestInjectBannerTracker(t *testing.T) {
 				seat: string(openrtb_ext.BidderIx),
 			},
 			want: want{
-				adm:                   `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
-				impCountMethodEnabled: true,
+				adm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
 			},
 		},
 		{
@@ -167,17 +163,15 @@ func TestInjectBannerTracker(t *testing.T) {
 				seat: string(openrtb_ext.BidderAppnexus),
 			},
 			want: want{
-				adm:                   `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
-				impCountMethodEnabled: false,
+				adm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAdm, gotBurl, gotImpCountMethodEnabled := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels)
+			gotAdm, gotBurl := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels)
 			assert.Equal(t, tt.want.adm, gotAdm)
 			assert.Equal(t, tt.want.burl, gotBurl)
-			assert.Equal(t, tt.want.impCountMethodEnabled, gotImpCountMethodEnabled)
 		})
 	}
 }
