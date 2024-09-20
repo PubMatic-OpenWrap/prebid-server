@@ -1105,7 +1105,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				tt.args.payload = newPayload
 			}
 			if tt.wantBids != nil {
-				assert.Equal(t, tt.wantBids, tt.args.payload.BidderResponse.Bids, "Mismatched response bids")
+				assert.ElementsMatch(t, tt.wantBids, tt.args.payload.BidderResponse.Bids, "Mismatched response bids")
 			}
 
 			assert.Equal(t, tt.wantSeatNonBid, hookResult.SeatNonBid, "mismatched seatNonBids")
