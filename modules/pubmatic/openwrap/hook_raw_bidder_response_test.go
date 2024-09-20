@@ -253,7 +253,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapPercent: 100,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -622,7 +622,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-			}
+			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantBids: []*adapters.TypedBid{
 				{
@@ -782,6 +782,309 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				}, "pubmatic")
 				return seatNonBid
 			}(),
+		},
+		{
+			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}}},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-123",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   vastXMLAdM,
+						CrID:  "Cr-234",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+			},
+		},
+		{
+			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video_and_banner",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "banner",
+							}},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-123",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   vastXMLAdM,
+						CrID:  "Cr-234",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   "This is banner creative",
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+			},
+		},
+		{
+			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_banner",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "banner",
+							}},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   "This is banner creative",
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+			},
+		},
+		{
+			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_type_banner",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "banner",
+							}},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+			},
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   "This is banner creative",
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+			},
+		},
+		{
+			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_invalid_vast_xml_and_banner_creative",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{
+							VASTUnwrapPercent: 50,
+						},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   invalidVastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "banner",
+							},
+						},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+			},
+			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Add("unwrap-status", "1")
+				w.WriteHeader(http.StatusNoContent)
+			}),
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
+			},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   "This is banner creative",
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-123",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   invalidVastXMLAdM,
+						CrID:  "Cr-234",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {

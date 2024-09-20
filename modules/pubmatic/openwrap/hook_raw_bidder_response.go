@@ -40,6 +40,8 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	for _, bid := range payload.BidderResponse.Bids {
 		if !isEligibleForUnwrap(bid) {
 			unwrappedBids = append(unwrappedBids, bid)
+			result.DebugMessages = append(result.DebugMessages,
+				fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled))
 			continue
 		}
 		unwrappedBidsCnt++
