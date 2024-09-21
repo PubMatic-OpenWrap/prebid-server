@@ -606,6 +606,7 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+	AppStoreUrl      = "appStoreUrl"
 )
 
 // constants for log level
