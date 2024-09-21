@@ -164,6 +164,14 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{DeviceType: 5, MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr()},
 		},
 		{
+			name: "sdkDevice has model",
+			args: args{
+				sdkDevice:  &openrtb2.Device{MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr(), Model: "phone"},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
+			},
+			want: &openrtb2.Device{DeviceType: 5, MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr(), Model: "phone"},
+		},
+		{
 			name: "sdkDeviceExt has atts",
 			args: args{
 				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"atts":3}`)},
@@ -215,10 +223,18 @@ func TestUpdateApp(t *testing.T) {
 			want: &openrtb2.App{},
 		},
 		{
-			name: "signalApp has Paid,Keywords and Domain",
+			name: "signalApp has Paid,Keywords,storelurl and Domain,",
+			args: args{
+				signalApp:  &openrtb2.App{Paid: openrtb2.Int8Ptr(1), Keywords: "k1=v1", Domain: "abc.com", StoreURL: "storeurl.com"},
+				maxRequest: &openrtb2.BidRequest{},
+			},
+			want: &openrtb2.App{Paid: openrtb2.Int8Ptr(1), Keywords: "k1=v1", Domain: "abc.com", StoreURL: "storeurl.com"},
+		},
+		{
+			name: "storeurl not presrnt in signal but present in max request",
 			args: args{
 				signalApp:  &openrtb2.App{Paid: openrtb2.Int8Ptr(1), Keywords: "k1=v1", Domain: "abc.com"},
-				maxRequest: &openrtb2.BidRequest{},
+				maxRequest: &openrtb2.BidRequest{App: &openrtb2.App{StoreURL: "storeurl.com"}},
 			},
 			want: &openrtb2.App{Paid: openrtb2.Int8Ptr(1), Keywords: "k1=v1", Domain: "abc.com"},
 		},
