@@ -51,7 +51,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video",
+			name: "VASTUnwrap_Disabled_Video_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
@@ -81,49 +81,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video,_stats_enabled_true",
-			args: args{
-				module: OpenWrap{
-					cfg: config.Config{
-						Features: config.FeatureToggle{},
-						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
-							MaxWrapperSupport: 5,
-							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
-							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
-						}},
-					metricEngine: mockMetricsEngine,
-				},
-				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							}}},
-					Bidder: "pubmatic",
-				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
-			},
-			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Add("unwrap-status", "0")
-				w.Header().Add("unwrap-count", "1")
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(vastXMLAdM))
-			}),
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			setup: func() {
-			},
-		},
-		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_invalid_vast_xml",
+			name: "VASTUnwrap_Enabled_Single_Video_Bid_Invalid_Vast_xml",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -183,7 +141,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_type_video",
+			name: "VASTUnwrap_Enabled_Single_Video_Bid",
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "0")
 				w.Header().Add("unwrap-count", "1")
@@ -248,7 +206,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_for_multiple_bids_with_type_video",
+			name: "VASTUnwrap_Enabled_Multiple_Video_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -336,7 +294,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_for_multiple_bids_with_different_type",
+			name: "VASTUnwrap_Enabled_Video_and_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -424,7 +382,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_for_multiple_bids_with_native_and_video_type",
+			name: "VASTUnwrap_Enabled_Video_and_Native_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -512,7 +470,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_type_video_and_source_owsdk",
+			name: "VASTUnwrap_Enabled_Single_Video_bid_and_source_owsdk",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -577,7 +535,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_for_multiple_bids_with_nonvideo_type",
+			name: "VASTUnwrap_Enabled_Native_and_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -784,7 +742,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			}(),
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video",
+			name: "VASTUnwrap_Disabled_Video_Bids_Valid_XML",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -832,7 +790,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_video_and_banner",
+			name: "VASTUnwrap_Disabled_Video_and_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -905,7 +863,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_false_in_request_context_with_type_banner",
+			name: "VASTUnwrap_Disabled_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -954,7 +912,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_type_banner",
+			name: "VASTUnwrap_Enabled_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
@@ -1003,7 +961,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			},
 		},
 		{
-			name: "Set_Vast_Unwrapper_to_true_in_request_context_with_invalid_vast_xml_and_banner_creative",
+			name: "VASTUnwrap_Enabled_Invalid_Video_and_Banner_Bids",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
