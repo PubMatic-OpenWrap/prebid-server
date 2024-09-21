@@ -1769,6 +1769,77 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "AppLovinMax_request_with_storeurl_and_sourceapp_updated_from_DB",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+						},
+					},
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp1": {
+							NewExt: json.RawMessage(`{"skadn":{"sourceapp":"343200656"}}`),
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "testID",
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+							Ext: json.RawMessage(`{"skadn": {}}`),
+						},
+					},
+					Device: &openrtb2.Device{
+						OS: "iOS",
+					},
+					App: &openrtb2.App{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID: "testID",
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+						Ext: json.RawMessage(`{"skadn":{"sourceapp":"343200656"}}`),
+					},
+				},
+				Device: &openrtb2.Device{
+					OS: "iOS",
+				},
+				User: &openrtb2.User{},
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					StoreURL: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+				},
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -4290,6 +4361,104 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				nilCurrencyConversion: false,
 			},
 		},
+		{
+			name: "AppLovinMax_request_with_no_stroreURL_in_app_and_invalid_stroreURL_in_DB",
+			args: args{
+				ctx: context.Background(),
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							PubIDStr:                  "5890",
+							PubID:                     5890,
+							ProfileID:                 1234,
+							DisplayID:                 1,
+							SSAuction:                 -1,
+							Platform:                  "in-app",
+							Debug:                     true,
+							UA:                        "go-test",
+							IP:                        "127.0.0.1",
+							IsCTVRequest:              false,
+							TrackerEndpoint:           "t.pubmatic.com",
+							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+							UidCookie: &http.Cookie{
+								Name:  "uids",
+								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+							},
+							KADUSERCookie: &http.Cookie{
+								Name:  "KADUSERCOOKIE",
+								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+							},
+							OriginCookie:             "go-test",
+							Aliases:                  make(map[string]string),
+							ImpBidCtx:                make(map[string]models.ImpCtx),
+							PrebidBidderCode:         make(map[string]string),
+							BidderResponseTimeMillis: make(map[string]int),
+							ProfileIDStr:             "1234",
+							Endpoint:                 models.EndpointAppLovinMax,
+							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+							Country:                  "IND",
+						},
+					},
+				},
+				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"app":{"publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
+			},
+			fields: fields{
+				cache:        mockCache,
+				metricEngine: mockEngine,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+					2: {
+						models.PARTNER_ID:          "2",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+						models.TIMEOUT:             "200",
+					},
+					-1: {
+						models.AppStoreUrl:  "invalid-url",
+						models.PLATFORM_KEY: models.PLATFORM_APP,
+					},
+				}, nil)
+				//prometheus metrics
+				mockEngine.EXPECT().RecordPublisherRequests(gomock.Any(), gomock.Any(), gomock.Any()).Return()
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordBadRequests(gomock.Any(), gomock.Any())
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
+				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
+				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+					"adunit@700x900": {
+						SlotName: "adunit@700x900",
+						SlotMappings: map[string]interface{}{
+							models.SITE_CACHE_KEY: "12313",
+							models.TAG_CACHE_KEY:  "45343",
+						},
+					},
+				})
+				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+					OrderedSlotList: []string{"adunit@700x900"},
+					HashValueMap: map[string]string{
+						"adunit@700x900": "1232433543534543",
+					},
+				})
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+			want: want{
+				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+					Reject:  true,
+					NbrCode: int(openrtb3.NoBidInvalidRequest),
+					Errors:  []string{"failed to upadte appstoreurl and sourceapp: 123-456-789"},
+				},
+				error:                 true,
+				nilCurrencyConversion: false,
+				doMutate:              false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -6225,5 +6394,276 @@ func TestSetImpBidFloorParams(t *testing.T) {
 			assert.Equal(t, tt.expBidfloor, bidfloor, tt.name)
 			assert.Equal(t, tt.expBidfloorCur, bidfloorCur, tt.name)
 		})
+	}
+}
+
+func TestUpdateProfileAppStoreUrl(t *testing.T) {
+	tests := []struct {
+		name            string
+		rctx            models.RequestCtx
+		bidRequest      *openrtb2.BidRequest
+		impExt          *models.ImpExtension
+		wantErr         string
+		wantAppLovinMAx models.AppLovinMax
+		wantSourceApp   string
+	}{
+		{
+			name: "AppStoreUrl missing in DB",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {},
+				},
+			},
+			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
+			wantErr:         "app store url is missing in DB",
+			wantAppLovinMAx: models.AppLovinMax{},
+		},
+		{
+			name: "Invalid AppStoreUrl",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "invalid-url",
+					},
+				},
+			},
+			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
+			wantErr:         "app store url is invalid",
+			wantAppLovinMAx: models.AppLovinMax{},
+		},
+		{
+			name: "Valid AppStoreUrl os is ios and SKAdnetwork is present in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			impExt: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{}`),
+			},
+			wantErr: "",
+			wantAppLovinMAx: models.AppLovinMax{
+				AppStoreUrl: "https://apps.apple.com/app/id123456789",
+			},
+			wantSourceApp: "123456789",
+		},
+		{
+			name: "Valid AppStoreUrl os is Android and SKAdnetwork is present in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "Android",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			wantErr: "",
+			wantAppLovinMAx: models.AppLovinMax{
+				AppStoreUrl: "https://apps.apple.com/app/id123456789",
+			},
+		},
+		{
+			name: "Valid AppStoreUrl os is ios but SKAdnetwork missing in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{}`),
+					},
+				},
+			},
+			impExt:  &models.ImpExtension{},
+			wantErr: "skadn is missing in imp.ext",
+			wantAppLovinMAx: models.AppLovinMax{
+				AppStoreUrl: "https://apps.apple.com/app/id123456789",
+			},
+		},
+		{
+			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			impExt: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{}`),
+			},
+			wantErr: "itunes id is missing in app store url",
+			wantAppLovinMAx: models.AppLovinMax{
+				AppStoreUrl: "https://apps.apple.com/app/",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotAppLovinMax, err := updateProfileAppStoreUrl(tt.rctx, tt.bidRequest, tt.impExt)
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tt.wantErr)
+			}
+			assert.Equal(t, tt.wantAppLovinMAx, gotAppLovinMax)
+			if tt.impExt != nil {
+				if tt.impExt.SKAdnetwork != nil {
+					var skAdnetwork map[string]interface{}
+					if err := json.Unmarshal(tt.impExt.SKAdnetwork, &skAdnetwork); err == nil {
+						if _, ok := skAdnetwork["sourceapp"]; ok {
+							assert.Equal(t, tt.wantSourceApp, skAdnetwork["sourceapp"])
+						}
+					}
+
+				}
+			}
+		})
+	}
+}
+
+func TestExtractItunesIdFromAppStoreUrl(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "app_store_url_with_id1",
+			args: args{
+				url: "https://itunes.apple.com/.../id1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id2",
+			args: args{
+				url: "https://itunes.apple.com/...?id=361285480",
+			},
+			want: "361285480",
+		},
+		{
+			name: "app_store_url_with_id3",
+			args: args{
+				url: "https://itunes.apple.com/.../1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id4",
+			args: args{
+				url: "https://itunes.apple.com/.../12345id1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id5",
+			args: args{
+				url: "https://itunes.apple.com/.../id-1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "itunes_url_with_no_id",
+			args: args{
+				url: "https://itunes.apple.com/.../id",
+			},
+			want: "",
+		},
+		{
+			name: "app_store_url_with_id_and_multiple_ids",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789/id987654321",
+			},
+			want: "987654321",
+		},
+		{
+			name: "app_store_url_with_id_and_text",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789text",
+			},
+			want: "",
+		},
+		{
+			name: "app_store_url_with_id_and_trailing_slash",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789/",
+			},
+			want: "123456789",
+		},
+		{
+			name: "app_store_url_with_id_and_leading_slash",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app//id123456789",
+			},
+			want: "123456789",
+		},
+		{
+			name: "app_store_url_with_id_and_multiple_slashes",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789///",
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractItunesIdFromAppStoreUrl(tt.args.url)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+// Benchmark for extractItunesIdFromAppStoreUrl
+func BenchmarkExtractItunesIdFromAppStoreUrl(b *testing.B) {
+	testURL := "https://apps.apple.com/us/app/example-app/id=123456789"
+	for i := 0; i < b.N; i++ {
+		extractItunesIdFromAppStoreUrl(testURL)
 	}
 }
