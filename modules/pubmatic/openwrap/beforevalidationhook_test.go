@@ -6305,7 +6305,7 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 		rctx            models.RequestCtx
 		bidRequest      *openrtb2.BidRequest
 		impExt          *models.ImpExtension
-		wantAppLovinMAx models.AppLovinMax
+		wantAppStoreURL string
 		wantSourceApp   string
 	}{
 		{
@@ -6316,7 +6316,7 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 				},
 			},
 			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppLovinMAx: models.AppLovinMax{},
+			wantAppStoreURL: "",
 		},
 		{
 			name: "Invalid AppStoreUrl",
@@ -6328,7 +6328,7 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 				},
 			},
 			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppLovinMAx: models.AppLovinMax{},
+			wantAppStoreURL: "invalid-url",
 		},
 		{
 			name: "Valid AppStoreUrl os is ios and SKAdnetwork is present in imp.ext",
@@ -6353,10 +6353,8 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
-			wantAppLovinMAx: models.AppLovinMax{
-				AppStoreUrl: "https://apps.apple.com/app/id123456789",
-			},
-			wantSourceApp: "123456789",
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+			wantSourceApp:   "123456789",
 		},
 		{
 			name: "Valid AppStoreUrl os is Android and SKAdnetwork is present in imp.ext",
@@ -6378,9 +6376,7 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
-			wantAppLovinMAx: models.AppLovinMax{
-				AppStoreUrl: "https://apps.apple.com/app/id123456789",
-			},
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 		},
 		{
 			name: "Valid AppStoreUrl os is ios but SKAdnetwork missing in imp.ext",
@@ -6402,10 +6398,8 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
-			impExt: &models.ImpExtension{},
-			wantAppLovinMAx: models.AppLovinMax{
-				AppStoreUrl: "https://apps.apple.com/app/id123456789",
-			},
+			impExt:          &models.ImpExtension{},
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 		},
 		{
 			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl",
@@ -6430,16 +6424,14 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
-			wantAppLovinMAx: models.AppLovinMax{
-				AppStoreUrl: "https://apps.apple.com/app/",
-			},
+			wantAppStoreURL: "https://apps.apple.com/app/",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAppLovinMax := updateProfileAppStoreUrl(tt.rctx, tt.bidRequest, tt.impExt)
-			assert.Equal(t, tt.wantAppLovinMAx, gotAppLovinMax)
+			gotAppStoreURL := getProfileAppStoreUrlAndUpdateItunesID(tt.rctx, tt.bidRequest, tt.impExt)
+			assert.Equal(t, tt.wantAppStoreURL, gotAppStoreURL)
 			if tt.impExt != nil {
 				if tt.impExt.SKAdnetwork != nil {
 					var skAdnetwork map[string]interface{}
