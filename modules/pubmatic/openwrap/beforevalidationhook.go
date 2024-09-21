@@ -534,6 +534,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 			rCtx.AppLovinMax.AppStoreUrl = getProfileAppStoreUrlAndUpdateItunesID(rCtx, payload.BidRequest, impExt)
+			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
 		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil
