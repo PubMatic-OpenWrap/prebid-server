@@ -29,7 +29,7 @@ type DynamicAdpod struct {
 // TODO: Set exclusion config using request configs.
 // TODO: Set ReqDurs config using request configs.
 // TODO: Different execlusion config handling
-func NewDynamicAdpod(podId string, impCtx models.ImpCtx, profileConfigs *models.AdpodProfileConfig, requestAdPodExt *models.ExtRequestAdPod) *DynamicAdpod {
+func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profileConfigs *models.AdpodProfileConfig, requestAdPodExt *models.ExtRequestAdPod) *DynamicAdpod {
 	var (
 		maxPodDuration int64
 		adpodCfgV25    *models.AdPod
@@ -70,6 +70,7 @@ func NewDynamicAdpod(podId string, impCtx models.ImpCtx, profileConfigs *models.
 		AdpodV25:    adpodCfgV25,
 		AdpodBid:    &models.AdPodBid{},
 		WinningBids: &models.AdPodBid{},
+		Imp:         imp,
 	}
 }
 
