@@ -507,7 +507,6 @@ func (da *dynamicAdpod) recordRejectedAdPodBids(pubID string) {
 			}
 		}
 	}
-
 }
 
 // setBidExtParams function sets the prebid.video.duration and adpod.aprc parameters

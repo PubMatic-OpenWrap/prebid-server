@@ -25,3 +25,26 @@ func (sa *StructuredAdpod) GetPodType() models.PodType {
 func (sa *StructuredAdpod) AddImpressions(imp openrtb2.Imp) {
 	sa.Imps = append(sa.Imps, imp)
 }
+
+func (sa *StructuredAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
+
+}
+
+func (sa *StructuredAdpod) HoldAuction() {
+}
+
+func (sa *StructuredAdpod) CollectAPRC(impCtxMap map[string]models.ImpCtx) {
+	// if len(sa.AdpodBid.Bids) == 0 {
+	// 	return
+	// }
+	// impCtx := impCtxMap[da.AdpodBid.OriginalImpID]
+	// bidIdToAprc := make(map[string]int64)
+	// for _, bid := range da.AdpodBid.Bids {
+	// 	bidIdToAprc[bid.ID] = bid.Status
+	// }
+	// impCtx.BidIDToAPRC = bidIdToAprc
+	// impCtxMap[da.AdpodBid.OriginalImpID] = impCtx
+}
+
+func (sa *StructuredAdpod) GetWinningBidsIds(impCtxMap map[string]models.ImpCtx, ImpToWinningBids map[string]map[string]bool) {
+}

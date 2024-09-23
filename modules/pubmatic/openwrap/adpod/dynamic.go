@@ -1,11 +1,15 @@
 package adpod
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"sort"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils/ortb"
@@ -162,4 +166,200 @@ func getExclusionConfigs(podId string, adpodExt *models.ExtRequestAdPod) models.
 	}
 
 	return exclusion
+}
+
+func (da *DynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
+	originalImpId, sequence := util.DecodeImpressionID(bid.ImpID)
+
+	if da.AdpodBid == nil {
+		da.AdpodBid = &models.AdPodBid{
+			Bids:          make([]*models.Bid, 0),
+			OriginalImpID: originalImpId,
+			SeatName:      string(openrtb_ext.BidderOWPrebidCTV),
+		}
+	}
+
+	ext := openrtb_ext.ExtBid{}
+	if bid.Ext != nil {
+		json.Unmarshal(bid.Ext, &ext)
+	}
+
+	duration, status := getBidDuration(bid, da.AdpodV25, da.AdpodCtx.ProfileConfigs, da.GeneratedSlotConfigs, sequence)
+
+	da.AdpodBid.Bids = append(da.AdpodBid.Bids, &models.Bid{
+		Bid:               bid,
+		ExtBid:            ext,
+		Status:            status,
+		Duration:          int(duration),
+		DealTierSatisfied: util.GetDealTierSatisfied(&ext),
+		Seat:              string(models.BidderOWPrebidCTV),
+	})
+}
+
+/*
+getBidDuration determines the duration of video ad from given bid.
+it will try to get the actual ad duration returned by the bidder using prebid.video.duration
+if prebid.video.duration not present then uses defaultDuration passed as an argument
+if video lengths matching policy is present for request then it will validate and update duration based on policy
+*/
+func getBidDuration(bid *openrtb2.Bid, adpodConfig *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []models.GeneratedSlotConfig, sequence int) (int64, int64) {
+
+	// C1: Read it from bid.ext.prebid.video.duration field
+	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
+	if err != nil || duration <= 0 {
+		var defaultDuration int64
+		for i := range config {
+			if sequence == int(config[i].SequenceNumber) {
+				defaultDuration = config[i].MaxDuration
+			}
+		}
+		// incase if duration is not present use impression duration directly as it is
+		return defaultDuration, models.StatusOK
+	}
+
+	// C2: Based on video lengths matching policy validate and return duration
+	if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, adpodProfileCfg.AdserverCreativeDurationMatchingPolicy, config)
+	}
+
+	//default return duration which is present in bid.ext.prebid.vide.duration field
+	return duration, models.StatusOK
+}
+
+// getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
+func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []models.GeneratedSlotConfig) (int64, int64) {
+	switch policy {
+	case openrtb_ext.OWExactVideoAdDurationMatching:
+		tmp := GetNearestDuration(duration, config)
+		if tmp != duration {
+			return duration, models.StatusDurationMismatch
+		}
+		//its and valid duration return it with StatusOK
+
+	case openrtb_ext.OWRoundupVideoAdDurationMatching:
+		tmp := GetNearestDuration(duration, config)
+		if tmp == -1 {
+			return duration, models.StatusDurationMismatch
+		}
+		//update duration with nearest one duration
+		duration = tmp
+		//its and valid duration return it with StatusOK
+	}
+
+	return duration, models.StatusOK
+}
+
+// GetDealTierSatisfied ...
+func GetDealTierSatisfied(ext *openrtb_ext.ExtBid) bool {
+	return ext != nil && ext.Prebid != nil && ext.Prebid.DealTierSatisfied
+}
+
+// GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
+// it will return -1 if it doesn't found any match
+func GetNearestDuration(duration int64, config []models.GeneratedSlotConfig) int64 {
+	tmp := int64(-1)
+	diff := int64(math.MaxInt64)
+	for _, c := range config {
+		tdiff := (c.MaxDuration - duration)
+		if tdiff == 0 {
+			tmp = c.MaxDuration
+			break
+		}
+		if tdiff > 0 && tdiff <= diff {
+			tmp = c.MaxDuration
+			diff = tdiff
+		}
+	}
+	return tmp
+}
+
+func (da *DynamicAdpod) HoldAuction() {
+	if da.AdpodBid == nil || len(da.AdpodBid.Bids) == 0 {
+		return
+	}
+
+	// Check if we need sorting
+	// sort.Slice(da.AdpodBid.Bids, func(i, j int) bool { return da.AdpodBid.Bids[i].Price > da.AdpodBid.Bids[j].Price })
+
+	buckets := GetDurationWiseBidsBucket(da.AdpodBid.Bids)
+	if len(buckets) == 0 {
+		da.Error = errors.New("prebid_ctv all bids filtered while matching lineitem duration")
+		return
+	}
+
+	comb := NewCombination(
+		buckets,
+		uint64(da.MinPodDuration),
+		uint64(da.MaxPodDuration),
+		da.AdpodV25)
+
+	//adpod generator
+	adpodGenerator := NewAdPodGenerator(buckets, comb, da.AdpodV25)
+
+	adpodBid := adpodGenerator.GetAdPodBids()
+	if adpodBid == nil {
+		da.Error = errors.New("prebid_ctv unable to generate adpod from bids combinations")
+		return
+	}
+	adpodBid.OriginalImpID = da.AdpodBid.OriginalImpID
+	adpodBid.SeatName = da.AdpodBid.SeatName
+
+	da.WinningBids = adpodBid
+}
+
+func (da *DynamicAdpod) CollectAPRC(impCtxMap map[string]models.ImpCtx) {
+	if len(da.AdpodBid.Bids) == 0 {
+		return
+	}
+	impCtx := impCtxMap[da.AdpodBid.OriginalImpID]
+	bidIdToAprc := make(map[string]int64)
+	for _, bid := range da.AdpodBid.Bids {
+		bidIdToAprc[bid.ID] = bid.Status
+	}
+	impCtx.BidIDToAPRC = bidIdToAprc
+	impCtxMap[da.AdpodBid.OriginalImpID] = impCtx
+}
+
+func (da *DynamicAdpod) GetWinningBidsIds(impCtxMap map[string]models.ImpCtx, ImpToWinningBids map[string]map[string]bool) {
+	if len(da.WinningBids.Bids) == 0 {
+		return
+	}
+	impCtx := impCtxMap[da.AdpodBid.OriginalImpID]
+
+	winningBids := make(map[string]bool)
+	for _, bid := range da.WinningBids.Bids {
+		winningBids[bid.ID] = true
+		impCtx.BidIDToAPRC[bid.ID] = models.StatusWinningBid
+	}
+	ImpToWinningBids[da.AdpodBid.OriginalImpID] = winningBids
+	return
+}
+
+type BidsBuckets map[int][]*models.Bid
+
+func GetDurationWiseBidsBucket(bids []*models.Bid) BidsBuckets {
+	result := BidsBuckets{}
+
+	for i, bid := range bids {
+		if bid.Status == models.StatusOK {
+			result[bid.Duration] = append(result[bid.Duration], bids[i])
+		}
+	}
+
+	for k, v := range result {
+		//sort.Slice(v[:], func(i, j int) bool { return v[i].Price > v[j].Price })
+		sortBids(v)
+		result[k] = v
+	}
+
+	return result
+}
+
+func sortBids(bids []*models.Bid) {
+	sort.Slice(bids, func(i, j int) bool {
+		if bids[i].DealTierSatisfied == bids[j].DealTierSatisfied {
+			return bids[i].Price > bids[j].Price
+		}
+		return bids[i].DealTierSatisfied
+	})
 }

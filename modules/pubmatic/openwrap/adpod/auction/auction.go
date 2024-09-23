@@ -1,240 +1,240 @@
 package auction
 
-import (
-	"encoding/json"
-	"errors"
-	"math"
-	"sort"
-	"strconv"
+// import (
+// 	"github.com/prebid/openrtb/v19/openrtb2"
+// 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+// )
 
-	"github.com/buger/jsonparser"
-	"github.com/gofrs/uuid"
-	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-)
+// func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx) (map[string][]string, []error) {
+// 	var errs []error
 
-func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx models.RequestCtx) (map[string][]string, []error) {
-	var errs []error
+// 	if len(response.SeatBid) == 0 {
+// 		return nil, errs
+// 	}
 
-	if len(response.SeatBid) == 0 {
-		return nil, errs
-	}
+// 	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, rctx)
+// 	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, rctx.ImpBidCtx)
+// 	if len(errs) > 0 {
+// 		return nil, errs
+// 	}
 
-	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, rctx.ImpBidCtx, rctx.AdpodProfileConfig)
-	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, rctx.ImpBidCtx)
-	if len(errs) > 0 {
-		return nil, errs
-	}
+// 	// Record APRC for bids
+// 	collectAPRC(impAdpodBidsMap, rctx.ImpBidCtx)
 
-	// Record APRC for bids
-	collectAPRC(impAdpodBidsMap, rctx.ImpBidCtx)
+// 	winningBidIds, err := GetWinningBidsIds(adpodBids, rctx.ImpBidCtx)
+// 	if err != nil {
+// 		return nil, []error{err}
+// 	}
 
-	winningBidIds, err := GetWinningBidsIds(adpodBids, rctx.ImpBidCtx)
-	if err != nil {
-		return nil, []error{err}
-	}
+// 	return winningBidIds, nil
+// }
 
-	return winningBidIds, nil
-}
+// // GetTargeting returns the value of targeting key associated with bidder
+// // it is expected that bid.Ext contains prebid.targeting map
+// // if value not present or any error occured empty value will be returned
+// // along with error.
+// func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
+// 	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
+// 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
+// }
 
-// GetTargeting returns the value of targeting key associated with bidder
-// it is expected that bid.Ext contains prebid.targeting map
-// if value not present or any error occured empty value will be returned
-// along with error.
-func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
-	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
-	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
-}
+// func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value string) error {
+// 	if bid == nil {
+// 		return errors.New("Invalid bid")
+// 	}
 
-func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value string) error {
-	if bid == nil {
-		return errors.New("Invalid bid")
-	}
+// 	raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Quote(value)), "prebid", "targeting", string(key))
+// 	if err == nil {
+// 		bid.Ext = raw
+// 	}
+// 	return err
+// }
 
-	raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Quote(value)), "prebid", "targeting", string(key))
-	if err == nil {
-		bid.Ext = raw
-	}
-	return err
-}
+// func generateAdpodBids(rCtx models.RequestCtx, seatBids []openrtb2.SeatBid) (map[string]*models.AdPodBid, []openrtb2.SeatBid) {
+// 	impAdpodBidsMap := make(map[string]*models.AdPodBid)
+// 	videoSeatBids := make([]openrtb2.SeatBid, 0)
 
-func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig) (map[string]*models.AdPodBid, []openrtb2.SeatBid) {
-	impAdpodBidsMap := make(map[string]*models.AdPodBid)
-	videoSeatBids := make([]openrtb2.SeatBid, 0)
+// 	for i := range seatBids {
+// 		seat := seatBids[i]
+// 		videoBids := make([]openrtb2.Bid, 0)
+// 		for j := range seat.Bid {
+// 			bid := &seat.Bid[j]
+// 			if len(bid.ID) == 0 {
+// 				bidID, err := uuid.NewV4()
+// 				if err != nil {
+// 					continue
+// 				}
+// 				bid.ID = bidID.String()
+// 			}
 
-	for i := range seatBids {
-		seat := seatBids[i]
-		videoBids := make([]openrtb2.Bid, 0)
-		for j := range seat.Bid {
-			bid := &seat.Bid[j]
-			if len(bid.ID) == 0 {
-				bidID, err := uuid.NewV4()
-				if err != nil {
-					continue
-				}
-				bid.ID = bidID.String()
-			}
+// 			if bid.Price == 0 {
+// 				//filter invalid bids
+// 				continue
+// 			}
 
-			if bid.Price == 0 {
-				//filter invalid bids
-				continue
-			}
+// 			impId, _ := models.GetImpressionID(bid.ImpID)
+// 			eachImpCtx, ok := rCtx.ImpBidCtx[impId]
+// 			if !ok {
+// 				// Bid is rejected due to invalid imp id
+// 				continue
+// 			}
 
-			impId, sequence := models.GetImpressionID(bid.ImpID)
-			eachImpCtx, ok := impCtx[impId]
-			if !ok {
-				// Bid is rejected due to invalid imp id
-				continue
-			}
+// 			value, err := GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+// 			if err == nil {
+// 				// ignore error
+// 				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+// 			}
 
-			value, err := GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
-			if err == nil {
-				// ignore error
-				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
-			}
+// 			value, err = GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+// 			if err == nil {
+// 				// ignore error
+// 				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
+// 			}
+// 			if eachImpCtx.AdpodConfig == nil {
+// 				videoBids = append(videoBids, *bid)
+// 				continue
+// 			}
 
-			value, err = GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
-			if err == nil {
-				// ignore error
-				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
-			}
-			if eachImpCtx.AdpodConfig == nil {
-				videoBids = append(videoBids, *bid)
-				continue
-			}
+// 			ext := openrtb_ext.ExtBid{}
+// 			if bid.Ext != nil {
+// 				json.Unmarshal(bid.Ext, &ext)
+// 			}
 
-			ext := openrtb_ext.ExtBid{}
-			if bid.Ext != nil {
-				json.Unmarshal(bid.Ext, &ext)
-			}
+// 			// if deps.cfg.GenerateBidID == false {
+// 			// 	//making unique bid.id's per impression
+// 			// 	bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
+// 			// }
 
-			// if deps.cfg.GenerateBidID == false {
-			// 	//making unique bid.id's per impression
-			// 	bid.ID = util.GetUniqueBidID(bid.ID, len(impBids.Bids)+1)
-			// }
+// 			//get duration of creative
+// 			// eachImpCtx.BidIDToDur[bid.ID] = duration
+// 			// impCtx[impId] = eachImpCtx
 
-			//get duration of creative
-			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, adpodProfileCfg, eachImpCtx.ImpAdPodCfg, sequence)
-			if eachImpCtx.BidIDToDur == nil {
-				eachImpCtx.BidIDToDur = map[string]int64{}
-			}
-			eachImpCtx.BidIDToDur[bid.ID] = duration
-			impCtx[impId] = eachImpCtx
+// 			// eachImpBid := models.Bid{
+// 			// 	Bid:               bid,
+// 			// 	ExtBid:            ext,
+// 			// 	Status:            status,
+// 			// 	Duration:          int(duration),
+// 			// 	DealTierSatisfied: GetDealTierSatisfied(&ext),
+// 			// 	Seat:              seat.Seat,
+// 			// }
 
-			eachImpBid := models.Bid{
-				Bid:               bid,
-				ExtBid:            ext,
-				Status:            status,
-				Duration:          int(duration),
-				DealTierSatisfied: GetDealTierSatisfied(&ext),
-				Seat:              seat.Seat,
-			}
+// 			podId, ok := rCtx.ImpToPodId[impId]
+// 			if !ok {
+// 				videoBids = append(videoBids, *bid)
+// 				continue
+// 			}
 
-			//Adding adpod bids
-			impBids, ok := impAdpodBidsMap[impId]
-			if !ok {
-				impBids = &models.AdPodBid{
-					OriginalImpID: impId,
-					SeatName:      string(models.BidderOWPrebidCTV),
-				}
-				impAdpodBidsMap[impId] = impBids
-			}
+// 			adpodCtx, ok := rCtx.AdpodCtx[podId]
+// 			if !ok {
+// 				continue
+// 			}
 
-			impBids.Bids = append(impBids.Bids, &eachImpBid)
+// 			adpodCtx.CollectBid(bid, seat.Seat)
 
-		}
-		if len(videoBids) > 0 {
-			videoSeatBids = append(videoSeatBids, openrtb2.SeatBid{
-				Bid:   videoBids,
-				Seat:  seat.Seat,
-				Group: seat.Group,
-				Ext:   seat.Ext,
-			})
-		}
-	}
+// 			// //Adding adpod bids
+// 			// impBids, ok := impAdpodBidsMap[impId]
+// 			// if !ok {
+// 			// 	impBids = &models.AdPodBid{
+// 			// 		OriginalImpID: impId,
+// 			// 		SeatName:      string(models.BidderOWPrebidCTV),
+// 			// 	}
+// 			// 	impAdpodBidsMap[impId] = impBids
+// 			// }
 
-	//Sort the adpod bids
-	for _, v := range impAdpodBidsMap {
-		sort.Slice(v.Bids, func(i, j int) bool { return v.Bids[i].Price > v.Bids[j].Price })
-	}
+// 			// impBids.Bids = append(impBids.Bids, &eachImpBid)
 
-	return impAdpodBidsMap, videoSeatBids
-}
+// 		}
+// 		if len(videoBids) > 0 {
+// 			videoSeatBids = append(videoSeatBids, openrtb2.SeatBid{
+// 				Bid:   videoBids,
+// 				Seat:  seat.Seat,
+// 				Group: seat.Group,
+// 				Ext:   seat.Ext,
+// 			})
+// 		}
+// 	}
 
-/*
-getBidDuration determines the duration of video ad from given bid.
-it will try to get the actual ad duration returned by the bidder using prebid.video.duration
-if prebid.video.duration not present then uses defaultDuration passed as an argument
-if video lengths matching policy is present for request then it will validate and update duration based on policy
-*/
-func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []*models.GeneratedSlotConfig, sequence int) (int64, int64) {
+// 	//Sort the adpod bids
+// 	for _, v := range impAdpodBidsMap {
+// 		sort.Slice(v.Bids, func(i, j int) bool { return v.Bids[i].Price > v.Bids[j].Price })
+// 	}
 
-	// C1: Read it from bid.ext.prebid.video.duration field
-	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
-	if err != nil || duration <= 0 {
-		var defaultDuration int64
-		for i := range config {
-			if sequence == int(config[i].SequenceNumber) {
-				defaultDuration = config[i].MaxDuration
-			}
-		}
-		// incase if duration is not present use impression duration directly as it is
-		return defaultDuration, models.StatusOK
-	}
+// 	return impAdpodBidsMap, videoSeatBids
+// }
 
-	// C2: Based on video lengths matching policy validate and return duration
-	if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) > 0 {
-		return getDurationBasedOnDurationMatchingPolicy(duration, adpodProfileCfg.AdserverCreativeDurationMatchingPolicy, config)
-	}
+// /*
+// getBidDuration determines the duration of video ad from given bid.
+// it will try to get the actual ad duration returned by the bidder using prebid.video.duration
+// if prebid.video.duration not present then uses defaultDuration passed as an argument
+// if video lengths matching policy is present for request then it will validate and update duration based on policy
+// */
+// func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []*models.GeneratedSlotConfig, sequence int) (int64, int64) {
 
-	//default return duration which is present in bid.ext.prebid.vide.duration field
-	return duration, models.StatusOK
-}
+// 	// C1: Read it from bid.ext.prebid.video.duration field
+// 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
+// 	if err != nil || duration <= 0 {
+// 		var defaultDuration int64
+// 		for i := range config {
+// 			if sequence == int(config[i].SequenceNumber) {
+// 				defaultDuration = config[i].MaxDuration
+// 			}
+// 		}
+// 		// incase if duration is not present use impression duration directly as it is
+// 		return defaultDuration, models.StatusOK
+// 	}
 
-// getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
-func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*models.GeneratedSlotConfig) (int64, int64) {
-	switch policy {
-	case openrtb_ext.OWExactVideoAdDurationMatching:
-		tmp := GetNearestDuration(duration, config)
-		if tmp != duration {
-			return duration, models.StatusDurationMismatch
-		}
-		//its and valid duration return it with StatusOK
+// 	// C2: Based on video lengths matching policy validate and return duration
+// 	if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) > 0 {
+// 		return getDurationBasedOnDurationMatchingPolicy(duration, adpodProfileCfg.AdserverCreativeDurationMatchingPolicy, config)
+// 	}
 
-	case openrtb_ext.OWRoundupVideoAdDurationMatching:
-		tmp := GetNearestDuration(duration, config)
-		if tmp == -1 {
-			return duration, models.StatusDurationMismatch
-		}
-		//update duration with nearest one duration
-		duration = tmp
-		//its and valid duration return it with StatusOK
-	}
+// 	//default return duration which is present in bid.ext.prebid.vide.duration field
+// 	return duration, models.StatusOK
+// }
 
-	return duration, models.StatusOK
-}
+// // getDurationBasedOnDurationMatchingPolicy will return duration based on durationmatching policy
+// func getDurationBasedOnDurationMatchingPolicy(duration int64, policy openrtb_ext.OWVideoAdDurationMatchingPolicy, config []*models.GeneratedSlotConfig) (int64, int64) {
+// 	switch policy {
+// 	case openrtb_ext.OWExactVideoAdDurationMatching:
+// 		tmp := GetNearestDuration(duration, config)
+// 		if tmp != duration {
+// 			return duration, models.StatusDurationMismatch
+// 		}
+// 		//its and valid duration return it with StatusOK
 
-// GetDealTierSatisfied ...
-func GetDealTierSatisfied(ext *openrtb_ext.ExtBid) bool {
-	return ext != nil && ext.Prebid != nil && ext.Prebid.DealTierSatisfied
-}
+// 	case openrtb_ext.OWRoundupVideoAdDurationMatching:
+// 		tmp := GetNearestDuration(duration, config)
+// 		if tmp == -1 {
+// 			return duration, models.StatusDurationMismatch
+// 		}
+// 		//update duration with nearest one duration
+// 		duration = tmp
+// 		//its and valid duration return it with StatusOK
+// 	}
 
-// GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
-// it will return -1 if it doesn't found any match
-func GetNearestDuration(duration int64, config []*models.GeneratedSlotConfig) int64 {
-	tmp := int64(-1)
-	diff := int64(math.MaxInt64)
-	for _, c := range config {
-		tdiff := (c.MaxDuration - duration)
-		if tdiff == 0 {
-			tmp = c.MaxDuration
-			break
-		}
-		if tdiff > 0 && tdiff <= diff {
-			tmp = c.MaxDuration
-			diff = tdiff
-		}
-	}
-	return tmp
-}
+// 	return duration, models.StatusOK
+// }
+
+// // GetDealTierSatisfied ...
+// func GetDealTierSatisfied(ext *openrtb_ext.ExtBid) bool {
+// 	return ext != nil && ext.Prebid != nil && ext.Prebid.DealTierSatisfied
+// }
+
+// // GetNearestDuration will return nearest duration value present in ImpAdPodConfig objects
+// // it will return -1 if it doesn't found any match
+// func GetNearestDuration(duration int64, config []*models.GeneratedSlotConfig) int64 {
+// 	tmp := int64(-1)
+// 	diff := int64(math.MaxInt64)
+// 	for _, c := range config {
+// 		tdiff := (c.MaxDuration - duration)
+// 		if tdiff == 0 {
+// 			tmp = c.MaxDuration
+// 			break
+// 		}
+// 		if tdiff > 0 && tdiff <= diff {
+// 			tmp = c.MaxDuration
+// 			diff = tdiff
+// 		}
+// 	}
+// 	return tmp
+// }

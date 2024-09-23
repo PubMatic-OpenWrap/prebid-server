@@ -1,4 +1,4 @@
-package auction
+package adpod
 
 // Package combination generates possible ad pod response
 // based on bid response durations. It ensures that generated

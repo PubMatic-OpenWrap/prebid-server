@@ -5,7 +5,12 @@ import (
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
-type Adpod interface{}
+type Adpod interface {
+	CollectBid(bid *openrtb2.Bid, seat string)
+	HoldAuction()
+	CollectAPRC(impCtxMap map[string]ImpCtx)
+	GetWinningBidsIds(impCtxMap map[string]ImpCtx, ImpToWinningBids map[string]map[string]bool)
+}
 
 // AdpodCtx context for adpod
 type AdpodCtx struct {

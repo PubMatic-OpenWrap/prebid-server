@@ -9,7 +9,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/auction"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
@@ -67,10 +67,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		return result, nil
 	}
 
-	var winningAdpodBidIds map[string][]string
+	var winningAdpodBidIds map[string]map[string]bool
 	var errs []error
 	if rctx.IsCTVRequest {
-		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
+		winningAdpodBidIds, errs = adpod.FormAdpodBidsAndPerformExclusion(rctx, payload.BidResponse)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
@@ -236,7 +236,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
-				bidExt.Nbr = auction.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
+				bidExt.Nbr = adpod.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
 			} else {
 				// if current bid is winner then update NonBr code for earlier winning bid
 				if winningBids.IsWinningBid(impId, owbid.ID) && oldWinBidFound {
@@ -481,16 +481,6 @@ func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
 	}
 }
 
-func CheckWinningBidId(bidId string, wbidIds []string) bool {
-	if len(wbidIds) == 0 {
-		return false
-	}
-
-	for i := range wbidIds {
-		if bidId == wbidIds[i] {
-			return true
-		}
-	}
-
-	return false
+func CheckWinningBidId(bidId string, wbidIds map[string]bool) bool {
+	return wbidIds[bidId]
 }
