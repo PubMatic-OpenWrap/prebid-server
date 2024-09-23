@@ -255,6 +255,10 @@ var ortbMapper = &ParserMap{
 		ORTBUserExtConsent: Parser.ORTBUserExtConsent,
 		//User.Ext.EIDS
 		ORTBUserExtEIDS: Parser.ORTBUserExtEIDS,
+		//User.Ext.SessionDuration
+		ORTBUserExtSessionDuration: Parser.ORTBUserExtSessionDuration,
+		//User.Ext.ImpDepth
+		ORTBUserExtImpDepth: Parser.ORTBUserExtImpDepth,
 		//User.Data
 		ORTBUserData: Parser.ORTBUserData,
 
@@ -603,6 +607,13 @@ type Parser interface {
 
 	//User.Ext.EIDS
 	ORTBUserExtEIDS() error
+
+	//User.Ext.SessionDuration
+	ORTBUserExtSessionDuration() error
+
+	//User.Ext.ImpDepth
+	ORTBUserExtImpDepth() error
+
 	//User.Data
 	ORTBUserData() error
 

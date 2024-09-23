@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
@@ -4496,6 +4497,73 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 	}
 
 	userExt[ORTBExtEIDS] = eids
+
+	data, err := json.Marshal(userExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.User.Ext = data
+	return
+}
+
+// ORTBUserExtSessionDuration will read and set ortb User.Ext.sessionduration parameter
+func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
+	valStr, ok := o.values.GetString(ORTBUserExtSessionDuration)
+	if !ok {
+		return
+	}
+	if o.ortb.User == nil {
+		o.ortb.User = &openrtb2.User{}
+	}
+	userExt := map[string]interface{}{}
+	if o.ortb.User.Ext != nil {
+		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
+		if err != nil {
+			return
+		}
+	}
+
+	if valStr != "" {
+		val, err := strconv.ParseInt(valStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		userExt[ORTBExtSessionDuration] = val
+	}
+
+	data, err := json.Marshal(userExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.User.Ext = data
+	return
+}
+
+// ORTBUserExtImpDepth will read and set ortb User.Ext.impdepth parameter
+func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
+	valStr, ok := o.values.GetString(ORTBUserExtImpDepth)
+	if !ok {
+		return
+	}
+	if o.ortb.User == nil {
+		o.ortb.User = &openrtb2.User{}
+	}
+	userExt := map[string]interface{}{}
+	if o.ortb.User.Ext != nil {
+		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
+		if err != nil {
+			return
+		}
+	}
+	if valStr != "" {
+		val, err := strconv.ParseInt(valStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		userExt[ORTBExtImpDepth] = val
+	}
 
 	data, err := json.Marshal(userExt)
 	if err != nil {
