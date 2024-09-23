@@ -221,6 +221,7 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject            bool
 	MultiFloorsConfig MultiFloorsConfig
+	AppStoreUrl       string
 }
 
 type MultiFloorsConfig struct {
