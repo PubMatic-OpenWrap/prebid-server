@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUpdateUserEidsWithValidValues(t *testing.T) {
+func TestUpdateUserExtWithValidValues(t *testing.T) {
 	type args struct {
 		user *openrtb2.User
 	}
@@ -117,10 +117,35 @@ func TestUpdateUserEidsWithValidValues(t *testing.T) {
 			},
 			want: &openrtb2.User{},
 		},
+		{
+			name: "test_valid_user_ext_sessionduration_impdepth",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`),
+			},
+		},
+		{
+			name: "test_invalid_user_ext_sessionduration_impdepth",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{
+					"sessionduration": 0,
+					"impdepth": -10
+					}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{}`),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			UpdateUserEidsWithValidValues(tt.args.user)
+			UpdateUserExtWithValidValues(tt.args.user)
 			assert.Equal(t, tt.want, tt.args.user)
 		})
 	}

@@ -37,7 +37,7 @@ func ValidateEIDs(eids []openrtb2.EID) []openrtb2.EID {
 	return validEIDs
 }
 
-func UpdateUserEidsWithValidValues(user *openrtb2.User) {
+func UpdateUserExtWithValidValues(user *openrtb2.User) {
 	if user == nil {
 		return
 	}
@@ -48,7 +48,13 @@ func UpdateUserEidsWithValidValues(user *openrtb2.User) {
 		if err != nil {
 			return
 		}
+		if userExt.SessionDuration < 0 {
+			userExt.SessionDuration = 0
+		}
 
+		if userExt.ImpDepth < 0 {
+			userExt.ImpDepth = 0
+		}
 		eids := ValidateEIDs(userExt.Eids)
 		userExt.Eids = nil
 		if len(eids) > 0 {

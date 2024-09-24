@@ -4529,7 +4529,9 @@ func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
-		userExt[ORTBExtSessionDuration] = val
+		if val > 0 {
+			userExt[ORTBExtSessionDuration] = val
+		}
 	}
 
 	data, err := json.Marshal(userExt)
@@ -4562,7 +4564,9 @@ func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
-		userExt[ORTBExtImpDepth] = val
+		if val > 0 {
+			userExt[ORTBExtImpDepth] = val
+		}
 	}
 
 	data, err := json.Marshal(userExt)
