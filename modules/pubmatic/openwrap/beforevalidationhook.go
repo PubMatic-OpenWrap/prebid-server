@@ -306,8 +306,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 					gamQueryParams = gamRedirectURL.Query()
 				}
 			}
-			setAppParams(payload.BidRequest, gamQueryParams)
-			setDeviceParams(payload.BidRequest, gamQueryParams)
+			setAppDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
+			setDeviceDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
 		}
 	}
 
@@ -419,14 +419,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, rCtx.RedirectURL, gamQueryParams, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
 			}
-			setImpVideoParams(imp, adpodConfig, gamQueryParams)
 
 			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
@@ -1342,9 +1341,7 @@ func isValidURL(urlVal string) bool {
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
 }
 
-func setAppParams(request *openrtb2.BidRequest, gamQueryParams url.Values) {
-
-	// // If app is nil means request containes site object
+func setAppDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
 	if request == nil || request.App == nil {
 		return
 	}
@@ -1359,70 +1356,14 @@ func setAppParams(request *openrtb2.BidRequest, gamQueryParams url.Values) {
 	}
 }
 
-func setDeviceParams(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+func setDeviceDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request == nil || request.Device == nil {
+		return
+	}
 	if request.Device.IFA == "" {
 		request.Device.IFA = gamQueryParams.Get(models.GAMDeviceIFA)
 	}
 	if request.Device.Language == "" {
 		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
 	}
-}
-
-func setImpVideoParams(imp openrtb2.Imp, adpodConfig *models.AdPod, gamQueryParams url.Values) {
-	if imp.Video == nil {
-		return
-	}
-	if imp.Video.MinDuration == 0 {
-		imp.Video.MinDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMinDuration), 64, 0)
-	}
-	if imp.Video.MaxDuration == 0 {
-		imp.Video.MaxDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMaxDuration), 64, 0)
-	}
-	if imp.Video.Linearity == 0 {
-		if linearity := gamQueryParams.Get(models.GAMVideoLinearity); len(linearity) > 0 {
-			if linearity == models.GAMVideoLinear {
-				imp.Video.Linearity = adcom1.LinearityLinear
-			} else if linearity == models.GAMVideoNonLinear {
-				imp.Video.Linearity = adcom1.LinearityNonLinear
-			}
-		}
-	}
-
-	if imp.Video.W == nil && imp.Video.H == nil {
-		if dimension := gamQueryParams.Get(models.GAMVideoDimensions); len(dimension) > 0 {
-			sizes := getDimension(dimension)
-			if len(sizes) > 1 {
-				w, err := strconv.ParseInt(sizes[0], 64, 0)
-				if err == nil {
-					h, err := strconv.ParseInt(sizes[1], 64, 0)
-					if err == nil {
-						imp.Video.W = ptrutil.ToPtr(w)
-						imp.Video.H = ptrutil.ToPtr(h)
-					}
-				}
-			}
-		}
-	}
-
-	if adpodConfig == nil {
-		return
-	}
-
-	if adpodConfig.MaxAds == 0 {
-		adpodConfig.MaxAds, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
-	}
-	if adpodConfig.MinDuration == 0 {
-		adpodConfig.MinDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMinDuration))
-	}
-	if adpodConfig.MaxDuration == 0 {
-		adpodConfig.MaxDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
-	}
-}
-
-func getDimension(size string) []string {
-	if !strings.Contains(size, models.Pipe) {
-		return strings.Split(size, models.DelimiterX)
-	}
-	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
-
 }
