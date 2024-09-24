@@ -35,13 +35,12 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
 	defer close(unwrappedBidsChan)
 
-	unwrappedBidsCnt := 0
+	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
+	totalBidCnt := len(payload.BidderResponse.Bids)
 	// send bids for unwrap
 	for _, bid := range payload.BidderResponse.Bids {
 		if !isEligibleForUnwrap(bid) {
 			unwrappedBids = append(unwrappedBids, bid)
-			result.DebugMessages = append(result.DebugMessages,
-				fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled))
 			continue
 		}
 		unwrappedBidsCnt++
@@ -55,6 +54,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	for i := 0; i < unwrappedBidsCnt; i++ {
 		unwrappedBid := <-unwrappedBidsChan
 		if !rejectBid(unwrappedBid.unwrapStatus) {
+			unwrappedSuccessBidCnt++
 			unwrappedBids = append(unwrappedBids, unwrappedBid.bid)
 			continue
 		}
@@ -75,8 +75,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	result.ChangeSet = changeSet
 	result.SeatNonBid = seatNonBid
 	result.DebugMessages = append(result.DebugMessages,
-		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled))
-
+		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] Total Input Bids: [%d] Total Bids sent for unwrapping: [%d] Total Unwrap Success: [%d]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, totalBidCnt, unwrappedBidsCnt, unwrappedSuccessBidCnt))
 	return result, nil
 }
 
