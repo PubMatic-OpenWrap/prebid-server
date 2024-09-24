@@ -289,7 +289,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 		return 0, err
 	}
-
+	var gamQueryParams url.Values
 	if rCtx.IsCTVRequest {
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
@@ -297,6 +297,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 			return result, nil
+		}
+		if rCtx.Endpoint == models.EndpointJson && rCtx.RedirectURL != "" {
+			defaultAdUnitConfig, ok := rCtx.AdUnitConfig.Config[models.AdunitConfigDefaultKey]
+			if ok && defaultAdUnitConfig != nil {
+				gamRedirectURL, err := url.Parse(rCtx.RedirectURL)
+				if gamRedirectURL != nil && err == nil {
+					gamQueryParams = gamRedirectURL.Query()
+				}
+			}
+			setAppParams(payload.BidRequest, gamQueryParams)
+			setDeviceParams(payload.BidRequest, gamQueryParams)
 		}
 	}
 
@@ -415,6 +426,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
 			}
+			setImpVideoParams(imp, adpodConfig, gamQueryParams)
 
 			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
@@ -1328,4 +1340,89 @@ func isValidURL(urlVal string) bool {
 		return false
 	}
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
+}
+
+func setAppParams(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+
+	// // If app is nil means request containes site object
+	if request == nil || request.App == nil {
+		return
+	}
+	if request.App.ID == "" {
+		request.App.ID = gamQueryParams.Get(models.GAMAppID)
+	}
+	if request.App.Bundle == "" {
+		request.App.Bundle = gamQueryParams.Get(models.GAMAppBundle)
+	}
+	if request.App.StoreURL == "" {
+		request.App.StoreURL = gamQueryParams.Get(models.GAMAppStoreUrl)
+	}
+}
+
+func setDeviceParams(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request.Device.IFA == "" {
+		request.Device.IFA = gamQueryParams.Get(models.GAMDeviceIFA)
+	}
+	if request.Device.Language == "" {
+		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
+	}
+}
+
+func setImpVideoParams(imp openrtb2.Imp, adpodConfig *models.AdPod, gamQueryParams url.Values) {
+	if imp.Video == nil {
+		return
+	}
+	if imp.Video.MinDuration == 0 {
+		imp.Video.MinDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMinDuration), 64, 0)
+	}
+	if imp.Video.MaxDuration == 0 {
+		imp.Video.MaxDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMaxDuration), 64, 0)
+	}
+	if imp.Video.Linearity == 0 {
+		if linearity := gamQueryParams.Get(models.GAMVideoLinearity); len(linearity) > 0 {
+			if linearity == models.GAMVideoLinear {
+				imp.Video.Linearity = adcom1.LinearityLinear
+			} else if linearity == models.GAMVideoNonLinear {
+				imp.Video.Linearity = adcom1.LinearityNonLinear
+			}
+		}
+	}
+
+	if imp.Video.W == nil && imp.Video.H == nil {
+		if dimension := gamQueryParams.Get(models.GAMVideoDimensions); len(dimension) > 0 {
+			sizes := getDimension(dimension)
+			if len(sizes) > 1 {
+				w, err := strconv.ParseInt(sizes[0], 64, 0)
+				if err == nil {
+					h, err := strconv.ParseInt(sizes[1], 64, 0)
+					if err == nil {
+						imp.Video.W = ptrutil.ToPtr(w)
+						imp.Video.H = ptrutil.ToPtr(h)
+					}
+				}
+			}
+		}
+	}
+
+	if adpodConfig == nil {
+		return
+	}
+
+	if adpodConfig.MaxAds == 0 {
+		adpodConfig.MaxAds, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
+	}
+	if adpodConfig.MinDuration == 0 {
+		adpodConfig.MinDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMinDuration))
+	}
+	if adpodConfig.MaxDuration == 0 {
+		adpodConfig.MaxDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
+	}
+}
+
+func getDimension(size string) []string {
+	if !strings.Contains(size, models.Pipe) {
+		return strings.Split(size, models.DelimiterX)
+	}
+	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
+
 }
