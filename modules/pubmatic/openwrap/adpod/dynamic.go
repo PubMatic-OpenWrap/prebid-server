@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -15,6 +17,10 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils/ortb"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
+)
+
+const (
+	ctvImpressionIDSeparator = "::"
 )
 
 type DynamicAdpod struct {
@@ -71,10 +77,8 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 			ProfileConfigs: profileConfigs,
 			Exclusion:      exclusion,
 		},
-		AdpodV25:    adpodCfgV25,
-		AdpodBid:    &models.AdPodBid{},
-		WinningBids: &models.AdPodBid{},
-		Imp:         imp,
+		AdpodV25: adpodCfgV25,
+		Imp:      imp,
 	}
 }
 
@@ -115,6 +119,21 @@ func (da *DynamicAdpod) GetImpressions() []*openrtb_ext.ImpWrapper {
 
 func generateImpressionID(impID string, seqNo int) string {
 	return fmt.Sprintf(impressions.ImpressionIDFormat, impID, seqNo)
+}
+
+// Function to retrieve the original impression ID and sequence number
+func retrieveImpressionIDAndSeq(combinedID string) (string, int) {
+	parts := strings.SplitN(combinedID, ctvImpressionIDSeparator, 2)
+	if len(parts) != 2 {
+		return combinedID, 0
+	}
+
+	seqNo, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return parts[0], 0
+	}
+
+	return parts[0], seqNo
 }
 
 // getAdPodImpsConfigs will return number of impressions configurations within adpod
@@ -169,7 +188,7 @@ func getExclusionConfigs(podId string, adpodExt *models.ExtRequestAdPod) models.
 }
 
 func (da *DynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
-	originalImpId, sequence := util.DecodeImpressionID(bid.ImpID)
+	originalImpId, sequence := retrieveImpressionIDAndSeq(bid.ImpID)
 
 	if da.AdpodBid == nil {
 		da.AdpodBid = &models.AdPodBid{
@@ -332,7 +351,6 @@ func (da *DynamicAdpod) GetWinningBidsIds(impCtxMap map[string]models.ImpCtx, Im
 		impCtx.BidIDToAPRC[bid.ID] = models.StatusWinningBid
 	}
 	ImpToWinningBids[da.AdpodBid.OriginalImpID] = winningBids
-	return
 }
 
 type BidsBuckets map[int][]*models.Bid
