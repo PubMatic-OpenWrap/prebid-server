@@ -77,7 +77,7 @@ func generateAdpodBids(rCtx models.RequestCtx, seatBids []openrtb2.SeatBid) {
 			}
 
 			impId, _ := models.GetImpressionID(bid.ImpID)
-			eachImpCtx, ok := rCtx.ImpBidCtx[impId]
+			_, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				// Bid is rejected due to invalid imp id
 				continue
