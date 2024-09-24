@@ -1,7 +1,6 @@
 package adpod
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -95,17 +94,7 @@ func generateAdpodBids(rCtx models.RequestCtx, seatBids []openrtb2.SeatBid) {
 				// ignore error
 				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
 			}
-			if eachImpCtx.AdpodConfig == nil {
-				videoBids = append(videoBids, *bid)
-				continue
-			}
-
-			ext := openrtb_ext.ExtBid{}
-			if bid.Ext != nil {
-				json.Unmarshal(bid.Ext, &ext)
-			}
-
-			podId, ok := rCtx.ImpToPodId[impId]
+			podId, ok := rCtx.ImpToPodId[bid.ImpID]
 			if !ok {
 				videoBids = append(videoBids, *bid)
 				continue
