@@ -109,7 +109,6 @@ func (sa *structuredAdpod) HoldAuction() {
 
 		sa.WinningBid[slot.ImpId] = *bids[slot.Index]
 	}
-
 }
 
 func (sa *structuredAdpod) Validate() []error {

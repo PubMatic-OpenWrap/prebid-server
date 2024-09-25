@@ -35,9 +35,16 @@ type ExtBidResponse struct {
 }
 
 type ExtWrapper struct {
-	ResponseFormat   string            `json:"responseformat,omitempty"`
-	RedirectURL      string            `json:"redirecturl,omitempty"`
-	ImpToAdServerURL map[string]string `json:"imptoadserverurl,omitempty"`
+	ResponseFormat      string            `json:"responseformat,omitempty"`
+	RedirectURL         string            `json:"redirecturl,omitempty"`
+	ImpToAdServerURL    map[string]string `json:"imptoadserverurl,omitempty"`
+	ImpToAdpodID        map[string]string `json:"imptoadpodid,omitempty"`
+	ImpresssionSequence []Sequence        `json:"impsequence,omitempty"`
+}
+type Sequence struct {
+	ImpID         string            `json:"id,omitempty"`
+	PodID         string            `json:"podid,omitempty"`
+	VideoPosition adcom1.StartDelay `json:"position,omitempty"	`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug

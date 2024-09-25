@@ -400,7 +400,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			continue
 		}
 
-		var adpodConfig *models.AdPod
+		var (
+			adpodConfig   *models.AdPod
+			adruleApplied bool
+		)
 		if rCtx.IsCTVRequest {
 			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
@@ -424,8 +427,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
 			}
-
-			podConfigs, err := adpod.GetAdpodConfigs(rCtx, m.cache, videoAdUnitCtx.AppliedSlotAdUnitConfig)
+			var podConfigs []models.PodConfig
+			podConfigs, adruleApplied, err = adpod.GetAdpodConfigs(rCtx, m.cache, videoAdUnitCtx.AppliedSlotAdUnitConfig)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -595,6 +598,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 				AdserverURL:       adserverURL,
+				AdRuleApplied:     adruleApplied,
 			}
 		}
 

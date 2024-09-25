@@ -27,6 +27,10 @@ type Exclusion struct {
 	IABCategoryExclusion      bool
 }
 
+func (ex *Exclusion) ShouldApplyExclusion() bool {
+	return ex.AdvertiserDomainExclusion || ex.IABCategoryExclusion
+}
+
 type GeneratedSlotConfig struct {
 	ImpID          string `json:"id,omitempty"`
 	SequenceNumber int8   `json:"seq,omitempty"`

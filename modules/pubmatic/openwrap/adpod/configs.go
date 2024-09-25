@@ -127,11 +127,12 @@ func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
 	return nil
 }
 
-func GetAdpodConfigs(rctx models.RequestCtx, cache cache.Cache, adunit *adunitconfig.AdConfig) ([]models.PodConfig, error) {
+func GetAdpodConfigs(rctx models.RequestCtx, cache cache.Cache, adunit *adunitconfig.AdConfig) ([]models.PodConfig, bool, error) {
+	adRuleApplied := false
 	// Fetch Adpod Configs from UI
 	pods, err := cache.GetAdpodConfig(rctx.PubID, rctx.ProfileID, rctx.DisplayVersionID)
 	if err != nil {
-		return nil, err
+		return nil, adRuleApplied, err
 	}
 
 	var uiAdpodConfigs []models.PodConfig
@@ -161,9 +162,10 @@ func GetAdpodConfigs(rctx models.RequestCtx, cache cache.Cache, adunit *adunitco
 		podConfigs = append(podConfigs, uiAdpodConfigs...)
 	} else if len(adrules) > 0 && rctx.AdruleFlag {
 		podConfigs = append(podConfigs, adrules...)
+		adRuleApplied = true
 	}
 
-	return podConfigs, nil
+	return podConfigs, adRuleApplied, nil
 }
 
 func decouplePodConfigs(pods *adpodconfig.AdpodConfig) []models.PodConfig {

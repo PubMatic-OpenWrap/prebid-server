@@ -3,9 +3,11 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strconv"
 	"time"
 
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
@@ -298,6 +300,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
+		responseExt.Wrapper.ImpresssionSequence = GetImpressionSequence(rctx.ImpBidCtx)
+		responseExt.Wrapper.ImpToAdpodID = rctx.ImpToPodId
 		if len(rctx.RedirectURL) > 0 {
 			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
 				ResponseFormat: rctx.ResponseFormat,
@@ -483,4 +487,84 @@ func resetBidIdtoOriginal(bidResponse *openrtb2.BidResponse) {
 
 func CheckWinningBidId(bidId string, wbidIds map[string]bool) bool {
 	return wbidIds[bidId]
+}
+
+func GetImpressionSequence(impsCtx map[string]models.ImpCtx) []openrtb_ext.Sequence {
+	imps := make([]models.ImpCtx, len(impsCtx))
+	count := 0
+	for _, impCtx := range impsCtx {
+		imps[count] = impCtx
+		count++
+	}
+	sort.Slice(imps, func(i, j int) bool {
+		// First, sort by StartDelay category (pre-roll, mid-roll, post-roll)
+
+		videoPositionI := categoriseVideoPosition(imps[i].Video.StartDelay)
+		videoPositionJ := categoriseVideoPosition(imps[j].Video.StartDelay)
+		if videoPositionI != videoPositionJ {
+			return videoPositionI < videoPositionJ
+		}
+
+		// For mid-roll, further sort by StartDelay value
+		if videoPositionI == 2 && *imps[i].Video.StartDelay != *imps[j].Video.StartDelay {
+			return *imps[i].Video.StartDelay < *imps[j].Video.StartDelay
+		}
+
+		// Finally, sort by PodSequence
+		return getPodSequencePriority(imps[i].Video.PodSeq) < getPodSequencePriority(imps[j].Video.PodSeq)
+	})
+	var sequence []openrtb_ext.Sequence
+	for _, imp := range imps {
+		podID := imp.Video.PodID
+		if imp.AdpodConfig != nil {
+			podID = imp.ImpID
+		}
+		sequence = append(sequence, openrtb_ext.Sequence{
+			ImpID:         imp.ImpID,
+			PodID:         podID,
+			VideoPosition: getVideoPosition(imp.Video, imp.AdRuleApplied),
+		})
+	}
+	return sequence
+}
+
+// Determines the category of the StartDelay for sorting
+// 0: pre-roll, 1: mid-roll, 2: post-roll
+func categoriseVideoPosition(delay *adcom1.StartDelay) int {
+	if delay == nil {
+		return 1 // Treat nil as highest priority (pre-roll)
+	}
+	switch {
+	case *delay == 0:
+		return 0 // pre-roll
+	case *delay > 0:
+		return 2 // mid-roll
+	case *delay == -1:
+		return 3 // mid-roll
+	case *delay == -2:
+		return 4 // post-roll
+	default:
+		return 5 // post-roll
+	}
+}
+
+func getPodSequencePriority(podSeq adcom1.PodSequence) int {
+	switch {
+	case podSeq == adcom1.PodSeqFirst:
+		return 0
+	case podSeq == adcom1.PodSeqAny:
+		return 1
+	case podSeq == adcom1.PodSeqLast:
+		return 2
+	default:
+		return 2
+	}
+}
+
+func getVideoPosition(video *openrtb2.Video, isAdRuleApplied bool) adcom1.StartDelay {
+	if !isAdRuleApplied || video.StartDelay == nil {
+		return adcom1.StartPreRoll
+	}
+
+	return video.StartDelay.Val()
 }

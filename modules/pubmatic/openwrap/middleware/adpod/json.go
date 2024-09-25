@@ -47,6 +47,45 @@ type jsonResponse struct {
 	debug       string
 }
 
+var (
+	podPosition = struct {
+		PreRoll struct {
+			Start int
+			End   int
+		}
+		MidRoll struct {
+			Start int
+			End   int
+		}
+		PostRoll struct {
+			Start int
+			End   int
+		}
+	}{
+		PreRoll: struct {
+			Start int
+			End   int
+		}{
+			Start: 1,
+			End:   30,
+		},
+		MidRoll: struct {
+			Start int
+			End   int
+		}{
+			Start: 31,
+			End:   60,
+		},
+		PostRoll: struct {
+			Start int
+			End   int
+		}{
+			Start: 61,
+			End:   90,
+		},
+	}
+)
+
 func (jr *jsonResponse) formJSONResponse(adpodWriter *utils.HTTPResponseBufferWriter, requestMethod string) ([]byte, map[string]string, int) {
 	var statusCode = http.StatusOK
 	var headers = map[string]string{
@@ -96,11 +135,15 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 	var (
 		responseFormat, redirectURL string
 		impToAdserverURL            = map[string]string{}
+		impSequence                 []openrtb_ext.Sequence
+		impToPodId                  map[string]string
 	)
 	if reqExt.Wrapper != nil {
 		responseFormat = reqExt.Wrapper.ResponseFormat
 		redirectURL = reqExt.Wrapper.RedirectURL
 		impToAdserverURL = reqExt.Wrapper.ImpToAdServerURL
+		impSequence = reqExt.Wrapper.ImpresssionSequence
+		impToPodId = reqExt.Wrapper.ImpToAdpodID
 		reqExt.Wrapper = nil
 	}
 	bidResponse.Ext, _ = json.Marshal(reqExt)
@@ -126,7 +169,7 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 			}
 		}
 	}
-	adPodBids := formAdpodBids(bidArrayMap, jr.cacheClient)
+	adPodBids := formAdpodBids(bidArrayMap, jr.cacheClient, impSequence, impToPodId)
 	adpodResponse := bidResponseAdpod{AdPodBids: adPodBids, Ext: bidResponse.Ext}
 	formRedirectURL(&adpodResponse, requestMethod, redirectURL, impToAdserverURL)
 	if len(redirectURL) > 0 && responseFormat == models.ResponseFormatRedirect && jr.debug != "1" {
@@ -138,40 +181,46 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 	return response, http.StatusOK
 }
 
-func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client) []*adPodBid {
+func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client, impSequence []openrtb_ext.Sequence, impToPodID map[string]string) []*adPodBid {
+	// PodPostion represent slot start and end range for pre, mid and post roll.
+
 	var adpodBids []*adPodBid
-	for impId, bids := range bidsMap {
-		adpodBid := &adPodBid{
-			ID: impId,
+	podExist := map[string]*adPodBid{}
+	for _, sequence := range impSequence {
+		podID := sequence.PodID
+		if podID == "" {
+			podID = sequence.ImpID
 		}
-		if len(bids) == 0 {
-			adpodBid.NBR = exchange.ErrorGeneral.Ptr()
+		var (
+			adpodBid *adPodBid
+			ok       bool
+		)
+		if adpodBid, ok = podExist[podID]; !ok {
+			adpodBid = &adPodBid{
+				ID:        podID,
+				Targeting: []map[string]string{},
+			}
 			adpodBids = append(adpodBids, adpodBid)
+		}
+
+		bids := bidsMap[sequence.ImpID]
+		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
+		if len(bids) == 0 {
 			continue
 		}
-		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
-
 		cacheIds, err := cacheAllBids(cacheClient, bids)
 		if err != nil {
 			adpodBid.Error = err.Error()
-			adpodBids = append(adpodBids, adpodBid)
 			continue
 		}
-
-		targetings := []map[string]string{}
-		for i := 0; i < len(bids); i++ {
+		for i, bid := range bids {
+			//for i := 0; i < len(bid); i++ {
 			slotNo := i + 1
-			targeting := createTargetting(bids[i], slotNo, cacheIds[i])
+			targeting := createTargetting(bid, slotNo, cacheIds[i])
 			if len(targeting) > 0 {
-				targetings = append(targetings, targeting)
+				adpodBid.Targeting = append(adpodBid.Targeting, targeting)
 			}
 		}
-
-		if len(targetings) > 0 {
-			adpodBid.Targeting = targetings
-		}
-
-		adpodBids = append(adpodBids, adpodBid)
 	}
 
 	return adpodBids
@@ -182,7 +231,7 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 }
 
 func createTargetting(bid openrtb2.Bid, slotNo int, cacheId string) map[string]string {
-	targetingKeyValMap := make(map[string]string)
+	targetingKeyValMap := map[string]string{}
 	targetingKeyValMap[prepareSlotLevelKey(slotNo, models.PWT_CACHEID)] = cacheId
 
 	if len(bid.Ext) > 0 {
@@ -201,7 +250,6 @@ func createTargetting(bid openrtb2.Bid, slotNo int, cacheId string) map[string]s
 				targetingKeyValMap[k] = v
 			}
 		}
-
 	}
 
 	return targetingKeyValMap
