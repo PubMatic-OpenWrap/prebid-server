@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/exchange"
@@ -184,6 +185,9 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client, impSequence []openrtb_ext.Sequence, impToPodID map[string]string) []*adPodBid {
 	// PodPostion represent slot start and end range for pre, mid and post roll.
 
+	preRollSlot := 1
+	midRollSlot := 31
+	postRollSlot := 61
 	var adpodBids []*adPodBid
 	podExist := map[string]*adPodBid{}
 	for _, sequence := range impSequence {
@@ -214,9 +218,18 @@ func formAdpodBids(bidsMap map[string][]openrtb2.Bid, cacheClient *pbc.Client, i
 			continue
 		}
 		for i, bid := range bids {
-			//for i := 0; i < len(bid); i++ {
-			slotNo := i + 1
-			targeting := createTargetting(bid, slotNo, cacheIds[i])
+			slot := 1
+			if sequence.VideoPosition == adcom1.StartMidRoll {
+				slot = midRollSlot
+				midRollSlot++
+			} else if sequence.VideoPosition == adcom1.StartPostRoll {
+				slot = postRollSlot
+				postRollSlot++
+			} else {
+				slot = preRollSlot
+				preRollSlot++
+			}
+			targeting := createTargetting(bid, slot, cacheIds[i])
 			if len(targeting) > 0 {
 				adpodBid.Targeting = append(adpodBid.Targeting, targeting)
 			}
