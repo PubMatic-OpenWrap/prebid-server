@@ -342,6 +342,12 @@ func getPricingDetailsTestCases() []struct {
 			wantPrice:    0,
 			wantCurrency: "",
 		},
+		{
+			name:         "bug",
+			vastXML:      "<VAST\n\txmlns:xs=\"https://www.w3.org/2001/XMLSchema\"\n\txmlns=\"https://www.iab.com/VAST\" version=\"4.1\">\n\t<Ad id=\"scenario_9_adid\" sequence=\"1\">\n\t\t<InLine>\n\t\t\t<AdSystem version=\"4.1\">PubMatic</AdSystem>\n\t\t\t<AdServingId>scenario_9</AdServingId>\n\t\t\t<AdTitle>Test Ad scenario_9</AdTitle>\n\t\t\t<Pricing model=\"cpm\" currency=\"USD\">\n\t\t\t\t<![CDATA[ 5.00 ]]>\n\t\t\t</Pricing>\n\t\t\t<Impression>\n\t\t\t\t<![CDATA[ https://example.com/impression/ ]]>\n\t\t\t</Impression>\n\t\t\t<Advertiser>Test Advertiser</Advertiser>\n\t\t\t<Category authority=\"https://www.iabtechlab.com/categoryauthority\">IAB1-1\t</Category>\n\t\t\t<Creatives>\n\t\t\t\t<Creative id=\"5481\" sequence=\"1\" adId=\"2447226_scenario_9\">\n\t\t\t\t\t<UniversalAdId idRegistry=\"Ad-ID\">8465_scenario_9</UniversalAdId>\n\t\t\t\t\t<Linear>\n\t\t\t\t\t\t<Duration>00:00:10</Duration>\n\t\t\t\t\t\t<MediaFiles>\n\t\t\t\t\t\t\t<MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">\n\t\t\t\t\t\t\t\t<![CDATA[ https://ads.pubmatic.com/AdServer/js/ott/sampleads/10_seconds_ad.mp4 ]]>\n\t\t\t\t\t\t\t</MediaFile>\n\t\t\t\t\t\t</MediaFiles>\n\t\t\t\t\t</Linear>\n\t\t\t\t</Creative>\n\t\t\t</Creatives>\n\t\t</InLine>\n\t</Ad>\n</VAST>  ",
+			wantPrice:    5,
+			wantCurrency: "USD",
+		},
 		// TODO: Add test cases.
 	}
 }

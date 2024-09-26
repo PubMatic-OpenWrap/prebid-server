@@ -7,23 +7,23 @@ type AdpodConfig struct {
 }
 
 type Dynamic struct {
-	PodDur      int   `json:"poddur,omitempty"`
-	Maxseq      int   `json:"maxseq,omitempty"`
-	MinDuration int   `json:"minduration,omitempty"`
-	MaxDuration int   `json:"maxduration,omitempty"`
-	Rqddurs     []int `json:"rqddurs,omitempty"`
+	PodDur      int64   `json:"poddur,omitempty"`
+	MaxSeq      int64   `json:"maxseq,omitempty"`
+	MinDuration int64   `json:"minduration,omitempty"`
+	MaxDuration int64   `json:"maxduration,omitempty"`
+	RqdDurs     []int64 `json:"rqddurs,omitempty"`
 }
 
 type Structured struct {
-	MinDuration int   `json:"minduration,omitempty"`
-	MaxDuration int   `json:"maxduration,omitempty"`
-	Rqddurs     []int `json:"rqddurs,omitempty"`
+	MinDuration int64   `json:"minduration,omitempty"`
+	MaxDuration int64   `json:"maxduration,omitempty"`
+	RqdDurs     []int64 `json:"rqddurs,omitempty"`
 }
 
 type Hybrid struct {
-	PodDur      *int  `json:"poddur,omitempty"`
-	Maxseq      *int  `json:"maxseq,omitempty"`
-	MinDuration int   `json:"minduration,omitempty"`
-	MaxDuration int   `json:"maxduration,omitempty"`
-	Rqddurs     []int `json:"rqddurs,omitempty"`
+	PodDur      *int64  `json:"poddur,omitempty"`
+	MaxSeq      *int64  `json:"maxseq,omitempty"`
+	MinDuration int64   `json:"minduration,omitempty"`
+	MaxDuration int64   `json:"maxduration,omitempty"`
+	RqdDurs     []int64 `json:"rqddurs,omitempty"`
 }
