@@ -311,6 +311,7 @@ var ortbMapper = &ParserMap{
 		ORTBExtPrebidFloorsEnforcement:          Parser.ORTBExtPrebidFloorsEnforceFloorDeals,
 		ORTBExtPrebidReturnAllBidStatus:         Parser.ORTBExtPrebidReturnAllBidStatus,
 		ORTBExtPrebidBidderParamsPubmaticCDS:    Parser.ORTBExtPrebidBidderParamsPubmaticCDS,
+		ORTBAdrule:                              Parser.ORTBAdrule,
 	},
 	ExtMapping: ExtParserMap{
 		//Extensions
@@ -663,4 +664,5 @@ type Parser interface {
 	ORTBDeviceGeoExt(string, *string) error
 	ORTBUserExt(string, *string) error
 	ORTBUserGeoExt(string, *string) error
+	ORTBAdrule() error
 }
