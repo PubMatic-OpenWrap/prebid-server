@@ -212,6 +212,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 
+			if rctx.IsCTVRequest {
+				if bidExt.AdPod == nil {
+					bidExt.AdPod = &models.AdpodBidExt{}
+				}
+				if impCtx.AdpodConfig != nil {
+					bidExt.AdPod.IsAdpodBid = true
+				}
+			}
+
 			var wbid models.OwBid
 			var wbids []*models.OwBid
 			var oldWinBidFound bool
