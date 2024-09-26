@@ -283,7 +283,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 		return 0, err
 	}
-
+	var gamQueryParams url.Values
 	if rCtx.IsCTVRequest {
 		err := ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
@@ -291,6 +291,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 			return result, nil
+		}
+		if rCtx.Endpoint == models.EndpointJson && rCtx.RedirectURL != "" {
+			defaultAdUnitConfig, ok := rCtx.AdUnitConfig.Config[models.AdunitConfigDefaultKey]
+			if ok && defaultAdUnitConfig != nil {
+				gamRedirectURL, err := url.Parse(rCtx.RedirectURL)
+				if gamRedirectURL != nil && err == nil {
+					gamQueryParams = gamRedirectURL.Query()
+				}
+			}
+			setAppDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
+			setDeviceDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
 		}
 	}
 
@@ -405,7 +416,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adruleApplied bool
 		)
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, gamQueryParams, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -1334,4 +1345,31 @@ func isValidURL(urlVal string) bool {
 		return false
 	}
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
+}
+
+func setAppDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request == nil || request.App == nil {
+		return
+	}
+	if request.App.ID == "" {
+		request.App.ID = gamQueryParams.Get(models.GAMAppID)
+	}
+	if request.App.Bundle == "" {
+		request.App.Bundle = gamQueryParams.Get(models.GAMAppBundle)
+	}
+	if request.App.StoreURL == "" {
+		request.App.StoreURL = gamQueryParams.Get(models.GAMAppStoreUrl)
+	}
+}
+
+func setDeviceDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request == nil || request.Device == nil {
+		return
+	}
+	if request.Device.IFA == "" {
+		request.Device.IFA = gamQueryParams.Get(models.GAMDeviceIFA)
+	}
+	if request.Device.Language == "" {
+		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
+	}
 }
