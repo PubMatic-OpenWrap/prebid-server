@@ -44,9 +44,8 @@ func TestInjectBannerTracker(t *testing.T) {
 				seat: "pubmatic",
 			},
 			want: want{
-				adm:                   `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
-				burl:                  `sample.com/track?tid=1234&owsspburl=http://burl.com`,
-				impCountMethodEnabled: false,
+				adm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+				burl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
 			},
 		},
 		{
