@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -4525,13 +4526,12 @@ func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
 	}
 
 	if valStr != "" {
-		val, err := strconv.ParseInt(valStr, 10, 64)
+		val, err := strconv.ParseUint(valStr, 10, 64)
 		if err != nil {
-			return fmt.Errorf("%v", err)
+			logger.Warn("Invalid session duration value '%v': %v", valStr, err)
+			return nil
 		}
-		if val > 0 {
-			userExt[ORTBExtSessionDuration] = val
-		}
+		userExt[ORTBExtSessionDuration] = int64(val)
 	}
 
 	data, err := json.Marshal(userExt)
@@ -4560,13 +4560,12 @@ func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
 		}
 	}
 	if valStr != "" {
-		val, err := strconv.ParseInt(valStr, 10, 64)
+		val, err := strconv.ParseUint(valStr, 10, 64)
 		if err != nil {
-			return fmt.Errorf("%v", err)
+			logger.Warn("Invalid imp depth value '%v': %v", valStr, err)
+			return nil
 		}
-		if val > 0 {
-			userExt[ORTBExtImpDepth] = val
-		}
+		userExt[ORTBExtImpDepth] = int64(val)
 	}
 
 	data, err := json.Marshal(userExt)

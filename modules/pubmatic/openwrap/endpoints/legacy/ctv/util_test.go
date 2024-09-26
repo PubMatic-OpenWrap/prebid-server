@@ -133,7 +133,7 @@ func TestUpdateUserExtWithValidValues(t *testing.T) {
 			args: args{
 				user: &openrtb2.User{
 					Ext: json.RawMessage(`{
-					"sessionduration": 0,
+					"sessionduration": -20,
 					"impdepth": -10
 					}`),
 				},

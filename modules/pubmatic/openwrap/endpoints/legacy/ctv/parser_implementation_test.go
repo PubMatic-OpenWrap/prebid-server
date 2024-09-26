@@ -316,8 +316,10 @@ func getTestValues() url.Values {
 		ORTBRequestExtPrebidTransparencyContent: {`{"pubmatic": {"include": 1}}`},
 
 		//
-		ORTBUserData:    {`[{"name":"publisher.com","ext":{"segtax":4},"segment":[{"id":"1"}]}]`},
-		ORTBUserExtEIDS: {`[{"source":"bvod.connect","uids":[{"id":"OztamSession-123456","atype":501},{"id":"7D92078A-8246-4BA4-AE5B-76104861E7DC","atype":2,"ext":{"seq":1,"demgid":"1234"}},{"id":"8D92078A-8246-4BA4-AE5B-76104861E7DC","atype":2,"ext":{"seq":2,"demgid":"2345"}}]}]`},
+		ORTBUserData:               {`[{"name":"publisher.com","ext":{"segtax":4},"segment":[{"id":"1"}]}]`},
+		ORTBUserExtEIDS:            {`[{"source":"bvod.connect","uids":[{"id":"OztamSession-123456","atype":501},{"id":"7D92078A-8246-4BA4-AE5B-76104861E7DC","atype":2,"ext":{"seq":1,"demgid":"1234"}},{"id":"8D92078A-8246-4BA4-AE5B-76104861E7DC","atype":2,"ext":{"seq":2,"demgid":"2345"}}]}]`},
+		ORTBUserExtSessionDuration: {"40"},
+		ORTBUserExtImpDepth:        {"10"},
 
 		ORTBDeviceExtIfaType:   {"ORTBDeviceExtIfaType"},
 		ORTBDeviceExtSessionID: {"ORTBDeviceExtSessionID"},
@@ -734,6 +736,8 @@ func TestParseORTBRequest(t *testing.T) {
 		  ],
 		  "ext": {
 			"consent": "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA",
+			"sessionduration": 40,
+		    "impdepth": 10,
 			"eids": [
 			  {
 				"source": "bvod.connect",
@@ -2441,6 +2445,224 @@ func TestORTBDeviceExtIfaType(t *testing.T) {
 			if err := tt.o.ORTBDeviceExtIfaType(); (err != nil) != tt.wantErr {
 				t.Errorf("ORTBDeviceExtIfaType() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestOpenRTB_ORTBUserExtSessionDuration(t *testing.T) {
+	type fields struct {
+		values URLValues
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		user       *openrtb2.User
+		wantResult *openrtb2.User
+		wantErr    error
+	}{
+		{
+			name: "Nil_User_and_Ext",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtSessionDuration: []string{"3600"},
+					},
+				},
+			},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"sessionduration":3600}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Valid_sessionduration",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtSessionDuration: []string{"3600"},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"sessionduration":3600}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Zero_sessionduration",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtSessionDuration: {"0"},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"sessionduration":0}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Negative_sessionduration",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtSessionDuration: {"-10"},
+					},
+				},
+			},
+			user:       &openrtb2.User{},
+			wantResult: &openrtb2.User{Ext: nil},
+			wantErr:    nil,
+		},
+		{
+			name: "Empty_sessionduration",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtSessionDuration: {""},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: nil,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Missing_sessionduration",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: nil,
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &OpenRTB{
+				values: tt.fields.values,
+				ortb:   &openrtb2.BidRequest{ID: "request-ID", User: tt.user},
+			}
+			err := o.ORTBUserExtSessionDuration()
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.wantResult, o.ortb.User)
+		})
+	}
+}
+
+func TestOpenRTB_ORTBUserExtImpDepth(t *testing.T) {
+	type fields struct {
+		values URLValues
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		user       *openrtb2.User
+		wantResult *openrtb2.User
+		wantErr    error
+	}{
+		{
+			name: "Nil_User_and_Ext",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtImpDepth: []string{"2"},
+					},
+				},
+			},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"impdepth":2}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Valid_impdepth",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtImpDepth: []string{"2"},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"impdepth":2}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Zero_impdepth",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtImpDepth: {"0"},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: json.RawMessage(`{"impdepth":0}`),
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Negative_impdepth",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtImpDepth: {"-10"},
+					},
+				},
+			},
+			user:       &openrtb2.User{},
+			wantResult: &openrtb2.User{Ext: nil},
+			wantErr:    nil,
+		},
+		{
+			name: "Empty_impdepth",
+			fields: fields{
+				values: URLValues{
+					Values: url.Values{
+						ORTBUserExtImpDepth: {""},
+					},
+				},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: nil,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Missing_impdepth",
+			fields: fields{
+				values: URLValues{},
+			},
+			user: &openrtb2.User{},
+			wantResult: &openrtb2.User{
+				Ext: nil,
+			},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &OpenRTB{
+				values: tt.fields.values,
+				ortb:   &openrtb2.BidRequest{ID: "request-ID", User: tt.user},
+			}
+			err := o.ORTBUserExtImpDepth()
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.wantResult, o.ortb.User)
 		})
 	}
 }
