@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -37,7 +38,7 @@ func ValidateEIDs(eids []openrtb2.EID) []openrtb2.EID {
 	return validEIDs
 }
 
-func UpdateUserEidsWithValidValues(user *openrtb2.User) {
+func UpdateUserExtWithValidValues(user *openrtb2.User) {
 	if user == nil {
 		return
 	}
@@ -48,7 +49,15 @@ func UpdateUserEidsWithValidValues(user *openrtb2.User) {
 		if err != nil {
 			return
 		}
+		if userExt.SessionDuration < 0 {
+			logger.Warn("Invalid sessionduration value: %v. Only positive values are allowed.", userExt.SessionDuration)
+			userExt.SessionDuration = 0
+		}
 
+		if userExt.ImpDepth < 0 {
+			logger.Warn("Invalid impdepth value: %v. Only positive values are allowed.", userExt.ImpDepth)
+			userExt.ImpDepth = 0
+		}
 		eids := ValidateEIDs(userExt.Eids)
 		userExt.Eids = nil
 		if len(eids) > 0 {
