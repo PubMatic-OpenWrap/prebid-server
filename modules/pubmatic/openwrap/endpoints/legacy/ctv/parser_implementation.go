@@ -4511,7 +4511,7 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 // ORTBUserExtSessionDuration will read and set ortb User.Ext.sessionduration parameter
 func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
 	valStr, ok := o.values.GetString(ORTBUserExtSessionDuration)
-	if !ok {
+	if !ok || valStr == "" {
 		return
 	}
 	if o.ortb.User == nil {
@@ -4519,20 +4519,17 @@ func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
 	}
 	userExt := map[string]interface{}{}
 	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
-		if err != nil {
+		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
 			return
 		}
 	}
 
-	if valStr != "" {
-		val, err := strconv.ParseUint(valStr, 10, 64)
-		if err != nil {
-			logger.Warn("Invalid session duration value '%v': %v", valStr, err)
-			return nil
-		}
-		userExt[ORTBExtSessionDuration] = int64(val)
+	val, err := strconv.ParseUint(valStr, 10, 64)
+	if err != nil {
+		logger.Warn("Invalid session duration value '%v': %v", valStr, err)
+		return nil
 	}
+	userExt[ORTBExtSessionDuration] = int64(val)
 
 	data, err := json.Marshal(userExt)
 	if err != nil {
@@ -4546,7 +4543,7 @@ func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
 // ORTBUserExtImpDepth will read and set ortb User.Ext.impdepth parameter
 func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
 	valStr, ok := o.values.GetString(ORTBUserExtImpDepth)
-	if !ok {
+	if !ok || valStr == "" {
 		return
 	}
 	if o.ortb.User == nil {
@@ -4554,19 +4551,17 @@ func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
 	}
 	userExt := map[string]interface{}{}
 	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
-		if err != nil {
+		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
 			return
 		}
 	}
-	if valStr != "" {
-		val, err := strconv.ParseUint(valStr, 10, 64)
-		if err != nil {
-			logger.Warn("Invalid imp depth value '%v': %v", valStr, err)
-			return nil
-		}
-		userExt[ORTBExtImpDepth] = int64(val)
+
+	val, err := strconv.ParseUint(valStr, 10, 64)
+	if err != nil {
+		logger.Warn("Invalid imp depth value '%v': %v", valStr, err)
+		return nil
 	}
+	userExt[ORTBExtImpDepth] = int64(val)
 
 	data, err := json.Marshal(userExt)
 	if err != nil {
