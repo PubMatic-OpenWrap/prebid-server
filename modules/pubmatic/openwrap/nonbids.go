@@ -23,6 +23,12 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 
 		}
 
+		// seat-non-bid for partner-filtered error
+		for bidder := range rctx.AdapterFilteredMap {
+			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(nbr.RequestBlockedPartnerThrottle)})
+			seatNonBid.AddBid(nonBid, bidder)
+		}
+
 		// seat-non-bid for slot-not-mapped error
 		// Note : Throttled partner will not be a part of impCtx.NonMapped
 		for bidder := range impCtx.NonMapped {
