@@ -85,6 +85,7 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 			}
 
 			adpodBid, _ := jsonparser.GetBoolean(bid.Ext, "adpod", "isAdpodBid")
+			bid.Ext = jsonparser.Delete(bid.Ext, "adpod")
 			if !adpodBid {
 				videoSeatBid.Bid = append(videoSeatBid.Bid, bid)
 				continue
@@ -123,7 +124,6 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 		bid.AdM = creative
 		bid.Price = price
 		bid.ImpID = impId
-
 		// Get Categories and ad domain
 		category := make(map[string]bool)
 		addomain := make(map[string]bool)
