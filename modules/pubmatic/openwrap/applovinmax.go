@@ -91,6 +91,10 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
 	}
 
+	if signalDevice.Model != "" {
+		maxRequest.Device.Model = signalDevice.Model
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {
@@ -130,6 +134,7 @@ func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if signalApp.Domain != "" {
 		maxRequest.App.Domain = signalApp.Domain
 	}
+	maxRequest.App.StoreURL = signalApp.StoreURL
 }
 
 func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {

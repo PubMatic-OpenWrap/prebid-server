@@ -100,6 +100,6 @@ replace github.com/prebid/prebid-server/v2 => ./
 
 replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef
 
-replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240909135535-5d3df9e9a959
+replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240914050009-a916f68552f5
 
 replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0

@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
@@ -20,8 +21,10 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 	var errs error
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
-			var errMsg string
-			var err error
+			var (
+				errMsg string
+				err    error
+			)
 			tracker := rctx.Trackers[bid.ID]
 			adformat := tracker.BidType
 			if rctx.Platform == models.PLATFORM_VIDEO {
@@ -32,6 +35,9 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 			switch adformat {
 			case models.Banner:
 				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL = injectBannerTracker(rctx, tracker, bid, seatBid.Seat, pixels)
+				if tracker.IsOMEnabled {
+					bidResponse.SeatBid[i].Bid[j].Ext, err = jsonparser.Set(bid.Ext, []byte(`1`), models.ImpCountingMethod)
+				}
 			case models.Video:
 				trackers := []models.OWTracker{tracker}
 				bidResponse.SeatBid[i].Bid[j].AdM, bidResponse.SeatBid[i].Bid[j].BURL, err = injectVideoCreativeTrackers(rctx, bid, trackers)
