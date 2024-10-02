@@ -214,7 +214,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
 				BidType:       adformat,
-				DspId:         dspId,
+				IsOMEnabled:   trackerWithOM(rctx, partnerID, dspId),
 			}
 		}
 	}

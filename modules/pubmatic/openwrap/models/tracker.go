@@ -9,7 +9,7 @@ type OWTracker struct {
 	PriceModel    string
 	PriceCurrency string
 	BidType       string `json:"-"` // video, banner, native
-	DspId         int    `json:"-"` // dsp id
+	IsOMEnabled   bool   `json:"-"` // is om enabled
 }
 
 // Tracker tracker url creation parameters

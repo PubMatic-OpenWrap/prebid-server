@@ -6,10 +6,11 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_injectBannerTracker(t *testing.T) {
+func TestInjectBannerTracker(t *testing.T) {
 	type args struct {
 		rctx    models.RequestCtx
 		tracker models.OWTracker
@@ -17,11 +18,14 @@ func Test_injectBannerTracker(t *testing.T) {
 		seat    string
 		pixels  []adunitconfig.UniversalPixel
 	}
+	type want struct {
+		adm  string
+		burl string
+	}
 	tests := []struct {
-		name     string
-		args     args
-		wantAdm  string
-		wantBurl string
+		name string
+		args args
+		want want
 	}{
 		{
 			name: "endpoint_applovinmax",
@@ -39,8 +43,10 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: "pubmatic",
 			},
-			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
-			wantBurl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
+			want: want{
+				adm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
+				burl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
+			},
 		},
 		{
 			name: "app_platform",
@@ -56,7 +62,9 @@ func Test_injectBannerTracker(t *testing.T) {
 				},
 				seat: "test",
 			},
-			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			want: want{
+				adm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			},
 		},
 		{
 			name: "app_platform_OM_Inactive_pubmatic",
@@ -65,15 +73,17 @@ func Test_injectBannerTracker(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
-					DspId:      -1,
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: false,
 				},
 				bid: openrtb2.Bid{
 					AdM: `sample_creative`,
 				},
 				seat: models.BidderPubMatic,
 			},
-			wantAdm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			want: want{
+				adm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			},
 		},
 		{
 			name: "app_platform_OM_Active_pubmatic",
@@ -82,15 +92,17 @@ func Test_injectBannerTracker(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 				},
 				tracker: models.OWTracker{
-					TrackerURL: `Tracking URL`,
-					DspId:      models.DspId_DV360,
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: true,
 				},
 				bid: openrtb2.Bid{
 					AdM: `sample_creative`,
 				},
 				seat: models.BidderPubMatic,
 			},
-			wantAdm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+			want: want{
+				adm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+			},
 		},
 		{
 			name: "tbf_feature_enabled",
@@ -107,23 +119,68 @@ func Test_injectBannerTracker(t *testing.T) {
 					AdM: `sample_creative`,
 				},
 			},
-			wantAdm: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
+			want: want{
+				adm: `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>sample_creative`,
+			},
+		},
+		{
+			name: "app_platform_partner_other_than_pubmatic_imp_counting_method_enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					ImpCountingMethodEnabledBidders: map[string]struct{}{
+						string(openrtb_ext.BidderIx): {},
+					},
+				},
+				tracker: models.OWTracker{
+					TrackerURL:  `Tracking URL`,
+					IsOMEnabled: true,
+				},
+				bid: openrtb2.Bid{
+					AdM: `sample_creative`,
+				},
+				seat: string(openrtb_ext.BidderIx),
+			},
+			want: want{
+				adm: `sample_creative<script id="OWPubOMVerification" data-owurl="Tracking URL" src="${OMScript}"></script>`,
+			},
+		},
+		{
+			name: "app_platform_partner_other_than_pubmatic_imp_counting_method_disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					ImpCountingMethodEnabledBidders: map[string]struct{}{
+						string(openrtb_ext.BidderIx): {},
+					},
+				},
+				tracker: models.OWTracker{
+					TrackerURL: `Tracking URL`,
+				},
+				bid: openrtb2.Bid{
+					AdM: `sample_creative`,
+				},
+				seat: string(openrtb_ext.BidderAppnexus),
+			},
+			want: want{
+				adm: `sample_creative<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="Tracking URL"></div>`,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotAdm, gotBurl := injectBannerTracker(tt.args.rctx, tt.args.tracker, tt.args.bid, tt.args.seat, tt.args.pixels)
-			assert.Equal(t, tt.wantAdm, gotAdm)
-			assert.Equal(t, tt.wantBurl, gotBurl)
+			assert.Equal(t, tt.want.adm, gotAdm)
+			assert.Equal(t, tt.want.burl, gotBurl)
 		})
 	}
 }
 
-func Test_trackerWithOM(t *testing.T) {
+func TestTrackerWithOM(t *testing.T) {
 	type args struct {
-		tracker    models.OWTracker
-		platform   string
-		bidderCode string
+		rctx              models.RequestCtx
+		prebidPartnerName string
+		dspID             int
 	}
 	tests := []struct {
 		name string
@@ -131,54 +188,81 @@ func Test_trackerWithOM(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "in-app_partner_otherthan_pubmatic",
+			name: "in-app_partner_other_than_pubmatic",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
+
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
 				},
-				platform:   models.PLATFORM_APP,
-				bidderCode: "test",
+				prebidPartnerName: "test",
 			},
 			want: false,
 		},
 		{
 			name: "in-app_partner_pubmatic_other_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: -1,
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
 				},
-				platform:   models.PLATFORM_APP,
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             -1,
 			},
 			want: false,
 		},
 		{
 			name: "display_partner_pubmatic_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_DISPLAY,
 				},
-				platform:   models.PLATFORM_DISPLAY,
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
 			},
 			want: false,
 		},
 		{
 			name: "in-app_partner_pubmatic_dv360",
 			args: args{
-				tracker: models.OWTracker{
-					DspId: models.DspId_DV360,
+
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
 				},
-				platform:   models.PLATFORM_APP,
-				bidderCode: models.BidderPubMatic,
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
 			},
 			want: true,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_imp_counting_method_enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					ImpCountingMethodEnabledBidders: map[string]struct{}{
+						"ix": {},
+					},
+				},
+				prebidPartnerName: "ix",
+			},
+			want: true,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_imp_counting_method_disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					ImpCountingMethodEnabledBidders: map[string]struct{}{
+						"ix": {},
+					},
+				},
+				prebidPartnerName: "magnite",
+			},
+			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trackerWithOM(tt.args.tracker, tt.args.platform, tt.args.bidderCode); got != tt.want {
-				t.Errorf("trackerWithOM() = %v, want %v", got, tt.want)
+			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID); got != tt.want {
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}

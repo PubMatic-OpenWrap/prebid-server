@@ -92,36 +92,37 @@ type RequestCtx struct {
 
 	BidderResponseTimeMillis map[string]int
 
-	Endpoint               string
-	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
-	MetricsEngine          metrics.MetricsEngine
-	ReturnAllBidStatus     bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
-	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
-	DCName                 string
-	CachePutMiss           int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	CurrencyConversion     func(from string, to string, value float64) (float64, error)
-	MatchedImpression      map[string]int
-	CustomDimensions       map[string]CustomDimension
-	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
-	IsTBFFeatureEnabled    bool
-	VastUnwrapEnabled      bool
-	VastUnwrapStatsEnabled bool
-	AppLovinMax            AppLovinMax
-	LoggerDisabled         bool
-	TrackerDisabled        bool
-	ProfileType            int
-	ProfileTypePlatform    int
-	AppPlatform            int
-	AppIntegrationPath     *int
-	AppSubIntegrationPath  *int
-	Method                 string
-	Errors                 []error
-	RedirectURL            string
-	ResponseFormat         string
-	WakandaDebug           wakanda.WakandaDebug
-	PriceGranularity       *openrtb_ext.PriceGranularity
-	IsMaxFloorsEnabled     bool
-	SendBurl               bool
+	Endpoint                        string
+	PubIDStr, ProfileIDStr          string // TODO: remove this once we completely move away from header-bidding
+	MetricsEngine                   metrics.MetricsEngine
+	ReturnAllBidStatus              bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	Sshb                            string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
+	DCName                          string
+	CachePutMiss                    int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion              func(from string, to string, value float64) (float64, error)
+	MatchedImpression               map[string]int
+	CustomDimensions                map[string]CustomDimension
+	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
+	IsTBFFeatureEnabled             bool
+	VastUnwrapEnabled               bool
+	VastUnwrapStatsEnabled          bool
+	AppLovinMax                     AppLovinMax
+	LoggerDisabled                  bool
+	TrackerDisabled                 bool
+	ProfileType                     int
+	ProfileTypePlatform             int
+	AppPlatform                     int
+	AppIntegrationPath              *int
+	AppSubIntegrationPath           *int
+	Method                          string
+	Errors                          []error
+	RedirectURL                     string
+	ResponseFormat                  string
+	WakandaDebug                    wakanda.WakandaDebug
+	PriceGranularity                *openrtb_ext.PriceGranularity
+	IsMaxFloorsEnabled              bool
+	SendBurl                        bool
+	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
 
 	// Adpod
 	AdruleFlag         bool
@@ -235,6 +236,7 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject            bool
 	MultiFloorsConfig MultiFloorsConfig
+	AppStoreUrl       string
 }
 
 type MultiFloorsConfig struct {

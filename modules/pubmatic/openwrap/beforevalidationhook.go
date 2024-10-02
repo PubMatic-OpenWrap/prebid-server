@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode"
 
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
@@ -183,6 +184,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 				AdserverCreativeDurations:              []int{5, 10},
 				AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
 			}
+		}
+	}
+
+	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
+	if len(videoAdDuration) > 0 {
+		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+			AdserverCreativeDurationMatchingPolicy: policy,
 		}
 	}
 
@@ -427,6 +437,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				return result, nil
 			}
 
+			//Adding default durations for CTV Test requests
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              []int{5, 10},
+					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+				}
+			}
+
 			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -575,6 +593,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
+
+		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
+			rCtx.AppLovinMax.AppStoreUrl = getProfileAppStoreUrlAndUpdateItunesID(rCtx, payload.BidRequest, impExt)
+			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
+		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -714,6 +737,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
 	if rctx.IsTestRequest > 0 {
 		bidRequest.Test = 1
+	}
+
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		if rctx.AppLovinMax.AppStoreUrl != "" {
+			bidRequest.App.StoreURL = rctx.AppLovinMax.AppStoreUrl
+		}
 	}
 
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
@@ -1366,4 +1395,49 @@ func setDeviceDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams u
 	if request.Device.Language == "" {
 		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
 	}
+}
+func getProfileAppStoreUrlAndUpdateItunesID(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) string {
+	appStoreUrl := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppStoreUrl]
+	if appStoreUrl == "" {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: app storeurl not present in DB", rctx.PubID, rctx.ProfileID)
+		return appStoreUrl
+	}
+	appStoreUrl = strings.TrimSpace(appStoreUrl)
+	if !isValidURL(appStoreUrl) {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app storeurl", rctx.PubID, rctx.ProfileID, appStoreUrl)
+		return appStoreUrl
+	}
+	var err error
+	if bidRequest.Device != nil && strings.ToLower(bidRequest.Device.OS) == "ios" {
+		//no multiple imp supported for AppLovinMax
+		if impExt != nil {
+			if impExt.SKAdnetwork == nil {
+				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID, appStoreUrl)
+				return appStoreUrl
+			}
+			var itunesID string
+			if itunesID = extractItunesIdFromAppStoreUrl(appStoreUrl); itunesID == "" {
+				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
+				return appStoreUrl
+			}
+			if impExt.SKAdnetwork, err = jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
+				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, appStoreUrl, err.Error())
+			}
+		}
+	}
+	return appStoreUrl
+}
+
+func extractItunesIdFromAppStoreUrl(url string) string {
+	url = strings.TrimSuffix(url, "/")
+	itunesID := ""
+	for i := len(url) - 1; i >= 0; i-- {
+		char := rune(url[i])
+		if unicode.IsDigit(char) {
+			itunesID = string(char) + itunesID
+		} else {
+			break
+		}
+	}
+	return itunesID
 }

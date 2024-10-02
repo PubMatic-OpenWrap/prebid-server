@@ -357,6 +357,9 @@ const (
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
 
+	//constants for tracker impCountingMethod
+	ImpCountingMethod = "imp_ct_mthd"
+
 	DealIDNotApplicable   = "na"
 	DealTierNotApplicable = "na"
 	PwtDealTier           = "pwtdealtier"
@@ -621,6 +624,7 @@ const (
 	FeatureMaxFloors           = 5
 	FeatureBidRecovery         = 6
 	FeatureApplovinMultiFloors = 7
+	FeatureImpCountingMethod   = 8
 )
 
 // constants for applovinmax requests
@@ -632,6 +636,7 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+	AppStoreUrl      = "appStoreUrl"
 )
 
 // constants for log level

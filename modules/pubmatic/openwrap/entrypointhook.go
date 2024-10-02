@@ -134,7 +134,8 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl: endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
 	if rCtx.IsCTVRequest {

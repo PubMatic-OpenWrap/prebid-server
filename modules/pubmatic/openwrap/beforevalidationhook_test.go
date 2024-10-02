@@ -1769,6 +1769,77 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "AppLovinMax_request_with_storeurl_and_sourceapp_updated_from_DB",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+						},
+					},
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"testImp1": {
+							NewExt: json.RawMessage(`{"skadn":{"sourceapp":"343200656"}}`),
+						},
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "testID",
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+							Ext: json.RawMessage(`{"skadn": {}}`),
+						},
+					},
+					Device: &openrtb2.Device{
+						OS: "iOS",
+					},
+					App: &openrtb2.App{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID: "testID",
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:     ptrutil.ToPtr[int64](200),
+							H:     ptrutil.ToPtr[int64](300),
+							Plcmt: 1,
+						},
+						Ext: json.RawMessage(`{"skadn":{"sourceapp":"343200656"}}`),
+					},
+				},
+				Device: &openrtb2.Device{
+					OS: "iOS",
+				},
+				User: &openrtb2.User{},
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					StoreURL: "https://itunes.apple.com/us/app/angry-birds/id343200656",
+				},
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -6498,5 +6569,256 @@ func TestSetImpBidFloorParams(t *testing.T) {
 			assert.Equal(t, tt.expBidfloor, bidfloor, tt.name)
 			assert.Equal(t, tt.expBidfloorCur, bidfloorCur, tt.name)
 		})
+	}
+}
+
+func TestUpdateProfileAppStoreUrl(t *testing.T) {
+	tests := []struct {
+		name            string
+		rctx            models.RequestCtx
+		bidRequest      *openrtb2.BidRequest
+		impExt          *models.ImpExtension
+		wantAppStoreURL string
+		wantSourceApp   string
+	}{
+		{
+			name: "AppStoreUrl missing in DB",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {},
+				},
+			},
+			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
+			wantAppStoreURL: "",
+		},
+		{
+			name: "Invalid AppStoreUrl",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "invalid-url",
+					},
+				},
+			},
+			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
+			wantAppStoreURL: "invalid-url",
+		},
+		{
+			name: "Valid AppStoreUrl os is ios and SKAdnetwork is present in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			impExt: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{}`),
+			},
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+			wantSourceApp:   "123456789",
+		},
+		{
+			name: "Valid AppStoreUrl os is Android and SKAdnetwork is present in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "Android",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+		},
+		{
+			name: "Valid AppStoreUrl os is ios but SKAdnetwork missing in imp.ext",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{}`),
+					},
+				},
+			},
+			impExt:          &models.ImpExtension{},
+			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+		},
+		{
+			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl",
+			rctx: models.RequestCtx{
+				PartnerConfigMap: map[int]map[string]string{
+					models.VersionLevelConfigID: {
+						models.AppStoreUrl: "https://apps.apple.com/app/",
+					},
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Device: &openrtb2.Device{
+					OS: "ios",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						Ext: json.RawMessage(`{"skadn": {}}`),
+					},
+				},
+			},
+			impExt: &models.ImpExtension{
+				SKAdnetwork: json.RawMessage(`{}`),
+			},
+			wantAppStoreURL: "https://apps.apple.com/app/",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotAppStoreURL := getProfileAppStoreUrlAndUpdateItunesID(tt.rctx, tt.bidRequest, tt.impExt)
+			assert.Equal(t, tt.wantAppStoreURL, gotAppStoreURL)
+			if tt.impExt != nil {
+				if tt.impExt.SKAdnetwork != nil {
+					var skAdnetwork map[string]interface{}
+					if err := json.Unmarshal(tt.impExt.SKAdnetwork, &skAdnetwork); err == nil {
+						if _, ok := skAdnetwork["sourceapp"]; ok {
+							assert.Equal(t, tt.wantSourceApp, skAdnetwork["sourceapp"])
+						}
+					}
+
+				}
+			}
+		})
+	}
+}
+
+func TestExtractItunesIdFromAppStoreUrl(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "app_store_url_with_id1",
+			args: args{
+				url: "https://itunes.apple.com/.../id1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id2",
+			args: args{
+				url: "https://itunes.apple.com/...?id=361285480",
+			},
+			want: "361285480",
+		},
+		{
+			name: "app_store_url_with_id3",
+			args: args{
+				url: "https://itunes.apple.com/.../1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id4",
+			args: args{
+				url: "https://itunes.apple.com/.../12345id1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "app_store_url_with_id5",
+			args: args{
+				url: "https://itunes.apple.com/.../id-1175273098",
+			},
+			want: "1175273098",
+		},
+		{
+			name: "itunes_url_with_no_id",
+			args: args{
+				url: "https://itunes.apple.com/.../id",
+			},
+			want: "",
+		},
+		{
+			name: "app_store_url_with_id_and_multiple_ids",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789/id987654321",
+			},
+			want: "987654321",
+		},
+		{
+			name: "app_store_url_with_id_and_text",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789text",
+			},
+			want: "",
+		},
+		{
+			name: "app_store_url_with_id_and_trailing_slash",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789/",
+			},
+			want: "123456789",
+		},
+		{
+			name: "app_store_url_with_id_and_leading_slash",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app//id123456789",
+			},
+			want: "123456789",
+		},
+		{
+			name: "app_store_url_with_id_and_multiple_slashes",
+			args: args{
+				url: "https://itunes.apple.com/us/app/example-app/id123456789///",
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractItunesIdFromAppStoreUrl(tt.args.url)
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
+// Benchmark for extractItunesIdFromAppStoreUrl
+func BenchmarkExtractItunesIdFromAppStoreUrl(b *testing.B) {
+	testURL := "https://apps.apple.com/us/app/example-app/id=123456789"
+	for i := 0; i < b.N; i++ {
+		extractItunesIdFromAppStoreUrl(testURL)
 	}
 }
