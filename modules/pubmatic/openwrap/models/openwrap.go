@@ -9,9 +9,13 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
+	"github.com/prebid/prebid-server/v2/util/maputil"
+	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v2/util/sliceutil"
 )
 
 type RequestCtx struct {
@@ -88,36 +92,47 @@ type RequestCtx struct {
 
 	BidderResponseTimeMillis map[string]int
 
-	Endpoint               string
-	PubIDStr, ProfileIDStr string // TODO: remove this once we completely move away from header-bidding
-	MetricsEngine          metrics.MetricsEngine
-	ReturnAllBidStatus     bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
-	Sshb                   string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
-	DCName                 string
-	CachePutMiss           int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
-	CurrencyConversion     func(from string, to string, value float64) (float64, error)
-	MatchedImpression      map[string]int
-	CustomDimensions       map[string]CustomDimension
-	AmpVideoEnabled        bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
-	IsTBFFeatureEnabled    bool
-	VastUnwrapEnabled      bool
-	VastUnwrapStatsEnabled bool
-	AppLovinMax            AppLovinMax
-	LoggerDisabled         bool
-	TrackerDisabled        bool
-	ProfileType            int
-	ProfileTypePlatform    int
-	AppPlatform            int
-	AppIntegrationPath     *int
-	AppSubIntegrationPath  *int
-	Method                 string
-	Errors                 []error
-	RedirectURL            string
-	ResponseFormat         string
-	WakandaDebug           wakanda.WakandaDebug
-	PriceGranularity       *openrtb_ext.PriceGranularity
-	IsMaxFloorsEnabled     bool
-	SendBurl               bool
+	Endpoint                        string
+	PubIDStr, ProfileIDStr          string // TODO: remove this once we completely move away from header-bidding
+	MetricsEngine                   metrics.MetricsEngine
+	ReturnAllBidStatus              bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
+	Sshb                            string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
+	DCName                          string
+	CachePutMiss                    int // to be used in case of CTV JSON endpoint/amp/inapp-ott-video endpoint
+	CurrencyConversion              func(from string, to string, value float64) (float64, error)
+	MatchedImpression               map[string]int
+	CustomDimensions                map[string]CustomDimension
+	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
+	IsTBFFeatureEnabled             bool
+	VastUnwrapEnabled               bool
+	VastUnwrapStatsEnabled          bool
+	AppLovinMax                     AppLovinMax
+	LoggerDisabled                  bool
+	TrackerDisabled                 bool
+	ProfileType                     int
+	ProfileTypePlatform             int
+	AppPlatform                     int
+	AppIntegrationPath              *int
+	AppSubIntegrationPath           *int
+	Method                          string
+	Errors                          []error
+	RedirectURL                     string
+	ResponseFormat                  string
+	WakandaDebug                    wakanda.WakandaDebug
+	PriceGranularity                *openrtb_ext.PriceGranularity
+	IsMaxFloorsEnabled              bool
+	SendBurl                        bool
+	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
+
+	// Adpod
+	AdruleFlag         bool
+	AdpodProfileConfig *AdpodProfileConfig
+	ImpAdPodConfig     map[string][]PodConfig
+}
+
+type AdpodProfileConfig struct {
+	AdserverCreativeDurations              []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
+	AdserverCreativeDurationMatchingPolicy string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.
 }
 
 type OwBid struct {
@@ -168,7 +183,7 @@ type ImpCtx struct {
 	//temp
 	BidderError string
 
-	// CTV
+	// Adpod
 	IsAdPodRequest bool
 	AdpodConfig    *AdPod
 	ImpAdPodCfg    []*ImpAdPodConfig
@@ -221,6 +236,7 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject            bool
 	MultiFloorsConfig MultiFloorsConfig
+	AppStoreUrl       string
 }
 
 type MultiFloorsConfig struct {
@@ -281,4 +297,18 @@ func IsNewWinningBid(bid, wbid *OwBid, preferDeals bool) bool {
 	}
 	bid.Nbr = nbr.LossBidLostToHigherBid.Ptr()
 	return false
+}
+
+func (ic *ImpCtx) DeepCopy() ImpCtx {
+	impCtx := *ic
+	impCtx.IsRewardInventory = ptrutil.Clone(ic.IsRewardInventory)
+	impCtx.Video = ortb.DeepCopyImpVideo(ic.Video)
+	impCtx.Native = ortb.DeepCopyImpNative(ic.Native)
+	impCtx.IncomingSlots = sliceutil.Clone(ic.IncomingSlots)
+	impCtx.Bidders = maputil.Clone(ic.Bidders)
+	impCtx.NonMapped = maputil.Clone(ic.NonMapped)
+	impCtx.NewExt = sliceutil.Clone(ic.NewExt)
+	impCtx.BidCtx = maputil.Clone(ic.BidCtx)
+
+	return impCtx
 }
