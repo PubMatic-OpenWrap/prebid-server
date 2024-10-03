@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,32 +18,35 @@ var invalidVastXMLAdM = "<VAST version='3.0'><Ad id='1'><AdSystem>PubMatic</AdSy
 var inlineXMLAdM = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><VAST version=\"3.0\"><Ad id=\"1329167\"><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Error>https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;er=[ERRORCODE]</Error><Error>https://track.dsptracker.com?p=1234&amp;er=[ERRORCODE]</Error><Impression>https://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1&amp;pubId=64195&amp;siteId=47105&amp;adId=1405154&amp;adType=13&amp;adServerId=243&amp;kefact=1.000000&amp;kaxefact=1.000000&amp;kadNetFrequecy=0&amp;kadwidth=0&amp;kadheight=0&amp;kadsizeid=97&amp;kltstamp=1536933242&amp;indirectAdId=0&amp;adServerOptimizerId=2&amp;ranreq=0.05969169352174375&amp;kpbmtpfact=11.000000&amp;dcId=1&amp;tldId=0&amp;passback=0&amp;svr=ktk57&amp;ekefact=er2bW2sDAwCra06ACbsIQySn5nqBtYsTl8fy5lupAexh37D_&amp;ekaxefact=er2bW4EDAwB_LQpJJ23Fq0DcNC-NSAFXdpSQC8XBk_S33_Fa&amp;ekpbmtpfact=er2bW5MDAwDJHdBnLBt5IrRuh7x0oqp_tjIALv_VvSQDAl6R&amp;crID=m:1_x:3_y:3_p:11_va:3&amp;lpu=ae.com&amp;ucrid=678722001014421372&amp;campaignId=16774&amp;creativeId=0&amp;pctr=0.000000&amp;wDSPByrId=511&amp;wDspId=27&amp;wbId=0&amp;wrId=0&amp;wAdvID=3170&amp;isRTB=1&amp;rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1&amp;imprId=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;oid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;pageURL=http%253A%252F%252Fowsdk-stagingams.pubmatic.com%253A8443%252Fvast-validator%252F%2523&amp;sec=1&amp;pmc=1</Impression><Impression>https://DspImpressionTracker.com/</Impression><Creatives><Creative AdID=\"1329167\"><Linear skipoffset=\"20%\"><TrackingEvents><Tracking event=\"close\">https://mytracking.com/linear/close</Tracking><Tracking event=\"skip\">https://mytracking.com/linear/skip</Tracking><Tracking event=\"creativeView\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=1</Tracking><Tracking event=\"start\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=2</Tracking><Tracking event=\"midpoint\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=3</Tracking><Tracking event=\"firstQuartile\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=4</Tracking><Tracking event=\"thirdQuartile\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=5</Tracking><Tracking event=\"complete\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=6</Tracking></TrackingEvents><Duration>00:00:04</Duration><VideoClicks><ClickThrough>https://www.automationtester.in</ClickThrough><ClickTracking>https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=99</ClickTracking></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4</MediaFile><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4</MediaFile><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/mp4-sample-3.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
 
 func TestUnwrap_Unwrap(t *testing.T) {
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockMetricsEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type fields struct {
-		endpoint string
+		endpoint      string
+		defaultTime   int
+		metricEngine  metrics.MetricsEngine
+		unwrapRequest http.HandlerFunc
 	}
 	type args struct {
-		accountID string
-		bidder    string
-		bid       *adapters.TypedBid
-		userAgent string
-		ip        string
+		accountID      string
+		bidder         string
+		bid            *adapters.TypedBid
+		userAgent      string
+		ip             string
+		isStatsEnabled bool
 	}
 	tests := []struct {
-		name                 string
-		fields               fields
-		args                 args
-		setup                func()
-		mockHandler          http.HandlerFunc
-		expectedAdm          string
-		expectedUnwrapStatus string
+		name        string
+		fields      fields
+		args        args
+		setup       func()
+		mockHandler http.HandlerFunc
+		expectedAdm string
 	}{
 		{
-			name:   "Unwrap enabled with valid adm",
-			fields: fields{endpoint: "http://localhost:8001/unwrap"},
+			name: "Stats enabled only",
 			args: args{
 				accountID: "5890",
 				bidder:    "pubmatic",
@@ -51,8 +55,37 @@ func TestUnwrap_Unwrap(t *testing.T) {
 						AdM: vastXMLAdM,
 					},
 				},
-				userAgent: "UA",
-				ip:        "10.12.13.14",
+				userAgent:      "UA",
+				ip:             "10.12.13.14",
+				isStatsEnabled: true,
+			},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+			},
+			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "1")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(vastXMLAdM))
+			}),
+			expectedAdm: vastXMLAdM,
+		},
+		{
+			name: "Unwrap enabled with valid adm",
+			args: args{
+				accountID: "5890",
+				bidder:    "pubmatic",
+				bid: &adapters.TypedBid{
+					Bid: &openrtb2.Bid{
+						AdM: vastXMLAdM,
+					},
+				},
+				userAgent:      "UA",
+				ip:             "10.12.13.14",
+				isStatsEnabled: false,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
@@ -66,12 +99,10 @@ func TestUnwrap_Unwrap(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(inlineXMLAdM))
 			}),
-			expectedAdm:          inlineXMLAdM,
-			expectedUnwrapStatus: "0",
+			expectedAdm: inlineXMLAdM,
 		},
 		{
-			name:   "Unwrap enabled with invalid adm",
-			fields: fields{endpoint: "http://localhost:8001/unwrap"},
+			name: "Unwrap enabled with invalid adm",
 			args: args{
 				accountID: "5890",
 				bidder:    "pubmatic",
@@ -80,8 +111,9 @@ func TestUnwrap_Unwrap(t *testing.T) {
 						AdM: invalidVastXMLAdM,
 					},
 				},
-				userAgent: "UA",
-				ip:        "10.12.13.14",
+				userAgent:      "UA",
+				ip:             "10.12.13.14",
+				isStatsEnabled: false,
 			},
 			setup: func() {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
@@ -91,43 +123,21 @@ func TestUnwrap_Unwrap(t *testing.T) {
 				w.Header().Add("unwrap-status", "1")
 				w.WriteHeader(http.StatusNoContent)
 			}),
-			expectedAdm:          invalidVastXMLAdM,
-			expectedUnwrapStatus: "1",
-		},
-		{
-			name:   "Error while forming the HTTPRequest for unwrap process",
-			fields: fields{endpoint: ":"},
-			args: args{
-				accountID: "5890",
-				bidder:    "pubmatic",
-				bid: &adapters.TypedBid{
-					Bid: &openrtb2.Bid{
-						AdM: invalidVastXMLAdM,
-					},
-				},
-				userAgent: "UA",
-				ip:        "10.12.13.14",
-			},
-			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "")
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-			},
-			mockHandler:          http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {}),
-			expectedAdm:          invalidVastXMLAdM,
-			expectedUnwrapStatus: "",
+			expectedAdm: invalidVastXMLAdM,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			if tt.setup != nil {
 				tt.setup()
 			}
-			uw := NewUnwrap(tt.fields.endpoint, 200, tt.mockHandler, mockMetricsEngine)
-			unwrapStatus := uw.Unwrap(tt.args.bid, tt.args.accountID, tt.args.bidder, tt.args.userAgent, tt.args.ip)
-			if strings.Compare(tt.args.bid.Bid.AdM, tt.expectedAdm) != 0 {
+			uw := NewUnwrap("http://localhost:8001/unwrap", 200, tt.mockHandler, mockMetricsEngine)
+			uw.Unwrap(tt.args.accountID, tt.args.bidder, tt.args.bid, tt.args.userAgent, tt.args.ip, tt.args.isStatsEnabled)
+			if !tt.args.isStatsEnabled && strings.Compare(tt.args.bid.Bid.AdM, tt.expectedAdm) != 0 {
 				assert.Equal(t, inlineXMLAdM, tt.args.bid.Bid.AdM, "AdM is not updated correctly after unwrap ")
+
 			}
-			assert.Equal(t, tt.expectedUnwrapStatus, unwrapStatus, "mismatched unwrap status")
 		})
 	}
 }

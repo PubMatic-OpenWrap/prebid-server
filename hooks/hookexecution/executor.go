@@ -260,10 +260,9 @@ func (e *hookExecutor) ExecuteRawBidderResponseStage(response *adapters.BidderRe
 
 	stageName := hooks.StageRawBidderResponse.String()
 	executionCtx := e.newContext(stageName)
-	payload := hookstage.RawBidderResponsePayload{BidderResponse: response, Bidder: bidder}
-
+	payload := hookstage.RawBidderResponsePayload{Bids: response.Bids, Bidder: bidder}
 	outcome, payload, contexts, reject := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
-	response = payload.BidderResponse
+	response.Bids = payload.Bids
 	outcome.Entity = entity(bidder)
 	outcome.Stage = stageName
 

@@ -101,6 +101,7 @@ type PixelView struct {
 
 type FeatureToggle struct {
 	VASTUnwrapPercent             int
+	VASTUnwrapStatsPercent        int
 	AnalyticsThrottlingPercentage string
 }
 

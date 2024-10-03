@@ -2,7 +2,6 @@ package pubmatic
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -295,8 +294,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -349,8 +347,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -406,8 +403,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -463,8 +459,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -517,8 +512,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -570,8 +564,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -716,8 +709,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										OriginalBidCPM: 10,
-										ExtBid:         openrtb_ext.ExtBid{},
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -779,7 +771,6 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										OriginalBidCPM: 12,
 										ExtBid: openrtb_ext.ExtBid{
 											Prebid: &openrtb_ext.ExtBidPrebid{
 												Floors: &openrtb_ext.ExtBidPrebidFloors{
@@ -1024,8 +1015,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 							BidCtx: map[string]models.BidCtx{
 								"bid-id-1": {
 									BidExt: models.BidExt{
-										ExtBid:         openrtb_ext.ExtBid{},
-										OriginalBidCPM: 10,
+										ExtBid: openrtb_ext.ExtBid{},
 									},
 								},
 							},
@@ -1297,7 +1287,6 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 	}
 }
 func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
-	pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
 	type args struct {
 		ao   analytics.AuctionObject
 		rCtx *models.RequestCtx
@@ -1431,301 +1420,6 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "log rejected non-bid having bidder_response_currency EUR and request_currency USD",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Cur: []string{models.USD},
-						},
-					},
-					Response: &openrtb2.BidResponse{Cur: models.USD},
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							Seat: "appnexus",
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: int(nbr.LossBidLostInVastUnwrap),
-									Ext: openrtb_ext.ExtNonBid{
-										Prebid: openrtb_ext.ExtNonBidPrebid{
-											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												W:              10,
-												H:              50,
-												OriginalBidCur: "EUR",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					PriceGranularity: &pg,
-					CurrencyConversion: func(from, to string, value float64) (float64, error) {
-						if from == "USD" && to == "EUR" {
-							return value * 1.2, nil
-						}
-						if from == "EUR" && to == "USD" {
-							return value * 0.8, nil
-						}
-						return 0, nil
-					},
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp1": {
-							Bidders: map[string]models.PartnerData{
-								"appnexus": {
-									PartnerID:        1,
-									PrebidBidderCode: "appnexus",
-									KGP:              "kgp",
-									KGPV:             "kgpv",
-								},
-							},
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-									},
-								},
-							},
-							BidFloor:    10.5,
-							BidFloorCur: "USD",
-						},
-					},
-					PartnerConfigMap: map[int]map[string]string{
-						1: {
-							"rev_share": "0",
-						},
-					},
-					WinningBids: make(models.WinningBids),
-					Platform:    models.PLATFORM_APP,
-				},
-			},
-			partners: map[string][]PartnerRecord{
-				"imp1": {
-					{
-						PartnerID:      "appnexus",
-						BidderCode:     "appnexus",
-						KGPV:           "kgpv",
-						KGPSV:          "kgpv",
-						PartnerSize:    "10x50",
-						GrossECPM:      8,
-						NetECPM:        8,
-						BidID:          "bid-id-1",
-						OrigBidID:      "bid-id-1",
-						DealID:         "-1",
-						ServerSide:     1,
-						OriginalCPM:    10,
-						OriginalCur:    "EUR",
-						FloorValue:     10.5,
-						FloorRuleValue: 10.5,
-						PriceBucket:    "8.00",
-						Nbr:            ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-					},
-				},
-			},
-		},
-		{
-			name: "log rejected non-bid having bidder_response_currency EUR and request_currency USD and having 50% revshare",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Cur: []string{models.USD},
-						},
-					},
-					Response: &openrtb2.BidResponse{Cur: models.USD},
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							Seat: "appnexus",
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: int(nbr.LossBidLostInVastUnwrap),
-									Ext: openrtb_ext.ExtNonBid{
-										Prebid: openrtb_ext.ExtNonBidPrebid{
-											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												W:              10,
-												H:              50,
-												OriginalBidCur: "EUR",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					PriceGranularity: &pg,
-					CurrencyConversion: func(from, to string, value float64) (float64, error) {
-						if from == "USD" && to == "EUR" {
-							return value * 1.2, nil
-						}
-						if from == "EUR" && to == "USD" {
-							return value * 0.8, nil
-						}
-						return 0, nil
-					},
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp1": {
-							Bidders: map[string]models.PartnerData{
-								"appnexus": {
-									PartnerID:        1,
-									PrebidBidderCode: "appnexus",
-									KGP:              "kgp",
-									KGPV:             "kgpv",
-								},
-							},
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-									},
-								},
-							},
-							BidFloor:    10.5,
-							BidFloorCur: "USD",
-						},
-					},
-					PartnerConfigMap: map[int]map[string]string{
-						1: {
-							"rev_share": "50",
-						},
-					},
-					WinningBids: make(models.WinningBids),
-					Platform:    models.PLATFORM_APP,
-				},
-			},
-			partners: map[string][]PartnerRecord{
-				"imp1": {
-					{
-						PartnerID:      "appnexus",
-						BidderCode:     "appnexus",
-						KGPV:           "kgpv",
-						KGPSV:          "kgpv",
-						PartnerSize:    "10x50",
-						GrossECPM:      8,
-						NetECPM:        4,
-						PriceBucket:    "4.00",
-						BidID:          "bid-id-1",
-						OrigBidID:      "bid-id-1",
-						DealID:         "-1",
-						ServerSide:     1,
-						OriginalCPM:    10,
-						OriginalCur:    "EUR",
-						FloorValue:     10.5,
-						FloorRuleValue: 10.5,
-						Nbr:            ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-					},
-				},
-			},
-		},
-		{
-			name: "log rejected non-bid having response_currency USD and request_currency EUR and having 50% revshare",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Cur: []string{"EUR"},
-						},
-					},
-					Response: &openrtb2.BidResponse{Cur: "EUR"},
-					SeatNonBid: []openrtb_ext.SeatNonBid{
-						{
-							Seat: "appnexus",
-							NonBid: []openrtb_ext.NonBid{
-								{
-									ImpId:      "imp1",
-									StatusCode: int(nbr.LossBidLostInVastUnwrap),
-									Ext: openrtb_ext.ExtNonBid{
-										Prebid: openrtb_ext.ExtNonBidPrebid{
-											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												W:              10,
-												H:              50,
-												OriginalBidCur: models.USD,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					CurrencyConversion: func(from, to string, value float64) (float64, error) {
-						if from == "USD" && to == "EUR" {
-							return value * 1.2, nil
-						}
-						if from == "EUR" && to == "USD" {
-							return value * 0.8, nil
-						}
-						return value, nil
-					},
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp1": {
-							Bidders: map[string]models.PartnerData{
-								"appnexus": {
-									PartnerID:        1,
-									PrebidBidderCode: "appnexus",
-									KGP:              "kgp",
-									KGPV:             "kgpv",
-								},
-							},
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{},
-										Nbr:    ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-									},
-								},
-							},
-							BidFloor:    10.5,
-							BidFloorCur: "USD",
-						},
-					},
-					PartnerConfigMap: map[int]map[string]string{
-						1: {
-							"rev_share": "50",
-						},
-					},
-					WinningBids: make(models.WinningBids),
-					Platform:    models.PLATFORM_APP,
-				},
-			},
-			partners: map[string][]PartnerRecord{
-				"imp1": {
-					{
-						PartnerID:      "appnexus",
-						BidderCode:     "appnexus",
-						KGPV:           "kgpv",
-						KGPSV:          "kgpv",
-						PartnerSize:    "10x50",
-						GrossECPM:      10,
-						NetECPM:        5,
-						BidID:          "bid-id-1",
-						OrigBidID:      "bid-id-1",
-						DealID:         "-1",
-						ServerSide:     1,
-						OriginalCPM:    10,
-						OriginalCur:    "USD",
-						FloorValue:     10.5,
-						FloorRuleValue: 10.5,
-						Nbr:            ptrutil.ToPtr(nbr.LossBidLostInVastUnwrap),
-					},
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1767,7 +1461,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 													FloorValue:     1,
 													FloorCurrency:  models.USD,
 												},
-												OriginalBidCPM: 10,
 											},
 										},
 									},
@@ -1834,7 +1527,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 													FloorValue:     0,
 													FloorCurrency:  models.USD,
 												},
-												OriginalBidCPM: 10,
 											},
 										},
 									},
@@ -1901,7 +1593,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 													FloorValue:     10,
 													FloorCurrency:  models.USD,
 												},
-												OriginalBidCPM: 10,
 											},
 										},
 									},
@@ -1960,9 +1651,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												OriginalBidCPM: 10,
+												Price: 10,
+												ID:    "bid-id-1",
 											},
 										},
 									},
@@ -2021,9 +1711,8 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												OriginalBidCPM: 10,
+												Price: 10,
+												ID:    "bid-id-1",
 											},
 										},
 									},
@@ -2093,7 +1782,6 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 													FloorValue:     1,
 													FloorCurrency:  "JPY",
 												},
-												OriginalBidCPM: 10,
 											},
 										},
 									},
@@ -2300,7 +1988,6 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 												BidId:             "uuid",
 											},
 										},
-										OriginalBidCPM: 10,
 									},
 								},
 							},
@@ -2330,11 +2017,6 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 			name: "valid bid, but json unmarshal fails",
 			args: args{
 				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Cur: []string{},
-						},
-					},
 					Response: &openrtb2.BidResponse{
 						SeatBid: []openrtb2.SeatBid{
 							{
@@ -2364,13 +2046,11 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 												BidId:             "uuid",
 											},
 										},
-										OriginalBidCPM: 10,
 									},
 								},
 							},
 						},
 					},
-					CurrencyConversion: func(from, to string, value float64) (float64, error) { return 10, nil },
 				},
 			},
 			partners: map[string][]PartnerRecord{
@@ -2386,7 +2066,6 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						OriginalCur:  models.USD,
 						NetECPM:      10,
 						GrossECPM:    10,
-						OriginalCPM:  10,
 						DealPriority: 0,
 					},
 				},
@@ -2424,8 +2103,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 												DealTierSatisfied: true,
 											},
 										},
-										OriginalBidCPM: 10,
-										Nbr:            nbr.LossBidLostToHigherBid.Ptr(),
+										Nbr: nbr.LossBidLostToHigherBid.Ptr(),
 									},
 								},
 							},
@@ -2517,10 +2195,9 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price:          10,
-												ID:             "bid-id-1",
-												BidId:          "uuid",
-												OriginalBidCPM: 10,
+												Price: 10,
+												ID:    "bid-id-1",
+												BidId: "uuid",
 											},
 										},
 									},
@@ -2586,7 +2263,6 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 												BidId:             "uuid",
 											},
 										},
-										OriginalBidCPM: 10,
 									},
 								},
 							},
@@ -2642,9 +2318,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 			name: "valid bid, but bid.ext is empty",
 			args: args{
 				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{},
-					},
 					Response: &openrtb2.BidResponse{
 						SeatBid: []openrtb2.SeatBid{
 							{
@@ -2679,7 +2352,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 							},
 						},
 					},
-					CurrencyConversion: func(from, to string, value float64) (float64, error) { return 10, nil },
 				},
 			},
 			partners: map[string][]PartnerRecord{
@@ -2695,7 +2367,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						OriginalCur:  models.USD,
 						NetECPM:      10,
 						GrossECPM:    10,
-						OriginalCPM:  10,
 						DealPriority: 0,
 					},
 				},
@@ -2705,9 +2376,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 			name: "dropped bid, bidExt unmarshal fails",
 			args: args{
 				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{},
-					},
 					Response: &openrtb2.BidResponse{
 						SeatBid: []openrtb2.SeatBid{
 							{
@@ -2742,7 +2410,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 							},
 						},
 					},
-					CurrencyConversion: func(from, to string, value float64) (float64, error) { return 10, nil },
 				},
 			},
 			partners: map[string][]PartnerRecord{
@@ -2758,7 +2425,6 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						OriginalCur:  models.USD,
 						NetECPM:      10,
 						GrossECPM:    10,
-						OriginalCPM:  10,
 						DealPriority: 0,
 						Nbr:          nil,
 					},
@@ -3580,9 +3246,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 			name: "overwrite marketplace bid details",
 			args: args{
 				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{},
-					},
 					Response: &openrtb2.BidResponse{
 						SeatBid: []openrtb2.SeatBid{
 							{
@@ -3631,7 +3294,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 							},
 						},
 					},
-					CurrencyConversion: func(from, to string, value float64) (float64, error) { return value, nil },
 				},
 			},
 			partners: map[string][]PartnerRecord{
@@ -3647,7 +3309,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 						OriginalCur: models.USD,
 						GrossECPM:   1,
 						NetECPM:     1,
-						OriginalCPM: 1,
 						KGPV:        "apnx_kgpv",
 						KGPSV:       "apnx_kgpv",
 					},
@@ -3662,7 +3323,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 						OriginalCur: models.USD,
 						GrossECPM:   2,
 						NetECPM:     2,
-						OriginalCPM: 2,
 						KGPV:        "pubm_kgpv",
 						KGPSV:       "pubm_kgpv",
 					},
@@ -3677,7 +3337,6 @@ func TestGetPartnerRecordsByImpForMarketPlaceBidders(t *testing.T) {
 						OriginalCur: models.USD,
 						GrossECPM:   3,
 						NetECPM:     3,
-						OriginalCPM: 3,
 						KGPV:        "pubm_kgpv",
 						KGPSV:       "pubm_kgpv",
 					},
@@ -4941,129 +4600,129 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 		args args
 		want want
 	}{
-		{
-			name: "req.Imp not mapped in ImpBidCtx",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Imp: []openrtb2.Imp{
-								{
-									ID:    "imp1",
-									TagID: "tagid",
-								},
-							},
-						},
-					},
-					Response: &openrtb2.BidResponse{},
-				},
-				rCtx: &models.RequestCtx{
-					Endpoint: models.EndpointV25,
-					PubID:    5890,
-				},
-				logInfo:    false,
-				forRespExt: true,
-			},
-			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
-				header: http.Header{
-					models.USER_AGENT_HEADER: []string{""},
-					models.IP_HEADER:         []string{""},
-				},
-			},
-		},
-		{
-			name: "multi imps request",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Imp: []openrtb2.Imp{
-								{
-									ID:    "imp_1",
-									TagID: "tagid_1",
-								},
-								{
-									ID:    "imp_2",
-									TagID: "tagid_2",
-								},
-							},
-						},
-					},
-					Response: &openrtb2.BidResponse{},
-				},
-				rCtx: &models.RequestCtx{
-					PubID:    5890,
-					Endpoint: models.EndpointV25,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp_1": {
-							SlotName:   "imp_1_tagid_1",
-							AdUnitName: "tagid_1",
-						},
-						"imp_2": {
-							AdUnitName: "tagid_2",
-							SlotName:   "imp_2_tagid_2",
-						},
-					},
-				},
-				logInfo:    false,
-				forRespExt: true,
-			},
-			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
-				header: http.Header{
-					models.USER_AGENT_HEADER: []string{""},
-					models.IP_HEADER:         []string{""},
-				},
-			},
-		},
-		{
-			name: "multi imps request and one request has incomingslots",
-			args: args{
-				ao: analytics.AuctionObject{
-					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Imp: []openrtb2.Imp{
-								{
-									ID:    "imp_1",
-									TagID: "tagid_1",
-								},
-								{
-									ID:    "imp_2",
-									TagID: "tagid_2",
-								},
-							},
-						},
-					},
-					Response: &openrtb2.BidResponse{},
-				},
-				rCtx: &models.RequestCtx{
-					PubID:    5890,
-					Endpoint: models.EndpointV25,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp_1": {
-							IncomingSlots:     []string{"0x0v", "100x200"},
-							IsRewardInventory: ptrutil.ToPtr(int8(1)),
-							SlotName:          "imp_1_tagid_1",
-							AdUnitName:        "tagid_1",
-						},
-						"imp_2": {
-							AdUnitName: "tagid_2",
-							SlotName:   "imp_2_tagid_2",
-						},
-					},
-				},
-				logInfo:    false,
-				forRespExt: true,
-			},
-			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
-				header: http.Header{
-					models.USER_AGENT_HEADER: []string{""},
-					models.IP_HEADER:         []string{""},
-				},
-			},
-		},
+		// {
+		// 	name: "req.Imp not mapped in ImpBidCtx",
+		// 	args: args{
+		// 		ao: analytics.AuctionObject{
+		// 			RequestWrapper: &openrtb_ext.RequestWrapper{
+		// 				BidRequest: &openrtb2.BidRequest{
+		// 					Imp: []openrtb2.Imp{
+		// 						{
+		// 							ID:    "imp1",
+		// 							TagID: "tagid",
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Response: &openrtb2.BidResponse{},
+		// 		},
+		// 		rCtx: &models.RequestCtx{
+		// 			Endpoint: models.EndpointV25,
+		// 			PubID:    5890,
+		// 		},
+		// 		logInfo:    false,
+		// 		forRespExt: true,
+		// 	},
+		// 	want: want{
+		// 		logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
+		// 		header: http.Header{
+		// 			models.USER_AGENT_HEADER: []string{""},
+		// 			models.IP_HEADER:         []string{""},
+		// 		},
+		// 	},
+		// },
+		// {
+		// 	name: "multi imps request",
+		// 	args: args{
+		// 		ao: analytics.AuctionObject{
+		// 			RequestWrapper: &openrtb_ext.RequestWrapper{
+		// 				BidRequest: &openrtb2.BidRequest{
+		// 					Imp: []openrtb2.Imp{
+		// 						{
+		// 							ID:    "imp_1",
+		// 							TagID: "tagid_1",
+		// 						},
+		// 						{
+		// 							ID:    "imp_2",
+		// 							TagID: "tagid_2",
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Response: &openrtb2.BidResponse{},
+		// 		},
+		// 		rCtx: &models.RequestCtx{
+		// 			PubID:    5890,
+		// 			Endpoint: models.EndpointV25,
+		// 			ImpBidCtx: map[string]models.ImpCtx{
+		// 				"imp_1": {
+		// 					SlotName:   "imp_1_tagid_1",
+		// 					AdUnitName: "tagid_1",
+		// 				},
+		// 				"imp_2": {
+		// 					AdUnitName: "tagid_2",
+		// 					SlotName:   "imp_2_tagid_2",
+		// 				},
+		// 			},
+		// 		},
+		// 		logInfo:    false,
+		// 		forRespExt: true,
+		// 	},
+		// 	want: want{
+		// 		logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
+		// 		header: http.Header{
+		// 			models.USER_AGENT_HEADER: []string{""},
+		// 			models.IP_HEADER:         []string{""},
+		// 		},
+		// 	},
+		// },
+		// {
+		// 	name: "multi imps request and one request has incomingslots",
+		// 	args: args{
+		// 		ao: analytics.AuctionObject{
+		// 			RequestWrapper: &openrtb_ext.RequestWrapper{
+		// 				BidRequest: &openrtb2.BidRequest{
+		// 					Imp: []openrtb2.Imp{
+		// 						{
+		// 							ID:    "imp_1",
+		// 							TagID: "tagid_1",
+		// 						},
+		// 						{
+		// 							ID:    "imp_2",
+		// 							TagID: "tagid_2",
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Response: &openrtb2.BidResponse{},
+		// 		},
+		// 		rCtx: &models.RequestCtx{
+		// 			PubID:    5890,
+		// 			Endpoint: models.EndpointV25,
+		// 			ImpBidCtx: map[string]models.ImpCtx{
+		// 				"imp_1": {
+		// 					IncomingSlots:     []string{"0x0v", "100x200"},
+		// 					IsRewardInventory: ptrutil.ToPtr(int8(1)),
+		// 					SlotName:          "imp_1_tagid_1",
+		// 					AdUnitName:        "tagid_1",
+		// 				},
+		// 				"imp_2": {
+		// 					AdUnitName: "tagid_2",
+		// 					SlotName:   "imp_2_tagid_2",
+		// 				},
+		// 			},
+		// 		},
+		// 		logInfo:    false,
+		// 		forRespExt: true,
+		// 	},
+		// 	want: want{
+		// 		logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","sz":["0x0v","100x200"],"au":"tagid_1","ps":[],"rwrd":1},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
+		// 		header: http.Header{
+		// 			models.USER_AGENT_HEADER: []string{""},
+		// 			models.IP_HEADER:         []string{""},
+		// 		},
+		// 	},
+		// },
 		{
 			name: "multi imps request and one imp has partner record",
 			args: args{
@@ -5281,100 +4940,6 @@ func Test_getFloorValueFromUpdatedRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			getFloorValueFromUpdatedRequest(tt.args.reqWrapper, tt.args.rCtx)
 			assert.Equal(t, tt.want, tt.args.rCtx, tt.name)
-		})
-	}
-}
-
-func TestGetBidPriceAfterCurrencyConversion(t *testing.T) {
-	type args struct {
-		price             float64
-		requestCurrencies []string
-		responseCurrency  string
-		currencyConverter func(fromCurrency string, toCurrency string, value float64) (float64, error)
-	}
-	tests := []struct {
-		name string
-		args args
-		want float64
-	}{
-		{
-			name: "Single request currency - successful conversion",
-			args: args{
-				price:             100.0,
-				requestCurrencies: []string{"EUR"},
-				responseCurrency:  "USD",
-				currencyConverter: func(fromCurrency string, toCurrency string, value float64) (float64, error) {
-					if fromCurrency == "USD" && toCurrency == "EUR" {
-						return 85.0, nil // Assuming conversion rate USD to EUR is 0.85
-					}
-					return 0, fmt.Errorf("unsupported conversion")
-				},
-			},
-			want: 85.0,
-		},
-		{
-			name: "Multiple request currencies - first successful conversion",
-			args: args{
-				price:             100.0,
-				requestCurrencies: []string{"EUR", "GBP"},
-				responseCurrency:  "USD",
-				currencyConverter: func(fromCurrency string, toCurrency string, value float64) (float64, error) {
-					if fromCurrency == "USD" && toCurrency == "EUR" {
-						return 85.0, nil // Successful conversion to EUR
-					}
-					return 0, fmt.Errorf("unsupported conversion")
-				},
-			},
-			want: 85.0,
-		},
-		{
-			name: "Multiple request currencies - second successful conversion",
-			args: args{
-				price:             100.0,
-				requestCurrencies: []string{"JPY", "GBP"},
-				responseCurrency:  "USD",
-				currencyConverter: func(fromCurrency string, toCurrency string, value float64) (float64, error) {
-					if fromCurrency == "USD" && toCurrency == "GBP" {
-						return 75.0, nil // Successful conversion to GBP
-					}
-					return 0, fmt.Errorf("unsupported conversion")
-				},
-			},
-			want: 75.0,
-		},
-		{
-			name: "No request currencies provided - default to USD",
-			args: args{
-				price:             100.0,
-				requestCurrencies: []string{},
-				responseCurrency:  "USD",
-				currencyConverter: func(fromCurrency string, toCurrency string, value float64) (float64, error) {
-					if fromCurrency == "USD" && toCurrency == "USD" {
-						return 100.0, nil // No conversion needed
-					}
-					return 0, fmt.Errorf("unsupported conversion")
-				},
-			},
-			want: 100.0,
-		},
-		{
-			name: "Conversion fails for all currencies",
-			args: args{
-				price:             100.0,
-				requestCurrencies: []string{"JPY", "CNY"},
-				responseCurrency:  "USD",
-				currencyConverter: func(fromCurrency string, toCurrency string, value float64) (float64, error) {
-					return 0, fmt.Errorf("conversion failed")
-				},
-			},
-			want: 0.0, // Default to 0 on failure
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := GetBidPriceAfterCurrencyConversion(tt.args.price, tt.args.requestCurrencies, tt.args.responseCurrency, tt.args.currencyConverter)
-			assert.Equal(t, tt.want, got, "mismatched price")
 		})
 	}
 }

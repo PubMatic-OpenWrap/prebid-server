@@ -34,8 +34,7 @@ func handleRawBidderResponseHook(
 
 	// allowedBids will store all bids that have passed the attribute check
 	allowedBids := make([]*adapters.TypedBid, 0)
-	for _, bid := range payload.BidderResponse.Bids {
-
+	for _, bid := range payload.Bids {
 		failedChecksData := make(map[string]interface{})
 		bidMediaTypes := mediaTypesFromBid(bid)
 		dealID := bid.Bid.DealID
@@ -77,7 +76,7 @@ func handleRawBidderResponseHook(
 	}
 
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-	if len(payload.BidderResponse.Bids) != len(allowedBids) {
+	if len(payload.Bids) != len(allowedBids) {
 		changeSet.RawBidderResponse().Bids().Update(allowedBids)
 		result.ChangeSet = changeSet
 	}

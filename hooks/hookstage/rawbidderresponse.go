@@ -25,6 +25,6 @@ type RawBidderResponse interface {
 // objects representing bids returned by a particular bidder.
 // Hooks are allowed to modify bids using mutations.
 type RawBidderResponsePayload struct {
-	BidderResponse *adapters.BidderResponse
-	Bidder         string
+	Bids   []*adapters.TypedBid
+	Bidder string
 }

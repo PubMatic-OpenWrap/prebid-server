@@ -154,7 +154,7 @@ func (e mockTimeoutHook) HandleRawBidderResponseHook(_ context.Context, _ hookst
 	time.Sleep(20 * time.Millisecond)
 	c := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 	c.AddMutation(func(payload hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-		payload.BidderResponse.Bids[0].BidMeta = &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "new-code"}
+		payload.Bids[0].BidMeta = &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "new-code"}
 		return payload, nil
 	}, hookstage.MutationUpdate, "bidderResponse", "bidMeta.AdapterCode")
 
@@ -371,7 +371,7 @@ func (e mockUpdateBidderResponseHook) HandleRawBidderResponseHook(_ context.Cont
 	c := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 	c.AddMutation(
 		func(payload hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-			payload.BidderResponse.Bids[0].DealPriority = 10
+			payload.Bids[0].DealPriority = 10
 			return payload, nil
 		}, hookstage.MutationUpdate, "bidderResponse", "bid.deal-priority",
 	)
