@@ -36,7 +36,7 @@ func Test_injectNativeCreativeTrackers(t *testing.T) {
 				},
 				endpoint: models.EndpointAppLovinMax,
 			},
-			wantBurl: `t.pubmatic.com/track?tid=1234&owsspburl=http://burl.com`,
+			wantBurl: `t.pubmatic.com/track?tid=1234&owsspburl=http%3A%2F%2Fburl.com`,
 			wantAdm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
 			wantErr:  false,
 		},

@@ -45,7 +45,7 @@ func TestInjectBannerTracker(t *testing.T) {
 			},
 			want: want{
 				adm:  `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="sample.com"></div>`,
-				burl: `sample.com/track?tid=1234&owsspburl=http://burl.com`,
+				burl: `sample.com/track?tid=1234&owsspburl=http%3A%2F%2Fburl.com`,
 			},
 		},
 		{
