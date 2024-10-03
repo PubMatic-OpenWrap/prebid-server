@@ -54,7 +54,7 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 		} else {
 			deviceExt.DeleteIFAType()
 		}
-	} else if extSessionID != "" {
+	} else if extSessionID != "" && dvc.DeviceIFA == "" {
 		dvc.DeviceIFA = extSessionID
 		dvc.IFATypeID = ptrutil.ToPtr(models.DeviceIfaTypeIdSessionId)
 		deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)

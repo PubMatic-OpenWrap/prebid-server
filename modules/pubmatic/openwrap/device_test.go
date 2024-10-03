@@ -391,17 +391,60 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 				},
 			},
 			want: &models.DeviceCtx{
+				DeviceIFA: `existing_ifa_id`,
+				Ext: func() *models.ExtDevice {
+					deviceExt := &models.ExtDevice{}
+					deviceExt.SetSessionID(`sample_session_id`)
+					return deviceExt
+				}(),
+			},
+		},
+		{
+			name: `ifa_type_missing_ifa_empty_session_id_present`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					DeviceIFA: "",
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetSessionID(`sample_session_id`)
+						return deviceExt
+					}(),
+				},
+			},
+			want: &models.DeviceCtx{
 				IFATypeID: ptrutil.ToPtr(9),
 				DeviceIFA: `sample_session_id`,
 				Ext: func() *models.ExtDevice {
 					deviceExt := &models.ExtDevice{}
 					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
 					deviceExt.SetSessionID(`sample_session_id`)
-
 					return deviceExt
 				}(),
 			},
 		},
+		{
+			name: `ifa_type_missing_ifa_not_present_session_id_present`,
+			args: args{
+				dvc: &models.DeviceCtx{
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.SetSessionID(`sample_session_id`)
+						return deviceExt
+					}(),
+				},
+			},
+			want: &models.DeviceCtx{
+				IFATypeID: ptrutil.ToPtr(9),
+				DeviceIFA: `sample_session_id`,
+				Ext: func() *models.ExtDevice {
+					deviceExt := &models.ExtDevice{}
+					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
+					deviceExt.SetSessionID(`sample_session_id`)
+					return deviceExt
+				}(),
+			},
+		},
+
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {

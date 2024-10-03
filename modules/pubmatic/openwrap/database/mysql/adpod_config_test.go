@@ -65,7 +65,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						MaxDuration: 60,
 						MinDuration: 1,
 						PodDur:      180,
-						Maxseq:      5,
+						MaxSeq:      5,
 					},
 				},
 			},
@@ -105,7 +105,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						MaxDuration: 60,
 						MinDuration: 1,
 						PodDur:      180,
-						Maxseq:      5,
+						MaxSeq:      5,
 					},
 				},
 			},
@@ -143,8 +143,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 				Dynamic: []adpodconfig.Dynamic{
 					{
 						PodDur:  600,
-						Maxseq:  5,
-						Rqddurs: []int{6, 60, 120, 600},
+						MaxSeq:  5,
+						RqdDurs: []int64{6, 60, 120, 600},
 					},
 				},
 			},
@@ -188,7 +188,7 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 						MaxDuration: 60,
 						MinDuration: 1,
 						PodDur:      180,
-						Maxseq:      5,
+						MaxSeq:      5,
 					},
 				},
 				Structured: []adpodconfig.Structured{
@@ -205,8 +205,8 @@ func TestMySqlDBGetAdpodConfigs(t *testing.T) {
 					{
 						MaxDuration: 20,
 						MinDuration: 5,
-						Maxseq:      ptrutil.ToPtr(3),
-						PodDur:      ptrutil.ToPtr(60),
+						MaxSeq:      ptrutil.ToPtr(int64(3)),
+						PodDur:      ptrutil.ToPtr(int64(60)),
 					},
 				},
 			},

@@ -112,6 +112,7 @@ func (m OpenWrap) handleEntrypointHook(
 		LoggerImpressionID:        requestExtWrapper.LoggerImpressionID,
 		ClientConfigFlag:          requestExtWrapper.ClientConfigFlag,
 		SSAI:                      requestExtWrapper.SSAI,
+		AdruleFlag:                requestExtWrapper.Video.AdruleFlag,
 		IP:                        models.GetIP(payload.Request),
 		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
 		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
@@ -133,12 +134,15 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl: endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
-	// SSAuction will be always 1 for CTV request
 	if rCtx.IsCTVRequest {
+		// SSAuction will be always 1 for CTV request
 		rCtx.SSAuction = 1
+
+		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it

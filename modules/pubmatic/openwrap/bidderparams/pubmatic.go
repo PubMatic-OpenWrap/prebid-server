@@ -3,7 +3,6 @@ package bidderparams
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
@@ -12,16 +11,9 @@ import (
 )
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
-	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
-
-	// change profile id for pubmatic2
-	if secondaryProfileID, ok := rctx.PartnerConfigMap[partnerID][models.KEY_PROFILE_ID]; ok {
-		wrapExt = fmt.Sprintf(`{"%s":0,"%s":%s}`, models.SS_PM_VERSION_ID, models.SS_PM_PROFILE_ID, secondaryProfileID)
-	}
-
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
-		PublisherId: strconv.Itoa(rctx.PubID),
-		WrapExt:     json.RawMessage(wrapExt),
+		PublisherId: getPubMaticPublisherID(rctx, partnerID),
+		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
 		Keywords:    getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
 		Floors:      getApplovinBidFloors(rctx, imp),
 		SendBurl:    rctx.SendBurl,
@@ -38,13 +30,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		isRegexKGP = true
 	}
 
-	if rctx.IsTestRequest == 1 {
-		matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
-		params, err := json.Marshal(extImpPubMatic)
-		return matchedSlot, matchedPattern, isRegexSlot, params, err
-	}
-
-	if rctx.IsTestRequest > 0 {
+	if rctx.IsTestRequest == models.TestValueTwo {
 		if len(slots) > 0 {
 			extImpPubMatic.AdSlot = slots[0]
 		}
@@ -148,4 +134,34 @@ func getMatchingSlotAndPattern(rctx models.RequestCtx, cache cache.Cache, slots 
 		}
 	}
 	return matchedSlot, matchedPattern, isRegexSlot
+}
+
+func getPubMaticPublisherID(rctx models.RequestCtx, partnerID int) string {
+	//Pubmatic secondary flow send account level pubID
+	if pubID, ok := rctx.PartnerConfigMap[partnerID][models.KEY_PUBLISHER_ID]; ok {
+		return pubID
+	}
+	//PubMatic alias flow
+	if pubID, ok := rctx.PartnerConfigMap[partnerID][models.PubID]; ok {
+		return pubID
+	}
+	//PubMatic primary flow
+	return rctx.PubIDStr
+}
+
+func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessage {
+	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
+
+	// change profile id for pubmatic2
+	if secondaryProfileID, ok := rctx.PartnerConfigMap[partnerID][models.KEY_PROFILE_ID]; ok {
+		wrapExt = fmt.Sprintf(`{"%s":%s}`, models.SS_PM_PROFILE_ID, secondaryProfileID)
+	}
+
+	//Pubmatic alias flow do not send wrapExt
+	if isAlias, ok := rctx.PartnerConfigMap[partnerID][models.IsAlias]; ok && isAlias == "1" {
+		if pubID, ok := rctx.PartnerConfigMap[partnerID][models.PubID]; ok && pubID != rctx.PubIDStr {
+			return nil
+		}
+	}
+	return json.RawMessage(wrapExt)
 }

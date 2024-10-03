@@ -16,7 +16,7 @@ func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid o
 
 	var replacedTrackerStr, trackerFormat string
 	trackerFormat = models.TrackerCallWrap
-	if trackerWithOM(tracker, rctx.Platform, seat) {
+	if tracker.IsOMEnabled {
 		trackerFormat = models.TrackerCallWrapOMActive
 	}
 	replacedTrackerStr = strings.Replace(trackerFormat, "${escapedUrl}", tracker.TrackerURL, 1)
@@ -40,14 +40,20 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 	return adm
 }
 
-// TrackerWithOM checks for OM active condition for DV360
-func trackerWithOM(tracker models.OWTracker, platform, bidderCode string) bool {
-	if platform == models.PLATFORM_APP && bidderCode == string(openrtb_ext.BidderPubmatic) {
-		if tracker.DspId == models.DspId_DV360 {
-			return true
-		}
+// TrackerWithOM checks for OM active condition for DV360 with Pubmatic and other bidders
+func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int) bool {
+	if rctx.Platform != models.PLATFORM_APP {
+		return false
 	}
-	return false
+
+	// check for OM active for DV360 with Pubmatic
+	if prebidPartnerName == string(openrtb_ext.BidderPubmatic) && dspID == models.DspId_DV360 {
+		return true
+	}
+
+	// check for OM active for other bidders
+	_, isPresent := rctx.ImpCountingMethodEnabledBidders[prebidPartnerName]
+	return isPresent
 }
 
 // applyTBFFeature adds the tracker before or after the actual bid.Adm

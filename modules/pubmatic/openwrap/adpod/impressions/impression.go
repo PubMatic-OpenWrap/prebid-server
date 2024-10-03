@@ -27,14 +27,14 @@ type ImpGenerator interface {
 	// Algorithm() int // returns algorithm used for computing number of impressions
 }
 
-func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx, pubId string, me metrics.MetricsEngine) ([]*openrtb_ext.ImpWrapper, []error) {
+func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig, pubId string, me metrics.MetricsEngine) ([]*openrtb_ext.ImpWrapper, []error) {
 	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
 
 	for _, impWrapper := range request.GetImp() {
 		eachImpCtx := impCtx[impWrapper.ID]
 
-		impAdpodConfig, err := getAdPodImpConfig(impWrapper.Imp, eachImpCtx.AdpodConfig)
+		impAdpodConfig, err := getAdPodImpConfig(impWrapper.Imp, eachImpCtx.AdpodConfig, adpodProfileCfg)
 		if impAdpodConfig == nil {
 			imps = append(imps, impWrapper)
 			if err != nil {
@@ -95,13 +95,13 @@ func generateImpressionID(impID string, seqNo int) string {
 }
 
 // getAdPodImpsConfigs will return number of impressions configurations within adpod
-func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod) ([]*models.ImpAdPodConfig, error) {
+func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) ([]*models.ImpAdPodConfig, error) {
 	// This case for non adpod video impression
 	if adpod == nil {
 		return nil, nil
 	}
-	selectedAlgorithm := SelectAlgorithm(adpod)
-	impGen := NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, selectedAlgorithm)
+	selectedAlgorithm := SelectAlgorithm(adpod, adpodProfileCfg)
+	impGen := NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, adpodProfileCfg, selectedAlgorithm)
 	impRanges := impGen.Get()
 
 	// labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
@@ -132,10 +132,10 @@ func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod) ([]*models.ImpAdP
 // Return Value:
 //   - MinMaxAlgorithm (default)
 //   - ByDurationRanges: if reqAdPod extension has VideoAdDuration and VideoAdDurationMatchingPolicy is "exact" algorithm
-func SelectAlgorithm(reqAdPod *models.AdPod) int {
+func SelectAlgorithm(reqAdPod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) int {
 	if reqAdPod != nil {
-		if len(reqAdPod.VideoAdDuration) > 0 &&
-			(models.OWExactVideoAdDurationMatching == reqAdPod.VideoAdDurationMatching || models.OWRoundupVideoAdDurationMatching == reqAdPod.VideoAdDurationMatching) {
+		if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurations) > 0 &&
+			(models.OWExactVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy || models.OWRoundupVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) {
 			return models.ByDurationRanges
 		}
 	}
@@ -146,7 +146,7 @@ func SelectAlgorithm(reqAdPod *models.AdPod) int {
 // based on input algorithm type
 // if invalid algorithm type is passed, it returns default algorithm which will compute
 // impressions based on minimum ad slot duration
-func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, algorithm int) ImpGenerator {
+func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, algorithm int) ImpGenerator {
 	switch algorithm {
 	case models.MaximizeForDuration:
 		g := newMaximizeForDuration(podMinDuration, podMaxDuration, adpod)
@@ -157,10 +157,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, a
 		return &g
 
 	case models.ByDurationRanges:
-		g := newByDurationRanges(adpod.VideoAdDurationMatching, adpod.VideoAdDuration,
-			int(adpod.MaxAds),
-			adpod.MinDuration, adpod.MaxDuration)
-
+		g := newByDurationRanges(adpodProfileCfg, int(adpod.MaxAds), adpod.MinDuration, adpod.MaxDuration)
 		return &g
 	}
 
