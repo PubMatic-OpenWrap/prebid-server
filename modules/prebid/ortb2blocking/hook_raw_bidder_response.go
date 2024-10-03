@@ -35,6 +35,7 @@ func handleRawBidderResponseHook(
 	// allowedBids will store all bids that have passed the attribute check
 	allowedBids := make([]*adapters.TypedBid, 0)
 	for _, bid := range payload.Bids {
+
 		failedChecksData := make(map[string]interface{})
 		bidMediaTypes := mediaTypesFromBid(bid)
 		dealID := bid.Bid.DealID

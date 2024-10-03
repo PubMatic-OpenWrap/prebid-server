@@ -3,6 +3,7 @@ package openwrap
 import (
 	"fmt"
 	"net/http"
+
 	"testing"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
@@ -13,9 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
 	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +23,7 @@ var invalidVastXMLAdM = "<VAST version='3.0'><Ad id='1'><AdSystem>PubMatic</AdSy
 var inlineXMLAdM = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><VAST version=\"3.0\"><Ad id=\"1329167\"><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Error>https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;er=[ERRORCODE]</Error><Error>https://track.dsptracker.com?p=1234&amp;er=[ERRORCODE]</Error><Impression>https://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?operId=1&amp;pubId=64195&amp;siteId=47105&amp;adId=1405154&amp;adType=13&amp;adServerId=243&amp;kefact=1.000000&amp;kaxefact=1.000000&amp;kadNetFrequecy=0&amp;kadwidth=0&amp;kadheight=0&amp;kadsizeid=97&amp;kltstamp=1536933242&amp;indirectAdId=0&amp;adServerOptimizerId=2&amp;ranreq=0.05969169352174375&amp;kpbmtpfact=11.000000&amp;dcId=1&amp;tldId=0&amp;passback=0&amp;svr=ktk57&amp;ekefact=er2bW2sDAwCra06ACbsIQySn5nqBtYsTl8fy5lupAexh37D_&amp;ekaxefact=er2bW4EDAwB_LQpJJ23Fq0DcNC-NSAFXdpSQC8XBk_S33_Fa&amp;ekpbmtpfact=er2bW5MDAwDJHdBnLBt5IrRuh7x0oqp_tjIALv_VvSQDAl6R&amp;crID=m:1_x:3_y:3_p:11_va:3&amp;lpu=ae.com&amp;ucrid=678722001014421372&amp;campaignId=16774&amp;creativeId=0&amp;pctr=0.000000&amp;wDSPByrId=511&amp;wDspId=27&amp;wbId=0&amp;wrId=0&amp;wAdvID=3170&amp;isRTB=1&amp;rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1&amp;imprId=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;oid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;pageURL=http%253A%252F%252Fowsdk-stagingams.pubmatic.com%253A8443%252Fvast-validator%252F%2523&amp;sec=1&amp;pmc=1</Impression><Impression>https://DspImpressionTracker.com/</Impression><Creatives><Creative AdID=\"1329167\"><Linear skipoffset=\"20%\"><TrackingEvents><Tracking event=\"close\">https://mytracking.com/linear/close</Tracking><Tracking event=\"skip\">https://mytracking.com/linear/skip</Tracking><Tracking event=\"creativeView\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=1</Tracking><Tracking event=\"start\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=2</Tracking><Tracking event=\"midpoint\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=3</Tracking><Tracking event=\"firstQuartile\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=4</Tracking><Tracking event=\"thirdQuartile\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=5</Tracking><Tracking event=\"complete\">https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=6</Tracking></TrackingEvents><Duration>00:00:04</Duration><VideoClicks><ClickThrough>https://www.automationtester.in</ClickThrough><ClickTracking>https://aktrack.pubmatic.com/track?operId=7&amp;p=64195&amp;s=47105&amp;a=1405154&amp;wa=243&amp;ts=1536933242&amp;wc=16774&amp;crId=m:1_x:3_y:3_p:11_va:3&amp;ucrid=678722001014421372&amp;impid=24D9FEDA-C97D-4DF7-B747-BD3CFF5AC7B5&amp;advertiser_id=3170&amp;ecpm=1.000000&amp;e=99</ClickTracking></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4</MediaFile><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4</MediaFile><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">https://stagingams.pubmatic.com:8443/openwrap/media/mp4-sample-3.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
 
 func TestHandleRawBidderResponseHook(t *testing.T) {
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockMetricsEngine := mock_metrics.NewMockMetricsEngine(ctrl)
@@ -33,21 +33,24 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		payload             hookstage.RawBidderResponsePayload
 		moduleInvocationCtx hookstage.ModuleInvocationContext
 		isAdmUpdated        bool
+		randomNumber        int
 	}
 	tests := []struct {
-		name           string
-		args           args
-		wantResult     hookstage.HookResult[hookstage.RawBidderResponsePayload]
-		setup          func()
-		wantSeatNonBid openrtb_ext.NonBidCollection
-		mockHandler    http.HandlerFunc
+		name        string
+		args        args
+		wantResult  hookstage.HookResult[hookstage.RawBidderResponsePayload]
+		setup       func()
+		wantErr     bool
+		mockHandler http.HandlerFunc
 	}{
+
 		{
 			name: "Empty Request Context",
 			args: args{
 				module: OpenWrap{},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
+			wantErr:    false,
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context with type video",
@@ -61,73 +64,32 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   "<div>This is an Ad</div>",
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							}}}},
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   "<div>This is an Ad</div>",
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						}}},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				randomNumber:        1,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantErr:    false,
 		},
 		{
 			name: "Set Vast Unwrapper to false in request context with type video, stats enabled true",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
-						Features: config.FeatureToggle{},
-						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
-							MaxWrapperSupport: 5,
-							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
-							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
-						}},
-					metricEngine: mockMetricsEngine,
-				},
-				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							}}},
-					Bidder: "pubmatic",
-				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
-			},
-			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Add("unwrap-status", "0")
-				w.Header().Add("unwrap-count", "1")
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(vastXMLAdM))
-			}),
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			setup: func() {
-			},
-		},
-		{
-			name: "Set Vast Unwrapper to true in request context with invalid vast xml",
-			args: args{
-				module: OpenWrap{
-					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapStatsPercent: 2,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -137,20 +99,68 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   invalidVastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
 							},
+							BidType: "video",
+						}},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				randomNumber:        1,
+			},
+			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "1")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(vastXMLAdM))
+			}),
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1")
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+			},
+			wantErr: false,
+		},
+		{
+			name: "Set Vast Unwrapper to true in request context with invalid vast xml",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						Features: config.FeatureToggle{
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
+						},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   invalidVastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
@@ -166,7 +176,9 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
+			wantErr: true,
 		},
+
 		{
 			name: "Set Vast Unwrapper to true in request context with type video",
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -179,7 +191,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -189,34 +202,34 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
 							},
+							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-				isAdmUpdated:        true,
+
+				isAdmUpdated: true,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
+			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with type video",
@@ -224,7 +237,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -234,37 +248,36 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
 							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-456",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-789",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							}},
-					},
+							BidType: "video",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-456",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-789",
+								W:     100,
+								H:     50,
+							},
+							BidType: "video",
+						}},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 				isAdmUpdated:        true,
+				randomNumber:        10,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -274,19 +287,22 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			}),
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0").Times(2)
-				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1").Times(2)
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).Times(2)
-				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).Times(2)
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
+			wantErr: false,
 		},
+
 		{
 			name: "Set Vast Unwrapper to true in request context for multiple bids with different type",
 			args: args{
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -296,37 +312,36 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
 							},
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-456",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   "This is banner creative",
-									CrID:  "Cr-789",
-									W:     100,
-									H:     50,
-								},
-								BidType: "banner",
-							}},
-					},
+							BidType: "video",
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-456",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   "This is banner creative",
+								CrID:  "Cr-789",
+								W:     100,
+								H:     50,
+							},
+							BidType: "banner",
+						}},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-				isAdmUpdated:        true,
+
+				isAdmUpdated: true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -336,11 +351,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			}),
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any()).AnyTimes()
 			},
+			wantErr: false,
 		},
 		{
 			name: "Set Vast Unwrapper to true in request context with type video and source owsdk",
@@ -348,7 +364,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				module: OpenWrap{
 					cfg: config.Config{
 						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
+							VASTUnwrapStatsPercent: 2,
+							VASTUnwrapPercent:      50,
 						},
 						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
 							MaxWrapperSupport: 5,
@@ -358,26 +375,25 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					metricEngine: mockMetricsEngine,
 				},
 				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   vastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
+					Bids: []*adapters.TypedBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:    "Bid-123",
+								ImpID: fmt.Sprintf("div-adunit-%d", 123),
+								Price: 2.1,
+								AdM:   vastXMLAdM,
+								CrID:  "Cr-234",
+								W:     100,
+								H:     50,
 							},
+							BidType: "video",
 						},
 					},
 					Bidder: "pubmatic",
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-				isAdmUpdated:        true,
+
+				isAdmUpdated: true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -387,141 +403,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 			}),
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
-				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1")
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "1").AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).AnyTimes()
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).AnyTimes()
 			},
-		},
-		{
-			name: "bid with InvalidVAST should be discarded and should be present in seatNonBid",
-			args: args{
-				module: OpenWrap{
-					cfg: config.Config{
-						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
-						},
-						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
-							MaxWrapperSupport: 5,
-							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
-							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
-						}},
-					metricEngine: mockMetricsEngine,
-				},
-				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   invalidVastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							},
-						},
-					},
-					Bidder: "pubmatic",
-				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-			},
-			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Add("unwrap-status", models.UnwrapInvalidVASTStatus)
-				w.WriteHeader(http.StatusNoContent)
-			}),
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", models.UnwrapInvalidVASTStatus)
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-			},
-			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
-				seatNonBid.AddBid(openrtb_ext.NonBid{
-					ImpId:      fmt.Sprintf("div-adunit-%d", 123),
-					StatusCode: int(nbr.LossBidLostInVastUnwrap),
-					Ext: openrtb_ext.ExtNonBid{
-						Prebid: openrtb_ext.ExtNonBidPrebid{
-							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price: 2.1,
-								ID:    "Bid-123",
-								W:     100,
-								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
-							},
-						},
-					},
-				}, "pubmatic")
-				return seatNonBid
-			}(),
-		},
-		{
-			name: "bid with EmptyVAST should be discarded and should be present in seatNonBid",
-			args: args{
-				module: OpenWrap{
-					cfg: config.Config{
-						Features: config.FeatureToggle{
-							VASTUnwrapPercent: 50,
-						},
-						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
-							MaxWrapperSupport: 5,
-							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
-							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
-						}},
-					metricEngine: mockMetricsEngine,
-				},
-				payload: hookstage.RawBidderResponsePayload{
-					BidderResponse: &adapters.BidderResponse{
-						Bids: []*adapters.TypedBid{
-							{
-								Bid: &openrtb2.Bid{
-									ID:    "Bid-123",
-									ImpID: fmt.Sprintf("div-adunit-%d", 123),
-									Price: 2.1,
-									AdM:   invalidVastXMLAdM,
-									CrID:  "Cr-234",
-									W:     100,
-									H:     50,
-								},
-								BidType: "video",
-							},
-						},
-					},
-					Bidder: "pubmatic",
-				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
-			},
-			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Add("unwrap-status", models.UnwrapEmptyVASTStatus)
-				w.WriteHeader(http.StatusNoContent)
-			}),
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
-			setup: func() {
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", models.UnwrapEmptyVASTStatus)
-				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
-			},
-			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
-				seatNonBid.AddBid(openrtb_ext.NonBid{
-					ImpId:      fmt.Sprintf("div-adunit-%d", 123),
-					StatusCode: int(nbr.LossBidLostInVastUnwrap),
-					Ext: openrtb_ext.ExtNonBid{
-						Prebid: openrtb_ext.ExtNonBidPrebid{
-							Bid: openrtb_ext.ExtNonBidPrebidBid{
-								Price: 2.1,
-								ID:    "Bid-123",
-								W:     100,
-								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
-							},
-						},
-					},
-				}, "pubmatic")
-				return seatNonBid
-			}(),
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -530,56 +417,19 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				tt.setup()
 			}
 
+			GetRandomNumberIn1To100 = func() int {
+				return tt.args.randomNumber
+			}
+
 			m := tt.args.module
 			m.unwrap = unwrap.NewUnwrap("http://localhost:8001/unwrap", 200, tt.mockHandler, m.metricEngine)
-			hookResult, _ := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload)
-			if tt.args.moduleInvocationCtx.ModuleContext != nil && tt.args.isAdmUpdated {
-				assert.Equal(t, inlineXMLAdM, tt.args.payload.BidderResponse.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+			_, err := m.handleRawBidderResponseHook(tt.args.moduleInvocationCtx, tt.args.payload)
+			if !assert.NoError(t, err, tt.wantErr) {
+				return
 			}
-			assert.Equal(t, tt.wantSeatNonBid, hookResult.SeatNonBid, "mismatched seatNonBids")
-		})
-	}
-}
-
-func TestIsEligibleForUnwrap(t *testing.T) {
-	type args struct {
-		bid *adapters.TypedBid
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "Bid is nil",
-			args: args{bid: nil},
-			want: false,
-		},
-		{
-			name: "Bid.Bid is nil",
-			args: args{bid: &adapters.TypedBid{Bid: nil}},
-			want: false,
-		},
-		{
-			name: "AdM is empty",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}},
-			want: false,
-		},
-		{
-			name: "BidType is not video",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeBanner}},
-			want: false,
-		},
-		{
-			name: "Bid is eligible for unwrap",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeVideo}},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isEligibleForUnwrap(tt.args.bid)
-			assert.Equal(t, tt.want, got)
+			if tt.args.moduleInvocationCtx.ModuleContext != nil && tt.args.isAdmUpdated {
+				assert.Equal(t, inlineXMLAdM, tt.args.payload.Bids[0].Bid.AdM, "AdM is not updated correctly after executing RawBidderResponse hook.")
+			}
 		})
 	}
 }

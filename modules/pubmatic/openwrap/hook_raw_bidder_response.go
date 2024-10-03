@@ -34,7 +34,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		}
 		wg.Wait()
 		changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-		for _, bid := range payload.Bids {
+		changeSet.RawBidderResponse().Bids().Update(payload.Bids)
 		result.ChangeSet = changeSet
 	} else {
 		vastRequestContext.VastUnwrapStatsEnabled = GetRandomNumberIn1To100() <= m.cfg.Features.VASTUnwrapStatsPercent
