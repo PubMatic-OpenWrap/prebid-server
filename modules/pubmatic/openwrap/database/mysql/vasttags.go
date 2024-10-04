@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -28,5 +29,10 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 			vasttags[vastTag.ID] = &vastTag
 		}
 	}
+
+	if err = rows.Err(); err != nil {
+		glog.Errorf("PublisherVASTTags row scan failed for pubID %d", pubID)
+	}
+
 	return vasttags, nil
 }

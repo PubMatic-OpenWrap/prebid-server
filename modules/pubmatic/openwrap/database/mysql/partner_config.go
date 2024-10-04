@@ -99,5 +99,10 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 	if err != nil {
 		return versionID, displayVersionIDFromDB, platform.String, profileType, err
 	}
+
+	if err = row.Err(); err != nil {
+		glog.Errorf("LiveVersionInnerQuery, DisplayVersionInnerQuery row scan failed for pubID %d", pubID)
+	}
+
 	return versionID, displayVersionIDFromDB, platform.String, profileType, nil
 }

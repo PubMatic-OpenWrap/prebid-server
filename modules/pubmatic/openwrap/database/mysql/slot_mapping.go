@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -32,6 +33,10 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error
 			continue
 		}
 		nameHashMap[name] = hash
+	}
+
+	if err = rows.Err(); err != nil {
+		glog.Errorf("SlotNameHash row scan failed for pubID %d", pubID)
 	}
 
 	//vastTagHookPublisherSlotName(nameHashMap, pubID)
@@ -67,6 +72,11 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 		}
 
 	}
+
+	if err = rows.Err(); err != nil {
+		glog.Errorf("WrapperSlotMappingsQuery/WrapperLiveVersionSlotMappings row scan failed for profileID %d", profileID)
+	}
+
 	//vastTagHookPartnerSlotMapping(partnerSlotMappingMap, profileId, displayVersion)
 	return partnerSlotMappingMap, nil
 }

@@ -27,5 +27,10 @@ func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
 		}
 		profileTypePlatformMap[ptpKey] = ptpValue
 	}
+
+	if err = rows.Err(); err != nil {
+		glog.Errorf("ProfileTypePlatformMapQuery row scan failed")
+	}
+
 	return profileTypePlatformMap, nil
 }
