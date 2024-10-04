@@ -78,9 +78,21 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
+func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *models.AdPod) error {
 	if config == nil {
 		return nil
+	}
+
+	if video.MinDuration < 0 {
+		return errors.New("imp.video.minduration must be number positive number")
+	}
+
+	if video.MaxDuration <= 0 {
+		return errors.New("imp.video.maxduration must be number positive non zero number")
+	}
+
+	if video.MinDuration > video.MaxDuration {
+		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
 	}
 
 	if config.MinAds <= 0 {
@@ -113,6 +125,10 @@ func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
 
 	if config.MinDuration > config.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
+	}
+
+	if !((config.MinAds*config.MinDuration) <= int(video.MaxDuration) && int(video.MinDuration) <= (config.MaxAds*config.MaxDuration)) {
+		return errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 	}
 
 	if rCtx.AdpodProfileConfig != nil && len(rCtx.AdpodProfileConfig.AdserverCreativeDurations) > 0 {
