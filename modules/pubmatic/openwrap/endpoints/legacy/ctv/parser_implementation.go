@@ -2125,17 +2125,17 @@ func (o *OpenRTB) ORTBDeviceIpv6() (err error) {
 }
 
 // ORTBDeviceDnt will read and set ortb Device.Dnt parameter
-func (o *OpenRTB) ORTBDeviceDnt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceDnt)
-	if !ok || err != nil {
-		return
+// ORTBDeviceDnt will read and set ortb Device.Dnt parameter
+func (o *OpenRTB) ORTBDeviceDnt() error {
+	dnt, err := o.values.GetBoolToInt(constant.ORTBDeviceDnt)
+	if err != nil || dnt == nil {
+		return err
 	}
 	if o.ortb.Device == nil {
 		o.ortb.Device = &openrtb2.Device{}
 	}
-	val8 := int8(val)
-	o.ortb.Device.DNT = &val8
-	return
+	o.ortb.Device.DNT = ptrutil.ToPtr(int8(*dnt))
+	return nil
 }
 
 // ORTBDeviceLmt will read and set ortb Device.Lmt parameter
