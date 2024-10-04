@@ -572,7 +572,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			var isValidAppStoreUrl bool
 			rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx)
 			if isValidAppStoreUrl {
-				updateSkadnSourceapp(rCtx, rCtx.AppLovinMax.AppStoreUrl, payload.BidRequest, impExt)
+				updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
 			}
 			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
 		}
@@ -1364,22 +1364,26 @@ func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {
 	return appStoreUrl, isValidAppStoreUrl
 }
 
-func updateSkadnSourceapp(rctx models.RequestCtx, appStoreUrl string, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
-	var err error
-	if bidRequest.Device != nil && strings.ToLower(bidRequest.Device.OS) == "ios" {
-		//no multiple imp supported for AppLovinMax
-		if impExt != nil {
-			if impExt.SKAdnetwork == nil {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID, appStoreUrl)
-			}
-			var itunesID string
-			if itunesID = extractItunesIdFromAppStoreUrl(appStoreUrl); itunesID == "" {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
-			}
-			if impExt.SKAdnetwork, err = jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, appStoreUrl, err.Error())
-			}
-		}
+func updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
+	if bidRequest.Device == nil || strings.ToLower(bidRequest.Device.OS) != "ios" {
+		return
+	}
+
+	if impExt == nil || impExt.SKAdnetwork == nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID)
+		return
+	}
+
+	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppLovinMax.AppStoreUrl)
+	if itunesID == "" {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl)
+		return
+	}
+
+	if updatedSKAdnetwork, err := jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl, err.Error())
+	} else {
+		impExt.SKAdnetwork = updatedSKAdnetwork
 	}
 }
 

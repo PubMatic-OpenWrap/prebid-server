@@ -6636,7 +6636,6 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 	tests := []struct {
 		name            string
 		rctx            models.RequestCtx
-		appStoreUrl     string
 		bidRequest      *openrtb2.BidRequest
 		impExt          *models.ImpExtension
 		wantAppStoreURL string
@@ -6650,8 +6649,10 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
+				},
 			},
-			appStoreUrl: "https://apps.apple.com/app/id123456789",
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Device: &openrtb2.Device{
@@ -6677,8 +6678,10 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
+				},
 			},
-			appStoreUrl: "https://apps.apple.com/app/id123456789",
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Device: &openrtb2.Device{
@@ -6700,8 +6703,10 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
+				},
 			},
-			appStoreUrl: "https://apps.apple.com/app/id123456789",
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Device: &openrtb2.Device{
@@ -6724,8 +6729,10 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/",
+				},
 			},
-			appStoreUrl: "https://apps.apple.com/app/",
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Device: &openrtb2.Device{
@@ -6746,7 +6753,7 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateSkadnSourceapp(tt.rctx, tt.appStoreUrl, tt.bidRequest, tt.impExt)
+			updateSkadnSourceapp(tt.rctx, tt.bidRequest, tt.impExt)
 			if tt.impExt != nil {
 				if tt.impExt.SKAdnetwork != nil {
 					var skAdnetwork map[string]interface{}
