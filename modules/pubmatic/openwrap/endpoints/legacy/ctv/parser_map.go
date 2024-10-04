@@ -21,6 +21,7 @@ type ParserMap struct {
 // ortbMapper is ParserMap for ortb parameters
 var ortbMapper = &ParserMap{
 	KeyMapping: KeyParserMap{
+		ORTBAdrule: Parser.ORTBAdrule,
 		//BidRequest
 		ORTBBidRequestID:      Parser.ORTBBidRequestID,
 		ORTBBidRequestTest:    Parser.ORTBBidRequestTest,
@@ -349,7 +350,7 @@ type ORTBParser interface {
 
 type Parser interface {
 	ORTBParser
-
+	ORTBAdrule() error
 	//BidRequest
 	ORTBBidRequestID() error
 	ORTBBidRequestTest() error

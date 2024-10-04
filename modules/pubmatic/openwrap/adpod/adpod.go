@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
@@ -35,19 +39,20 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 
 }
 
-func GetV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, me metrics.MetricsEngine) (*models.AdPod, error) {
-	adpodConfigs, ok, err := resolveV25AdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
+func GetV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, redirectURL string, gamQueryParams url.Values, me metrics.MetricsEngine) (*models.AdPod, error) {
+	adpodConfigs, ok, err := resolveV25AdpodConfigs(impVideo, adUnitConfig, pubId, me)
 	if !ok || err != nil {
 		return nil, err
 	}
 
+	setImpVideoDetailsWithGAMParams(impVideo, adpodConfigs, gamQueryParams)
 	// Set default value if adpod object does not exists
 	setDefaultValues(adpodConfigs)
 
 	return adpodConfigs, nil
 }
 
-func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
+func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
 	var adpodConfig *models.AdPod
 
 	// Check in impression extension
@@ -73,9 +78,21 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
+func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *models.AdPod) error {
 	if config == nil {
 		return nil
+	}
+
+	if video.MinDuration < 0 {
+		return errors.New("imp.video.minduration must be number positive number")
+	}
+
+	if video.MaxDuration <= 0 {
+		return errors.New("imp.video.maxduration must be number positive non zero number")
+	}
+
+	if video.MinDuration > video.MaxDuration {
+		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
 	}
 
 	if config.MinAds <= 0 {
@@ -108,6 +125,10 @@ func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
 
 	if config.MinDuration > config.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
+	}
+
+	if !((config.MinAds*config.MinDuration) <= int(video.MaxDuration) && int(video.MinDuration) <= (config.MaxAds*config.MaxDuration)) {
+		return errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 	}
 
 	if rCtx.AdpodProfileConfig != nil && len(rCtx.AdpodProfileConfig.AdserverCreativeDurations) > 0 {
@@ -292,4 +313,62 @@ func ApplyAdpodConfigs(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 	bidRequest.Imp = imps
 	return bidRequest
+}
+
+func setImpVideoDetailsWithGAMParams(video *openrtb2.Video, adpodConfig *models.AdPod, gamQueryParams url.Values) {
+	if video == nil {
+		return
+	}
+	if video.MinDuration == 0 {
+		video.MinDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMinDuration), 64, 0)
+	}
+	if video.MaxDuration == 0 {
+		video.MaxDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMaxDuration), 64, 0)
+	}
+	if video.Linearity == 0 {
+		if linearity := gamQueryParams.Get(models.GAMVideoLinearity); len(linearity) > 0 {
+			if linearity == models.GAMVideoLinear {
+				video.Linearity = adcom1.LinearityLinear
+			} else if linearity == models.GAMVideoNonLinear {
+				video.Linearity = adcom1.LinearityNonLinear
+			}
+		}
+	}
+
+	if video.W == nil && video.H == nil {
+		if dimension := gamQueryParams.Get(models.GAMVideoDimensions); len(dimension) > 0 {
+			sizes := getDimension(dimension)
+			if len(sizes) > 1 {
+				w, err := strconv.ParseInt(sizes[0], 64, 0)
+				if err == nil {
+					h, err := strconv.ParseInt(sizes[1], 64, 0)
+					if err == nil {
+						video.W = ptrutil.ToPtr(w)
+						video.H = ptrutil.ToPtr(h)
+					}
+				}
+			}
+		}
+	}
+
+	if adpodConfig == nil {
+		return
+	}
+
+	if adpodConfig.MaxAds == 0 {
+		adpodConfig.MaxAds, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
+	}
+	if adpodConfig.MinDuration == 0 {
+		adpodConfig.MinDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMinDuration))
+	}
+	if adpodConfig.MaxDuration == 0 {
+		adpodConfig.MaxDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
+	}
+}
+
+func getDimension(size string) []string {
+	if !strings.Contains(size, models.Pipe) {
+		return strings.Split(size, models.DelimiterX)
+	}
+	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
 }
