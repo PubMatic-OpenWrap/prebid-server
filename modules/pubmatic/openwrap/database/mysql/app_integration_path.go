@@ -27,5 +27,10 @@ func (db *mySqlDB) GetAppIntegrationPaths() (map[string]int, error) {
 		}
 		appIntegrationPathMap[aipKey] = aipValue
 	}
+
+	if err = rows.Err(); err != nil {
+		glog.Errorf("AppIntegrationPathMapQuery row scan failed")
+	}
+
 	return appIntegrationPathMap, nil
 }
