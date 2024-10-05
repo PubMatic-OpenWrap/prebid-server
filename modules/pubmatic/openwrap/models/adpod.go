@@ -1,5 +1,10 @@
 package models
 
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
+)
+
 const (
 	//BidderOWPrebidCTV for prebid adpod response
 	BidderOWPrebidCTV string = "prebid_ctv"
@@ -12,9 +17,9 @@ const (
 	DefaultIABCategoryExclusionPercent = 100
 )
 
-const (
-	Adpod = "adpod"
-)
+// const (
+// 	Adpod = "adpod"
+// )
 
 const (
 	// MinDuration represents index value where we can get minimum duration of given impression object
@@ -51,4 +56,60 @@ type PodConfig struct {
 	MinDuration int64
 	MaxDuration int64
 	RqdDurs     []int64
+}
+
+type PodType uint
+
+const (
+	NotAdpod   PodType = 0
+	Dynamic    PodType = 1
+	Structured PodType = 2
+)
+
+// AdpodCtx context for adpod
+type AdpodCtx struct {
+	PodId          string
+	Type           PodType
+	Imps           []openrtb2.Imp
+	Exclusion      Exclusion
+	ProfileConfigs *AdpodProfileConfig
+}
+
+// Exclusion config for adpod
+type Exclusion struct {
+	AdvertiserDomainExclusion bool
+	IABCategoryExclusion      bool
+}
+
+func (ex *Exclusion) ShouldApplyExclusion() bool {
+	return ex.AdvertiserDomainExclusion || ex.IABCategoryExclusion
+}
+
+type Adpod interface {
+	GetImpressions() []*openrtb_ext.ImpWrapper
+}
+
+type Bid struct {
+	*openrtb2.Bid
+	openrtb_ext.ExtBid
+	Duration          int
+	Status            int64
+	DealTierSatisfied bool
+	Seat              string
+}
+
+type AdPodBid struct {
+	Bids          []*Bid
+	Price         float64
+	Cat           []string
+	ADomain       []string
+	OriginalImpID string
+	SeatName      string
+}
+
+type GeneratedSlotConfig struct {
+	ImpID          string `json:"id,omitempty"`
+	SequenceNumber int8   `json:"seq,omitempty"`
+	MinDuration    int64  `json:"minduration,omitempty"`
+	MaxDuration    int64  `json:"maxduration,omitempty"`
 }
