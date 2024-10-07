@@ -570,9 +570,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 			var isValidAppStoreUrl bool
-			rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx)
-			if isValidAppStoreUrl {
-				updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+			if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
 			}
 			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
 		}
@@ -1364,7 +1363,7 @@ func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {
 	return appStoreUrl, isValidAppStoreUrl
 }
 
-func updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
+func (m *OpenWrap) updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
 	if bidRequest.Device == nil || strings.ToLower(bidRequest.Device.OS) != "ios" {
 		return
 	}
@@ -1376,6 +1375,7 @@ func updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidReques
 
 	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppLovinMax.AppStoreUrl)
 	if itunesID == "" {
+		m.metricEngine.RecordFailedParsingItuneID(rctx.PubIDStr, rctx.ProfileIDStr)
 		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl)
 		return
 	}
