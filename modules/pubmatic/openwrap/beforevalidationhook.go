@@ -760,7 +760,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if bidRequest.User.CustomData == "" && rctx.KADUSERCookie != nil {
 		bidRequest.User.CustomData = rctx.KADUSERCookie.Value
 	}
-	ctv.UpdateUserExtWithValidValues(bidRequest.User)
+	UpdateUserExtWithValidValues(bidRequest.User)
 
 	for i := 0; i < len(bidRequest.WLang); i++ {
 		bidRequest.WLang[i] = getValidLanguage(bidRequest.WLang[i])
