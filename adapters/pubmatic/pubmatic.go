@@ -113,6 +113,9 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
+	//for display manager and version
+	displayManager, displayManagerVer := getDisplayManagerAndVer(request)
+
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
 	if err != nil {
 		return nil, []error{err}
@@ -125,7 +128,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
+		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
@@ -383,7 +386,7 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, []float64, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, displayManager, displayManagerVer string) (*pubmaticWrapperExt, string, []float64, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 	var floors []float64
@@ -395,6 +398,12 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	if imp.Audio != nil {
 		imp.Audio = nil
+	}
+
+	// Populate imp.displaymanager and imp.displaymanagerver if the SDK failed to do it.
+	if imp.DisplayManager == "" && imp.DisplayManagerVer == "" && displayManager != "" && displayManagerVer != "" {
+		imp.DisplayManager = displayManager
+		imp.DisplayManagerVer = displayManagerVer
 	}
 
 	var bidderExt ExtImpBidderPubmatic
@@ -853,4 +862,23 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		bidderName: string(bidderName),
 	}
 	return bidder, nil
+}
+
+func getDisplayManagerAndVer(req *openrtb2.BidRequest) (string, string) {
+	if req.App == nil {
+		return "", ""
+	}
+
+	if source, err := jsonparser.GetString(req.App.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil {
+		if version, err := jsonparser.GetString(req.App.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil {
+			return source, version
+		}
+	}
+
+	if source, err := jsonparser.GetString(req.App.Ext, "source"); err == nil {
+		if version, err := jsonparser.GetString(req.App.Ext, "version"); err == nil {
+			return source, version
+		}
+	}
+	return "", ""
 }
