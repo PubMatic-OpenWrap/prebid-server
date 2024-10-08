@@ -71,6 +71,9 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	var originalRequest []byte
+	originalRequest = payload.Body
+
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
@@ -179,7 +182,11 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+		if endpoint == models.EndpointAppLovinMax {
+			rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequest)
+		} else {
+			rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+		}
 	}
 
 	result.Reject = false
