@@ -186,7 +186,7 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	}
 
 	maxRequest.User.Data = signalUser.Data
-	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids")
+	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth")
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
