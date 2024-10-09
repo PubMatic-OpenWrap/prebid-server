@@ -182,11 +182,11 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
+		requestData := payload.Body
 		if endpoint == models.EndpointAppLovinMax {
-			rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequest)
-		} else {
-			rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+			requestData = originalRequest
 		}
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, requestData)
 	}
 
 	result.Reject = false

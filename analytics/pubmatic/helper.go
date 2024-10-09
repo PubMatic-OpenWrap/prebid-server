@@ -130,11 +130,13 @@ func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, logg
 			jsonParam := parseURL.Query().Get(parseUrlFormat)
 			rCtx.WakandaDebug.SetLogger(json.RawMessage(jsonParam))
 		}
-		bytes, err := json.Marshal(ao.Response)
-		if err != nil {
-			glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
+		if rCtx.Endpoint != models.EndpointAppLovinMax {
+			bytes, err := json.Marshal(ao.Response)
+			if err != nil {
+				glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
+			}
+			rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
 		}
-		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
 		rCtx.WakandaDebug.SetOpenRTB(ao.RequestWrapper.BidRequest)
 		rCtx.WakandaDebug.WriteLogToFiles()
 	}
