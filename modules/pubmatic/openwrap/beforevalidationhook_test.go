@@ -6572,7 +6572,73 @@ func TestSetImpBidFloorParams(t *testing.T) {
 	}
 }
 
-func TestUpdateProfileAppStoreUrl(t *testing.T) {
+func TestGetProfileAppStoreUrl(t *testing.T) {
+	type args struct {
+		rctx models.RequestCtx
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 bool
+	}{
+		{
+			name: "AppStoreUrl missing in DB",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {},
+					},
+				},
+			},
+			want:  "",
+			want1: false,
+		},
+		{
+			name: "Invalid AppStoreUrl",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {
+							models.AppStoreUrl: "invalid-url",
+						},
+					},
+				},
+			},
+			want:  "invalid-url",
+			want1: false,
+		},
+		{
+			name: "Valid AppStoreUrl",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {
+							models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+						},
+					},
+				},
+			},
+			want:  "https://apps.apple.com/app/id123456789",
+			want1: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getProfileAppStoreUrl(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want1, got1)
+		})
+	}
+}
+
+func TestUpdateSkadnSourceapp(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	type feilds struct {
+		m *OpenWrap
+	}
 	tests := []struct {
 		name            string
 		rctx            models.RequestCtx
@@ -6580,29 +6646,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 		impExt          *models.ImpExtension
 		wantAppStoreURL string
 		wantSourceApp   string
+		fe              feilds
+		setup           func() *mock_metrics.MockMetricsEngine
 	}{
-		{
-			name: "AppStoreUrl missing in DB",
-			rctx: models.RequestCtx{
-				PartnerConfigMap: map[int]map[string]string{
-					models.VersionLevelConfigID: {},
-				},
-			},
-			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppStoreURL: "",
-		},
-		{
-			name: "Invalid AppStoreUrl",
-			rctx: models.RequestCtx{
-				PartnerConfigMap: map[int]map[string]string{
-					models.VersionLevelConfigID: {
-						models.AppStoreUrl: "invalid-url",
-					},
-				},
-			},
-			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppStoreURL: "invalid-url",
-		},
 		{
 			name: "Valid AppStoreUrl os is ios and SKAdnetwork is present in imp.ext",
 			rctx: models.RequestCtx{
@@ -6610,6 +6656,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6626,6 +6675,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
 			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 			wantSourceApp:   "123456789",
 		},
@@ -6634,8 +6686,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			rctx: models.RequestCtx{
 				PartnerConfigMap: map[int]map[string]string{
 					models.VersionLevelConfigID: {
-						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+						models.AppStoreUrl: "https://apps.apple.com/app/id",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6649,7 +6704,10 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
-			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
+			wantAppStoreURL: "https://apps.apple.com/app/id",
 		},
 		{
 			name: "Valid AppStoreUrl os is ios but SKAdnetwork missing in imp.ext",
@@ -6658,6 +6716,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6671,17 +6732,25 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
 			impExt:          &models.ImpExtension{},
 			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 		},
 		{
-			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl",
+			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl(url is of Android)",
 			rctx: models.RequestCtx{
 				PartnerConfigMap: map[int]map[string]string{
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/",
+				},
+				PubIDStr:     "5890",
+				ProfileIDStr: "1234",
 			},
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
@@ -6694,6 +6763,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordFailedParsingItuneID("5890", "1234")
+				return mockEngine
+			},
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
@@ -6703,8 +6777,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAppStoreURL := getProfileAppStoreUrlAndUpdateItunesID(tt.rctx, tt.bidRequest, tt.impExt)
-			assert.Equal(t, tt.wantAppStoreURL, gotAppStoreURL)
+			metricsEngine := tt.setup()
+			tt.fe.m = &OpenWrap{
+				metricEngine: metricsEngine,
+			}
+			tt.fe.m.updateSkadnSourceapp(tt.rctx, tt.bidRequest, tt.impExt)
 			if tt.impExt != nil {
 				if tt.impExt.SKAdnetwork != nil {
 					var skAdnetwork map[string]interface{}

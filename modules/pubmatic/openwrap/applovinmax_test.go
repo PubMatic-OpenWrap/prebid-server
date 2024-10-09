@@ -439,6 +439,38 @@ func TestUpdateUser(t *testing.T) {
 			},
 			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"consent":"consent_string","eids":[{"source":"amxid","uids":[{"atype":1,"id":"88de601e-3d98-48e7-81d7-00000000"}]},{"source":"adserver.org","uids":[{"id":"1234567","ext":{"rtiPartner":"TDID"}}]}]}`)},
 		},
+		{
+			name: "signalUserExt has sessionduration and impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
+		},
+		{
+			name: "signalUserExt has invalid sessionduration and impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":"sessionduration","impdepth":"impdepth"}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":"sessionduration","impdepth":"impdepth"}`)},
+		},
+		{
+			name: "signalUserExt has sessionduration",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40}`)},
+		},
+		{
+			name: "signalUserExt has impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"impdepth":10}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"impdepth":10}`)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
