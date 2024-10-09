@@ -223,7 +223,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "do not populate imp.displaymanager and imp.displaymanagerver in imp if only displaymanager or displaymanagerver is empty in args",
+			name: "do not populate imp.displaymanager and imp.displaymanagerver in imp if only displaymanager or displaymanagerver is present in args",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video:             &openrtb2.Video{},
@@ -1592,7 +1592,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 		want want
 	}{
 		{
-			name: "request app object is nils",
+			name: "request app object is nil",
 			args: args{
 				req: &openrtb2.BidRequest{
 					App: nil,
