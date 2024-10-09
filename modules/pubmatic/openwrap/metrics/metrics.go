@@ -92,4 +92,7 @@ type MetricsEngine interface {
 	//VMAP-adrule
 	RecordAdruleEnabled(pubId, profId string)
 	RecordAdruleValidationFailure(pubId, profId string)
+
+	//AppLovinMax metrics
+	RecordFailedParsingItuneID(pubId, profId string)
 }
