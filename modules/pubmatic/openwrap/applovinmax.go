@@ -264,7 +264,7 @@ func setProfileID(requestBody []byte) ([]byte, string) {
 	}
 
 	if _, err := strconv.Atoi(profIDStr); err != nil {
-		glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to convert app.id to integer", profIDStr)
+		glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to convert app.id to integer %v", profIDStr, err)
 		return requestBody, ""
 	}
 
@@ -272,7 +272,7 @@ func setProfileID(requestBody []byte) ([]byte, string) {
 	if newRequestBody, err := jsonparser.Set(requestBody, []byte(profIDStr), "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
 		return newRequestBody, profIDStr
 	}
-	glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to set profileid in wrapper ", profIDStr)
+	glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to set profileid in wrapper %v", profIDStr, err)
 	return requestBody, ""
 }
 
