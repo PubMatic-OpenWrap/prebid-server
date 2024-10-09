@@ -71,8 +71,7 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
-	var originalRequest []byte
-	originalRequest = payload.Body
+	originalRequest := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine

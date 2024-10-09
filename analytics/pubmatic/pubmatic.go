@@ -1,7 +1,6 @@
 package pubmatic
 
 import (
-	"encoding/json"
 	"runtime/debug"
 	"sync"
 
@@ -82,11 +81,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
 	if rCtx.Endpoint == models.EndpointAppLovinMax {
-		bytes, err := json.Marshal(orignalMaxBidResponse)
-		if err != nil {
-			glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
-		}
-		rCtx.WakandaDebug.SetHTTPResponseBodyWriter(string(bytes))
+		ao.Response = orignalMaxBidResponse
 	}
 	setWakandaObject(rCtx, ao, loggerURL)
 }
