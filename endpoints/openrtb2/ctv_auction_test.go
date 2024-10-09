@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/adpod"
 	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -247,7 +248,8 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 		resp *openrtb2.BidResponse
 	}
 	type want struct {
-		resp *openrtb2.BidResponse
+		resp       *openrtb2.BidResponse
+		seatNonBid openrtb_ext.NonBidCollection
 	}
 	tests := []struct {
 		name string
@@ -269,6 +271,7 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 					Cur:        "USD",
 					CustomData: "custom",
 				},
+				seatNonBid: openrtb_ext.NonBidCollection{},
 			},
 		},
 	}
@@ -276,16 +279,152 @@ func TestCreateAdPodBidResponse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			deps := ctvEndpointDeps{
 				request: &openrtb2.BidRequest{
-					ID: "1",
+					Imp: []openrtb2.Imp{
+						{
+							ID:    "imp1",
+							Video: &openrtb2.Video{},
+						},
+					},
 				},
 			}
-			actual := deps.createAdPodBidResponse(tt.args.resp)
+			actual, seatNonBid := deps.createAdPodBidResponse(tt.args.resp)
 			assert.Equal(t, tt.want.resp, actual)
+			assert.Equal(t, tt.want.seatNonBid, seatNonBid)
+
 		})
 
 	}
 }
 
+func TestCreateAdPodBidResponseSeatNonBid(t *testing.T) {
+	structuredAdpod := adpod.NewStructuredAdpod("test-pod", "test-pub", &metrics.MetricsEngineMock{}, nil)
+	structuredAdpod.WinningBid = map[string]types.Bid{
+		"imp1": {
+			Bid: &openrtb2.Bid{
+				ID:    "BID-2",
+				Price: 15,
+			},
+			Seat: "pubmatic",
+		},
+	}
+	structuredAdpod.ImpBidMap = map[string][]*types.Bid{
+		"imp1": {
+			{
+				Bid: &openrtb2.Bid{
+					ID:    "BID-1",
+					Price: 10,
+				},
+				ExtBid: openrtb_ext.ExtBid{
+					Prebid: &openrtb_ext.ExtBidPrebid{
+						Meta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
+						Type: "video",
+					},
+					OriginalBidCPM:    10,
+					OriginalBidCur:    "USD",
+					OriginalBidCPMUSD: 10,
+				},
+				DealTierSatisfied: false,
+				Seat:              "pubmatic",
+				Nbr:               nbr.LossBidLostToHigherBid.Ptr(),
+			},
+			{
+				Bid: &openrtb2.Bid{
+					ID:    "BID-2",
+					Price: 15,
+				},
+				ExtBid: openrtb_ext.ExtBid{
+					Prebid: &openrtb_ext.ExtBidPrebid{
+						Meta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
+					},
+				},
+				DealTierSatisfied: false,
+				Seat:              "pubmatic",
+			},
+		},
+	}
+
+	type args struct {
+		resp *openrtb2.BidResponse
+	}
+	type want struct {
+		resp       *openrtb2.BidResponse
+		seatNonBid openrtb_ext.NonBidCollection
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "sample bidresponse with seatnonbid",
+			args: args{
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
+				},
+			},
+			want: want{
+				resp: &openrtb2.BidResponse{
+					ID:         "id1",
+					Cur:        "USD",
+					CustomData: "custom",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "BID-2",
+									Price: 15,
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+				},
+				seatNonBid: func() openrtb_ext.NonBidCollection {
+					seatNonBid := openrtb_ext.NonBidCollection{}
+					nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+						Bid:               &openrtb2.Bid{ID: "BID-1", Price: 10},
+						NonBidReason:      501,
+						OriginalBidCPM:    10,
+						OriginalBidCur:    "USD",
+						BidType:           "video",
+						OriginalBidCPMUSD: 10,
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdapterCode: "pubmatic",
+						},
+					})
+					seatNonBid.AddBid(nonBid, "pubmatic")
+					return seatNonBid
+				}(),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			deps := ctvEndpointDeps{
+				podCtx: map[string]adpod.Adpod{
+					"imp1": structuredAdpod,
+				},
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:    "imp1",
+							Video: &openrtb2.Video{},
+						},
+					},
+				},
+			}
+			actual, seatNonBid := deps.createAdPodBidResponse(tt.args.resp)
+			assert.Equal(t, tt.want.resp, actual)
+			assert.Equal(t, tt.want.seatNonBid, seatNonBid)
+		})
+	}
+}
 func TestGetAdPodExt(t *testing.T) {
 	type args struct {
 		resp *openrtb2.BidResponse
@@ -319,7 +458,7 @@ func TestGetAdPodExt(t *testing.T) {
 				},
 			},
 			want: want{
-				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+				data: json.RawMessage(`{"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"impid":"imp1","vidext":{"adpod":{}}}}}}`),
 			},
 		},
 		{
@@ -344,7 +483,7 @@ func TestGetAdPodExt(t *testing.T) {
 				},
 			},
 			want: want{
-				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1","seatbid":[{"bid":[{"id":"b1","impid":"","price":0},{"id":"b2","impid":"","price":0}],"seat":"pubmatic"}]},"config":{"imp1":{"vidext":{"adpod":{}}}}}}`),
+				data: json.RawMessage(`{"xyz":10,"adpod":{"bidresponse":{"id":"resp1"},"config":{"imp1":{"impid":"imp1","vidext":{"adpod":{}}}}}}`),
 			},
 		},
 	}

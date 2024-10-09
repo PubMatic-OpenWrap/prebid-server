@@ -24,7 +24,9 @@ type Adpod interface {
 	CollectBid(bid *openrtb2.Bid, seat string)
 	HoldAuction()
 	GetAdpodSeatBids() []openrtb2.SeatBid
+	GetWinningBids() []openrtb2.SeatBid
 	GetAdpodExtension(blockedVastTagID map[string]map[string][]string) *types.ImpData
+	CollectSeatNonBids() openrtb_ext.NonBidCollection
 }
 
 type AdpodCtx struct {
