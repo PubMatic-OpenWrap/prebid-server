@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
@@ -262,10 +263,16 @@ func setProfileID(requestBody []byte) ([]byte, string) {
 		return requestBody, ""
 	}
 
+	if _, err := strconv.Atoi(profIDStr); err != nil {
+		glog.Errorf("failed to convert app.id to integer: %v", err)
+		return requestBody, ""
+	}
+
 	requestBody = jsonparser.Delete(requestBody, "app", "id")
 	if newRequestBody, err := jsonparser.Set(requestBody, []byte(profIDStr), "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
 		return newRequestBody, profIDStr
 	}
+	glog.Errorf("failed to set profileid in wrapper: %v", err)
 	return requestBody, ""
 }
 
