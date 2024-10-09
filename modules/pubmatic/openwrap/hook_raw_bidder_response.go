@@ -2,13 +2,19 @@ package openwrap
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
+
+type BidUnwrapInfo struct {
+	bid          *adapters.TypedBid
+	unwrapStatus string
+}
 
 func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
@@ -20,41 +26,63 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		return result, nil
 	}
 
-	if vastRequestContext.VastUnwrapEnabled {
-		// Do Unwrap and Update Adm
-		wg := new(sync.WaitGroup)
-		for _, bid := range payload.Bids {
-			if string(bid.BidType) == models.MediaTypeVideo {
-				wg.Add(1)
-				go func(bid *adapters.TypedBid) {
-					defer wg.Done()
-					m.unwrap.Unwrap(miCtx.AccountID, payload.Bidder, bid, vastRequestContext.UA, vastRequestContext.IP, vastRequestContext.VastUnwrapStatsEnabled)
-				}(bid)
-			}
-		}
-		wg.Wait()
-		changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-		changeSet.RawBidderResponse().Bids().Update(payload.Bids)
-		result.ChangeSet = changeSet
-	} else {
-		vastRequestContext.VastUnwrapStatsEnabled = GetRandomNumberIn1To100() <= m.cfg.Features.VASTUnwrapStatsPercent
-		if vastRequestContext.VastUnwrapStatsEnabled {
-			// Do Unwrap and Collect stats only
-			for _, bid := range payload.Bids {
-				if string(bid.BidType) == models.MediaTypeVideo {
-					go func(bid *adapters.TypedBid) {
-						m.unwrap.Unwrap(miCtx.AccountID, payload.Bidder, bid, vastRequestContext.UA, vastRequestContext.IP, vastRequestContext.VastUnwrapStatsEnabled)
-					}(bid)
-				}
-			}
-		}
+	if !vastRequestContext.VastUnwrapEnabled {
+		return result, nil
 	}
 
-	if vastRequestContext.VastUnwrapEnabled || vastRequestContext.VastUnwrapStatsEnabled {
-		result.DebugMessages = append(result.DebugMessages,
-			fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] VastUnwrapStatsEnabled:[%v] ",
-				vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, vastRequestContext.VastUnwrapStatsEnabled))
+	seatNonBid := openrtb_ext.NonBidCollection{}
+	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.BidderResponse.Bids))
+	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
+	defer close(unwrappedBidsChan)
+
+	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
+	totalBidCnt := len(payload.BidderResponse.Bids)
+	// send bids for unwrap
+	for _, bid := range payload.BidderResponse.Bids {
+		if !isEligibleForUnwrap(bid) {
+			unwrappedBids = append(unwrappedBids, bid)
+			continue
+		}
+		unwrappedBidsCnt++
+		go func(bid adapters.TypedBid) {
+			unwrapStatus := m.unwrap.Unwrap(&bid, miCtx.AccountID, payload.Bidder, vastRequestContext.UA, vastRequestContext.IP)
+			unwrappedBidsChan <- BidUnwrapInfo{&bid, unwrapStatus}
+		}(*bid)
 	}
 
+	// collect bids after unwrap
+	for i := 0; i < unwrappedBidsCnt; i++ {
+		unwrappedBid := <-unwrappedBidsChan
+		if !rejectBid(unwrappedBid.unwrapStatus) {
+			unwrappedSuccessBidCnt++
+			unwrappedBids = append(unwrappedBids, unwrappedBid.bid)
+			continue
+		}
+		seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+			Bid:            unwrappedBid.bid.Bid,
+			NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
+			DealPriority:   unwrappedBid.bid.DealPriority,
+			BidMeta:        unwrappedBid.bid.BidMeta,
+			BidType:        unwrappedBid.bid.BidType,
+			BidVideo:       unwrappedBid.bid.BidVideo,
+			OriginalBidCur: payload.BidderResponse.Currency,
+		}), payload.Bidder,
+		)
+	}
+
+	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
+	changeSet.RawBidderResponse().Bids().Update(unwrappedBids)
+	result.ChangeSet = changeSet
+	result.SeatNonBid = seatNonBid
+	result.DebugMessages = append(result.DebugMessages,
+		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] Total Input Bids: [%d] Total Bids sent for unwrapping: [%d] Total Unwrap Success: [%d]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, totalBidCnt, unwrappedBidsCnt, unwrappedSuccessBidCnt))
 	return result, nil
+}
+
+func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
+	return bid != nil && bid.BidType == openrtb_ext.BidTypeVideo && bid.Bid != nil && bid.Bid.AdM != ""
+}
+
+func rejectBid(bidUnwrapStatus string) bool {
+	return bidUnwrapStatus == models.UnwrapEmptyVASTStatus || bidUnwrapStatus == models.UnwrapInvalidVASTStatus
 }
