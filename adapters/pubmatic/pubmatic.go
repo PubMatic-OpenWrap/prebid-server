@@ -113,7 +113,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
-	//for display manager and version
 	displayManager, displayManagerVer := getDisplayManagerAndVer(request)
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
@@ -864,6 +863,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 	return bidder, nil
 }
 
+// getDisplayManagerAndVer returns the display manager and version from the request.app.ext or request.app.prebid.ext source and version
 func getDisplayManagerAndVer(req *openrtb2.BidRequest) (string, string) {
 	if req.App == nil {
 		return "", ""
