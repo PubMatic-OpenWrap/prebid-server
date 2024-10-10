@@ -36,7 +36,7 @@ func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("AllDspFscPcntQuery row scan failed")
+		return nil, err
 	}
 
 	return fscDspThresholds, nil

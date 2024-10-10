@@ -79,7 +79,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 
 	// NYC_TODO: ignore close error
 	if err = rows.Err(); err != nil {
-		glog.Errorf("partner config row scan failed for versionID %d", versionID)
+		return nil, err
 	}
 	return partnerConfigMap, nil
 }

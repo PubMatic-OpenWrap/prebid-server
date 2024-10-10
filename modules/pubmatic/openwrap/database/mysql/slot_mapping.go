@@ -74,7 +74,7 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("WrapperSlotMappingsQuery/WrapperLiveVersionSlotMappings row scan failed for profileID %d", profileID)
+		return nil, err
 	}
 
 	//vastTagHookPartnerSlotMapping(partnerSlotMappingMap, profileId, displayVersion)

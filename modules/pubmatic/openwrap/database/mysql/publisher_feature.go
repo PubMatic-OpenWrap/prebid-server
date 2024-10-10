@@ -37,7 +37,7 @@ func (db *mySqlDB) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData,
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("PublisherFeatureMapQuery row scan failed")
+		return nil, err
 	}
 
 	return publisherFeatureMap, nil

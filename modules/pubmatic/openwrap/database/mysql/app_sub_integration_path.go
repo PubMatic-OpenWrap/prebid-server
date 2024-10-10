@@ -29,7 +29,7 @@ func (db *mySqlDB) GetAppSubIntegrationPaths() (map[string]int, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("AppSubIntegrationPathMapQuery row scan failed")
+		return nil, err
 	}
 
 	return appSubIntegrationPathMap, nil

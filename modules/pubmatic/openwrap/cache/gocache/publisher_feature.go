@@ -3,6 +3,7 @@ package gocache
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -13,6 +14,7 @@ func (c *cache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, er
 	publisherFeatureMap, err := c.db.GetPublisherFeatureMap()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.PublisherFeatureMapQuery, "", "")
+		glog.Errorf("[PartialQueryFailure] for PublisherFeatureMapQuery with err: %v", err)
 		return publisherFeatureMap, fmt.Errorf(errorPubFeatureUpdate, err)
 	}
 	return publisherFeatureMap, nil

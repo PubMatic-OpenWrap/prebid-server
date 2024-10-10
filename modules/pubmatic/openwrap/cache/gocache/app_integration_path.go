@@ -3,6 +3,7 @@ package gocache
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -13,6 +14,7 @@ func (c *cache) GetAppIntegrationPaths() (map[string]int, error) {
 	appIntegrationPathMap, err := c.db.GetAppIntegrationPaths()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.AppIntegrationPathMapQuery, "", "")
+		glog.Errorf("[PartialQueryFailure] for AppIntegrationPathMapQuery with err: %v", err)
 		return appIntegrationPathMap, fmt.Errorf(errorAppIntegrationPathMapUpdate, err)
 	}
 	return appIntegrationPathMap, nil
