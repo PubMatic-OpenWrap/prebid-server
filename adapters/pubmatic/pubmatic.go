@@ -104,7 +104,6 @@ const (
 	AdServerGAM              = "gam"
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
-	sendBurlKey              = "sendburl"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {

@@ -195,7 +195,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "sendburl set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			name: "sendburl in imp.ext.bidder as true",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
@@ -203,7 +203,34 @@ func TestParseImpressionObject(t *testing.T) {
 				},
 			},
 			want: want{
-				impExt: json.RawMessage(`{"sendburl":true}`),
+				impExt:   nil,
+				sendburl: true,
+			},
+		},
+		{
+			name: "sendburl in imp.ext.bidder as false",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"sendburl":false}}`),
+				},
+			},
+			want: want{
+				impExt:   nil,
+				sendburl: false,
+			},
+		},
+		{
+			name: "sendburl is not present in imp.ext.bidder ",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{}}`),
+				},
+			},
+			want: want{
+				impExt:   nil,
+				sendburl: false,
 			},
 		},
 		{
@@ -262,7 +289,7 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, _, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
+			receivedWrapperExt, receivedPublisherId, _, sendburl, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
@@ -270,6 +297,7 @@ func TestParseImpressionObject(t *testing.T) {
 			assert.Equal(t, tt.want.impExt, tt.args.imp.Ext)
 			assert.Equal(t, tt.want.displayManager, tt.args.imp.DisplayManager)
 			assert.Equal(t, tt.want.displayManagerVer, tt.args.imp.DisplayManagerVer)
+			assert.Equal(t, tt.want.sendburl, sendburl)
 		})
 	}
 }
