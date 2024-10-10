@@ -71,7 +71,7 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
-	originalRequest := payload.Body
+	originalRequestBody := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
@@ -181,7 +181,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequest)
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
 	result.Reject = false

@@ -91,12 +91,12 @@ func setCommandHandler() {
 	}
 }
 
-func TestInstance() func() {
+func TestInstance(pubId string, profileId string) func() {
 	wakandaRulesMap = &rulesMap{
 		rules: make(map[string]*wakandaRule),
 	}
 
-	key := "PUB:111__PROF:222"
+	key := "PUB:" + pubId + "__PROF:" + profileId
 	wakandaRulesMap.AddIfNotPresent(key, 2, "DC1")
 	return func() {
 		wakandaRulesMap = nil
