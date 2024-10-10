@@ -191,9 +191,12 @@ func TestLogAuctionObject(t *testing.T) {
 														{
 															Values: map[string]interface{}{
 																"request-ctx": &models.RequestCtx{
-																	Endpoint: models.EndpointAppLovinMax,
-																	Debug:    false,
-																	PubID:    5890,
+																	Endpoint:     models.EndpointAppLovinMax,
+																	Debug:        false,
+																	PubID:        5890,
+																	PubIDStr:     "5890",
+																	ProfileID:    1234,
+																	ProfileIDStr: "1234",
 																},
 															},
 														},
