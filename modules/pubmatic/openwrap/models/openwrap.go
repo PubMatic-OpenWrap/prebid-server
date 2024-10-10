@@ -121,7 +121,6 @@ type RequestCtx struct {
 	WakandaDebug                    wakanda.WakandaDebug
 	PriceGranularity                *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled              bool
-	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
 
 	// Adpod

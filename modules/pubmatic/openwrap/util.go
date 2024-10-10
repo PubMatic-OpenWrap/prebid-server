@@ -548,3 +548,9 @@ func UpdateUserExtWithValidValues(user *openrtb2.User) {
 		}
 	}
 }
+
+func getSendBurl(requestExt []byte) bool {
+	//ignore error, default is false
+	sendBurl, _ := jsonparser.GetBoolean(requestExt, "prebid", "bidderparams", "pubmatic", "sendburl")
+	return sendBurl
+}
