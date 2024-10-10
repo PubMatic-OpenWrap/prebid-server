@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -16,6 +17,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
 		Keywords:    getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
 		Floors:      getApplovinBidFloors(rctx, imp),
+		Sendburl:    rctx.Endpoint == models.EndpointAppLovinMax || getSendBurl(bidRequest.Ext),
 	}
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
@@ -163,4 +165,10 @@ func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessag
 		}
 	}
 	return json.RawMessage(wrapExt)
+}
+
+func getSendBurl(requestExt []byte) bool {
+	//ignore error, default is false
+	sendBurl, _ := jsonparser.GetBoolean(requestExt, "prebid", "bidderparams", "pubmatic", "sendburl")
+	return sendBurl
 }

@@ -36,9 +36,8 @@ const MaxDecimalFigures int = 15
 
 // ExtRequest defines the contract for bidrequest.ext
 type ExtRequest struct {
-	Prebid   ExtRequestPrebid      `json:"prebid"`
-	SChain   *openrtb2.SupplyChain `json:"schain,omitempty"`
-	Sendburl bool                  `json:"sendburl,omitempty"`
+	Prebid ExtRequestPrebid      `json:"prebid"`
+	SChain *openrtb2.SupplyChain `json:"schain,omitempty"`
 }
 
 // ExtRequestPrebid defines the contract for bidrequest.ext.prebid

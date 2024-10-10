@@ -88,6 +88,7 @@ type extRequestAdServer struct {
 	Wrapper     *pubmaticWrapperExt `json:"wrapper,omitempty"`
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
+	Sendburl    bool                `json:"sendburl,omitempty"`
 	openrtb_ext.ExtRequest
 }
 
@@ -103,6 +104,7 @@ const (
 	AdServerGAM              = "gam"
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
+	sendBurlKey              = "sendburl"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -565,6 +567,9 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	}
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &cookies)
+	}
+	if sendburl, ok := reqExtBidderParams[sendBurlKey]; ok {
+		pmReqExt.Sendburl, _ = strconv.ParseBool(string(sendburl))
 	}
 	// OW patch -end-
 

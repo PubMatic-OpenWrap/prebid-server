@@ -119,8 +119,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	requestExt.SendBurl = rCtx.Endpoint == models.EndpointAppLovinMax || getSendBurl(payload.BidRequest.Ext)
-
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
