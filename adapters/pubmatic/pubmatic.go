@@ -131,7 +131,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, floors, sendburl, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
+		wrapperExtFromImp, pubIDFromImp, floors, sendBurl, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
@@ -140,8 +140,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			continue
 		}
 
-		if updateSendBurl && sendburl {
-			newReqExt.SendBurl = sendburl
+		if updateSendBurl && sendBurl {
+			newReqExt.SendBurl = sendBurl
 		}
 		updateSendBurl = false
 
