@@ -118,7 +118,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
 		return result, nil
 	}
-
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
@@ -654,13 +653,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+		sendBurl := rCtx.Endpoint == models.EndpointAppLovinMax || getSendBurl(payload.BidRequest.Ext)
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, sendBurl, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
+				sendBurl := rCtx.Endpoint == models.EndpointAppLovinMax || getSendBurl(payload.BidRequest.Ext)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, sendBurl, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
 			}
 		}
 	}
@@ -967,12 +968,16 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, sendburl bool, cookie, loggerID, bidderCode string) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
 	bidderParamsMap[bidderCode] = map[string]interface{}{
 		models.WrapperLoggerImpID: loggerID,
+	}
+
+	if sendburl {
+		bidderParamsMap[bidderCode][models.SendBurl] = true
 	}
 
 	if len(cookie) != 0 {
@@ -1400,4 +1405,10 @@ func extractItunesIdFromAppStoreUrl(url string) string {
 		}
 	}
 	return itunesID
+}
+
+func getSendBurl(requestExt []byte) bool {
+	//ignore error, default is false
+	sendBurl, _ := jsonparser.GetBoolean(requestExt, "prebid", "bidderparams", "pubmatic", "sendburl")
+	return sendBurl
 }

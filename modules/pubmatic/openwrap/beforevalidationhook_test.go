@@ -3016,6 +3016,7 @@ func TestGetDomainFromUrl(t *testing.T) {
 func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	type args struct {
 		bidderParams json.RawMessage
+		sendburl     bool
 		cookie       string
 		loggerID     string
 		bidderCode   string
@@ -3068,7 +3069,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
+			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.sendburl, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return

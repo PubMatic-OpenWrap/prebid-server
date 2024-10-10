@@ -610,6 +610,7 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+	SendBurl         = "sendburl"
 	AppStoreUrl      = "appStoreUrl"
 )
 
