@@ -209,15 +209,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointAppLovinMax:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		if requestExtWrapper.ProfileId == 0 {
-			profileIDStr := getProfileID(payload.Body)
-			if profileIDStr != "" {
-				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
-					requestExtWrapper.ProfileId = ProfileId
-				}
-			}
-		}
+		fallthrough
 	case models.EndpointWebS2S:
 		fallthrough
 	default:
