@@ -28,5 +28,10 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 			vasttags[vastTag.ID] = &vastTag
 		}
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return vasttags, nil
 }
