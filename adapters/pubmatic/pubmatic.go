@@ -88,6 +88,7 @@ type extRequestAdServer struct {
 	Wrapper     *pubmaticWrapperExt `json:"wrapper,omitempty"`
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
+	SendBurl    bool                `json:"sendburl,omitempty"`
 	openrtb_ext.ExtRequest
 }
 
@@ -112,6 +113,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	pubID := ""
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
+	updateSendBurl := true
 
 	displayManager, displayManagerVer := "", ""
 	if request.App != nil && request.App.Ext != nil {
@@ -130,7 +132,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
+		wrapperExtFromImp, pubIDFromImp, floors, sendburl, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
@@ -138,6 +140,11 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			i--
 			continue
 		}
+
+		if updateSendBurl && sendburl {
+			newReqExt.SendBurl = sendburl
+		}
+		updateSendBurl = false
 
 		if len(floors) > 0 {
 			impFloorsMap[request.Imp[i].ID] = floors
@@ -388,14 +395,15 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, displayManager, displayManagerVer string) (*pubmaticWrapperExt, string, []float64, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, displayManager, displayManagerVer string) (*pubmaticWrapperExt, string, []float64, bool, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 	var floors []float64
+	sendBurl := false
 
 	// PubMatic supports banner and video impressions.
 	if imp.Banner == nil && imp.Video == nil && imp.Native == nil {
-		return wrapExt, pubID, floors, fmt.Errorf("invalid MediaType. PubMatic only supports Banner, Video and Native. Ignoring ImpID=%s", imp.ID)
+		return wrapExt, pubID, floors, sendBurl, fmt.Errorf("invalid MediaType. PubMatic only supports Banner, Video and Native. Ignoring ImpID=%s", imp.ID)
 	}
 
 	if imp.Audio != nil {
@@ -410,12 +418,16 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	var bidderExt ExtImpBidderPubmatic
 	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
-		return wrapExt, pubID, floors, err
+		return wrapExt, pubID, floors, sendBurl, err
 	}
 
 	var pubmaticExt openrtb_ext.ExtImpPubmatic
 	if err := json.Unmarshal(bidderExt.Bidder, &pubmaticExt); err != nil {
-		return wrapExt, pubID, floors, err
+		return wrapExt, pubID, floors, sendBurl, err
+	}
+
+	if pubmaticExt.SendBurl {
+		sendBurl = pubmaticExt.SendBurl
 	}
 
 	if extractPubIDFromImp {
@@ -426,18 +438,18 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	if extractWrapperExtFromImp && len(pubmaticExt.WrapExt) != 0 {
 		err := json.Unmarshal([]byte(pubmaticExt.WrapExt), &wrapExt)
 		if err != nil {
-			return wrapExt, pubID, floors, fmt.Errorf("Error in Wrapper Parameters = %v  for ImpID = %v WrapperExt = %v", err.Error(), imp.ID, string(pubmaticExt.WrapExt))
+			return wrapExt, pubID, floors, sendBurl, fmt.Errorf("Error in Wrapper Parameters = %v  for ImpID = %v WrapperExt = %v", err.Error(), imp.ID, string(pubmaticExt.WrapExt))
 		}
 	}
 
 	if err := validateAdSlot(strings.TrimSpace(pubmaticExt.AdSlot), imp); err != nil {
-		return wrapExt, pubID, floors, err
+		return wrapExt, pubID, floors, sendBurl, err
 	}
 
 	if imp.Banner != nil {
 		bannerCopy, err := assignBannerSize(imp.Banner)
 		if err != nil {
-			return wrapExt, pubID, floors, err
+			return wrapExt, pubID, floors, sendBurl, err
 		}
 		imp.Banner = bannerCopy
 	}
@@ -460,10 +472,6 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	if pubmaticExt.PmZoneID != "" {
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
-	}
-
-	if pubmaticExt.SendBurl {
-		extMap[sendBurlKey] = pubmaticExt.SendBurl
 	}
 
 	if bidderExt.SKAdnetwork != nil {
@@ -502,7 +510,7 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		}
 	}
 
-	return wrapExt, pubID, pubmaticExt.Floors, nil
+	return wrapExt, pubID, pubmaticExt.Floors, sendBurl, nil
 }
 
 // roundToFourDecimals retuns given value to 4 decimal points
