@@ -88,6 +88,7 @@ type extRequestAdServer struct {
 	Wrapper     *pubmaticWrapperExt `json:"wrapper,omitempty"`
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
+	Sendburl    bool                `json:"sendburl,omitempty"`
 	openrtb_ext.ExtRequest
 }
 
