@@ -118,6 +118,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
 		return result, nil
 	}
+
+	if rCtx.SendBurl {
+		requestExt.SendBurl = rCtx.SendBurl
+	}
+
 	rCtx.NewReqExt = requestExt
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus

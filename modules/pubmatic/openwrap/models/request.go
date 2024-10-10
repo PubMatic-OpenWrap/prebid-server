@@ -69,9 +69,10 @@ type RequestExt struct {
 	openrtb_ext.ExtRequest
 
 	// Move this to bidder params
-	Wrapper *RequestExtWrapper                `json:"wrapper,omitempty"`
-	Bidder  map[string]map[string]interface{} `json:"bidder,omitempty"`
-	AdPod   *ExtRequestAdPod                  `json:"adpod,omitempty"`
+	Wrapper  *RequestExtWrapper                `json:"wrapper,omitempty"`
+	Bidder   map[string]map[string]interface{} `json:"bidder,omitempty"`
+	AdPod    *ExtRequestAdPod                  `json:"adpod,omitempty"`
+	SendBurl bool                              `json:"sendburl,omitempty"`
 }
 
 // pbopenrtb_ext alias for prebid server openrtb_ext
