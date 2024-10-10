@@ -113,7 +113,10 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
-	displayManager, displayManagerVer := getDisplayManagerAndVer(request)
+	displayManager, displayManagerVer := "", ""
+	if request.App != nil && request.App.Ext != nil {
+		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
+	}
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
 	if err != nil {
@@ -864,19 +867,15 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 }
 
 // getDisplayManagerAndVer returns the display manager and version from the request.app.ext or request.app.prebid.ext source and version
-func getDisplayManagerAndVer(req *openrtb2.BidRequest) (string, string) {
-	if req.App == nil {
-		return "", ""
-	}
-
-	if source, err := jsonparser.GetString(req.App.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil {
-		if version, err := jsonparser.GetString(req.App.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil {
+func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
+	if source, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil && version != "" {
 			return source, version
 		}
 	}
 
-	if source, err := jsonparser.GetString(req.App.Ext, "source"); err == nil {
-		if version, err := jsonparser.GetString(req.App.Ext, "version"); err == nil {
+	if source, err := jsonparser.GetString(app.Ext, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, "version"); err == nil && version != "" {
 			return source, version
 		}
 	}
