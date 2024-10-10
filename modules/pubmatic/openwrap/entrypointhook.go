@@ -134,7 +134,6 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
@@ -248,10 +247,4 @@ func GetEndpoint(path, source string, agent string) string {
 		return models.EndpointJson
 	}
 	return ""
-}
-
-func getSendBurl(request []byte) bool {
-	//ignore error, default is false
-	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
-	return sendBurl
 }

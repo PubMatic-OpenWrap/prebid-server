@@ -1609,7 +1609,6 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							},
 						},
 					},
-					SendBurl: true,
 				},
 				cache: mockCache,
 				impExt: models.ImpExtension{
@@ -1655,7 +1654,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2],"sendburl":true}`),
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@DIV1@200x300","wrapper":{"version":1,"profile":123},"keywords":[{"key":"test_key1","value":["test_value1","test_value2"]},{"key":"test_key2","value":["test_value1","test_value2"]}],"floors":[1.5,1.2,2.2]}`),
 				wantErr:        false,
 			},
 		},
@@ -1993,6 +1992,53 @@ func TestGetPubMaticWrapperExt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getPubMaticWrapperExt(tt.args.rctx, tt.args.partnerID)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetSendBurl(t *testing.T) {
+	type args struct {
+		requestExt []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+
+		{
+			name: "request with sendburl true",
+			args: args{
+				requestExt: []byte(`{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}`),
+			},
+			want: true,
+		},
+		{
+			name: "appLovinMax request with sendburl false",
+			args: args{
+				requestExt: []byte(`{"prebid":{"bidderparams":{"pubmatic":{"sendburl":false,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}`),
+			},
+			want: false,
+		},
+		{
+			name: "appLovinMax request with no sendburl key",
+			args: args{
+				requestExt: []byte(`{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}`),
+			},
+			want: false,
+		},
+		{
+			name: "no ext object in request",
+			args: args{
+				requestExt: []byte(``),
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSendBurl(tt.args.requestExt)
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -194,18 +194,6 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "sendburl set in imp.ext.prebid.pubmatic, pass to imp.ext",
-			args: args{
-				imp: &openrtb2.Imp{
-					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"sendburl":true}}`),
-				},
-			},
-			want: want{
-				impExt: json.RawMessage(`{"sendburl":true}`),
-			},
-		},
-		{
 			name: "Populate imp.displaymanager and imp.displaymanagerver if both are empty in imp",
 			args: args{
 				imp: &openrtb2.Imp{
