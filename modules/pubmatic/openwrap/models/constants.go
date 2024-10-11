@@ -611,6 +611,7 @@ const (
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
 	AppStoreUrl      = "appStoreUrl"
+	SendBurl         = "sendburl"
 )
 
 // constants for log level

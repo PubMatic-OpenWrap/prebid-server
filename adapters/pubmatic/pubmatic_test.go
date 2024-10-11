@@ -89,7 +89,6 @@ func TestParseImpressionObject(t *testing.T) {
 		impExt            json.RawMessage
 		displayManager    string
 		displayManagerVer string
-		sendburl          bool
 	}
 	tests := []struct {
 		name                string
@@ -195,45 +194,6 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "sendburl in imp.ext.bidder as true",
-			args: args{
-				imp: &openrtb2.Imp{
-					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"sendburl":true}}`),
-				},
-			},
-			want: want{
-				impExt:   nil,
-				sendburl: true,
-			},
-		},
-		{
-			name: "sendburl in imp.ext.bidder as false",
-			args: args{
-				imp: &openrtb2.Imp{
-					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"sendburl":false}}`),
-				},
-			},
-			want: want{
-				impExt:   nil,
-				sendburl: false,
-			},
-		},
-		{
-			name: "sendburl is not present in imp.ext.bidder ",
-			args: args{
-				imp: &openrtb2.Imp{
-					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{}}`),
-				},
-			},
-			want: want{
-				impExt:   nil,
-				sendburl: false,
-			},
-		},
-		{
 			name: "Populate imp.displaymanager and imp.displaymanagerver if both are empty in imp",
 			args: args{
 				imp: &openrtb2.Imp{
@@ -289,7 +249,7 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, _, sendburl, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
+			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
@@ -297,7 +257,6 @@ func TestParseImpressionObject(t *testing.T) {
 			assert.Equal(t, tt.want.impExt, tt.args.imp.Ext)
 			assert.Equal(t, tt.want.displayManager, tt.args.imp.DisplayManager)
 			assert.Equal(t, tt.want.displayManagerVer, tt.args.imp.DisplayManagerVer)
-			assert.Equal(t, tt.want.sendburl, sendburl)
 		})
 	}
 }
@@ -420,6 +379,24 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 						AlternateBidderCodes: &openrtb_ext.ExtAlternateBidderCodes{Enabled: true, Bidders: map[string]openrtb_ext.ExtAdapterAlternateBidderCodes{"pubmatic": {Enabled: true, AllowedBidderCodes: []string{"groupm"}}}},
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":true}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":true}`),
+					},
+				},
+				SendBurl: true,
 			},
 			wantErr: false,
 		},
