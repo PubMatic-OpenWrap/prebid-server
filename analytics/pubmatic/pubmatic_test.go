@@ -2,10 +2,12 @@ package pubmatic
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
@@ -37,6 +39,11 @@ func TestNewHTTPLogger(t *testing.T) {
 
 // TestLogAuctionObject just increases code coverage, it does not validate anything
 func TestLogAuctionObject(t *testing.T) {
+	oldSend := send
+	send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.MultiHttpContextInterface) {}
+	defer func() {
+		send = oldSend
+	}()
 	tests := []struct {
 		name             string
 		ao               *analytics.AuctionObject
