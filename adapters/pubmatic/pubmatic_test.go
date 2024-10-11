@@ -400,6 +400,24 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "valid wrapper object and invalid senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":{}}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":{}}`),
+					},
+				},
+				SendBurl: false,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
