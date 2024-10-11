@@ -23,11 +23,11 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
-	clearInstance := wakanda.TestInstance("111", "222")
+	reset := wakanda.TestInstance("111", "222")
 
 	defer func() {
 		ctrl.Finish()
-		clearInstance()
+		reset()
 	}()
 
 	type fields struct {
