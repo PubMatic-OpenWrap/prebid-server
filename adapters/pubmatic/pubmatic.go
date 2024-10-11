@@ -140,10 +140,13 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			continue
 		}
 
-		if updateSendBurl && sendBurl {
-			newReqExt.SendBurl = sendBurl
+		//Update only once in first impression only because it is same for all impressions
+		if updateSendBurl {
+			if sendBurl {
+				newReqExt.SendBurl = sendBurl
+			}
+			updateSendBurl = false
 		}
-		updateSendBurl = false
 
 		if len(floors) > 0 {
 			impFloorsMap[request.Imp[i].ID] = floors
