@@ -28,15 +28,15 @@ func (name *BidderName) String() string {
 
 // Names of reserved bidders. These names may not be used by a core bidder or alias.
 const (
-	BidderReservedAll     BidderName = "all"     // Reserved for the /info/bidders/all endpoint.
-	BidderReservedContext BidderName = "context" // Reserved for first party data.
-	BidderReservedData    BidderName = "data"    // Reserved for first party data.
-	BidderReservedGeneral BidderName = "general" // Reserved for non-bidder specific messages when using a map keyed on the bidder name.
-	BidderReservedGPID    BidderName = "gpid"    // Reserved for Global Placement ID (GPID).
-	BidderReservedPrebid  BidderName = "prebid"  // Reserved for Prebid Server configuration.
-	BidderReservedSKAdN   BidderName = "skadn"   // Reserved for Apple's SKAdNetwork OpenRTB extension.
-	BidderReservedTID     BidderName = "tid"     // Reserved for Per-Impression Transactions IDs for Multi-Impression Bid Requests.
-	BidderReservedCommerce    BidderName = "commerce"
+	BidderReservedAll      BidderName = "all"     // Reserved for the /info/bidders/all endpoint.
+	BidderReservedContext  BidderName = "context" // Reserved for first party data.
+	BidderReservedData     BidderName = "data"    // Reserved for first party data.
+	BidderReservedGeneral  BidderName = "general" // Reserved for non-bidder specific messages when using a map keyed on the bidder name.
+	BidderReservedGPID     BidderName = "gpid"    // Reserved for Global Placement ID (GPID).
+	BidderReservedPrebid   BidderName = "prebid"  // Reserved for Prebid Server configuration.
+	BidderReservedSKAdN    BidderName = "skadn"   // Reserved for Apple's SKAdNetwork OpenRTB extension.
+	BidderReservedTID      BidderName = "tid"     // Reserved for Per-Impression Transactions IDs for Multi-Impression Bid Requests.
+	BidderReservedCommerce BidderName = "commerce"
 )
 
 // IsBidderNameReserved returns true if the specified name is a case insensitive match for a reserved bidder name.
@@ -194,6 +194,7 @@ const (
 	BidderPangle            BidderName = "pangle"
 	BidderPGAM              BidderName = "pgam"
 	BidderPubmatic          BidderName = "pubmatic"
+	BidderOpenWrap          BidderName = "openwrap"
 	BidderPubnative         BidderName = "pubnative"
 	BidderPulsepoint        BidderName = "pulsepoint"
 	BidderQuantumdex        BidderName = "quantumdex"
@@ -248,7 +249,6 @@ const (
 	BidderAdButlerOnsite    BidderName = "adbutler_onsite"
 	BidderCriteoRetail      BidderName = "criteoretail"
 	BidderCitrus            BidderName = "citrus"
-
 )
 
 // CoreBidderNames returns a slice of all core bidders.
@@ -541,8 +541,3 @@ func (validator *bidderParamValidator) Validate(name BidderName, ext json.RawMes
 func (validator *bidderParamValidator) Schema(name BidderName) string {
 	return validator.schemaContents[name]
 }
-
-
-
-
-

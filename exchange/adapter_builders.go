@@ -6,8 +6,8 @@ import (
 	"github.com/prebid/prebid-server/adapters/aax"
 	"github.com/prebid/prebid-server/adapters/aceex"
 	"github.com/prebid/prebid-server/adapters/acuityads"
-	"github.com/prebid/prebid-server/adapters/adbutler_sponsored"
 	"github.com/prebid/prebid-server/adapters/adbutler_onsite"
+	"github.com/prebid/prebid-server/adapters/adbutler_sponsored"
 	"github.com/prebid/prebid-server/adapters/adf"
 	"github.com/prebid/prebid-server/adapters/adgeneration"
 	"github.com/prebid/prebid-server/adapters/adhese"
@@ -107,6 +107,7 @@ import (
 	"github.com/prebid/prebid-server/adapters/nobid"
 	"github.com/prebid/prebid-server/adapters/onetag"
 	"github.com/prebid/prebid-server/adapters/openweb"
+	"github.com/prebid/prebid-server/adapters/openwrap"
 	"github.com/prebid/prebid-server/adapters/openx"
 	"github.com/prebid/prebid-server/adapters/operaads"
 	"github.com/prebid/prebid-server/adapters/orbidder"
@@ -275,6 +276,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderPangle:            pangle.Builder,
 		openrtb_ext.BidderPGAM:              adtelligent.Builder,
 		openrtb_ext.BidderPubmatic:          pubmatic.Builder,
+		openrtb_ext.BidderOpenWrap:          openwrap.Builder,
 		openrtb_ext.BidderPubnative:         pubnative.Builder,
 		openrtb_ext.BidderPulsepoint:        pulsepoint.Builder,
 		openrtb_ext.BidderQuantumdex:        apacdex.Builder,
@@ -329,10 +331,5 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderAdButlerOnsite:    adbutler_onsite.Builder,
 		openrtb_ext.BidderCriteoRetail:      criteoretail.Builder,
 		openrtb_ext.BidderCitrus:            citrus.Builder,
-
 	}
 }
-
-
-
-
