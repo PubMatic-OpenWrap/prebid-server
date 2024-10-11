@@ -194,18 +194,6 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "sendburl set in imp.ext.prebid.pubmatic, pass to imp.ext",
-			args: args{
-				imp: &openrtb2.Imp{
-					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"sendburl":true}}`),
-				},
-			},
-			want: want{
-				impExt: json.RawMessage(`{"sendburl":true}`),
-			},
-		},
-		{
 			name: "Populate imp.displaymanager and imp.displaymanagerver if both are empty in imp",
 			args: args{
 				imp: &openrtb2.Imp{
@@ -391,6 +379,42 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 						AlternateBidderCodes: &openrtb_ext.ExtAlternateBidderCodes{Enabled: true, Bidders: map[string]openrtb_ext.ExtAdapterAlternateBidderCodes{"pubmatic": {Enabled: true, AllowedBidderCodes: []string{"groupm"}}}},
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":true}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":true}`),
+					},
+				},
+				SendBurl: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and invalid senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":{}}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":{}}`),
+					},
+				},
+				SendBurl: false,
 			},
 			wantErr: false,
 		},
