@@ -128,6 +128,10 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 		}
 	}
 
+	if rctx.Endpoint == models.EndpointWebS2S {
+		return defaultBids
+	}
+
 	// add nobids for throttled adapter to all the impressions (how do we set profile with custom list of bidders at impression level?)
 	for bidder := range rctx.AdapterThrottleMap {
 		for impID := range rctx.ImpBidCtx { // ImpBidCtx is used only for list of impID, it does not have data of throttled adapters
