@@ -32,25 +32,25 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 	}
 
 	if rctx.Endpoint == models.EndpointWebS2S {
-		addNonBidsFromDefaultBids(rctx, &seatNonBid)
+		updateSeatNonBidsFromDefaultBids(rctx, &seatNonBid)
 	}
 
 	return seatNonBid
 }
 
-func addNonBidsFromDefaultBids(rctx models.RequestCtx, seatNonBid *openrtb_ext.NonBidCollection) {
-
+func updateSeatNonBidsFromDefaultBids(rctx models.RequestCtx, seatNonBid *openrtb_ext.NonBidCollection) {
 	for impID, noSeatBid := range rctx.DefaultBids {
 		for seat, bids := range noSeatBid {
 			for _, bid := range bids {
-				nbr := rctx.ImpBidCtx[impID].BidCtx[bid.ID].Nbr
-				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(*nbr)})
-				seatNonBid.AddBid(nonBid, seat)
-			}
+				if rctx.ImpBidCtx != nil && rctx.ImpBidCtx[impID].BidCtx != nil && rctx.ImpBidCtx[impID].BidCtx[bid.ID].Nbr != nil {
+					nbr := rctx.ImpBidCtx[impID].BidCtx[bid.ID].Nbr
+					nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(*nbr)})
+					seatNonBid.AddBid(nonBid, seat)
+				}
 
+			}
 		}
 	}
-
 }
 
 // addSeatNonBidsInResponseExt adds the rctx.SeatNonBids in the response-ext
