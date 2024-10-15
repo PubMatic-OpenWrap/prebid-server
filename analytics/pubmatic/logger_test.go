@@ -1243,6 +1243,210 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			partners: map[string][]PartnerRecord{},
 		},
 		{
+			name: "Multi_impression_request_slot_not_mapped_for_imp1_for_appnexus",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp2",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-2",
+										ImpID: "imp2",
+										Price: 20,
+									},
+								},
+								Seat: "appnexus",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidFloorCur: "USD",
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+										OriginalBidCur: "USD",
+									},
+								},
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+										Nbr:    exchange.ErrorGeneral.Ptr(),
+									},
+								},
+							},
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+							},
+						},
+						"imp2": {
+							BidFloorCur: "USD",
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+										OriginalBidCur: "USD",
+									},
+								},
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 20,
+										OriginalBidCur: "USD",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						NetECPM:     10,
+						GrossECPM:   10,
+						OriginalCPM: 10,
+						OriginalCur: "USD",
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+					},
+				},
+				"imp2": {
+					{
+						NetECPM:     10,
+						GrossECPM:   10,
+						OriginalCPM: 10,
+						OriginalCur: "USD",
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-1",
+						OrigBidID:   "bid-id-1",
+						DealID:      "-1",
+						ServerSide:  1,
+					},
+					{
+						NetECPM:     20,
+						GrossECPM:   20,
+						OriginalCPM: 20,
+						OriginalCur: "USD",
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-2",
+						OrigBidID:   "bid-id-2",
+						DealID:      "-1",
+						ServerSide:  1,
+					},
+				},
+			},
+		},
+		{
+			name: "slot_not_mapped_for_pubmatic",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										Price: 0,
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-2",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "appnexus",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidFloorCur: "USD",
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+										OriginalBidCur: "USD",
+									},
+								},
+							},
+							NonMapped: map[string]struct{}{
+								"pubmatic": {},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						NetECPM:     10,
+						GrossECPM:   10,
+						OriginalCPM: 10,
+						OriginalCur: "USD",
+						PartnerID:   "appnexus",
+						BidderCode:  "appnexus",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-2",
+						OrigBidID:   "bid-id-2",
+						DealID:      "-1",
+						ServerSide:  1,
+					},
+				},
+			},
+		},
+		{
 			name: "partner throttled, default bid present is seat-bid but absent in seat-non-bid",
 			args: args{
 				ao: analytics.AuctionObject{
