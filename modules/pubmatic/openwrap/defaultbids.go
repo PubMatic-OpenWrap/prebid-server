@@ -128,6 +128,8 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 		}
 	}
 
+	//Do not add nobids in default bids for throttled adapter and non-mapped bidders in case of web-s2s
+	//as we are forming forming seatNonBids from defaultBids which is used for owlogger
 	if rctx.Endpoint == models.EndpointWebS2S {
 		return defaultBids
 	}
