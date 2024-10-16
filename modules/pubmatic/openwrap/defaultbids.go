@@ -55,8 +55,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			if defaultBids[impID] == nil {
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
-
-			uuid := uuid.NewV4().String()
+			uuid, _ := m.uuidGenerator.Generate()
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
