@@ -36,9 +36,9 @@ jobs:
           echo "hasChanges=${hasChanges}" >> $GITHUB_OUTPUT
 
       - name: Install semgrep
+        if: contains(steps.should_run_semgrep.outputs.hasChanges, 'true')
         run: |
-          apt install pipx
-          pipx install semgrep==1.22.0
+          pip3 install semgrep==1.22.0 --break-system-packages.
           semgrep --version
 
       - name: Run semgrep tests
