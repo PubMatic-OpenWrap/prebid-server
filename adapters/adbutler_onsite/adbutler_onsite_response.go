@@ -22,6 +22,12 @@ type AdButlerBeacon struct {
 	TrackingUrl string `json:"url,omitempty"`
 }
 
+
+const (
+	MarkupInvalid openrtb2.MarkupType = 0
+)
+
+
 type Placement struct {
 	BannerID             string `json:"banner_id,omitempty"`
 	Width                string `json:"width,omitempty"`
@@ -170,7 +176,6 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			}
 
 			bidExt := &openrtb_ext.ExtBidCMOnsite{
-				AdType:   adType,
 				ViewUrl:  viewURL,
 				ClickUrl: clickURL,
 			}
@@ -178,10 +183,11 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			bid := &openrtb2.Bid{
 				ID:    bidID,
 				ImpID: impID,
-				NURL:  nURL,
+				BURL:  nURL,
 				W:     int64(width),
 				H:     int64(height),
 				AdM:   adm,
+				MType:   adType,
 			}
 
 			adapters.AddDefaultFieldsComm(bid)
@@ -202,17 +208,17 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 	return bidResponse
 }
 
-func getADM(adButlerBid *Placement) (string, int) {
+func getADM(adButlerBid *Placement) (string, openrtb2.MarkupType) {
 
 	if adButlerBid.Body != "" {
-		return adButlerBid.Body, Adtype_Custom_Banner
+		return adButlerBid.Body, openrtb2.MarkupNative
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), Adtype_Banner
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), openrtb2.MarkupBanner
 	}
 
-	return "", Adtype_Invalid
+	return "", MarkupInvalid
 }
 
 func getImpIDMap(request *openrtb2.BidRequest) map[string][]string {
@@ -280,3 +286,4 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
