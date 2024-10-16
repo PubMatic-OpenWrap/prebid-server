@@ -56,20 +56,20 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	var orignalMaxBidResponse *openrtb2.BidResponse
-	if rCtx.Endpoint == models.EndpointAppLovinMax {
-		orignalMaxBidResponse = new(openrtb2.BidResponse)
-		*orignalMaxBidResponse = *ao.Response
-	}
-
-	err := RestoreBidResponse(rCtx, *ao)
-	if err != nil {
-		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
-	}
-
 	var loggerURL string
 	var headers http.Header
 	if !rCtx.LoggerDisabled {
+		var orignalMaxBidResponse *openrtb2.BidResponse
+		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			orignalMaxBidResponse = new(openrtb2.BidResponse)
+			*orignalMaxBidResponse = *ao.Response
+		}
+
+		err := RestoreBidResponse(rCtx, *ao)
+		if err != nil {
+			glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
+		}
+
 		loggerURL, headers = GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
 		if loggerURL == "" {
 			glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
@@ -78,11 +78,12 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		}
 
 		go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
+
+		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			ao.Response = orignalMaxBidResponse
+		}
 	}
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax {
-		ao.Response = orignalMaxBidResponse
-	}
 	setWakandaObject(rCtx, ao, loggerURL)
 }
 
