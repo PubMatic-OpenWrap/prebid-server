@@ -53,8 +53,8 @@ git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 h1:Ea8zwi
 git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3/go.mod h1:c/I6IcDn4Mtq4mmw8wGJN3v0o10nIMX7VTuQnsalUw0=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d h1:BgLUpJQ9Z89eDGz//voK74G/8FgjgVg2PWVbjgCJ4+A=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b h1:7AsXylZJDwq514L8KE0Id079VNfUsDEMUIYMlRYH+0Y=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
