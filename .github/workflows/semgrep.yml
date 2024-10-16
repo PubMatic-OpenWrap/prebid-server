@@ -38,7 +38,7 @@ jobs:
       - name: Install semgrep
         if: contains(steps.should_run_semgrep.outputs.hasChanges, 'true')
         run: |
-          pip3 install semgrep==1.22.0
+          pip3 install semgrep==1.22.0 --break-system-packages
           semgrep --version
 
       - name: Run semgrep tests
