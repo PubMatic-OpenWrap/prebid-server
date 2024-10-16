@@ -1,6 +1,7 @@
 package pubmatic
 
 import (
+	"net/http"
 	"runtime/debug"
 	"sync"
 
@@ -55,11 +56,6 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
-	if rCtx.LoggerDisabled {
-		// logger disabled explicitly for publisher,profile request
-		return
-	}
-
 	var orignalMaxBidResponse *openrtb2.BidResponse
 	if rCtx.Endpoint == models.EndpointAppLovinMax {
 		orignalMaxBidResponse = new(openrtb2.BidResponse)
@@ -71,14 +67,18 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
 	}
 
-	loggerURL, headers := GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
-	if loggerURL == "" {
-		glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
-			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
-		return
-	}
+	var loggerURL string
+	var headers http.Header
+	if !rCtx.LoggerDisabled {
+		loggerURL, headers = GetLogAuctionObjectAsURL(*ao, rCtx, false, false)
+		if loggerURL == "" {
+			glog.Errorf("Failed to prepare the owlogger for pub:[%d], profile:[%d], version:[%d].",
+				rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
+			return
+		}
 
-	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
+		go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
+	}
 
 	if rCtx.Endpoint == models.EndpointAppLovinMax {
 		ao.Response = orignalMaxBidResponse
