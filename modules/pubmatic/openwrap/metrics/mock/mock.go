@@ -826,3 +826,15 @@ func (mr *MockMetricsEngineMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockMetricsEngine)(nil).Shutdown))
 }
+
+// RecordFailedParsingItuneID mocks base method.
+func (m *MockMetricsEngine) RecordFailedParsingItuneID(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordFailedParsingItuneID", arg0, arg1)
+}
+
+// RecordFailedParsingItuneID indicates an expected call of RecordFailedParsingItuneID.
+func (mr *MockMetricsEngineMockRecorder) RecordFailedParsingItuneID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordFailedParsingItuneID", reflect.TypeOf((*MockMetricsEngine)(nil).RecordFailedParsingItuneID), arg0, arg1)
+}

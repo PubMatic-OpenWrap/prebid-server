@@ -81,15 +81,22 @@ func TestParseImpressionObject(t *testing.T) {
 		imp                      *openrtb2.Imp
 		extractWrapperExtFromImp bool
 		extractPubIDFromImp      bool
+		displayManager           string
+		displayManagerVer        string
+	}
+	type want struct {
+		bidfloor          float64
+		impExt            json.RawMessage
+		displayManager    string
+		displayManagerVer string
 	}
 	tests := []struct {
 		name                string
 		args                args
 		expectedWrapperExt  *pubmaticWrapperExt
 		expectedPublisherId string
+		want                want
 		wantErr             bool
-		expectedBidfloor    float64
-		expectedImpExt      json.RawMessage
 	}{
 		{
 			name: "imp.bidfloor empty and kadfloor set",
@@ -99,8 +106,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
 				},
 			},
-			expectedBidfloor: 0.12,
-			expectedImpExt:   json.RawMessage(nil),
+			want: want{
+				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "imp.bidfloor set and kadfloor empty",
@@ -111,8 +120,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{}}`),
 				},
 			},
-			expectedBidfloor: 0.12,
-			expectedImpExt:   json.RawMessage(nil),
+			want: want{
+				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "imp.bidfloor set and kadfloor invalid",
@@ -123,8 +134,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"aaa"}}`),
 				},
 			},
-			expectedBidfloor: 0.12,
-			expectedImpExt:   json.RawMessage(nil),
+			want: want{
+				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "imp.bidfloor set and kadfloor set, higher imp.bidfloor",
@@ -135,7 +148,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.11"}}`),
 				},
 			},
-			expectedBidfloor: 0.12,
+			want: want{
+				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "imp.bidfloor set and kadfloor set, higher kadfloor",
@@ -146,8 +162,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":"0.13"}}`),
 				},
 			},
-			expectedBidfloor: 0.13,
-			expectedImpExt:   json.RawMessage(nil),
+			want: want{
+				bidfloor: 0.13,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "kadfloor string set with whitespace",
@@ -158,8 +176,10 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:      json.RawMessage(`{"bidder":{"kadfloor":" \t  0.13  "}}`),
 				},
 			},
-			expectedBidfloor: 0.13,
-			expectedImpExt:   json.RawMessage(nil),
+			want: want{
+				bidfloor: 0.13,
+				impExt:   json.RawMessage(nil),
+			},
 		},
 		{
 			name: "bidViewability Object is set in imp.ext.prebid.pubmatic, pass to imp.ext",
@@ -169,27 +189,74 @@ func TestParseImpressionObject(t *testing.T) {
 					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}}`),
 				},
 			},
-			expectedImpExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
+			want: want{
+				impExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
+			},
 		},
 		{
-			name: "sendburl set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			name: "Populate imp.displaymanager and imp.displaymanagerver if both are empty in imp",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
-					Ext:   json.RawMessage(`{"bidder":{"sendburl":true}}`),
+					Ext:   json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
 				},
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
 			},
-			expectedImpExt: json.RawMessage(`{"sendburl":true}`),
+			want: want{
+				bidfloor:          0.12,
+				impExt:            json.RawMessage(nil),
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "do not populate imp.displaymanager and imp.displaymanagerver in imp if only displaymanager or displaymanagerver is present in args",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video:             &openrtb2.Video{},
+					Ext:               json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
+					DisplayManagerVer: "1.0.0",
+				},
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+			want: want{
+				bidfloor:          0.12,
+				impExt:            json.RawMessage(nil),
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "do not populate imp.displaymanager and imp.displaymanagerver if already present in imp",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video:             &openrtb2.Video{},
+					Ext:               json.RawMessage(`{"bidder":{"kadfloor":"0.12"}}`),
+					DisplayManager:    "prebid-mobile",
+					DisplayManagerVer: "1.0.0",
+				},
+				displayManager:    "prebid-android",
+				displayManagerVer: "2.0.0",
+			},
+			want: want{
+				bidfloor:          0.12,
+				impExt:            json.RawMessage(nil),
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp)
+			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
-			assert.Equal(t, tt.expectedBidfloor, tt.args.imp.BidFloor)
-			assert.Equal(t, tt.expectedImpExt, tt.args.imp.Ext)
+			assert.Equal(t, tt.want.bidfloor, tt.args.imp.BidFloor)
+			assert.Equal(t, tt.want.impExt, tt.args.imp.Ext)
+			assert.Equal(t, tt.want.displayManager, tt.args.imp.DisplayManager)
+			assert.Equal(t, tt.want.displayManagerVer, tt.args.imp.DisplayManagerVer)
 		})
 	}
 }
@@ -312,6 +379,42 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 						AlternateBidderCodes: &openrtb_ext.ExtAlternateBidderCodes{Enabled: true, Bidders: map[string]openrtb_ext.ExtAdapterAlternateBidderCodes{"pubmatic": {Enabled: true, AllowedBidderCodes: []string{"groupm"}}}},
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":true}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":true}`),
+					},
+				},
+				SendBurl: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and invalid senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":{}}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				ExtRequest: openrtb_ext.ExtRequest{
+					Prebid: openrtb_ext.ExtRequestPrebid{
+						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":{}}`),
+					},
+				},
+				SendBurl: false,
 			},
 			wantErr: false,
 		},
@@ -1496,6 +1599,135 @@ func TestTrimSuffixWithPattern(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := trimSuffixWithPattern(tt.args.input)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetDisplayManagerAndVer(t *testing.T) {
+	type args struct {
+		app *openrtb2.App
+	}
+	type want struct {
+		displayManager    string
+		displayManagerVer string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "request app object is not nil but app.ext has no source and version",
+			args: args{
+
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has source and version",
+			args: args{
+
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile","version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext.prebid has source and version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"prebid":{"source":"prebid-mobile","version":"1.0.0"}}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has only version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has only source",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext have empty source but version is present",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"", "version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext have empty version but source is present",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile", "version":""}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and both app.ext and app.ext.prebid have source and version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile-android","version":"2.0.0","prebid":{"source":"prebid-mobile","version":"1.0.0"}}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			displayManager, displayManagerVer := getDisplayManagerAndVer(tt.args.app)
+			assert.Equal(t, tt.want.displayManager, displayManager)
+			assert.Equal(t, tt.want.displayManagerVer, displayManagerVer)
 		})
 	}
 }
