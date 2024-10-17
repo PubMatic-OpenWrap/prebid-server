@@ -187,6 +187,21 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	}
 
 	maxRequest.User.Data = signalUser.Data
+
+	keys := []string{"sessionduration", "impdepth"}
+
+	for _, key := range keys {
+		if field, dataType, _, err := jsonparser.Get(signalUser.Ext, key); err == nil {
+			if dataType == jsonparser.String {
+				quotedStr := strconv.Quote(string(field))
+				field = []byte(quotedStr)
+			}
+			maxRequest.User.Ext, _ = jsonparser.Set(maxRequest.User.Ext, field, key)
+		} else {
+			maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, key)
+		}
+	}
+
 	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth")
 }
 

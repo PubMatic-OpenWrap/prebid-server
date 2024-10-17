@@ -440,6 +440,30 @@ func TestUpdateUser(t *testing.T) {
 			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"consent":"consent_string","eids":[{"source":"amxid","uids":[{"atype":1,"id":"88de601e-3d98-48e7-81d7-00000000"}]},{"source":"adserver.org","uids":[{"id":"1234567","ext":{"rtiPartner":"TDID"}}]}]}`)},
 		},
 		{
+			name: "signalUserExt_and_request_both_has_sessionduration_and_impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43", Ext: json.RawMessage(`{"sessionduration":50,"impdepth":15}`)}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
+		},
+		{
+			name: "signalUserExt_has_invalid_and_request_has_valid_sessionduration_and_impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":-40,"impdepth":"impdepth"}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43", Ext: json.RawMessage(`{"sessionduration":50,"impdepth":15}`)}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":-40,"impdepth":"impdepth"}`)},
+		},
+		{
+			name: "request_has_sessionduration_and_impdepth",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2"},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43", Ext: json.RawMessage(`{"sessionduration":50,"impdepth":15}`)}},
+			},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{}`)},
+		},
+		{
 			name: "signalUserExt has sessionduration and impdepth",
 			args: args{
 				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
