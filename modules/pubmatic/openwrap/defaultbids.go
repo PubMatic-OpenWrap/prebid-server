@@ -55,8 +55,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			if defaultBids[impID] == nil {
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
-
-			uuid := uuid.NewV4().String()
+			uuid, _ := m.uuidGenerator.Generate()
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
@@ -126,6 +125,12 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 				}
 			}
 		}
+	}
+
+	//Do not add nobids in default bids for throttled adapter and non-mapped bidders in case of web-s2s
+	//as we are forming forming seatNonBids from defaultBids which is used for owlogger
+	if rctx.Endpoint == models.EndpointWebS2S {
+		return defaultBids
 	}
 
 	// add nobids for throttled adapter to all the impressions (how do we set profile with custom list of bidders at impression level?)

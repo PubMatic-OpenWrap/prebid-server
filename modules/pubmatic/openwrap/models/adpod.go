@@ -43,3 +43,12 @@ type ImpAdPodConfig struct {
 	MinDuration    int64  `json:"minduration,omitempty"`
 	MaxDuration    int64  `json:"maxduration,omitempty"`
 }
+
+type PodConfig struct {
+	PodID       string
+	PodDur      int64
+	MaxSeq      int64
+	MinDuration int64
+	MaxDuration int64
+	RqdDurs     []int64
+}

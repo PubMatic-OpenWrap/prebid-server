@@ -71,6 +71,8 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	originalRequestBody := payload.Body
+
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
@@ -112,6 +114,7 @@ func (m OpenWrap) handleEntrypointHook(
 		LoggerImpressionID:        requestExtWrapper.LoggerImpressionID,
 		ClientConfigFlag:          requestExtWrapper.ClientConfigFlag,
 		SSAI:                      requestExtWrapper.SSAI,
+		AdruleFlag:                requestExtWrapper.Video.AdruleFlag,
 		IP:                        models.GetIP(payload.Request),
 		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
 		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
@@ -133,12 +136,15 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl: endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
-	// SSAuction will be always 1 for CTV request
 	if rCtx.IsCTVRequest {
+		// SSAuction will be always 1 for CTV request
 		rCtx.SSAuction = 1
+
+		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	}
 
 	// only http.ErrNoCookie is returned, we can ignore it
@@ -175,7 +181,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
 	result.Reject = false
@@ -203,15 +209,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointAppLovinMax:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		if requestExtWrapper.ProfileId == 0 {
-			profileIDStr := getProfileID(payload.Body)
-			if profileIDStr != "" {
-				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
-					requestExtWrapper.ProfileId = ProfileId
-				}
-			}
-		}
+		fallthrough
 	case models.EndpointWebS2S:
 		fallthrough
 	default:

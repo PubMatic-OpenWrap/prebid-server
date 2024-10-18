@@ -113,7 +113,7 @@ func Test_feature_Start(t *testing.T) {
 	}
 }
 
-func Test_feature_updateFeatureConfigMaps(t *testing.T) {
+func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
@@ -127,6 +127,7 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 		ampMultiformat      ampMultiformat
 		bidRecovery         bidRecovery
 		appLovinMultiFloors appLovinMultiFloors
+		impCountingMethod   impCountingMethod
 	}
 	tests := []struct {
 		name   string
@@ -157,6 +158,13 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 				},
 				tbf: tbf{
 					pubProfileTraffic: map[int]map[int]int{},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{},
+					},
+					index: 0,
 				},
 			},
 		},
@@ -204,6 +212,13 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 				},
 				bidRecovery: bidRecovery{
 					enabledPublisherProfile: map[int]map[int]struct{}{},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{},
+					},
+					index: 1,
 				},
 			},
 		},
@@ -255,6 +270,13 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 				},
 				appLovinMultiFloors: appLovinMultiFloors{
 					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{},
+					},
+					index: 1,
 				},
 			},
 		},
@@ -331,6 +353,60 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{},
+					},
+					index: 1,
+				},
+			},
+		},
+		{
+			name: "fetch impcountingmethod feature data with multiple bidders",
+			fields: fields{
+				cache: mockCache,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureImpCountingMethod: {
+							Enabled: 1,
+							Value:   "appnexus, rubicon",
+						},
+					},
+				}, nil)
+				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+			},
+			want: want{
+				fsc: fsc{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp: map[int]int{
+						6: 100,
+					},
+				},
+				ampMultiformat: ampMultiformat{
+					enabledPublishers: map[int]struct{}{},
+				},
+				tbf: tbf{
+					pubProfileTraffic: map[int]map[int]int{},
+				},
+				bidRecovery: bidRecovery{
+					enabledPublisherProfile: map[int]map[int]struct{}{},
+				},
+				appLovinMultiFloors: appLovinMultiFloors{
+					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{
+							"appnexus": {},
+							"rubicon":  {},
+						},
+					},
+					index: 1,
+				},
 			},
 		},
 	}
@@ -349,13 +425,18 @@ func Test_feature_updateFeatureConfigMaps(t *testing.T) {
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: make(map[int]struct{}),
 				},
+				impCountingMethod: newImpCountingMethod(),
 			}
+			defer func() {
+				fe = nil
+			}()
 			fe.updateFeatureConfigMaps()
 			assert.Equal(t, tt.want.fsc, fe.fsc, tt.name)
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
 			assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)
 			assert.Equal(t, tt.want.appLovinMultiFloors, fe.appLovinMultiFloors, tt.name)
+			assert.Equal(t, tt.want.impCountingMethod, fe.impCountingMethod, tt.name)
 		})
 	}
 }

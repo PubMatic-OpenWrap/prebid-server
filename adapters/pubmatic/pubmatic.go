@@ -88,6 +88,7 @@ type extRequestAdServer struct {
 	Wrapper     *pubmaticWrapperExt `json:"wrapper,omitempty"`
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
+	SendBurl    bool                `json:"sendburl,omitempty"`
 	openrtb_ext.ExtRequest
 }
 
@@ -113,6 +114,11 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
+	displayManager, displayManagerVer := "", ""
+	if request.App != nil && request.App.Ext != nil {
+		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
+	}
+
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
 	if err != nil {
 		return nil, []error{err}
@@ -125,7 +131,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
+		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
@@ -383,7 +389,7 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, []float64, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, displayManager, displayManagerVer string) (*pubmaticWrapperExt, string, []float64, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 	var floors []float64
@@ -395,6 +401,12 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	if imp.Audio != nil {
 		imp.Audio = nil
+	}
+
+	// Populate imp.displaymanager and imp.displaymanagerver if the SDK failed to do it.
+	if imp.DisplayManager == "" && imp.DisplayManagerVer == "" && displayManager != "" && displayManagerVer != "" {
+		imp.DisplayManager = displayManager
+		imp.DisplayManagerVer = displayManagerVer
 	}
 
 	var bidderExt ExtImpBidderPubmatic
@@ -449,10 +461,6 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	if pubmaticExt.PmZoneID != "" {
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
-	}
-
-	if pubmaticExt.SendBurl {
-		extMap[sendBurlKey] = pubmaticExt.SendBurl
 	}
 
 	if bidderExt.SKAdnetwork != nil {
@@ -559,6 +567,9 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	}
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &cookies)
+	}
+	if sendBurl, ok := reqExtBidderParams[sendBurlKey]; ok {
+		pmReqExt.SendBurl, _ = strconv.ParseBool(string(sendBurl))
 	}
 	// OW patch -end-
 
@@ -853,4 +864,20 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		bidderName: string(bidderName),
 	}
 	return bidder, nil
+}
+
+// getDisplayManagerAndVer returns the display manager and version from the request.app.ext or request.app.prebid.ext source and version
+func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
+	if source, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+
+	if source, err := jsonparser.GetString(app.Ext, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+	return "", ""
 }

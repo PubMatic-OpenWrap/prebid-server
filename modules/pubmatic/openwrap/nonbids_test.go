@@ -3,7 +3,10 @@ package openwrap
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/exchange"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -126,6 +129,44 @@ func TestPrepareSeatNonBids(t *testing.T) {
 					{
 						Bid:          &openrtb2.Bid{ImpID: "imp1"},
 						NonBidReason: int(nbr.RequestBlockedPartnerThrottle),
+					},
+				},
+			}),
+		},
+		{
+			name: "seatnonbid_should_be_updated_from_defaultbids_from_webs2s_endpoint",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			seatNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: int(exchange.ErrorGeneral),
 					},
 				},
 			}),
@@ -831,4 +872,393 @@ func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.
 		}
 	}
 	return nonBids
+}
+
+func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
+	type args struct {
+		rctx       models.RequestCtx
+		seatNonBid *openrtb_ext.NonBidCollection
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantSeatNonBid []openrtb_ext.SeatNonBid
+	}{
+		{
+			name: "no default bids",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: nil,
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			wantSeatNonBid: nil,
+		},
+		{
+			name: "imp not present in impbidctx for default bid",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp2": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+		},
+		{
+			name: "bid absent in impbidctx for default bid",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+		},
+		{
+			name: "default bid with no non-bid reason",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			wantSeatNonBid: nil,
+		},
+		{
+			name: "singal default bid",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			wantSeatNonBid: []openrtb_ext.SeatNonBid{
+				{
+					Seat: "pubmatic",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 100,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple default bids for same imp",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+								},
+							},
+							"appnexus": {
+								{
+									ID:    "bid-id-2",
+									ImpID: "imp1",
+								},
+							},
+							"rubicon": {
+								{
+									ID:    "bid-id-3",
+									ImpID: "imp1",
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorTimeout.Ptr(),
+									},
+								},
+								"bid-id-3": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorBidderUnreachable.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			wantSeatNonBid: []openrtb_ext.SeatNonBid{
+				{
+					Seat: "pubmatic",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 100,
+						},
+					},
+				},
+				{
+					Seat: "appnexus",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 101,
+						},
+					},
+				},
+				{
+					Seat: "rubicon",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 103,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple default bids for different imp",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-1",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+							"appnexus": {
+								{
+									ID:    "bid-id-2",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+							"rubicon": {
+								{
+									ID:    "bid-id-3",
+									ImpID: "imp1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+						"imp2": {
+							"pubmatic": {
+								{
+									ID:    "bid-id-4",
+									ImpID: "imp2",
+									Ext:   []byte(`{}`),
+								},
+							},
+							"appnexus": {
+								{
+									ID:    "bid-id-5",
+									ImpID: "imp2",
+									Ext:   []byte(`{}`),
+								},
+							},
+							"rubicon": {
+								{
+									ID:    "bid-id-6",
+									ImpID: "imp2",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+								"bid-id-2": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorTimeout.Ptr(),
+									},
+								},
+								"bid-id-3": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorBidderUnreachable.Ptr(),
+									},
+								},
+							},
+						},
+						"imp2": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-4": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorGeneral.Ptr(),
+									},
+								},
+								"bid-id-5": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorTimeout.Ptr(),
+									},
+								},
+								"bid-id-6": {
+									BidExt: models.BidExt{
+										Nbr: exchange.ErrorBidderUnreachable.Ptr(),
+									},
+								},
+							},
+						},
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			wantSeatNonBid: []openrtb_ext.SeatNonBid{
+				{
+					Seat: "pubmatic",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 100,
+						},
+						{
+							ImpId:      "imp2",
+							StatusCode: 100,
+						},
+					},
+				},
+				{
+					Seat: "appnexus",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 101,
+						},
+						{
+							ImpId:      "imp2",
+							StatusCode: 101,
+						},
+					},
+				},
+				{
+					Seat: "rubicon",
+					NonBid: []openrtb_ext.NonBid{
+						{
+							ImpId:      "imp1",
+							StatusCode: 103,
+						},
+						{
+							ImpId:      "imp2",
+							StatusCode: 103,
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateSeatNonBidsFromDefaultBids(tt.args.rctx, tt.args.seatNonBid)
+			gotSetaNonBid := tt.args.seatNonBid.Get()
+
+			cmp.Equal(tt.wantSeatNonBid, gotSetaNonBid,
+				cmpopts.SortSlices(func(a, b openrtb_ext.SeatNonBid) bool {
+					return a.Seat < b.Seat
+				}),
+				cmpopts.SortSlices(sortNonBids),
+			)
+		})
+	}
+}
+
+func sortNonBids(a, b openrtb_ext.NonBid) bool {
+	return a.ImpId < b.ImpId
 }

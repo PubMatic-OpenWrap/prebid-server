@@ -680,7 +680,7 @@ func TestNormalizeDomain(t *testing.T) {
 
 func newTestTagAdapter(name string) *bidderAdapter {
 	return &bidderAdapter{
-		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}, false),
+		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}, 0),
 		BidderName: openrtb_ext.BidderName(name),
 	}
 }
@@ -1823,7 +1823,6 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 	testMethodName := "test"
 
 	type args struct {
-		bidder           string
 		vastBidderInfo   *openrtb_ext.FastXMLMetrics
 		getMetricsEngine func() *metrics.MetricsEngineMock
 	}
@@ -1835,7 +1834,6 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 		{
 			name: "Record_Fast_XML_Metrics_Respnse_matched",
 			args: args{
-				bidder: "pubmatic",
 				vastBidderInfo: &openrtb_ext.FastXMLMetrics{
 					XMLParserTime:   time.Millisecond * 10,
 					EtreeParserTime: time.Millisecond * 20,
@@ -1843,9 +1841,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, "pubmatic", time.Millisecond*10).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, "pubmatic", time.Millisecond*20).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, "pubmatic", false).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*10).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*20).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, false).Return()
 					return metricEngine
 				},
 			},
@@ -1853,7 +1851,6 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 		{
 			name: "Record_Fast_XML_Metrics_Respnse_mismatched",
 			args: args{
-				bidder: "pubmatic",
 				vastBidderInfo: &openrtb_ext.FastXMLMetrics{
 					XMLParserTime:   time.Millisecond * 15,
 					EtreeParserTime: time.Millisecond * 25,
@@ -1861,9 +1858,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, "pubmatic", time.Millisecond*15).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, "pubmatic", time.Millisecond*25).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, "pubmatic", true).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*15).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*25).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, true).Return()
 					return metricEngine
 				},
 			},
@@ -1873,7 +1870,7 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockMetricEngine := tt.args.getMetricsEngine()
-			recordFastXMLMetrics(mockMetricEngine, testMethodName, tt.args.bidder, tt.args.vastBidderInfo)
+			recordFastXMLMetrics(mockMetricEngine, testMethodName, tt.args.vastBidderInfo)
 			mockMetricEngine.AssertExpectations(t)
 		})
 	}

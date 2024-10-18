@@ -357,6 +357,9 @@ const (
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
 
+	//constants for tracker impCountingMethod
+	ImpCountingMethod = "imp_ct_mthd"
+
 	DealIDNotApplicable   = "na"
 	DealTierNotApplicable = "na"
 	PwtDealTier           = "pwtdealtier"
@@ -371,21 +374,23 @@ const (
 	Enabled          = "1"
 
 	// VAST Unwrap
-	RequestContext     = "rctx"
-	UnwrapCount        = "unwrap-count"
-	UnwrapStatus       = "unwrap-status"
-	Timeout            = "Timeout"
-	UnwrapSucessStatus = "0"
-	UnwrapTimeout      = "unwrap-timeout"
-	MediaTypeVideo     = "video"
-	ProfileId          = "profileID"
-	VersionId          = "versionID"
-	DisplayId          = "DisplayID"
-	XUserIP            = "X-Forwarded-For"
-	XUserAgent         = "X-Device-User-Agent"
-	CreativeID         = "unwrap-ucrid"
-	PubID              = "pub_id"
-	ImpressionID       = "imr_id"
+	RequestContext          = "rctx"
+	UnwrapCount             = "unwrap-count"
+	UnwrapStatus            = "unwrap-status"
+	Timeout                 = "Timeout"
+	UnwrapSucessStatus      = "0"
+	UnwrapEmptyVASTStatus   = "4"
+	UnwrapInvalidVASTStatus = "6"
+	UnwrapTimeout           = "unwrap-timeout"
+	MediaTypeVideo          = "video"
+	ProfileId               = "profileID"
+	VersionId               = "versionID"
+	DisplayId               = "DisplayID"
+	XUserIP                 = "X-Forwarded-For"
+	XUserAgent              = "X-Device-User-Agent"
+	CreativeID              = "unwrap-ucrid"
+	PubID                   = "pub_id"
+	ImpressionID            = "imr_id"
 
 	//Constants for new SDK reporting
 	ProfileTypeKey        = "type"
@@ -593,6 +598,7 @@ const (
 	FeatureMaxFloors           = 5
 	FeatureBidRecovery         = 6
 	FeatureApplovinMultiFloors = 7
+	FeatureImpCountingMethod   = 8
 )
 
 // constants for applovinmax requests
@@ -604,6 +610,8 @@ const (
 	OwSspBurl        = "owsspburl"
 	MissingSignal    = "missing"
 	InvalidSignal    = "invalid"
+	AppStoreUrl      = "appStoreUrl"
+	SendBurl         = "sendburl"
 )
 
 // constants for log level

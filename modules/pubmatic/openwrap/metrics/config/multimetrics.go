@@ -529,3 +529,10 @@ func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalTyp
 		thisME.RecordSignalDataStatus(pubid, profileid, signalType)
 	}
 }
+
+// RecordFailedParsingItuneID record failed parsing itune id
+func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
+	for _, thisME := range *me {
+		thisME.RecordFailedParsingItuneID(pubId, profId)
+	}
+}

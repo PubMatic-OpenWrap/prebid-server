@@ -22,7 +22,7 @@ type OWMetricsEngine interface {
 	RecordPanic(hostname, method string)
 	RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason)
 	//RecordXMLParserResponseTime records execution time for multiple parsers
-	RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration)
+	RecordXMLParserResponseTime(parser string, method string, respTime time.Duration)
 	//RecordXMLParserResponseMismatch records number of response mismatch
-	RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool)
+	RecordXMLParserResponseMismatch(method string, isMismatch bool)
 }
