@@ -71,6 +71,8 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, nil
 	}
 
+	originalRequestBody := payload.Body
+
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
@@ -179,7 +181,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
 	result.Reject = false
@@ -207,15 +209,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointAppLovinMax:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		if requestExtWrapper.ProfileId == 0 {
-			profileIDStr := getProfileID(payload.Body)
-			if profileIDStr != "" {
-				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
-					requestExtWrapper.ProfileId = ProfileId
-				}
-			}
-		}
+		fallthrough
 	case models.EndpointWebS2S:
 		fallthrough
 	default:
