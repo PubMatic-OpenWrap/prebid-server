@@ -1,0 +1,11 @@
+maintainer:
+maintainer:
+  email: openwrap@pubmatic.com
+gvlVendorID: 997
+capabilities:
+  app:
+    mediaTypes:
+      - banner
+  site:
+    mediaTypes:
+      - banner
