@@ -1,11 +1,7 @@
-maintainer:
-maintainer:
-  email: openwrap@pubmatic.com
-gvlVendorID: 997
-capabilities:
-  app:
-    mediaTypes:
-      - banner
-  site:
-    mediaTypes:
-      - banner
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "AdButler Adapter Params",
+	"description": "A schema which validates params accepted by the AdButler adapter",
+	"type": "object"
+}
+
