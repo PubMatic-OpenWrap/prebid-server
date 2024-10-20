@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/adapters"
 	ttx "github.com/prebid/prebid-server/adapters/33across"
 	"github.com/prebid/prebid-server/adapters/aax"
