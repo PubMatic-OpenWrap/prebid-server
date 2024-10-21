@@ -1415,7 +1415,7 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 			}
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
-			nonBidParams.NonBidReason = int(ResponseRejectedGeneral)
+			nonBidParams.NonBidReason = int(ResponseRejectedDSA)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}
