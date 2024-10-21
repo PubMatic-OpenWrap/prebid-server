@@ -59,6 +59,8 @@ type Device struct {
 	Platform models.DevicePlatform `json:"plt,omitempty"`
 	IFAType  *models.DeviceIFAType `json:"ifty,omitempty"` //OTT-416, adding device.ext.ifa_type
 	ATTS     *float64              `json:"atts,omitempty"` //device.ext.atts
+	ID       string                `json:"id,omitempty"`
+	Model    string                `json:"md,omitempty"`
 }
 
 /*
@@ -203,6 +205,8 @@ func (wlog *WloggerRecord) logDeviceObject(dvc *models.DeviceCtx) {
 
 	wlog.Device.Platform = dvc.Platform
 	wlog.Device.IFAType = dvc.IFATypeID
+	wlog.Device.ID = dvc.ID
+	wlog.Device.Model = dvc.Model
 	if dvc.Ext != nil {
 		wlog.record.Device.ATTS, _ = dvc.Ext.GetAtts()
 	}
