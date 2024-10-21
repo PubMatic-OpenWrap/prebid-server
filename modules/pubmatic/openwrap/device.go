@@ -14,7 +14,8 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 	}
 	//this is needed in determine ifa_type parameter
 	dvc.DeviceIFA = strings.TrimSpace(device.IFA)
-	setDeviceIDAndModel(dvc, device)
+	dvc.Model = device.Model
+	dvc.ID = getDeviceID(dvc, device)
 
 	if device.Ext == nil {
 		return
@@ -27,40 +28,37 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 	}
 	dvc.Ext = &deviceExt
 
+	if dvc.ID == "" {
+		dvc.ID, _ = dvc.Ext.GetSessionID()
+	}
 	//update device IFA Details
 	updateDeviceIFADetails(dvc)
 }
 
-// setDeviceIDAndModel sets deviceID and device.model for logging purpose
-func setDeviceIDAndModel(dvc *models.DeviceCtx, device *openrtb2.Device) {
-	dvc.Model = device.Model
+// getDeviceID retrieves deviceID for logging purpose
+func getDeviceID(dvc *models.DeviceCtx, device *openrtb2.Device) string {
 	if dvc.DeviceIFA != "" {
-		dvc.ID = dvc.DeviceIFA
-		return
+		return dvc.DeviceIFA
 	}
 	if device.DIDSHA1 != "" {
-		dvc.ID = device.DIDSHA1
-		return
+		return device.DIDSHA1
 	}
 	if device.DIDMD5 != "" {
-		dvc.ID = device.DIDMD5
-		return
+		return device.DIDMD5
 	}
 	if device.DPIDSHA1 != "" {
-		dvc.ID = device.DPIDSHA1
-		return
+		return device.DPIDSHA1
 	}
 	if device.DPIDMD5 != "" {
-		dvc.ID = device.DPIDMD5
-		return
+		return device.DPIDMD5
 	}
 	if device.MACSHA1 != "" {
-		dvc.ID = device.MACSHA1
-		return
+		return device.MACSHA1
 	}
 	if device.MACMD5 != "" {
-		dvc.ID = device.MACMD5
+		return device.MACMD5
 	}
+	return ""
 }
 
 func updateDeviceIFADetails(dvc *models.DeviceCtx) {
@@ -71,11 +69,6 @@ func updateDeviceIFADetails(dvc *models.DeviceCtx) {
 	deviceExt := dvc.Ext
 	extIFAType, ifaTypeFound := deviceExt.GetIFAType()
 	extSessionID, _ := deviceExt.GetSessionID()
-
-	//if deviceID not set, update with sessionID
-	if dvc.ID == "" {
-		dvc.ID = extSessionID
-	}
 
 	if ifaTypeFound {
 		if dvc.DeviceIFA != "" {

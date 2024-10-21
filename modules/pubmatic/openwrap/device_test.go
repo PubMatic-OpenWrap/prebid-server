@@ -202,6 +202,29 @@ func TestPopulateDeviceExt(t *testing.T) {
 			},
 		},
 		{
+			name: `deviceID_as_sessionid_incase_ifa_not_present`,
+			args: args{
+				device: &openrtb2.Device{
+					Model: "iphone,11",
+					Ext:   json.RawMessage(`{"atts": 1,"session_id": "sample_session_id"}`),
+				},
+			},
+			want: want{
+				deviceCtx: models.DeviceCtx{
+					DeviceIFA: `sample_session_id`,
+					ID:        "sample_session_id",
+					Model:     "iphone,11",
+					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
+					Ext: func() *models.ExtDevice {
+						deviceExt := &models.ExtDevice{}
+						deviceExt.UnmarshalJSON([]byte(`{"atts":1,"session_id": "sample_session_id"}`))
+						deviceExt.SetIFAType("sessionid")
+						return deviceExt
+					}(),
+				},
+			},
+		},
+		{
 			name: `all_valid_ext_parameters`,
 			args: args{
 				device: &openrtb2.Device{
@@ -362,7 +385,6 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `sample_session_id`,
-				ID:        `sample_session_id`,
 				IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeSESSIONID]),
 				Ext: func() *models.ExtDevice {
 					ext := &models.ExtDevice{}
@@ -392,7 +414,6 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			args: args{
 				dvc: &models.DeviceCtx{
 					DeviceIFA: `existing_ifa_id`,
-					ID:        `existing_ifa_id`,
 					Ext: func() *models.ExtDevice {
 						deviceExt := &models.ExtDevice{}
 						deviceExt.SetSessionID(`sample_session_id`)
@@ -402,7 +423,6 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			},
 			want: &models.DeviceCtx{
 				DeviceIFA: `existing_ifa_id`,
-				ID:        `existing_ifa_id`,
 				Ext: func() *models.ExtDevice {
 					deviceExt := &models.ExtDevice{}
 					deviceExt.SetSessionID(`sample_session_id`)
@@ -425,7 +445,6 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			want: &models.DeviceCtx{
 				IFATypeID: ptrutil.ToPtr(9),
 				DeviceIFA: `sample_session_id`,
-				ID:        `sample_session_id`,
 				Ext: func() *models.ExtDevice {
 					deviceExt := &models.ExtDevice{}
 					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
@@ -448,7 +467,6 @@ func TestUpdateDeviceIFADetails(t *testing.T) {
 			want: &models.DeviceCtx{
 				IFATypeID: ptrutil.ToPtr(9),
 				DeviceIFA: `sample_session_id`,
-				ID:        `sample_session_id`,
 				Ext: func() *models.ExtDevice {
 					deviceExt := &models.ExtDevice{}
 					deviceExt.SetIFAType(models.DeviceIFATypeSESSIONID)
@@ -569,115 +587,64 @@ func TestAmendDeviceObject(t *testing.T) {
 	}
 }
 
-func TestSetDeviceIDAndModel(t *testing.T) {
+func TestGetDeviceID(t *testing.T) {
 	tests := []struct {
 		name     string
 		dvc      *models.DeviceCtx
 		device   *openrtb2.Device
-		expected *models.DeviceCtx
+		expected string
 	}{
 		{
-			name: "DeviceIFA set",
-			dvc: &models.DeviceCtx{
-				DeviceIFA: "test-ifa",
-			},
-			device: &openrtb2.Device{
-				Model: "iPhone",
-				IFA:   "test-ifa",
-			},
-			expected: &models.DeviceCtx{
-				DeviceIFA: "test-ifa",
-				ID:        "test-ifa",
-				Model:     "iPhone",
-			},
+			name:     "Empty input",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{},
+			expected: "",
 		},
 		{
-			name: "DIDSHA1 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:   "Samsung",
-				DIDSHA1: "test-didsha1",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-didsha1",
-				Model: "Samsung",
-			},
+			name:     "DeviceIFA present",
+			dvc:      &models.DeviceCtx{DeviceIFA: "test-ifa"},
+			device:   &openrtb2.Device{IFA: "test-ifa"},
+			expected: "test-ifa",
 		},
 		{
-			name: "DIDMD5 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:  "Pixel",
-				DIDMD5: "test-didmd5",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-didmd5",
-				Model: "Pixel",
-			},
+			name:     "DIDSHA1 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{DIDSHA1: "test-didsha1"},
+			expected: "test-didsha1",
 		},
 		{
-			name: "DPIDSHA1 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:    "Huawei",
-				DPIDSHA1: "test-dpidsha1",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-dpidsha1",
-				Model: "Huawei",
-			},
+			name:     "DIDMD5 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{DIDMD5: "test-didmd5"},
+			expected: "test-didmd5",
 		},
 		{
-			name: "DPIDMD5 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:   "OnePlus",
-				DPIDMD5: "test-dpidmd5",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-dpidmd5",
-				Model: "OnePlus",
-			},
+			name:     "DPIDSHA1 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{DPIDSHA1: "test-dpidsha1"},
+			expected: "test-dpidsha1",
 		},
 		{
-			name: "MACSHA1 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:   "Xiaomi",
-				MACSHA1: "test-macsha1",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-macsha1",
-				Model: "Xiaomi",
-			},
+			name:     "DPIDMD5 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{DPIDMD5: "test-dpidmd5"},
+			expected: "test-dpidmd5",
 		},
 		{
-			name: "MACMD5 set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model:  "Oppo",
-				MACMD5: "test-macmd5",
-			},
-			expected: &models.DeviceCtx{
-				ID:    "test-macmd5",
-				Model: "Oppo",
-			},
+			name:     "MACSHA1 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{MACSHA1: "test-macsha1"},
+			expected: "test-macsha1",
 		},
 		{
-			name: "No ID set",
-			dvc:  &models.DeviceCtx{},
-			device: &openrtb2.Device{
-				Model: "Generic",
-			},
-			expected: &models.DeviceCtx{
-				Model: "Generic",
-			},
+			name:     "MACMD5 present",
+			dvc:      &models.DeviceCtx{},
+			device:   &openrtb2.Device{MACMD5: "test-macmd5"},
+			expected: "test-macmd5",
 		},
 		{
-			name: "All ID set",
-			dvc: &models.DeviceCtx{
-				DeviceIFA: "test-ifa",
-			},
+			name: "Multiple fields present, DeviceIFA takes precedence",
+			dvc:  &models.DeviceCtx{DeviceIFA: "test-ifa"},
 			device: &openrtb2.Device{
 				IFA:      "test-ifa",
 				DIDSHA1:  "test-didsha1",
@@ -686,23 +653,28 @@ func TestSetDeviceIDAndModel(t *testing.T) {
 				DPIDMD5:  "test-dpidmd5",
 				MACSHA1:  "test-macsha1",
 				MACMD5:   "test-macmd5",
-				Model:    "iphone,11",
 			},
-			expected: &models.DeviceCtx{
-				Model: "iphone,11",
-				ID:    "test-ifa",
+			expected: "test-ifa",
+		},
+		{
+			name: "Multiple fields present, precedence order respected",
+			dvc:  &models.DeviceCtx{},
+			device: &openrtb2.Device{
+				DIDMD5:   "test-didmd5",
+				DPIDSHA1: "test-dpidsha1",
+				DPIDMD5:  "test-dpidmd5",
+				MACSHA1:  "test-macsha1",
+				MACMD5:   "test-macmd5",
 			},
+			expected: "test-didmd5",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setDeviceIDAndModel(tt.dvc, tt.device)
-			if tt.dvc.ID != tt.expected.ID {
-				t.Errorf("ID = %v, want %v", tt.dvc.ID, tt.expected.ID)
-			}
-			if tt.dvc.Model != tt.expected.Model {
-				t.Errorf("Model = %v, want %v", tt.dvc.Model, tt.expected.Model)
+			got := getDeviceID(tt.dvc, tt.device)
+			if got != tt.expected {
+				t.Errorf("getDeviceID() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
