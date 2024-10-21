@@ -332,7 +332,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			// owlogger would not contain non-mapped bidders, do we need this
 			if _, ok := impCtx.NonMapped[seat]; ok {
-				break
+				continue
 			}
 
 			var kgp, kgpv, kgpsv, adFormat string
