@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -36,7 +35,7 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("SlotNameHash row scan failed for pubID %d", pubID)
+		return nil, err
 	}
 
 	//vastTagHookPublisherSlotName(nameHashMap, pubID)

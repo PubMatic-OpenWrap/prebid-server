@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -101,7 +100,7 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 	}
 
 	if err = row.Err(); err != nil {
-		glog.Errorf("LiveVersionInnerQuery, DisplayVersionInnerQuery row scan failed for pubID %d", pubID)
+		return versionID, displayVersionIDFromDB, platform.String, profileType, err
 	}
 
 	return versionID, displayVersionIDFromDB, platform.String, profileType, nil

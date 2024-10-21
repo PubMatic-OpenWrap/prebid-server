@@ -70,7 +70,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		glog.Errorf("[PartialQueryFailure] for GetParterConfigQuery with err: %v", err)
-		return
+		return err
 	}
 
 	if len(partnerConfigMap) == 0 {

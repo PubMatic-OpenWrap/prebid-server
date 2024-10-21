@@ -16,6 +16,10 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 	cacheKey := key(PubSlotNameHash, pubID)
 
 	publisherSlotNameHashMap, err := c.db.GetPublisherSlotNameHash(pubID)
+	if err != nil {
+		glog.Errorf("[PartialQueryFailure] for GetSlotNameHash with err: %v", err)
+		return err
+	}
 	//This call may set nil publisherSlotNameHashMap in cache
 	c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
