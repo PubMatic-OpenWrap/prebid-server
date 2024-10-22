@@ -44,7 +44,7 @@ var trackingEvents = []string{"start", "firstQuartile", "midpoint", "thirdQuarti
 
 // PubMatic specific event IDs
 // This will go in event-config once PreBid modular design is in place
-var eventIDMap = map[string]string{
+var trackingEventIDMap = map[string]string{
 	"start":         "2",
 	"firstQuartile": "4",
 	"midpoint":      "3",
@@ -54,14 +54,14 @@ var eventIDMap = map[string]string{
 
 // InjectVideoEventTrackers injects the video tracking events
 // Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
-func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) ([]byte, bool, error) {
+func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID string, timestamp int64, bidRequest *openrtb2.BidRequest) (string, error) {
 	// parse VAST
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(vastXML)
 	if nil != err {
 		err = fmt.Errorf("account:[%s] bidder:[%s] err:[vast_xml_parsing_failed:%s] vast:[%s] ", accountID, requestingBidder, err.Error(), vastXML)
 		glog.Error(err.Error())
-		return []byte(vastXML), false, err // false indicates events trackers are not injected
+		return vastXML, err // false indicates events trackers are not injected
 	}
 
 	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
@@ -71,11 +71,11 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 		impMap[bidRequest.Imp[i].ID] = &bidRequest.Imp[i]
 	}
 
-	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, doc, impMap)
+	eventURLMap := GetVideoEventTracking(trackerURL, bid, prebidGenBidId, requestingBidder, bidderCoreName, accountID, timestamp, bidRequest, impMap)
 	trackersInjected := false
 	// return if if no tracking URL
 	if len(eventURLMap) == 0 {
-		return []byte(vastXML), false, errors.New("Event URLs are not found")
+		return vastXML, errors.New("event URLs not found")
 	}
 
 	creatives := FindCreatives(doc)
@@ -107,30 +107,28 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 		}
 	}
 	for _, creative := range creatives {
-		trackingEvents := creative.SelectElement("TrackingEvents")
-		if nil == trackingEvents {
-			trackingEvents = creative.CreateElement("TrackingEvents")
-			creative.AddChild(trackingEvents)
+		trackingEventsXML := creative.SelectElement("TrackingEvents")
+		if trackingEventsXML == nil {
+			trackingEventsXML = creative.CreateElement("TrackingEvents")
+			creative.AddChild(trackingEventsXML)
 		}
-		// Inject
-		for event, url := range eventURLMap {
-			trackingEle := trackingEvents.CreateElement("Tracking")
+		// Inject - using trackingEvents instead of map to keep output xml predictable. (sequencing in map is not guaranteed)
+		for _, event := range trackingEvents {
+			trackingEle := trackingEventsXML.CreateElement("Tracking")
 			trackingEle.CreateAttr("event", event)
-			trackingEle.SetText(fmt.Sprintf("%s", url))
+			trackingEle.SetText(eventURLMap[event])
 			trackersInjected = true
 		}
 	}
 
-	out := []byte(vastXML)
-	var wErr error
 	if trackersInjected {
-		out, wErr = doc.WriteToBytes()
-		trackersInjected = trackersInjected && nil == wErr
-		if nil != wErr {
-			glog.Errorf("%v", wErr.Error())
+		out, err := doc.WriteToString()
+		if err != nil {
+			glog.Errorf("%v", err.Error())
 		}
+		return out, err
 	}
-	return out, trackersInjected, wErr
+	return vastXML, nil
 }
 
 // GetVideoEventTracking returns map containing key as event name value as associaed video event tracking URL
@@ -141,99 +139,111 @@ func InjectVideoEventTrackers(trackerURL, vastXML string, bid *openrtb2.Bid, pre
 //
 // If your company can not use [EVENT_ID] and has its own macro. provide config.TrackerMacros implementation
 // and ensure that your macro is part of trackerURL configuration
-func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, doc *etree.Document, impMap map[string]*openrtb2.Imp) map[string]string {
-	eventURLMap := make(map[string]string)
-	if "" == strings.TrimSpace(trackerURL) {
-		return eventURLMap
+func GetVideoEventTracking(trackerURL string, bid *openrtb2.Bid, prebidGenBidId, requestingBidder string, bidderCoreName string, accountId string, timestamp int64, req *openrtb2.BidRequest, impMap map[string]*openrtb2.Imp) map[string]string {
+	if strings.TrimSpace(trackerURL) == "" {
+		return nil
 	}
 
-	// lookup custom macros
-	var customMacroMap map[string]string
-	if nil != req.Ext {
-		reqExt := new(openrtb_ext.ExtRequest)
-		err := json.Unmarshal(req.Ext, &reqExt)
-		if err == nil {
-			customMacroMap = reqExt.Prebid.Macros
+	// replace standard macros
+	// NYC shall we put all macros with their default values here?
+	macroMap := map[string]string{
+		PBSAdUnitIDMacro:       "",
+		PBSBidIDMacro:          bid.ID,
+		PBSOrigBidIDMacro:      bid.ID,
+		PBSBidderMacro:         bidderCoreName,
+		PBSBidderCodeMacro:     requestingBidder,
+		PBSAdvertiserNameMacro: "",
+		VASTAdTypeMacro:        string(openrtb_ext.BidTypeVideo),
+	}
+
+	/* Use generated bidId if present, else use bid.ID */
+	if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
+		macroMap[PBSBidIDMacro] = prebidGenBidId
+	}
+
+	if impMap != nil {
+		if imp, ok := impMap[bid.ImpID]; ok {
+			macroMap[PBSAdUnitIDMacro] = imp.TagID
 		} else {
+			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
+		}
+	}
+
+	if len(bid.ADomain) > 0 {
+		var err error
+		//macroMap[PBSAdvertiserNameMacro] = strings.Join(bid.ADomain, ",")
+		macroMap[PBSAdvertiserNameMacro], err = extractDomain(bid.ADomain[0])
+		if err != nil {
+			glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
+		}
+	}
+
+	if req != nil {
+		if req.App != nil {
+			// macroMap[VASTAppBundleMacro] = req.App.Bundle
+			macroMap[VASTDomainMacro] = req.App.Bundle
+			if req.App.Publisher != nil {
+				macroMap[PBSAccountMacro] = req.App.Publisher.ID
+			}
+		}
+		if req.Site != nil {
+			macroMap[VASTDomainMacro] = getDomain(req.Site)
+			macroMap[VASTPageURLMacro] = req.Site.Page
+			if req.Site.Publisher != nil {
+				macroMap[PBSAccountMacro] = req.Site.Publisher.ID
+			}
+		}
+	}
+
+	// lookup in custom macros - keep this block at last for highest priority
+	reqExt := new(openrtb_ext.ExtRequest)
+	if req.Ext != nil {
+		err := json.Unmarshal(req.Ext, &reqExt)
+		if err != nil {
 			glog.Warningf("Error in unmarshling req.Ext.Prebid.Vast: [%s]", err.Error())
 		}
 	}
+	for key, value := range reqExt.Prebid.Macros {
+		macroMap[strings.TrimSpace(key)] = strings.TrimSpace(value)
+	}
 
-	for _, event := range trackingEvents {
-		eventURL := trackerURL
-		// lookup in custom macros
-		if nil != customMacroMap {
-			for customMacro, value := range customMacroMap {
-				eventURL = replaceMacro(eventURL, customMacro, value)
-			}
-		}
-		// replace standard macros
-		eventURL = replaceMacro(eventURL, VASTAdTypeMacro, string(openrtb_ext.BidTypeVideo))
-		if nil != req && nil != req.App {
-			// eventURL = replaceMacro(eventURL, VASTAppBundleMacro, req.App.Bundle)
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, req.App.Bundle)
-			if nil != req.App.Publisher {
-				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.App.Publisher.ID)
-			}
-		}
-		if nil != req && nil != req.Site {
-			eventURL = replaceMacro(eventURL, VASTDomainMacro, getDomain(req.Site))
-			eventURL = replaceMacro(eventURL, VASTPageURLMacro, req.Site.Page)
-			if nil != req.Site.Publisher {
-				eventURL = replaceMacro(eventURL, PBSAccountMacro, req.Site.Publisher.ID)
-			}
-		}
-
-		domain := ""
-		if len(bid.ADomain) > 0 {
-			var err error
-			//eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, strings.Join(bid.ADomain, ","))
-			domain, err = extractDomain(bid.ADomain[0])
-			if err != nil {
-				glog.Warningf("Unable to extract domain from '%s'. [%s]", bid.ADomain[0], err.Error())
-			}
-		}
-
-		eventURL = replaceMacro(eventURL, PBSAdvertiserNameMacro, domain)
-
-		eventURL = replaceMacro(eventURL, PBSBidderMacro, bidderCoreName)
-		eventURL = replaceMacro(eventURL, PBSBidderCodeMacro, requestingBidder)
-
-		/* Use generated bidId if present, else use bid.ID */
-		if len(prebidGenBidId) > 0 && prebidGenBidId != bid.ID {
-			eventURL = replaceMacro(eventURL, PBSBidIDMacro, prebidGenBidId)
-		} else {
-			eventURL = replaceMacro(eventURL, PBSBidIDMacro, bid.ID)
-		}
-		eventURL = replaceMacro(eventURL, PBSOrigBidIDMacro, bid.ID)
-
+	eventURLMap := make(map[string]string)
+	for name, id := range trackingEventIDMap { // NYC check if trackingEvents and macroMap can be clubbed
 		// replace [EVENT_ID] macro with PBS defined event ID
-		eventURL = replaceMacro(eventURL, PBSEventIDMacro, eventIDMap[event])
-
-		if imp, ok := impMap[bid.ImpID]; ok {
-			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, imp.TagID)
-		} else {
-			glog.Warningf("Setting empty value for %s macro, as failed to determine imp.TagID for bid.ImpID: %s", PBSAdUnitIDMacro, bid.ImpID)
-			eventURL = replaceMacro(eventURL, PBSAdUnitIDMacro, "")
-		}
-
-		eventURLMap[event] = eventURL
+		macroMap[PBSEventIDMacro] = id
+		eventURLMap[name] = replaceMacros(trackerURL, macroMap)
 	}
 	return eventURLMap
 }
 
-func replaceMacro(trackerURL, macro, value string) string {
-	macro = strings.TrimSpace(macro)
-	trimmedValue := strings.TrimSpace(value)
+func replaceMacros(trackerURL string, macroMap map[string]string) string {
+	var builder strings.Builder
 
-	if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) > 0 {
-		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(value))
-	} else if strings.HasPrefix(macro, "[") && strings.HasSuffix(macro, "]") && len(trimmedValue) == 0 {
-		trackerURL = strings.ReplaceAll(trackerURL, macro, url.QueryEscape(""))
-	} else {
-		glog.Warningf("Invalid macro '%v'. Either empty or missing prefix '[' or suffix ']", macro)
+	for i := 0; i < len(trackerURL); i++ {
+		if trackerURL[i] == '[' {
+			found := false
+			j := i + 1
+			for ; j < len(trackerURL); j++ {
+				if trackerURL[j] == ']' {
+					found = true
+					break
+				}
+			}
+			if found {
+				n := j + 1
+				k := trackerURL[i:n]
+				if v, ok := macroMap[k]; ok {
+					v = url.QueryEscape(v) // NYC move QueryEscape while creating map, no need to do this everytime
+					_, _ = builder.Write([]byte(v))
+					i = j
+					continue
+				}
+			}
+		}
+		_ = builder.WriteByte(trackerURL[i])
 	}
-	return trackerURL
+
+	return builder.String()
 }
 
 // FindCreatives finds Linear, NonLinearAds fro InLine and Wrapper Type of creatives

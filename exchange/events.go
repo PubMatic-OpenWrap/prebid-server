@@ -83,8 +83,8 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 
 	if ev.enabledVideoEvents {
 		// always inject event  trackers without checkign isModifyingVASTXMLAllowed
-		if newVastXML, injected, _ := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); injected {
-			bid.AdM = string(newVastXML)
+		if newVastXML, err := events.InjectVideoEventTrackers(trackerURL, vastXML, bid, bidID, bidderName.String(), bidderCoreName.String(), ev.accountID, ev.auctionTimestampMs, req); err == nil {
+			bid.AdM = newVastXML
 		}
 	}
 }
