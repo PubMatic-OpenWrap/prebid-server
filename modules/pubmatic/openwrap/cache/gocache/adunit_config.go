@@ -11,7 +11,7 @@ import (
 func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) (err error) {
 	adunitConfig, err := c.db.GetAdunitConfig(profileID, displayVersion)
 	if err != nil {
-		glog.Errorf("[PartialQueryFailure] for adunitConfigQuery with err: %v", err)
+		glog.Errorf("[QueryFailure] for adunitConfigQuery with err: %v", err)
 		return err
 	}
 

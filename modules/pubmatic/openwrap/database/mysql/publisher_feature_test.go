@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -111,8 +112,33 @@ func Test_mySqlDB_GetPublisherFeatureMap(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-
 				rows := sqlmock.NewRows([]string{"pub_id", "feature_id", "is_enabled", "value"})
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM test_wrapper_table (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetPublisherFeatureMapQuery: "^SELECT (.+) FROM test_wrapper_table (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			want:    map[int]map[int]models.FeatureData(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"pub_id", "feature_id", "is_enabled", "value"}).
+					AddRow(`5890`, `1`, `0`, sql.NullString{}).
+					AddRow(`5890`, `2`, `1`, `{"1234": 100}`).
+					AddRow(`5890`, `3`, `1`, sql.NullString{})
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM test_wrapper_table (.+)")).WillReturnRows(rows)
 				return db
 			},

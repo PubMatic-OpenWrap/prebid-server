@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -515,7 +516,6 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			args: args{
 				versionID: 123,
 			},
-
 			want: map[int]map[string]string{
 				101: {
 					"accountId":         "1234",
@@ -604,6 +604,35 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
 					AddRow(102, "-", "-", 0, -1, 0, 100, "k1", "v1").
 					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2")
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetParterConfig: models.TestQuery,
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				versionID: 123,
+			},
+			want:    map[int]map[string]string(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k1", "v1").
+					AddRow(101, "openx", "openx", 0, -1, 0, 152, "k2", "v2").
+					AddRow(102, "pubmatic", "pubmatic", 0, -1, 0, 76, "k1", "v2")
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
 				return db
 			},

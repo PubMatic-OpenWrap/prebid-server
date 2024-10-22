@@ -11,7 +11,7 @@ import (
 func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion int) (err error) {
 	adpodConfig, err := c.db.GetAdpodConfig(pubID, profileID, displayVersion)
 	if err != nil {
-		glog.Errorf("[PartialQueryFailure] for LiveVersionInnerQuery/DisplayVersionInnerQuery with err: %v", err)
+		glog.Errorf("[QueryFailure] for LiveVersionInnerQuery/DisplayVersionInnerQuery with err: %v", err)
 		return err
 	}
 

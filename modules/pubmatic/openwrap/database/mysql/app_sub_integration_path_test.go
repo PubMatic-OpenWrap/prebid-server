@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -83,6 +84,31 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"name", "id"})
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					MaxDbContextTimeout: 100,
+					Queries: config.Queries{
+						GetAppSubIntegrationPathMapQuery: "^SELECT (.+) FROM app_sub_integration_path (.+)",
+					},
+				},
+			},
+			want:    map[string]int{},
+			wantErr: false,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "id"}).
+					AddRow(`test_sub_1`, `1,3`).
+					AddRow(`test_sub_2`, `2`)
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
 				return db
 			},

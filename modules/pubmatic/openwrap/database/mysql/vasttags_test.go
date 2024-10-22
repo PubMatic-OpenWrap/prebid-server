@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -97,6 +98,35 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 					AddRow(101, 501, "vast_tag_url_1", 15, 2.0).
 					AddRow(102, 502, "vast_tag_url_2", 10, 0.0).
 					AddRow(103, 501, "vast_tag_url_1", 30, 3.0)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetPublisherVASTTagsQuery: "^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want:    models.PublisherVASTTags(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"id", "partnerId", "url", "duration", "price"}).
+					AddRow(101, 501, "vast_tag_url_1", 15, 2.0).
+					AddRow(102, 502, "vast_tag_url_2", 10, 0.0).
+					AddRow(103, 501, "vast_tag_url_1", 30, 3.0)
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_publisher_partner_vast_tag (.+)")).WillReturnRows(rows)
 				return db
 			},

@@ -17,7 +17,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 
 	publisherSlotNameHashMap, err := c.db.GetPublisherSlotNameHash(pubID)
 	if err != nil {
-		glog.Errorf("[PartialQueryFailure] for GetSlotNameHash with err: %v", err)
+		glog.Errorf("[QueryFailure] for GetSlotNameHash with err: %v", err)
 		return err
 	}
 	//This call may set nil publisherSlotNameHashMap in cache
@@ -29,7 +29,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) error {
 	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
 	if err != nil {
-		glog.Errorf("[PartialQueryFailure] for WrapperSlotMappingsQuery/WrapperLiveVersionSlotMappings with err: %v", err)
+		glog.Errorf("[QueryFailure] for WrapperSlotMappingsQuery/WrapperLiveVersionSlotMappings with err: %v", err)
 	}
 
 	//put a version level dummy entry in cache denoting mappings are present for this version
