@@ -188,6 +188,7 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 
 	maxRequest.User.Data = signalUser.Data
 
+	//Pass user.ext.sessionduration and user.ext.impdepth to ow partners in case of ALMAX integration
 	keys := []string{"sessionduration", "impdepth"}
 
 	for _, key := range keys {
@@ -203,6 +204,7 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 				maxRequest.User.Ext, _ = jsonparser.Set(maxRequest.User.Ext, field, key)
 			}
 		} else {
+			// Don’t pass sessionduration and impdepth parameter if present in the request
 			maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, key)
 		}
 	}
