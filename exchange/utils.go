@@ -9,7 +9,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
-	"github.com/prebid/go-gdpr/vendorconsent"
 
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
@@ -66,10 +65,10 @@ func cleanOpenRTBRequests(ctx context.Context,
 		return
 	}
 
-	aliasesGVLIDs, errs := parseAliasesGVLIDs(req.BidRequest)
+	/*aliasesGVLIDs, errs := parseAliasesGVLIDs(req.BidRequest)
 	if len(errs) > 0 {
 		return
-	}
+	}*/
 
 	var allBidderRequests []BidderRequest
 	allBidderRequests, errs = getAuctionBidderRequests(auctionReq, requestExt, bidderToSyncerKey, impsByBidder, aliases, hostSChainNode)
@@ -80,7 +79,7 @@ func cleanOpenRTBRequests(ctx context.Context,
 
 	updateContentObjectForBidder(allBidderRequests, requestExt)
 
-	gdprSignal, err := extractGDPR(req.BidRequest)
+	/*gdprSignal, err := extractGDPR(req.BidRequest)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -132,17 +131,17 @@ func cleanOpenRTBRequests(ctx context.Context,
 			PublisherID: auctionReq.LegacyLabels.PubID,
 		}
 		gdprPerms = gdprPermsBuilder(tcf2Cfg, gdprRequestInfo)
-	}
+	}*/
 
 	// bidder level privacy policies
 	for _, bidderRequest := range allBidderRequests {
 		bidRequestAllowed := true
 
 		// CCPA
-		privacyEnforcement.CCPA = ccpaEnforcer.ShouldEnforce(bidderRequest.BidderName.String())
+		//privacyEnforcement.CCPA = ccpaEnforcer.ShouldEnforce(bidderRequest.BidderName.String())
 
 		// GDPR
-		if gdprEnforced {
+		/*if gdprEnforced {
 			auctionPermissions, err := gdprPerms.AuctionActivitiesAllowed(ctx, bidderRequest.BidderCoreName, bidderRequest.BidderName)
 			bidRequestAllowed = auctionPermissions.AllowBidRequest
 
@@ -161,10 +160,10 @@ func cleanOpenRTBRequests(ctx context.Context,
 
 		if auctionReq.FirstPartyData != nil && auctionReq.FirstPartyData[bidderRequest.BidderName] != nil {
 			applyFPD(auctionReq.FirstPartyData[bidderRequest.BidderName], bidderRequest.BidRequest)
-		}
+		}*/
 
 		if bidRequestAllowed {
-			privacyEnforcement.Apply(bidderRequest.BidRequest)
+			//privacyEnforcement.Apply(bidderRequest.BidRequest)
 			allowedBidderRequests = append(allowedBidderRequests, bidderRequest)
 		}
 	}
@@ -838,3 +837,4 @@ func WrapJSONInData(data []byte) []byte {
 	res = append(res, []byte(`}`)...)
 	return res
 }
+
