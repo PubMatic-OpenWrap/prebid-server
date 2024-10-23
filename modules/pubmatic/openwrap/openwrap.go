@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
 )
 
 const (
@@ -43,6 +44,7 @@ type OpenWrap struct {
 	pubFeatures     publisherfeature.Feature
 	unwrap          unwrap.Unwrap
 	profileMetaData profilemetadata.ProfileMetaData
+	uuidGenerator   uuidutil.UUIDGenerator
 }
 
 var ow *OpenWrap
@@ -125,6 +127,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			pubFeatures:     pubFeatures,
 			unwrap:          uw,
 			profileMetaData: profileMetaData,
+			uuidGenerator:   uuidutil.UUIDRandomGenerator{},
 		}
 	})
 
