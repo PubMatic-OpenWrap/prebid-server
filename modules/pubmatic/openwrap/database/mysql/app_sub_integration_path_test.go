@@ -98,8 +98,8 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]int{},
-			wantErr: false,
+			want:    map[string]int(nil),
+			wantErr: true,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {

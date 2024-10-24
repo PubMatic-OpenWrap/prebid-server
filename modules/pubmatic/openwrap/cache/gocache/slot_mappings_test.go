@@ -41,8 +41,9 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 		pubid int
 	}
 	type want struct {
-		publisherSlotNameHashMap map[string]string
+		publisherSlotNameHashMap interface{}
 		err                      error
+		foundCacheKey            bool
 	}
 	tests := []struct {
 		name   string
@@ -69,6 +70,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			want: want{
 				publisherSlotNameHashMap: nil,
 				err:                      fmt.Errorf("Error from the DB"),
+				foundCacheKey:            false,
 			},
 		},
 		{
@@ -93,6 +95,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				publisherSlotNameHashMap: map[string]string{
 					testSlotName: testHashValue,
 				},
+				foundCacheKey: true,
 			},
 		},
 		{
@@ -111,8 +114,9 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(nil, nil)
 			},
 			want: want{
-				publisherSlotNameHashMap: nil,
+				publisherSlotNameHashMap: map[string]string(nil),
 				err:                      nil,
+				foundCacheKey:            true,
 			},
 		},
 	}
@@ -131,7 +135,7 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 			assert.Equal(t, tt.want.err, err)
 			cacheKey := key(PubSlotNameHash, tt.args.pubid)
 			publisherSlotNameHashMap, found := c.cache.Get(cacheKey)
-			assert.True(t, found)
+			assert.Equal(t, tt.want.foundCacheKey, found)
 			assert.Equal(t, tt.want.publisherSlotNameHashMap, publisherSlotNameHashMap)
 		})
 	}
