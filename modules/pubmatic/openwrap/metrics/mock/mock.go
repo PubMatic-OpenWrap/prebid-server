@@ -539,18 +539,6 @@ func (mr *MockMetricsEngineMockRecorder) RecordPrebidTimeoutRequests(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPrebidTimeoutRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPrebidTimeoutRequests), arg0, arg1)
 }
 
-// RecordPublisherInvalidProfileImpressions mocks base method.
-func (m *MockMetricsEngine) RecordPublisherInvalidProfileImpressions(arg0, arg1 string, arg2 int) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherInvalidProfileImpressions", arg0, arg1, arg2)
-}
-
-// RecordPublisherInvalidProfileImpressions indicates an expected call of RecordPublisherInvalidProfileImpressions.
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherInvalidProfileImpressions(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherInvalidProfileImpressions", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherInvalidProfileImpressions), arg0, arg1, arg2)
-}
-
 // RecordPublisherInvalidProfileRequests mocks base method.
 func (m *MockMetricsEngine) RecordPublisherInvalidProfileRequests(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()

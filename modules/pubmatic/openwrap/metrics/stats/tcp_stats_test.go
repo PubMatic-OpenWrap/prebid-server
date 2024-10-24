@@ -308,25 +308,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "RecordPublisherInvalidProfileImpressions",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], "5890", "pubmatic"): 10,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherInvalidProfileImpressions("5890", "pubmatic", 10)
-			},
-		},
-		{
 			name: "RecordNobidErrPrebidServerRequests",
 			args: args{
 				statTCP: &StatsTCP{

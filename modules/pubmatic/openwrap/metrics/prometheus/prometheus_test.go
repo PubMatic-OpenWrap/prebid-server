@@ -94,20 +94,6 @@ func TestRecordPublisherProfileRequests(t *testing.T) {
 		})
 }
 
-func TestRecordPublisherInvalidProfileImpressions(t *testing.T) {
-	m := createMetricsForTesting()
-
-	m.RecordPublisherInvalidProfileImpressions("5890", "1234", 3)
-
-	expectedCount := float64(3)
-	assertCounterVecValue(t, "", "invalid_imps", m.pubProfInvalidImps,
-		expectedCount,
-		prometheus.Labels{
-			pubIDLabel:     "5890",
-			profileIDLabel: "1234",
-		})
-}
-
 func TestRecordNobidErrPrebidServerRequests(t *testing.T) {
 	m := createMetricsForTesting()
 

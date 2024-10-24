@@ -459,13 +459,6 @@ func (m *Metrics) RecordPublisherProfileRequests(publisherID, profileID string) 
 	}).Inc()
 }
 
-func (m *Metrics) RecordPublisherInvalidProfileImpressions(publisherID, profileID string, impCount int) {
-	m.pubProfInvalidImps.With(prometheus.Labels{
-		pubIDLabel:     publisherID,
-		profileIDLabel: profileID,
-	}).Add(float64(impCount))
-}
-
 func (m *Metrics) RecordNobidErrPrebidServerRequests(publisherID string, nbr int) {
 	m.pubRequestValidationErrors.With(prometheus.Labels{
 		pubIDLabel: publisherID,

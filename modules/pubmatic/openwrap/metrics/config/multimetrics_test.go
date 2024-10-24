@@ -166,7 +166,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
-	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher, int(nbr.AllPartnerThrottled))
 	mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(publisher)
 	mockEngine.EXPECT().RecordInvalidCreativeStats(publisher, partner)
@@ -234,7 +233,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
 	multiMetricEngine.RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
-	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher, int(nbr.AllPartnerThrottled))
 	multiMetricEngine.RecordNobidErrPrebidServerResponse(publisher)
 	multiMetricEngine.RecordInvalidCreativeStats(publisher, partner)

@@ -9,7 +9,6 @@ type MetricsEngine interface {
 	RecordPartnerResponseErrors(publisherID, partner, err string)
 	RecordPartnerConfigErrors(publisherID, profileID, partner string, errcode int)
 	RecordPublisherProfileRequests(publisher, profileID string)
-	RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int)
 	RecordNobidErrPrebidServerRequests(publisher string, nbr int)
 	RecordNobidErrPrebidServerResponse(publisher string)
 	RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string)

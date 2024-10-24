@@ -103,13 +103,6 @@ func (me *MultiMetricsEngine) RecordPublisherProfileRequests(publisher, profile 
 	}
 }
 
-// RecordPublisherInvalidProfileImpressions across all engines
-func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherInvalidProfileImpressions(publisher, profileID, impCount)
-	}
-}
-
 // RecordNobidErrPrebidServerRequests across all engines
 func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	for _, thisME := range *me {
