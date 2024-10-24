@@ -4972,7 +4972,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 				seatNonBid := openrtb_ext.NonBidCollection{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:          &openrtb2.Bid{},
-					NonBidReason: 300,
+					NonBidReason: 620,
 					BidMeta: &openrtb_ext.ExtBidPrebidMeta{
 						AdapterCode: "pubmatic",
 					},
