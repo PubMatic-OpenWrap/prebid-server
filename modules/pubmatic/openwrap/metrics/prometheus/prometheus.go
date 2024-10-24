@@ -120,7 +120,7 @@ const (
 	adapterCodeLabel   = "adapter_code"
 )
 
-var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
+var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
 var once sync.Once
 var metric *Metrics
 
@@ -578,8 +578,7 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
 func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
 	m.loggerFailure.With(prometheus.Labels{
-		pubIDLabel:     publisher,
-		profileIDLabel: profile,
+		pubIDLabel: publisher,
 	}).Inc()
 }
 

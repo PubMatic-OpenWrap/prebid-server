@@ -84,11 +84,6 @@ func (st *StatsTCP) RecordPublisherInvalidProfileRequests(endpoint, publisher, p
 	}
 }
 
-func (st *StatsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], publisher, profileID), impCount)
-	//TODO @viral ;previously by 1 but now by impCount
-}
-
 func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrPrebidServerRequests], publisher), 1)
 }
