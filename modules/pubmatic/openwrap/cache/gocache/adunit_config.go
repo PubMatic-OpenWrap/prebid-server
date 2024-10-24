@@ -8,9 +8,15 @@ import (
 )
 
 func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) (err error) {
+	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
 	adunitConfig, err := c.db.GetAdunitConfig(profileID, displayVersion)
 	if err != nil {
 		return err
+	}
+
+	if adunitConfig == nil {
+		c.cache.Set(cacheKey, adunitConfig, getSeconds(c.cfg.CacheDefaultExpiry))
+		return
 	}
 
 	if adunitConfig != nil {
@@ -22,7 +28,6 @@ func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersi
 		adunitConfig.Config = caseFoldConfigMap
 	}
 
-	cacheKey := key(PubAdunitConfig, pubID, profileID, displayVersion)
 	c.cache.Set(cacheKey, adunitConfig, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
 }

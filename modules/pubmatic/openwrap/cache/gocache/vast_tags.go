@@ -15,7 +15,9 @@ func (c *cache) populatePublisherVASTTags(pubID int) error {
 	}
 
 	if publisherVASTTags == nil {
+		c.cache.Set(cacheKey, publisherVASTTags, getSeconds(c.cfg.VASTTagCacheExpiry))
 		publisherVASTTags = models.PublisherVASTTags{}
+		return nil
 	}
 
 	c.cache.Set(cacheKey, publisherVASTTags, getSeconds(c.cfg.VASTTagCacheExpiry))
