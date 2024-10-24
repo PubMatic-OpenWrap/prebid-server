@@ -160,9 +160,9 @@ func (me *MultiMetricsEngine) RecordPublisherResponseTimeStats(publisher string,
 }
 
 // RecordPublisherWrapperLoggerFailure across all engines
-func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
+func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher, versionID string) {
 	for _, thisME := range *me {
-		thisME.RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID)
+		thisME.RecordPublisherWrapperLoggerFailure(publisher, versionID)
 	}
 }
 

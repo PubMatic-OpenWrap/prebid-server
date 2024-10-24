@@ -118,8 +118,8 @@ func (st *StatsTCP) RecordPublisherResponseTimeStats(publisher string, responseT
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statKeyIndex], publisher, "overall"), 1)
 }
 
-func (st *StatsTCP) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], publisher, profileID, versionID), 1)
+func (st *StatsTCP) RecordPublisherWrapperLoggerFailure(publisher, versionID string) {
+	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], publisher, versionID), 1)
 }
 
 func (st *StatsTCP) RecordPrebidTimeoutRequests(publisher, profileID string) {

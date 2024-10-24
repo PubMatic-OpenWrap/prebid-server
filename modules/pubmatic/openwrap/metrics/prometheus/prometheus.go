@@ -577,7 +577,7 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 }
 
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
-func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
+func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, version string) {
 	m.loggerFailure.With(prometheus.Labels{
 		pubIDLabel: publisher,
 	}).Inc()
