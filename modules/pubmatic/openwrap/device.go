@@ -14,6 +14,8 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 	}
 	//this is needed in determine ifa_type parameter
 	dvc.DeviceIFA = strings.TrimSpace(device.IFA)
+	dvc.Model = device.Model
+	dvc.ID = getDeviceID(dvc, device)
 
 	if device.Ext == nil {
 		return
@@ -26,8 +28,37 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 	}
 	dvc.Ext = &deviceExt
 
+	if dvc.ID == "" {
+		dvc.ID, _ = dvc.Ext.GetSessionID()
+	}
 	//update device IFA Details
 	updateDeviceIFADetails(dvc)
+}
+
+// getDeviceID retrieves deviceID for logging purpose
+func getDeviceID(dvc *models.DeviceCtx, device *openrtb2.Device) string {
+	if dvc.DeviceIFA != "" {
+		return dvc.DeviceIFA
+	}
+	if device.DIDSHA1 != "" {
+		return device.DIDSHA1
+	}
+	if device.DIDMD5 != "" {
+		return device.DIDMD5
+	}
+	if device.DPIDSHA1 != "" {
+		return device.DPIDSHA1
+	}
+	if device.DPIDMD5 != "" {
+		return device.DPIDMD5
+	}
+	if device.MACSHA1 != "" {
+		return device.MACSHA1
+	}
+	if device.MACMD5 != "" {
+		return device.MACMD5
+	}
+	return ""
 }
 
 func updateDeviceIFADetails(dvc *models.DeviceCtx) {
