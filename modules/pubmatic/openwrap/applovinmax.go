@@ -188,28 +188,13 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 
 	maxRequest.User.Data = signalUser.Data
 
-	//Pass user.ext.sessionduration and user.ext.impdepth to ow partners in case of ALMAX integration
-	keys := []string{"sessionduration", "impdepth"}
-
-	for _, key := range keys {
-		if field, dataType, _, err := jsonparser.Get(signalUser.Ext, key); err == nil {
-			if field != nil {
-				if dataType == jsonparser.String {
-					quotedStr := strconv.Quote(string(field))
-					field = []byte(quotedStr)
-				}
-				if maxRequest.User.Ext == nil {
-					maxRequest.User.Ext = json.RawMessage("{}")
-				}
-				maxRequest.User.Ext, _ = jsonparser.Set(maxRequest.User.Ext, field, key)
-			}
-		} else {
-			// Don’t pass sessionduration and impdepth parameter if present in the request
-			maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, key)
-		}
+	if maxRequest.User.Ext != nil {
+		// Don’t pass sessionduration and impdepth parameter if present in the request
+		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "sessionduration")
+		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "impdepth")
 	}
-
-	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids")
+	//Pass user.ext.sessionduration and user.ext.impdepth to ow partners in case of ALMAX integration
+	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth")
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {

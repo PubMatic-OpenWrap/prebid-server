@@ -453,7 +453,7 @@ func TestUpdateUser(t *testing.T) {
 				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10,"consent":"consent_string"}`)},
 				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
 			},
-			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10,"consent":"consent_string"}`)},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"consent":"consent_string","sessionduration":40,"impdepth":10}`)},
 		},
 		{
 			name: "signalUserExt_has_invalid_sessionduration_and_impdepth_with_consent",
@@ -461,7 +461,7 @@ func TestUpdateUser(t *testing.T) {
 				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":-40,"impdepth":-10,"consent":"consent_string"}`)},
 				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID", Yob: 2000, Gender: "F", Keywords: "k52=v43"}},
 			},
-			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":-40,"impdepth":-10,"consent":"consent_string"}`)},
+			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"consent":"consent_string","sessionduration":-40,"impdepth":-10}`)},
 		},
 		{
 			name: "request_has_sessionduration_and_impdepth_with_consent",
