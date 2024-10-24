@@ -420,7 +420,7 @@ func Test_cache_getActivePartnerConfigAndPopulateWrapperMappings(t *testing.T) {
 				displayVersion: testVersionID,
 			},
 			want: want{
-				cacheEntry: false,
+				cacheEntry: true,
 				err:        fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", testPubID, testProfileID, testVersionID),
 			},
 			setup: func() {

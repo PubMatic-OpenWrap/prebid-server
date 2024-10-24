@@ -8,12 +8,16 @@ import (
 )
 
 func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion int) (err error) {
+	cacheKey := key(PubAdpodConfig, pubID, profileID, displayVersion)
 	adpodConfig, err := c.db.GetAdpodConfig(pubID, profileID, displayVersion)
 	if err != nil {
 		return err
 	}
 
-	cacheKey := key(PubAdpodConfig, pubID, profileID, displayVersion)
+	if adpodConfig == nil {
+		c.cache.Set(cacheKey, adpodConfig, getSeconds(c.cfg.CacheDefaultExpiry))
+		return
+	}
 	c.cache.Set(cacheKey, adpodConfig, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
 }
