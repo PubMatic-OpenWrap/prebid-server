@@ -103,13 +103,6 @@ func (me *MultiMetricsEngine) RecordPublisherProfileRequests(publisher, profile 
 	}
 }
 
-// RecordPublisherInvalidProfileImpressions across all engines
-func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherInvalidProfileImpressions(publisher, profileID, impCount)
-	}
-}
-
 // RecordNobidErrPrebidServerRequests across all engines
 func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	for _, thisME := range *me {
@@ -167,9 +160,9 @@ func (me *MultiMetricsEngine) RecordPublisherResponseTimeStats(publisher string,
 }
 
 // RecordPublisherWrapperLoggerFailure across all engines
-func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
+func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher, versionID string) {
 	for _, thisME := range *me {
-		thisME.RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID)
+		thisME.RecordPublisherWrapperLoggerFailure(publisher, versionID)
 	}
 }
 
@@ -188,9 +181,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 }
 
 // RecordBadRequests across all engines
-func (me *MultiMetricsEngine) RecordBadRequests(endpoint string, errorCode int) {
+func (me *MultiMetricsEngine) RecordBadRequests(publisher, endpoint string, errorCode int) {
 	for _, thisME := range *me {
-		thisME.RecordBadRequests(endpoint, errorCode)
+		thisME.RecordBadRequests(publisher, endpoint, errorCode)
 	}
 }
 
