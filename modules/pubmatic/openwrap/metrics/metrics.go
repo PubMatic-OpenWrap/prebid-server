@@ -17,7 +17,7 @@ type MetricsEngine interface {
 	RecordPublisherResponseTimeStats(publisher string, responseTimeMs int)
 	RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string)
 	RecordPublisherInvalidProfileRequests(endpoint, publisher, profileID string)
-	RecordBadRequests(endpoint string, errorCode int)
+	RecordBadRequests(publisher, endpoint string, errorCode int)
 	RecordUidsCookieNotPresentErrorStats(publisher, profileID string)
 	RecordVideoInstlImpsStats(publisher, profileID string)
 	RecordImpDisabledViaConfigStats(impType, publisher, profileID string)

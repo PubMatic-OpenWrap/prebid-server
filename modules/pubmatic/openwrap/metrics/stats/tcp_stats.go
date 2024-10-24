@@ -176,7 +176,7 @@ func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVRequests], endpoint, platform), 1)
 }
 
-func (st *StatsTCP) RecordBadRequests(endpoint string, errorCode int) {
+func (st *StatsTCP) RecordBadRequests(publisher, endpoint string, errorCode int) {
 	switch endpoint {
 	case "amp":
 		st.statsClient.PublishStat(statKeys[statsKeyAMPBadRequests], 1)

@@ -263,7 +263,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.endpointBadRequest = newCounter(cfg, promRegistry,
 		"bad_requests",
 		"Count bad requests along with NBR code at endpoint level.",
-		[]string{endpointLabel, nbrLabel},
+		[]string{pubIDLabel, endpointLabel, nbrLabel},
 	)
 
 	// publisher platform endpoint level metrics
@@ -509,8 +509,9 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 	}).Inc()
 }
 
-func (m *Metrics) RecordBadRequests(endpoint string, errorCode int) {
+func (m *Metrics) RecordBadRequests(publisherID, endpoint string, errorCode int) {
 	m.endpointBadRequest.With(prometheus.Labels{
+		pubIDLabel:    publisherID,
 		endpointLabel: endpoint,
 		nbrLabel:      strconv.Itoa(errorCode),
 	}).Inc()

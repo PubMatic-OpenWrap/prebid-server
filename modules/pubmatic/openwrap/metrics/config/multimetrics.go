@@ -181,9 +181,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 }
 
 // RecordBadRequests across all engines
-func (me *MultiMetricsEngine) RecordBadRequests(endpoint string, errorCode int) {
+func (me *MultiMetricsEngine) RecordBadRequests(publisher, endpoint string, errorCode int) {
 	for _, thisME := range *me {
-		thisME.RecordBadRequests(endpoint, errorCode)
+		thisME.RecordBadRequests(publisher, endpoint, errorCode)
 	}
 }
 

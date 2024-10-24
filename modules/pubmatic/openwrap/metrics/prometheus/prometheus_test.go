@@ -169,12 +169,13 @@ func TestRecordPublisherInvalidProfileRequests(t *testing.T) {
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordBadRequests(models.EndpointV25, int(nbr.AllPartnerThrottled))
+	m.RecordBadRequests("5890", models.EndpointV25, int(nbr.AllPartnerThrottled))
 
 	expectedCount := float64(1)
 	assertCounterVecValue(t, "", "bad_requests", m.endpointBadRequest,
 		expectedCount,
 		prometheus.Labels{
+			pubIDLabel:    "5890",
 			endpointLabel: models.EndpointV25,
 			nbrLabel:      strconv.Itoa(int(nbr.AllPartnerThrottled)),
 		})
