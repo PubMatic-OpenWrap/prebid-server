@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -110,6 +111,31 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"name", "id"})
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM profile_type_platform (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					MaxDbContextTimeout: 100,
+					Queries: config.Queries{
+						GetProfileTypePlatformMapQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
+					},
+				},
+			},
+			want:    map[string]int(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "id"}).
+					AddRow(`test1`, `1`).
+					AddRow(`test2`, `2`)
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM profile_type_platform (.+)")).WillReturnRows(rows)
 				return db
 			},

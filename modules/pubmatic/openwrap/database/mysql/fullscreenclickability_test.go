@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -79,6 +80,32 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 					AddRow(`5`, `24`).
 					AddRow(`8`, `20`).
 					AddRow(`9`, `12.12`)
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_feature_dsp_mapping (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetAllDspFscPcntQuery: "^SELECT (.+) FROM wrapper_feature_dsp_mapping (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			want:    map[int]int(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"dsp_id", "value"}).
+					AddRow(`5`, `24`).
+					AddRow(`8`, `20`).
+					AddRow(`9`, `12.12`)
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_feature_dsp_mapping (.+)")).WillReturnRows(rows)
 				return db
 			},

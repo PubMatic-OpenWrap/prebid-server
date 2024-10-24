@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -79,7 +78,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 
 	// NYC_TODO: ignore close error
 	if err = rows.Err(); err != nil {
-		glog.Errorf("partner config row scan failed for versionID %d", versionID)
+		return nil, err
 	}
 	return partnerConfigMap, nil
 }
@@ -99,5 +98,10 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 	if err != nil {
 		return versionID, displayVersionIDFromDB, platform.String, profileType, err
 	}
+
+	if err = row.Err(); err != nil {
+		return versionID, displayVersionIDFromDB, platform.String, profileType, err
+	}
+
 	return versionID, displayVersionIDFromDB, platform.String, profileType, nil
 }

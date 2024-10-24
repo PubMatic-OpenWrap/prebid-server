@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -67,7 +68,6 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -97,6 +97,34 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"name", "hash"}).
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want:    map[string]string(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "hash"}).
+					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
+					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
 
 				return db
@@ -186,7 +214,6 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow("10_112", 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -238,7 +265,6 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -290,6 +316,35 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan with displayversion 0",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetWrapperLiveVersionSlotMappings: "^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE",
+					},
+				},
+			},
+			args: args{
+				partnerConfigMap: formTestPartnerConfig(),
+				profileID:        19109,
+				displayVersion:   0,
+			},
+			want:    map[int][]models.SlotMapping(nil),
+			wantErr: true,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
+					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
+					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
+				rows = rows.RowError(1, errors.New("error in row scan"))
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
 
 				return db
 			},
