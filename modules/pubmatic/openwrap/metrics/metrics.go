@@ -17,7 +17,7 @@ type MetricsEngine interface {
 	RecordPublisherResponseTimeStats(publisher string, responseTimeMs int)
 	RecordPublisherWrapperLoggerFailure(publisher string)
 	RecordPublisherInvalidProfileRequests(endpoint, publisher, profileID string)
-	RecordBadRequests(publisher, endpoint string, errorCode int)
+	RecordBadRequests(endpoint, publisher string, errorCode int)
 	RecordUidsCookieNotPresentErrorStats(publisher, profileID string)
 	RecordVideoInstlImpsStats(publisher, profileID string)
 	RecordImpDisabledViaConfigStats(impType, publisher, profileID string)
@@ -94,5 +94,5 @@ type MetricsEngine interface {
 
 	//AppLovinMax metrics
 	RecordFailedParsingItuneID(pubId, profId string)
-	RecordEndpointResponseSize(endpoint string, body float64)
+	RecordEndpointResponseSize(endpoint string, bodySize float64)
 }

@@ -181,9 +181,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 }
 
 // RecordBadRequests across all engines
-func (me *MultiMetricsEngine) RecordBadRequests(publisher, endpoint string, errorCode int) {
+func (me *MultiMetricsEngine) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	for _, thisME := range *me {
-		thisME.RecordBadRequests(publisher, endpoint, errorCode)
+		thisME.RecordBadRequests(endpoint, publisher, errorCode)
 	}
 }
 
@@ -530,9 +530,9 @@ func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
 	}
 }
 
-// RecordBidRecoveryStatus record failed parsing itune id
-func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, body float64) {
+// RecordEndpointResponseSize record failed parsing itune id
+func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySize float64) {
 	for _, thisME := range *me {
-		thisME.RecordEndpointResponseSize(endpoint, body)
+		thisME.RecordEndpointResponseSize(endpoint, bodySize)
 	}
 }

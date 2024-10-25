@@ -169,7 +169,7 @@ func TestRecordPublisherInvalidProfileRequests(t *testing.T) {
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordBadRequests("5890", models.EndpointV25, int(nbr.AllPartnerThrottled))
+	m.RecordBadRequests(models.EndpointV25, "5890", int(nbr.AllPartnerThrottled))
 
 	expectedCount := float64(1)
 	assertCounterVecValue(t, "", "bad_requests", m.endpointBadRequest,

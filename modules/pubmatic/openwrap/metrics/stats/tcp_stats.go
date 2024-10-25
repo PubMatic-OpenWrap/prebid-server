@@ -176,7 +176,7 @@ func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVRequests], endpoint, platform), 1)
 }
 
-func (st *StatsTCP) RecordBadRequests(publisher, endpoint string, errorCode int) {
+func (st *StatsTCP) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	switch endpoint {
 	case "amp":
 		st.statsClient.PublishStat(statKeys[statsKeyAMPBadRequests], 1)
@@ -347,5 +347,5 @@ func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string) 
 func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}
 func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
 }
-func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)          {}
-func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, body float64) {}
+func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)              {}
+func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64) {}

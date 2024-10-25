@@ -518,10 +518,10 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 	}).Inc()
 }
 
-func (m *Metrics) RecordBadRequests(publisherID, endpoint string, errorCode int) {
+func (m *Metrics) RecordBadRequests(endpoint, publisherID string, errorCode int) {
 	m.endpointBadRequest.With(prometheus.Labels{
-		pubIDLabel:    publisherID,
 		endpointLabel: endpoint,
+		pubIDLabel:    publisherID,
 		nbrLabel:      strconv.Itoa(errorCode),
 	}).Inc()
 }
@@ -700,8 +700,8 @@ func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duratio
 	}).Observe(float64(length.Milliseconds()))
 }
 
-func (m *Metrics) RecordEndpointResponseSize(endpoint string, body float64) {
+func (m *Metrics) RecordEndpointResponseSize(endpoint string, bodySize float64) {
 	m.endpointResponseSize.With(prometheus.Labels{
 		endpointLabel: endpoint,
-	}).Observe(float64(body) / 1024)
+	}).Observe(float64(bodySize) / 1024)
 }

@@ -733,13 +733,13 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 7,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordBadRequests("5890", "amp", 1)
-				st.RecordBadRequests("5890", "video", 1)
-				st.RecordBadRequests("5890", "v25", 1)
-				st.RecordBadRequests("5890", "json", 100)
-				st.RecordBadRequests("5890", "openwrap", 200)
-				st.RecordBadRequests("5890", "ortb", 300)
-				st.RecordBadRequests("5890", "vast", 400)
+				st.RecordBadRequests("amp", "5890", 1)
+				st.RecordBadRequests("video", "5890", 1)
+				st.RecordBadRequests("v25", "5890", 1)
+				st.RecordBadRequests("json", "5890", 100)
+				st.RecordBadRequests("openwrap", "5890", 200)
+				st.RecordBadRequests("ortb", "5890", 300)
+				st.RecordBadRequests("vast", "5890", 400)
 			},
 		},
 		{
