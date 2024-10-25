@@ -5,8 +5,8 @@
 package mock_metrics
 
 import (
-	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	gomock "github.com/golang/mock/gomock"
+	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	reflect "reflect"
 	time "time"
 )
