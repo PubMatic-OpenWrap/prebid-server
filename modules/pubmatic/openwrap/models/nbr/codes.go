@@ -9,6 +9,7 @@ const (
 	RequestBlockedSlotNotMapped   openrtb3.NoBidReason = 503
 	RequestBlockedPartnerThrottle openrtb3.NoBidReason = 504
 	RequestBlockedPartnerFiltered openrtb3.NoBidReason = 505
+	LossBidLostInVastUnwrap       openrtb3.NoBidReason = 506
 )
 
 // Openwrap module specific codes
@@ -32,4 +33,5 @@ const (
 	InvalidRedirectURL             openrtb3.NoBidReason = 617
 	InvalidResponseFormat          openrtb3.NoBidReason = 618
 	MissingOWRedirectURL           openrtb3.NoBidReason = 619
+	ResponseRejectedDSA            openrtb3.NoBidReason = 620 // Response Rejected - DSA
 )

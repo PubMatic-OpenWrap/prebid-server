@@ -92,6 +92,9 @@ type Metrics struct {
 	//VMAP adrule
 	pubProfAdruleEnabled           *prometheus.CounterVec
 	pubProfAdruleValidationfailure *prometheus.CounterVec
+
+	//ApplovinMax
+	failedParsingItuneId *prometheus.CounterVec
 }
 
 const (
@@ -360,6 +363,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIdLabel, profileIDLabel},
 	)
 
+	metrics.failedParsingItuneId = newCounter(cfg, promRegistry,
+		"failed_parsing_itune_id",
+		"Count of failed parsing itune id",
+		[]string{pubIdLabel, profileIDLabel},
+	)
+
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics
@@ -597,6 +606,14 @@ func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
 		profileIDLabel:  profileid,
 		signalTypeLabel: signalType,
 	}).Inc()
+}
+
+func (m *Metrics) RecordFailedParsingItuneID(pubId, profId string) {
+	m.failedParsingItuneId.With(prometheus.Labels{
+		pubIDLabel:     pubId,
+		profileIDLabel: profId,
+	}).Inc()
+
 }
 
 // TODO - really need ?

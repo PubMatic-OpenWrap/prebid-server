@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
 
@@ -59,6 +60,12 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 		return
 	}
 
+	var orignalMaxBidResponse *openrtb2.BidResponse
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
+		orignalMaxBidResponse = new(openrtb2.BidResponse)
+		*orignalMaxBidResponse = *ao.Response
+	}
+
 	err := RestoreBidResponse(rCtx, *ao)
 	if err != nil {
 		glog.Error("Failed to restore bid response for pub:[%d], profile:[%d], version:[%d], err:[%s].", rCtx.PubID, rCtx.ProfileID, rCtx.VersionID, err.Error())
@@ -73,6 +80,9 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
+		ao.Response = orignalMaxBidResponse
+	}
 	setWakandaObject(rCtx, ao, loggerURL)
 }
 

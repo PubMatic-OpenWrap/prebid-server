@@ -429,6 +429,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
+
 			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, rCtx.RedirectURL, gamQueryParams, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
@@ -595,7 +596,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
-			rCtx.AppLovinMax.AppStoreUrl = getProfileAppStoreUrlAndUpdateItunesID(rCtx, payload.BidRequest, impExt)
+			var isValidAppStoreUrl bool
+			if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+			}
 			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
 		}
 		impExt.Wrapper = nil
@@ -676,13 +680,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl)
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl)
 			}
 		}
 	}
@@ -786,7 +790,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if bidRequest.User.CustomData == "" && rctx.KADUSERCookie != nil {
 		bidRequest.User.CustomData = rctx.KADUSERCookie.Value
 	}
-	ctv.UpdateUserEidsWithValidValues(bidRequest.User)
+	UpdateUserExtWithValidValues(bidRequest.User)
 
 	for i := 0; i < len(bidRequest.WLang); i++ {
 		bidRequest.WLang[i] = getValidLanguage(bidRequest.WLang[i])
@@ -989,7 +993,7 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
@@ -999,6 +1003,10 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, 
 
 	if len(cookie) != 0 {
 		bidderParamsMap[bidderCode][models.COOKIE] = cookie
+	}
+
+	if sendBurl {
+		bidderParamsMap[bidderCode][models.SendBurl] = true
 	}
 
 	return json.Marshal(bidderParamsMap)
@@ -1396,36 +1404,45 @@ func setDeviceDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams u
 		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
 	}
 }
-func getProfileAppStoreUrlAndUpdateItunesID(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) string {
+
+func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {
+	isValidAppStoreUrl := false
 	appStoreUrl := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppStoreUrl]
 	if appStoreUrl == "" {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: app storeurl not present in DB", rctx.PubID, rctx.ProfileID)
-		return appStoreUrl
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: app store url not present in DB", rctx.PubID, rctx.ProfileID)
+		return appStoreUrl, isValidAppStoreUrl
 	}
 	appStoreUrl = strings.TrimSpace(appStoreUrl)
 	if !isValidURL(appStoreUrl) {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app storeurl", rctx.PubID, rctx.ProfileID, appStoreUrl)
-		return appStoreUrl
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
+		return appStoreUrl, isValidAppStoreUrl
 	}
-	var err error
-	if bidRequest.Device != nil && strings.ToLower(bidRequest.Device.OS) == "ios" {
-		//no multiple imp supported for AppLovinMax
-		if impExt != nil {
-			if impExt.SKAdnetwork == nil {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID, appStoreUrl)
-				return appStoreUrl
-			}
-			var itunesID string
-			if itunesID = extractItunesIdFromAppStoreUrl(appStoreUrl); itunesID == "" {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
-				return appStoreUrl
-			}
-			if impExt.SKAdnetwork, err = jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
-				glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, appStoreUrl, err.Error())
-			}
-		}
+	isValidAppStoreUrl = true
+	return appStoreUrl, isValidAppStoreUrl
+}
+
+func (m *OpenWrap) updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
+	if bidRequest.Device == nil || strings.ToLower(bidRequest.Device.OS) != "ios" {
+		return
 	}
-	return appStoreUrl
+
+	if impExt == nil || impExt.SKAdnetwork == nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID)
+		return
+	}
+
+	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppLovinMax.AppStoreUrl)
+	if itunesID == "" {
+		m.metricEngine.RecordFailedParsingItuneID(rctx.PubIDStr, rctx.ProfileIDStr)
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl)
+		return
+	}
+
+	if updatedSKAdnetwork, err := jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl, err.Error())
+	} else {
+		impExt.SKAdnetwork = updatedSKAdnetwork
+	}
 }
 
 func extractItunesIdFromAppStoreUrl(url string) string {
