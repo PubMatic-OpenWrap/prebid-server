@@ -111,7 +111,7 @@ func Test_cache_populatePublisherVASTTags(t *testing.T) {
 			want: want{
 				cacheEntry:        true,
 				err:               nil,
-				PublisherVASTTags: models.PublisherVASTTags(nil),
+				PublisherVASTTags: models.PublisherVASTTags{},
 			},
 		},
 	}
