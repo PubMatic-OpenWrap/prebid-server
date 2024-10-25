@@ -274,6 +274,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordDBQueryFailure(arg0, arg1, arg2 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordDBQueryFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordDBQueryFailure), arg0, arg1, arg2)
 }
 
+// RecordEndpointResponseSize mocks base method
+func (m *MockMetricsEngine) RecordEndpointResponseSize(arg0 string, arg1 float64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordEndpointResponseSize", arg0, arg1)
+}
+
+// RecordEndpointResponseSize indicates an expected call of RecordEndpointResponseSize
+func (mr *MockMetricsEngineMockRecorder) RecordEndpointResponseSize(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordEndpointResponseSize", reflect.TypeOf((*MockMetricsEngine)(nil).RecordEndpointResponseSize), arg0, arg1)
+}
+
 // RecordFailedParsingItuneID mocks base method
 func (m *MockMetricsEngine) RecordFailedParsingItuneID(arg0, arg1 string) {
 	m.ctrl.T.Helper()

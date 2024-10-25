@@ -95,6 +95,7 @@ type Metrics struct {
 
 	//ApplovinMax
 	failedParsingItuneId *prometheus.CounterVec
+	endpointResponseSize *prometheus.HistogramVec
 }
 
 const (
@@ -121,6 +122,7 @@ const (
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
+var responseSizeBuckets = []float64{0, 4, 7, 10, 15}
 var once sync.Once
 var metric *Metrics
 
@@ -367,6 +369,13 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"failed_parsing_itune_id",
 		"Count of failed parsing itune id",
 		[]string{pubIdLabel, profileIDLabel},
+	)
+
+	metrics.endpointResponseSize = newHistogramVec(cfg, promRegistry,
+		"endpoint_response_size",
+		"Size of response",
+		[]string{endpointLabel},
+		responseSizeBuckets,
 	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
@@ -689,4 +698,10 @@ func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duratio
 	m.cacheWriteTime.With(prometheus.Labels{
 		successLabel: strconv.FormatBool(success),
 	}).Observe(float64(length.Milliseconds()))
+}
+
+func (m *Metrics) RecordEndpointResponseSize(endpoint string, body float64) {
+	m.endpointResponseSize.With(prometheus.Labels{
+		endpointLabel: endpoint,
+	}).Observe(float64(body) / 1024)
 }

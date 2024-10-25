@@ -347,4 +347,5 @@ func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string) 
 func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}
 func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
 }
-func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string) {}
+func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)          {}
+func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, body float64) {}

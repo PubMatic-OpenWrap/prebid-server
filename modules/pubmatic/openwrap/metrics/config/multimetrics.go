@@ -529,3 +529,10 @@ func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
 		thisME.RecordFailedParsingItuneID(pubId, profId)
 	}
 }
+
+// RecordBidRecoveryStatus record failed parsing itune id
+func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, body float64) {
+	for _, thisME := range *me {
+		thisME.RecordEndpointResponseSize(endpoint, body)
+	}
+}
