@@ -146,7 +146,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	platform := "video"
 	responseTime := 1
 	endpoint := "in-app"
-	versionID := "1"
 	errorCode := 10
 	processingTime := 10
 	method := "GET"
@@ -174,7 +173,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPublisherResponseEncodingErrorStats(publisher)
 	mockEngine.EXPECT().RecordPartnerResponseTimeStats(publisher, partner, responseTime)
 	mockEngine.EXPECT().RecordPublisherResponseTimeStats(publisher, responseTime)
-	mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure(publisher, versionID)
+	mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure(publisher)
 	mockEngine.EXPECT().RecordCacheErrorRequests(endpoint, publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
 	mockEngine.EXPECT().RecordBadRequests(publisher, endpoint, errorCode)
@@ -241,7 +240,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPublisherResponseEncodingErrorStats(publisher)
 	multiMetricEngine.RecordPartnerResponseTimeStats(publisher, partner, responseTime)
 	multiMetricEngine.RecordPublisherResponseTimeStats(publisher, responseTime)
-	multiMetricEngine.RecordPublisherWrapperLoggerFailure(publisher, versionID)
+	multiMetricEngine.RecordPublisherWrapperLoggerFailure(publisher)
 	multiMetricEngine.RecordCacheErrorRequests(endpoint, publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
 	multiMetricEngine.RecordBadRequests(publisher, endpoint, errorCode)

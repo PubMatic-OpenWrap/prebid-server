@@ -292,7 +292,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.loggerFailure = newCounter(cfg, promRegistry,
 		"logger_send_failed",
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
-		[]string{pubIDLabel, profileIDLabel},
+		[]string{pubIDLabel},
 	)
 	metrics.analyticsThrottle = newCounter(cfg, promRegistry,
 		"analytics_throttle",
@@ -577,7 +577,7 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 }
 
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
-func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, version string) {
+func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher string) {
 	m.loggerFailure.With(prometheus.Labels{
 		pubIDLabel: publisher,
 	}).Inc()

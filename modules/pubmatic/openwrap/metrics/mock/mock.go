@@ -623,15 +623,15 @@ func (mr *MockMetricsEngineMockRecorder) RecordPublisherResponseTimeStats(arg0, 
 }
 
 // RecordPublisherWrapperLoggerFailure mocks base method
-func (m *MockMetricsEngine) RecordPublisherWrapperLoggerFailure(arg0, arg1 string) {
+func (m *MockMetricsEngine) RecordPublisherWrapperLoggerFailure(arg0 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordPublisherWrapperLoggerFailure", arg0, arg1)
+	m.ctrl.Call(m, "RecordPublisherWrapperLoggerFailure", arg0)
 }
 
 // RecordPublisherWrapperLoggerFailure indicates an expected call of RecordPublisherWrapperLoggerFailure
-func (mr *MockMetricsEngineMockRecorder) RecordPublisherWrapperLoggerFailure(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMetricsEngineMockRecorder) RecordPublisherWrapperLoggerFailure(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherWrapperLoggerFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherWrapperLoggerFailure), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherWrapperLoggerFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherWrapperLoggerFailure), arg0)
 }
 
 // RecordReqImpsWithContentCount mocks base method

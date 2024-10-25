@@ -522,12 +522,12 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], "5890", "0"): 1,
+					fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], "5890"): 1,
 				},
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherWrapperLoggerFailure("5890", "0")
+				st.RecordPublisherWrapperLoggerFailure("5890")
 			},
 		},
 		{
