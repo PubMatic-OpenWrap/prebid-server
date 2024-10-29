@@ -10,22 +10,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-type ExtRequestORTB struct {
-	Wrapper *ExtRequestWrapper                `json:"wrapper,omitempty"`
-}
-type ExtRequestWrapper struct {
-	ProfileId            *int    `json:"profileid,omitempty"`
-	VersionId            *int    `json:"versionid,omitempty"`
-	SSAuctionFlag        *int    `json:"ssauction,omitempty"`
-	SumryDisableFlag     *int    `json:"sumry_disable,omitempty"`
-	ClientConfigFlag     *int    `json:"clientconfig,omitempty"`
-	LogInfoFlag          *int    `json:"loginfo,omitempty"`
-	SupportDeals         bool    `json:"supportdeals,omitempty"`
-	IncludeBrandCategory *int    `json:"includebrandcategory,omitempty"`
-	ABTestConfig         *int    `json:"abtest,omitempty"`
-	LoggerImpressionID   *string `json:"wiid,omitempty"`
-	SSAI                 *string `json:"ssai,omitempty"`
-}
+type ExtRequestORTB  map[string]interface{}     
 
 func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, error) {
 	var requestExt *ExtRequestORTB
@@ -113,11 +98,28 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if err != nil {
 		return nil, []error{err}
 	}
-	
+
 	request.Ext = extJSON
 
 	for i := 0; i < len(request.Imp); i++ {
-		request.Imp[i].Ext = nil
+		var impExt map[string]interface{}
+
+		if request.Imp[i].Ext != nil {
+			var err1 error
+			if err1 = json.Unmarshal(request.Imp[i].Ext, &impExt); err1 == nil {
+				bidderExt := impExt["bidder"].(map[string]interface{})
+				impExtJSON, err3 := json.Marshal(bidderExt["impExt"])
+					if err3 != nil {
+						return nil, []error{err}
+					}
+					request.Imp[i].Ext = impExtJSON
+				
+				} else{
+					request.Imp[i].Ext = nil
+				}
+		} else{
+			request.Imp[i].Ext = nil
+		}
 	}
 
 	reqJSON, err := json.Marshal(request)
@@ -134,4 +136,4 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Body:    reqJSON,
 		Headers: headers,
 	}}, nil
-}
+	}
