@@ -226,7 +226,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					Body: []byte(`{"ext":{"wrapper":{"profileids":5890,"versionid":1}}}`),
 				},
 				setup: func(mme *mock_metrics.MockMetricsEngine) {
-					mme.EXPECT().RecordBadRequests(gomock.Any(), "", 700)
+					mme.EXPECT().RecordBadRequests(gomock.Any(), "0", 700)
 				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
@@ -383,7 +383,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					Body: []byte(`{"imp":[{"tagid":"/43743431/DMDemo","ext":{"prebid":{"bidder":{"pubmatic":{"publisherId":"5890"}},"adunitcode":"div-gpt-ad-1460505748561-0"}},"id":"div-gpt-ad-1460505748561-0","banner":{"topframe":1,"format":[{"w":300,"h":250}]}}],"site":{"domain":"localhost:9999","publisher":{"domain":"localhost:9999","id":"5890"},"page":"http://localhost:9999/integrationExamples/gpt/owServer_example.html"},"device":{"w":1792,"h":446,"dnt":0,"ua":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36","language":"en","sua":{"source":1,"platform":{"brand":"macOS"},"browsers":[{"brand":"Google Chrome","version":["117"]},{"brand":"Not;A=Brand","version":["8"]},{"brand":"Chromium","version":["117"]}],"mobile":0}},"ext":{"prebid":{"auctiontimestamp":1697191822565,"targeting":{"includewinners":true,"includebidderkeys":true},"bidderparams":{"pubmatic":{"publisherId":"5890","wrapper":{}}},"channel":{"name":"pbjs","version":"v8.7.0-pre"},"createtids":false}},"id":"5bdd7da5-1166-40fe-a9cb-3bf3c3164cd3","test":0,"tmax":3000}`),
 				},
 				setup: func(mme *mock_metrics.MockMetricsEngine) {
-					mme.EXPECT().RecordBadRequests(gomock.Any(), "", 700)
+					mme.EXPECT().RecordBadRequests(gomock.Any(), "0", 700)
 				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{

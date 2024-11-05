@@ -48,6 +48,9 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
+			if rCtx.PubIDStr == "" {
+				rCtx.PubIDStr = "0"
+			}
 			m.metricEngine.RecordBadRequests(endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			if glog.V(models.LogLevelDebug) {
 				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",

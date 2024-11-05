@@ -530,7 +530,7 @@ func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
 	}
 }
 
-// RecordEndpointResponseSize record failed parsing itune id
+// RecordEndpointResponseSize record endpoint specific response size
 func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySize float64) {
 	for _, thisME := range *me {
 		thisME.RecordEndpointResponseSize(endpoint, bodySize)
