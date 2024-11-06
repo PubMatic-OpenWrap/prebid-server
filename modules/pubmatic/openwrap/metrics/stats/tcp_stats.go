@@ -84,11 +84,6 @@ func (st *StatsTCP) RecordPublisherInvalidProfileRequests(endpoint, publisher, p
 	}
 }
 
-func (st *StatsTCP) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], publisher, profileID), impCount)
-	//TODO @viral ;previously by 1 but now by impCount
-}
-
 func (st *StatsTCP) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyNobidErrPrebidServerRequests], publisher), 1)
 }
@@ -123,8 +118,8 @@ func (st *StatsTCP) RecordPublisherResponseTimeStats(publisher string, responseT
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statKeyIndex], publisher, "overall"), 1)
 }
 
-func (st *StatsTCP) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], publisher, profileID, versionID), 1)
+func (st *StatsTCP) RecordPublisherWrapperLoggerFailure(publisher string) {
+	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], publisher), 1)
 }
 
 func (st *StatsTCP) RecordPrebidTimeoutRequests(publisher, profileID string) {
@@ -181,7 +176,7 @@ func (st *StatsTCP) RecordCTVRequests(endpoint string, platform string) {
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyCTVRequests], endpoint, platform), 1)
 }
 
-func (st *StatsTCP) RecordBadRequests(endpoint string, errorCode int) {
+func (st *StatsTCP) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	switch endpoint {
 	case "amp":
 		st.statsClient.PublishStat(statKeys[statsKeyAMPBadRequests], 1)
@@ -352,4 +347,5 @@ func (st *StatsTCP) RecordSignalDataStatus(pubid, profileid, signalType string) 
 func (st *StatsTCP) RecordPrebidCacheRequestTime(success bool, length time.Duration)          {}
 func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
 }
-func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string) {}
+func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)              {}
+func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64) {}

@@ -94,20 +94,6 @@ func TestRecordPublisherProfileRequests(t *testing.T) {
 		})
 }
 
-func TestRecordPublisherInvalidProfileImpressions(t *testing.T) {
-	m := createMetricsForTesting()
-
-	m.RecordPublisherInvalidProfileImpressions("5890", "1234", 3)
-
-	expectedCount := float64(3)
-	assertCounterVecValue(t, "", "invalid_imps", m.pubProfInvalidImps,
-		expectedCount,
-		prometheus.Labels{
-			pubIDLabel:     "5890",
-			profileIDLabel: "1234",
-		})
-}
-
 func TestRecordNobidErrPrebidServerRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
@@ -183,12 +169,13 @@ func TestRecordPublisherInvalidProfileRequests(t *testing.T) {
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 
-	m.RecordBadRequests(models.EndpointV25, int(nbr.AllPartnerThrottled))
+	m.RecordBadRequests(models.EndpointV25, "5890", int(nbr.AllPartnerThrottled))
 
 	expectedCount := float64(1)
 	assertCounterVecValue(t, "", "bad_requests", m.endpointBadRequest,
 		expectedCount,
 		prometheus.Labels{
+			pubIDLabel:    "5890",
 			endpointLabel: models.EndpointV25,
 			nbrLabel:      strconv.Itoa(int(nbr.AllPartnerThrottled)),
 		})
