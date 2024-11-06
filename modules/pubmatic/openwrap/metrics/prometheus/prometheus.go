@@ -95,6 +95,7 @@ type Metrics struct {
 
 	//ApplovinMax
 	failedParsingItuneId *prometheus.CounterVec
+	endpointResponseSize *prometheus.HistogramVec
 }
 
 const (
@@ -120,7 +121,8 @@ const (
 	adapterCodeLabel   = "adapter_code"
 )
 
-var standardTimeBuckets = []float64{0.1, 0.3, 0.75, 1}
+var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
+var responseSizeBuckets = []float64{0, 4, 7, 10, 15}
 var once sync.Once
 var metric *Metrics
 
@@ -263,7 +265,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.endpointBadRequest = newCounter(cfg, promRegistry,
 		"bad_requests",
 		"Count bad requests along with NBR code at endpoint level.",
-		[]string{endpointLabel, nbrLabel},
+		[]string{pubIDLabel, endpointLabel, nbrLabel},
 	)
 
 	// publisher platform endpoint level metrics
@@ -292,7 +294,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.loggerFailure = newCounter(cfg, promRegistry,
 		"logger_send_failed",
 		"Count of failures to send the logger to analytics endpoint at publisher and profile level",
-		[]string{pubIDLabel, profileIDLabel},
+		[]string{pubIDLabel},
 	)
 	metrics.analyticsThrottle = newCounter(cfg, promRegistry,
 		"analytics_throttle",
@@ -367,6 +369,13 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"failed_parsing_itune_id",
 		"Count of failed parsing itune id",
 		[]string{pubIdLabel, profileIDLabel},
+	)
+
+	metrics.endpointResponseSize = newHistogramVec(cfg, promRegistry,
+		"endpoint_response_size",
+		"Size of response",
+		[]string{endpointLabel},
+		responseSizeBuckets,
 	)
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
@@ -459,13 +468,6 @@ func (m *Metrics) RecordPublisherProfileRequests(publisherID, profileID string) 
 	}).Inc()
 }
 
-func (m *Metrics) RecordPublisherInvalidProfileImpressions(publisherID, profileID string, impCount int) {
-	m.pubProfInvalidImps.With(prometheus.Labels{
-		pubIDLabel:     publisherID,
-		profileIDLabel: profileID,
-	}).Add(float64(impCount))
-}
-
 func (m *Metrics) RecordNobidErrPrebidServerRequests(publisherID string, nbr int) {
 	m.pubRequestValidationErrors.With(prometheus.Labels{
 		pubIDLabel: publisherID,
@@ -516,9 +518,10 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 	}).Inc()
 }
 
-func (m *Metrics) RecordBadRequests(endpoint string, errorCode int) {
+func (m *Metrics) RecordBadRequests(endpoint, publisherID string, errorCode int) {
 	m.endpointBadRequest.With(prometheus.Labels{
 		endpointLabel: endpoint,
+		pubIDLabel:    publisherID,
 		nbrLabel:      strconv.Itoa(errorCode),
 	}).Inc()
 }
@@ -583,10 +586,9 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 }
 
 // RecordPublisherWrapperLoggerFailure to record count of owlogger failures
-func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher, profile, version string) {
+func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher string) {
 	m.loggerFailure.With(prometheus.Labels{
-		pubIDLabel:     publisher,
-		profileIDLabel: profile,
+		pubIDLabel: publisher,
 	}).Inc()
 }
 
@@ -696,4 +698,10 @@ func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duratio
 	m.cacheWriteTime.With(prometheus.Labels{
 		successLabel: strconv.FormatBool(success),
 	}).Observe(float64(length.Milliseconds()))
+}
+
+func (m *Metrics) RecordEndpointResponseSize(endpoint string, bodySize float64) {
+	m.endpointResponseSize.With(prometheus.Labels{
+		endpointLabel: endpoint,
+	}).Observe(float64(bodySize) / 1024)
 }

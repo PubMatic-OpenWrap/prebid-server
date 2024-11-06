@@ -72,7 +72,7 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 
 		// we will not record at version level in prometheus metric
-		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
+		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr)
 		return
 	}
 	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))
