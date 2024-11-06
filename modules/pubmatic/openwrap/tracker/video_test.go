@@ -701,6 +701,26 @@ func Test_updatePricingNode(t *testing.T) {
 			},
 			want: `<Pricing model="` + models.VideoPricingModelCPM + `" currency="` + models.VideoPricingCurrencyUSD + `"><![CDATA[1.2]]></Pricing>`,
 		},
+		{
+			name: "adding_space_in_price",
+			args: args{
+				doc:      getXMLDocument(`<Pricing>  4.5  </Pricing>`),
+				price:    1.2,
+				model:    "",
+				currency: "",
+			},
+			want: `<Pricing model="` + models.VideoPricingModelCPM + `" currency="` + models.VideoPricingCurrencyUSD + `"><![CDATA[1.2]]></Pricing>`,
+		},
+		{
+			name: "adding_space_in_price_with_cdata",
+			args: args{
+				doc:      getXMLDocument(`<Pricing>  <![CDATA[4.5]]>  </Pricing>`),
+				price:    1.2,
+				model:    "",
+				currency: "",
+			},
+			want: `<Pricing model="` + models.VideoPricingModelCPM + `" currency="` + models.VideoPricingCurrencyUSD + `"><![CDATA[1.2]]></Pricing>`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
