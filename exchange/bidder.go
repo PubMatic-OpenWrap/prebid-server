@@ -357,7 +357,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							bidderName = bidResponse.Bids[i].Seat
 						}
 
-						if valid, err := alternateBidderCodes.IsValidBidderCode(bidderRequest.BidderName.String(), bidderName.String()); !valid {
+						/*if valid, err := alternateBidderCodes.IsValidBidderCode(bidderRequest.BidderName.String(), bidderName.String()); !valid {
 							if err != nil {
 								err = &errortypes.Warning{
 									WarningCode: errortypes.AlternateBidderCodeWarningCode,
@@ -366,7 +366,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 								errs = append(errs, err)
 							}
 							continue
-						}
+						}*/
 
 						adjustmentFactor := 1.0
 						if givenAdjustment, ok := bidRequestOptions.bidAdjustments[bidderName.String()]; ok {
@@ -735,3 +735,4 @@ func compressToGZIP(requestBody []byte) []byte {
 	w.Close()
 	return b.Bytes()
 }
+

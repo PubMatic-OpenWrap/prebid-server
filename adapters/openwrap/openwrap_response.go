@@ -52,23 +52,19 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 	for _, sb := range bidResp.SeatBid {
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-			// Copy SeatBid Ext to Bid.Ext
-			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
-
+		
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
 				bid.Cat = bid.Cat[0:1]
 			}
 
-			seat := ""
 			var bidExt *pubmaticBidExt
 			bidType := openrtb_ext.BidTypeBanner
 			err := json.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
 				errs = append(errs, err)
 			} else if bidExt != nil {
-				seat = bidExt.Marketplace
 				if bidExt.VideoCreativeInfo != nil && bidExt.VideoCreativeInfo.Duration != nil {
 					impVideo.Duration = *bidExt.VideoCreativeInfo.Duration
 				}
@@ -86,7 +82,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				Bid:        &bid,
 				BidType:    bidType,
 				BidVideo:   impVideo,
-				Seat:       openrtb_ext.BidderName(seat),
+				Seat:       openrtb_ext.BidderName(sb.Seat),
 			})
 
 		}
@@ -96,25 +92,6 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 	}
 	return bidResponse, errs
 }
-
-func copySBExtToBidExt(sbExt json.RawMessage, bidExt json.RawMessage) json.RawMessage {
-	if sbExt != nil {
-		sbExtMap := getMapFromJSON(sbExt)
-		bidExtMap := make(map[string]interface{})
-		if bidExt != nil {
-			bidExtMap = getMapFromJSON(bidExt)
-		}
-		if bidExtMap != nil && sbExtMap != nil {
-			if sbExtMap[buyId] != nil && bidExtMap[buyId] == nil {
-				bidExtMap[buyId] = sbExtMap[buyId]
-			}
-		}
-		byteAra, _ := json.Marshal(bidExtMap)
-		return json.RawMessage(byteAra)
-	}
-	return bidExt
-}
-
 
 func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
 	// setting "banner" as the default bid type
@@ -167,3 +144,4 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+

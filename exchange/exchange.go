@@ -1104,16 +1104,14 @@ func (e *exchange) makeBid(bids []*pbsOrtbBid, auc *auction, returnCreative bool
 			}
 		}
 
-		if bidExtJSON, err := makeBidExtJSON(bid.bid.Ext, bidExtPrebid, impExtInfoMap, bid.bid.ImpID, bid.originalBidCPM, bid.originalBidCur, bid.originalBidCPMUSD); err != nil {
-			errs = append(errs, err)
-		} else {
-			result = append(result, *bid.bid)
-			resultBid := &result[len(result)-1]
-			resultBid.Ext = bidExtJSON
-			if !returnCreative {
-				resultBid.AdM = ""
-			}
+		bidExtJSON := bid.bid.Ext
+		result = append(result, *bid.bid)
+		resultBid := &result[len(result)-1]
+		resultBid.Ext = bidExtJSON
+		if !returnCreative {
+			resultBid.AdM = ""
 		}
+		
 	}
 	return result, errs
 }
@@ -1305,3 +1303,4 @@ func isAdsCertEnabled(experiment *openrtb_ext.Experiment, info config.BidderInfo
 	bidderAdsCertEnabled := info.Experiment.AdsCert.Enabled
 	return requestAdsCertEnabled && bidderAdsCertEnabled
 }
+
