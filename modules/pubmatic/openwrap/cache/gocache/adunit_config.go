@@ -5,13 +5,14 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 func (c *cache) populateCacheWithAdunitConfig(pubID int, profileID, displayVersion int) (err error) {
 	adunitConfig, err := c.db.GetAdunitConfig(profileID, displayVersion)
 	if err != nil {
-		glog.Errorf("[QueryFailure] for adunitConfigQuery with err: %v", err)
+		glog.Errorf(models.DBQueryFailure, "adunitConfigQuery", pubID, profileID, err)
 		return err
 	}
 

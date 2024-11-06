@@ -444,6 +444,8 @@ var (
 	TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="${OMScript}"></script>`
 	//Universal Pixel Macro
 	UniversalPixelMacroForUrl = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${pixelUrl}"></div>`
+	//DBQueryFailure reponse error
+	DBQueryFailure = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
 )
 
 // LogOnlyWinBidArr is an array containing Partners who only want winning bids to be logged

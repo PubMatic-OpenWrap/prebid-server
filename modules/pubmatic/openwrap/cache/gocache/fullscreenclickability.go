@@ -16,7 +16,7 @@ func (c *cache) GetFSCThresholdPerDSP() (map[int]int, error) {
 	fscThreshold, err := c.db.GetFSCThresholdPerDSP()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.AllDspFscPcntQuery, "", "")
-		glog.Errorf("[QueryFailure] for AllDspFscPcntQuery with err: %v", err)
+		glog.Errorf(models.DBQueryFailure, "AllDspFscPcntQuery", "", "", err)
 		return fscThreshold, fmt.Errorf(errorFscDspMsg, err)
 	}
 	return fscThreshold, nil

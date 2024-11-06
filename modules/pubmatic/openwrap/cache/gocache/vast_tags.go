@@ -12,7 +12,7 @@ func (c *cache) populatePublisherVASTTags(pubID int) error {
 	//get publisher level vast tag details from DB
 	publisherVASTTags, err := c.db.GetPublisherVASTTags(pubID)
 	if err != nil {
-		glog.Errorf("[QueryFailure] for PublisherVASTTags with err: %v", err)
+		glog.Errorf(models.DBQueryFailure, "PublisherVASTTags", pubID, "", err)
 		return err
 	}
 
