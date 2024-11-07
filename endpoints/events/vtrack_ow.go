@@ -80,6 +80,8 @@ func InjectVideoEventTrackers(
 func tmpFastXMLProcessing(vast string) string {
 	//replace only if trackers are injected
 	vast = strings.ReplaceAll(vast, " >", ">")
+	vast = strings.ReplaceAll(vast, "'", "\"")
+
 	// if strings.Contains(vast, "'") {
 	// 	if index := strings.Index(vast, "<VAST"); index != -1 {
 	// 		vast = vast[0:index] + strings.ReplaceAll(vast[index:], "'", "\"")
