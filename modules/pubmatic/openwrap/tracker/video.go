@@ -128,7 +128,7 @@ func InjectPricingNodeInVAST(parent *etree.Element, price float64, model string,
 
 func updatePricingNode(node *etree.Element, price float64, model string, currency string) {
 	//Update Price
-
+	node.Child = nil
 	node.SetText(fmt.Sprintf("%v", price))
 
 	//Update Pricing.Model
