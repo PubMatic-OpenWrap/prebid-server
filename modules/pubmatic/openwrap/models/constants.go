@@ -444,8 +444,6 @@ var (
 	TrackerCallWrapOMActive = `<script id="OWPubOMVerification" data-owurl="${escapedUrl}" src="${OMScript}"></script>`
 	//Universal Pixel Macro
 	UniversalPixelMacroForUrl = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${pixelUrl}"></div>`
-	//DBQueryFailure reponse error
-	DBQueryFailure = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
 )
 
 // LogOnlyWinBidArr is an array containing Partners who only want winning bids to be logged
@@ -543,8 +541,8 @@ const (
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	GetAdpodConfig                     = "GetAdpodConfig"
-	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
-	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
+	LiveVersionInnerQuery              = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
@@ -619,4 +617,9 @@ const (
 // constants for log level
 const (
 	LogLevelDebug glog.Level = 3
+)
+
+const (
+	// ErrDBQueryFailed reponse error
+	ErrDBQueryFailed = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
 )

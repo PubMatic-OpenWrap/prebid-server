@@ -11,7 +11,7 @@ import (
 func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion int) (err error) {
 	adpodConfig, err := c.db.GetAdpodConfig(pubID, profileID, displayVersion)
 	if err != nil {
-		glog.Errorf(models.DBQueryFailure, "LiveVersionInnerQuery/DisplayVersionInnerQuery", pubID, profileID, err)
+		glog.Errorf(models.ErrDBQueryFailed, models.LiveVersionInnerQuery+"/"+models.DisplayVersionInnerQuery, pubID, profileID, err)
 		return err
 	}
 

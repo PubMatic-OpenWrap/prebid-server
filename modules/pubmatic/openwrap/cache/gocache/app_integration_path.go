@@ -14,7 +14,7 @@ func (c *cache) GetAppIntegrationPaths() (map[string]int, error) {
 	appIntegrationPathMap, err := c.db.GetAppIntegrationPaths()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.AppIntegrationPathMapQuery, "", "")
-		glog.Errorf("DBQueryFailure", err)
+		glog.Errorf(models.ErrDBQueryFailed, models.AppIntegrationPathMapQuery, "", "", err)
 		return appIntegrationPathMap, fmt.Errorf(errorAppIntegrationPathMapUpdate, err)
 	}
 	return appIntegrationPathMap, nil

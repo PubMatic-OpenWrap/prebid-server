@@ -17,7 +17,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 
 	publisherSlotNameHashMap, err := c.db.GetPublisherSlotNameHash(pubID)
 	if err != nil {
-		glog.Errorf(models.DBQueryFailure, "GetSlotNameHash", pubID, "", err)
+		glog.Errorf(models.ErrDBQueryFailed, models.SlotNameHash, pubID, "", err)
 		return err
 	}
 	//This call may set nil publisherSlotNameHashMap in cache
@@ -29,7 +29,7 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) error {
 	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
 	if err != nil {
-		glog.Errorf(models.DBQueryFailure, "WrapperSlotMappingsQuery/WrapperLiveVersionSlotMappings", pubID, profileID, err)
+		glog.Errorf(models.ErrDBQueryFailed, models.WrapperSlotMappingsQuery+"/"+models.WrapperLiveVersionSlotMappings, pubID, profileID, err)
 		return err
 	}
 

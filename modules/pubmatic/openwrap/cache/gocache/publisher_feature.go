@@ -14,7 +14,7 @@ func (c *cache) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, er
 	publisherFeatureMap, err := c.db.GetPublisherFeatureMap()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.PublisherFeatureMapQuery, "", "")
-		glog.Errorf(models.DBQueryFailure, "PublisherFeatureMapQuery", "", "", err)
+		glog.Errorf(models.ErrDBQueryFailed, models.PublisherFeatureMapQuery, "", "", err)
 		return publisherFeatureMap, fmt.Errorf(errorPubFeatureUpdate, err)
 	}
 	return publisherFeatureMap, nil
