@@ -9,16 +9,15 @@ type MetricsEngine interface {
 	RecordPartnerResponseErrors(publisherID, partner, err string)
 	RecordPartnerConfigErrors(publisherID, profileID, partner string, errcode int)
 	RecordPublisherProfileRequests(publisher, profileID string)
-	RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int)
 	RecordNobidErrPrebidServerRequests(publisher string, nbr int)
 	RecordNobidErrPrebidServerResponse(publisher string)
 	RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string)
 	RecordPlatformPublisherPartnerResponseStats(platform, publisher, partner string)
 	RecordPartnerResponseTimeStats(publisher, partner string, responseTime int)
 	RecordPublisherResponseTimeStats(publisher string, responseTimeMs int)
-	RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string)
+	RecordPublisherWrapperLoggerFailure(publisher string)
 	RecordPublisherInvalidProfileRequests(endpoint, publisher, profileID string)
-	RecordBadRequests(endpoint string, errorCode int)
+	RecordBadRequests(endpoint, publisher string, errorCode int)
 	RecordUidsCookieNotPresentErrorStats(publisher, profileID string)
 	RecordVideoInstlImpsStats(publisher, profileID string)
 	RecordImpDisabledViaConfigStats(impType, publisher, profileID string)
@@ -95,4 +94,5 @@ type MetricsEngine interface {
 
 	//AppLovinMax metrics
 	RecordFailedParsingItuneID(pubId, profId string)
+	RecordEndpointResponseSize(endpoint string, bodySize float64)
 }
