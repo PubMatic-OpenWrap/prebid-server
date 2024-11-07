@@ -331,6 +331,12 @@ func getPricingDetailsTestCases() []struct {
 			wantCurrency: "USD",
 		},
 		{
+			name:         "vast_with_whitespace_cdata_pricing",
+			vastXML:      `<VAST version="3.0"><Ad><Wrapper><Pricing>  <![CDATA[ 12.05 ]]>  </Pricing></Wrapper></Ad></VAST>`,
+			wantPrice:    12.05,
+			wantCurrency: "USD",
+		},
+		{
 			name:         "vast_gt_2.x_pricing",
 			vastXML:      `<VAST version="3.0"><Ad><Wrapper><Pricing>12.05</Pricing></Wrapper></Ad></VAST>`,
 			wantPrice:    12.05,
