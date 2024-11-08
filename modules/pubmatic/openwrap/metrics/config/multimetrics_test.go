@@ -146,7 +146,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	platform := "video"
 	responseTime := 1
 	endpoint := "in-app"
-	versionID := "1"
 	errorCode := 10
 	processingTime := 10
 	method := "GET"
@@ -166,7 +165,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 
 	mockEngine.EXPECT().RecordPublisherProfileRequests(publisher, profile)
-	mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	mockEngine.EXPECT().RecordNobidErrPrebidServerRequests(publisher, int(nbr.AllPartnerThrottled))
 	mockEngine.EXPECT().RecordNobidErrPrebidServerResponse(publisher)
 	mockEngine.EXPECT().RecordInvalidCreativeStats(publisher, partner)
@@ -175,10 +173,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPublisherResponseEncodingErrorStats(publisher)
 	mockEngine.EXPECT().RecordPartnerResponseTimeStats(publisher, partner, responseTime)
 	mockEngine.EXPECT().RecordPublisherResponseTimeStats(publisher, responseTime)
-	mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure(publisher, profile, versionID)
+	mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure(publisher)
 	mockEngine.EXPECT().RecordCacheErrorRequests(endpoint, publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
-	mockEngine.EXPECT().RecordBadRequests(endpoint, errorCode)
+	mockEngine.EXPECT().RecordBadRequests(endpoint, publisher, errorCode)
 	mockEngine.EXPECT().RecordPrebidTimeoutRequests(publisher, profile)
 	mockEngine.EXPECT().RecordSSTimeoutRequests(publisher, profile)
 	mockEngine.EXPECT().RecordUidsCookieNotPresentErrorStats(publisher, profile)
@@ -234,7 +232,6 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPartnerResponseErrors(publisher, partner, models.PartnerErrTimeout)
 	multiMetricEngine.RecordPartnerConfigErrors(publisher, profile, partner, models.PartnerErrSlotNotMapped)
 	multiMetricEngine.RecordPublisherProfileRequests(publisher, profile)
-	multiMetricEngine.RecordPublisherInvalidProfileImpressions(publisher, profile, impCount)
 	multiMetricEngine.RecordNobidErrPrebidServerRequests(publisher, int(nbr.AllPartnerThrottled))
 	multiMetricEngine.RecordNobidErrPrebidServerResponse(publisher)
 	multiMetricEngine.RecordInvalidCreativeStats(publisher, partner)
@@ -243,10 +240,10 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPublisherResponseEncodingErrorStats(publisher)
 	multiMetricEngine.RecordPartnerResponseTimeStats(publisher, partner, responseTime)
 	multiMetricEngine.RecordPublisherResponseTimeStats(publisher, responseTime)
-	multiMetricEngine.RecordPublisherWrapperLoggerFailure(publisher, profile, versionID)
+	multiMetricEngine.RecordPublisherWrapperLoggerFailure(publisher)
 	multiMetricEngine.RecordCacheErrorRequests(endpoint, publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
-	multiMetricEngine.RecordBadRequests(endpoint, errorCode)
+	multiMetricEngine.RecordBadRequests(endpoint, publisher, errorCode)
 	multiMetricEngine.RecordPrebidTimeoutRequests(publisher, profile)
 	multiMetricEngine.RecordSSTimeoutRequests(publisher, profile)
 	multiMetricEngine.RecordUidsCookieNotPresentErrorStats(publisher, profile)
