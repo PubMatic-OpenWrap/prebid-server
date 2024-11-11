@@ -21,6 +21,14 @@ type ExtRequestAdPod struct {
 	CrossPodIABCategoryExclusionPercent int `json:"crosspodexcliabcat,omitempty"` //Percent Value - Across multiple impression there will be no ads from same advertiser
 	IABCategoryExclusionWindow          int `json:"excliabcatwindow,omitempty"`   //Duration in minute between pods where exclusive IAB rule needs to be applied
 	AdvertiserExclusionWindow           int `json:"excladvwindow,omitempty"`      //Duration in minute between pods where exclusive advertiser rule needs to be applied
+	// Duration in minute between pods where exclusive advertiser rule needs to be applied
+	Exclusion *AdpodExclusion `json:"adpodexclusion,omitempty"`
+}
+
+// AdpodExclusion holds AdPod specific exclusion parameters
+type AdpodExclusion struct {
+	IABCategory      []string `json:"iabcategory,omitempty"`
+	AdvertiserDomain []string `json:"advertiserdomain,omitempty"`
 }
 
 // AdPod holds Video AdPod specific extension parameters at impression level

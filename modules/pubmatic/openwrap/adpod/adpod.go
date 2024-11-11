@@ -57,7 +57,7 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
+		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.ADPOD)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithReqConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
@@ -67,7 +67,7 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 
 	// Check in adunit config
 	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
+		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.ADPOD)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithDbConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
