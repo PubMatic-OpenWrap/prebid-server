@@ -53,7 +53,7 @@ func collectBids(response *openrtb2.BidResponse, rctx models.RequestCtx) {
 				}
 			}
 
-			originalImpID, _ := util.DecodeImpressionID(bid.ImpID) //TODO: check if we can reomove and maintain map
+			// originalImpID, _ := DecodeImpressionID(bid.ImpID) //TODO: check if we can reomove and maintain map
 
 			value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if nil == err {
@@ -67,7 +67,7 @@ func collectBids(response *openrtb2.BidResponse, rctx models.RequestCtx) {
 				adpod.AddTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
 			}
 
-			podId, ok := rctx.ImpToPodId[originalImpID]
+			podId, ok := rctx.ImpToPodId[bid.ImpID]
 			if !ok {
 				continue
 			}
@@ -83,9 +83,10 @@ func collectBids(response *openrtb2.BidResponse, rctx models.RequestCtx) {
 }
 
 func doAdpodAuction(rCtx models.RequestCtx) map[string][]string {
-	var winningBidIds map[string][]string
+	winningBidIds := map[string][]string{}
 	for _, adpodCtx := range rCtx.AdpodCtx {
 		adpodCtx.HoldAuction()
+		adpodCtx.CollectAPRC(rCtx)
 		adpodCtx.GetWinningBidsIds(rCtx, winningBidIds)
 	}
 	return winningBidIds

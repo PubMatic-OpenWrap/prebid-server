@@ -158,7 +158,7 @@ func generateImpressionID(impID string, seqNo int) string {
 }
 
 func (da *DynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
-	originalImpId, sequence := util.DecodeImpressionID(bid.ImpID)
+	originalImpId, sequence := DecodeImpressionID(bid.ImpID)
 
 	if da.AdpodBid == nil {
 		da.AdpodBid = &models.AdPodBid{
@@ -283,23 +283,7 @@ func (da *DynamicAdpod) HoldAuction() {
 	da.WinningBids = adpodBid
 }
 
-func (da *DynamicAdpod) collectAPRC(impAdpodBidsMap map[string]*models.AdPodBid, rctx models.RequestCtx) {
-	// if len(da.AdpodBid.Bids) == 0 {
-	// 	return
-	// }
-
-	// impId := da.AdpodBid.OriginalImpID
-	// bidIdToAprcMap := make(map[string]int64)
-	// for _, bid := range da.AdpodBid.Bids {
-	// 	bidIdToAprcMap[bid.ID] = bid.Status
-	// }
-
-	// impCtx := impCtxMap[impId]
-	// impCtx.BidIDToAPRC = bidIdToAprcMap
-	// impCtxMap[impId] = impCtx
-}
-
-func (da *DynamicAdpod) GetWinningBidsIds(rctx models.RequestCtx, winningBidIds map[string][]string) {
+func (da *DynamicAdpod) CollectAPRC(rctx models.RequestCtx) {
 	if len(da.AdpodBid.Bids) == 0 {
 		return
 	}
@@ -307,7 +291,24 @@ func (da *DynamicAdpod) GetWinningBidsIds(rctx models.RequestCtx, winningBidIds 
 	if !ok {
 		return
 	}
+	bidIdToAprcMap := make(map[string]int64)
 	for _, bid := range da.AdpodBid.Bids {
+		bidIdToAprcMap[bid.ID] = bid.Status
+	}
+
+	impCtx.BidIDToAPRC = bidIdToAprcMap
+	rctx.ImpBidCtx[da.AdpodBid.OriginalImpID] = impCtx
+}
+
+func (da *DynamicAdpod) GetWinningBidsIds(rctx models.RequestCtx, winningBidIds map[string][]string) {
+	if len(da.WinningBids.Bids) == 0 {
+		return
+	}
+	impCtx, ok := rctx.ImpBidCtx[da.AdpodBid.OriginalImpID]
+	if !ok {
+		return
+	}
+	for _, bid := range da.WinningBids.Bids {
 		if len(bid.AdM) == 0 {
 			continue
 		}

@@ -89,6 +89,7 @@ type Adpod interface {
 	GetImpressions() []*openrtb_ext.ImpWrapper
 	CollectBid(bid *openrtb2.Bid, seat string)
 	HoldAuction()
+	CollectAPRC(rctx RequestCtx)
 	GetWinningBidsIds(rctx RequestCtx, winningBidIds map[string][]string)
 }
 type Bid struct {
