@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
@@ -75,7 +76,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	var winningAdpodBidIds map[string][]string
 	var errs []error
 	if rctx.IsCTVRequest {
-		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
+		winningAdpodBidIds, errs = adpod.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
