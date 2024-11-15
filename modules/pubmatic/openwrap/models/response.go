@@ -28,6 +28,7 @@ type BidExt struct {
 	Nbr               *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
 	Fsc               int                   `json:"fsc,omitempty"`
 	AdPod             *AdpodBidExt          `json:"adpod,omitempty"`
+	InBannerVideo     bool                  `json:"ibv,omitempty"`
 }
 
 type AdpodBidExt struct {

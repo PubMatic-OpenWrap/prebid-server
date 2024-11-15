@@ -298,6 +298,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordFailedParsingItuneID(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordFailedParsingItuneID", reflect.TypeOf((*MockMetricsEngine)(nil).RecordFailedParsingItuneID), arg0, arg1)
 }
 
+// RecordIBVRequest mocks base method
+func (m *MockMetricsEngine) RecordIBVRequest(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordIBVRequest", arg0, arg1)
+}
+
+// RecordIBVRequest indicates an expected call of RecordIBVRequest
+func (mr *MockMetricsEngineMockRecorder) RecordIBVRequest(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIBVRequest", reflect.TypeOf((*MockMetricsEngine)(nil).RecordIBVRequest), arg0, arg1)
+}
+
 // RecordGetProfileDataTime mocks base method
 func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()

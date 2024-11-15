@@ -96,6 +96,9 @@ type Metrics struct {
 	//ApplovinMax
 	failedParsingItuneId *prometheus.CounterVec
 	endpointResponseSize *prometheus.HistogramVec
+
+	//IBV request
+	ibvRequests *prometheus.CounterVec
 }
 
 const (
@@ -378,6 +381,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		responseSizeBuckets,
 	)
 
+	metrics.ibvRequests = newCounter(cfg, promRegistry,
+		"ibv_requests",
+		"Count of in-banner video requests",
+		[]string{pubIDLabel, profileIDLabel})
+
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics
@@ -610,12 +618,20 @@ func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
 	}).Inc()
 }
 
-func (m *Metrics) RecordFailedParsingItuneID(pubId, profId string) {
+// RecordFailedParsingItuneID to record failed parsing itune id
+func (m *Metrics) RecordFailedParsingItuneID(pubid, profileid string) {
 	m.failedParsingItuneId.With(prometheus.Labels{
-		pubIDLabel:     pubId,
-		profileIDLabel: profId,
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
 	}).Inc()
+}
 
+// RecordIBVRequest to record IBV request
+func (m *Metrics) RecordIBVRequest(pubid, profileid string) {
+	m.ibvRequests.With(prometheus.Labels{
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
+	}).Inc()
 }
 
 // TODO - really need ?

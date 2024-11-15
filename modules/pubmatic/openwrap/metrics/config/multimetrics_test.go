@@ -221,6 +221,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	mockEngine.EXPECT().RecordAmpVideoRequests("pubid", "profileid")
 	mockEngine.EXPECT().RecordAmpVideoResponses("pubid", "profileid")
+	mockEngine.EXPECT().RecordIBVRequest("pubid", "profileid")
 
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
@@ -288,4 +289,5 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	multiMetricEngine.RecordAmpVideoRequests("pubid", "profileid")
 	multiMetricEngine.RecordAmpVideoResponses("pubid", "profileid")
+	multiMetricEngine.RecordIBVRequest("pubid", "profileid")
 }

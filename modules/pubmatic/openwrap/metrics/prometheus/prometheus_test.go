@@ -312,6 +312,20 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
+func TestRecordIBVRequest(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordIBVRequest("5890", "59201")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "ibv_requests", m.ibvRequests,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:     "5890",
+			profileIDLabel: "59201",
+		})
+}
+
 func TestRecordSignalDataStatus(t *testing.T) {
 	m := createMetricsForTesting()
 

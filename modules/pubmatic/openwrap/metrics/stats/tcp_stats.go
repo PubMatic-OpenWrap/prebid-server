@@ -349,3 +349,4 @@ func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName
 }
 func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)              {}
 func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64) {}
+func (st *StatsTCP) RecordIBVRequest(pubId, profId string)                        {}
