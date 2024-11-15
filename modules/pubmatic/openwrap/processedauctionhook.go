@@ -60,6 +60,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 					if impCtx.AdpodConfig != nil {
 						podId = imp.ID
 					}
+					impCtx.AdPod = true
 					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, imp, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
 					// case models.Structured:
 					// 	if _, ok := rctx.AdpodCtx[imp.Video.PodID]; !ok {
@@ -67,6 +68,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 					// 	}
 				}
 			}
+			rctx.ImpBidCtx[imp.ID] = impCtx
 		}
 	}
 

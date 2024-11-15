@@ -194,6 +194,7 @@ type ImpCtx struct {
 	BidIDToAPRC    map[string]int64
 	AdserverURL    string
 	BidIDToDur     map[string]int64
+	AdPod          bool
 }
 
 type PartnerData struct {

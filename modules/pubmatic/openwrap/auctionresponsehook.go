@@ -75,7 +75,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	var winningAdpodBidIds map[string][]string
 	var errs []error
-	if rctx.IsCTVRequest {
+	if rctx.IsCTVRequest && len(rctx.AdpodCtx) > 0 {
 		winningAdpodBidIds, errs = adpod.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
 		if len(errs) > 0 {
 			for i := range errs {
@@ -230,7 +230,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				wbids          []*models.OwBid
 				oldWinBidFound bool
 			)
-			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
+			if rctx.IsCTVRequest && impCtx.AdPod {
 				if CheckWinningBidId(bid.ID, winningAdpodBidIds[impId]) {
 					winningBids.AppendBid(impId, &owbid)
 				}
@@ -252,7 +252,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				bidExt.Nbr = owbid.Nbr
 			}
 
-			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
+			if rctx.IsCTVRequest && impCtx.AdPod {
 				bidExt.Nbr = auction.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
 			} else {
 				// if current bid is winner then update NonBr code for earlier winning bid

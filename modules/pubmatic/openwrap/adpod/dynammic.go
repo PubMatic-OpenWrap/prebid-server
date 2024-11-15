@@ -49,15 +49,15 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 			MaxAds:                      int(video.MaxSeq),
 			MinDuration:                 int(video.MinDuration),
 			MaxDuration:                 int(video.MaxDuration),
-			AdvertiserExclusionPercent:  ptrutil.ToPtr(0),
-			IABCategoryExclusionPercent: ptrutil.ToPtr(0),
+			AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
+			IABCategoryExclusionPercent: ptrutil.ToPtr(100),
 		}
-		if exclusion.AdvertiserDomainExclusion {
-			adpodCfg.AdvertiserExclusionPercent = ptrutil.ToPtr(100)
-		}
-		if exclusion.IABCategoryExclusion {
-			adpodCfg.IABCategoryExclusionPercent = ptrutil.ToPtr(100)
-		}
+		// if exclusion.AdvertiserDomainExclusion {
+		// 	adpodCfg.AdvertiserExclusionPercent = ptrutil.ToPtr(100)
+		// }
+		// if exclusion.IABCategoryExclusion {
+		// 	adpodCfg.IABCategoryExclusionPercent = ptrutil.ToPtr(100)
+		// }
 	} else {
 		maxPodDuration = video.MaxDuration
 		adpodCfg = impCtx.AdpodConfig
