@@ -3,7 +3,6 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -1815,7 +1814,6 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 					result, err := mut.Apply(tt.args.payload)
 					gotBidResponse, _ := json.Marshal(result.BidResponse)
 					assert.Nil(t, err, tt.name)
-					fmt.Println(string(gotBidResponse))
 					assert.Equal(t, string(tt.want.bidResponse), string(gotBidResponse), tt.name)
 				}
 				return
