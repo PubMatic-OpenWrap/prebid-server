@@ -645,7 +645,9 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		targets := getTargetingKeys(sb.Ext, string(externalRequest.BidderName))
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-			bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+
+			//single bidresp => update, requestdata -> bid.ext.mbmf.floor, trim impid
+			bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
 
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
@@ -880,4 +882,39 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
+	bidExtMap := getMapFromJSON(bidExt)
+	reqBodyMap := getMapFromJSON(reqBody)
+
+	if bidExtMap == nil {
+		bidExtMap = make(map[string]interface{})
+	}
+
+	if reqBodyMap == nil {
+		return bidExt
+	}
+
+	if imp, ok := reqBodyMap["imp"]; ok {
+		impMap := imp.([]interface{})
+		for _, impObj := range impMap {
+			impObjMap := impObj.(map[string]interface{})
+			if reqImpID, ok := impObjMap["id"]; ok && re.MatchString(reqImpID.(string)) {
+				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
+					floorValue := floor.(float64)
+					if floorValue > 0 {
+						bidExtMap["mbmf"] = append(bidExtMap["mbmf"].([]interface{}), floorValue)
+					}
+					trimSuffixWithPattern(reqImpID.(string))
+				}
+			}
+		}
+	}
+
+	bidExt, err := json.Marshal(bidExtMap)
+	if err != nil {
+		return bidExt
+	}
+	return bidExt
 }

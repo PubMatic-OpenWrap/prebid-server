@@ -178,6 +178,41 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	return defaultBids
 }
 
+func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
+	defaultBids := rctx.DefaultBids
+	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+		return defaultBids
+	}
+	seatBidsMultiFloor := make(map[string]int, len(bidResponse.SeatBid))
+	for _, seatBid := range bidResponse.SeatBid {
+		if seatBid.Seat == models.BidderPubMatic || seatBid.Seat == models.BidderPubMaticSecondaryAlias {
+			for _, bid := range seatBid.Bid {
+				impId, _ := models.GetImpressionID(bid.ImpID)
+				seatBidsMultiFloor[impId]++
+			}
+		}
+	}
+
+	for impID, impCtx := range rctx.ImpBidCtx {
+		count := len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID]
+		if _, ok := defaultBids[impID][models.BidderPubMatic]; ok {
+			count = count - len(defaultBids[impID][models.BidderPubMatic])
+		}
+		for i := 0; i < count; i++ {
+			uuid, _ := m.uuidGenerator.Generate()
+			bidExt := newDefaultBidExt(*rctx, impID, models.BidderPubMatic, bidResponseExt)
+			bidExtJson, _ := json.Marshal(bidExt)
+
+			defaultBids[impID][models.BidderPubMatic] = append(defaultBids[impID][models.BidderPubMatic], openrtb2.Bid{
+				ID:    uuid,
+				ImpID: impID,
+				Ext:   bidExtJson,
+			})
+		}
+	}
+	return defaultBids
+}
+
 // getNonBRCodeFromBidRespExt maps the error-code present in prebid partner response with standard nonBR code
 func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *openrtb3.NoBidReason {
 	errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]

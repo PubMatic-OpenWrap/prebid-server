@@ -11,23 +11,24 @@ import (
 type BidExt struct {
 	openrtb_ext.ExtBid
 
-	ErrorCode         int                   `json:"errorCode,omitempty"`
-	ErrorMsg          string                `json:"errorMessage,omitempty"`
-	RefreshInterval   int                   `json:"refreshInterval,omitempty"`
-	CreativeType      string                `json:"crtype,omitempty"`
-	Summary           []Summary             `json:"summary,omitempty"`
-	SKAdnetwork       json.RawMessage       `json:"skadn,omitempty"`
-	Video             *ExtBidVideo          `json:"video,omitempty"`
-	Banner            *ExtBidBanner         `json:"banner,omitempty"`
-	DspId             int                   `json:"dspid,omitempty"`
-	Winner            int                   `json:"winner,omitempty"`
-	NetECPM           float64               `json:"netecpm,omitempty"`
-	OriginalBidCPM    float64               `json:"origbidcpm,omitempty"`
-	OriginalBidCur    string                `json:"origbidcur,omitempty"`
-	OriginalBidCPMUSD float64               `json:"origbidcpmusd,omitempty"`
-	Nbr               *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
-	Fsc               int                   `json:"fsc,omitempty"`
-	AdPod             *AdpodBidExt          `json:"adpod,omitempty"`
+	ErrorCode          int                   `json:"errorCode,omitempty"`
+	ErrorMsg           string                `json:"errorMessage,omitempty"`
+	RefreshInterval    int                   `json:"refreshInterval,omitempty"`
+	CreativeType       string                `json:"crtype,omitempty"`
+	Summary            []Summary             `json:"summary,omitempty"`
+	SKAdnetwork        json.RawMessage       `json:"skadn,omitempty"`
+	Video              *ExtBidVideo          `json:"video,omitempty"`
+	Banner             *ExtBidBanner         `json:"banner,omitempty"`
+	DspId              int                   `json:"dspid,omitempty"`
+	Winner             int                   `json:"winner,omitempty"`
+	NetECPM            float64               `json:"netecpm,omitempty"`
+	OriginalBidCPM     float64               `json:"origbidcpm,omitempty"`
+	OriginalBidCur     string                `json:"origbidcur,omitempty"`
+	OriginalBidCPMUSD  float64               `json:"origbidcpmusd,omitempty"`
+	Nbr                *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
+	Fsc                int                   `json:"fsc,omitempty"`
+	AdPod              *AdpodBidExt          `json:"adpod,omitempty"`
+	MultiBidMultiFloor float64               `json:"mbmf,omitempty"`
 }
 
 type AdpodBidExt struct {

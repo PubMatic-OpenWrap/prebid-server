@@ -102,3 +102,7 @@ func renameTransparencyParamsKey(bidExt []byte) []byte {
 
 	return bidExt
 }
+
+func addFloorInBidExt(bidExt []byte, requestBody []byte) []byte {
+	return bidExt
+}
