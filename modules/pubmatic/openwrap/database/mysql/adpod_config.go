@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
 	versionID, displayVersion, _, _, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
@@ -21,7 +22,7 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 
 	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, versionID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("GetAdpodConfigQuery Failure Error")
 	}
 	defer rows.Close()
 
@@ -48,12 +49,12 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 		}
 
 		if err != nil {
-			return nil, err
+			return nil, errors.New("Unmarshal Error")
 		}
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, errors.New("Row scan Failure Error")
 	}
 
 	return config, nil

@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -15,7 +16,7 @@ import (
 func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayVersion int) (map[int]map[string]string, error) {
 	versionID, displayVersionID, platform, profileType, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error")
 	}
 
 	partnerConfigMap, err := db.getActivePartnerConfigurations(profileID, versionID)
