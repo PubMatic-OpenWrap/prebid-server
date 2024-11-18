@@ -28,7 +28,7 @@ type BidExt struct {
 	Nbr                *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
 	Fsc                int                   `json:"fsc,omitempty"`
 	AdPod              *AdpodBidExt          `json:"adpod,omitempty"`
-	MultiBidMultiFloor float64               `json:"mbmf,omitempty"`
+	MultiBidMultiFloor float64               `json:"mbmfv,omitempty"`
 }
 
 type AdpodBidExt struct {

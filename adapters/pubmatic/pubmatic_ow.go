@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	dsaKey          = "dsa"
-	transparencyKey = "transparency"
+	dsaKey                = "dsa"
+	transparencyKey       = "transparency"
+	multiBidMultiFloorKey = "mbmfv"
 )
 
 var (
@@ -116,12 +117,7 @@ func trimSuffixWithPattern(input string) string {
 }
 
 func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
-	bidExtMap := getMapFromJSON(bidExt)
 	reqBodyMap := getMapFromJSON(reqBody)
-
-	if bidExtMap == nil {
-		bidExtMap = make(map[string]interface{})
-	}
 
 	if reqBodyMap == nil {
 		return bidExt
@@ -135,16 +131,11 @@ func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte 
 				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
 					floorValue := floor.(float64)
 					if floorValue > 0 {
-						bidExtMap["mbmf"] = append(bidExtMap["mbmf"].([]interface{}), floorValue)
+						bidExt, _ = jsonparser.Set(bidExt, []byte(fmt.Sprintf("%f", floorValue)), multiBidMultiFloorKey)
 					}
 				}
 			}
 		}
-	}
-
-	bidExt, err := json.Marshal(bidExtMap)
-	if err != nil {
-		return bidExt
 	}
 	return bidExt
 }
