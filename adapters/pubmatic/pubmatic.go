@@ -641,10 +641,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
 
-			//single bidresp => update, requestdata -> bid.ext.mbmf.floor, trim impid
+			//single bidresp => update, requestdata -> bid.ext.mbmfv.floor, trim impid
 			if re.MatchString(bid.ImpID) {
 				bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
-				trimSuffixWithPattern(bid.ImpID)
+				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
 			}
 
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
