@@ -41,7 +41,8 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 	)
 	exclusion := getExclusionConfigs(podId, requestAdPodExt)
 	video := impCtx.Video
-
+	newProfileConfig := new(models.AdpodProfileConfig)
+	*newProfileConfig = *profileConfigs
 	if video.PodDur > 0 {
 		maxPodDuration = video.PodDur
 		adpodCfg = &models.AdPod{
@@ -51,6 +52,25 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 			MaxDuration:                 int(video.MaxDuration),
 			AdvertiserExclusionPercent:  ptrutil.ToPtr(100),
 			IABCategoryExclusionPercent: ptrutil.ToPtr(100),
+		}
+
+		if len(video.RqdDurs) > 0 {
+			durs := make([]int, 0)
+			minDur := video.RqdDurs[0]
+			maxDur := video.RqdDurs[0]
+			for _, dur := range video.RqdDurs {
+				if dur < minDur {
+					minDur = dur
+				}
+				if dur > maxDur {
+					maxDur = dur
+				}
+				durs = append(durs, int(dur))
+			}
+			adpodCfg.MinDuration = int(minDur)
+			adpodCfg.MaxDuration = int(maxDur)
+			newProfileConfig.AdserverCreativeDurationMatchingPolicy = openrtb_ext.OWExactVideoAdDurationMatching
+			newProfileConfig.AdserverCreativeDurations = durs
 		}
 		// if exclusion.AdvertiserDomainExclusion {
 		// 	adpodCfg.AdvertiserExclusionPercent = ptrutil.ToPtr(100)
@@ -69,7 +89,7 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 		AdpodCtx: models.AdpodCtx{
 			PodId:          podId,
 			Type:           models.Dynamic,
-			ProfileConfigs: profileConfigs,
+			ProfileConfigs: newProfileConfig,
 			Exclusion:      exclusion,
 		},
 		AdpodConfig: adpodCfg,
