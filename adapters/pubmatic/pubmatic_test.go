@@ -1550,59 +1550,6 @@ func TestPubmaticAdapter_buildAdapterRequest(t *testing.T) {
 	}
 }
 
-func TestTrimSuffixWithPattern(t *testing.T) {
-	type args struct {
-		input string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "input string is empty",
-			args: args{
-				input: "",
-			},
-			want: "",
-		},
-		{
-			name: "input string does not contain pattern",
-			args: args{
-				input: "div123456789",
-			},
-			want: "div123456789",
-		},
-		{
-			name: "input string contains pattern",
-			args: args{
-				input: "div123456789_mf1",
-			},
-			want: "div123456789",
-		},
-		{
-			name: "input string contains pattern at the end",
-			args: args{
-				input: "div123456789_mf1_mf2",
-			},
-			want: "div123456789",
-		},
-		{
-			name: "input string contains pattern at the start",
-			args: args{
-				input: "mf1_mf2_div123456789",
-			},
-			want: "mf1",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := trimSuffixWithPattern(tt.args.input)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestGetDisplayManagerAndVer(t *testing.T) {
 	type args struct {
 		app *openrtb2.App

@@ -377,6 +377,12 @@ func GetBidLevelFloorsDetails(bidExt BidExt, impCtx ImpCtx,
 	var floorCurrency string
 	frv = NotSet
 
+	//Set the fv from bid.ext.mbmf if it is set
+	if bidExt.MultiBidMultiFloor > 0 {
+		fv = bidExt.MultiBidMultiFloor
+		return
+	}
+
 	if bidExt.Prebid != nil && bidExt.Prebid.Floors != nil {
 		floorCurrency = bidExt.Prebid.Floors.FloorCurrency
 		fv = RoundToTwoDigit(bidExt.Prebid.Floors.FloorValue)
@@ -403,11 +409,6 @@ func GetBidLevelFloorsDetails(bidExt BidExt, impCtx ImpCtx,
 
 	if frv == NotSet {
 		frv = 0 // set it back to 0
-	}
-
-	//Set the fv from bid.ext.mbmf if it is set
-	if bidExt.MultiBidMultiFloor > 0 {
-		fv = bidExt.MultiBidMultiFloor
 	}
 
 	return

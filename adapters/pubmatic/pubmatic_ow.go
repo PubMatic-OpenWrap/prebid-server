@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/buger/jsonparser"
@@ -19,6 +20,13 @@ const (
 var (
 	paramKey    = []byte(`"params"`)
 	dsaParamKey = []byte(`"dsaparams"`)
+)
+
+var re = regexp.MustCompile(appLovinMaxImpressionPattern)
+
+const (
+	multiFloors                  = "_mf"
+	appLovinMaxImpressionPattern = "_mf.*"
 )
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
@@ -103,6 +111,40 @@ func renameTransparencyParamsKey(bidExt []byte) []byte {
 	return bidExt
 }
 
-func addFloorInBidExt(bidExt []byte, requestBody []byte) []byte {
+func trimSuffixWithPattern(input string) string {
+	return re.ReplaceAllString(input, "")
+}
+
+func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
+	bidExtMap := getMapFromJSON(bidExt)
+	reqBodyMap := getMapFromJSON(reqBody)
+
+	if bidExtMap == nil {
+		bidExtMap = make(map[string]interface{})
+	}
+
+	if reqBodyMap == nil {
+		return bidExt
+	}
+
+	if imp, ok := reqBodyMap["imp"]; ok {
+		impMap := imp.([]interface{})
+		for _, impObj := range impMap {
+			impObjMap := impObj.(map[string]interface{})
+			if reqImpID, ok := impObjMap["id"]; ok {
+				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
+					floorValue := floor.(float64)
+					if floorValue > 0 {
+						bidExtMap["mbmf"] = append(bidExtMap["mbmf"].([]interface{}), floorValue)
+					}
+				}
+			}
+		}
+	}
+
+	bidExt, err := json.Marshal(bidExtMap)
+	if err != nil {
+		return bidExt
+	}
 	return bidExt
 }

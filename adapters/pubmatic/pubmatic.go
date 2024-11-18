@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,22 +23,18 @@ import (
 const MAX_IMPRESSIONS_PUBMATIC = 30
 const MAX_MULTIFLOORS_PUBMATIC = 3
 
-var re = regexp.MustCompile(appLovinMaxImpressionPattern)
-
 const (
-	ae                           = "ae"
-	PUBMATIC                     = "[PUBMATIC]"
-	buyId                        = "buyid"
-	buyIdTargetingKey            = "hb_buyid_"
-	skAdnetworkKey               = "skadn"
-	rewardKey                    = "reward"
-	dctrKeywordName              = "dctr"
-	urlEncodedEqualChar          = "%3D"
-	AdServerKey                  = "adserver"
-	PBAdslotKey                  = "pbadslot"
-	bidViewability               = "bidViewability"
-	multiFloors                  = "_mf"
-	appLovinMaxImpressionPattern = "_mf.*"
+	ae                  = "ae"
+	PUBMATIC            = "[PUBMATIC]"
+	buyId               = "buyid"
+	buyIdTargetingKey   = "hb_buyid_"
+	skAdnetworkKey      = "skadn"
+	rewardKey           = "reward"
+	dctrKeywordName     = "dctr"
+	urlEncodedEqualChar = "%3D"
+	AdServerKey         = "adserver"
+	PBAdslotKey         = "pbadslot"
+	bidViewability      = "bidViewability"
 )
 
 type PubmaticAdapter struct {
@@ -647,7 +642,10 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			bid := sb.Bid[i]
 
 			//single bidresp => update, requestdata -> bid.ext.mbmf.floor, trim impid
-			bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
+			if re.MatchString(bid.ImpID) {
+				bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
+				trimSuffixWithPattern(bid.ImpID)
+			}
 
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
@@ -709,10 +707,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		}
 	}
 	return bidResponse, errs
-}
-
-func trimSuffixWithPattern(input string) string {
-	return re.ReplaceAllString(input, "")
 }
 
 func getNativeAdm(adm string) (string, error) {
@@ -882,39 +876,4 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 		}
 	}
 	return "", ""
-}
-
-func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
-	bidExtMap := getMapFromJSON(bidExt)
-	reqBodyMap := getMapFromJSON(reqBody)
-
-	if bidExtMap == nil {
-		bidExtMap = make(map[string]interface{})
-	}
-
-	if reqBodyMap == nil {
-		return bidExt
-	}
-
-	if imp, ok := reqBodyMap["imp"]; ok {
-		impMap := imp.([]interface{})
-		for _, impObj := range impMap {
-			impObjMap := impObj.(map[string]interface{})
-			if reqImpID, ok := impObjMap["id"]; ok && re.MatchString(reqImpID.(string)) {
-				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
-					floorValue := floor.(float64)
-					if floorValue > 0 {
-						bidExtMap["mbmf"] = append(bidExtMap["mbmf"].([]interface{}), floorValue)
-					}
-					trimSuffixWithPattern(reqImpID.(string))
-				}
-			}
-		}
-	}
-
-	bidExt, err := json.Marshal(bidExtMap)
-	if err != nil {
-		return bidExt
-	}
-	return bidExt
 }
