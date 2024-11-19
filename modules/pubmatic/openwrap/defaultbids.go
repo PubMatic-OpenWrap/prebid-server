@@ -199,8 +199,12 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	for impID, impCtx := range rctx.ImpBidCtx {
 		defaultBidsCount := len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID]
 
+		if defaultBids[impID] == nil {
+			defaultBids[impID] = make(map[string][]openrtb2.Bid)
+		}
+
 		//if defaultbid is already present for pubmatic, then reset it, as we are adding new defaultbids with MultiBidMultiFloor
-		if _, ok := defaultBids[impID][models.BidderPubMatic]; ok {
+		if _, ok := defaultBids[impID][models.BidderPubMatic]; ok && defaultBidsCount > 0 {
 			defaultBids[impID][models.BidderPubMatic] = make([]openrtb2.Bid, 0, defaultBidsCount)
 		}
 

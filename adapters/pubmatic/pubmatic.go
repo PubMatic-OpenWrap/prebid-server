@@ -259,44 +259,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	return requestData, errs
 }
 
-// buildMultiFloorRequests builds multiple requests for each floor value
-func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, impFloorsMap map[string][]float64, cookies []string) ([]*adapters.RequestData, []error) {
-	requestData := []*adapters.RequestData{}
-	errs := make([]error, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
-
-	for i := 0; i < MAX_MULTIFLOORS_PUBMATIC; i++ {
-		isFloorsUpdated := false
-		newImps := make([]openrtb2.Imp, len(request.Imp))
-		copy(newImps, request.Imp)
-		//TODO-AK: Remove the imp from the request if the floor is not present except for the first floor
-		for j := range newImps {
-			floors, ok := impFloorsMap[request.Imp[j].ID]
-			if !ok || len(floors) <= i {
-				continue
-			}
-			isFloorsUpdated = true
-			newImps[j].BidFloor = floors[i]
-			newImps[j].ID = fmt.Sprintf("%s"+multiFloors+"%d", newImps[j].ID, i+1)
-		}
-
-		if !isFloorsUpdated {
-			continue
-		}
-
-		newRequest := *request
-		newRequest.Imp = newImps
-
-		newRequestData, errData := a.buildAdapterRequest(&newRequest, cookies)
-		if errData != nil {
-			errs = append(errs, errData)
-		}
-		if len(newRequestData) > 0 {
-			requestData = append(requestData, newRequestData...)
-		}
-	}
-	return requestData, errs
-}
-
 // buildAdapterRequest builds the request for Pubmatic
 func (a *PubmaticAdapter) buildAdapterRequest(request *openrtb2.BidRequest, cookies []string) ([]*adapters.RequestData, error) {
 	reqJSON, err := json.Marshal(request)
