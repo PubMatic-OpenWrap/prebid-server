@@ -16,6 +16,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 const (
@@ -114,6 +115,19 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 		return "", nbr.EmptySeatBid.Ptr(), errors.New("empty bid response")
 	}
 
+	var reqExt openrtb_ext.ExtBidResponse
+	err := json.Unmarshal(bidResponse.Ext, &reqExt)
+	if err != nil {
+		nbr := openrtb3.NoBidReason(openrtb3.NoBidGeneralError)
+		return "", &nbr, errors.New("No Bid")
+	}
+
+	isAdpodResponse := false
+	if reqExt.Wrapper != nil && reqExt.Wrapper.IsPodRequest {
+		isAdpodResponse = true
+	}
+	reqExt.Wrapper = nil
+
 	bidArray := make([]openrtb2.Bid, 0)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -123,7 +137,7 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 		}
 	}
 
-	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
+	creative, _ := getAdPodBidCreativeAndPriceForVast(bidArray, isAdpodResponse)
 	if len(creative) == 0 {
 		nbr := openrtb3.NoBidReason(openrtb3.NoBidGeneralError)
 		return "", &nbr, errors.New("No Bid")
@@ -223,4 +237,65 @@ func addExtInfo(vastBytes []byte, responseExt json.RawMessage) []byte {
 		return []byte(adm)
 	}
 	return vastBytes
+}
+
+func getAdPodBidCreativeAndPriceForVast(bids []openrtb2.Bid, isAdpodRequest bool) (string, float64) {
+	if len(bids) == 0 {
+		return "", 0
+	}
+	if !isAdpodRequest {
+		return bids[0].AdM, bids[0].Price
+	}
+	var price float64
+	doc := etree.NewDocument()
+	vast := doc.CreateElement(VASTElement)
+	sequenceNumber := 1
+	var version float64 = 2.0
+
+	for _, bid := range bids {
+		price = price + bid.Price
+		var newAd *etree.Element
+
+		if strings.HasPrefix(bid.AdM, HTTPPrefix) {
+			newAd = etree.NewElement(VASTAdElement)
+			wrapper := newAd.CreateElement(VASTWrapperElement)
+			vastAdTagURI := wrapper.CreateElement(VASTAdTagURIElement)
+			vastAdTagURI.CreateCharData(bid.AdM)
+		} else {
+			adDoc := etree.NewDocument()
+			if err := adDoc.ReadFromString(bid.AdM); err != nil {
+				continue
+			}
+
+			vastTag := adDoc.SelectElement(VASTElement)
+
+			//Get Actual VAST Version
+			bidVASTVersion, _ := strconv.ParseFloat(vastTag.SelectAttrValue(VASTVersionAttribute, VASTDefaultVersionStr), 64)
+			version = math.Max(version, bidVASTVersion)
+
+			ads := vastTag.SelectElements(VASTAdElement)
+			if len(ads) > 0 {
+				newAd = ads[0].Copy()
+			}
+		}
+
+		if newAd != nil {
+			//creative.AdId attribute needs to be updated
+			newAd.CreateAttr(VASTSequenceAttribute, fmt.Sprint(sequenceNumber))
+			vast.AddChild(newAd)
+			sequenceNumber++
+		}
+	}
+
+	if int(version) > len(VASTVersionsStr) {
+		version = VASTMaxVersion
+	}
+
+	vast.CreateAttr(VASTVersionAttribute, VASTVersionsStr[int(version)])
+	bidAdM, err := doc.WriteToString()
+	if err != nil {
+		glog.Error("Error while creating vast:", err)
+		return "", price
+	}
+	return bidAdM, price
 }

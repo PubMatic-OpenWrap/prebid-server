@@ -314,6 +314,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointVAST {
+		if len(rctx.AdpodCtx) > 0 {
+			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
+				IsPodRequest: true,
+			}
+		}
+	}
+
 	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
 		if len(rctx.RedirectURL) > 0 {
 			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
