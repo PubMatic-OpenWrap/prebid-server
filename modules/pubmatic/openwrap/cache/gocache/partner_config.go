@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -68,6 +69,10 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
+			glog.Errorf("No rows found for partner config query for pubID %d, profileID %d: %v", pubID, profileID, err)
+		}
 		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		glog.Errorf(models.ErrDBQueryFailed, models.PartnerConfigQuery, pubID, profileID, err)
 		return err
