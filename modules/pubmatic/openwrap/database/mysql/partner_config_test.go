@@ -46,7 +46,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			},
 
 			want:    nil,
-			wantErr: errors.New("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error"),
+			wantErr: errors.New("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error: sql: Scan error on column index 0, name \"versionID\": converting driver.Value type string (\"25_1\") to a int: invalid syntax"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -75,7 +75,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				displayVersion: 0,
 			},
 			want:    nil,
-			wantErr: errors.New("all expectations were already fulfilled, call to Query '%!(EXTRA int=1000, int=251, int=19109, int=251, int=251)' with args [] was not expected"),
+			wantErr: errors.New("GetParterConfigQuery Failure Error: all expectations were already fulfilled, call to Query '%!(EXTRA int=1000, int=251, int=19109, int=251, int=251)' with args [] was not expected"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -276,8 +276,7 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 			}
 			gotPartnerConfigMap, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
 			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				t.Errorf("mySqlDB.GetActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
-				return
+				assert.ErrorIs(t, tt.wantErr, err)
 			}
 			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
