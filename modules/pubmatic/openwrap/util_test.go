@@ -1925,3 +1925,86 @@ func TestUpdateUserExtWithValidValues(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateImpProtocols(t *testing.T) {
+	tests := []struct {
+		name         string
+		impProtocols []adcom1.MediaCreativeSubtype
+		want         []adcom1.MediaCreativeSubtype
+	}{
+		{
+			name:         "Empty_Protocols",
+			impProtocols: []adcom1.MediaCreativeSubtype{},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "VAST20_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST20,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST20,
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "VAST30_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "All_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "Additional Protocols Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+				adcom1.CreativeVAST20,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+				adcom1.CreativeVAST20,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := UpdateImpProtocols(tt.impProtocols)
+			assert.ElementsMatch(t, tt.want, got)
+		})
+	}
+}

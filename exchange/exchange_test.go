@@ -996,6 +996,163 @@ func TestFloorsSignalling(t *testing.T) {
 	}
 
 }
+func TestFilterBidsByVastVersions(t *testing.T) {
+	mockCurrencyClient := &currency.MockCurrencyRatesHttpClient{
+		ResponseBody: `{"dataAsOf":"2023-04-10","conversions":{"USD":{"MXN":10.00}}}`,
+	}
+
+	currencyConverter := currency.NewRateConverter(
+		mockCurrencyClient,
+		"currency.com",
+		24*time.Hour,
+	)
+	currencyConverter.Run()
+	noBidServer := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }
+	server := httptest.NewServer(http.HandlerFunc(noBidServer))
+	defer server.Close()
+
+	// Initialize Real Exchange
+	e := exchange{
+		cache: &wellBehavedCache{},
+		me:    &metricsConf.NilMetricsEngine{},
+		gdprPermsBuilder: fakePermissionsBuilder{
+			permissions: &permissionsMock{
+				allowAllBidders: true,
+			},
+		}.Builder,
+		currencyConverter: currencyConverter,
+		categoriesFetcher: nilCategoryFetcher{},
+		bidIDGenerator:    &fakeBidIDGenerator{GenerateBidID: false, ReturnError: false},
+		priceFloorFetcher: &mockPriceFloorFetcher{},
+	}
+	e.requestSplitter = requestSplitter{
+		me:               e.me,
+		gdprPermsBuilder: e.gdprPermsBuilder,
+	}
+
+	type testResults struct {
+		bidFloor    float64
+		bidFloorCur string
+		errMessage  string
+		errCode     int
+		resolvedReq string
+		err         error
+	}
+
+	testCases := []struct {
+		desc       string
+		req        *openrtb_ext.RequestWrapper
+		bidderImpl *goodSingleBidder
+		expected   testResults
+	}{
+		{
+			desc: "requestext_has_strict_vast_mode_vast_version_3",
+			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				ID: "some-request-id",
+				Imp: []openrtb2.Imp{{
+					ID:          "some-impression-id",
+					BidFloor:    15,
+					BidFloorCur: "USD",
+					Ext:         json.RawMessage(`{"prebid":{"bidder":{"appnexus": {"placementId": 1}}}}`),
+				}},
+				Site: &openrtb2.Site{
+					Page:   "prebid.org",
+					Ext:    json.RawMessage(`{"amp":0}`),
+					Domain: "www.website.com",
+				},
+				Test: 1,
+				Cur:  []string{"USD"},
+				Ext:  json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			}},
+			bidderImpl: &goodSingleBidder{
+				httpRequest: &adapters.RequestData{
+					Method:  "POST",
+					Uri:     server.URL,
+					Body:    []byte(`{"key":"val"}`),
+					Headers: http.Header{},
+				},
+				bidResponse: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							BidType: openrtb_ext.BidTypeVideo,
+							Bid:     &openrtb2.Bid{ID: "some-bid-id", AdM: "<VAST version=\"3.0\"></VAST>"},
+						},
+					},
+				}},
+			expected: testResults{
+				bidFloorCur: "USD",
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strict_vast_mode":true}}}`,
+			},
+		},
+		{
+			desc: "requestext_has_strict_vast_mode_vast_version_2",
+			req: &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				ID: "some-request-id",
+				Imp: []openrtb2.Imp{{
+					ID:          "some-impression-id",
+					BidFloor:    15,
+					BidFloorCur: "USD",
+					Ext:         json.RawMessage(`{"prebid":{"bidder":{"appnexus": {"placementId": 1}}}}`),
+				}},
+				Site: &openrtb2.Site{
+					Page:   "prebid.org",
+					Ext:    json.RawMessage(`{"amp":0}`),
+					Domain: "www.website.com",
+				},
+				Test: 1,
+				Cur:  []string{"USD"},
+				Ext:  json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			}},
+			bidderImpl: &goodSingleBidder{
+				httpRequest: &adapters.RequestData{
+					Method:  "POST",
+					Uri:     server.URL,
+					Body:    []byte(`{"key":"val"}`),
+					Headers: http.Header{},
+				},
+				bidResponse: &adapters.BidderResponse{
+					Bids: []*adapters.TypedBid{
+						{
+							BidType: openrtb_ext.BidTypeVideo,
+							Bid:     &openrtb2.Bid{ID: "some-bid-id", AdM: "<VAST version=\"2.0\"></VAST>"},
+						},
+					},
+				}},
+			expected: testResults{
+				bidFloorCur: "USD",
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strict_vast_mode":true}}}`,
+				errMessage:  "appnexus Bid some-bid-id was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
+				errCode:     10014,
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		auctionRequest := &AuctionRequest{
+			BidRequestWrapper: test.req,
+			Account:           config.Account{DebugAllow: true},
+			UserSyncs:         &emptyUsersync{},
+			HookExecutor:      &hookexecution.EmptyHookExecutor{},
+			TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+		}
+
+		e.adapterMap = map[openrtb_ext.BidderName]AdaptedBidder{
+			openrtb_ext.BidderAppnexus: AdaptBidder(test.bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, nil, ""),
+		}
+		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
+		assert.Equal(t, test.expected.err, err, "Error")
+		actualExt := &openrtb_ext.ExtBidResponse{}
+		_ = jsonutil.UnmarshalValid(outBidResponse.Ext, actualExt)
+		if test.expected.errMessage != "" {
+			assert.Equal(t, actualExt.Warnings["prebid"][0].Message, test.expected.errMessage, "Warning Message")
+			assert.Equal(t, actualExt.Warnings["prebid"][0].Code, test.expected.errCode, "Warning Code")
+		}
+		actualResolvedRequest, _, _, _ := jsonparser.Get(outBidResponse.Ext, "debug", "resolvedrequest")
+		assert.JSONEq(t, test.expected.resolvedReq, string(actualResolvedRequest), "Resolved request is incorrect")
+
+	}
+
+}
 
 func TestReturnCreativeEndToEnd(t *testing.T) {
 	sampleAd := "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST ...></VAST>"

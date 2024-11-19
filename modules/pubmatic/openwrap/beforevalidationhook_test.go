@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"net/http"
 	"sort"
 	"testing"
@@ -1836,6 +1837,522 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 				},
 				Source: &openrtb2.Source{
 					TID: "testID",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Multi_Imp",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+						{
+							ID: "testImp2",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3, 6, 7, 8},
+						},
+					},
+					{
+						ID: "testImp2",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Empty_Protocols",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Protocols_Not_Present",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: "0",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
 				},
 			},
 			wantErr: false,
