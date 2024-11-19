@@ -118,11 +118,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
-			if rctx.Endpoint == models.EndpointAppLovinMax && rctx.AppLovinMax.MultiFloorsConfig.Enabled && bidExt.MultiBidMultiFloor > 0 {
-				impCtx.BidFloor = bidExt.MultiBidMultiFloor
-				bidExt.MultiBidMultiFloor = 0
-			}
-
 			if rctx.IsCTVRequest {
 				if dur, ok := impCtx.BidIDToDur[bid.ID]; ok {
 					bidExt.Prebid.Video.Duration = int(dur)

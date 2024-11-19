@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	dsaKey                = "dsa"
-	transparencyKey       = "transparency"
-	multiBidMultiFloorKey = "mbmfv"
+	dsaKey                       = "dsa"
+	transparencyKey              = "transparency"
+	multiFloors                  = "_mf"
+	appLovinMaxImpressionPattern = "_mf.*"
+	multiBidMultiFloorKey        = "mbmfv"
 )
 
 var (
@@ -24,11 +26,6 @@ var (
 )
 
 var re = regexp.MustCompile(appLovinMaxImpressionPattern)
-
-const (
-	multiFloors                  = "_mf"
-	appLovinMaxImpressionPattern = "_mf.*"
-)
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
 	targets := map[string]string{}
@@ -118,6 +115,7 @@ func trimSuffixWithPattern(input string) string {
 
 func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
 	reqBodyMap := getMapFromJSON(reqBody)
+	var err error
 
 	if reqBodyMap == nil {
 		return bidExt
@@ -131,7 +129,9 @@ func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte 
 				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
 					floorValue := floor.(float64)
 					if floorValue > 0 {
-						bidExt, _ = jsonparser.Set(bidExt, []byte(fmt.Sprintf("%f", floorValue)), multiBidMultiFloorKey)
+						if bidExt, err = jsonparser.Set(bidExt, []byte(fmt.Sprintf("%f", floorValue)), multiBidMultiFloorKey); err != nil {
+							return bidExt
+						}
 					}
 				}
 			}

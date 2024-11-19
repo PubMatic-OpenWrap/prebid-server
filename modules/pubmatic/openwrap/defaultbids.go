@@ -180,9 +180,12 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 
 func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 	defaultBids := rctx.DefaultBids
+	//MultiBidMultiFloor is enabled only for AppLovinMax
 	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
 		return defaultBids
 	}
+
+	// count of pubmatic bids for each impression
 	seatBidsMultiFloor := make(map[string]int, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
 		if seatBid.Seat == models.BidderPubMatic || seatBid.Seat == models.BidderPubMaticSecondaryAlias {
@@ -194,13 +197,16 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-		count := len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID]
+		defaultBidsCount := len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID]
+
+		//if defaultbid is already present for pubmatic, then reset it, as we are adding new defaultbids with MultiBidMultiFloor
 		if _, ok := defaultBids[impID][models.BidderPubMatic]; ok {
-			defaultBids[impID][models.BidderPubMatic] = make([]openrtb2.Bid, 0, count)
+			defaultBids[impID][models.BidderPubMatic] = make([]openrtb2.Bid, 0, defaultBidsCount)
 		}
-		for i := 0; i < count; i++ {
+
+		for i := 0; i < defaultBidsCount; i++ {
 			uuid, _ := m.uuidGenerator.Generate()
-			bidExt := newDefaultBidExtMultiFloors(*rctx, impID, i)
+			bidExt := newDefaultBidExtMultiFloors(*rctx, impID, models.BidderPubMatic, i, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
 			defaultBids[impID][models.BidderPubMatic] = append(defaultBids[impID][models.BidderPubMatic], openrtb2.Bid{
@@ -258,10 +264,10 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 	return &bidExt
 }
 
-func newDefaultBidExtMultiFloors(rctx models.RequestCtx, impID string, index int) *models.BidExt {
+func newDefaultBidExtMultiFloors(rctx models.RequestCtx, impID, bidder string, index int, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
 	return &models.BidExt{
 		NetECPM:            0,
-		Nbr:                exchange.ErrorGeneral.Ptr(),
+		Nbr:                getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
 		MultiBidMultiFloor: rctx.AppLovinMax.MultiFloorsConfig.Config[rctx.ImpBidCtx[impID].TagID][index],
 	}
 }
