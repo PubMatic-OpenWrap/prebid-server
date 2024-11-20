@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -54,6 +55,10 @@ var (
 
 const (
 	test = "_test"
+)
+
+var (
+	protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper}
 )
 
 func init() {
@@ -549,19 +554,9 @@ func UpdateUserExtWithValidValues(user *openrtb2.User) {
 	}
 }
 
-func chechIfProtocolPresent(impProtocols []adcom1.MediaCreativeSubtype, protocol adcom1.MediaCreativeSubtype) bool {
-	for _, impProtocol := range impProtocols {
-		if impProtocol == protocol {
-			return true
-		}
-	}
-	return false
-}
-
 func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.MediaCreativeSubtype {
-	protocols := []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper}
 	for _, protocol := range protocols {
-		if !chechIfProtocolPresent(impProtocols, protocol) {
+		if !slices.Contains(impProtocols, protocol) {
 			impProtocols = append(impProtocols, protocol)
 		}
 	}

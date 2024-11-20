@@ -1926,7 +1926,7 @@ func TestUpdateUserExtWithValidValues(t *testing.T) {
 	}
 }
 
-func Test_UpdateImpProtocols(t *testing.T) {
+func TestUpdateImpProtocols(t *testing.T) {
 	tests := []struct {
 		name         string
 		impProtocols []adcom1.MediaCreativeSubtype
@@ -1983,7 +1983,7 @@ func Test_UpdateImpProtocols(t *testing.T) {
 			},
 		},
 		{
-			name: "Additional Protocols Present",
+			name: "Additional_Protocols_Present",
 			impProtocols: []adcom1.MediaCreativeSubtype{
 				adcom1.CreativeVAST30,
 				adcom1.CreativeVAST30Wrapper,

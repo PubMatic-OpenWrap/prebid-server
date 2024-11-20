@@ -397,9 +397,9 @@ func updateSeatNonBidsInvalidVastVersion(seatNonBids *openrtb_ext.NonBidCollecti
 	}
 }
 
-func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBid *openrtb_ext.NonBidCollection) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []error) {
+func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBid *openrtb_ext.NonBidCollection) []error {
 	errs := []error{}
-
+	rejectedBid := []*entities.PbsOrtbSeatBid{}
 	for _, seatBid := range adapterBids {
 		validBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
 		for _, pbsBid := range seatBid.Bids {
@@ -410,15 +410,16 @@ func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.Pb
 						Message:     fmt.Sprintf("%s Bid %s was filtered for Imp %s with Vast Version %s: Incompatible with GAM unwinding requirements", seatBid.Seat, pbsBid.Bid.ID, pbsBid.Bid.ImpID, vastVersion),
 						WarningCode: errortypes.InvalidVastVersionWarningCode,
 					})
-					updateSeatNonBidsInvalidVastVersion(seatNonBid, []*entities.PbsOrtbSeatBid{seatBid})
+					rejectedBid = append(rejectedBid, seatBid)
 					continue
 				}
 			}
+			updateSeatNonBidsInvalidVastVersion(seatNonBid, rejectedBid)
 			validBids = append(validBids, pbsBid)
 		}
 		seatBid.Bids = validBids
 	}
-	return adapterBids, errs
+	return errs
 }
 
 func validateVastVersion(adM string) (bool, string) {
@@ -430,6 +431,5 @@ func validateVastVersion(adM string) (bool, string) {
 	if err != nil {
 		return false, matches[1]
 	}
-	vastVersionInt := int(vastVersionFloat)
-	return validVastVersions[vastVersionInt], matches[1]
+	return validVastVersions[int(vastVersionFloat)], matches[1]
 }

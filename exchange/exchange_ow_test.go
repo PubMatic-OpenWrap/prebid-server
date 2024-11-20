@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1924,6 +1925,93 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 			errs: []error{},
 		},
 		{
+			name: "multiple_bids_valid_vast_version",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="3.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="4.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder1",
+					},
+					"bidder2": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="3.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="4.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder2",
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"bidder1": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid1",
+								AdM: `<VAST version="3.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid2",
+								AdM: `<VAST version="4.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+					Seat: "bidder1",
+				},
+				"bidder2": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid1",
+								AdM: `<VAST version="3.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid2",
+								AdM: `<VAST version="4.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+					Seat: "bidder2",
+				},
+			},
+			errs: []error{},
+		},
+		{
 			name: "invalid_vast_version",
 			args: args{
 				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
@@ -1951,6 +2039,162 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 			errs: []error{
 				&errortypes.Warning{
 					Message:     "bidder1 Bid bid1 was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+			},
+		},
+		{
+			name: "multiple_bids_invalid_vast_version",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="1.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder1",
+					},
+					"bidder2": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="2.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="1.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder2",
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"bidder1": {
+					Bids: []*entities.PbsOrtbBid{},
+					Seat: "bidder1",
+				},
+				"bidder2": {
+					Bids: []*entities.PbsOrtbBid{},
+					Seat: "bidder2",
+				},
+			},
+			errs: []error{
+				&errortypes.Warning{
+					Message:     "bidder1 Bid bid1 was filtered for Imp  with Vast Version 0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+				&errortypes.Warning{
+					Message:     "bidder1 Bid bid2 was filtered for Imp  with Vast Version 1.0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+				&errortypes.Warning{
+					Message:     "bidder2 Bid bid1 was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+				&errortypes.Warning{
+					Message:     "bidder2 Bid bid2 was filtered for Imp  with Vast Version 1.0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+			},
+		},
+		{
+			name: "multiple_bids_valid_invalid_vast_version",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="3.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="1.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder1",
+					},
+					"bidder2": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="2.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid2",
+									AdM: `<VAST version="4.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeVideo,
+							},
+						},
+						Seat: "bidder2",
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"bidder1": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid1",
+								AdM: `<VAST version="3.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+					Seat: "bidder1",
+				},
+				"bidder2": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid2",
+								AdM: `<VAST version="4.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeVideo,
+						},
+					},
+					Seat: "bidder2",
+				},
+			},
+			errs: []error{
+				&errortypes.Warning{
+					Message:     "bidder1 Bid bid2 was filtered for Imp  with Vast Version 1.0: Incompatible with GAM unwinding requirements",
+					WarningCode: errortypes.InvalidVastVersionWarningCode,
+				},
+				&errortypes.Warning{
+					Message:     "bidder2 Bid bid1 was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
 					WarningCode: errortypes.InvalidVastVersionWarningCode,
 				},
 			},
@@ -2061,9 +2305,151 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, errs := filterBidsByVastVersion(tt.args.adapterBids, tt.args.seatNonBid)
-			assert.Equal(t, tt.want, got)
-			assert.Equal(t, tt.errs, errs)
+			errs := filterBidsByVastVersion(tt.args.adapterBids, tt.args.seatNonBid)
+			assert.ElementsMatch(t, tt.want, tt.args.adapterBids)
+			assert.ElementsMatch(t, tt.errs, errs)
+		})
+	}
+}
+
+func TestValidateVastVersion(t *testing.T) {
+	tests := []struct {
+		name            string
+		adM             string
+		expectedValid   bool
+		expectedVersion string
+	}{
+		{
+			name:            "Valid VAST version 3",
+			adM:             `<VAST version="3.0"></VAST>`,
+			expectedValid:   true,
+			expectedVersion: "3.0",
+		},
+		{
+			name:            "Valid VAST version 4",
+			adM:             `<VAST version="4.0"></VAST>`,
+			expectedValid:   true,
+			expectedVersion: "4.0",
+		},
+		{
+			name:            "Invalid VAST version 2",
+			adM:             `<VAST version="2.0"></VAST>`,
+			expectedValid:   false,
+			expectedVersion: "2.0",
+		},
+		{
+			name:            "Invalid VAST version 5",
+			adM:             `<VAST version="5.0"></VAST>`,
+			expectedValid:   false,
+			expectedVersion: "5.0",
+		},
+		{
+			name:            "No VAST version",
+			adM:             `<VAST></VAST>`,
+			expectedValid:   false,
+			expectedVersion: "",
+		},
+		{
+			name:            "Malformed VAST tag",
+			adM:             `<VAST version="4.0"`,
+			expectedValid:   false,
+			expectedVersion: "",
+		},
+		{
+			name:            "Empty AdM",
+			adM:             ``,
+			expectedValid:   false,
+			expectedVersion: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			valid, version := validateVastVersion(tt.adM)
+			assert.Equal(t, tt.expectedValid, valid)
+			assert.Equal(t, tt.expectedVersion, version)
+		})
+	}
+}
+
+func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
+	tests := []struct {
+		name            string
+		rejectedBids    []*entities.PbsOrtbSeatBid
+		expectedNonBids openrtb_ext.NonBidCollection
+	}{
+		{
+			name: "single_rejected_bid",
+			rejectedBids: []*entities.PbsOrtbSeatBid{
+				{
+					Seat: "seat1",
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{ID: "bid1"},
+						},
+					},
+				},
+			},
+			expectedNonBids: getNonBids(
+				map[string][]openrtb_ext.NonBidParams{
+					"seat1": {
+						{
+							NonBidReason: int(nbr.LossBidLostInVastVersionValidation),
+							Bid: &openrtb2.Bid{
+								ID: "bid1",
+							},
+							BidMeta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "seat1"},
+						},
+					},
+				}),
+		},
+		{
+			name: "multiple_rejected_bids",
+			rejectedBids: []*entities.PbsOrtbSeatBid{
+				{
+					Seat: "seat1",
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{ID: "bid1"},
+						},
+						{
+							Bid: &openrtb2.Bid{ID: "bid2"},
+						},
+					},
+				},
+			},
+			expectedNonBids: getNonBids(
+				map[string][]openrtb_ext.NonBidParams{
+					"seat1": {
+						{
+							NonBidReason: int(nbr.LossBidLostInVastVersionValidation),
+							Bid: &openrtb2.Bid{
+								ID: "bid1",
+							},
+							BidMeta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "seat1"},
+						},
+						{
+							NonBidReason: int(nbr.LossBidLostInVastVersionValidation),
+							Bid: &openrtb2.Bid{
+								ID: "bid2",
+							},
+							BidMeta: &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "seat1"},
+						},
+					},
+				}),
+		},
+		{
+			name:            "no_rejected_bids",
+			rejectedBids:    []*entities.PbsOrtbSeatBid{},
+			expectedNonBids: openrtb_ext.NonBidCollection{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			seatNonBids := openrtb_ext.NonBidCollection{}
+			updateSeatNonBidsInvalidVastVersion(&seatNonBids, tt.rejectedBids)
+			assert.Equal(t, tt.expectedNonBids, seatNonBids)
 		})
 	}
 }

@@ -996,7 +996,7 @@ func TestFloorsSignalling(t *testing.T) {
 	}
 
 }
-func TestFilterBidsByVastVersions(t *testing.T) {
+func TestHoldAuction_FilterBidsByVastVersions(t *testing.T) {
 	mockCurrencyClient := &currency.MockCurrencyRatesHttpClient{
 		ResponseBody: `{"dataAsOf":"2023-04-10","conversions":{"USD":{"MXN":10.00}}}`,
 	}
@@ -1062,7 +1062,7 @@ func TestFilterBidsByVastVersions(t *testing.T) {
 				},
 				Test: 1,
 				Cur:  []string{"USD"},
-				Ext:  json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+				Ext:  json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
 			}},
 			bidderImpl: &goodSingleBidder{
 				httpRequest: &adapters.RequestData{
@@ -1081,7 +1081,7 @@ func TestFilterBidsByVastVersions(t *testing.T) {
 				}},
 			expected: testResults{
 				bidFloorCur: "USD",
-				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strict_vast_mode":true}}}`,
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strictvastmode":true}}}`,
 			},
 		},
 		{
@@ -1101,7 +1101,7 @@ func TestFilterBidsByVastVersions(t *testing.T) {
 				},
 				Test: 1,
 				Cur:  []string{"USD"},
-				Ext:  json.RawMessage(`{"prebid":{"strict_vast_mode":true}}`),
+				Ext:  json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
 			}},
 			bidderImpl: &goodSingleBidder{
 				httpRequest: &adapters.RequestData{
@@ -1120,7 +1120,7 @@ func TestFilterBidsByVastVersions(t *testing.T) {
 				}},
 			expected: testResults{
 				bidFloorCur: "USD",
-				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strict_vast_mode":true}}}`,
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"strictvastmode":true}}}`,
 				errMessage:  "appnexus Bid some-bid-id was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
 				errCode:     10014,
 			},
@@ -1143,15 +1143,14 @@ func TestFilterBidsByVastVersions(t *testing.T) {
 		assert.Equal(t, test.expected.err, err, "Error")
 		actualExt := &openrtb_ext.ExtBidResponse{}
 		_ = jsonutil.UnmarshalValid(outBidResponse.Ext, actualExt)
-		if test.expected.errMessage != "" {
+		if test.expected.errMessage != "" && actualExt.Warnings != nil {
+			assert.NotNil(t, actualExt.Warnings["prebid"], "prebid warning should be present")
 			assert.Equal(t, actualExt.Warnings["prebid"][0].Message, test.expected.errMessage, "Warning Message")
 			assert.Equal(t, actualExt.Warnings["prebid"][0].Code, test.expected.errCode, "Warning Code")
 		}
 		actualResolvedRequest, _, _, _ := jsonparser.Get(outBidResponse.Ext, "debug", "resolvedrequest")
 		assert.JSONEq(t, test.expected.resolvedReq, string(actualResolvedRequest), "Resolved request is incorrect")
-
 	}
-
 }
 
 func TestReturnCreativeEndToEnd(t *testing.T) {
