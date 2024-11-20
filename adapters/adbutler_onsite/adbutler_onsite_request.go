@@ -1,9 +1,7 @@
 package adbutler_onsite
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -217,14 +215,14 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	// Pretty-print the JSON request body for debugging
-	var prettyReqJSON bytes.Buffer
+	/*var prettyReqJSON bytes.Buffer
 	err = json.Indent(&prettyReqJSON, reqJSON, "", "  ")
 	if err != nil {
 		fmt.Println("Failed to parse JSON:", err)
 		return nil, []error{err}
 	}
 	fmt.Println("Request Body:")
-	fmt.Println(prettyReqJSON.String())
+	fmt.Println(prettyReqJSON.String())*/
 
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json")
@@ -237,6 +235,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}}, nil
 
 }
+
 
 
 

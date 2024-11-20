@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"bytes"
-
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -84,13 +82,13 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 	}
 
 	//Temporarily for Debugging
-	var prettyJSON bytes.Buffer
+	/*var prettyJSON bytes.Buffer
 	err := json.Indent(&prettyJSON, response.Body, "", "  ")
 	if err != nil {
 		fmt.Println("Failed to parse JSON:", err)
 		return nil, []error{err}
 	}
-	fmt.Println(prettyJSON.String())
+	fmt.Println(prettyJSON.String())*/
 
 	var adButlerResp AdButlerOnsiteResponse
 	if err := json.Unmarshal(response.Body, &adButlerResp); err != nil {
@@ -286,4 +284,5 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
 
