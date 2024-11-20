@@ -19,13 +19,13 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 		name    string
 		fields  fields
 		want    map[int]int
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("context deadline exceeded"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -45,7 +45,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 				},
 			},
 			want:    map[int]int{},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -70,7 +70,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 				5: 24,
 				8: 20,
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -95,7 +95,7 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 				},
 			},
 			want:    map[int]int(nil),
-			wantErr: true,
+			wantErr: errors.New("error in row scan"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -118,9 +118,10 @@ func Test_mySqlDB_GetFSCThresholdPerDSP(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetFSCThresholdPerDSP()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetFSCThresholdPerDSP() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})

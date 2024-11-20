@@ -20,7 +20,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 		name    string
 		fields  fields
 		want    map[string]int
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
@@ -31,7 +31,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("all expectations were already fulfilled, call to Query '' with args [] was not expected"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -53,7 +53,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 			want: map[string]int{
 				"test_sub_2": 2,
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -77,7 +77,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				},
 			},
 			want:    map[string]int{},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -99,7 +99,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				},
 			},
 			want:    map[string]int(nil),
-			wantErr: true,
+			wantErr: errors.New("error in row scan"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -121,9 +121,10 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetAppSubIntegrationPaths()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetAppSubIntegrationPaths() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got, tt.name)
 		})

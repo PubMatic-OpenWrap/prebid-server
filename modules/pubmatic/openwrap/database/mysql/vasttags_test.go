@@ -24,13 +24,13 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 		fields  fields
 		args    args
 		want    models.PublisherVASTTags
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("context deadline exceeded"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -56,7 +56,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 				102: {ID: 102, PartnerID: 502, URL: "vast_tag_url_2", Duration: 10, Price: 0.0},
 				103: {ID: 103, PartnerID: 501, URL: "vast_tag_url_1", Duration: 30, Price: 3.0},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -88,7 +88,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 				102: {ID: 102, PartnerID: 502, URL: "vast_tag_url_2", Duration: 10, Price: 0.0},
 				103: {ID: 103, PartnerID: 501, URL: "vast_tag_url_1", Duration: 30, Price: 3.0},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -116,7 +116,7 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 				pubID: 5890,
 			},
 			want:    models.PublisherVASTTags(nil),
-			wantErr: true,
+			wantErr: errors.New("error in row scan"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -139,9 +139,10 @@ func Test_mySqlDB_GetPublisherVASTTags(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetPublisherVASTTags(tt.args.pubID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetPublisherVASTTags() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})

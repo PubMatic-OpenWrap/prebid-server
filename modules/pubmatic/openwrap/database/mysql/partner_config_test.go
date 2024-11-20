@@ -275,8 +275,10 @@ func Test_mySqlDB_GetActivePartnerConfigurations(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			gotPartnerConfigMap, err := db.GetActivePartnerConfigurations(tt.args.pubID, tt.args.profileID, tt.args.displayVersion)
-			if err != nil && tt.wantErr != nil && err.Error() != tt.wantErr.Error() {
-				assert.ErrorIs(t, tt.wantErr, err)
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
@@ -296,13 +298,13 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 		fields  fields
 		args    args
 		want    map[int]map[string]string
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("context deadline exceeded"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -325,7 +327,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				versionID: 1,
 			},
 			want:    map[int]map[string]string{},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -369,7 +371,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"vendorId":          "76",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -417,7 +419,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"vendorId":          "100",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -472,7 +474,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"vendorId":          "100",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -525,7 +527,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"vendorId":          "100",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -577,7 +579,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 					"vendorId":          "100",
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -609,7 +611,7 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				versionID: 123,
 			},
 			want:    map[int]map[string]string(nil),
-			wantErr: true,
+			wantErr: errors.New("error in row scan"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -632,9 +634,10 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			gotPartnerConfigMap, err := db.getActivePartnerConfigurations(tt.args.profileID, tt.args.versionID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.getActivePartnerConfigurations() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, gotPartnerConfigMap)
 		})
@@ -658,7 +661,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 		expectedDisplayVersionIDFromDB int
 		expectedPlatform               string
 		expectedProfileType            int
-		wantErr                        bool
+		wantErr                        error
 		setup                          func() *sql.DB
 	}{
 		{
@@ -679,7 +682,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 0,
 			expectedPlatform:               "",
 			expectedProfileType:            0,
-			wantErr:                        true,
+			wantErr:                        errors.New("sql: Scan error on column index 0, name \"versionID\": converting driver.Value type string (\"25_1\") to a int: invalid syntax"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -711,7 +714,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 9,
 			expectedPlatform:               "in-app",
 			expectedProfileType:            1,
-			wantErr:                        false,
+			wantErr:                        nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -743,7 +746,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 9,
 			expectedPlatform:               "in-app",
 			expectedProfileType:            1,
-			wantErr:                        false,
+			wantErr:                        nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -774,7 +777,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 12,
 			expectedPlatform:               "",
 			expectedProfileType:            1,
-			wantErr:                        false,
+			wantErr:                        nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -803,7 +806,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 9,
 			expectedPlatform:               "",
 			expectedProfileType:            1,
-			wantErr:                        false,
+			wantErr:                        nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -832,7 +835,7 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 			expectedDisplayVersionIDFromDB: 9,
 			expectedPlatform:               "in-app",
 			expectedProfileType:            1,
-			wantErr:                        false,
+			wantErr:                        nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -851,9 +854,10 @@ func Test_mySqlDB_getVersionIdAndProfileDeatails(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			gotVersionID, gotDisplayVersionID, gotPlatform, gotProfileType, err := db.getVersionIdAndProfileDetails(tt.args.profileID, tt.args.displayVersion, tt.args.pubID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.getVersionID() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.expectedVersionID, gotVersionID)
 			assert.Equal(t, tt.expectedDisplayVersionIDFromDB, gotDisplayVersionID)

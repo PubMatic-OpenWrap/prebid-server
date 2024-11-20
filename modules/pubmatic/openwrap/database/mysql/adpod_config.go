@@ -17,12 +17,22 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 		return nil, fmt.Errorf("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error: %w", err)
 	}
 
+	config, err := db.getAdpodConfig(versionID)
+	if err != nil {
+		return nil, fmt.Errorf("GetAdpodConfigQuery Failure Error: %w", err)
+	}
+
+	return config, nil
+}
+
+func (db *mySqlDB) getAdpodConfig(versionID int) (*adpodconfig.AdpodConfig, error) {
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
 	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetAdpodConfig, versionID)
 	if err != nil {
-		return nil, fmt.Errorf("GetAdpodConfigQuery Failure Error: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -49,12 +59,12 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("Unmarshal Error: %w", err)
+			return nil, err
 		}
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("Row scan Failure Error: %w", err)
+		return nil, err
 	}
 
 	return config, nil

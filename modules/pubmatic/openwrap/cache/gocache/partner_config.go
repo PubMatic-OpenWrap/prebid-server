@@ -71,7 +71,6 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-			glog.Errorf("No rows found for partner config query for pubID %d, profileID %d: %v", pubID, profileID, err)
 		}
 		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		glog.Errorf(models.ErrDBQueryFailed, models.PartnerConfigQuery, pubID, profileID, err)

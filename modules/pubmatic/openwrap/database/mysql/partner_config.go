@@ -29,8 +29,10 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 			partnerConfigMap[-1][models.ProfileTypeKey] = strconv.Itoa(profileType)
 
 		}
+	} else {
+		return partnerConfigMap, fmt.Errorf("GetParterConfigQuery Failure Error: %w", err)
 	}
-	return partnerConfigMap, fmt.Errorf("GetParterConfigQuery Failure Error: %w", err)
+	return partnerConfigMap, err
 }
 
 func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map[int]map[string]string, error) {
