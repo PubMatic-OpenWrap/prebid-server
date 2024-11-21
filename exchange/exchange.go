@@ -428,7 +428,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 		if requestExtPrebid.StrictVastMode {
 			var validationErrs []error
-			validationErrs = filterBidsByVastVersion(adapterBids, seatNonBids)
+			validationErrs = filterBidsByVastVersion(adapterBids, &seatNonBid)
 			errs = append(errs, validationErrs...)
 		}
 
