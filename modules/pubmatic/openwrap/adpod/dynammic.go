@@ -42,7 +42,9 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 	exclusion := getExclusionConfigs(podId, requestAdPodExt)
 	video := impCtx.Video
 	newProfileConfig := new(models.AdpodProfileConfig)
-	*newProfileConfig = *profileConfigs
+	if profileConfigs != nil {
+		*newProfileConfig = *profileConfigs
+	}
 	if video.PodDur > 0 {
 		maxPodDuration = video.PodDur
 		adpodCfg = &models.AdPod{
