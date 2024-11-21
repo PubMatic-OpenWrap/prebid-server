@@ -410,7 +410,12 @@ func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.Pb
 						Message:     fmt.Sprintf("%s Bid %s was filtered for Imp %s with Vast Version %s: Incompatible with GAM unwinding requirements", seatBid.Seat, pbsBid.Bid.ID, pbsBid.Bid.ImpID, vastVersion),
 						WarningCode: errortypes.InvalidVastVersionWarningCode,
 					})
-					rejectedBid = append(rejectedBid, seatBid)
+					rejectedBid = append(rejectedBid, &entities.PbsOrtbSeatBid{
+						Seat:      seatBid.Seat,
+						Currency:  seatBid.Currency,
+						HttpCalls: seatBid.HttpCalls,
+						Bids:      []*entities.PbsOrtbBid{pbsBid},
+					})
 					continue
 				}
 			}

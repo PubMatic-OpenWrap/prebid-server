@@ -2306,10 +2306,20 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errs := filterBidsByVastVersion(tt.args.adapterBids, tt.args.seatNonBid)
-			assert.ElementsMatch(t, tt.want, tt.args.adapterBids)
+			want := mapToSlice(tt.want)
+			got := mapToSlice(tt.args.adapterBids)
+			assert.ElementsMatch(t, want, got)
 			assert.ElementsMatch(t, tt.errs, errs)
 		})
 	}
+}
+
+func mapToSlice(bidMap map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) []*entities.PbsOrtbSeatBid {
+	var result []*entities.PbsOrtbSeatBid
+	for _, bid := range bidMap {
+		result = append(result, bid)
+	}
+	return result
 }
 
 func TestValidateVastVersion(t *testing.T) {
