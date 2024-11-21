@@ -192,13 +192,17 @@ func (da *DynamicAdpod) CollectBid(bid *openrtb2.Bid, seat string) {
 		}
 	}
 
+	//get duration of creative
+	duration, status := getBidDuration(bid, da.ProfileConfigs, da.GeneratedSlotConfigs, da.GeneratedSlotConfigs[sequence-1].MaxDuration)
+	updatdExt, err := jsonparser.Set(bid.Ext, []byte(fmt.Sprintf("%d", duration)), "prebid", "video", "duration")
+	if err == nil {
+		bid.Ext = updatdExt
+	}
+
 	ext := openrtb_ext.ExtBid{}
 	if bid.Ext != nil {
 		json.Unmarshal(bid.Ext, &ext)
 	}
-
-	//get duration of creative
-	duration, status := getBidDuration(bid, da.ProfileConfigs, da.GeneratedSlotConfigs, da.GeneratedSlotConfigs[sequence-1].MaxDuration)
 
 	da.AdpodBid.Bids = append(da.AdpodBid.Bids, &models.Bid{
 		Bid:               bid,
