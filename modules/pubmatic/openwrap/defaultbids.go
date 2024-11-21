@@ -180,6 +180,9 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 
 func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 	defaultBids := rctx.DefaultBids
+	var excludeFloors []float64    //exclude floors which are already present in bidresponse
+	var adunitFloors []float64     //floors for each adunit
+	var defaultBidFloors []float64 //floors for default bids
 	//MultiBidMultiFloor is enabled only for AppLovinMax
 	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
 		return defaultBids
@@ -191,13 +194,23 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 		if seatBid.Seat == models.BidderPubMatic || seatBid.Seat == models.BidderPubMaticSecondaryAlias {
 			for _, bid := range seatBid.Bid {
 				impId, _ := models.GetImpressionID(bid.ImpID)
+				var bidExt models.BidExt
 				seatBidsMultiFloor[impId]++
+				if bid.Ext != nil {
+					if err := json.Unmarshal(bid.Ext, &bidExt); err == nil && bidExt.MultiBidMultiFloorValue != 0 {
+						excludeFloors = append(excludeFloors, bidExt.MultiBidMultiFloorValue)
+					}
+				}
 			}
 		}
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
 		defaultBidsCount := len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID]
+
+		if defaultBidsCount <= 0 {
+			continue
+		}
 
 		if defaultBids[impID] == nil {
 			defaultBids[impID] = make(map[string][]openrtb2.Bid)
@@ -208,9 +221,26 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 			defaultBids[impID][models.BidderPubMatic] = make([]openrtb2.Bid, 0, defaultBidsCount)
 		}
 
+		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[rctx.ImpBidCtx[impID].TagID]
+
+		//exclude floors which are already present in bidresponse for defaultbids
+		defaultBidFloors = nil
+		for _, floor := range adunitFloors {
+			exclude := false
+			for _, excludeFloor := range excludeFloors {
+				if floor == excludeFloor {
+					exclude = true
+					break
+				}
+			}
+			if !exclude {
+				defaultBidFloors = append(defaultBidFloors, floor)
+			}
+		}
+
 		for i := 0; i < defaultBidsCount; i++ {
 			uuid, _ := m.uuidGenerator.Generate()
-			bidExt := newDefaultBidExtMultiFloors(*rctx, impID, models.BidderPubMatic, i, bidResponseExt)
+			bidExt := newDefaultBidExtMultiFloors(defaultBidFloors[i], models.BidderPubMatic, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
 			defaultBids[impID][models.BidderPubMatic] = append(defaultBids[impID][models.BidderPubMatic], openrtb2.Bid{
@@ -268,11 +298,11 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 	return &bidExt
 }
 
-func newDefaultBidExtMultiFloors(rctx models.RequestCtx, impID, bidder string, index int, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
+func newDefaultBidExtMultiFloors(floor float64, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
 	return &models.BidExt{
-		NetECPM:            0,
-		Nbr:                getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
-		MultiBidMultiFloor: rctx.AppLovinMax.MultiFloorsConfig.Config[rctx.ImpBidCtx[impID].TagID][index],
+		NetECPM:                 0,
+		Nbr:                     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
+		MultiBidMultiFloorValue: floor,
 	}
 }
 

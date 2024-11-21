@@ -378,8 +378,8 @@ func GetBidLevelFloorsDetails(bidExt BidExt, impCtx ImpCtx,
 	frv = NotSet
 
 	//Set the fv from bid.ext.mbmf if it is set
-	if bidExt.MultiBidMultiFloor > 0 {
-		fv = bidExt.MultiBidMultiFloor
+	if bidExt.MultiBidMultiFloorValue > 0 {
+		fv = bidExt.MultiBidMultiFloorValue
 		return
 	}
 

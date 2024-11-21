@@ -18,7 +18,7 @@ const (
 	transparencyKey              = "transparency"
 	multiFloors                  = "_mf"
 	appLovinMaxImpressionPattern = "_mf.*"
-	multiBidMultiFloorKey        = "mbmfv"
+	multiBidMultiFloorValueKey   = "mbmfv"
 )
 
 var (
@@ -154,27 +154,45 @@ func trimSuffixWithPattern(input string) string {
 
 func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
 	reqBodyMap := getMapFromJSON(reqBody)
-	var err error
-
 	if reqBodyMap == nil {
 		return bidExt
 	}
 
-	if imp, ok := reqBodyMap["imp"]; ok {
-		impMap := imp.([]interface{})
-		for _, impObj := range impMap {
-			impObjMap := impObj.(map[string]interface{})
-			if reqImpID, ok := impObjMap["id"]; ok {
-				if floor, ok := impObjMap["bidfloor"]; ok && reqImpID.(string) == bidImpID {
-					floorValue := floor.(float64)
-					if floorValue > 0 {
-						if bidExt, err = jsonparser.Set(bidExt, []byte(fmt.Sprintf("%f", floorValue)), multiBidMultiFloorKey); err != nil {
-							return bidExt
-						}
-					}
-				}
-			}
+	updatedBidExt := bidExt
+	if bidExt == nil {
+		updatedBidExt = json.RawMessage(`{}`)
+	}
+
+	imps, ok := reqBodyMap["imp"].([]interface{})
+	if !ok {
+		return bidExt
+	}
+
+	for _, imp := range imps {
+		impMap, ok := imp.(map[string]interface{})
+		if !ok {
+			continue
 		}
+
+		reqImpID, ok := impMap["id"].(string)
+		if !ok || reqImpID != bidImpID {
+			continue
+		}
+
+		floor, ok := impMap["bidfloor"].(float64)
+		if !ok || floor <= 0 {
+			continue
+		}
+
+		var err error
+		updatedBidExt, err = jsonparser.Set(updatedBidExt, []byte(fmt.Sprintf("%f", floor)), multiBidMultiFloorValueKey)
+		if err != nil {
+			return bidExt
+		}
+	}
+
+	if len(updatedBidExt) > 2 {
+		return updatedBidExt
 	}
 	return bidExt
 }

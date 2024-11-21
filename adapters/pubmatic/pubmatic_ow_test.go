@@ -475,6 +475,48 @@ func TestPubmaticMakeBids(t *testing.T) {
 				Currency: "USD",
 			},
 		},
+		{
+			name: "MultiBid MultiFloor request",
+			args: args{
+				response: &adapters.ResponseData{
+					StatusCode: http.StatusOK,
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id_mf1", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+				},
+				externalRequest: &adapters.RequestData{
+					BidderName: openrtb_ext.BidderPubmatic,
+					Body:       []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+				},
+			},
+			wantErr: nil,
+			wantResp: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "7706636740145184841",
+							ImpID:   "test-imp-id",
+							Price:   0.500000,
+							AdID:    "29681110",
+							AdM:     "some-test-ad",
+							ADomain: []string{"pubmatic.com"},
+							CrID:    "29681110",
+							H:       250,
+							W:       300,
+							DealID:  "testdeal",
+							Ext:     json.RawMessage(`{"mbmfv":0.120000}`),
+						},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdvertiserID: 958,
+							AgencyID:     958,
+							MediaType:    "banner",
+						},
+					},
+				},
+				Currency: "USD",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -953,3 +995,79 @@ func TestTrimSuffixWithPattern(t *testing.T) {
 		})
 	}
 }
+
+func Test_updateBidExtWithMultiFloor(t *testing.T) {
+	type args struct {
+		bidImpID string
+		bidExt   []byte
+		reqBody  []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want []byte
+	}{
+		{
+			name: "empty request body",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(``),
+				bidExt:   []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+			},
+			want: []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+		},
+		{
+			name: "request body with no imp",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(`{"id":"test-request-id"}`),
+				bidExt:   []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+			},
+			want: []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+		},
+		{
+			name: "request body with imp but no matching imp with bidImpID",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}]}`),
+				bidExt:   []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+			},
+			want: []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+		},
+		{
+			name: "request body with imp and matching imp with bidImpID",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}]}`),
+				bidExt:   []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+			},
+			want: []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1,"mbmfv":0.120000}`),
+		},
+		{
+			name: "request body with multiple imp and matching imp with bidImpID",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.13,"ext":{}}]}`),
+				bidExt:   []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
+			},
+			want: []byte(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1,"mbmfv":0.120000}`),
+		},
+		{
+			name: "request body with imp and matching imp with bidImpID and no bidExt",
+			args: args{
+				bidImpID: "test-imp-id",
+				reqBody:  []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}]}`),
+				bidExt:   nil,
+			},
+			want: []byte(`{"mbmfv":0.120000}`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := updateBidExtWithMultiFloor(tt.args.bidImpID, tt.args.bidExt, tt.args.reqBody)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+//Need to write happy path test cases with nil bidExt

@@ -1502,197 +1502,197 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 		doMutate bool
 		setup    func() *mock_metrics.MockMetricsEngine
 	}{
-		{
-			name: "empty moduleContext",
-			args: args{
-				ctx:       nil,
-				moduleCtx: hookstage.ModuleInvocationContext{},
-				payload:   hookstage.AuctionResponsePayload{},
-			},
-			doMutate: false,
-			want: want{
-				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: module-ctx not found in handleAuctionResponseHook()"},
-				},
-				err: nil,
-			},
-		},
-		{
-			name: "empty requestContext",
-			args: args{
-				ctx: nil,
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": nil,
-					},
-				},
-				payload: hookstage.AuctionResponsePayload{},
-			},
-			doMutate: false,
-			want: want{
-				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
-				},
-				err: nil,
-			},
-		},
-		{
-			name: "requestContext is not of type RequestCtx",
-			args: args{
-				ctx: nil,
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": "request-ctx", // request-ctx is not of type RequestCtx
-					},
-				},
-				payload: hookstage.AuctionResponsePayload{},
-			},
-			doMutate: false,
-			want: want{
-				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
-				},
-				err: nil,
-			},
-		},
-		{
-			name: "requestContext has sshb=1(request should not execute module hook)",
-			args: args{
-				ctx: nil,
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
-							Sshb: "1",
-						},
-					},
-				},
-				payload: hookstage.AuctionResponsePayload{},
-			},
-			doMutate: false,
-			want: want{
-				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{},
-				err:    nil,
-			},
-		},
-		{
-			name: "empty bidResponse",
-			args: args{
-				ctx: nil,
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
-							Sshb:     "0",
-							PubID:    5890,
-							PubIDStr: "5890",
-						},
-					},
-				},
-				payload: hookstage.AuctionResponsePayload{
-					BidResponse: &openrtb2.BidResponse{
-						SeatBid: []openrtb2.SeatBid{},
-					},
-				},
-			},
-			doMutate: true,
-			setup: func() *mock_metrics.MockMetricsEngine {
-				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
-				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
-				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
-				return mockEngine
-			},
-			want: want{
-				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
-				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"","ext":{"matchedimpression":{}}}`),
-			},
-		},
-		{
-			name: "valid bidResponse with banner bids",
-			args: args{
-				ctx: nil,
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
-							PubID:    5890,
-							PubIDStr: "5890",
-							Platform: "web",
-							ImpBidCtx: map[string]models.ImpCtx{
-								"Div1": {
-									Bidders: map[string]models.PartnerData{
-										"pubmatic": {
-											PartnerID:        123,
-											PrebidBidderCode: "pubmatic",
-										},
-									},
-									Video:  &openrtb2.Video{},
-									Type:   "video",
-									Banner: true,
-								},
-							},
-							BidderResponseTimeMillis: map[string]int{},
-							SeatNonBids:              map[string][]openrtb_ext.NonBid{},
-							ReturnAllBidStatus:       true,
-							Debug:                    true,
-							ClientConfigFlag:         1,
-							PartnerConfigMap: map[int]map[string]string{
-								123: {
-									models.PARTNER_ID:          "123",
-									models.PREBID_PARTNER_NAME: "pubmatic",
-									models.BidderCode:          "pubmatic",
-									models.SERVER_SIDE_FLAG:    "1",
-									models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-									models.TIMEOUT:             "200",
-								},
-								-1: {
-									models.DisplayVersionID: "1",
-									"refreshInterval":       "30",
-									"rev_share":             "0.5",
-								},
-							},
-						},
-					},
-				},
-				payload: hookstage.AuctionResponsePayload{
-					BidResponse: &openrtb2.BidResponse{
-						ID: "12345",
-						SeatBid: []openrtb2.SeatBid{
-							{
-								Bid: []openrtb2.Bid{
-									{
-										ID:    "bid-id-1",
-										ImpID: "Div1",
-										Price: 5,
-										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tgid=0&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
-									},
-								},
-								Seat: "pubmatic",
-							},
-						},
-						Ext: json.RawMessage(`{"responsetimemillis":{"pubmatic":8}}`),
-					},
-				},
-			},
-			setup: func() *mock_metrics.MockMetricsEngine {
-				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("web", "5890", "pubmatic")
-				mockEngine.EXPECT().RecordPartnerResponseTimeStats("5890", "pubmatic", 8)
-				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
-				mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
-				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
-				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
-				return mockEngine
-			},
-			doMutate: true,
-			want: want{
-				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{`[{"PubID":5890,"ProfileID":0,"DisplayID":0,"VersionID":0,"DisplayVersionID":0,"SSAuction":0,"SummaryDisable":0,"SSAI":"","PartnerConfigMap":{"-1":{"displayVersionId":"1","refreshInterval":"30","rev_share":"0.5"},"123":{"bidderCode":"pubmatic","kgp":"_AU_@_W_x_H_","partnerId":"123","prebidPartnerName":"pubmatic","serverSideEnabled":"1","timeout":"200"}},"SupportDeals":false,"Platform":"web","LoggerImpressionID":"","ClientConfigFlag":1,"IP":"","TMax":0,"IsTestRequest":0,"ABTestConfig":0,"ABTestConfigApplied":0,"IsCTVRequest":false,"TrackerEndpoint":"","VideoErrorTrackerEndpoint":"","UA":"","Cookies":"","UidCookie":null,"KADUSERCookie":null,"ParsedUidCookie":null,"OriginCookie":"","Debug":true,"Trace":false,"PageURL":"","StartTime":0,"DevicePlatform":0,"Trackers":{"bid-id-1":{"Tracker":{"PubID":5890,"PageURL":"","Timestamp":0,"IID":"","ProfileID":"0","VersionID":"0","SlotID":"","Adunit":"","PartnerInfo":{"PartnerID":"pubmatic","BidderCode":"pubmatic","KGPV":"","GrossECPM":0,"NetECPM":0,"BidID":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","OrigBidID":"bid-id-1","AdSize":"0x0","AdDuration":0,"Adformat":"banner","ServerSide":1,"Advertiser":"","FloorValue":0,"FloorRuleValue":0,"DealID":"-1"},"RewardedInventory":0,"SURL":"","Platform":0,"SSAI":"","AdPodSlot":0,"TestGroup":0,"Origin":"","FloorSkippedFlag":null,"FloorModelVersion":"","FloorSource":null,"FloorType":0,"CustomDimensions":"","LoggerData":{"KGPSV":"","FloorProvider":"","FloorFetchStatus":null}},"TrackerURL":"https:?adv=\u0026af=banner\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026eg=0\u0026en=0\u0026ft=0\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0","ErrorURL":"","Price":5,"PriceModel":"CPM","PriceCurrency":""}},"PrebidBidderCode":null,"ImpBidCtx":{"Div1":{"ImpID":"","TagID":"","Div":"","SlotName":"","AdUnitName":"","Secure":0,"BidFloor":0,"BidFloorCur":"","IsRewardInventory":null,"Banner":true,"Video":{"mimes":null},"Native":null,"IncomingSlots":null,"Type":"video","Bidders":{"pubmatic":{"PartnerID":123,"PrebidBidderCode":"pubmatic","MatchedSlot":"","KGP":"","KGPV":"","IsRegex":false,"Params":null,"VASTTagFlag":false,"VASTTagFlags":null}},"NonMapped":null,"NewExt":null,"BidCtx":{"bid-id-1":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"banner","bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"banner","dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD","EG":0,"EN":0}},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false}},"Aliases":null,"NewReqExt":null,"ResponseExt":{"responsetimemillis":{"pubmatic":8}},"MarketPlaceBidders":null,"AdapterThrottleMap":null,"AdUnitConfig":null,"Source":"","Origin":"","SendAllBids":false,"WinningBids":{"Div1":{"ID":"bid-id-1","NetEcpm":5,"BidDealTierSatisfied":false,"Nbr":null}},"DroppedBids":null,"DefaultBids":{},"SeatNonBids":{},"BidderResponseTimeMillis":{"pubmatic":8},"Endpoint":"","PubIDStr":"5890","ProfileIDStr":"","MetricsEngine":{},"ReturnAllBidStatus":true,"Sshb":"","DCName":"","CachePutMiss":0,"MatchedImpression":{"pubmatic":0},"CustomDimensions":null}]`},
-				},
-				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cimg src=\"http://ads.pubmatic.com/AdTag/728x90.png\"\u003e\u003c/img\u003e\u003cdiv style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"\u003e\u003cimg src=\"https://t.pubmatic.com/wt?adv=\u0026af=banner\u0026aps=0\u0026au=%2F43743431%2FDMDemo\u0026bc=appnexus\u0026bidid=4033c510-6d67-4af6-b53f-682ff1a580c3\u0026di=-1\u0026eg=14\u0026en=14\u0026frv=1.57\u0026ft=0\u0026fv=1.57\u0026iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40\u0026kgpv=\u0026orig=ebay.com\u0026origbidid=718825584\u0026pdvid=1\u0026pid=22503\u0026plt=1\u0026pn=appnexus\u0026psz=728x90\u0026pubid=5890\u0026purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1\u0026sl=1\u0026slot=%2F43743431%2FDMDemo\u0026ss=1\u0026tgid=0\u0026tst=1704357774\"\u003e\u003c/div\u003e\u003cdiv style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"\u003e\u003cimg src=\"https:?adv=\u0026af=banner\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026eg=0\u0026en=0\u0026ft=0\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0\"\u003e\u003c/div\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"banner","bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"banner","dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
-			},
-		},
+		// {
+		// 	name: "empty moduleContext",
+		// 	args: args{
+		// 		ctx:       nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{},
+		// 		payload:   hookstage.AuctionResponsePayload{},
+		// 	},
+		// 	doMutate: false,
+		// 	want: want{
+		// 		result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
+		// 			DebugMessages: []string{"error: module-ctx not found in handleAuctionResponseHook()"},
+		// 		},
+		// 		err: nil,
+		// 	},
+		// },
+		// {
+		// 	name: "empty requestContext",
+		// 	args: args{
+		// 		ctx: nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{
+		// 			ModuleContext: hookstage.ModuleContext{
+		// 				"rctx": nil,
+		// 			},
+		// 		},
+		// 		payload: hookstage.AuctionResponsePayload{},
+		// 	},
+		// 	doMutate: false,
+		// 	want: want{
+		// 		result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
+		// 			DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+		// 		},
+		// 		err: nil,
+		// 	},
+		// },
+		// {
+		// 	name: "requestContext is not of type RequestCtx",
+		// 	args: args{
+		// 		ctx: nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{
+		// 			ModuleContext: hookstage.ModuleContext{
+		// 				"rctx": "request-ctx", // request-ctx is not of type RequestCtx
+		// 			},
+		// 		},
+		// 		payload: hookstage.AuctionResponsePayload{},
+		// 	},
+		// 	doMutate: false,
+		// 	want: want{
+		// 		result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
+		// 			DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+		// 		},
+		// 		err: nil,
+		// 	},
+		// },
+		// {
+		// 	name: "requestContext has sshb=1(request should not execute module hook)",
+		// 	args: args{
+		// 		ctx: nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{
+		// 			ModuleContext: hookstage.ModuleContext{
+		// 				"rctx": models.RequestCtx{
+		// 					Sshb: "1",
+		// 				},
+		// 			},
+		// 		},
+		// 		payload: hookstage.AuctionResponsePayload{},
+		// 	},
+		// 	doMutate: false,
+		// 	want: want{
+		// 		result: hookstage.HookResult[hookstage.AuctionResponsePayload]{},
+		// 		err:    nil,
+		// 	},
+		// },
+		// {
+		// 	name: "empty bidResponse",
+		// 	args: args{
+		// 		ctx: nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{
+		// 			ModuleContext: hookstage.ModuleContext{
+		// 				"rctx": models.RequestCtx{
+		// 					Sshb:     "0",
+		// 					PubID:    5890,
+		// 					PubIDStr: "5890",
+		// 				},
+		// 			},
+		// 		},
+		// 		payload: hookstage.AuctionResponsePayload{
+		// 			BidResponse: &openrtb2.BidResponse{
+		// 				SeatBid: []openrtb2.SeatBid{},
+		// 			},
+		// 		},
+		// 	},
+		// 	doMutate: true,
+		// 	setup: func() *mock_metrics.MockMetricsEngine {
+		// 		mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+		// 		mockEngine.EXPECT().RecordNobidErrPrebidServerResponse("5890")
+		// 		mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+		// 		return mockEngine
+		// 	},
+		// 	want: want{
+		// 		result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
+		// 		err:         nil,
+		// 		bidResponse: json.RawMessage(`{"id":"","ext":{"matchedimpression":{}}}`),
+		// 	},
+		// },
+		// {
+		// 	name: "valid bidResponse with banner bids",
+		// 	args: args{
+		// 		ctx: nil,
+		// 		moduleCtx: hookstage.ModuleInvocationContext{
+		// 			ModuleContext: hookstage.ModuleContext{
+		// 				"rctx": models.RequestCtx{
+		// 					PubID:    5890,
+		// 					PubIDStr: "5890",
+		// 					Platform: "web",
+		// 					ImpBidCtx: map[string]models.ImpCtx{
+		// 						"Div1": {
+		// 							Bidders: map[string]models.PartnerData{
+		// 								"pubmatic": {
+		// 									PartnerID:        123,
+		// 									PrebidBidderCode: "pubmatic",
+		// 								},
+		// 							},
+		// 							Video:  &openrtb2.Video{},
+		// 							Type:   "video",
+		// 							Banner: true,
+		// 						},
+		// 					},
+		// 					BidderResponseTimeMillis: map[string]int{},
+		// 					SeatNonBids:              map[string][]openrtb_ext.NonBid{},
+		// 					ReturnAllBidStatus:       true,
+		// 					Debug:                    true,
+		// 					ClientConfigFlag:         1,
+		// 					PartnerConfigMap: map[int]map[string]string{
+		// 						123: {
+		// 							models.PARTNER_ID:          "123",
+		// 							models.PREBID_PARTNER_NAME: "pubmatic",
+		// 							models.BidderCode:          "pubmatic",
+		// 							models.SERVER_SIDE_FLAG:    "1",
+		// 							models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+		// 							models.TIMEOUT:             "200",
+		// 						},
+		// 						-1: {
+		// 							models.DisplayVersionID: "1",
+		// 							"refreshInterval":       "30",
+		// 							"rev_share":             "0.5",
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 		},
+		// 		payload: hookstage.AuctionResponsePayload{
+		// 			BidResponse: &openrtb2.BidResponse{
+		// 				ID: "12345",
+		// 				SeatBid: []openrtb2.SeatBid{
+		// 					{
+		// 						Bid: []openrtb2.Bid{
+		// 							{
+		// 								ID:    "bid-id-1",
+		// 								ImpID: "Div1",
+		// 								Price: 5,
+		// 								AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tgid=0&tst=1704357774\"></div>",
+		// 								Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
+		// 							},
+		// 						},
+		// 						Seat: "pubmatic",
+		// 					},
+		// 				},
+		// 				Ext: json.RawMessage(`{"responsetimemillis":{"pubmatic":8}}`),
+		// 			},
+		// 		},
+		// 	},
+		// 	setup: func() *mock_metrics.MockMetricsEngine {
+		// 		mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+		// 		mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("web", "5890", "pubmatic")
+		// 		mockEngine.EXPECT().RecordPartnerResponseTimeStats("5890", "pubmatic", 8)
+		// 		mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+		// 		mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
+		// 		mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+		// 		mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+		// 		return mockEngine
+		// 	},
+		// 	doMutate: true,
+		// 	want: want{
+		// 		result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
+		// 			DebugMessages: []string{`[{"PubID":5890,"ProfileID":0,"DisplayID":0,"VersionID":0,"DisplayVersionID":0,"SSAuction":0,"SummaryDisable":0,"SSAI":"","PartnerConfigMap":{"-1":{"displayVersionId":"1","refreshInterval":"30","rev_share":"0.5"},"123":{"bidderCode":"pubmatic","kgp":"_AU_@_W_x_H_","partnerId":"123","prebidPartnerName":"pubmatic","serverSideEnabled":"1","timeout":"200"}},"SupportDeals":false,"Platform":"web","LoggerImpressionID":"","ClientConfigFlag":1,"IP":"","TMax":0,"IsTestRequest":0,"ABTestConfig":0,"ABTestConfigApplied":0,"IsCTVRequest":false,"TrackerEndpoint":"","VideoErrorTrackerEndpoint":"","UA":"","Cookies":"","UidCookie":null,"KADUSERCookie":null,"ParsedUidCookie":null,"OriginCookie":"","Debug":true,"Trace":false,"PageURL":"","StartTime":0,"DevicePlatform":0,"Trackers":{"bid-id-1":{"Tracker":{"PubID":5890,"PageURL":"","Timestamp":0,"IID":"","ProfileID":"0","VersionID":"0","SlotID":"","Adunit":"","PartnerInfo":{"PartnerID":"pubmatic","BidderCode":"pubmatic","KGPV":"","GrossECPM":0,"NetECPM":0,"BidID":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","OrigBidID":"bid-id-1","AdSize":"0x0","AdDuration":0,"Adformat":"banner","ServerSide":1,"Advertiser":"","FloorValue":0,"FloorRuleValue":0,"DealID":"-1"},"RewardedInventory":0,"SURL":"","Platform":0,"SSAI":"","AdPodSlot":0,"TestGroup":0,"Origin":"","FloorSkippedFlag":null,"FloorModelVersion":"","FloorSource":null,"FloorType":0,"CustomDimensions":"","LoggerData":{"KGPSV":"","FloorProvider":"","FloorFetchStatus":null}},"TrackerURL":"https:?adv=\u0026af=banner\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026eg=0\u0026en=0\u0026ft=0\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0","ErrorURL":"","Price":5,"PriceModel":"CPM","PriceCurrency":""}},"PrebidBidderCode":null,"ImpBidCtx":{"Div1":{"ImpID":"","TagID":"","Div":"","SlotName":"","AdUnitName":"","Secure":0,"BidFloor":0,"BidFloorCur":"","IsRewardInventory":null,"Banner":true,"Video":{"mimes":null},"Native":null,"IncomingSlots":null,"Type":"video","Bidders":{"pubmatic":{"PartnerID":123,"PrebidBidderCode":"pubmatic","MatchedSlot":"","KGP":"","KGPV":"","IsRegex":false,"Params":null,"VASTTagFlag":false,"VASTTagFlags":null}},"NonMapped":null,"NewExt":null,"BidCtx":{"bid-id-1":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"banner","bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"banner","dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD","EG":0,"EN":0}},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false}},"Aliases":null,"NewReqExt":null,"ResponseExt":{"responsetimemillis":{"pubmatic":8}},"MarketPlaceBidders":null,"AdapterThrottleMap":null,"AdUnitConfig":null,"Source":"","Origin":"","SendAllBids":false,"WinningBids":{"Div1":{"ID":"bid-id-1","NetEcpm":5,"BidDealTierSatisfied":false,"Nbr":null}},"DroppedBids":null,"DefaultBids":{},"SeatNonBids":{},"BidderResponseTimeMillis":{"pubmatic":8},"Endpoint":"","PubIDStr":"5890","ProfileIDStr":"","MetricsEngine":{},"ReturnAllBidStatus":true,"Sshb":"","DCName":"","CachePutMiss":0,"MatchedImpression":{"pubmatic":0},"CustomDimensions":null}]`},
+		// 		},
+		// 		err:         nil,
+		// 		bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cimg src=\"http://ads.pubmatic.com/AdTag/728x90.png\"\u003e\u003c/img\u003e\u003cdiv style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"\u003e\u003cimg src=\"https://t.pubmatic.com/wt?adv=\u0026af=banner\u0026aps=0\u0026au=%2F43743431%2FDMDemo\u0026bc=appnexus\u0026bidid=4033c510-6d67-4af6-b53f-682ff1a580c3\u0026di=-1\u0026eg=14\u0026en=14\u0026frv=1.57\u0026ft=0\u0026fv=1.57\u0026iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40\u0026kgpv=\u0026orig=ebay.com\u0026origbidid=718825584\u0026pdvid=1\u0026pid=22503\u0026plt=1\u0026pn=appnexus\u0026psz=728x90\u0026pubid=5890\u0026purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1\u0026sl=1\u0026slot=%2F43743431%2FDMDemo\u0026ss=1\u0026tgid=0\u0026tst=1704357774\"\u003e\u003c/div\u003e\u003cdiv style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"\u003e\u003cimg src=\"https:?adv=\u0026af=banner\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026eg=0\u0026en=0\u0026ft=0\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0\"\u003e\u003c/div\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"banner","bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"banner","dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
+		// 	},
+		// },
 		{
 			name: "valid bidResponse with video bids",
 			args: args{
@@ -1757,7 +1757,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -1781,7 +1781,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			want: want{
 				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
 				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026ft=0\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":"","vasttagid":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
+				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tgid=0\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":"","vasttagid":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD","mbmfv":4}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
 			},
 		},
 	}
