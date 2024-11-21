@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slices" // Use standard library in next prebid upgrade
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
