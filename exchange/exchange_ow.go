@@ -414,9 +414,9 @@ func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.Pb
 					continue
 				}
 			}
-			updateSeatNonBidsInvalidVastVersion(seatNonBid, rejectedBid)
 			validBids = append(validBids, pbsBid)
 		}
+		updateSeatNonBidsInvalidVastVersion(seatNonBid, rejectedBid)
 		seatBid.Bids = validBids
 	}
 	return errs
