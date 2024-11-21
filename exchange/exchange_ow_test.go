@@ -1890,7 +1890,77 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 		errs []error
 	}{
 		{
-			name: "valid_vast_version",
+			name: "valid_vast_version_banner",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="3.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeBanner,
+							},
+						},
+						Seat: "bidder1",
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"bidder1": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid1",
+								AdM: `<VAST version="3.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeBanner,
+						},
+					},
+					Seat: "bidder1",
+				},
+			},
+			errs: []error{},
+		},
+		{
+			name: "invalid_vast_version_banner",
+			args: args{
+				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:  "bid1",
+									AdM: `<VAST version="1.0"></VAST>`,
+								},
+								BidType: openrtb_ext.BidTypeBanner,
+							},
+						},
+						Seat: "bidder1",
+					},
+				},
+				seatNonBid: &openrtb_ext.NonBidCollection{},
+			},
+			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"bidder1": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								ID:  "bid1",
+								AdM: `<VAST version="1.0"></VAST>`,
+							},
+							BidType: openrtb_ext.BidTypeBanner,
+						},
+					},
+					Seat: "bidder1",
+				},
+			},
+			errs: []error{},
+		},
+		{
+			name: "valid_vast_version_video",
 			args: args{
 				adapterBids: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 					"bidder1": {
