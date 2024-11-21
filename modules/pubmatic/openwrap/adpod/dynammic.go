@@ -41,6 +41,7 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 	)
 	exclusion := getExclusionConfigs(podId, requestAdPodExt)
 	video := impCtx.Video
+	minDuration := video.MinDuration
 	newProfileConfig := new(models.AdpodProfileConfig)
 	if profileConfigs != nil {
 		*newProfileConfig = *profileConfigs
@@ -71,6 +72,7 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 			}
 			adpodCfg.MinDuration = int(minDur)
 			adpodCfg.MaxDuration = int(maxDur)
+			minDuration = minDur
 			newProfileConfig.AdserverCreativeDurationMatchingPolicy = openrtb_ext.OWExactVideoAdDurationMatching
 			newProfileConfig.AdserverCreativeDurations = durs
 		}
@@ -86,7 +88,7 @@ func NewDynamicAdpod(podId string, imp openrtb2.Imp, impCtx models.ImpCtx, profi
 	}
 
 	return &DynamicAdpod{
-		MinPodDuration: video.MinDuration,
+		MinPodDuration: minDuration,
 		MaxPodDuration: maxPodDuration,
 		AdpodCtx: models.AdpodCtx{
 			PodId:          podId,
