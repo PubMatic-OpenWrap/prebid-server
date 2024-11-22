@@ -715,7 +715,18 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			bidRequest.App.StoreURL = rctx.AppLovinMax.AppStoreUrl
 		}
 	}
-
+	strictVastMode := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
+	if strictVastMode {
+		if rctx.NewReqExt == nil {
+			rctx.NewReqExt = &models.RequestExt{}
+		}
+		rctx.NewReqExt.Prebid.StrictVastMode = strictVastMode
+		for i := 0; i < len(bidRequest.Imp); i++ {
+			if bidRequest.Imp[i].Video != nil {
+				bidRequest.Imp[i].Video.Protocols = UpdateImpProtocols(bidRequest.Imp[i].Video.Protocols)
+			}
+		}
+	}
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = append(bidRequest.Cur, cur)
 	}
