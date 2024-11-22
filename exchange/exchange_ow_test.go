@@ -2455,19 +2455,16 @@ func TestValidateVastVersion(t *testing.T) {
 func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 	tests := []struct {
 		name            string
-		rejectedBids    []*entities.PbsOrtbSeatBid
+		rejectedBids    []*entities.PbsOrtbBid
+		seat            string
 		expectedNonBids openrtb_ext.NonBidCollection
 	}{
 		{
 			name: "single_rejected_bid",
-			rejectedBids: []*entities.PbsOrtbSeatBid{
+			seat: "seat1",
+			rejectedBids: []*entities.PbsOrtbBid{
 				{
-					Seat: "seat1",
-					Bids: []*entities.PbsOrtbBid{
-						{
-							Bid: &openrtb2.Bid{ID: "bid1"},
-						},
-					},
+					Bid: &openrtb2.Bid{ID: "bid1"},
 				},
 			},
 			expectedNonBids: getNonBids(
@@ -2485,17 +2482,13 @@ func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 		},
 		{
 			name: "multiple_rejected_bids",
-			rejectedBids: []*entities.PbsOrtbSeatBid{
+			seat: "seat1",
+			rejectedBids: []*entities.PbsOrtbBid{
 				{
-					Seat: "seat1",
-					Bids: []*entities.PbsOrtbBid{
-						{
-							Bid: &openrtb2.Bid{ID: "bid1"},
-						},
-						{
-							Bid: &openrtb2.Bid{ID: "bid2"},
-						},
-					},
+					Bid: &openrtb2.Bid{ID: "bid1"},
+				},
+				{
+					Bid: &openrtb2.Bid{ID: "bid2"},
 				},
 			},
 			expectedNonBids: getNonBids(
@@ -2520,7 +2513,7 @@ func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 		},
 		{
 			name:            "no_rejected_bids",
-			rejectedBids:    []*entities.PbsOrtbSeatBid{},
+			rejectedBids:    []*entities.PbsOrtbBid{},
 			expectedNonBids: openrtb_ext.NonBidCollection{},
 		},
 	}
@@ -2528,7 +2521,7 @@ func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seatNonBids := openrtb_ext.NonBidCollection{}
-			updateSeatNonBidsInvalidVastVersion(&seatNonBids, tt.rejectedBids)
+			updateSeatNonBidsInvalidVastVersion(&seatNonBids, tt.seat, tt.rejectedBids)
 			assert.Equal(t, tt.expectedNonBids, seatNonBids)
 		})
 	}

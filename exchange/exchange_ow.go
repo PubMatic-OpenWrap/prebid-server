@@ -387,20 +387,18 @@ func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBi
 	}
 }
 
-func updateSeatNonBidsInvalidVastVersion(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
-	for _, pbsRejSeatBid := range rejectedBids {
-		for _, pbsRejBid := range pbsRejSeatBid.Bids {
-			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
-			nonBidParams.NonBidReason = int(nbr.LossBidLostInVastVersionValidation)
-			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
-		}
+func updateSeatNonBidsInvalidVastVersion(seatNonBids *openrtb_ext.NonBidCollection, seat string, rejectedBids []*entities.PbsOrtbBid) {
+	for _, pbsRejBid := range rejectedBids {
+		nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, seat)
+		nonBidParams.NonBidReason = int(nbr.LossBidLostInVastVersionValidation)
+		seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seat)
 	}
 }
 
 func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBid *openrtb_ext.NonBidCollection) []error {
 	errs := []error{}
-	rejectedBid := []*entities.PbsOrtbSeatBid{}
 	for _, seatBid := range adapterBids {
+		rejectedBid := []*entities.PbsOrtbBid{}
 		validBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
 		for _, pbsBid := range seatBid.Bids {
 			if pbsBid.BidType == openrtb_ext.BidTypeVideo && pbsBid.Bid.AdM != "" {
@@ -410,18 +408,13 @@ func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.Pb
 						Message:     fmt.Sprintf("%s Bid %s was filtered for Imp %s with Vast Version %s: Incompatible with GAM unwinding requirements", seatBid.Seat, pbsBid.Bid.ID, pbsBid.Bid.ImpID, vastVersion),
 						WarningCode: errortypes.InvalidVastVersionWarningCode,
 					})
-					rejectedBid = append(rejectedBid, &entities.PbsOrtbSeatBid{
-						Seat:      seatBid.Seat,
-						Currency:  seatBid.Currency,
-						HttpCalls: seatBid.HttpCalls,
-						Bids:      []*entities.PbsOrtbBid{pbsBid},
-					})
+					rejectedBid = append(rejectedBid, pbsBid)
 					continue
 				}
 			}
 			validBids = append(validBids, pbsBid)
 		}
-		updateSeatNonBidsInvalidVastVersion(seatNonBid, rejectedBid)
+		updateSeatNonBidsInvalidVastVersion(seatNonBid, seatBid.Seat, rejectedBid)
 		seatBid.Bids = validBids
 	}
 	return errs
