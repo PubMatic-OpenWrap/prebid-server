@@ -34,6 +34,7 @@ const (
 	PLATFORM_KEY                = "platform"
 	SendAllBidsKey              = "sendAllBids"
 	VastUnwrapperEnableKey      = "enableVastUnwrapper"
+	StrictVastModeKey           = "strictVastMode"
 	VastUnwrapTrafficPercentKey = "vastUnwrapTrafficPercent"
 	SSTimeoutKey                = "ssTimeout"
 	PWC                         = "awc"
