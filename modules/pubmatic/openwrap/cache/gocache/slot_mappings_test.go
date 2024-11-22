@@ -68,9 +68,9 @@ func Test_cache_populateCacheWithPubSlotNameHash(t *testing.T) {
 				mockDatabase.EXPECT().GetPublisherSlotNameHash(5890).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
-				publisherSlotNameHashMap: map[string]string(nil),
+				publisherSlotNameHashMap: nil,
 				err:                      fmt.Errorf("Error from the DB"),
-				foundCacheKey:            true,
+				foundCacheKey:            false,
 			},
 		},
 		{
@@ -191,9 +191,9 @@ func Test_cache_populateCacheWithWrapperSlotMappings(t *testing.T) {
 				mockDatabase.EXPECT().GetWrapperSlotMappings(formTestPartnerConfig(), testProfileID, testVersionID).Return(nil, fmt.Errorf("Error from the DB"))
 			},
 			want: want{
-				partnerSlotMapping: map[string]models.SlotMapping{},
+				partnerSlotMapping: nil,
 				err:                fmt.Errorf("Error from the DB"),
-				foundCacheKey:      true,
+				foundCacheKey:      false,
 			},
 		},
 		{

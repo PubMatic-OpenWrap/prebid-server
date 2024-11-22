@@ -542,7 +542,7 @@ const (
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	GetAdpodConfig                     = "GetAdpodConfig"
 	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
-	// LiveVersionInnerQuery              = "LiveVersionInnerQuery"
+	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
@@ -621,5 +621,6 @@ const (
 
 const (
 	// ErrDBQueryFailed reponse error
-	ErrDBQueryFailed = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
 )

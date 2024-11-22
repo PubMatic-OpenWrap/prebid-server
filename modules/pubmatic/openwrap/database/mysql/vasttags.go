@@ -15,13 +15,13 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
+	vasttags := models.PublisherVASTTags{}
 	rows, err := db.conn.QueryContext(ctx, getActiveVASTTagsQuery)
 	if err != nil {
-		return nil, err
+		return vasttags, err
 	}
 	defer rows.Close()
 
-	vasttags := models.PublisherVASTTags{}
 	for rows.Next() {
 		var vastTag models.VASTTag
 		if err := rows.Scan(&vastTag.ID, &vastTag.PartnerID, &vastTag.URL, &vastTag.Duration, &vastTag.Price); err == nil {
@@ -30,7 +30,7 @@ func (db *mySqlDB) GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, er
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return vasttags, err
 	}
 
 	return vasttags, nil

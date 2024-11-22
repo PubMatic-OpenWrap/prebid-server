@@ -3343,7 +3343,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					NbrCode: int(nbr.InvalidProfileConfiguration),
 					Errors:  []string{"failed to get profile data: received empty data"},
 				},
-				error:                 true,
+				error:                 false,
 				nilCurrencyConversion: true,
 			},
 		},
