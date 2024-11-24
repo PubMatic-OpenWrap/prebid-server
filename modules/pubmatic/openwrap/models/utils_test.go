@@ -963,7 +963,7 @@ func TestGetBidLevelFloorsDetails(t *testing.T) {
 			},
 			want: want{
 				fv:  5,
-				frv: -1,
+				frv: 5,
 			},
 		},
 	}

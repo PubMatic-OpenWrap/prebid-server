@@ -112,7 +112,7 @@ func renameTransparencyParamsKey(bidExt []byte) []byte {
 
 // buildMultiFloorRequests builds multiple requests for each floor value
 func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, impFloorsMap map[string][]float64, cookies []string) ([]*adapters.RequestData, []error) {
-	requestData := []*adapters.RequestData{}
+	requestData := make([]*adapters.RequestData, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
 	errs := make([]error, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
 
 	for i := 0; i < MAX_MULTIFLOORS_PUBMATIC; i++ {

@@ -248,6 +248,10 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 					Endpoint:    models.EndpointWebS2S,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "bid-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
 			},
 			want: map[string]map[string][]openrtb2.Bid{},
 		},
@@ -293,7 +297,15 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
 							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
 						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic": "pubmatic",
 					},
 				},
 				bidResponse: &openrtb2.BidResponse{
@@ -342,7 +354,15 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
 							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
 						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic": "pubmatic",
 					},
 				},
 				bidResponse: &openrtb2.BidResponse{
@@ -399,7 +419,15 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
 							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
 						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic": "pubmatic",
 					},
 				},
 				bidResponse: &openrtb2.BidResponse{
@@ -434,6 +462,177 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				uuidGenerator: TestUUIDGenerator{},
 			},
 			want: map[string]map[string][]openrtb2.Bid{},
+		},
+		{
+			name: "mulit-floors config have three floors and only one bid in the response for both partner pubmatic and pubmatic_1123",
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint:    models.EndpointAppLovinMax,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{},
+					AppLovinMax: models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{1.1, 2.1, 3.1},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"test-impID-1": {
+							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+								"pubmatic_1123": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
+						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic_1123": "pubmatic",
+						"pubmatic":      "pubmatic",
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "bid-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "pubmatic-bid-1",
+									ImpID: "test-impID-1",
+									Price: 1.5,
+									Ext:   []byte(`{"mbmfv":1.1}`),
+								},
+							},
+						},
+						{
+							Seat: "pubmatic_1123",
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "pubmatic-bid-2",
+									ImpID: "test-impID-1",
+									Price: 1.6,
+									Ext:   []byte(`{"mbmfv":1.1}`),
+								},
+							},
+						},
+					},
+				},
+			},
+			fields: fields{
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"test-impID-1": {
+					"pubmatic": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":2.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":3.1}`),
+						},
+					},
+					"pubmatic_1123": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":2.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":3.1}`),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mulit-floors config have three floors and no bid in the response for both partner pubmatic and pubmatic_1123",
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint:    models.EndpointAppLovinMax,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{},
+					AppLovinMax: models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{1.1, 2.1, 3.1},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"test-impID-1": {
+							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+								"pubmatic_1123": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
+						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic_1123": "pubmatic",
+						"pubmatic":      "pubmatic",
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "bid-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			fields: fields{
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"test-impID-1": {
+					"pubmatic": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":1.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":2.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":3.1}`),
+						},
+					},
+					"pubmatic_1123": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":1.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":2.1}`),
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{"mbmfv":3.1}`),
+						},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
