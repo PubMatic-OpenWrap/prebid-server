@@ -153,8 +153,9 @@ func trimSuffixWithPattern(input string) string {
 }
 
 func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {
-	reqBodyMap := getMapFromJSON(reqBody)
-	if reqBodyMap == nil {
+	var externalRequest openrtb2.BidRequest
+
+	if err := json.Unmarshal(reqBody, &externalRequest); err != nil {
 		return bidExt
 	}
 
@@ -163,35 +164,21 @@ func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte 
 		updatedBidExt = json.RawMessage(`{}`)
 	}
 
-	imps, ok := reqBodyMap["imp"].([]interface{})
-	if !ok {
-		return bidExt
-	}
-
-	for _, imp := range imps {
-		impMap, ok := imp.(map[string]interface{})
-		if !ok {
+	for _, imp := range externalRequest.Imp {
+		if imp.ID != bidImpID {
 			continue
 		}
-
-		reqImpID, ok := impMap["id"].(string)
-		if !ok || reqImpID != bidImpID {
+		if imp.BidFloor <= 0 {
 			continue
 		}
-
-		floor, ok := impMap["bidfloor"].(float64)
-		if !ok || floor <= 0 {
-			continue
-		}
-
 		var err error
-		updatedBidExt, err = jsonparser.Set(updatedBidExt, []byte(fmt.Sprintf("%f", floor)), multiBidMultiFloorValueKey)
+		updatedBidExt, err = jsonparser.Set(updatedBidExt, []byte(fmt.Sprintf("%f", imp.BidFloor)), multiBidMultiFloorValueKey)
 		if err != nil {
 			return bidExt
 		}
 	}
 
-	if len(updatedBidExt) > 2 {
+	if string(updatedBidExt) != "{}" {
 		return updatedBidExt
 	}
 	return bidExt
