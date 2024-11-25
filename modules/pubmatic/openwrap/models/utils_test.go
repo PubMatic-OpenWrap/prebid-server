@@ -958,12 +958,12 @@ func TestGetBidLevelFloorsDetails(t *testing.T) {
 			name: "floor_values_set_from_bidExt_mbmfv_for_applovinmax",
 			args: args{
 				bidExt: BidExt{
-					MultiBidMultiFloorValue: 5,
+					MultiBidMultiFloorValue: 5.0,
 				},
 			},
 			want: want{
-				fv:  5,
-				frv: 5,
+				fv:  5.0,
+				frv: 5.0,
 			},
 		},
 	}

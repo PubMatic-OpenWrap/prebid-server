@@ -604,7 +604,7 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			bid := sb.Bid[i]
 
 			//If imp is multi-floored then update the bid.ext.mbmfv with the floor value
-			if re.MatchString(bid.ImpID) {
+			if appLovinMaxImpressionRegex.MatchString(bid.ImpID) {
 				bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
 				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
 			}

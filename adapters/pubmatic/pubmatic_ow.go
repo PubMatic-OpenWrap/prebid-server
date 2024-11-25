@@ -17,7 +17,7 @@ const (
 	dsaKey                       = "dsa"
 	transparencyKey              = "transparency"
 	multiFloors                  = "_mf"
-	appLovinMaxImpressionPattern = "_mf.*"
+	appLovinMaxImpressionPattern = `_mf[0-9]+$`
 	multiBidMultiFloorValueKey   = "mbmfv"
 )
 
@@ -26,7 +26,7 @@ var (
 	dsaParamKey = []byte(`"dsaparams"`)
 )
 
-var re = regexp.MustCompile(appLovinMaxImpressionPattern)
+var appLovinMaxImpressionRegex = regexp.MustCompile(appLovinMaxImpressionPattern)
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
 	targets := map[string]string{}
@@ -149,7 +149,7 @@ func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, 
 }
 
 func trimSuffixWithPattern(input string) string {
-	return re.ReplaceAllString(input, "")
+	return appLovinMaxImpressionRegex.ReplaceAllString(input, "")
 }
 
 func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte {

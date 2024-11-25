@@ -978,14 +978,14 @@ func TestTrimSuffixWithPattern(t *testing.T) {
 			args: args{
 				input: "div123456789_mf1_mf2",
 			},
-			want: "div123456789",
+			want: "div123456789_mf1",
 		},
 		{
 			name: "input string contains pattern at the start",
 			args: args{
-				input: "mf1_mf2_div123456789",
+				input: "mf1_mf2_mf123456789",
 			},
-			want: "mf1",
+			want: "mf1_mf2",
 		},
 	}
 	for _, tt := range tests {
