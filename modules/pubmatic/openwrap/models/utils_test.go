@@ -954,6 +954,18 @@ func TestGetBidLevelFloorsDetails(t *testing.T) {
 				frv: 0,
 			},
 		},
+		{
+			name: "floor_values_set_from_bidExt_mbmfv_for_applovinmax",
+			args: args{
+				bidExt: BidExt{
+					MultiBidMultiFloorValue: 5.0,
+				},
+			},
+			want: want{
+				fv:  5.0,
+				frv: 5.0,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

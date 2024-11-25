@@ -196,7 +196,7 @@ func Test_createTrackers(t *testing.T) {
 				rctx: func() models.RequestCtx {
 					testRctx := rctx
 					testRctx.StartTime = startTime
-					testRctx.PrebidBidderCode["pubmatic"] = "pubmatic2"
+					testRctx.PrebidBidderCode["pubmatic2"] = "pubmatic"
 					return testRctx
 				}(),
 				bidResponse: &openrtb2.BidResponse{

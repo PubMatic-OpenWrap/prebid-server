@@ -115,7 +115,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 							bidId = bidExt.Prebid.BidId
 						}
 						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
-							partnerID = bidExt.Prebid.Meta.AdapterCode
 
 							if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
 								if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
