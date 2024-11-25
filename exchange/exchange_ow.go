@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
@@ -14,9 +15,11 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/currency"
+	"github.com/prebid/prebid-server/v2/errortypes"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	"github.com/prebid/prebid-server/v2/metrics"
 	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
@@ -35,6 +38,11 @@ const (
 	VASTTypeWrapperEndTag = "</Wrapper>"
 	VASTTypeInLineEndTag  = "</InLine>"
 )
+
+var validVastVersions = map[int]bool{
+	3: true,
+	4: true,
+}
 
 // VASTTagType describes the allowed values for VASTTagType
 type VASTTagType string
@@ -377,4 +385,49 @@ func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBi
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
+}
+
+func updateSeatNonBidsInvalidVastVersion(seatNonBids *openrtb_ext.NonBidCollection, seat string, rejectedBids []*entities.PbsOrtbBid) {
+	for _, pbsRejBid := range rejectedBids {
+		nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, seat)
+		nonBidParams.NonBidReason = int(nbr.LossBidLostInVastVersionValidation)
+		seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seat)
+	}
+}
+
+func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBid *openrtb_ext.NonBidCollection) []error {
+	errs := []error{}
+	for _, seatBid := range adapterBids {
+		rejectedBid := []*entities.PbsOrtbBid{}
+		validBids := make([]*entities.PbsOrtbBid, 0, len(seatBid.Bids))
+		for _, pbsBid := range seatBid.Bids {
+			if pbsBid.BidType == openrtb_ext.BidTypeVideo && pbsBid.Bid.AdM != "" {
+				isValid, vastVersion := validateVastVersion(pbsBid.Bid.AdM)
+				if !isValid {
+					errs = append(errs, &errortypes.Warning{
+						Message:     fmt.Sprintf("%s Bid %s was filtered for Imp %s with Vast Version %s: Incompatible with GAM unwinding requirements", seatBid.Seat, pbsBid.Bid.ID, pbsBid.Bid.ImpID, vastVersion),
+						WarningCode: errortypes.InvalidVastVersionWarningCode,
+					})
+					rejectedBid = append(rejectedBid, pbsBid)
+					continue
+				}
+			}
+			validBids = append(validBids, pbsBid)
+		}
+		updateSeatNonBidsInvalidVastVersion(seatNonBid, seatBid.Seat, rejectedBid)
+		seatBid.Bids = validBids
+	}
+	return errs
+}
+
+func validateVastVersion(adM string) (bool, string) {
+	matches := vastVersionRegex.FindStringSubmatch(adM)
+	if len(matches) != 2 {
+		return false, ""
+	}
+	vastVersionFloat, err := strconv.ParseFloat(matches[1], 64)
+	if err != nil {
+		return false, matches[1]
+	}
+	return validVastVersions[int(vastVersionFloat)], matches[1]
 }
