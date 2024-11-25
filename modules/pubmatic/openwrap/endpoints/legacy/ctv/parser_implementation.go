@@ -2127,17 +2127,17 @@ func (o *OpenRTB) ORTBDeviceIpv6() (err error) {
 }
 
 // ORTBDeviceDnt will read and set ortb Device.Dnt parameter
-func (o *OpenRTB) ORTBDeviceDnt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceDnt)
-	if !ok || err != nil {
-		return
+// ORTBDeviceDnt will read and set ortb Device.Dnt parameter
+func (o *OpenRTB) ORTBDeviceDnt() error {
+	dnt, err := o.values.GetBoolToInt(ORTBDeviceDnt)
+	if err != nil || dnt == nil {
+		return err
 	}
 	if o.ortb.Device == nil {
 		o.ortb.Device = &openrtb2.Device{}
 	}
-	val8 := int8(val)
-	o.ortb.Device.DNT = &val8
-	return
+	o.ortb.Device.DNT = ptrutil.ToPtr(int8(*dnt))
+	return nil
 }
 
 // ORTBDeviceLmt will read and set ortb Device.Lmt parameter
@@ -4759,4 +4759,40 @@ func (o *OpenRTB) ORTBRegsGppSid() error {
 		return err
 	}
 	return nil
+}
+
+// ORTBAdrule will read and set ortb Adrule parameter
+func (o *OpenRTB) ORTBAdrule() (err error) {
+	val, ok, err := o.values.GetBoolean(ORTBAdrule)
+	if !ok || err != nil {
+		return
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		if err = json.Unmarshal(o.ortb.Ext, &reqExt); err != nil {
+			return
+		}
+	}
+
+	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
+	if !ok {
+		wrapperExt = map[string]interface{}{}
+	}
+
+	video, ok := wrapperExt[ORTBVideo].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+
+	video[ORTBExtAdrule] = val
+	wrapperExt[ORTBVideo] = video
+	reqExt[ORTBExtWrapper] = wrapperExt
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Ext = data
+	return
 }

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"git.pubmatic.com/PubMatic/go-common/util"
 )
 
 // JSONType New Type Defined for JSON Object
@@ -412,6 +414,25 @@ func (values *URLValues) GetJSON(key string) (map[string]interface{}, error) {
 			return nil, err
 		}
 		return parsedData, nil
+	}
+	return nil, nil
+}
+
+// GetBoolToInt extracts and parses a boolean value associated with the given key
+func (values *URLValues) GetBoolToInt(key string) (*int, error) {
+	if v := values.Get(key); len(v) > 0 {
+		intVal, err := strconv.Atoi(v)
+		if err != nil {
+			switch strings.ToLower(fmt.Sprintf("%v", v)) {
+			case "true":
+				return util.GetIntPtr(1), nil
+			case "false":
+				return util.GetIntPtr(0), nil
+			default:
+				return nil, fmt.Errorf(parsingErrorFormat, key, fmt.Sprintf(` '%s' is not a bool`, v))
+			}
+		}
+		return util.GetIntPtr(intVal), nil
 	}
 	return nil, nil
 }

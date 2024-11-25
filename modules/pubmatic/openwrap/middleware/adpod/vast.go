@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +16,6 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
-	"github.com/rs/vast"
 )
 
 const (
@@ -33,6 +31,13 @@ const (
 	VASTVersionAttribute  = `version`
 	VASTSequenceAttribute = `sequence`
 	HTTPPrefix            = `http`
+)
+
+const (
+	inLineEnd       = "</InLine>"
+	wrapperEnd      = "</Wrapper>"
+	extensionsStart = "<Extensions>"
+	extensionsEnd   = "</Extensions>"
 )
 
 var (
@@ -192,39 +197,30 @@ func getAdPodBidCreativeAndPrice(bids []openrtb2.Bid) (string, float64) {
 }
 
 func addExtInfo(vastBytes []byte, responseExt json.RawMessage) []byte {
-	var v vast.VAST
-	if err := xml.Unmarshal(vastBytes, &v); err != nil {
-		return vastBytes
+
+	adm := string(vastBytes)
+	owExt := "<Extension type=" + `"OpenWrap"` + "><Ext><![CDATA[" + string(responseExt) + "]]></Ext></Extension>"
+
+	// Check if Extensions Exists
+	ci := strings.Index(adm, extensionsEnd)
+	if ci != -1 {
+		adm = strings.Replace(adm, extensionsEnd, owExt+extensionsEnd, 1)
+		return []byte(adm)
 	}
 
-	if len(v.Ads) == 0 {
-		return vastBytes
+	// Check if Wrapper Exists
+	wi := strings.Index(adm, wrapperEnd)
+	if wi != -1 {
+		adm = strings.Replace(adm, wrapperEnd, extensionsStart+owExt+extensionsEnd+wrapperEnd, 1)
+		return []byte(adm)
+
 	}
 
-	owExtBytes := append([]byte("<Ext>"), append(responseExt, []byte("</Ext>")...)...)
-
-	owExt := vast.Extension{
-		Type: "OpenWrap",
-		Data: owExtBytes,
+	// Check if Inline Exists
+	wi = strings.Index(adm, inLineEnd)
+	if wi != -1 {
+		adm = strings.Replace(adm, inLineEnd, extensionsStart+owExt+extensionsEnd+inLineEnd, 1)
+		return []byte(adm)
 	}
-
-	ad := v.Ads[0]
-	if ad.InLine != nil {
-		if ad.InLine.Extensions == nil {
-			ad.InLine.Extensions = &([]vast.Extension{})
-		}
-		*ad.InLine.Extensions = append(*ad.InLine.Extensions, owExt)
-	} else if ad.Wrapper != nil {
-		if ad.Wrapper.Extensions == nil {
-			ad.Wrapper.Extensions = []vast.Extension{}
-		}
-		ad.Wrapper.Extensions = append(ad.Wrapper.Extensions, owExt)
-	}
-
-	newVASTBytes, err := xml.Marshal(v)
-	if err != nil {
-		return vastBytes
-	}
-
-	return newVASTBytes
+	return vastBytes
 }
