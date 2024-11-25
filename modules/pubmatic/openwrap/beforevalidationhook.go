@@ -134,8 +134,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		glog.Errorf("getProfileData error %s with Invalid pubid: %v profile id: %v version id : %v combination", err, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayVersionID)
-		return result, err
+		return result, errors.New("invalid profile data")
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {

@@ -1,6 +1,8 @@
 package gocache
 
 import (
+	"database/sql"
+	"errors"
 	"strconv"
 
 	"github.com/golang/glog"
@@ -9,13 +11,17 @@ import (
 )
 
 func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion int) (err error) {
+	cacheKey := key(PubAdpodConfig, pubID, profileID, displayVersion)
 	adpodConfig, err := c.db.GetAdpodConfig(pubID, profileID, displayVersion)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.metricEngine.RecordDBQueryFailure(models.LiveVersionInnerQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
+			c.cache.Set(cacheKey, adpodConfig, getSeconds(c.cfg.CacheDefaultExpiry))
+		}
 		glog.Errorf(models.ErrDBQueryFailed, models.GetAdpodConfig, pubID, profileID, err)
 		return err
 	}
 
-	cacheKey := key(PubAdpodConfig, pubID, profileID, displayVersion)
 	c.cache.Set(cacheKey, adpodConfig, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
 }

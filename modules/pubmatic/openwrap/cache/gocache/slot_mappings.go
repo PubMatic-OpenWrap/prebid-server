@@ -29,7 +29,6 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) error {
 	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
 	if err != nil {
-		glog.Errorf(models.ErrDBQueryFailed, models.WrapperSlotMappingsQuery+"/"+models.WrapperLiveVersionSlotMappings, pubID, profileID, err)
 		return err
 	}
 

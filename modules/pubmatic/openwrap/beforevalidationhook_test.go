@@ -3858,9 +3858,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 					Reject:  true,
 					NbrCode: int(nbr.InvalidProfileConfiguration),
-					Errors:  []string{"failed to get profile data: received empty data"},
+					Errors:  []string{"invalid profile data"},
 				},
-				error:                 false,
+				error:                 true,
 				nilCurrencyConversion: true,
 			},
 		},
