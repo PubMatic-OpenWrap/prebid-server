@@ -186,24 +186,24 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 		return defaultBids
 	}
 
-	excludeFloors := make(map[string][]float64, len(bidResponse.SeatBid))    //exclude floors which are already present in bidresponse
-	var adunitFloors []float64                                               //floors for each adunit
-	defaultBidFloors := make(map[string][]float64, len(bidResponse.SeatBid)) //per bidder floors for default bids
+	bidderExcludeFloors := make(map[string][]float64, len(bidResponse.SeatBid))    //exclude floors which are already present in bidresponse
+	var adunitFloors []float64                                                     //floors for each adunit
+	bidderDefaultbidFloors := make(map[string][]float64, len(bidResponse.SeatBid)) //per bidder floors for default bids
 
-	// count of pubmatic and pubmatic_alias bids for each impression
-	seatBidsMultiFloor := make(map[string]map[string]int, len(bidResponse.SeatBid))
+	// count of pubmatic and pubmatic_alias's bids for each impression
+	bidderImpBidCounts := make(map[string]map[string]int, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
 		if rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMatic || rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMaticSecondaryAlias {
 			for _, bid := range seatBid.Bid {
 				impId, _ := models.GetImpressionID(bid.ImpID)
 				var bidExt models.BidExt
-				if seatBidsMultiFloor[impId] == nil {
-					seatBidsMultiFloor[impId] = make(map[string]int)
+				if bidderImpBidCounts[impId] == nil {
+					bidderImpBidCounts[impId] = make(map[string]int)
 				}
-				seatBidsMultiFloor[impId][seatBid.Seat]++
+				bidderImpBidCounts[impId][seatBid.Seat]++
 				if bid.Ext != nil {
 					if err := json.Unmarshal(bid.Ext, &bidExt); err == nil && bidExt.MultiBidMultiFloorValue != 0 {
-						excludeFloors[seatBid.Seat] = append(excludeFloors[seatBid.Seat], bidExt.MultiBidMultiFloorValue)
+						bidderExcludeFloors[seatBid.Seat] = append(bidderExcludeFloors[seatBid.Seat], bidExt.MultiBidMultiFloorValue)
 					}
 				}
 			}
@@ -211,13 +211,13 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[rctx.ImpBidCtx[impID].TagID]
+		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
 		for bidder := range impCtx.Bidders {
-			if bidderCode, ok := rctx.PrebidBidderCode[bidder]; ok && (bidderCode != models.BidderPubMatic && bidderCode != models.BidderPubMaticSecondaryAlias) {
+			if prebidBidderCode, ok := rctx.PrebidBidderCode[bidder]; ok && (prebidBidderCode != models.BidderPubMatic && prebidBidderCode != models.BidderPubMaticSecondaryAlias) {
 				continue
 			}
 			defaultBidsCount := 0
-			if defaultBidsCount = len(rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]) - seatBidsMultiFloor[impID][bidder]; defaultBidsCount <= 0 {
+			if defaultBidsCount = len(adunitFloors) - bidderImpBidCounts[impID][bidder]; defaultBidsCount <= 0 {
 				continue
 			}
 			if defaultBids[impID] == nil {
@@ -230,23 +230,23 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 			}
 
 			//exclude floors which are already present in bidresponse for defaultbids
-			defaultBidFloors[bidder] = make([]float64, 0, defaultBidsCount)
+			bidderDefaultbidFloors[bidder] = make([]float64, 0, defaultBidsCount)
 			for _, floor := range adunitFloors {
 				exclude := false
-				for _, excludeFloor := range excludeFloors[bidder] {
+				for _, excludeFloor := range bidderExcludeFloors[bidder] {
 					if floor == excludeFloor {
 						exclude = true
 						break
 					}
 				}
 				if !exclude {
-					defaultBidFloors[bidder] = append(defaultBidFloors[bidder], floor)
+					bidderDefaultbidFloors[bidder] = append(bidderDefaultbidFloors[bidder], floor)
 				}
 			}
 
 			for i := 0; i < defaultBidsCount; i++ {
 				uuid, _ := m.uuidGenerator.Generate()
-				bidExt := newDefaultBidExtMultiFloors(defaultBidFloors[bidder][i], bidder, bidResponseExt)
+				bidExt := newDefaultBidExtMultiFloors(bidderDefaultbidFloors[bidder][i], bidder, bidResponseExt)
 				bidExtJson, _ := json.Marshal(bidExt)
 
 				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
