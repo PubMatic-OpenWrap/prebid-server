@@ -65,10 +65,10 @@ github.com/IABTechLab/adscert v0.34.0/go.mod h1:pCLd3Up1kfTrH6kYFUGGeavxIc1f6Tvv
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241119153024-93d879bf45ec h1:pwf79tshkYqD4Jw5WaROcUA7tJlgKrohP0p11r6tkMg=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241119153024-93d879bf45ec/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241119162738-688068449884 h1:pwmsYUUzG82rctv3PStSGLng/zhV1P/jGVdEM6zL9lg=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241119162738-688068449884/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5 h1:uNJ9lOn3q677J2PbR9wbnHec8452lHYvUZCfqMUxk0s=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52 h1:n1pLyiO0A0dUwvYjktIIRd6Kikm//msfvV6JO7m3lIE=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

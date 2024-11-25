@@ -51,7 +51,7 @@ require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241119162738-688068449884
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52
 	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
@@ -64,6 +64,7 @@ require (
 
 require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
+	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -99,6 +100,6 @@ replace github.com/prebid/prebid-server/v2 => ./
 
 replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef
 
-replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241119153024-93d879bf45ec
+replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5
 
 replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0
