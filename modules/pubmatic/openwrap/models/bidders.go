@@ -17,6 +17,7 @@ const (
 	BidderTrustxAlias            = "trustx"
 	BidderSynacormediaAlias      = "synacormedia"
 	BidderViewDeos               = "viewdeos"
+	BidderAppStockAlias          = "appstock"
 )
 
 const (
