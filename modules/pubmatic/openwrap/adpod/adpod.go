@@ -103,7 +103,7 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *m
 		return errors.New("adpod.maxads must be positive number")
 	}
 
-	if config.MinDuration <= 0 {
+	if config.MinDuration < 0 {
 		return errors.New("adpod.adminduration must be positive number")
 	}
 
