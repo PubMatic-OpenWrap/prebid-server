@@ -307,7 +307,6 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 
 func newDefaultBidExtMultiFloors(floor float64, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
 	return &models.BidExt{
-		NetECPM:                 0,
 		Nbr:                     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
 		MultiBidMultiFloorValue: floor,
 	}
