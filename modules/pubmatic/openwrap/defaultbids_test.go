@@ -302,6 +302,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 									PrebidBidderCode: "pubmatic",
 								},
 							},
+							BidCtx: map[string]models.BidCtx{},
 						},
 					},
 					PrebidBidderCode: map[string]string{
@@ -321,17 +322,14 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":1.1}`),
 						},
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":2.1}`),
 						},
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":3.1}`),
 						},
 					},
 				},
@@ -398,12 +396,10 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":2.1}`),
 						},
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":3.1}`),
 						},
 					},
 				},
@@ -570,108 +566,99 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":2.1}`),
 						},
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":3.1}`),
 						},
 					},
 					"pubmatic_1123": {
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":2.1}`),
 						},
 						{
 							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
 							ImpID: "test-impID-1",
-							Ext:   []byte(`{"mbmfv":3.1}`),
 						},
 					},
 				},
 			},
 		},
-		// {
-		// 	name: "mulit-floors config have three floors and no bid in the response for both partner pubmatic and pubmatic_1123",
-		// 	args: args{
-		// 		rctx: &models.RequestCtx{
-		// 			Endpoint:    models.EndpointAppLovinMax,
-		// 			DefaultBids: map[string]map[string][]openrtb2.Bid{},
-		// 			AppLovinMax: models.AppLovinMax{
-		// 				MultiFloorsConfig: models.MultiFloorsConfig{
-		// 					Enabled: true,
-		// 					Config: models.ApplovinAdUnitFloors{
-		// 						"adunit-1": []float64{1.1, 2.1, 3.1},
-		// 					},
-		// 				},
-		// 			},
-		// 			ImpBidCtx: map[string]models.ImpCtx{
-		// 				"test-impID-1": {
-		// 					TagID: "adunit-1",
-		// 					Bidders: map[string]models.PartnerData{
-		// 						"pubmatic": {
-		// 							PrebidBidderCode: "pubmatic",
-		// 						},
-		// 						"pubmatic_1123": {
-		// 							PrebidBidderCode: "pubmatic",
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 			PrebidBidderCode: map[string]string{
-		// 				"pubmatic_1123": "pubmatic",
-		// 				"pubmatic":      "pubmatic",
-		// 			},
-		// 		},
-		// 		bidResponse: &openrtb2.BidResponse{
-		// 			ID:      "bid-1",
-		// 			SeatBid: []openrtb2.SeatBid{},
-		// 		},
-		// 	},
-		// 	fields: fields{
-		// 		uuidGenerator: TestUUIDGenerator{},
-		// 	},
-		// 	want: map[string]map[string][]openrtb2.Bid{
-		// 		"test-impID-1": {
-		// 			"pubmatic": {
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":1.1}`),
-		// 				},
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":2.1}`),
-		// 				},
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":3.1}`),
-		// 				},
-		// 			},
-		// 			"pubmatic_1123": {
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":1.1}`),
-		// 				},
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":2.1}`),
-		// 				},
-		// 				{
-		// 					ID:    "30470a14-2949-4110-abce-b62d57304ad5",
-		// 					ImpID: "test-impID-1",
-		// 					Ext:   []byte(`{"mbmfv":3.1}`),
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			name: "mulit-floors config have three floors and no bid in the response for both partner pubmatic and pubmatic_1123",
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint:    models.EndpointAppLovinMax,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{},
+					AppLovinMax: models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{1.1, 2.1, 3.1},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"test-impID-1": {
+							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+								"pubmatic_1123": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{},
+						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic_1123": "pubmatic",
+						"pubmatic":      "pubmatic",
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "bid-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			fields: fields{
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"test-impID-1": {
+					"pubmatic": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+					},
+					"pubmatic_1123": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "test-impID-1",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
