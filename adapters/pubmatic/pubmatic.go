@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,22 +23,18 @@ import (
 const MAX_IMPRESSIONS_PUBMATIC = 30
 const MAX_MULTIFLOORS_PUBMATIC = 3
 
-var re = regexp.MustCompile(appLovinMaxImpressionPattern)
-
 const (
-	ae                           = "ae"
-	PUBMATIC                     = "[PUBMATIC]"
-	buyId                        = "buyid"
-	buyIdTargetingKey            = "hb_buyid_"
-	skAdnetworkKey               = "skadn"
-	rewardKey                    = "reward"
-	dctrKeywordName              = "dctr"
-	urlEncodedEqualChar          = "%3D"
-	AdServerKey                  = "adserver"
-	PBAdslotKey                  = "pbadslot"
-	bidViewability               = "bidViewability"
-	multiFloors                  = "_mf"
-	appLovinMaxImpressionPattern = "_mf.*"
+	ae                  = "ae"
+	PUBMATIC            = "[PUBMATIC]"
+	buyId               = "buyid"
+	buyIdTargetingKey   = "hb_buyid_"
+	skAdnetworkKey      = "skadn"
+	rewardKey           = "reward"
+	dctrKeywordName     = "dctr"
+	urlEncodedEqualChar = "%3D"
+	AdServerKey         = "adserver"
+	PBAdslotKey         = "pbadslot"
+	bidViewability      = "bidViewability"
 )
 
 type PubmaticAdapter struct {
@@ -260,44 +255,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	requestData, errData := a.buildAdapterRequest(request, cookies)
 	if errData != nil {
 		errs = append(errs, errData)
-	}
-	return requestData, errs
-}
-
-// buildMultiFloorRequests builds multiple requests for each floor value
-func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, impFloorsMap map[string][]float64, cookies []string) ([]*adapters.RequestData, []error) {
-	requestData := []*adapters.RequestData{}
-	errs := make([]error, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
-
-	for i := 0; i < MAX_MULTIFLOORS_PUBMATIC; i++ {
-		isFloorsUpdated := false
-		newImps := make([]openrtb2.Imp, len(request.Imp))
-		copy(newImps, request.Imp)
-		//TODO-AK: Remove the imp from the request if the floor is not present except for the first floor
-		for j := range newImps {
-			floors, ok := impFloorsMap[request.Imp[j].ID]
-			if !ok || len(floors) <= i {
-				continue
-			}
-			isFloorsUpdated = true
-			newImps[j].BidFloor = floors[i]
-			newImps[j].ID = fmt.Sprintf("%s"+multiFloors+"%d", newImps[j].ID, i+1)
-		}
-
-		if !isFloorsUpdated {
-			continue
-		}
-
-		newRequest := *request
-		newRequest.Imp = newImps
-
-		newRequestData, errData := a.buildAdapterRequest(&newRequest, cookies)
-		if errData != nil {
-			errs = append(errs, errData)
-		}
-		if len(newRequestData) > 0 {
-			requestData = append(requestData, newRequestData...)
-		}
 	}
 	return requestData, errs
 }
@@ -645,7 +602,12 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		targets := getTargetingKeys(sb.Ext, string(externalRequest.BidderName))
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-			bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+
+			//If imp is multi-floored then update the bid.ext.mbmfv with the floor value
+			if appLovinMaxImpressionRegex.MatchString(bid.ImpID) {
+				bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
+				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+			}
 
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
@@ -707,10 +669,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		}
 	}
 	return bidResponse, errs
-}
-
-func trimSuffixWithPattern(input string) string {
-	return re.ReplaceAllString(input, "")
 }
 
 func getNativeAdm(adm string) (string, error) {

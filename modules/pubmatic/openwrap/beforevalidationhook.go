@@ -461,7 +461,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// prebidBidderCode is equivalent of PBS-Core's bidderCode
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
-			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+			rCtx.PrebidBidderCode[bidderCode] = prebidBidderCode
 
 			if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
