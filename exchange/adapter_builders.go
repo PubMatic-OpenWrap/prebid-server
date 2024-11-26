@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/displayio"
 	"github.com/prebid/prebid-server/v2/adapters"
 	ttx "github.com/prebid/prebid-server/v2/adapters/33across"
 	"github.com/prebid/prebid-server/v2/adapters/aax"
@@ -78,6 +77,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/deepintent"
 	"github.com/prebid/prebid-server/v2/adapters/definemedia"
 	"github.com/prebid/prebid-server/v2/adapters/dianomi"
+	"github.com/prebid/prebid-server/v2/adapters/displayio"
 	"github.com/prebid/prebid-server/v2/adapters/dmx"
 	"github.com/prebid/prebid-server/v2/adapters/dxkulture"
 	evolution "github.com/prebid/prebid-server/v2/adapters/e_volution"
