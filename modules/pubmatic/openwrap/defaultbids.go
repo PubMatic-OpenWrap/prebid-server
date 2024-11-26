@@ -225,12 +225,18 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 				if _, ok := bidderExcludeFloors[key]; !ok {
 					uuid, _ := m.uuidGenerator.Generate()
 					bidExt := newDefaultBidExtMultiFloors(floor, bidder, bidResponseExt)
-					bidExtJson, _ := json.Marshal(bidExt)
 					defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
 						ID:    uuid,
 						ImpID: impID,
-						Ext:   bidExtJson,
 					})
+
+					// create bidCtx because we need it for owlogger
+					rctx.ImpBidCtx[impID].BidCtx[uuid] = models.BidCtx{
+						BidExt: models.BidExt{
+							Nbr:                     bidExt.Nbr,
+							MultiBidMultiFloorValue: bidExt.MultiBidMultiFloorValue,
+						},
+					}
 				}
 
 			}
