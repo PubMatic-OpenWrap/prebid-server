@@ -48,7 +48,10 @@ func (m OpenWrap) handleEntrypointHook(
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
+			if rCtx.PubIDStr == "" {
+				rCtx.PubIDStr = "0"
+			}
+			m.metricEngine.RecordBadRequests(endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			if glog.V(models.LogLevelDebug) {
 				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
 					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, queryParams.Encode(), string(payload.Body))
@@ -70,6 +73,8 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
+
+	originalRequestBody := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
@@ -179,7 +184,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
-		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, payload.Body)
+		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
 	result.Reject = false
@@ -207,15 +212,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
 		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
 	case models.EndpointAppLovinMax:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
-		if requestExtWrapper.ProfileId == 0 {
-			profileIDStr := getProfileID(payload.Body)
-			if profileIDStr != "" {
-				if ProfileId, newErr := strconv.Atoi(profileIDStr); newErr == nil {
-					requestExtWrapper.ProfileId = ProfileId
-				}
-			}
-		}
+		fallthrough
 	case models.EndpointWebS2S:
 		fallthrough
 	default:

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"net/http"
 	"sort"
 	"testing"
@@ -1840,6 +1841,522 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "GAM_Unwinding_Enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Multi_Imp",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+						{
+							ID: "testImp2",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3, 6, 7, 8},
+						},
+					},
+					{
+						ID: "testImp2",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Empty_Protocols",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Enabled_Protocols_Not_Present",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: models.Enabled,
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:     ptrutil.ToPtr[int64](200),
+								H:     ptrutil.ToPtr[int64](300),
+								Plcmt: 1,
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{3, 6, 7, 8},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+			},
+			wantErr: false,
+		},
+		{
+			name: "GAM_Unwinding_Disabled",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest: 1,
+					PartnerConfigMap: map[int]map[string]string{
+						-1: {
+							models.AdServerCurrency:  "USD",
+							models.SChainDBKey:       "1",
+							models.StrictVastModeKey: "0",
+						},
+					},
+					TMax:     500,
+					IP:       "127.0.0.1",
+					Platform: models.PLATFORM_APP,
+					KADUSERCookie: &http.Cookie{
+						Name:  "KADUSERCOOKIE",
+						Value: "123456789",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID:   "testID",
+					Test: 1,
+					Cur:  []string{"EUR"},
+					TMax: 500,
+					Source: &openrtb2.Source{
+						TID: "testID",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID: "testImp1",
+							Video: &openrtb2.Video{
+								W:         ptrutil.ToPtr[int64](200),
+								H:         ptrutil.ToPtr[int64](300),
+								Plcmt:     1,
+								Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+							},
+						},
+					},
+					Device: &openrtb2.Device{
+						IP:         "127.0.0.1",
+						Language:   "en",
+						DeviceType: 1,
+					},
+					WLang: []string{"en", "hi"},
+					User: &openrtb2.User{
+						CustomData: "123456789",
+						Ext:        json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":""}]},{"source":"liveramp.com","uids":[{"id":"IDL:"}]}]}`),
+					},
+					Site: &openrtb2.Site{
+						Publisher: &openrtb2.Publisher{
+							ID: "1010",
+						},
+						Content: &openrtb2.Content{
+							Language: "en",
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidRequest{
+				ID:   "testID",
+				Test: 1,
+				Cur:  []string{"EUR", "USD"},
+				TMax: 500,
+				Source: &openrtb2.Source{
+					TID: "testID",
+				},
+				Imp: []openrtb2.Imp{
+					{
+						ID: "testImp1",
+						Video: &openrtb2.Video{
+							W:         ptrutil.ToPtr[int64](200),
+							H:         ptrutil.ToPtr[int64](300),
+							Plcmt:     1,
+							Protocols: []adcom1.MediaCreativeSubtype{1, 2, 3},
+						},
+					},
+				},
+				Device: &openrtb2.Device{
+					IP:         "127.0.0.1",
+					Language:   "en",
+					DeviceType: 1,
+				},
+				WLang: []string{"en", "hi"},
+				User: &openrtb2.User{
+					CustomData: "123456789",
+					Ext:        json.RawMessage(`{}`),
+				},
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "1010",
+					},
+					Content: &openrtb2.Content{
+						Language: "en",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3019,6 +3536,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		cookie       string
 		loggerID     string
 		bidderCode   string
+		sendBurl     bool
 	}
 	tests := []struct {
 		name    string
@@ -3065,10 +3583,43 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 			},
 			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
 		},
+		{
+			name: "sendburl is true and both cookie and loggerID are present",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				cookie:       "test_cookie",
+				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
+				bidderCode:   "pubmatic",
+				sendBurl:     true,
+			},
+			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","sendburl":true,"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+		},
+		{
+			name: "sendburl is true and both cookie and loggerID are empty",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				cookie:       "",
+				loggerID:     "",
+				bidderCode:   "pubmatic",
+				sendBurl:     true,
+			},
+			want: json.RawMessage(`{"pubmatic":{"sendburl":true,"wiid":""}}`),
+		},
+		{
+			name: "sendburl is false and both cookie and loggerID are present",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				cookie:       "test_cookie",
+				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
+				bidderCode:   "pubmatic",
+				sendBurl:     false,
+			},
+			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode)
+			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode, tt.args.sendBurl)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return
@@ -3216,7 +3767,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, "5890", getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
@@ -3262,10 +3813,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				}, errors.New("test"))
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -3298,10 +3848,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -3346,10 +3895,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -3396,7 +3944,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3457,7 +4005,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3508,7 +4056,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnersFiltered))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllPartnersFiltered))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnersFiltered))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3559,7 +4107,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3613,7 +4161,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, "5890", getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3663,7 +4211,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -3757,7 +4305,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllSlotsDisabled))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllSlotsDisabled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllSlotsDisabled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
@@ -3953,7 +4501,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -4209,7 +4757,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, 18)
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, "1234", 18)
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
 			},
 			want: want{
@@ -4237,7 +4785,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, 18)
+				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, "1234", 18)
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
 			},
 			want: want{
@@ -4740,7 +5288,7 @@ func TestCurrencyConverion(t *testing.T) {
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(5890, 1234).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(5890, 1234).Return(false, false)
@@ -4788,7 +5336,7 @@ func TestCurrencyConverion(t *testing.T) {
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(5890, 1234).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(5890, 1234).Return(false, false)
@@ -4887,7 +5435,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 
@@ -4917,7 +5465,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			},
 			setup: func() {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 			},
@@ -5408,10 +5956,9 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, errors.New("test"))
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidProfileConfiguration))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5462,10 +6009,9 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidPlatform))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidPlatform))
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
-				mockEngine.EXPECT().RecordPublisherInvalidProfileImpressions("5890", rctx.ProfileIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5518,7 +6064,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -5573,7 +6119,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -5619,7 +6165,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
@@ -6572,7 +7118,73 @@ func TestSetImpBidFloorParams(t *testing.T) {
 	}
 }
 
-func TestUpdateProfileAppStoreUrl(t *testing.T) {
+func TestGetProfileAppStoreUrl(t *testing.T) {
+	type args struct {
+		rctx models.RequestCtx
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 bool
+	}{
+		{
+			name: "AppStoreUrl missing in DB",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {},
+					},
+				},
+			},
+			want:  "",
+			want1: false,
+		},
+		{
+			name: "Invalid AppStoreUrl",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {
+							models.AppStoreUrl: "invalid-url",
+						},
+					},
+				},
+			},
+			want:  "invalid-url",
+			want1: false,
+		},
+		{
+			name: "Valid AppStoreUrl",
+			args: args{
+				rctx: models.RequestCtx{
+					PartnerConfigMap: map[int]map[string]string{
+						models.VersionLevelConfigID: {
+							models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+						},
+					},
+				},
+			},
+			want:  "https://apps.apple.com/app/id123456789",
+			want1: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getProfileAppStoreUrl(tt.args.rctx)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want1, got1)
+		})
+	}
+}
+
+func TestUpdateSkadnSourceapp(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	type feilds struct {
+		m *OpenWrap
+	}
 	tests := []struct {
 		name            string
 		rctx            models.RequestCtx
@@ -6580,29 +7192,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 		impExt          *models.ImpExtension
 		wantAppStoreURL string
 		wantSourceApp   string
+		fe              feilds
+		setup           func() *mock_metrics.MockMetricsEngine
 	}{
-		{
-			name: "AppStoreUrl missing in DB",
-			rctx: models.RequestCtx{
-				PartnerConfigMap: map[int]map[string]string{
-					models.VersionLevelConfigID: {},
-				},
-			},
-			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppStoreURL: "",
-		},
-		{
-			name: "Invalid AppStoreUrl",
-			rctx: models.RequestCtx{
-				PartnerConfigMap: map[int]map[string]string{
-					models.VersionLevelConfigID: {
-						models.AppStoreUrl: "invalid-url",
-					},
-				},
-			},
-			bidRequest:      &openrtb2.BidRequest{App: &openrtb2.App{}},
-			wantAppStoreURL: "invalid-url",
-		},
 		{
 			name: "Valid AppStoreUrl os is ios and SKAdnetwork is present in imp.ext",
 			rctx: models.RequestCtx{
@@ -6610,6 +7202,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6626,6 +7221,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
 			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 			wantSourceApp:   "123456789",
 		},
@@ -6634,8 +7232,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 			rctx: models.RequestCtx{
 				PartnerConfigMap: map[int]map[string]string{
 					models.VersionLevelConfigID: {
-						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
+						models.AppStoreUrl: "https://apps.apple.com/app/id",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6649,7 +7250,10 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
-			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
+			wantAppStoreURL: "https://apps.apple.com/app/id",
 		},
 		{
 			name: "Valid AppStoreUrl os is ios but SKAdnetwork missing in imp.ext",
@@ -6658,6 +7262,9 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
+				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/id123456789",
 				},
 			},
 			bidRequest: &openrtb2.BidRequest{
@@ -6671,17 +7278,25 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				return mock_metrics.NewMockMetricsEngine(ctrl)
+			},
 			impExt:          &models.ImpExtension{},
 			wantAppStoreURL: "https://apps.apple.com/app/id123456789",
 		},
 		{
-			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl",
+			name: "Valid AppStoreUrl os is ios but Itunes ID missing in AppStoreUrl(url is of Android)",
 			rctx: models.RequestCtx{
 				PartnerConfigMap: map[int]map[string]string{
 					models.VersionLevelConfigID: {
 						models.AppStoreUrl: "https://apps.apple.com/app/",
 					},
 				},
+				AppLovinMax: models.AppLovinMax{
+					AppStoreUrl: "https://apps.apple.com/app/",
+				},
+				PubIDStr:     "5890",
+				ProfileIDStr: "1234",
 			},
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
@@ -6694,6 +7309,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 					},
 				},
 			},
+			setup: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordFailedParsingItuneID("5890", "1234")
+				return mockEngine
+			},
 			impExt: &models.ImpExtension{
 				SKAdnetwork: json.RawMessage(`{}`),
 			},
@@ -6703,8 +7323,11 @@ func TestUpdateProfileAppStoreUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAppStoreURL := getProfileAppStoreUrlAndUpdateItunesID(tt.rctx, tt.bidRequest, tt.impExt)
-			assert.Equal(t, tt.wantAppStoreURL, gotAppStoreURL)
+			metricsEngine := tt.setup()
+			tt.fe.m = &OpenWrap{
+				metricEngine: metricsEngine,
+			}
+			tt.fe.m.updateSkadnSourceapp(tt.rctx, tt.bidRequest, tt.impExt)
 			if tt.impExt != nil {
 				if tt.impExt.SKAdnetwork != nil {
 					var skAdnetwork map[string]interface{}

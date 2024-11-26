@@ -308,25 +308,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "RecordPublisherInvalidProfileImpressions",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPublisherInvProfileImpressions], "5890", "pubmatic"): 10,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherInvalidProfileImpressions("5890", "pubmatic", 10)
-			},
-		},
-		{
 			name: "RecordNobidErrPrebidServerRequests",
 			args: args{
 				statTCP: &StatsTCP{
@@ -541,12 +522,12 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], "5890", "1234", "0"): 1,
+					fmt.Sprintf(statKeys[statsKeyLoggerErrorRequests], "5890"): 1,
 				},
 				channelSize: 1,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordPublisherWrapperLoggerFailure("5890", "1234", "0")
+				st.RecordPublisherWrapperLoggerFailure("5890")
 			},
 		},
 		{
@@ -752,13 +733,13 @@ func TestRecordFunctions(t *testing.T) {
 				channelSize: 7,
 			},
 			callRecord: func(st *StatsTCP) {
-				st.RecordBadRequests("amp", 1)
-				st.RecordBadRequests("video", 1)
-				st.RecordBadRequests("v25", 1)
-				st.RecordBadRequests("json", 100)
-				st.RecordBadRequests("openwrap", 200)
-				st.RecordBadRequests("ortb", 300)
-				st.RecordBadRequests("vast", 400)
+				st.RecordBadRequests("amp", "5890", 1)
+				st.RecordBadRequests("video", "5890", 1)
+				st.RecordBadRequests("v25", "5890", 1)
+				st.RecordBadRequests("json", "5890", 100)
+				st.RecordBadRequests("openwrap", "5890", 200)
+				st.RecordBadRequests("ortb", "5890", 300)
+				st.RecordBadRequests("vast", "5890", 400)
 			},
 		},
 		{

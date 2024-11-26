@@ -209,7 +209,7 @@ func TestSendMethod(t *testing.T) {
 			},
 			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
 				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-				mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure("5890", "1", "")
+				mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure("5890")
 				return mockEngine
 			},
 			getMockMultiHttpContext: func() *mock_mhttp.MockMultiHttpContextInterface {

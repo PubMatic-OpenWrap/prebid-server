@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/privacy"
 
@@ -424,6 +425,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
+
+		if requestExtPrebid.StrictVastMode {
+			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBid)
+			errs = append(errs, validationErrs...)
+		}
 
 		if e.priceFloorEnabled {
 			var rejectedBids []*entities.PbsOrtbSeatBid
@@ -1415,7 +1421,7 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 			}
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
-			nonBidParams.NonBidReason = int(ResponseRejectedGeneral)
+			nonBidParams.NonBidReason = int(nbr.ResponseRejectedDSA)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}

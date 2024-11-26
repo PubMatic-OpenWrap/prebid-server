@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -55,8 +56,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			if defaultBids[impID] == nil {
 				defaultBids[impID] = make(map[string][]openrtb2.Bid)
 			}
-
-			uuid := uuid.NewV4().String()
+			uuid, _ := m.uuidGenerator.Generate()
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 
@@ -128,6 +128,12 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 		}
 	}
 
+	//Do not add nobids in default bids for throttled adapter and non-mapped bidders in case of web-s2s
+	//as we are forming forming seatNonBids from defaultBids which is used for owlogger
+	if rctx.Endpoint == models.EndpointWebS2S {
+		return defaultBids
+	}
+
 	// add nobids for throttled adapter to all the impressions (how do we set profile with custom list of bidders at impression level?)
 	for bidder := range rctx.AdapterThrottleMap {
 		for impID := range rctx.ImpBidCtx { // ImpBidCtx is used only for list of impID, it does not have data of throttled adapters
@@ -170,6 +176,67 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 		}
 	}
 
+	return defaultBids
+}
+
+func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
+
+	// MultiBidMultiFloor is only supported for AppLovinMax
+	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+		return rctx.DefaultBids
+	}
+
+	defaultBids := rctx.DefaultBids
+	bidderExcludeFloors := make(map[string]struct{}, len(bidResponse.SeatBid)) //exclude floors which are already present in bidresponse
+	var adunitFloors []float64                                                 //floors for each adunit
+
+	for _, seatBid := range bidResponse.SeatBid {
+		if rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMatic || rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMaticSecondaryAlias {
+			for _, bid := range seatBid.Bid {
+				impId, _ := models.GetImpressionID(bid.ImpID)
+				floorValue := rctx.ImpBidCtx[impId].BidCtx[bid.ID].BidExt.MultiBidMultiFloorValue
+				if floorValue > 0 {
+					key := fmt.Sprintf("%s-%s-%.2f", impId, seatBid.Seat, floorValue)
+					bidderExcludeFloors[key] = struct{}{}
+				}
+			}
+		}
+	}
+
+	for impID, impCtx := range rctx.ImpBidCtx {
+		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
+		for bidder := range impCtx.Bidders {
+			if prebidBidderCode := rctx.PrebidBidderCode[bidder]; prebidBidderCode != models.BidderPubMatic && prebidBidderCode != models.BidderPubMaticSecondaryAlias {
+				continue
+			}
+
+			if defaultBids[impID] == nil {
+				defaultBids[impID] = make(map[string][]openrtb2.Bid)
+			}
+
+			//if defaultbid is already present for pubmatic, then reset it, as we are adding new defaultbids with MultiBidMultiFloor
+			if _, ok := defaultBids[impID][bidder]; ok {
+				defaultBids[impID][bidder] = make([]openrtb2.Bid, 0)
+			}
+
+			//exclude floors which are already present in bidresponse for defaultbids
+			for _, floor := range adunitFloors {
+				key := fmt.Sprintf("%s-%s-%.2f", impID, bidder, floor)
+				if _, ok := bidderExcludeFloors[key]; !ok {
+					uuid, _ := m.uuidGenerator.Generate()
+					bidExt := newDefaultBidExtMultiFloors(floor, bidder, bidResponseExt)
+					bidExtJson, _ := json.Marshal(bidExt)
+					defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
+						ID:    uuid,
+						ImpID: impID,
+						Ext:   bidExtJson,
+					})
+				}
+
+			}
+
+		}
+	}
 	return defaultBids
 }
 
@@ -216,6 +283,13 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 		}
 	}
 	return &bidExt
+}
+
+func newDefaultBidExtMultiFloors(floor float64, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
+	return &models.BidExt{
+		Nbr:                     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
+		MultiBidMultiFloorValue: floor,
+	}
 }
 
 // TODO : Check if we need this?

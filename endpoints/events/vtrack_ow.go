@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 var (
 	errEventURLNotConfigured = errors.New("event urls not configured")
+	tmpWSRemoverRegex        = regexp.MustCompile(`>\s+<`)
 )
 
 // InjectVideoEventTrackers injects the video tracking events
@@ -52,16 +54,18 @@ func InjectVideoEventTrackers(
 	etreeParserTime := time.Since(_startTime)
 
 	if fastXMLExperiment && err == nil {
+		etreeXMLResponse := response
+
 		_startTime = time.Now()
 		fastXMLResponse, _ := injectVideoEventsFastXML(vastXML, eventURLMap, nurlPresent, imp.Video.Linearity)
 		fastXMLParserTime := time.Since(_startTime)
 
 		//temporary
 		if fastXMLResponse != vastXML {
-			fastXMLResponse = tmpFastXMLProcessing(fastXMLResponse)
+			fastXMLResponse, etreeXMLResponse = tmpFastXMLProcessing(fastXMLResponse, response)
 		}
 
-		isResponseMismatch := (response != fastXMLResponse)
+		isResponseMismatch := (etreeXMLResponse != fastXMLResponse)
 
 		if isResponseMismatch {
 			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
@@ -75,17 +79,6 @@ func InjectVideoEventTrackers(
 	}
 
 	return response, metrics, err
-}
-
-func tmpFastXMLProcessing(vast string) string {
-	//replace only if trackers are injected
-	vast = strings.ReplaceAll(vast, " >", ">")
-	// if strings.Contains(vast, "'") {
-	// 	if index := strings.Index(vast, "<VAST"); index != -1 {
-	// 		vast = vast[0:index] + strings.ReplaceAll(vast[index:], "'", "\"")
-	// 	}
-	// }
-	return vast
 }
 
 func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (string, error) {
@@ -235,4 +228,17 @@ func FindCreatives(doc *etree.Document) []*etree.Element {
 	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 	return creatives
+}
+
+func tmpFastXMLProcessing(fastXML, etreeXML string) (string, string) {
+	//replace only if trackers are injected
+	fastXML = strings.TrimSpace(fastXML)                        //step1: remove heading and trailing whitespaces
+	fastXML = tmpWSRemoverRegex.ReplaceAllString(fastXML, "><") //step2: remove inbetween whitespaces
+	fastXML = strings.ReplaceAll(fastXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
+	fastXML = strings.ReplaceAll(fastXML, "'", "\"")            //step4: convert single quote to double quote
+
+	etreeXML = tmpWSRemoverRegex.ReplaceAllString(etreeXML, "><") //step2: remove inbetween whitespaces
+	etreeXML = strings.ReplaceAll(etreeXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
+	etreeXML = strings.ReplaceAll(etreeXML, "'", "\"")
+	return fastXML, etreeXML
 }

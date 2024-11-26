@@ -53,9 +53,8 @@ git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 h1:Ea8zwi
 git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3/go.mod h1:c/I6IcDn4Mtq4mmw8wGJN3v0o10nIMX7VTuQnsalUw0=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d h1:BgLUpJQ9Z89eDGz//voK74G/8FgjgVg2PWVbjgCJ4+A=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
-github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b h1:7AsXylZJDwq514L8KE0Id079VNfUsDEMUIYMlRYH+0Y=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
@@ -66,10 +65,10 @@ github.com/IABTechLab/adscert v0.34.0/go.mod h1:pCLd3Up1kfTrH6kYFUGGeavxIc1f6Tvv
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240914050009-a916f68552f5 h1:qNRDZVW/TJI0O4hPVdk5YCl+WxD6alYdaCG0im73lNo=
-github.com/PubMatic-OpenWrap/etree v1.0.2-0.20240914050009-a916f68552f5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2 h1:4zaGImZVnKCJudxKfsVNJAqGhCPxbjApAo0QvEThwpw=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240826060652-d9d5d05fdad2/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5 h1:uNJ9lOn3q677J2PbR9wbnHec8452lHYvUZCfqMUxk0s=
+github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52 h1:n1pLyiO0A0dUwvYjktIIRd6Kikm//msfvV6JO7m3lIE=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -520,7 +519,6 @@ github.com/yudai/gojsondiff v1.0.0/go.mod h1:AY32+k2cwILAkW1fbgxQ5mUmMiZFgLIV+FB
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 h1:BHyfKlQyqbsFN5p3IfnEUduWvb9is428/nNb5L3U01M=
 github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82/go.mod h1:lgjkn3NuSvDfVJdfcVVdX+jpBxNmX4rDAzaS45IcYoM=
 github.com/yudai/pp v2.0.1+incompatible h1:Q4//iY4pNF6yPLZIigmvcl7k/bPgrcTPIFIcmawg5bI=
-github.com/yudai/pp v2.0.1+incompatible/go.mod h1:PuxR/8QJ7cyCkFp/aUDS+JY727OFEZkTdatxwunjIkc=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

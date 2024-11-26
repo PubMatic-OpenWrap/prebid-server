@@ -51,7 +51,7 @@ func getGdprEnabledFlag(partnerConfigMap map[int]map[string]string) int {
 }
 
 // send function will send the owlogger to analytics endpoint
-func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.MultiHttpContextInterface) {
+var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.MultiHttpContextInterface) {
 	startTime := time.Now()
 	hc, _ := mhttp.NewHttpCall(url, "")
 
@@ -72,7 +72,7 @@ func send(rCtx *models.RequestCtx, url string, headers http.Header, mhc mhttp.Mu
 			rCtx.PubID, rCtx.ProfileID, rCtx.VersionID)
 
 		// we will not record at version level in prometheus metric
-		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr, rCtx.ProfileIDStr, "")
+		rCtx.MetricsEngine.RecordPublisherWrapperLoggerFailure(rCtx.PubIDStr)
 		return
 	}
 	rCtx.MetricsEngine.RecordSendLoggerDataTime(time.Since(startTime))

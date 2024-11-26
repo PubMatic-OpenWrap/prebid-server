@@ -103,13 +103,6 @@ func (me *MultiMetricsEngine) RecordPublisherProfileRequests(publisher, profile 
 	}
 }
 
-// RecordPublisherInvalidProfileImpressions across all engines
-func (me *MultiMetricsEngine) RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int) {
-	for _, thisME := range *me {
-		thisME.RecordPublisherInvalidProfileImpressions(publisher, profileID, impCount)
-	}
-}
-
 // RecordNobidErrPrebidServerRequests across all engines
 func (me *MultiMetricsEngine) RecordNobidErrPrebidServerRequests(publisher string, nbr int) {
 	for _, thisME := range *me {
@@ -167,9 +160,9 @@ func (me *MultiMetricsEngine) RecordPublisherResponseTimeStats(publisher string,
 }
 
 // RecordPublisherWrapperLoggerFailure across all engines
-func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string) {
+func (me *MultiMetricsEngine) RecordPublisherWrapperLoggerFailure(publisher string) {
 	for _, thisME := range *me {
-		thisME.RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID)
+		thisME.RecordPublisherWrapperLoggerFailure(publisher)
 	}
 }
 
@@ -188,9 +181,9 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 }
 
 // RecordBadRequests across all engines
-func (me *MultiMetricsEngine) RecordBadRequests(endpoint string, errorCode int) {
+func (me *MultiMetricsEngine) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	for _, thisME := range *me {
-		thisME.RecordBadRequests(endpoint, errorCode)
+		thisME.RecordBadRequests(endpoint, publisher, errorCode)
 	}
 }
 
@@ -527,6 +520,20 @@ func (me *MultiMetricsEngine) RecordAdruleValidationFailure(publisher, profile s
 func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalType string) {
 	for _, thisME := range *me {
 		thisME.RecordSignalDataStatus(pubid, profileid, signalType)
+	}
+}
+
+// RecordFailedParsingItuneID record failed parsing itune id
+func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
+	for _, thisME := range *me {
+		thisME.RecordFailedParsingItuneID(pubId, profId)
+	}
+}
+
+// RecordEndpointResponseSize record endpoint specific response size
+func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySize float64) {
+	for _, thisME := range *me {
+		thisME.RecordEndpointResponseSize(endpoint, bodySize)
 	}
 }
 

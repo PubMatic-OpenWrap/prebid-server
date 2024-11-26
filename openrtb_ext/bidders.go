@@ -93,6 +93,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderDeepintent,
 	BidderDefinemedia,
 	BidderDianomi,
+	BidderDisplayio,
 	BidderEdge226,
 	BidderDmx,
 	BidderDXKulture,
@@ -385,6 +386,7 @@ const (
 	BidderDeepintent        BidderName = "deepintent"
 	BidderDefinemedia       BidderName = "definemedia"
 	BidderDianomi           BidderName = "dianomi"
+	BidderDisplayio         BidderName = "displayio"
 	BidderEdge226           BidderName = "edge226"
 	BidderDmx               BidderName = "dmx"
 	BidderDXKulture         BidderName = "dxkulture"

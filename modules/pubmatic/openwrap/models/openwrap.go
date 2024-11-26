@@ -156,6 +156,8 @@ type DeviceCtx struct {
 	IFATypeID *DeviceIFAType
 	Platform  DevicePlatform
 	Ext       *ExtDevice
+	ID        string
+	Model     string
 }
 
 type ImpCtx struct {
