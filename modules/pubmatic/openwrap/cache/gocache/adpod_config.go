@@ -16,7 +16,8 @@ func (c *cache) populateCacheWithAdpodConfig(pubID, profileID, displayVersion in
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.metricEngine.RecordDBQueryFailure(models.LiveVersionInnerQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
-			c.cache.Set(cacheKey, adpodConfig, getSeconds(c.cfg.CacheDefaultExpiry))
+		} else {
+			c.metricEngine.RecordDBQueryFailure(models.GetAdpodConfig, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		}
 		glog.Errorf(models.ErrDBQueryFailed, models.GetAdpodConfig, pubID, profileID, err)
 		return err
@@ -40,7 +41,6 @@ func (c *cache) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconf
 	if err := c.LockAndLoad(lockKey, func() error {
 		return c.populateCacheWithAdpodConfig(pubID, profileID, displayVersion)
 	}); err != nil {
-		c.metricEngine.RecordDBQueryFailure(models.GetAdpodConfig, strconv.Itoa(pubID), strconv.Itoa(profileID))
 		return nil, err
 	}
 
