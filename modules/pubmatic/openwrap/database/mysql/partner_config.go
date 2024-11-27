@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -16,7 +15,7 @@ import (
 func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayVersion int) (map[int]map[string]string, error) {
 	versionID, displayVersionID, platform, profileType, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error: %w", err)
 	}
 
 	partnerConfigMap, err := db.getActivePartnerConfigurations(profileID, versionID)
@@ -30,6 +29,8 @@ func (db *mySqlDB) GetActivePartnerConfigurations(pubID, profileID int, displayV
 			partnerConfigMap[-1][models.ProfileTypeKey] = strconv.Itoa(profileType)
 
 		}
+	} else {
+		return partnerConfigMap, fmt.Errorf("GetParterConfigQuery Failure Error: %w", err)
 	}
 	return partnerConfigMap, err
 }
@@ -79,7 +80,7 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 
 	// NYC_TODO: ignore close error
 	if err = rows.Err(); err != nil {
-		glog.Errorf("partner config row scan failed for versionID %d", versionID)
+		return nil, err
 	}
 	return partnerConfigMap, nil
 }
@@ -99,5 +100,10 @@ func (db *mySqlDB) getVersionIdAndProfileDetails(profileID, displayVersion, pubI
 	if err != nil {
 		return versionID, displayVersionIDFromDB, platform.String, profileType, err
 	}
+
+	if err = row.Err(); err != nil {
+		return versionID, displayVersionIDFromDB, platform.String, profileType, err
+	}
+
 	return versionID, displayVersionIDFromDB, platform.String, profileType, nil
 }

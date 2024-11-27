@@ -132,14 +132,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
-		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
-		} else {
-			err = errors.New("failed to get profile data: received empty data")
-		}
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		return result, err
+		return result, errors.New("invalid profile data")
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {

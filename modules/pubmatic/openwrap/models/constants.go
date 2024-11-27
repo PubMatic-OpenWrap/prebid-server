@@ -542,8 +542,8 @@ const (
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	GetAdpodConfig                     = "GetAdpodConfig"
-	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
-	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
+	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
@@ -618,4 +618,10 @@ const (
 // constants for log level
 const (
 	LogLevelDebug glog.Level = 3
+)
+
+const (
+	// ErrDBQueryFailed reponse error
+	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
 )
