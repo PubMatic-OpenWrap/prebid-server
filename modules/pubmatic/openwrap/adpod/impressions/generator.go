@@ -1,5 +1,11 @@
 package impressions
 
+import (
+	"runtime/debug"
+
+	"github.com/golang/glog"
+)
+
 // generator contains Pod Minimum Duration, Pod Maximum Duration, Slot Minimum Duration and Slot Maximum Duration
 // It holds additional attributes required by this algorithm for  internal computation.
 //
@@ -176,7 +182,11 @@ func (g generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority bool) 
 // if  any validation fails it removes all the alloated slots and  makes is of size 0
 // and sets the freeTime value as RequestedPodMaxDuration
 func (config *generator) validateSlots() {
-
+	defer func() {
+		if recover := recover(); recover != nil {
+			glog.Errorf("generator panic pod: %v  stacktrace: %v ", config.requested, string(debug.Stack()))
+		}
+	}()
 	// default return value if validation fails
 	emptySlots := make([][2]int64, 0)
 	if len(config.Slots) == 0 {
