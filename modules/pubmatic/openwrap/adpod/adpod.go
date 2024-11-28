@@ -78,18 +78,7 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *models.AdPod, adUnitConfig *adunitconfig.AdConfig) error {
-
-	video = ortb.DeepCopyImpVideo(video)
-	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil {
-		if video.MinDuration == 0 {
-			video.MinDuration = adUnitConfig.Video.Config.MinDuration
-		}
-
-		if video.MaxDuration == 0 {
-			video.MaxDuration = adUnitConfig.Video.Config.MaxDuration
-		}
-	}
+func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *models.AdPod) error {
 
 	if config == nil {
 		return nil
