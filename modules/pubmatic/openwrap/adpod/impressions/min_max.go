@@ -2,9 +2,7 @@ package impressions
 
 import (
 	"fmt"
-	"log"
 	"math"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -124,19 +122,6 @@ func (mm MinMax) getRepeations(impressionKey string) int {
 // based on configrations present in c
 func get(c generator, ch chan [][2]int64, wg *sync.WaitGroup) {
 	defer wg.Done()
-	defer func() {
-		if r := recover(); r != nil {
-			// Get stack trace
-			stack := make([]byte, 4096)
-			stack = stack[:runtime.Stack(stack, false)]
-
-			// Log the panic, request, and stack trace
-			log.Printf("PANIC: %v\nRequest: %+v\nStack Trace:\n%s", r, c.requested, string(stack))
-
-			// Optionally re-panic if you want the panic to propagate
-			// panic(r)
-		}
-	}()
 	imps := c.Get()
 	// util.Logf("A2 Impressions = %v\n", imps)
 	ch <- imps
