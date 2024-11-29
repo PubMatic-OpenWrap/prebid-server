@@ -3,11 +3,13 @@ package adbutler_onsite
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -127,6 +129,15 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 
 }
 
+// randomFloatInRange generates a random float64 in the range (1, 3].
+func randomPriceInRange() float64 {
+	// Seed the random number generator to ensure different results each time
+	rand.Seed(time.Now().UnixNano())
+
+	// Generate a random float64 in the range (0, 2] and then shift it to (1, 3]
+	return 1 + rand.Float64()*2
+}
+
 func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfBids int) *adapters.BidderResponse {
 
 	impIDMap := getImpIDMap(request)
@@ -186,6 +197,8 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				H:     int64(height),
 				AdM:   adm,
 				MType:   adType,
+				Price: randomPriceInRange(),  //Temporary calculation
+				CrID: adButlerBid.BannerID,
 			}
 
 			adapters.AddDefaultFieldsComm(bid)
@@ -284,5 +297,6 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
 
 
