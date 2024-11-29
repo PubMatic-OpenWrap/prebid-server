@@ -13,6 +13,7 @@ import (
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	"github.com/jinzhu/copier"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -668,39 +669,56 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	}
 
+	finalBidRequest, updateErr := m.updateRequest(rCtx, payload.BidRequest)
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
 			moduleCtx.ModuleContext["rctx"] = rctx
 		}()
-
-		var err error
-		if rctx.IsCTVRequest && ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
-			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
-			if err != nil {
-				schainBytes, _ := json.Marshal(ep.BidRequest.Source.SChain)
-				glog.Errorf(ctv.ErrSchainValidationFailed, SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
-				ep.BidRequest.Source.SChain = nil
-			}
-		}
-		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
-		if err != nil {
-			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
-		}
-
-		if rctx.IsCTVRequest {
-			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
-			if err != nil {
-				result.Errors = append(result.Errors, err.Error())
-			}
-
-			ep.BidRequest = adpod.ApplyAdpodConfigs(rctx, ep.BidRequest)
+		if updateErr == nil {
+			ep.BidRequest = finalBidRequest
 		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
 	result.Reject = false
 	return result, nil
+}
+func (m *OpenWrap) updateRequest(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
+
+	// Create a deep copy of the bidRequest using copier
+	copiedBidRequest := &openrtb2.BidRequest{}
+	err := copier.Copy(copiedBidRequest, bidRequest)
+	if err != nil {
+		return nil, err
+	}
+	// Validate the supply chain (SChain) if it's a CTV request
+	if rctx.IsCTVRequest && copiedBidRequest.Source != nil && copiedBidRequest.Source.SChain != nil {
+		err = ctv.IsValidSchain(copiedBidRequest.Source.SChain)
+		if err != nil {
+			schainBytes, _ := json.Marshal(copiedBidRequest.Source.SChain)
+			glog.Errorf(ctv.ErrSchainValidationFailed, SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
+			copiedBidRequest.Source.SChain = nil
+		}
+	}
+
+	// Apply profile changes to the bidRequest
+	copiedBidRequest, err = m.applyProfileChanges(rctx, copiedBidRequest)
+	if err != nil {
+		return bidRequest, fmt.Errorf("failed to apply profile changes: %s", err.Error())
+	}
+
+	// If it's a CTV request, filter non-video impressions and apply adpod configurations
+	if rctx.IsCTVRequest {
+		err = ctv.FilterNonVideoImpressions(copiedBidRequest)
+		if err != nil {
+			return bidRequest, err
+		}
+
+		copiedBidRequest = adpod.ApplyAdpodConfigs(rctx, copiedBidRequest)
+	}
+
+	return copiedBidRequest, err
 }
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
