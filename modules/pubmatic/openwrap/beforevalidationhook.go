@@ -186,15 +186,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDuration) > 0 {
-		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: policy,
-		}
-	}
-
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
 	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
 		rCtx.DisplayVersionID = ver
@@ -444,7 +435,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 
-			if err := adpod.ValidateV25Configs(rCtx, imp.Video, adpodConfig); err != nil {
+			if err := adpod.ValidateV25Configs(rCtx, imp.Video, adpodConfig, videoAdUnitCtx.AppliedSlotAdUnitConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)

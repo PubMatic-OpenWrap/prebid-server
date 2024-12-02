@@ -78,64 +78,82 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *models.AdPod) error {
+func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *models.AdPod, adUnitConfig *adunitconfig.AdConfig) error {
+	videoMinDuration := video.MinDuration
+	videoMaxDuration := video.MaxDuration
 
-	if config == nil {
+	// return nil if video is disabled as prebid will return error because of video object missing.
+	if adUnitConfig.Video.Enabled != nil && !*adUnitConfig.Video.Enabled {
 		return nil
 	}
 
-	if video.MinDuration < 0 {
-		return errors.New("imp.video.minduration must be number positive number")
+	if adUnitConfig.Video.Config != nil {
+		if videoMinDuration == 0 {
+			videoMinDuration = adUnitConfig.Video.Config.MinDuration
+		}
+
+		if videoMaxDuration == 0 {
+			videoMaxDuration = adUnitConfig.Video.Config.MaxDuration
+		}
 	}
 
-	if video.MaxDuration <= 0 {
-		return errors.New("imp.video.maxduration must be number positive non zero number")
+	if pod == nil {
+		return nil
 	}
 
-	if video.MinDuration > video.MaxDuration {
-		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
-	}
-
-	if config.MinAds <= 0 {
+	if pod.MinAds <= 0 {
 		return errors.New("adpod.minads must be positive number")
 	}
 
-	if config.MaxAds <= 0 {
+	if pod.MaxAds <= 0 {
 		return errors.New("adpod.maxads must be positive number")
 	}
 
-	if config.MinDuration < 0 {
+	if pod.MinDuration < 0 {
 		return errors.New("adpod.adminduration must be positive number")
 	}
 
-	if config.MaxDuration <= 0 {
+	if pod.MaxDuration <= 0 {
 		return errors.New("adpod.admaxduration must be positive number")
 	}
 
-	if (config.AdvertiserExclusionPercent != nil) && (*config.AdvertiserExclusionPercent < 0 || *config.AdvertiserExclusionPercent > 100) {
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
 		return errors.New("adpod.excladv must be number between 0 and 100")
 	}
 
-	if (config.IABCategoryExclusionPercent != nil) && (*config.IABCategoryExclusionPercent < 0 || *config.IABCategoryExclusionPercent > 100) {
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
 		return errors.New("adpod.excliabcat must be number between 0 and 100")
 	}
 
-	if config.MinAds > config.MaxAds {
+	if pod.MinAds > pod.MaxAds {
 		return errors.New("adpod.minads must be less than adpod.maxads")
 	}
 
-	if config.MinDuration > config.MaxDuration {
+	if pod.MinDuration > pod.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
 	}
 
-	if !((config.MinAds*config.MinDuration) <= int(video.MaxDuration) && int(video.MinDuration) <= (config.MaxAds*config.MaxDuration)) {
+	if videoMinDuration < 0 {
+		return errors.New("imp.video.minduration must be number positive number")
+	}
+
+	if videoMaxDuration <= 0 {
+		return errors.New("imp.video.maxduration must be number positive non zero number")
+	}
+
+	if videoMinDuration > videoMaxDuration {
+		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
+	}
+
+	if ((pod.MinAds * pod.MinDuration) <= int(videoMaxDuration)) && (int(videoMinDuration) <= (pod.MaxAds * pod.MaxDuration)) {
+	} else {
 		return errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 	}
 
 	if rCtx.AdpodProfileConfig != nil && len(rCtx.AdpodProfileConfig.AdserverCreativeDurations) > 0 {
 		validDurations := false
 		for _, videoDuration := range rCtx.AdpodProfileConfig.AdserverCreativeDurations {
-			if videoDuration >= config.MinDuration && videoDuration <= config.MaxDuration {
+			if videoDuration >= pod.MinDuration && videoDuration <= pod.MaxDuration {
 				validDurations = true
 				break
 			}
@@ -147,6 +165,7 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, config *m
 	}
 
 	return nil
+
 }
 
 func GetAdpodConfigs(rctx models.RequestCtx, cache cache.Cache, adunit *adunitconfig.AdConfig) ([]models.PodConfig, error) {
