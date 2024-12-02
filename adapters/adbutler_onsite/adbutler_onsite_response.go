@@ -129,13 +129,16 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 
 }
 
-// randomFloatInRange generates a random float64 in the range (1, 3].
+// randomPriceInRange generates a random float64 in the range (1, 3] with two decimal precision.
 func randomPriceInRange() float64 {
 	// Seed the random number generator to ensure different results each time
 	rand.Seed(time.Now().UnixNano())
 
-	// Generate a random float64 in the range (0, 2] and then shift it to (1, 3]
-	return 1 + rand.Float64()*2
+	// Generate a random float64 in the range (1, 3]
+	randomValue := 1 + rand.Float64()*2
+
+	// Format the float to two decimal places and convert it back to float64
+	return float64(int(randomValue*100)) / 100
 }
 
 func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfBids int) *adapters.BidderResponse {
@@ -162,7 +165,11 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			height, _ := strconv.Atoi(adButlerBid.Height)
 
 			adm, adType := getADM(adButlerBid)
-
+			if adType == openrtb2.MarkupNative {
+				if adButlerBid.RedirectURL != "" && !strings.Contains(adm, "<a href=") {
+					adm = DYNAMIC_IMAGE_URL_AHREFSTART + adm + DYNAMIC_IMAGE_URL_AHREFEND
+				}
+			}
 			adm = encodeRedirectURL(adm, Pattern_Click_URL, CLICK_KEY)
 
 			if adType == Adtype_Invalid {
@@ -201,8 +208,6 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				CrID: adButlerBid.BannerID,
 			}
 
-			adapters.AddDefaultFieldsComm(bid)
-
 			bidExtJSON, err1 := json.Marshal(bidExt)
 			if nil == err1 {
 				bid.Ext = json.RawMessage(bidExtJSON)
@@ -226,8 +231,8 @@ func getADM(adButlerBid *Placement) (string, openrtb2.MarkupType) {
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), openrtb2.MarkupBanner
-	}
+		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.ImageURL), openrtb2.MarkupBanner
+	} 
 
 	return "", MarkupInvalid
 }
@@ -297,6 +302,4 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
-
-
 
