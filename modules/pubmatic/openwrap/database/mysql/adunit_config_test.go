@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -26,13 +27,13 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 		fields  fields
 		args    args
 		want    *adunitconfig.AdUnitConfig
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("context deadline exceeded"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -56,7 +57,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				displayVersion: 0,
 			},
 			want:    nil,
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -87,7 +88,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					"default": {BidFloor: ptrutil.ToPtr(2.0)},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -118,7 +119,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					"default": {BidFloor: ptrutil.ToPtr(3.1)},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -144,7 +145,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 				displayVersion: 0,
 			},
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("unmarshal error adunitconfig"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -185,7 +186,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -217,7 +218,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					"abc":     {BidFloor: ptrutil.ToPtr(3.1)},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -248,7 +249,7 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 					"default": {},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -269,9 +270,10 @@ func Test_mySqlDB_GetAdunitConfig(t *testing.T) {
 			defer db.conn.Close()
 
 			got, err := db.GetAdunitConfig(tt.args.profileID, tt.args.displayVersion)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetAdunitConfig() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})

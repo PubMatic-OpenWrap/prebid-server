@@ -1725,6 +1725,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 									Banner: false,
 								},
 							},
+							PrebidBidderCode: map[string]string{
+								"pubmatic": "pubmatic",
+							},
 							BidderResponseTimeMillis: map[string]int{},
 							SeatNonBids:              map[string][]openrtb_ext.NonBid{},
 							ReturnAllBidStatus:       true,
@@ -1758,7 +1761,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}}}`),
 									},
 								},
 								Seat: "pubmatic",

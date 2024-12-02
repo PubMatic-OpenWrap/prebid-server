@@ -838,7 +838,31 @@ func (mr *MockMetricsEngineMockRecorder) RecordVideoInstlImpsStats(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVideoInstlImpsStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordVideoInstlImpsStats), arg0, arg1)
 }
 
-// Shutdown mocks base method
+// RecordBidRecoveryStatus mocks base method.
+func (m *MockMetricsEngine) RecordBidRecoveryStatus(arg0 string, arg1 string, arg2 bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordBidRecoveryStatus", arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryStatus indicates an expected call of RecordBidRecoveryStatus.
+func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryStatus), arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryResponseTime mocks base method.
+func (m *MockMetricsEngine) RecordBidRecoveryResponseTime(arg0 string, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordBidRecoveryResponseTime", arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryResponseTime indicates an expected call of RecordBidRecoveryStatus.
+func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryResponseTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryResponseTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryResponseTime), arg0, arg1, arg2)
+}
+
+// Shutdown mocks base method.
 func (m *MockMetricsEngine) Shutdown() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Shutdown")

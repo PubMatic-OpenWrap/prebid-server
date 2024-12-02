@@ -331,6 +331,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.ResponseExt = responseExt
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
+	rctx.DefaultBids = m.addDefaultBidsForMultiFloorsConfig(&rctx, payload.BidResponse, responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 

@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -178,6 +179,73 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	return defaultBids
 }
 
+func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
+
+	// MultiBidMultiFloor is only supported for AppLovinMax
+	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+		return rctx.DefaultBids
+	}
+
+	defaultBids := rctx.DefaultBids
+	bidderExcludeFloors := make(map[string]struct{}, len(bidResponse.SeatBid)) //exclude floors which are already present in bidresponse
+	var adunitFloors []float64                                                 //floors for each adunit
+
+	for _, seatBid := range bidResponse.SeatBid {
+		if rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMatic || rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMaticSecondaryAlias {
+			for _, bid := range seatBid.Bid {
+				impId, _ := models.GetImpressionID(bid.ImpID)
+				floorValue := rctx.ImpBidCtx[impId].BidCtx[bid.ID].BidExt.MultiBidMultiFloorValue
+				if floorValue > 0 {
+					key := fmt.Sprintf("%s-%s-%.2f", impId, seatBid.Seat, floorValue)
+					bidderExcludeFloors[key] = struct{}{}
+				}
+			}
+		}
+	}
+
+	for impID, impCtx := range rctx.ImpBidCtx {
+		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
+		for bidder := range impCtx.Bidders {
+			if prebidBidderCode := rctx.PrebidBidderCode[bidder]; prebidBidderCode != models.BidderPubMatic && prebidBidderCode != models.BidderPubMaticSecondaryAlias {
+				continue
+			}
+
+			if defaultBids[impID] == nil {
+				defaultBids[impID] = make(map[string][]openrtb2.Bid)
+			}
+
+			//if defaultbid is already present for pubmatic, then reset it, as we are adding new defaultbids with MultiBidMultiFloor
+			if _, ok := defaultBids[impID][bidder]; ok {
+				defaultBids[impID][bidder] = make([]openrtb2.Bid, 0)
+			}
+
+			//exclude floors which are already present in bidresponse for defaultbids
+			for _, floor := range adunitFloors {
+				key := fmt.Sprintf("%s-%s-%.2f", impID, bidder, floor)
+				if _, ok := bidderExcludeFloors[key]; !ok {
+					uuid, _ := m.uuidGenerator.Generate()
+					bidExt := newDefaultBidExtMultiFloors(floor, bidder, bidResponseExt)
+					defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
+						ID:    uuid,
+						ImpID: impID,
+					})
+
+					// create bidCtx because we need it for owlogger
+					rctx.ImpBidCtx[impID].BidCtx[uuid] = models.BidCtx{
+						BidExt: models.BidExt{
+							Nbr:                     bidExt.Nbr,
+							MultiBidMultiFloorValue: bidExt.MultiBidMultiFloorValue,
+						},
+					}
+				}
+
+			}
+
+		}
+	}
+	return defaultBids
+}
+
 // getNonBRCodeFromBidRespExt maps the error-code present in prebid partner response with standard nonBR code
 func getNonBRCodeFromBidRespExt(bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *openrtb3.NoBidReason {
 	errs := bidResponseExt.Errors[openrtb_ext.BidderName(bidder)]
@@ -221,6 +289,13 @@ func newDefaultBidExt(rctx models.RequestCtx, impID, bidder string, bidResponseE
 		}
 	}
 	return &bidExt
+}
+
+func newDefaultBidExtMultiFloors(floor float64, bidder string, bidResponseExt openrtb_ext.ExtBidResponse) *models.BidExt {
+	return &models.BidExt{
+		Nbr:                     getNonBRCodeFromBidRespExt(bidder, bidResponseExt),
+		MultiBidMultiFloorValue: floor,
+	}
 }
 
 // TODO : Check if we need this?

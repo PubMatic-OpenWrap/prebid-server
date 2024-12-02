@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -15,6 +16,10 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 	cacheKey := key(PubSlotNameHash, pubID)
 
 	publisherSlotNameHashMap, err := c.db.GetPublisherSlotNameHash(pubID)
+	if err != nil {
+		glog.Errorf(models.ErrDBQueryFailed, models.SlotNameHash, pubID, "", err)
+		return
+	}
 	//This call may set nil publisherSlotNameHashMap in cache
 	c.cache.Set(cacheKey, publisherSlotNameHashMap, getSeconds(c.cfg.CacheDefaultExpiry))
 	return
@@ -23,6 +28,9 @@ func (c *cache) populateCacheWithPubSlotNameHash(pubID int) (err error) {
 // PopulateCacheWithWrapperSlotMappings will get the SlotMappings from database and put them in cache.
 func (c *cache) populateCacheWithWrapperSlotMappings(pubID int, partnerConfigMap map[int]map[string]string, profileID, displayVersion int) error {
 	partnerSlotMappingMap, err := c.db.GetWrapperSlotMappings(partnerConfigMap, profileID, displayVersion)
+	if err != nil {
+		return err
+	}
 
 	//put a version level dummy entry in cache denoting mappings are present for this version
 	cacheKey := key(PUB_SLOT_INFO, pubID, profileID, displayVersion, 0)
