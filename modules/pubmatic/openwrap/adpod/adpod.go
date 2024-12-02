@@ -66,7 +66,7 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig
 	}
 
 	// Check in adunit config
-	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
 		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.ADPOD)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithDbConfigCount(pubId)
@@ -83,11 +83,8 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *mode
 	videoMaxDuration := video.MaxDuration
 
 	// return nil if video is disabled as prebid will return error because of video object missing.
-	if adUnitConfig.Video.Enabled != nil && !*adUnitConfig.Video.Enabled {
-		return nil
-	}
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil {
 
-	if adUnitConfig.Video.Config != nil {
 		if videoMinDuration == 0 {
 			videoMinDuration = adUnitConfig.Video.Config.MinDuration
 		}
