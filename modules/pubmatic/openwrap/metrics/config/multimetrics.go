@@ -537,7 +537,7 @@ func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySi
 	}
 }
 
-// RecordFailedParsingItuneID record failed parsing itune id
+// RecordIBVRequest record failed parsing itune id
 func (me *MultiMetricsEngine) RecordIBVRequest(pubId, profId string) {
 	for _, thisME := range *me {
 		thisME.RecordIBVRequest(pubId, profId)
