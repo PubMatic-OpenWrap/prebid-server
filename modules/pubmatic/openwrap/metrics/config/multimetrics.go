@@ -537,6 +537,13 @@ func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySi
 	}
 }
 
+// RecordIBVRequest record failed parsing itune id
+func (me *MultiMetricsEngine) RecordIBVRequest(pubId, profId string) {
+	for _, thisME := range *me {
+		thisME.RecordIBVRequest(pubId, profId)
+	}
+}
+
 // RecordBidRecoveryStatus across all engines
 func (me *MultiMetricsEngine) RecordBidRecoveryStatus(publisher, profile string, success bool) {
 	for _, thisME := range *me {

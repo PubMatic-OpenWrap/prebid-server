@@ -118,6 +118,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 				}
 			}
 
+			if bidExt.InBannerVideo {
+				m.metricEngine.RecordIBVRequest(rctx.PubIDStr, rctx.ProfileIDStr)
+			}
+
 			if rctx.IsCTVRequest {
 				if dur, ok := impCtx.BidIDToDur[bid.ID]; ok {
 					bidExt.Prebid.Video.Duration = int(dur)

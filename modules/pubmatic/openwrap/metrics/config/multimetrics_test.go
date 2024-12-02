@@ -221,6 +221,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	mockEngine.EXPECT().RecordAmpVideoRequests("pubid", "profileid")
 	mockEngine.EXPECT().RecordAmpVideoResponses("pubid", "profileid")
+	mockEngine.EXPECT().RecordIBVRequest("pubid", "profileid")
 	mockEngine.EXPECT().RecordBidRecoveryStatus(publisher, profile, true)
 	mockEngine.EXPECT().RecordBidRecoveryResponseTime(publisher, profile, time.Duration(200))
 
@@ -290,6 +291,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordOWServerPanic("endpoint", "methodName", "nodeName", "podName")
 	multiMetricEngine.RecordAmpVideoRequests("pubid", "profileid")
 	multiMetricEngine.RecordAmpVideoResponses("pubid", "profileid")
+	multiMetricEngine.RecordIBVRequest("pubid", "profileid")
 	multiMetricEngine.RecordBidRecoveryStatus(publisher, profile, true)
 	multiMetricEngine.RecordBidRecoveryResponseTime(publisher, profile, time.Duration(200))
 }
