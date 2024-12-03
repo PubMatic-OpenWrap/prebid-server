@@ -121,7 +121,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			// Explicitly set the bid.ext.mbmfv value if it is present in the bid.ext since we need it for logging but do not want it in the response
 			mbmfv, err := jsonparser.GetFloat(bid.Ext, models.MultiBidMultiFloorValue)
-			if err != nil && mbmfv > 0 {
+			if err == nil && mbmfv > 0 {
 				bidExt.MultiBidMultiFloorValue = mbmfv
 			}
 
