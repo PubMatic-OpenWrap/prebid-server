@@ -301,6 +301,24 @@ func getPricingDetailsTestCases() []struct {
 			wantCurrency: "USD",
 		},
 		{
+			name:         "vast_2.0_empty_pricing",
+			vastXML:      `<VAST><Ad><Wrapper><Extensions><Extension><Pricing></Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    0,
+			wantCurrency: "",
+		},
+		{
+			name:         "vast_2.0_cdata_pricing",
+			vastXML:      `<VAST><Ad><Wrapper><Extensions><Extension><Pricing><![CDATA[ 12.05 ]]></Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    12.05,
+			wantCurrency: "USD",
+		},
+		{
+			name:         "vast_2.0_pricing",
+			vastXML:      `<VAST><Ad><Wrapper><Extensions><Extension><Pricing>12.05</Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    12.05,
+			wantCurrency: "USD",
+		},
+		{
 			name:         "vast_2.0_empty_currency",
 			vastXML:      `<VAST><Ad><Wrapper><Extensions><Extension><Price currency="">12.05</Price></Extension></Extensions></Wrapper></Ad></VAST>`,
 			wantPrice:    12.05,
@@ -352,6 +370,30 @@ func getPricingDetailsTestCases() []struct {
 			name:         "bug",
 			vastXML:      "<VAST\n\txmlns:xs=\"https://www.w3.org/2001/XMLSchema\"\n\txmlns=\"https://www.iab.com/VAST\" version=\"4.1\">\n\t<Ad id=\"scenario_9_adid\" sequence=\"1\">\n\t\t<InLine>\n\t\t\t<AdSystem version=\"4.1\">PubMatic</AdSystem>\n\t\t\t<AdServingId>scenario_9</AdServingId>\n\t\t\t<AdTitle>Test Ad scenario_9</AdTitle>\n\t\t\t<Pricing model=\"cpm\" currency=\"USD\">\n\t\t\t\t<![CDATA[ 5.00 ]]>\n\t\t\t</Pricing>\n\t\t\t<Impression>\n\t\t\t\t<![CDATA[ https://example.com/impression/ ]]>\n\t\t\t</Impression>\n\t\t\t<Advertiser>Test Advertiser</Advertiser>\n\t\t\t<Category authority=\"https://www.iabtechlab.com/categoryauthority\">IAB1-1\t</Category>\n\t\t\t<Creatives>\n\t\t\t\t<Creative id=\"5481\" sequence=\"1\" adId=\"2447226_scenario_9\">\n\t\t\t\t\t<UniversalAdId idRegistry=\"Ad-ID\">8465_scenario_9</UniversalAdId>\n\t\t\t\t\t<Linear>\n\t\t\t\t\t\t<Duration>00:00:10</Duration>\n\t\t\t\t\t\t<MediaFiles>\n\t\t\t\t\t\t\t<MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\">\n\t\t\t\t\t\t\t\t<![CDATA[ https://ads.pubmatic.com/AdServer/js/ott/sampleads/10_seconds_ad.mp4 ]]>\n\t\t\t\t\t\t\t</MediaFile>\n\t\t\t\t\t\t</MediaFiles>\n\t\t\t\t\t</Linear>\n\t\t\t\t</Creative>\n\t\t\t</Creatives>\n\t\t</InLine>\n\t</Ad>\n</VAST>  ",
 			wantPrice:    5,
+			wantCurrency: "USD",
+		},
+		{
+			name:         "vast_2.0_pricing_price_all_location",
+			vastXML:      `<VAST><Ad><Wrapper><Pricing><![CDATA[ 15.05 ]]></Pricing><Extensions><Extension><Pricing><![CDATA[ 12.05 ]]></Pricing><Price><![CDATA[ 10.05 ]]></Price></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    15.05,
+			wantCurrency: "USD",
+		},
+		{
+			name:         "vast_3.0_pricing_price_all_location",
+			vastXML:      `<VAST version="3.0"><Ad><Wrapper><Pricing><![CDATA[ 15.05 ]]></Pricing><Extensions><Extension><Pricing><![CDATA[ 12.05 ]]></Pricing><Price><![CDATA[ 10.05 ]]></Price></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    15.05,
+			wantCurrency: "USD",
+		},
+		{
+			name:         "vast_2.0_pricing_price_extension",
+			vastXML:      `<VAST><Ad><Wrapper><Extensions><Extension><Pricing><![CDATA[ 12.05 ]]></Pricing><Price><![CDATA[ 10.05 ]]></Price></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    12.05,
+			wantCurrency: "USD",
+		},
+		{
+			name:         "vast_3.0_pricing_price_extension",
+			vastXML:      `<VAST version="3.0"><Ad><Wrapper><Extensions><Extension><Pricing><![CDATA[ 12.05 ]]></Pricing><Price><![CDATA[ 10.05 ]]></Price></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantPrice:    12.05,
 			wantCurrency: "USD",
 		},
 		// TODO: Add test cases.
@@ -419,6 +461,64 @@ func Test_etreeXMLParser_GetPricingDetails(t *testing.T) {
 			gotPrice, gotCurrency := parser.GetPricingDetails()
 			assert.Equal(t, tt.wantPrice, gotPrice)
 			assert.Equal(t, tt.wantCurrency, gotCurrency)
+		})
+	}
+}
+
+func getPricingNodeTestCases() []struct {
+	name      string
+	vastXML   string
+	wantNil   bool
+	wantPrice string
+} {
+	return []struct {
+		name      string
+		vastXML   string
+		wantNil   bool
+		wantPrice string
+	}{
+		{
+			name:    "no_pricing_node",
+			vastXML: `<VAST><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			wantNil: true,
+		},
+		{
+			name:      "pricing_node_present",
+			vastXML:   `<VAST><Ad><Wrapper><Pricing>12.50</Pricing></Wrapper></Ad></VAST>`,
+			wantNil:   false,
+			wantPrice: "12.50",
+		},
+		{
+			name:      "pricing_node_in_extension_pricing",
+			vastXML:   `<VAST><Ad><Wrapper><Extensions><Extension><Pricing>12.10</Pricing></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantNil:   false,
+			wantPrice: "12.10",
+		},
+		{
+			name:      "price_node_in_extension_price",
+			vastXML:   `<VAST><Ad><Wrapper><Extensions><Extension><Price>12.05</Price></Extension></Extensions></Wrapper></Ad></VAST>`,
+			wantNil:   false,
+			wantPrice: "12.05",
+		},
+	}
+}
+
+func Test_etreeXMLParser_getPricingNode(t *testing.T) {
+	for _, tt := range getPricingNodeTestCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := newETreeXMLParser()
+			err := parser.Parse([]byte(tt.vastXML))
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			node := parser.getPricingNode()
+			if tt.wantNil {
+				assert.Nil(t, node)
+			} else {
+				assert.NotNil(t, node)
+				assert.Equal(t, tt.wantPrice, node.Text())
+			}
 		})
 	}
 }
