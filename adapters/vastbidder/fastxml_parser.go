@@ -58,13 +58,7 @@ func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
 }
 
 func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
-	var node *fastxml.Element
-
-	if int(p.vastVersion) == 2 {
-		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Price")
-	} else {
-		node = p.reader.SelectElement(p.adElement, "Pricing")
-	}
+	node := p.getPricingNode()
 
 	if node == nil {
 		return 0.0, ""
@@ -80,6 +74,18 @@ func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
 	}
 
 	return priceValue, currency
+}
+
+func (p *fastXMLParser) getPricingNode() *fastxml.Element {
+	node := p.reader.SelectElement(p.adElement, "Pricing")
+	if node == nil {
+		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Pricing")
+	}
+	if node == nil {
+		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Price")
+	}
+
+	return node
 }
 
 func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
