@@ -604,15 +604,16 @@ const (
 
 // constants for applovinmax requests
 const (
-	Agent            = "agent"
-	AppLovinMaxAgent = "max"
-	TypeRewarded     = "rewarded"
-	SignalData       = "signaldata"
-	OwSspBurl        = "owsspburl"
-	MissingSignal    = "missing"
-	InvalidSignal    = "invalid"
-	AppStoreUrl      = "appStoreUrl"
-	SendBurl         = "sendburl"
+	Agent                   = "agent"
+	AppLovinMaxAgent        = "max"
+	TypeRewarded            = "rewarded"
+	SignalData              = "signaldata"
+	OwSspBurl               = "owsspburl"
+	MissingSignal           = "missing"
+	InvalidSignal           = "invalid"
+	AppStoreUrl             = "appStoreUrl"
+	SendBurl                = "sendburl"
+	MultiBidMultiFloorValue = "mbmfv"
 )
 
 // constants for log level
