@@ -557,10 +557,10 @@ func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
 	}
 
 	adPodSlot := AdPodSlot{
-		MinAds:                      adPodConfig.MinAds,
-		MaxAds:                      adPodConfig.MaxAds,
-		MinDuration:                 adPodConfig.MinDuration,
-		MaxDuration:                 adPodConfig.MaxDuration,
+		MinAds:                      *adPodConfig.MinAds,
+		MaxAds:                      *adPodConfig.MaxAds,
+		MinDuration:                 *adPodConfig.MinDuration,
+		MaxDuration:                 *adPodConfig.MaxDuration,
 		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
 		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
 	}
