@@ -56,8 +56,8 @@ func (g *generator) Init(podMinDuration, podMaxDuration uint64, config *models.A
 
 	g.podMinDuration = podMinDuration
 	g.podMaxDuration = podMaxDuration
-	g.minAds = uint64(config.MinAds)
-	g.maxAds = uint64(config.MaxAds)
+	g.minAds = uint64(*config.MinAds)
+	g.maxAds = uint64(*config.MaxAds)
 
 	// map of key = duration value = number of ads(must be non zero positive number)
 	g.slotDurationAdMap = make(map[uint64]uint64, len(g.slotDurations))

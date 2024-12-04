@@ -20,13 +20,44 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
-func setDefaultValues(adpodConfig *models.AdPod) {
-	if adpodConfig.MinAds == 0 {
-		adpodConfig.MinAds = models.DefaultMinAds
+func setDefaultValues(video *openrtb2.Video, adpodConfig *models.AdPod, adUnitConfig *adunitconfig.AdConfig) {
+	if adpodConfig == nil {
+		return
 	}
 
-	if adpodConfig.MaxAds == 0 {
-		adpodConfig.MaxAds = models.DefaultMaxAds
+	podMinDuration := video.MinDuration
+	podMaxDuration := video.MaxDuration
+
+	// return nil if video is disabled as prebid will return error because of video object missing.
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil {
+
+		if podMaxDuration == 0 {
+			podMinDuration = adUnitConfig.Video.Config.MinDuration
+		}
+
+		if podMaxDuration == 0 {
+			podMaxDuration = adUnitConfig.Video.Config.MaxDuration
+		}
+	}
+
+	if adpodConfig.MinAds == nil {
+		adpodConfig.MinAds = ptrutil.ToPtr(models.DefaultMinAds)
+	}
+
+	if adpodConfig.MaxAds == nil {
+		adpodConfig.MaxAds = ptrutil.ToPtr(models.DefaultMaxAds)
+	}
+
+	//pod.MinDuration setting default adminduration
+	if adpodConfig.MinDuration == nil {
+		duration := int(podMinDuration / 2)
+		adpodConfig.MinDuration = &duration
+	}
+
+	//pod.MaxDuration setting default admaxduration
+	if adpodConfig.MaxDuration == nil {
+		duration := int(podMaxDuration / 2)
+		adpodConfig.MaxDuration = &duration
 	}
 
 	if adpodConfig.AdvertiserExclusionPercent == nil {
@@ -47,7 +78,7 @@ func GetV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdC
 
 	setImpVideoDetailsWithGAMParams(impVideo, adpodConfigs, gamQueryParams)
 	// Set default value if adpod object does not exists
-	setDefaultValues(adpodConfigs)
+	setDefaultValues(impVideo, adpodConfigs, adUnitConfig)
 
 	return adpodConfigs, nil
 }
@@ -110,19 +141,19 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *mode
 		return nil
 	}
 
-	if pod.MinAds <= 0 {
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
 		return errors.New("adpod.minads must be positive number")
 	}
 
-	if pod.MaxAds <= 0 {
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
 		return errors.New("adpod.maxads must be positive number")
 	}
 
-	if pod.MinDuration < 0 {
+	if pod.MinDuration != nil && *pod.MinDuration < 0 {
 		return errors.New("adpod.adminduration must be positive number")
 	}
 
-	if pod.MaxDuration <= 0 {
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
 		return errors.New("adpod.admaxduration must be positive number")
 	}
 
@@ -134,15 +165,15 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *mode
 		return errors.New("adpod.excliabcat must be number between 0 and 100")
 	}
 
-	if pod.MinAds > pod.MaxAds {
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
 		return errors.New("adpod.minads must be less than adpod.maxads")
 	}
 
-	if pod.MinDuration > pod.MaxDuration {
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
 	}
 
-	if ((pod.MinAds * pod.MinDuration) <= int(videoMaxDuration)) && (int(videoMinDuration) <= (pod.MaxAds * pod.MaxDuration)) {
+	if ((*pod.MinAds * *pod.MinDuration) <= int(videoMaxDuration)) && (int(videoMinDuration) <= (*pod.MaxAds * *pod.MaxDuration)) {
 	} else {
 		return errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 	}
@@ -150,7 +181,7 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *mode
 	if rCtx.AdpodProfileConfig != nil && len(rCtx.AdpodProfileConfig.AdserverCreativeDurations) > 0 {
 		validDurations := false
 		for _, videoDuration := range rCtx.AdpodProfileConfig.AdserverCreativeDurations {
-			if videoDuration >= pod.MinDuration && videoDuration <= pod.MaxDuration {
+			if videoDuration >= *pod.MinDuration && videoDuration <= *pod.MaxDuration {
 				validDurations = true
 				break
 			}
@@ -372,14 +403,17 @@ func setImpVideoDetailsWithGAMParams(video *openrtb2.Video, adpodConfig *models.
 		return
 	}
 
-	if adpodConfig.MaxAds == 0 {
-		adpodConfig.MaxAds, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
+	if adpodConfig.MaxAds == nil && gamQueryParams.Has(models.GAMAdpodMaxAds) {
+		maxads, _ := strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
+		adpodConfig.MaxAds = &maxads
 	}
-	if adpodConfig.MinDuration == 0 {
-		adpodConfig.MinDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMinDuration))
+	if adpodConfig.MinDuration == nil && gamQueryParams.Has(models.GAMAdpodMinDuration) {
+		mndur, _ := strconv.Atoi(models.GAMAdpodMinDuration)
+		adpodConfig.MinDuration = ptrutil.ToPtr(mndur)
 	}
-	if adpodConfig.MaxDuration == 0 {
-		adpodConfig.MaxDuration, _ = strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
+	if adpodConfig.MaxDuration == nil && gamQueryParams.Has(models.GAMAdpodMaxDuration) {
+		mxdur, _ := strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
+		adpodConfig.MinDuration = ptrutil.ToPtr(mxdur)
 	}
 }
 
