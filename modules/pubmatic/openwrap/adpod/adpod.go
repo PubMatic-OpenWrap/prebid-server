@@ -70,17 +70,57 @@ func setDefaultValues(video *openrtb2.Video, adpodConfig *models.AdPod, adUnitCo
 
 }
 
-func GetV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, redirectURL string, gamQueryParams url.Values, me metrics.MetricsEngine) (*models.AdPod, error) {
-	adpodConfigs, ok, err := resolveV25AdpodConfigs(impVideo, adUnitConfig, pubId, me)
+func GetV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, redirectURL string, gamQueryParams url.Values, me metrics.MetricsEngine, requestExtAdpod *models.ExtRequestAdPod) (*models.AdPod, error) {
+	adpodConfig, ok, err := resolveV25AdpodConfigs(impVideo, adUnitConfig, pubId, me)
 	if !ok || err != nil {
 		return nil, err
 	}
 
-	setImpVideoDetailsWithGAMParams(impVideo, adpodConfigs, gamQueryParams)
+	mergeRequestExtAdpodConfig(adpodConfig, requestExtAdpod)
+	setImpVideoDetailsWithGAMParams(impVideo, adpodConfig, gamQueryParams)
 	// Set default value if adpod object does not exists
-	setDefaultValues(impVideo, adpodConfigs, adUnitConfig)
+	setDefaultValues(impVideo, adpodConfig, adUnitConfig)
 
-	return adpodConfigs, nil
+	return adpodConfig, nil
+}
+
+func mergeRequestExtAdpodConfig(pod *models.AdPod, requestExtPod *models.ExtRequestAdPod) {
+	if requestExtPod == nil {
+		return
+	}
+
+	if pod == nil {
+		pod = &models.AdPod{}
+	}
+
+	//pod.MinAds setting default value
+	if pod.MinAds == nil {
+		pod.MinAds = requestExtPod.MinAds
+	}
+
+	//pod.MaxAds setting default value
+	if pod.MaxAds == nil {
+		pod.MaxAds = requestExtPod.MaxAds
+	}
+
+	// Add Min and Max duration from request
+	if pod.MinDuration == nil {
+		pod.MinDuration = requestExtPod.MinDuration
+	}
+
+	if pod.MaxDuration == nil {
+		pod.MaxDuration = requestExtPod.MaxDuration
+	}
+
+	//pod.AdvertiserExclusionPercent setting default value
+	if pod.AdvertiserExclusionPercent == nil {
+		pod.AdvertiserExclusionPercent = requestExtPod.AdvertiserExclusionPercent
+	}
+
+	//pod.IABCategoryExclusionPercent setting default value
+	if pod.IABCategoryExclusionPercent == nil {
+		pod.IABCategoryExclusionPercent = requestExtPod.IABCategoryExclusionPercent
+	}
 }
 
 func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {

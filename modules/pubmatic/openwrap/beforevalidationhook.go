@@ -419,7 +419,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
 
-			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, rCtx.RedirectURL, gamQueryParams, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, rCtx.RedirectURL, gamQueryParams, m.metricEngine, requestExt.AdPod)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
