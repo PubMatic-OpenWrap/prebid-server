@@ -34,6 +34,8 @@ type Metrics struct {
 	pubNoBidResponseErrors     *prometheus.CounterVec
 	pubResponseTime            *prometheus.HistogramVec
 	pubImpsWithContent         *prometheus.CounterVec
+	pubBidRecoveryStatus       *prometheus.CounterVec
+	pubBidRecoveryTime         *prometheus.HistogramVec
 
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
@@ -96,6 +98,9 @@ type Metrics struct {
 	//ApplovinMax
 	failedParsingItuneId *prometheus.CounterVec
 	endpointResponseSize *prometheus.HistogramVec
+
+	//IBV request
+	ibvRequests *prometheus.CounterVec
 }
 
 const (
@@ -378,6 +383,23 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		responseSizeBuckets,
 	)
 
+	metrics.ibvRequests = newCounter(cfg, promRegistry,
+		"ibv_requests",
+		"Count of in-banner video requests",
+		[]string{pubIDLabel, profileIDLabel})
+	metrics.pubBidRecoveryTime = newHistogramVec(cfg, promRegistry,
+		"bid_recovery_response_time",
+		"Total time taken by request for secondary auction in ms at publisher profile level.",
+		[]string{pubIDLabel, profileIDLabel},
+		[]float64{100, 200, 300, 400},
+	)
+
+	metrics.pubBidRecoveryStatus = newCounter(cfg, promRegistry,
+		"bid_recovery_response_status",
+		"Count bid recovery status for secondary auction",
+		[]string{pubIDLabel, profileIDLabel, successLabel},
+	)
+
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
 	return &metrics
@@ -610,12 +632,20 @@ func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
 	}).Inc()
 }
 
-func (m *Metrics) RecordFailedParsingItuneID(pubId, profId string) {
+// RecordFailedParsingItuneID to record failed parsing itune id
+func (m *Metrics) RecordFailedParsingItuneID(pubid, profileid string) {
 	m.failedParsingItuneId.With(prometheus.Labels{
-		pubIDLabel:     pubId,
-		profileIDLabel: profId,
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
 	}).Inc()
+}
 
+// RecordIBVRequest to record IBV request
+func (m *Metrics) RecordIBVRequest(pubid, profileid string) {
+	m.ibvRequests.With(prometheus.Labels{
+		pubIDLabel:     pubid,
+		profileIDLabel: profileid,
+	}).Inc()
 }
 
 // TODO - really need ?
@@ -698,6 +728,21 @@ func (m *Metrics) RecordPrebidCacheRequestTime(success bool, length time.Duratio
 	m.cacheWriteTime.With(prometheus.Labels{
 		successLabel: strconv.FormatBool(success),
 	}).Observe(float64(length.Milliseconds()))
+}
+
+func (m *Metrics) RecordBidRecoveryStatus(publisherID, profileID string, success bool) {
+	m.pubBidRecoveryStatus.With(prometheus.Labels{
+		pubIDLabel:     publisherID,
+		profileIDLabel: profileID,
+		successLabel:   strconv.FormatBool(success),
+	}).Inc()
+}
+
+func (m *Metrics) RecordBidRecoveryResponseTime(publisherID, profileID string, responseTime time.Duration) {
+	m.pubBidRecoveryTime.With(prometheus.Labels{
+		pubIDLabel:     publisherID,
+		profileIDLabel: profileID,
+	}).Observe(float64(responseTime.Milliseconds()))
 }
 
 func (m *Metrics) RecordEndpointResponseSize(endpoint string, bodySize float64) {

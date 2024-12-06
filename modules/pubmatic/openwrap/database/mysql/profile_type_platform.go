@@ -27,5 +27,10 @@ func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
 		}
 		profileTypePlatformMap[ptpKey] = ptpValue
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return profileTypePlatformMap, nil
 }

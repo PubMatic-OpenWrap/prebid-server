@@ -4,12 +4,13 @@ import "github.com/prebid/openrtb/v20/openrtb3"
 
 // vendor specific NoBidReasons (500+)
 const (
-	LossBidLostToHigherBid        openrtb3.NoBidReason = 501 // Response Rejected - Lost to Higher Bid
-	LossBidLostToDealBid          openrtb3.NoBidReason = 502 // Response Rejected - Lost to a Bid for a Deal
-	RequestBlockedSlotNotMapped   openrtb3.NoBidReason = 503
-	RequestBlockedPartnerThrottle openrtb3.NoBidReason = 504
-	RequestBlockedPartnerFiltered openrtb3.NoBidReason = 505
-	LossBidLostInVastUnwrap       openrtb3.NoBidReason = 506
+	LossBidLostToHigherBid             openrtb3.NoBidReason = 501 // Response Rejected - Lost to Higher Bid
+	LossBidLostToDealBid               openrtb3.NoBidReason = 502 // Response Rejected - Lost to a Bid for a Deal
+	RequestBlockedSlotNotMapped        openrtb3.NoBidReason = 503
+	RequestBlockedPartnerThrottle      openrtb3.NoBidReason = 504
+	RequestBlockedPartnerFiltered      openrtb3.NoBidReason = 505
+	LossBidLostInVastUnwrap            openrtb3.NoBidReason = 506
+	LossBidLostInVastVersionValidation openrtb3.NoBidReason = 507
 )
 
 // Openwrap module specific codes

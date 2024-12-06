@@ -34,5 +34,10 @@ func (db *mySqlDB) GetFSCThresholdPerDSP() (map[int]int, error) {
 		}
 		fscDspThresholds[dspId] = pcnt
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return fscDspThresholds, nil
 }
