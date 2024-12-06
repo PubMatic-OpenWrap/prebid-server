@@ -1,6 +1,7 @@
 package gocache
 
 import (
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -11,11 +12,8 @@ func (c *cache) populatePublisherVASTTags(pubID int) error {
 	//get publisher level vast tag details from DB
 	publisherVASTTags, err := c.db.GetPublisherVASTTags(pubID)
 	if err != nil {
+		glog.Errorf(models.ErrDBQueryFailed, models.PublisherVASTTagsQuery, pubID, "", err)
 		return err
-	}
-
-	if publisherVASTTags == nil {
-		publisherVASTTags = models.PublisherVASTTags{}
 	}
 
 	c.cache.Set(cacheKey, publisherVASTTags, getSeconds(c.cfg.VASTTagCacheExpiry))

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
@@ -16,13 +17,13 @@ func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequ
 		if err == jsonparser.KeyPathNotFoundError {
 			signalType = models.MissingSignal
 		}
-		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), signalType)
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), rctx.ProfileIDStr, signalType)
 		return nil
 	}
 
 	signalData := &openrtb2.BidRequest{}
 	if err := json.Unmarshal([]byte(signal), signalData); err != nil {
-		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), getProfileID(requestBody), models.InvalidSignal)
+		rctx.MetricsEngine.RecordSignalDataStatus(getAppPublisherID(requestBody), rctx.ProfileIDStr, models.InvalidSignal)
 		return nil
 	}
 	return signalData
@@ -91,6 +92,10 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
 	}
 
+	if signalDevice.Model != "" {
+		maxRequest.Device.Model = signalDevice.Model
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {
@@ -130,6 +135,7 @@ func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if signalApp.Domain != "" {
 		maxRequest.App.Domain = signalApp.Domain
 	}
+	maxRequest.App.StoreURL = signalApp.StoreURL
 }
 
 func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
@@ -144,7 +150,7 @@ func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
 	if signalRegs.COPPA != 0 {
 		maxRequest.Regs.COPPA = signalRegs.COPPA
 	}
-	maxRequest.Regs.Ext = setIfKeysExists(signalRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy")
+	maxRequest.Regs.Ext = setIfKeysExists(signalRegs.Ext, maxRequest.Regs.Ext, "gdpr", "gpp", "gpp_sid", "us_privacy", "dsa")
 }
 
 func updateSource(signalSource *openrtb2.Source, maxRequest *openrtb2.BidRequest) {
@@ -181,7 +187,14 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 	}
 
 	maxRequest.User.Data = signalUser.Data
-	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids")
+
+	if maxRequest.User.Ext != nil {
+		// Don’t pass sessionduration and impdepth parameter if present in the request
+		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "sessionduration")
+		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "impdepth")
+	}
+	//Pass user.ext.sessionduration and user.ext.impdepth to ow partners in case of ALMAX integration
+	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth")
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
@@ -229,6 +242,7 @@ func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidReq
 }
 
 func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
+	requestBody, rctx.ProfileIDStr = setProfileID(requestBody)
 	signalData := getSignalData(requestBody, rctx)
 	if signalData == nil {
 		return modifyRequestBody(requestBody)
@@ -244,6 +258,29 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 		return maxRequestbytes
 	}
 	return requestBody
+}
+
+func setProfileID(requestBody []byte) ([]byte, string) {
+	if profileId, err := jsonparser.GetInt(requestBody, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil && profileId != 0 {
+		return requestBody, strconv.Itoa(int(profileId))
+	}
+
+	profIDStr, err := jsonparser.GetString(requestBody, "app", "id")
+	if err != nil || len(profIDStr) == 0 {
+		return requestBody, ""
+	}
+
+	if _, err := strconv.Atoi(profIDStr); err != nil {
+		glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to convert app.id to integer %v", profIDStr, err)
+		return requestBody, ""
+	}
+
+	requestBody = jsonparser.Delete(requestBody, "app", "id")
+	if newRequestBody, err := jsonparser.Set(requestBody, []byte(profIDStr), "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
+		return newRequestBody, profIDStr
+	}
+	glog.Errorf("[AppLovinMax] [ProfileID]: %s [Error]: failed to set profileid in wrapper %v", profIDStr, err)
+	return requestBody, ""
 }
 
 func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
@@ -299,17 +336,6 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 func getAppPublisherID(requestBody []byte) string {
 	if pubId, err := jsonparser.GetString(requestBody, "app", "publisher", "id"); err == nil && len(pubId) > 0 {
 		return pubId
-	}
-	return ""
-}
-
-func getProfileID(requestBody []byte) string {
-	if profileId, err := jsonparser.GetInt(requestBody, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); err == nil {
-		profIDStr := strconv.Itoa(int(profileId))
-		return profIDStr
-	}
-	if profIDStr, err := jsonparser.GetString(requestBody, "app", "id"); err == nil {
-		return profIDStr
 	}
 	return ""
 }

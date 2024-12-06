@@ -40,21 +40,17 @@ func NewUnwrap(Endpoint string, DefaultTime int, handler http.HandlerFunc, Metri
 
 }
 
-func (uw Unwrap) Unwrap(accountID, bidder string, bid *adapters.TypedBid, userAgent, ip string, isStatsEnabled bool) {
+func (uw Unwrap) Unwrap(bid *adapters.TypedBid, accountID, bidder, userAgent, ip string) (unwrapStatus string) {
 	startTime := time.Now()
 	var wrapperCnt int64
-	var respStatus string
-	if bid == nil || bid.Bid == nil || bid.Bid.AdM == "" {
-		return
-	}
 	defer func() {
 		if r := recover(); r != nil {
 			glog.Errorf("AdM:[%s] Error:[%v] stacktrace:[%s]", bid.Bid.AdM, r, string(debug.Stack()))
 		}
 		respTime := time.Since(startTime)
 		uw.metricEngine.RecordUnwrapRequestTime(accountID, bidder, respTime)
-		uw.metricEngine.RecordUnwrapRequestStatus(accountID, bidder, respStatus)
-		if respStatus == "0" {
+		uw.metricEngine.RecordUnwrapRequestStatus(accountID, bidder, unwrapStatus)
+		if unwrapStatus == "0" {
 			uw.metricEngine.RecordUnwrapWrapperCount(accountID, bidder, strconv.Itoa(int(wrapperCnt)))
 			uw.metricEngine.RecordUnwrapRespTime(accountID, strconv.Itoa(int(wrapperCnt)), respTime)
 		}
@@ -76,13 +72,14 @@ func (uw Unwrap) Unwrap(accountID, bidder string, bid *adapters.TypedBid, userAg
 	httpReq.Header = headers
 	httpResp := NewCustomRecorder()
 	uw.unwrapRequest(httpResp, httpReq)
-	respStatus = httpResp.Header().Get(models.UnwrapStatus)
+	unwrapStatus = httpResp.Header().Get(models.UnwrapStatus)
 	wrapperCnt, _ = strconv.ParseInt(httpResp.Header().Get(models.UnwrapCount), 10, 0)
-	if !isStatsEnabled && httpResp.Code == http.StatusOK && respStatus == models.UnwrapSucessStatus {
+	if httpResp.Code == http.StatusOK && unwrapStatus == models.UnwrapSucessStatus {
 		respBody := httpResp.Body.Bytes()
 		bid.Bid.AdM = string(respBody)
 	}
 
-	glog.V(models.LogLevelDebug).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] wrapper_cnt:[%v] httpRespCode= [%v] statsEnabled:[%v]",
-		accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, respStatus, wrapperCnt, httpResp.Code, isStatsEnabled)
+	glog.V(models.LogLevelDebug).Infof("[VAST_UNWRAPPER] pubid:[%v] bidder:[%v] impid:[%v] bidid:[%v] status_code:[%v] wrapper_cnt:[%v] httpRespCode= [%v]",
+		accountID, bidder, bid.Bid.ImpID, bid.Bid.ID, unwrapStatus, wrapperCnt, httpResp.Code)
+	return unwrapStatus
 }

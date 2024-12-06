@@ -9,22 +9,23 @@ type MetricsEngine interface {
 	RecordPartnerResponseErrors(publisherID, partner, err string)
 	RecordPartnerConfigErrors(publisherID, profileID, partner string, errcode int)
 	RecordPublisherProfileRequests(publisher, profileID string)
-	RecordPublisherInvalidProfileImpressions(publisher, profileID string, impCount int)
 	RecordNobidErrPrebidServerRequests(publisher string, nbr int)
 	RecordNobidErrPrebidServerResponse(publisher string)
 	RecordPlatformPublisherPartnerReqStats(platform, publisher, partner string)
 	RecordPlatformPublisherPartnerResponseStats(platform, publisher, partner string)
 	RecordPartnerResponseTimeStats(publisher, partner string, responseTime int)
 	RecordPublisherResponseTimeStats(publisher string, responseTimeMs int)
-	RecordPublisherWrapperLoggerFailure(publisher, profileID, versionID string)
+	RecordPublisherWrapperLoggerFailure(publisher string)
 	RecordPublisherInvalidProfileRequests(endpoint, publisher, profileID string)
-	RecordBadRequests(endpoint string, errorCode int)
+	RecordBadRequests(endpoint, publisher string, errorCode int)
 	RecordUidsCookieNotPresentErrorStats(publisher, profileID string)
 	RecordVideoInstlImpsStats(publisher, profileID string)
 	RecordImpDisabledViaConfigStats(impType, publisher, profileID string)
 	RecordPublisherRequests(endpoint string, publisher string, platform string)
 	RecordReqImpsWithContentCount(publisher, contentType string)
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
+	RecordBidRecoveryStatus(publisher, profile string, success bool)
+	RecordBidRecoveryResponseTime(publisher, profile string, responseTime time.Duration)
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
@@ -92,4 +93,11 @@ type MetricsEngine interface {
 	//VMAP-adrule
 	RecordAdruleEnabled(pubId, profId string)
 	RecordAdruleValidationFailure(pubId, profId string)
+
+	//AppLovinMax metrics
+	RecordFailedParsingItuneID(pubId, profId string)
+	RecordEndpointResponseSize(endpoint string, bodySize float64)
+
+	//IBV metric
+	RecordIBVRequest(pubId, profId string)
 }

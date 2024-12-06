@@ -55,9 +55,9 @@ func (me *Metrics) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3
 }
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, bidder string, respTime time.Duration) {
+func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
 }
 
 // RecordXMLParserResponseMismatch as a noop
-func (me *Metrics) RecordXMLParserResponseMismatch(method string, bidder string, isMismatch bool) {
+func (me *Metrics) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
 }

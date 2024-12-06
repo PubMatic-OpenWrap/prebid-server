@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.20
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240319050712-0b288cbb5a5d
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -51,7 +51,8 @@ require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20240621094509-2f843d282179
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52
+	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
@@ -90,7 +91,6 @@ require (
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -100,6 +100,6 @@ replace github.com/prebid/prebid-server/v2 => ./
 
 replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef
 
-replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20210129100623-8f30cfecf9f4
+replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5
 
 replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0

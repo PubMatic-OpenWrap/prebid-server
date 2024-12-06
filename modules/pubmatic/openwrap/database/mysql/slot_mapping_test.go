@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -23,13 +24,13 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 		fields  fields
 		args    args
 		want    map[string]string
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    map[string]string{},
-			wantErr: true,
+			wantErr: errors.New("context deadline exceeded"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -55,7 +56,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				"/43743431/DMDemo1@160x600": "2fb84286ede5b20e82b0601df0c7e454",
 				"/43743431/DMDemo2@160x600": "2aa34b52a9e941c1594af7565e599c8d",
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -67,7 +68,6 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -88,7 +88,7 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				"/43743431/DMDemo1@160x600": "2fb84286ede5b20e82b0601df0c7e454",
 				"/43743431/DMDemo2@160x600": "2aa34b52a9e941c1594af7565e599c8d",
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -97,6 +97,34 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				rows := sqlmock.NewRows([]string{"name", "hash"}).
 					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
 					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetSlotNameHash: "^SELECT (.+) FROM  wrapper_publisher_slot (.+)",
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				pubID: 5890,
+			},
+			want:    map[string]string(nil),
+			wantErr: errors.New("error in row scan"),
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "hash"}).
+					AddRow("/43743431/DMDemo1@160x600", "2fb84286ede5b20e82b0601df0c7e454").
+					AddRow("/43743431/DMDemo2@160x600", "2aa34b52a9e941c1594af7565e599c8d")
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM  wrapper_publisher_slot (.+)")).WillReturnRows(rows)
 
 				return db
@@ -110,9 +138,10 @@ func Test_mySqlDB_GetPublisherSlotNameHash(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetPublisherSlotNameHash(tt.args.pubID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetPublisherSlotNameHash() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -133,13 +162,13 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 		fields  fields
 		args    args
 		want    map[int][]models.SlotMapping
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
 			name:    "empty query in config file",
 			want:    map[int][]models.SlotMapping{},
-			wantErr: true,
+			wantErr: errors.New("all expectations were already fulfilled, call to Query '' with args [] was not expected"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -176,7 +205,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -186,7 +215,6 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow("10_112", 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -228,7 +256,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -238,7 +266,6 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
-
 				return db
 			},
 		},
@@ -280,7 +307,7 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -290,6 +317,35 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
 					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan with displayversion 0",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetWrapperLiveVersionSlotMappings: "^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE",
+					},
+				},
+			},
+			args: args{
+				partnerConfigMap: formTestPartnerConfig(),
+				profileID:        19109,
+				displayVersion:   0,
+			},
+			want:    map[int][]models.SlotMapping(nil),
+			wantErr: errors.New("error in row scan"),
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"PartnerId", "AdapterId", "VersionId", "SlotName", "MappingJson", "OrderId"}).
+					AddRow(10, 1, 1, "/43743431/DMDemo1@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0).
+					AddRow(10, 1, 1, "/43743431/DMDemo2@160x600", "{\"adtag\":\"1405192\",\"site\":\"47124\"}", 0)
+				rows = rows.RowError(1, errors.New("error in row scan"))
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM wrapper_partner_slot_mapping (.+) LIVE")).WillReturnRows(rows)
 
 				return db
 			},
@@ -302,9 +358,10 @@ func Test_mySqlDB_GetWrapperSlotMappings(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetWrapperSlotMappings(tt.args.partnerConfigMap, tt.args.profileID, tt.args.displayVersion)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetWrapperSlotMappings() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -320,13 +377,13 @@ func Test_mySqlDB_GetMappings(t *testing.T) {
 		name    string
 		args    args
 		want    map[string]interface{}
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name:    "empty_data",
 			args:    args{},
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("No mapping found for slot:"),
 		},
 		{
 			name: "slotmapping_notfound",
@@ -337,7 +394,7 @@ func Test_mySqlDB_GetMappings(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("No mapping found for slot:key1"),
 		},
 		{
 			name: "slotmapping_found_with_empty_fieldmap",
@@ -348,7 +405,7 @@ func Test_mySqlDB_GetMappings(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "slotmapping_found_with_fieldmap",
@@ -367,7 +424,7 @@ func Test_mySqlDB_GetMappings(t *testing.T) {
 				"key1": "value1",
 				"key2": "value2",
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "key_case_sensitive",
@@ -386,16 +443,17 @@ func Test_mySqlDB_GetMappings(t *testing.T) {
 				"key1": "value1",
 				"key2": "value2",
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := &mySqlDB{}
 			got, err := db.GetMappings(tt.args.slotKey, tt.args.slotMap)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetMappings() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})

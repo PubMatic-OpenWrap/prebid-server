@@ -34,6 +34,10 @@ func (db *mySqlDB) GetPublisherSlotNameHash(pubID int) (map[string]string, error
 		nameHashMap[name] = hash
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	//vastTagHookPublisherSlotName(nameHashMap, pubID)
 	return nameHashMap, nil
 }
@@ -67,6 +71,11 @@ func (db *mySqlDB) GetWrapperSlotMappings(partnerConfigMap map[int]map[string]st
 		}
 
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	//vastTagHookPartnerSlotMapping(partnerSlotMappingMap, profileId, displayVersion)
 	return partnerSlotMappingMap, nil
 }

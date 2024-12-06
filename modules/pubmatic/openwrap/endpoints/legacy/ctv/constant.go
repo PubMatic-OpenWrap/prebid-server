@@ -287,10 +287,12 @@ const (
 	ORTBUserGeoUtcOffset     = "user.geo.utcoffset"     //ORTBUserGeoUtcOffset get api parameter user.geo.utcoffset
 
 	// User.Ext.Consent level parameters
-	ORTBUserExtConsent = "user.ext.consent" //ORTBUserExtConsent get api parameter user.ext.consent
-	ORTBUserExtEIDS    = "user.ext.eids"    //ORTBUserExtEIDS get api parameter user.ext.eids
-	ORTBUserData       = "user.data"        //ORTBUserData get api parameter user.data
-	ORTBExtEIDS        = "eids"             //ORTBExtEIDS parameter
+	ORTBUserExtConsent         = "user.ext.consent"         //ORTBUserExtConsent get api parameter user.ext.consent
+	ORTBUserExtEIDS            = "user.ext.eids"            //ORTBUserExtEIDS get api parameter user.ext.eids
+	ORTBUserExtSessionDuration = "user.ext.sessionduration" //ORTBUserExtSessionDuration get api parameter user.ext.sessionduration
+	ORTBUserExtImpDepth        = "user.ext.impdepth"        //ORTBUserExtImpDepth get api parameter user.ext.impdepth
+	ORTBUserData               = "user.data"                //ORTBUserData get api parameter user.data
+	ORTBExtEIDS                = "eids"                     //ORTBExtEIDS parameter
 
 	// Regs.Ext.GDPR level parameters
 	ORTBRegsExtGdpr      = "regs.ext.gdpr"       //ORTBRegsExtGdpr get api parameter regs.ext.gdpr
@@ -350,6 +352,8 @@ const (
 	ORTBUserGeoExt             = "user.geo.ext"      //ORTBUserGeoExt get api parameter user.geo.ext
 	ORTBUserExtUIDS            = "uids"              //ORTBUserExtUIDs get api parameter user.ext.eids.uids
 	ORTBUserExtID              = "id"                //ORTBUserExtID get api parameter user.ext.eids.uids.id
+	ORTBExtSessionDuration     = "sessionduration"   //ORTBUserExtSessionDuration get api parameter user.ext.sessionduration
+	ORTBExtImpDepth            = "impdepth"          //ORTBUserExtImpDepth get api parameter user.ext.impdepth
 
 	// ORTB Extension Standard Keys */ //// get api parameter xtension Standard Klevel parameters
 	ORTBExtWrapper                                  = "wrapper"              //ORTBExtWrapper get api parameter wrapper

@@ -434,6 +434,8 @@ func TestLogDeviceObject(t *testing.T) {
 				dvc: &models.DeviceCtx{
 					Platform:  models.DevicePlatformDesktop,
 					IFATypeID: ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
+					ID:        "test_device_id",
+					Model:     "iphone,19",
 					Ext: func() *models.ExtDevice {
 						extDevice := models.ExtDevice{}
 						extDevice.UnmarshalJSON([]byte(`{"atts":0}`))
@@ -445,6 +447,8 @@ func TestLogDeviceObject(t *testing.T) {
 				Platform: models.DevicePlatformDesktop,
 				IFAType:  ptrutil.ToPtr(models.DeviceIFATypeID[models.DeviceIFATypeDPID]),
 				ATTS:     ptrutil.ToPtr(float64(openrtb_ext.IOSAppTrackingStatusNotDetermined)),
+				ID:       "test_device_id",
+				Model:    "iphone,19",
 			},
 		},
 	}

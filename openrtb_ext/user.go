@@ -22,7 +22,9 @@ type ExtUser struct {
 
 	Eids []openrtb2.EID `json:"eids,omitempty"`
 
-	Data json.RawMessage `json:"data,omitempty"`
+	Data            json.RawMessage `json:"data,omitempty"`
+	SessionDuration int64           `json:"sessionduration,omitempty"`
+	ImpDepth        int64           `json:"impdepth,omitempty"`
 }
 
 // ExtUserPrebid defines the contract for bidrequest.user.ext.prebid

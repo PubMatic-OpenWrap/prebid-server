@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -4496,6 +4498,70 @@ func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
 	}
 
 	userExt[ORTBExtEIDS] = eids
+
+	data, err := json.Marshal(userExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.User.Ext = data
+	return
+}
+
+// ORTBUserExtSessionDuration will read and set ortb User.Ext.sessionduration parameter
+func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
+	valStr, ok := o.values.GetString(ORTBUserExtSessionDuration)
+	if !ok || valStr == "" {
+		return
+	}
+	if o.ortb.User == nil {
+		o.ortb.User = &openrtb2.User{}
+	}
+	userExt := map[string]interface{}{}
+	if o.ortb.User.Ext != nil {
+		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
+			return
+		}
+	}
+
+	val, err := strconv.ParseUint(valStr, 10, 64)
+	if err != nil {
+		logger.Warn("Invalid session duration value '%v': %v", valStr, err)
+		return nil
+	}
+	userExt[ORTBExtSessionDuration] = int64(val)
+
+	data, err := json.Marshal(userExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.User.Ext = data
+	return
+}
+
+// ORTBUserExtImpDepth will read and set ortb User.Ext.impdepth parameter
+func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
+	valStr, ok := o.values.GetString(ORTBUserExtImpDepth)
+	if !ok || valStr == "" {
+		return
+	}
+	if o.ortb.User == nil {
+		o.ortb.User = &openrtb2.User{}
+	}
+	userExt := map[string]interface{}{}
+	if o.ortb.User.Ext != nil {
+		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
+			return
+		}
+	}
+
+	val, err := strconv.ParseUint(valStr, 10, 64)
+	if err != nil {
+		logger.Warn("Invalid imp depth value '%v': %v", valStr, err)
+		return nil
+	}
+	userExt[ORTBExtImpDepth] = int64(val)
 
 	data, err := json.Marshal(userExt)
 	if err != nil {

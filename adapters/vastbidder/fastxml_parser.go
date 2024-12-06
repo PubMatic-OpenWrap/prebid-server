@@ -58,19 +58,13 @@ func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
 }
 
 func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
-	var node *fastxml.Element
-
-	if int(p.vastVersion) == 2 {
-		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Price")
-	} else {
-		node = p.reader.SelectElement(p.adElement, "Pricing")
-	}
+	node := p.getPricingNode()
 
 	if node == nil {
 		return 0.0, ""
 	}
 
-	priceValue, err := strconv.ParseFloat(strings.TrimSpace(p.reader.Text(node, true)), 64)
+	priceValue, err := strconv.ParseFloat(strings.TrimSpace(p.reader.RawText(node)), 64)
 	if nil != err {
 		return 0.0, ""
 	}
@@ -82,6 +76,18 @@ func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
 	return priceValue, currency
 }
 
+func (p *fastXMLParser) getPricingNode() *fastxml.Element {
+	node := p.reader.SelectElement(p.adElement, "Pricing")
+	if node == nil {
+		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Pricing")
+	}
+	if node == nil {
+		node = p.reader.SelectElement(p.adElement, "Extensions", "Extension", "Price")
+	}
+
+	return node
+}
+
 func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 	switch int(p.vastVersion) {
 	case vastVersion2x, vastVersion3x:
@@ -89,7 +95,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 			if p.reader.SelectAttrValue(ext, "type") == "advertiser" {
 				ele := p.reader.SelectElement(ext, "Advertiser")
 				if ele != nil {
-					if value := strings.TrimSpace(p.reader.Text(ele, true)); len(value) > 0 {
+					if value := strings.TrimSpace(p.reader.Text(ele)); len(value) > 0 {
 						advertisers = append(advertisers, value)
 					}
 				}
@@ -98,7 +104,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 
 	case vastVersion4x:
 		if ele := p.reader.SelectElement(p.adElement, "Advertiser"); ele != nil {
-			if value := strings.TrimSpace(p.reader.Text(ele, true)); len(value) > 0 {
+			if value := strings.TrimSpace(p.reader.Text(ele)); len(value) > 0 {
 				advertisers = append(advertisers, value)
 			}
 		}
@@ -126,7 +132,7 @@ func (p *fastXMLParser) GetDuration() (int, error) {
 	if node == nil {
 		return 0, errEmptyVideoDuration
 	}
-	return parseDuration(strings.TrimSpace(p.reader.Text(node, true)))
+	return parseDuration(strings.TrimSpace(p.reader.RawText(node)))
 }
 
 func (p *fastXMLParser) getAdElement(vast *fastxml.Element) *fastxml.Element {

@@ -2,10 +2,10 @@ package config
 
 type OpenWrapConfig struct {
 	// OpenWrap Configurations
-	EnableFastXML       bool                `mapstructure:"enable_fast_xml"`
-	TrackerURL          string              `mapstructure:"tracker_url"`
-	VendorListScheduler VendorListScheduler `mapstructure:"vendor_list_scheduler"`
-	PriceFloorFetcher   PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
+	FastXMLEnabledPercentage int                 `mapstructure:"fast_xml_enabled_percentage"`
+	TrackerURL               string              `mapstructure:"tracker_url"`
+	VendorListScheduler      VendorListScheduler `mapstructure:"vendor_list_scheduler"`
+	PriceFloorFetcher        PriceFloorFetcher   `mapstructure:"price_floor_fetcher"`
 }
 
 type PriceFloorFetcher struct {
