@@ -290,7 +290,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	var gamQueryParams url.Values
 	if rCtx.IsCTVRequest {
-		err := ctv.ValidateVideoImpressions(payload.BidRequest)
+		err := adpod.IsValidRequestAdPodExt(requestExt.AdPod)
+		if err != nil {
+			result.NbrCode = int(nbr.InvalidAdpodConfig)
+			result.Errors = append(result.Errors, "invalid adpod configurations. reason: "+err.Error())
+			return result, err
+		}
+
+		err = ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
 			result.NbrCode = int(nbr.InvalidVideoRequest)
 			result.Errors = append(result.Errors, err.Error())

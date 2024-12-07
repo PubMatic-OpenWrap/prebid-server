@@ -463,3 +463,75 @@ func getDimension(size string) []string {
 	}
 	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
 }
+
+func IsValidRequestAdPodExt(pod *models.ExtRequestAdPod) error {
+	if pod == nil {
+		return nil
+	}
+
+	if pod.CrossPodAdvertiserExclusionPercent != nil &&
+		(*pod.CrossPodAdvertiserExclusionPercent < 0 || *pod.CrossPodAdvertiserExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excladv must be number between 0 and 100")
+	}
+
+	if pod.CrossPodIABCategoryExclusionPercent != nil &&
+		(*pod.CrossPodIABCategoryExclusionPercent < 0 || *pod.CrossPodIABCategoryExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excliabcat must be number between 0 and 100")
+	}
+
+	if pod.IABCategoryExclusionWindow != nil && *pod.IABCategoryExclusionWindow < 0 {
+		return errors.New("request.ext.adpod.excliabcatwindow must be postive number")
+	}
+
+	if pod.AdvertiserExclusionWindow != nil && *pod.AdvertiserExclusionWindow < 0 {
+		return errors.New("request.ext.adpod.excladvwindow must be postive number")
+	}
+
+	return isValidAdPod(&pod.AdPod)
+
+}
+
+func isValidAdPod(pod *models.AdPod) error {
+	//Validate Request Level AdPod Parameters
+	if pod == nil {
+		return nil
+	}
+
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
+		return errors.New("req.ext.adpod.minads must be positive number")
+	}
+
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
+		return errors.New("req.ext.adpod.maxads must be positive number")
+	}
+
+	if pod.MinDuration != nil && *pod.MinDuration <= 0 {
+		return errors.New("req.ext.adpod.adminduration must be positive number")
+	}
+
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
+		return errors.New("req.ext.adpod.admaxduration must be positive number")
+	}
+
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excladv must be number between 0 and 100")
+	}
+
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excliabcat must be number between 0 and 100")
+	}
+
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
+		return errors.New("req.ext.adpod.minads must be less than req.ext.adpod.maxads")
+	}
+
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
+		return errors.New("req.ext.adpod.adminduration must be less than req.ext.adpod.admaxduration")
+	}
+
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration == *pod.MaxDuration {
+		return errors.New("req.ext.adpod.adminduration must be less than req.ext.adpod.admaxduration")
+	}
+
+	return nil
+}
