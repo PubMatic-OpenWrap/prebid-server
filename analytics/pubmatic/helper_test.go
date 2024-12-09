@@ -256,6 +256,25 @@ func TestRestoreBidResponse(t *testing.T) {
 			},
 		},
 		{
+			name: "AppLovinMax.Reject is true",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-case-1",
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					AppLovinMax: models.AppLovinMax{
+						Reject: true,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-case-1",
+			},
+		},
+		{
 			name: "NBR is not nil",
 			args: args{
 				ao: analytics.AuctionObject{

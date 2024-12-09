@@ -81,7 +81,7 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 
 // RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
 func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
-	if rctx.Endpoint != models.EndpointAppLovinMax {
+	if rctx.Endpoint != models.EndpointAppLovinMax || rctx.AppLovinMax.Reject {
 		return nil
 	}
 
