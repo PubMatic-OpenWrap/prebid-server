@@ -336,6 +336,122 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "mulit-floors config do not have adunit configured and no bids in the response",
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"test-impID-1": {
+							"pubmatic": {
+								{
+									ID:    "dbbsdhkldks1234",
+									ImpID: "test-impID-1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					AppLovinMax: models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{1.1, 2.1, 3.1},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"test-impID-1": {
+							TagID: "adunit-2",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{},
+						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic": "pubmatic",
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "bid-1",
+				},
+			},
+			fields: fields{
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"test-impID-1": {
+					"pubmatic": {
+						{
+							ID:    "dbbsdhkldks1234",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{}`),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mulit-floors config have adunit configured but no floor in config and no bids in the response",
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"test-impID-1": {
+							"pubmatic": {
+								{
+									ID:    "dbbsdhkldks1234",
+									ImpID: "test-impID-1",
+									Ext:   []byte(`{}`),
+								},
+							},
+						},
+					},
+					AppLovinMax: models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"test-impID-1": {
+							TagID: "adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{},
+						},
+					},
+					PrebidBidderCode: map[string]string{
+						"pubmatic": "pubmatic",
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "bid-1",
+				},
+			},
+			fields: fields{
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"test-impID-1": {
+					"pubmatic": {
+						{
+							ID:    "dbbsdhkldks1234",
+							ImpID: "test-impID-1",
+							Ext:   []byte(`{}`),
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "mulit-floors config have three floors and only one bid in the response",
 			args: args{
 				rctx: &models.RequestCtx{

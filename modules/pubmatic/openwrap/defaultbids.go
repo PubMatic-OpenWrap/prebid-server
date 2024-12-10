@@ -188,7 +188,6 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 
 	defaultBids := rctx.DefaultBids
 	bidderExcludeFloors := make(map[string]struct{}, len(bidResponse.SeatBid)) //exclude floors which are already present in bidresponse
-	var adunitFloors []float64                                                 //floors for each adunit
 
 	for _, seatBid := range bidResponse.SeatBid {
 		if rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMatic || rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMaticSecondaryAlias {
@@ -204,7 +203,10 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-		adunitFloors = rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
+		adunitFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
+		if !ok || len(adunitFloors) == 0 {
+			continue
+		}
 		for bidder := range impCtx.Bidders {
 			if prebidBidderCode := rctx.PrebidBidderCode[bidder]; prebidBidderCode != models.BidderPubMatic && prebidBidderCode != models.BidderPubMaticSecondaryAlias {
 				continue
