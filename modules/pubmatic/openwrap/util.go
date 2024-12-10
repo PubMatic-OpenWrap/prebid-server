@@ -10,7 +10,10 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/exp/slices" // Use standard library in next prebid upgrade
+
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -22,6 +25,8 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
+
+var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
 
 var (
 	widthRegEx  *regexp.Regexp
@@ -51,6 +56,10 @@ var (
 
 const (
 	test = "_test"
+)
+
+var (
+	protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper}
 )
 
 func init() {
@@ -485,4 +494,72 @@ func getStringValueFromRequest(request []byte, key []string) (string, bool, erro
 		return "", true, fmt.Errorf("%s must be a string", strings.Join(key, "."))
 	}
 	return string(val), true, nil
+}
+
+func ValidateEIDs(eids []openrtb2.EID) []openrtb2.EID {
+	validEIDs := make([]openrtb2.EID, 0, len(eids))
+	for _, eid := range eids {
+		validUIDs := make([]openrtb2.UID, 0, len(eid.UIDs))
+		for _, uid := range eid.UIDs {
+			uid.ID = uidRegexp.ReplaceAllString(uid.ID, "")
+			if uid.ID != "" {
+				validUIDs = append(validUIDs, uid)
+			}
+		}
+		if len(validUIDs) > 0 {
+			eid.UIDs = validUIDs
+			validEIDs = append(validEIDs, eid)
+		}
+	}
+	return validEIDs
+}
+
+func UpdateUserExtWithValidValues(user *openrtb2.User) {
+	if user == nil {
+		return
+	}
+
+	if user.Ext != nil {
+		var userExt openrtb_ext.ExtUser
+		err := json.Unmarshal(user.Ext, &userExt)
+		if err != nil {
+			return
+		}
+		if userExt.SessionDuration < 0 {
+			glog.Warningf("Invalid sessionduration value: %v. Only positive values are allowed.", userExt.SessionDuration)
+			userExt.SessionDuration = 0
+		}
+
+		if userExt.ImpDepth < 0 {
+			glog.Warningf("Invalid impdepth value: %v. Only positive values are allowed.", userExt.ImpDepth)
+			userExt.ImpDepth = 0
+		}
+		eids := ValidateEIDs(userExt.Eids)
+		userExt.Eids = nil
+		if len(eids) > 0 {
+			userExt.Eids = eids
+		}
+
+		userExtjson, err := json.Marshal(userExt)
+		if err == nil {
+			user.Ext = userExtjson
+		}
+	}
+
+	if len(user.EIDs) > 0 {
+		eids := ValidateEIDs(user.EIDs)
+		user.EIDs = nil
+		if len(eids) > 0 {
+			user.EIDs = eids
+		}
+	}
+}
+
+func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.MediaCreativeSubtype {
+	for _, protocol := range protocols {
+		if !slices.Contains(impProtocols, protocol) {
+			impProtocols = append(impProtocols, protocol)
+		}
+	}
+	return impProtocols
 }

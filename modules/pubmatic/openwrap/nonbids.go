@@ -30,7 +30,29 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 			seatNonBid.AddBid(nonBid, bidder)
 		}
 	}
+
+	// Update seat-non-bids with default-bids for the web-s2s endpoint
+	// In other endpoints, default bids are added to response.seatbid, but for web-s2s, we must return a vanilla prebid	 response.
+	if rctx.Endpoint == models.EndpointWebS2S {
+		updateSeatNonBidsFromDefaultBids(rctx, &seatNonBid)
+	}
+
 	return seatNonBid
+}
+
+func updateSeatNonBidsFromDefaultBids(rctx models.RequestCtx, seatNonBid *openrtb_ext.NonBidCollection) {
+	for impID, defaultBid := range rctx.DefaultBids {
+		for seat, bids := range defaultBid {
+			for _, bid := range bids {
+				if rctx.ImpBidCtx != nil && rctx.ImpBidCtx[impID].BidCtx != nil && rctx.ImpBidCtx[impID].BidCtx[bid.ID].Nbr != nil {
+					nbr := rctx.ImpBidCtx[impID].BidCtx[bid.ID].Nbr
+					nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{Bid: &openrtb2.Bid{ImpID: impID}, NonBidReason: int(*nbr)})
+					seatNonBid.AddBid(nonBid, seat)
+				}
+
+			}
+		}
+	}
 }
 
 // addSeatNonBidsInResponseExt adds the rctx.SeatNonBids in the response-ext

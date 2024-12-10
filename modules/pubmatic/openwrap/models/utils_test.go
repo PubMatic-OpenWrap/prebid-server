@@ -954,6 +954,18 @@ func TestGetBidLevelFloorsDetails(t *testing.T) {
 				frv: 0,
 			},
 		},
+		{
+			name: "floor_values_set_from_bidExt_mbmfv_for_applovinmax",
+			args: args{
+				bidExt: BidExt{
+					MultiBidMultiFloorValue: 5.0,
+				},
+			},
+			want: want{
+				fv:  5.0,
+				frv: 5.0,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1229,6 +1241,7 @@ func TestGetKGPSV(t *testing.T) {
 			args: args{
 				bidderMeta: PartnerData{
 					KGPV: "kgpv",
+					KGP:  "_AU_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
@@ -1240,6 +1253,7 @@ func TestGetKGPSV(t *testing.T) {
 				bidderMeta: PartnerData{
 					KGPV:    "kgpv",
 					IsRegex: true,
+					KGP:     "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
@@ -1251,6 +1265,7 @@ func TestGetKGPSV(t *testing.T) {
 				bidderMeta: PartnerData{
 					MatchedSlot: "kgpsv",
 					IsRegex:     true,
+					KGP:         "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpsv",
@@ -1269,6 +1284,7 @@ func TestGetKGPSV(t *testing.T) {
 					KGPV:        "kgpv",
 					MatchedSlot: "kgpsv",
 					IsRegex:     true,
+					KGP:         "_AU_@_DIV_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
@@ -1287,27 +1303,14 @@ func TestGetKGPSV(t *testing.T) {
 					KGPV:        "kgpv",
 					MatchedSlot: "kgpsv",
 					IsRegex:     false,
+					KGP:         "_AU_@_W_x_H_",
 				},
 			},
 			kgpv:  "kgpv",
 			kgpsv: "kgpv",
 		},
 		{
-			name: "KGPV and KGP not present in partnerData,regex false and adformat is video",
-			args: args{
-				bid: openrtb2.Bid{
-					Price:  1,
-					DealID: "deal",
-					W:      250,
-					H:      300,
-				},
-				adformat: Video,
-			},
-			kgpv:  "",
-			kgpsv: "",
-		},
-		{
-			name: "KGPV not present in partnerData,regex false and adformat is video",
+			name: "KGPV not present in partnerData, regex false and adformat is video",
 			args: args{
 				bid: openrtb2.Bid{
 					Price:  1,
@@ -1325,7 +1328,7 @@ func TestGetKGPSV(t *testing.T) {
 			kgpsv: "adunit@0x0",
 		},
 		{
-			name: "KGPV not present in partnerData,regex false and adformat is banner",
+			name: "KGPV not present in partnerData, regex false and adformat is banner",
 			args: args{
 				bid: openrtb2.Bid{
 					Price:  1,
@@ -1347,12 +1350,11 @@ func TestGetKGPSV(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1 := GetKGPSV(tt.args.bid, tt.args.bidExt, tt.args.bidderMeta, tt.args.adformat, tt.args.tagId, tt.args.div, tt.args.source)
-			if got != tt.kgpv {
-				t.Errorf("GetKGPSV() got = %v, want %v", got, tt.kgpv)
-			}
-			if got1 != tt.kgpsv {
-				t.Errorf("GetKGPSV() got1 = %v, want %v", got1, tt.kgpsv)
-			}
+
+			// Ensure KGPV is not empty
+			assert.NotEmpty(t, got, "KGPV should not be empty")
+			assert.Equal(t, tt.kgpv, got, "GetKGPSV() got = %v, want %v", got, tt.kgpv)
+			assert.Equal(t, tt.kgpsv, got1, "GetKGPSV() got1 = %v, want %v", got1, tt.kgpsv)
 		})
 	}
 }

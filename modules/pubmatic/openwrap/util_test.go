@@ -1782,3 +1782,229 @@ func TestGetStringValueFromRequest(t *testing.T) {
 		assert.Equal(t, test.expectedError, err, "getStringValueFromRequest should return expected error for test case: %s", test.description)
 	}
 }
+
+func TestUpdateUserExtWithValidValues(t *testing.T) {
+	type args struct {
+		user *openrtb2.User
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.User
+	}{
+		{
+			name: "test_valid_user_eids",
+			args: args{
+				user: &openrtb2.User{
+					EIDs: []openrtb2.EID{
+						{
+							Source: "uidapi.com",
+							UIDs: []openrtb2.UID{
+								{
+									ID: "UID2:testUID",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.User{
+				EIDs: []openrtb2.EID{
+					{
+						Source: "uidapi.com",
+						UIDs: []openrtb2.UID{
+							{
+								ID: "testUID",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test_user_eids_and_user_ext_eids",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]},{"source":"liveramp.com","uids":[{"id":""}]}]}`),
+					EIDs: []openrtb2.EID{
+						{
+							Source: "uidapi.com",
+							UIDs: []openrtb2.UID{
+								{
+									ID: "UID2:testUID",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]}]}`),
+				EIDs: []openrtb2.EID{
+					{
+						Source: "uidapi.com",
+						UIDs: []openrtb2.UID{
+							{
+								ID: "testUID",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test_user_ext_eids",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]},{"source":"liveramp.com","uids":[{"id":""}]}]}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"testUID"},{"id":"testUID2"}]},{"source":"euid.eu","uids":[{"id":"testeuid"}]}]}`),
+			},
+		},
+		{
+			name: "test_user_ext_eids_invalid",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{"eids":[{"source":"uidapi.com","uids":[{"id":"UID2:"},{"id":""}]},{"source":"euid.eu","uids":[{"id":"euid:"}]},{"source":"liveramp.com","uids":[{"id":""}]}]}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{}`),
+			},
+		},
+		{
+			name: "test_valid_user_eids_invalid",
+			args: args{
+				user: &openrtb2.User{
+					EIDs: []openrtb2.EID{
+						{
+							Source: "uidapi.com",
+							UIDs: []openrtb2.UID{
+								{
+									ID: "UID2:",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.User{},
+		},
+		{
+			name: "test_valid_user_ext_sessionduration_impdepth",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`),
+			},
+		},
+		{
+			name: "test_invalid_user_ext_sessionduration_impdepth",
+			args: args{
+				user: &openrtb2.User{
+					Ext: json.RawMessage(`{
+					"sessionduration": -20,
+					"impdepth": -10
+					}`),
+				},
+			},
+			want: &openrtb2.User{
+				Ext: json.RawMessage(`{}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			UpdateUserExtWithValidValues(tt.args.user)
+			assert.Equal(t, tt.want, tt.args.user)
+		})
+	}
+}
+
+func TestUpdateImpProtocols(t *testing.T) {
+	tests := []struct {
+		name         string
+		impProtocols []adcom1.MediaCreativeSubtype
+		want         []adcom1.MediaCreativeSubtype
+	}{
+		{
+			name:         "Empty_Protocols",
+			impProtocols: []adcom1.MediaCreativeSubtype{},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "VAST20_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST20,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST20,
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "VAST30_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "All_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+			},
+		},
+		{
+			name: "Additional_Protocols_Present",
+			impProtocols: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+				adcom1.CreativeVAST20,
+			},
+			want: []adcom1.MediaCreativeSubtype{
+				adcom1.CreativeVAST30,
+				adcom1.CreativeVAST30Wrapper,
+				adcom1.CreativeVAST40,
+				adcom1.CreativeVAST40Wrapper,
+				adcom1.CreativeVAST20,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := UpdateImpProtocols(tt.impProtocols)
+			assert.ElementsMatch(t, tt.want, got)
+		})
+	}
+}

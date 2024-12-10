@@ -47,6 +47,20 @@ func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
+// GetImpCountingMethodEnabledBidders mocks base method
+func (m *MockFeature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImpCountingMethodEnabledBidders")
+	ret0, _ := ret[0].(map[string]struct{})
+	return ret0
+}
+
+// GetImpCountingMethodEnabledBidders indicates an expected call of GetImpCountingMethodEnabledBidders
+func (mr *MockFeatureMockRecorder) GetImpCountingMethodEnabledBidders() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImpCountingMethodEnabledBidders", reflect.TypeOf((*MockFeature)(nil).GetImpCountingMethodEnabledBidders))
+}
+
 // IsAmpMultiformatEnabled mocks base method
 func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()

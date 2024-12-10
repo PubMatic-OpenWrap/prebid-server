@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,22 +23,18 @@ import (
 const MAX_IMPRESSIONS_PUBMATIC = 30
 const MAX_MULTIFLOORS_PUBMATIC = 3
 
-var re = regexp.MustCompile(appLovinMaxImpressionPattern)
-
 const (
-	ae                           = "ae"
-	PUBMATIC                     = "[PUBMATIC]"
-	buyId                        = "buyid"
-	buyIdTargetingKey            = "hb_buyid_"
-	skAdnetworkKey               = "skadn"
-	rewardKey                    = "reward"
-	dctrKeywordName              = "dctr"
-	urlEncodedEqualChar          = "%3D"
-	AdServerKey                  = "adserver"
-	PBAdslotKey                  = "pbadslot"
-	bidViewability               = "bidViewability"
-	multiFloors                  = "_mf"
-	appLovinMaxImpressionPattern = "_mf.*"
+	ae                  = "ae"
+	PUBMATIC            = "[PUBMATIC]"
+	buyId               = "buyid"
+	buyIdTargetingKey   = "hb_buyid_"
+	skAdnetworkKey      = "skadn"
+	rewardKey           = "reward"
+	dctrKeywordName     = "dctr"
+	urlEncodedEqualChar = "%3D"
+	AdServerKey         = "adserver"
+	PBAdslotKey         = "pbadslot"
+	bidViewability      = "bidViewability"
 )
 
 type PubmaticAdapter struct {
@@ -88,6 +83,7 @@ type extRequestAdServer struct {
 	Wrapper     *pubmaticWrapperExt `json:"wrapper,omitempty"`
 	Acat        []string            `json:"acat,omitempty"`
 	Marketplace *marketplaceReqExt  `json:"marketplace,omitempty"`
+	SendBurl    bool                `json:"sendburl,omitempty"`
 	openrtb_ext.ExtRequest
 }
 
@@ -113,6 +109,11 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	extractWrapperExtFromImp := true
 	extractPubIDFromImp := true
 
+	displayManager, displayManagerVer := "", ""
+	if request.App != nil && request.App.Ext != nil {
+		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
+	}
+
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
 	if err != nil {
 		return nil, []error{err}
@@ -125,7 +126,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	impFloorsMap := map[string][]float64{}
 
 	for i := 0; i < len(request.Imp); i++ {
-		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp)
+		wrapperExtFromImp, pubIDFromImp, floors, err := parseImpressionObject(&request.Imp[i], extractWrapperExtFromImp, extractPubIDFromImp, displayManager, displayManagerVer)
 		// If the parsing is failed, remove imp and add the error.
 		if err != nil {
 			errs = append(errs, err)
@@ -258,44 +259,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	return requestData, errs
 }
 
-// buildMultiFloorRequests builds multiple requests for each floor value
-func (a *PubmaticAdapter) buildMultiFloorRequests(request *openrtb2.BidRequest, impFloorsMap map[string][]float64, cookies []string) ([]*adapters.RequestData, []error) {
-	requestData := []*adapters.RequestData{}
-	errs := make([]error, 0, MAX_MULTIFLOORS_PUBMATIC*len(request.Imp))
-
-	for i := 0; i < MAX_MULTIFLOORS_PUBMATIC; i++ {
-		isFloorsUpdated := false
-		newImps := make([]openrtb2.Imp, len(request.Imp))
-		copy(newImps, request.Imp)
-		//TODO-AK: Remove the imp from the request if the floor is not present except for the first floor
-		for j := range newImps {
-			floors, ok := impFloorsMap[request.Imp[j].ID]
-			if !ok || len(floors) <= i {
-				continue
-			}
-			isFloorsUpdated = true
-			newImps[j].BidFloor = floors[i]
-			newImps[j].ID = fmt.Sprintf("%s"+multiFloors+"%d", newImps[j].ID, i+1)
-		}
-
-		if !isFloorsUpdated {
-			continue
-		}
-
-		newRequest := *request
-		newRequest.Imp = newImps
-
-		newRequestData, errData := a.buildAdapterRequest(&newRequest, cookies)
-		if errData != nil {
-			errs = append(errs, errData)
-		}
-		if len(newRequestData) > 0 {
-			requestData = append(requestData, newRequestData...)
-		}
-	}
-	return requestData, errs
-}
-
 // buildAdapterRequest builds the request for Pubmatic
 func (a *PubmaticAdapter) buildAdapterRequest(request *openrtb2.BidRequest, cookies []string) ([]*adapters.RequestData, error) {
 	reqJSON, err := json.Marshal(request)
@@ -383,7 +346,7 @@ func assignBannerWidthAndHeight(banner *openrtb2.Banner, w, h int64) *openrtb2.B
 }
 
 // parseImpressionObject parse the imp to get it ready to send to pubmatic
-func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool) (*pubmaticWrapperExt, string, []float64, error) {
+func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractPubIDFromImp bool, displayManager, displayManagerVer string) (*pubmaticWrapperExt, string, []float64, error) {
 	var wrapExt *pubmaticWrapperExt
 	var pubID string
 	var floors []float64
@@ -395,6 +358,12 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	if imp.Audio != nil {
 		imp.Audio = nil
+	}
+
+	// Populate imp.displaymanager and imp.displaymanagerver if the SDK failed to do it.
+	if imp.DisplayManager == "" && imp.DisplayManagerVer == "" && displayManager != "" && displayManagerVer != "" {
+		imp.DisplayManager = displayManager
+		imp.DisplayManagerVer = displayManagerVer
 	}
 
 	var bidderExt ExtImpBidderPubmatic
@@ -449,10 +418,6 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 	}
 	if pubmaticExt.PmZoneID != "" {
 		extMap[pmZoneIDKeyName] = pubmaticExt.PmZoneID
-	}
-
-	if pubmaticExt.SendBurl {
-		extMap[sendBurlKey] = pubmaticExt.SendBurl
 	}
 
 	if bidderExt.SKAdnetwork != nil {
@@ -560,6 +525,9 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &cookies)
 	}
+	if sendBurl, ok := reqExtBidderParams[sendBurlKey]; ok {
+		pmReqExt.SendBurl, _ = strconv.ParseBool(string(sendBurl))
+	}
 	// OW patch -end-
 
 	return pmReqExt, cookies, nil
@@ -634,7 +602,12 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		targets := getTargetingKeys(sb.Ext, string(externalRequest.BidderName))
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-			bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+
+			//If imp is multi-floored then update the bid.ext.mbmfv with the floor value
+			if appLovinMaxImpressionRegex.MatchString(bid.ImpID) {
+				bid.Ext = updateBidExtWithMultiFloor(bid.ImpID, bid.Ext, externalRequest.Body)
+				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
+			}
 
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
@@ -696,10 +669,6 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		}
 	}
 	return bidResponse, errs
-}
-
-func trimSuffixWithPattern(input string) string {
-	return re.ReplaceAllString(input, "")
 }
 
 func getNativeAdm(adm string) (string, error) {
@@ -853,4 +822,20 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 		bidderName: string(bidderName),
 	}
 	return bidder, nil
+}
+
+// getDisplayManagerAndVer returns the display manager and version from the request.app.ext or request.app.prebid.ext source and version
+func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
+	if source, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+
+	if source, err := jsonparser.GetString(app.Ext, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+	return "", ""
 }

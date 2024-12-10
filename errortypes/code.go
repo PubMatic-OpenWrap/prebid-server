@@ -41,6 +41,7 @@ const (
 	SecCookieDeprecationLenWarningCode
 	SecBrowsingTopicsWarningCode
 	AdpodPostFilteringWarningCode
+	InvalidVastVersionWarningCode
 )
 
 // Coder provides an error or warning code with severity.

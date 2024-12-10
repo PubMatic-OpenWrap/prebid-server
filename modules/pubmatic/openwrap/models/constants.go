@@ -34,6 +34,7 @@ const (
 	PLATFORM_KEY                = "platform"
 	SendAllBidsKey              = "sendAllBids"
 	VastUnwrapperEnableKey      = "enableVastUnwrapper"
+	StrictVastModeKey           = "strictVastMode"
 	VastUnwrapTrafficPercentKey = "vastUnwrapTrafficPercent"
 	SSTimeoutKey                = "ssTimeout"
 	PWC                         = "awc"
@@ -357,6 +358,9 @@ const (
 	PixelPosAbove = "above"
 	PixelPosBelow = "below"
 
+	//constants for tracker impCountingMethod
+	ImpCountingMethod = "imp_ct_mthd"
+
 	DealIDNotApplicable   = "na"
 	DealTierNotApplicable = "na"
 	PwtDealTier           = "pwtdealtier"
@@ -371,21 +375,23 @@ const (
 	Enabled          = "1"
 
 	// VAST Unwrap
-	RequestContext     = "rctx"
-	UnwrapCount        = "unwrap-count"
-	UnwrapStatus       = "unwrap-status"
-	Timeout            = "Timeout"
-	UnwrapSucessStatus = "0"
-	UnwrapTimeout      = "unwrap-timeout"
-	MediaTypeVideo     = "video"
-	ProfileId          = "profileID"
-	VersionId          = "versionID"
-	DisplayId          = "DisplayID"
-	XUserIP            = "X-Forwarded-For"
-	XUserAgent         = "X-Device-User-Agent"
-	CreativeID         = "unwrap-ucrid"
-	PubID              = "pub_id"
-	ImpressionID       = "imr_id"
+	RequestContext          = "rctx"
+	UnwrapCount             = "unwrap-count"
+	UnwrapStatus            = "unwrap-status"
+	Timeout                 = "Timeout"
+	UnwrapSucessStatus      = "0"
+	UnwrapEmptyVASTStatus   = "4"
+	UnwrapInvalidVASTStatus = "6"
+	UnwrapTimeout           = "unwrap-timeout"
+	MediaTypeVideo          = "video"
+	ProfileId               = "profileID"
+	VersionId               = "versionID"
+	DisplayId               = "DisplayID"
+	XUserIP                 = "X-Forwarded-For"
+	XUserAgent              = "X-Device-User-Agent"
+	CreativeID              = "unwrap-ucrid"
+	PubID                   = "pub_id"
+	ImpressionID            = "imr_id"
 
 	//Constants for new SDK reporting
 	ProfileTypeKey        = "type"
@@ -536,8 +542,8 @@ const (
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	GetAdpodConfig                     = "GetAdpodConfig"
-	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
-	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
+	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
@@ -593,20 +599,30 @@ const (
 	FeatureMaxFloors           = 5
 	FeatureBidRecovery         = 6
 	FeatureApplovinMultiFloors = 7
+	FeatureImpCountingMethod   = 8
 )
 
 // constants for applovinmax requests
 const (
-	Agent            = "agent"
-	AppLovinMaxAgent = "max"
-	TypeRewarded     = "rewarded"
-	SignalData       = "signaldata"
-	OwSspBurl        = "owsspburl"
-	MissingSignal    = "missing"
-	InvalidSignal    = "invalid"
+	Agent                   = "agent"
+	AppLovinMaxAgent        = "max"
+	TypeRewarded            = "rewarded"
+	SignalData              = "signaldata"
+	OwSspBurl               = "owsspburl"
+	MissingSignal           = "missing"
+	InvalidSignal           = "invalid"
+	AppStoreUrl             = "appStoreUrl"
+	SendBurl                = "sendburl"
+	MultiBidMultiFloorValue = "mbmfv"
 )
 
 // constants for log level
 const (
 	LogLevelDebug glog.Level = 3
+)
+
+const (
+	// ErrDBQueryFailed reponse error
+	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
 )

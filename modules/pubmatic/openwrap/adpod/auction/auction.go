@@ -39,7 +39,7 @@ func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx model
 		return nil, errs
 	}
 
-	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, rctx.ImpBidCtx)
+	impAdpodBidsMap, _ := generateAdpodBids(response.SeatBid, rctx.ImpBidCtx, rctx.AdpodProfileConfig)
 	adpodBids, errs := doAdPodExclusions(impAdpodBidsMap, rctx.ImpBidCtx)
 	if len(errs) > 0 {
 		return nil, errs
@@ -77,7 +77,7 @@ func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value stri
 	return err
 }
 
-func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.ImpCtx) (map[string]*AdPodBid, []openrtb2.SeatBid) {
+func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig) (map[string]*AdPodBid, []openrtb2.SeatBid) {
 	impAdpodBidsMap := make(map[string]*AdPodBid)
 	videoSeatBids := make([]openrtb2.SeatBid, 0)
 
@@ -133,12 +133,13 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 			// }
 
 			//get duration of creative
-			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, eachImpCtx.ImpAdPodCfg, sequence)
+			duration, status := getBidDuration(bid, *eachImpCtx.AdpodConfig, adpodProfileCfg, eachImpCtx.ImpAdPodCfg, sequence)
 			if eachImpCtx.BidIDToDur == nil {
 				eachImpCtx.BidIDToDur = map[string]int64{}
 			}
 			eachImpCtx.BidIDToDur[bid.ID] = duration
 			impCtx[impId] = eachImpCtx
+
 			eachImpBid := Bid{
 				Bid:               bid,
 				ExtBid:            ext,
@@ -185,7 +186,7 @@ it will try to get the actual ad duration returned by the bidder using prebid.vi
 if prebid.video.duration not present then uses defaultDuration passed as an argument
 if video lengths matching policy is present for request then it will validate and update duration based on policy
 */
-func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, config []*models.ImpAdPodConfig, sequence int) (int64, int64) {
+func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, adpodProfileCfg *models.AdpodProfileConfig, config []*models.ImpAdPodConfig, sequence int) (int64, int64) {
 
 	// C1: Read it from bid.ext.prebid.video.duration field
 	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
@@ -201,8 +202,8 @@ func getBidDuration(bid *openrtb2.Bid, adpodConfig models.AdPod, config []*model
 	}
 
 	// C2: Based on video lengths matching policy validate and return duration
-	if len(adpodConfig.VideoAdDurationMatching) > 0 {
-		return getDurationBasedOnDurationMatchingPolicy(duration, adpodConfig.VideoAdDurationMatching, config)
+	if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) > 0 {
+		return getDurationBasedOnDurationMatchingPolicy(duration, adpodProfileCfg.AdserverCreativeDurationMatchingPolicy, config)
 	}
 
 	//default return duration which is present in bid.ext.prebid.vide.duration field

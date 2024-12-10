@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/privacy"
 
@@ -176,7 +177,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 		bidIDGenerator:           &bidIDGenerator{cfg.GenerateBidID},
 		hostSChainNode:           cfg.HostSChainNode,
 		adsCertSigner:            adsCertSigner,
-		server:                   config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter},
+		server:                   config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter, FastXMLEnabledPercentage: cfg.FastXMLEnabledPercentage},
 		bidValidationEnforcement: cfg.Validations,
 		requestSplitter:          requestSplitter,
 		macroReplacer:            macroReplacer,
@@ -425,6 +426,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
 
+		if requestExtPrebid.StrictVastMode {
+			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBid)
+			errs = append(errs, validationErrs...)
+		}
+
 		if e.priceFloorEnabled {
 			var rejectedBids []*entities.PbsOrtbSeatBid
 			var enforceErrs []error
@@ -493,7 +499,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 		}
 
-		evTracking := getEventTracking(requestExtPrebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL)
+		evTracking := getEventTracking(requestExtPrebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL,
+			OpenWrapEventTracking{
+				enabledVideoEvents:       requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
+				fastXMLEnabledPercentage: e.server.FastXMLEnabledPercentage,
+				me:                       e.me,
+			})
 		adapterBids = evTracking.modifyBidsForEvents(adapterBids, r.BidRequestWrapper.BidRequest, e.trakerURL)
 
 		r.HookExecutor.ExecuteAllProcessedBidResponsesStage(adapterBids)
@@ -1410,7 +1421,7 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 			}
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
-			nonBidParams.NonBidReason = int(ResponseRejectedGeneral)
+			nonBidParams.NonBidReason = int(nbr.ResponseRejectedDSA)
 			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}

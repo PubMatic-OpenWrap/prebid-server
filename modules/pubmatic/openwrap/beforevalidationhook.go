@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode"
 
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
@@ -27,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
@@ -52,7 +54,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 		if result.Reject {
-			m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
@@ -84,7 +86,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// return prebid validation error
 	if len(payload.BidRequest.Imp) == 0 || (payload.BidRequest.Site == nil && payload.BidRequest.App == nil) {
 		result.Reject = false
-		m.metricEngine.RecordBadRequests(rCtx.Endpoint, getPubmaticErrorCode(nbr.InvalidRequestExt))
+		m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(nbr.InvalidRequestExt))
 		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, int(nbr.InvalidRequestExt))
 		return result, nil
 	}
@@ -130,15 +132,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
-		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
-		} else {
-			err = errors.New("failed to get profile data: received empty data")
-		}
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
-		return result, err
+		return result, errors.New("invalid profile data")
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
@@ -170,6 +166,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
+	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
+	if len(videoAdDuration) > 0 {
+		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+			AdserverCreativeDurationMatchingPolicy: policy,
+		}
+	}
+
 	rCtx.PartnerConfigMap = partnerConfigMap // keep a copy at module level as well
 	if ver, err := strconv.Atoi(models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.DisplayVersionID)); err == nil {
 		rCtx.DisplayVersionID = ver
@@ -179,7 +184,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.InvalidPlatform)
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		m.metricEngine.RecordPublisherInvalidProfileImpressions(rCtx.PubIDStr, rCtx.ProfileIDStr, len(payload.BidRequest.Imp))
 		return result, errors.New("failed to get platform data")
 	}
 	rCtx.Platform = platform
@@ -336,7 +340,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 					m.metricEngine.RecordReqImpsWithContentCount(rCtx.PubIDStr, models.ContentTypeSite)
 				}
 			}
-			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, payload.BidRequest.Device.ConnectionType)
+
+			var connectionType *adcom1.ConnectionType
+			if payload.BidRequest.Device != nil && payload.BidRequest.Device.ConnectionType != nil {
+				connectionType = payload.BidRequest.Device.ConnectionType
+			}
+
+			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, connectionType)
 			if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
 				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
 				rCtx.AmpVideoEnabled = true
@@ -386,7 +396,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetAdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -395,18 +405,38 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			//Adding default durations for CTV Test requests
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && adpodConfig.VideoAdDuration == nil {
-				adpodConfig.VideoAdDuration = []int{5, 10}
-			}
-			if rCtx.IsTestRequest > 0 && adpodConfig != nil && len(adpodConfig.VideoAdDurationMatching) == 0 {
-				adpodConfig.VideoAdDurationMatching = openrtb_ext.OWRoundupVideoAdDurationMatching
+			if rCtx.IsTestRequest > 0 && adpodConfig != nil && rCtx.AdpodProfileConfig == nil {
+				rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+					AdserverCreativeDurations:              []int{5, 10},
+					AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+				}
 			}
 
-			if err := adpod.Validate(adpodConfig); err != nil {
+			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
 				return result, nil
+			}
+
+			podConfigs, err := adpod.GetAdpodConfigs(rCtx, m.cache, videoAdUnitCtx.AppliedSlotAdUnitConfig)
+			if err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
+
+			err = adpod.ValidateAdpodConfigs(podConfigs)
+			if err != nil {
+				result.NbrCode = int(nbr.InvalidAdpodConfig)
+				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
+				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				return result, nil
+			}
+
+			if len(podConfigs) > 0 {
+				rCtx.ImpAdPodConfig[imp.ID] = podConfigs
 			}
 		}
 
@@ -431,7 +461,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// prebidBidderCode is equivalent of PBS-Core's bidderCode
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
-			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+			rCtx.PrebidBidderCode[bidderCode] = prebidBidderCode
 
 			if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
@@ -530,6 +560,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
+
+		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
+			var isValidAppStoreUrl bool
+			if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+			}
+			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
+		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -608,13 +646,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic))
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl)
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl)
 			}
 		}
 	}
@@ -632,6 +670,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		defer func() {
+			moduleCtx.ModuleContext["rctx"] = rctx
+		}()
+
 		var err error
 		if rctx.IsCTVRequest && ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
 			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
@@ -651,6 +693,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if err != nil {
 				result.Errors = append(result.Errors, err.Error())
 			}
+
+			ep.BidRequest = adpod.ApplyAdpodConfigs(rctx, ep.BidRequest)
 		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
@@ -665,6 +709,23 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		if rctx.AppLovinMax.AppStoreUrl != "" {
+			bidRequest.App.StoreURL = rctx.AppLovinMax.AppStoreUrl
+		}
+	}
+	strictVastMode := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
+	if strictVastMode {
+		if rctx.NewReqExt == nil {
+			rctx.NewReqExt = &models.RequestExt{}
+		}
+		rctx.NewReqExt.Prebid.StrictVastMode = strictVastMode
+		for i := 0; i < len(bidRequest.Imp); i++ {
+			if bidRequest.Imp[i].Video != nil {
+				bidRequest.Imp[i].Video.Protocols = UpdateImpProtocols(bidRequest.Imp[i].Video.Protocols)
+			}
+		}
+	}
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = append(bidRequest.Cur, cur)
 	}
@@ -706,7 +767,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if bidRequest.User.CustomData == "" && rctx.KADUSERCookie != nil {
 		bidRequest.User.CustomData = rctx.KADUSERCookie.Value
 	}
-	ctv.UpdateUserEidsWithValidValues(bidRequest.User)
+	UpdateUserExtWithValidValues(bidRequest.User)
 
 	for i := 0; i < len(bidRequest.WLang); i++ {
 		bidRequest.WLang[i] = getValidLanguage(bidRequest.WLang[i])
@@ -793,6 +854,11 @@ func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.
 			bidfloorcur = *adUnitCfg.BidFloorCur
 		}
 	}
+
+	if bidfloor > 0 && len(bidfloorcur) == 0 {
+		bidfloorcur = models.USD
+	}
+
 	return bidfloor, bidfloorcur
 }
 
@@ -909,7 +975,7 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
@@ -919,6 +985,10 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, 
 
 	if len(cookie) != 0 {
 		bidderParamsMap[bidderCode][models.COOKIE] = cookie
+	}
+
+	if sendBurl {
+		bidderParamsMap[bidderCode][models.SendBurl] = true
 	}
 
 	return json.Marshal(bidderParamsMap)
@@ -1288,4 +1358,58 @@ func isValidURL(urlVal string) bool {
 		return false
 	}
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
+}
+
+func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {
+	isValidAppStoreUrl := false
+	appStoreUrl := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppStoreUrl]
+	if appStoreUrl == "" {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: app store url not present in DB", rctx.PubID, rctx.ProfileID)
+		return appStoreUrl, isValidAppStoreUrl
+	}
+	appStoreUrl = strings.TrimSpace(appStoreUrl)
+	if !isValidURL(appStoreUrl) {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
+		return appStoreUrl, isValidAppStoreUrl
+	}
+	isValidAppStoreUrl = true
+	return appStoreUrl, isValidAppStoreUrl
+}
+
+func (m *OpenWrap) updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest, impExt *models.ImpExtension) {
+	if bidRequest.Device == nil || strings.ToLower(bidRequest.Device.OS) != "ios" {
+		return
+	}
+
+	if impExt == nil || impExt.SKAdnetwork == nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID)
+		return
+	}
+
+	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppLovinMax.AppStoreUrl)
+	if itunesID == "" {
+		m.metricEngine.RecordFailedParsingItuneID(rctx.PubIDStr, rctx.ProfileIDStr)
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl)
+		return
+	}
+
+	if updatedSKAdnetwork, err := jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
+		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl, err.Error())
+	} else {
+		impExt.SKAdnetwork = updatedSKAdnetwork
+	}
+}
+
+func extractItunesIdFromAppStoreUrl(url string) string {
+	url = strings.TrimSuffix(url, "/")
+	itunesID := ""
+	for i := len(url) - 1; i >= 0; i-- {
+		char := rune(url[i])
+		if unicode.IsDigit(char) {
+			itunesID = string(char) + itunesID
+		} else {
+			break
+		}
+	}
+	return itunesID
 }

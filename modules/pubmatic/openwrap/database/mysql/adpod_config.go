@@ -3,10 +3,10 @@ package mysql
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adpodconfig"
 )
@@ -14,8 +14,18 @@ import (
 func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error) {
 	versionID, displayVersion, _, _, err := db.getVersionIdAndProfileDetails(profileID, displayVersion, pubID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("LiveVersionInnerQuery/DisplayVersionInnerQuery Failure Error: %w", err)
 	}
+
+	config, err := db.getAdpodConfig(versionID)
+	if err != nil {
+		return nil, fmt.Errorf("GetAdpodConfigQuery Failure Error: %w", err)
+	}
+
+	return config, nil
+}
+
+func (db *mySqlDB) getAdpodConfig(versionID int) (*adpodconfig.AdpodConfig, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
@@ -54,7 +64,7 @@ func (db *mySqlDB) GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodc
 	}
 
 	if err = rows.Err(); err != nil {
-		glog.Errorf("adpod config row scan failed for publisher %d having profile %d with versionID %d", pubID, profileID, displayVersion)
+		return nil, err
 	}
 
 	return config, nil
