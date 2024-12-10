@@ -854,6 +854,11 @@ func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.
 			bidfloorcur = *adUnitCfg.BidFloorCur
 		}
 	}
+
+	if bidfloor > 0 && len(bidfloorcur) == 0 {
+		bidfloorcur = models.USD
+	}
+
 	return bidfloor, bidfloorcur
 }
 

@@ -7108,6 +7108,19 @@ func TestSetImpBidFloorParams(t *testing.T) {
 			expBidfloor:    2.6,
 			expBidfloorCur: "USD",
 		},
+		{
+			name: "bidfloor_is_present_but_bidfloorcur_is_not_present_set_default_currency_USD",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor: ptrutil.ToPtr(2.0),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor: 2.6,
+				},
+			},
+			expBidfloor:    2.6,
+			expBidfloorCur: "USD",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
