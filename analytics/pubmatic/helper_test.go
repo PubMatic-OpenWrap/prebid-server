@@ -293,6 +293,58 @@ func TestRestoreBidResponse(t *testing.T) {
 			},
 		},
 		{
+			name: "AppLovinMax reaponse with no seatbid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "bid-id-1",
+				Cur:   "USD",
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
+			name: "AppLovinMax reaponse with seatbid but no bid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:    "123",
+						BidID: "bid-id-1",
+						Cur:   "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "",
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAppLovinMax,
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:    "123",
+				BidID: "bid-id-1",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "",
+					},
+				},
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
 			name: "failed to unmarshal BidResponse.SeatBid[0].Bid[0].Ext",
 			args: args{
 				ao: analytics.AuctionObject{

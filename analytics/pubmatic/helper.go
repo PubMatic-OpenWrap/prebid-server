@@ -90,6 +90,9 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	}
 
 	signalData := map[string]string{}
+	if len(ao.Response.SeatBid) == 0 || len(ao.Response.SeatBid[0].Bid) == 0 {
+		return errors.New("seatbid or bid not found in the response")
+	}
 	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
 		return err
 	}
