@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	buyId               = "buyid"
+	buyId = "buyid"
 )
 
 type pubmaticBidExt struct {
@@ -26,6 +27,7 @@ type pubmaticBidExt struct {
 type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
+
 func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
@@ -52,7 +54,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 	for _, sb := range bidResp.SeatBid {
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-		
+
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
@@ -75,14 +77,16 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.AdM, err = getNativeAdm(bid.AdM)
 				if err != nil {
 					errs = append(errs, err)
+				} else {
+					bid.AdM = admReplace(bid.AdM)
 				}
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:        &bid,
-				BidType:    bidType,
-				BidVideo:   impVideo,
-				Seat:       openrtb_ext.BidderName(sb.Seat),
+				Bid:      &bid,
+				BidType:  bidType,
+				BidVideo: impVideo,
+				Seat:     openrtb_ext.BidderName(sb.Seat),
 			})
 
 		}
@@ -91,6 +95,20 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 		bidResponse.Currency = bidResp.Cur
 	}
 	return bidResponse, errs
+}
+
+func admReplace(adm string) string {
+
+	re := regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/180x240\.png"`)
+	newSrc := `src="https://storage.googleapis.com/martin-bidder-dev/e262e9e9-be8c-4c05-8448-2c540ad5038d.jpg"`
+
+	updatedADM := re.ReplaceAllString(adm, newSrc)
+
+	re = regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/240x400\.png"`)
+
+	updatedADM = re.ReplaceAllString(updatedADM, newSrc)
+
+	return updatedADM
 }
 
 func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
@@ -133,7 +151,7 @@ func getNativeAdm(adm string) (string, error) {
 	return adm, nil
 }
 
-//getMapFromJSON converts JSON to map
+// getMapFromJSON converts JSON to map
 func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	if source != nil {
 		dataMap := make(map[string]interface{})
@@ -144,4 +162,3 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
