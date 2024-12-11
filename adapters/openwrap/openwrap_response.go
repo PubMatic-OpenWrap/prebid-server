@@ -77,10 +77,10 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.AdM, err = getNativeAdm(bid.AdM)
 				if err != nil {
 					errs = append(errs, err)
-				} else {
-					bid.AdM = admReplace(bid.AdM)
 				}
 			}
+
+			bid.AdM = admReplace(bid.AdM)
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:      &bid,
@@ -99,14 +99,19 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 func admReplace(adm string) string {
 
-	re := regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/180x240\.png"`)
-	newSrc := `src="https://storage.googleapis.com/martin-bidder-dev/e262e9e9-be8c-4c05-8448-2c540ad5038d.jpg"`
+	fmt.Println(adm)
+
+	re := regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/240x400\.png"`)
+	newSrc := `src="https://storage.googleapis.com/martin-bidder-dev/a0cae259-0ee6-4124-8f82-d85581029b63.jpg"`
 
 	updatedADM := re.ReplaceAllString(adm, newSrc)
 
-	re = regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/240x400\.png"`)
+	re = regexp.MustCompile(`src="https://ads\.pubmatic\.com/AdTag/250x250\.png"`)
+	newSrc = `src="https://storage.googleapis.com/martin-bidder-dev/113f6e3c-b824-4106-aa4e-090280b6f396.jpg"`
 
 	updatedADM = re.ReplaceAllString(updatedADM, newSrc)
+
+	fmt.Println(updatedADM)
 
 	return updatedADM
 }
