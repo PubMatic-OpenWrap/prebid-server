@@ -1,4 +1,4 @@
-package main_ow
+package main
 
 import (
 	"flag"
@@ -25,7 +25,7 @@ func init() {
 }
 
 // TODO: revert this after PBS-OpenWrap module
-func Main() {
+func main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
@@ -41,7 +41,6 @@ func Main() {
 	if err != nil {
 		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
-	main_ow()
 
 	// Create a soft memory limit on the total amount of memory that PBS uses to tune the behavior
 	// of the Go garbage collector. In summary, `cfg.GarbageCollectorThreshold` serves as a fixed cost

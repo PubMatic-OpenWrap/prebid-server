@@ -109,10 +109,26 @@ type RequestExtWrapper struct {
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
 	Video                ExtRequestWrapperVideo `json:"video,omitempty"`
 	PubId                int                    `json:"-"`
+	Debug                bool                   `json:"-"`
 }
 
 type ExtRequestWrapperVideo struct {
-	AdruleFlag bool `json:"adrule,omitempty"`
+	AdruleFlag           bool   `json:"adrule,omitempty"`
+	ProfileId            int    `json:"profileid,omitempty"`
+	VersionId            int    `json:"versionid,omitempty"`
+	SSAuctionFlag        int    `json:"ssauction,omitempty"`
+	SumryDisableFlag     int    `json:"sumry_disable,omitempty"`
+	ClientConfigFlag     int    `json:"clientconfig,omitempty"`
+	LogInfoFlag          int    `json:"loginfo,omitempty"`
+	SupportDeals         bool   `json:"supportdeals,omitempty"`
+	IncludeBrandCategory int    `json:"includebrandcategory,omitempty"`
+	ABTestConfig         int    `json:"abtest,omitempty"`
+	LoggerImpressionID   string `json:"wiid,omitempty"`
+	SSAI                 string `json:"ssai,omitempty"`
+
+	// for amp
+	PubId int  `json:"-"`
+	Debug bool `json:"-"`
 }
 
 type BidderWrapper struct {

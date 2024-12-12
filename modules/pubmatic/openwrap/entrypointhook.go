@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -44,7 +45,6 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx := models.RequestCtx{}
 	var endpoint string
-	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
@@ -105,7 +105,7 @@ func (m OpenWrap) handleEntrypointHook(
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
 		StartTime:                 time.Now().Unix(),
-		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
+		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug || requestExtWrapper.Debug,
 		UA:                        payload.Request.Header.Get("User-Agent"),
 		ProfileID:                 requestExtWrapper.ProfileId,
 		DisplayID:                 requestExtWrapper.VersionId,
@@ -161,9 +161,18 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
 	}
 
-	// temp, for AMP, etc
-	if pubid != 0 {
-		rCtx.PubID = pubid
+	if endpoint == models.EndpointAMP {
+		rCtx.PubID = requestExtWrapper.PubId
+
+		processOWAmpParams(payload.Request, &rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			queryParams := ep.Request.URL.Query()
+			queryParams.Add("tag_id", rCtx.ProfileIDStr)
+			queryParams.Add("account", rCtx.PubIDStr)
+			queryParams.Add("slot", ep.Request.Header.Get("auId"))
+			ep.Request.URL.RawQuery = queryParams.Encode()
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-amp-request")
 	}
 
 	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
@@ -205,7 +214,7 @@ func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.Hoo
 	switch endpoint {
 	case models.EndpintInappVideo:
 		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
-	case models.EndpointAMP:
+	case models.EndpointAMP, hookexecution.EndpointAmp:
 		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
 	case models.EndpointV25:
 		fallthrough
@@ -243,7 +252,7 @@ func GetEndpoint(path, source string, agent string) string {
 		return models.EndpointV25
 	case OpenWrapV25Video:
 		return models.EndpintInappVideo
-	case OpenWrapAmp:
+	case OpenWrapAmp, hookexecution.EndpointAmp:
 		return models.EndpointAMP
 	case OpenWrapOpenRTBVideo:
 		return models.EndpointORTB
@@ -259,4 +268,24 @@ func getSendBurl(request []byte) bool {
 	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl
+}
+
+func processOWAmpParams(r *http.Request, rctx *models.RequestCtx) {
+	rctx.AmpParams = models.AmpParams{
+		Slot:      r.URL.Query().Get("auId"),
+		Width:     r.URL.Query().Get("w"),
+		Height:    r.URL.Query().Get("h"),
+		Multisize: r.URL.Query().Get("ms"),
+		Origin:    r.URL.Query().Get("__amp_source_origin"),
+		Purl:      r.URL.Query().Get("purl"),
+		Curl:      r.URL.Query().Get("curl"),
+		ImpID:     uuid.NewV4().String(),
+	}
+
+	bidfloor, err := strconv.ParseFloat(r.URL.Query().Get(models.FloorValue), 64)
+	if err != nil {
+		rctx.AmpParams.BidFloor = bidfloor
+		rctx.AmpParams.BidFloorCur = r.URL.Query().Get(models.FloorCurrency)
+	}
+
 }
