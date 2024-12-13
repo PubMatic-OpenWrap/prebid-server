@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
@@ -15,6 +16,7 @@ import (
 
 const (
 	buyId               = "buyid"
+	admActivate         = "<a href=\"CONVERT_LANDING_PAGE\" target=\"_blank\"><img src=\"CONVERT_CREATIVE\" /></a>"
 )
 
 type pubmaticBidExt struct {
@@ -77,6 +79,9 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					errs = append(errs, err)
 				}
 			}
+
+			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
+			bid.AdM = updatedAdmActivate
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:        &bid,
@@ -144,4 +149,5 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
