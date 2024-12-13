@@ -25,6 +25,32 @@ type pubmaticBidExt struct {
 	Marketplace       string               `json:"marketplace,omitempty"`
 }
 
+
+// Function to extract the value of wDspCampId from the input string
+func extractWDSCampID(input string) string {
+	// Define the prefix and suffix to search for
+	prefix := "&wDspCampId="
+	suffix := "&"
+
+	// Find the starting position of the prefix
+	start := strings.Index(input, prefix)
+	if start == -1 {
+		return "" // Return empty string if prefix is not found
+	}
+
+	// Move the starting position past the prefix
+	start += len(prefix)
+
+	// Find the ending position of the suffix
+	end := strings.Index(input[start:], suffix)
+	if end == -1 {
+		return "" // Return empty string if suffix is not found
+	}
+
+	// Extract and return the value between the prefix and suffix
+	return input[start : start+end]
+}
+
 type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
@@ -78,6 +104,11 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				if err != nil {
 					errs = append(errs, err)
 				}
+			}
+
+			activateCampaignId := extractWDSCampID(bid.AdM)
+			if activateCampaignId != "" {
+				bid.CID = activateCampaignId
 			}
 
 			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
@@ -149,5 +180,6 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
