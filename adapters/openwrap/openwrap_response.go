@@ -16,7 +16,7 @@ import (
 
 const (
 	buyId               = "buyid"
-	admActivate         = "<a href=\"CONVERT_LANDING_PAGE\" target=\"_blank\"><img src=\"CONVERT_CREATIVE\" /></a>"
+	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_blank'><img src='CONVERT_CREATIVE'></a></div>"
 )
 
 type pubmaticBidExt struct {
@@ -180,6 +180,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
