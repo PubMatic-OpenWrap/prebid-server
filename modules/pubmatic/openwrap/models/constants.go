@@ -626,3 +626,13 @@ const (
 	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
 	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
 )
+
+const (
+	// ErrSSHBRequest sshb request error
+	ErrSSHBRequest        = "sshb request error"
+	ErrMissingProfileID   = "missing profile id"
+	ErrInvalidPublisherID = "invalid publisher id"
+	ErrInvalidRespFormat  = "Invalid response format, must be 'json' or 'redirect'"
+	ErrInvalidRedirectURL = "Invalid redirect URL"
+	ErrMissingRedirectURL = "owRedirectURL is missing"
+)

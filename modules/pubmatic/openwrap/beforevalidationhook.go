@@ -88,6 +88,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Reject = false
 		m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(nbr.InvalidRequestExt))
 		m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, int(nbr.InvalidRequestExt))
+		glog.Errorln("prebid validation error with nbr: %v", nbr.InvalidRequestExt)
 		return result, nil
 	}
 
@@ -119,6 +120,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 	rCtx.NewReqExt = requestExt
+	glog.Infoln("New Request ext: %s", rCtx.NewReqExt)
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 	m.setAnanlyticsFlags(&rCtx)
@@ -141,7 +143,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
 				result.NbrCode = int(nbr.InvalidResponseFormat)
-				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+				result.Errors = append(result.Errors, models.ErrInvalidRespFormat)
+				glog.Errorln(models.ErrInvalidRespFormat, "with nbr: %v", nbr.InvalidResponseFormat)
 				return result, nil
 			}
 		}
@@ -154,14 +157,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
 			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
 				result.NbrCode = int(nbr.InvalidRedirectURL)
-				result.Errors = append(result.Errors, "Invalid redirect URL")
+				result.Errors = append(result.Errors, models.ErrInvalidRedirectURL)
+				glog.Errorln(models.ErrInvalidRedirectURL, "with nbr: %v", nbr.InvalidRedirectURL)
 				return result, nil
 			}
 		}
 
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
-			result.Errors = append(result.Errors, "owRedirectURL is missing")
+			result.Errors = append(result.Errors, models.ErrMissingRedirectURL)
+			glog.Errorln(models.ErrMissingRedirectURL, "with nbr: %v", nbr.MissingOWRedirectURL)
 			return result, nil
 		}
 	}
@@ -196,6 +201,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ABTestConfigApplied = 1
 		rCtx.PartnerConfigMap = newPartnerConfigMap
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
+		glog.Warningln("ABTestProcessing failed to update the rCtx.PartnerConfigMap with %s", result.Warnings)
 	}
 
 	//set the profile MetaData for logging and tracking
@@ -225,6 +231,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.Errorln("All adapters throttled with error: %s and nbr: %v", rCtx.Errors, nbr.AllPartnerThrottled)
 		return result, nil
 	}
 
