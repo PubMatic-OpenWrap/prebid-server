@@ -134,15 +134,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
-		if err != nil {
-			err = errors.New("failed to get profile data: " + err.Error())
-		} else {
-			err = errors.New("failed to get profile data: received empty data")
-		}
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
-		glog.Warningln("getProfileData error with Invalid pubid: %v profile id: %v version id : %v combination", rCtx.PubID, rCtx.ProfileID, rCtx.DisplayVersionID)
-		return result, err
+		return result, errors.New("invalid profile data")
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
@@ -474,7 +468,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// prebidBidderCode is equivalent of PBS-Core's bidderCode
 			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
 			//
-			rCtx.PrebidBidderCode[prebidBidderCode] = bidderCode
+			rCtx.PrebidBidderCode[bidderCode] = prebidBidderCode
 
 			if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
 				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
@@ -727,7 +721,18 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			bidRequest.App.StoreURL = rctx.AppLovinMax.AppStoreUrl
 		}
 	}
-
+	strictVastMode := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
+	if strictVastMode {
+		if rctx.NewReqExt == nil {
+			rctx.NewReqExt = &models.RequestExt{}
+		}
+		rctx.NewReqExt.Prebid.StrictVastMode = strictVastMode
+		for i := 0; i < len(bidRequest.Imp); i++ {
+			if bidRequest.Imp[i].Video != nil {
+				bidRequest.Imp[i].Video.Protocols = UpdateImpProtocols(bidRequest.Imp[i].Video.Protocols)
+			}
+		}
+	}
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = append(bidRequest.Cur, cur)
 	}
@@ -856,6 +861,11 @@ func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.
 			bidfloorcur = *adUnitCfg.BidFloorCur
 		}
 	}
+
+	if bidfloor > 0 && len(bidfloorcur) == 0 {
+		bidfloorcur = models.USD
+	}
+
 	return bidfloor, bidfloorcur
 }
 

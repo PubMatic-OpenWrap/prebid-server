@@ -312,6 +312,20 @@ func TestRecordDBQueryFailure(t *testing.T) {
 		})
 }
 
+func TestRecordIBVRequest(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordIBVRequest("5890", "59201")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "ibv_requests", m.ibvRequests,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:     "5890",
+			profileIDLabel: "59201",
+		})
+}
+
 func TestRecordSignalDataStatus(t *testing.T) {
 	m := createMetricsForTesting()
 
@@ -359,6 +373,30 @@ func TestRecordAdruleValidationFailure(t *testing.T) {
 			pubIdLabel:   "5890",
 			profileLabel: "123",
 		})
+}
+
+func TestRecordBidRecoveryStatus(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordBidRecoveryStatus("5890", "123", true)
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "bid_recovery_response_status", m.pubBidRecoveryStatus,
+		expectedCount, prometheus.Labels{
+			pubIDLabel:     "5890",
+			profileIDLabel: "123",
+			successLabel:   "true",
+		})
+}
+
+func TestRecordBidRecoveryResponseTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordBidRecoveryResponseTime("5890", "12345", time.Duration(70)*time.Millisecond)
+	m.RecordBidRecoveryResponseTime("5890", "12345", time.Duration(130)*time.Millisecond)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.pubBidRecoveryTime,
+		pubIDLabel, "5890", profileIDLabel, "12345")
+	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 2, 200)
 }
 
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {

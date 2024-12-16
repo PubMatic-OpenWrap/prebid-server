@@ -27,5 +27,10 @@ func (db *mySqlDB) GetAppIntegrationPaths() (map[string]int, error) {
 		}
 		appIntegrationPathMap[aipKey] = aipValue
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return appIntegrationPathMap, nil
 }

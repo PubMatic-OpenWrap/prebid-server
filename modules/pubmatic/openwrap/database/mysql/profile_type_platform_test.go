@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"regexp"
 	"testing"
 
@@ -19,7 +20,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 		name    string
 		fields  fields
 		want    map[string]int
-		wantErr bool
+		wantErr error
 		setup   func() *sql.DB
 	}{
 		{
@@ -30,7 +31,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: true,
+			wantErr: errors.New("all expectations were already fulfilled, call to Query '' with args [] was not expected"),
 			setup: func() *sql.DB {
 				db, _, err := sqlmock.New()
 				if err != nil {
@@ -53,7 +54,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				"test1": 1,
 				"test2": 2,
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -79,7 +80,7 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 			want: map[string]int{
 				"test2": 2,
 			},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
@@ -103,13 +104,38 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				},
 			},
 			want:    map[string]int{},
-			wantErr: false,
+			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
 				rows := sqlmock.NewRows([]string{"name", "id"})
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM profile_type_platform (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "error in row scan",
+			fields: fields{
+				cfg: config.Database{
+					MaxDbContextTimeout: 100,
+					Queries: config.Queries{
+						GetProfileTypePlatformMapQuery: "^SELECT (.+) FROM profile_type_platform (.+)",
+					},
+				},
+			},
+			want:    map[string]int(nil),
+			wantErr: errors.New("error in row scan"),
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "id"}).
+					AddRow(`test1`, `1`).
+					AddRow(`test2`, `2`)
+				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM profile_type_platform (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -122,9 +148,10 @@ func Test_mySqlDB_GetProfileTypePlatform(t *testing.T) {
 				cfg:  tt.fields.cfg,
 			}
 			got, err := db.GetProfileTypePlatforms()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("mySqlDB.GetProfileTypePlatforms() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr == nil {
+				assert.NoError(t, err, tt.name)
+			} else {
+				assert.EqualError(t, err, tt.wantErr.Error(), tt.name)
 			}
 			assert.Equal(t, tt.want, got)
 		})

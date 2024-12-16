@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/exp/slices" // Use standard library in next prebid upgrade
+
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
@@ -54,6 +56,10 @@ var (
 
 const (
 	test = "_test"
+)
+
+var (
+	protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper}
 )
 
 func init() {
@@ -547,4 +553,13 @@ func UpdateUserExtWithValidValues(user *openrtb2.User) {
 			user.EIDs = eids
 		}
 	}
+}
+
+func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.MediaCreativeSubtype {
+	for _, protocol := range protocols {
+		if !slices.Contains(impProtocols, protocol) {
+			impProtocols = append(impProtocols, protocol)
+		}
+	}
+	return impProtocols
 }

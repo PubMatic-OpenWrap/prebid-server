@@ -24,6 +24,8 @@ type MetricsEngine interface {
 	RecordPublisherRequests(endpoint string, publisher string, platform string)
 	RecordReqImpsWithContentCount(publisher, contentType string)
 	RecordInjectTrackerErrorCount(adformat, publisher, partner string)
+	RecordBidRecoveryStatus(publisher, profile string, success bool)
+	RecordBidRecoveryResponseTime(publisher, profile string, responseTime time.Duration)
 
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
@@ -95,4 +97,7 @@ type MetricsEngine interface {
 	//AppLovinMax metrics
 	RecordFailedParsingItuneID(pubId, profId string)
 	RecordEndpointResponseSize(endpoint string, bodySize float64)
+
+	//IBV metric
+	RecordIBVRequest(pubId, profId string)
 }
