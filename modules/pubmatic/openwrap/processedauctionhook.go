@@ -63,15 +63,15 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 					impCtx.AdPod = true
 					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, imp, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
 				case models.Structured:
-					rctx.ImpToPodId[imp.ID] = imp.Video.PodID
-					impCtx.AdPod = true
 					podContext, ok := rctx.AdpodCtx[imp.Video.PodID]
 					if !ok {
 						podContext = adpod.NewStructuredAdpod(imp.Video.PodID, rctx.NewReqExt.AdPod)
+						rctx.AdpodCtx[imp.Video.PodID] = podContext
 					}
-
 					podContext.AddImpressions(imp)
-					rctx.AdpodCtx[imp.Video.PodID] = podContext
+					rctx.ImpToPodId[imp.ID] = imp.Video.PodID
+					impCtx.AdPod = true
+
 				}
 			}
 			rctx.ImpBidCtx[imp.ID] = impCtx
@@ -97,12 +97,10 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 						rctx.ImpToPodId[generatedImps[i].ID] = podId
 					}
 					imps = append(imps, generatedImps...)
-					// case models.Structured:
-					// 	structuredAdpod := rctx.AdpodCtx[impWrapper.Video.PodID].(*adpod.StructuredAdpod)
-					// 	structuredAdpod.AddImpressions(*impWrapper.Imp)
-					// 	rctx.ImpToPodId[impWrapper.ID] = impWrapper.Video.PodID
-					// 	imps = append(imps, impWrapper)
-					// }
+				case models.Structured:
+					structuredAdpod := rctx.AdpodCtx[impWrapper.Video.PodID].(*adpod.StructuredAdpod)
+					structuredAdpod.GetImpressions()
+					imps = append(imps, impWrapper)
 				}
 			}
 			//TODO: Check if we require this for structured adpod
