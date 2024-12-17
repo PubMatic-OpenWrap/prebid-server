@@ -426,6 +426,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
 
+		if requestExtPrebid.StrictVastMode {
+			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBid)
+			errs = append(errs, validationErrs...)
+		}
+
 		if e.priceFloorEnabled {
 			var rejectedBids []*entities.PbsOrtbSeatBid
 			var enforceErrs []error

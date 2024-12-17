@@ -34,6 +34,7 @@ const (
 	PLATFORM_KEY                = "platform"
 	SendAllBidsKey              = "sendAllBids"
 	VastUnwrapperEnableKey      = "enableVastUnwrapper"
+	StrictVastModeKey           = "strictVastMode"
 	VastUnwrapTrafficPercentKey = "vastUnwrapTrafficPercent"
 	SSTimeoutKey                = "ssTimeout"
 	PWC                         = "awc"
@@ -567,8 +568,8 @@ const (
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
 	GetAdpodConfig                     = "GetAdpodConfig"
-	//DisplayVersionInnerQuery       = "DisplayVersionInnerQuery"
-	//LiveVersionInnerQuery          = "LiveVersionInnerQuery"
+	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
+	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
 	TestQuery                     = "TestQuery"
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
@@ -629,18 +630,25 @@ const (
 
 // constants for applovinmax requests
 const (
-	Agent            = "agent"
-	AppLovinMaxAgent = "max"
-	TypeRewarded     = "rewarded"
-	SignalData       = "signaldata"
-	OwSspBurl        = "owsspburl"
-	MissingSignal    = "missing"
-	InvalidSignal    = "invalid"
-	AppStoreUrl      = "appStoreUrl"
-	SendBurl         = "sendburl"
+	Agent                   = "agent"
+	AppLovinMaxAgent        = "max"
+	TypeRewarded            = "rewarded"
+	SignalData              = "signaldata"
+	OwSspBurl               = "owsspburl"
+	MissingSignal           = "missing"
+	InvalidSignal           = "invalid"
+	AppStoreUrl             = "appStoreUrl"
+	SendBurl                = "sendburl"
+	MultiBidMultiFloorValue = "mbmfv"
 )
 
 // constants for log level
 const (
 	LogLevelDebug glog.Level = 3
+)
+
+const (
+	// ErrDBQueryFailed reponse error
+	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
 )

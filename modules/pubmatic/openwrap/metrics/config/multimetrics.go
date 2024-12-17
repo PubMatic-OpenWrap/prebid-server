@@ -536,3 +536,24 @@ func (me *MultiMetricsEngine) RecordEndpointResponseSize(endpoint string, bodySi
 		thisME.RecordEndpointResponseSize(endpoint, bodySize)
 	}
 }
+
+// RecordIBVRequest record failed parsing itune id
+func (me *MultiMetricsEngine) RecordIBVRequest(pubId, profId string) {
+	for _, thisME := range *me {
+		thisME.RecordIBVRequest(pubId, profId)
+	}
+}
+
+// RecordBidRecoveryStatus across all engines
+func (me *MultiMetricsEngine) RecordBidRecoveryStatus(publisher, profile string, success bool) {
+	for _, thisME := range *me {
+		thisME.RecordBidRecoveryStatus(publisher, profile, success)
+	}
+}
+
+// RecordBidRecoveryResponseTime across all engines
+func (me *MultiMetricsEngine) RecordBidRecoveryResponseTime(publisher, profile string, responseTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordBidRecoveryResponseTime(publisher, profile, responseTime)
+	}
+}

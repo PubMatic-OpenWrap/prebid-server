@@ -57,13 +57,7 @@ func (p *etreeXMLParser) Parse(vastXML []byte) (err error) {
 }
 
 func (p *etreeXMLParser) GetPricingDetails() (price float64, currency string) {
-	var node *etree.Element
-
-	if int(p.vastVersion) == 2 {
-		node = p.adElement.FindElement("./Extensions/Extension/Price")
-	} else {
-		node = p.adElement.SelectElement("Pricing")
-	}
+	node := p.getPricingNode()
 
 	if node == nil {
 		return 0.0, ""
@@ -79,6 +73,18 @@ func (p *etreeXMLParser) GetPricingDetails() (price float64, currency string) {
 	}
 
 	return priceValue, currency
+}
+
+func (p *etreeXMLParser) getPricingNode() *etree.Element {
+	node := p.adElement.SelectElement("Pricing")
+	if node == nil {
+		node = p.adElement.FindElement("./Extensions/Extension/Pricing")
+	}
+	if node == nil {
+		node = p.adElement.FindElement("./Extensions/Extension/Price")
+	}
+
+	return node
 }
 
 func (p *etreeXMLParser) GetAdvertiser() (advertisers []string) {

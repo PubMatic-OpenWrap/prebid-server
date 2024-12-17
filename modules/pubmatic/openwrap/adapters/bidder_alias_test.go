@@ -17,6 +17,7 @@ func TestAlias(t *testing.T) {
 		models.BidderAndBeyondAlias:         string(openrtb_ext.BidderAdkernel),
 		models.BidderMediaFuseAlias:         string(openrtb_ext.BidderAppnexus),
 		models.BidderAppStockAlias:          string(openrtb_ext.BidderLimelightDigital),
+		models.BidderAdsYieldAlias:          string(openrtb_ext.BidderLimelightDigital),
 	}
 	assert.Equal(t, expected, Alias())
 }

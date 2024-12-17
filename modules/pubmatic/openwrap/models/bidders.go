@@ -18,6 +18,7 @@ const (
 	BidderSynacormediaAlias      = "synacormedia"
 	BidderViewDeos               = "viewdeos"
 	BidderAppStockAlias          = "appstock"
+	BidderAdsYieldAlias          = "adsyield"
 )
 
 const (

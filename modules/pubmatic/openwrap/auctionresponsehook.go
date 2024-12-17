@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
@@ -117,6 +118,16 @@ func (m OpenWrap) handleAuctionResponseHook(
 					result.Errors = append(result.Errors, "failed to unmarshal bid.ext for "+utils.GetOriginalBidId(bid.ID))
 					// continue
 				}
+			}
+
+			// Explicitly set the bid.ext.mbmfv value if it is present in the bid.ext since we need it for logging but do not want it in the response
+			mbmfv, err := jsonparser.GetFloat(bid.Ext, models.MultiBidMultiFloorValue)
+			if err == nil && mbmfv > 0 {
+				bidExt.MultiBidMultiFloorValue = mbmfv
+			}
+
+			if bidExt.InBannerVideo {
+				m.metricEngine.RecordIBVRequest(rctx.PubIDStr, rctx.ProfileIDStr)
 			}
 
 			if rctx.IsCTVRequest {
@@ -347,6 +358,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	rctx.ResponseExt = responseExt
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
+	rctx.DefaultBids = m.addDefaultBidsForMultiFloorsConfig(&rctx, payload.BidResponse, responseExt)
 
 	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
 

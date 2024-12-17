@@ -27,5 +27,10 @@ func (db *mySqlDB) GetAppSubIntegrationPaths() (map[string]int, error) {
 		}
 		appSubIntegrationPathMap[asipKey] = asipValue
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return appSubIntegrationPathMap, nil
 }

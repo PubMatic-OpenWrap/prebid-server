@@ -1,11 +1,13 @@
 package gocache
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
 )
@@ -67,13 +69,19 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 	cacheKey := key(PUB_HB_PARTNER, pubID, profileID, displayVersion)
 	partnerConfigMap, err := c.db.GetActivePartnerConfigurations(pubID, profileID, displayVersion)
 	if err != nil {
-		c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
-		return
+		if errors.Is(err, sql.ErrNoRows) {
+			c.metricEngine.RecordDBQueryFailure(models.LiveVersionInnerQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
+			c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
+		} else {
+			c.metricEngine.RecordDBQueryFailure(models.PartnerConfigQuery, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		}
+		glog.Errorf(models.ErrDBQueryFailed, models.PartnerConfigQuery, pubID, profileID, err)
+		return err
 	}
 
 	if len(partnerConfigMap) == 0 {
 		c.cache.Set(cacheKey, partnerConfigMap, getSeconds(c.cfg.CacheDefaultExpiry))
-		return fmt.Errorf("there are no active partners for pubId:%d, profileId:%d, displayVersion:%d", pubID, profileID, displayVersion)
+		return fmt.Errorf(models.EmptyPartnerConfig, pubID, profileID, displayVersion)
 	}
 
 	err = c.populateCacheWithWrapperSlotMappings(pubID, partnerConfigMap, profileID, displayVersion)
@@ -83,6 +91,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 			queryType = models.WrapperLiveVersionSlotMappings
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		glog.Errorf(models.ErrDBQueryFailed, queryType, pubID, profileID, err)
 		return err
 	}
 
@@ -96,6 +105,7 @@ func (c *cache) getActivePartnerConfigAndPopulateWrapperMappings(pubID, profileI
 			queryType = models.AdUnitFailUnmarshal
 		}
 		c.metricEngine.RecordDBQueryFailure(queryType, strconv.Itoa(pubID), strconv.Itoa(profileID))
+		glog.Errorf(models.ErrDBQueryFailed, queryType, pubID, profileID, err)
 		return err
 	}
 
