@@ -144,10 +144,11 @@ type PartnerRecord struct {
 	OriginalCur string    `json:"ocry"`
 	MetaData    *MetaData `json:"md,omitempty"`
 
-	FloorValue     float64               `json:"fv,omitempty"`
-	FloorRuleValue float64               `json:"frv,omitempty"`
-	Nbr            *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
-	PriceBucket    string                `json:"pb,omitempty"`
+	FloorValue             float64               `json:"fv,omitempty"`
+	FloorRuleValue         float64               `json:"frv,omitempty"`
+	Nbr                    *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
+	PriceBucket            string                `json:"pb,omitempty"`
+	MultiBidMultiFloorFlag int                   `json:"mbmf,omitempty"`
 }
 
 type MetaData struct {

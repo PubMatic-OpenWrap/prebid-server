@@ -414,25 +414,30 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			pr := PartnerRecord{
-				PartnerID:         partnerID,                           // prebid biddercode
-				BidderCode:        seat,                                // pubmatic biddercode: pubmatic2
-				Latency1:          rCtx.BidderResponseTimeMillis[seat], // it is set inside auctionresponsehook for all bidders
-				KGPV:              kgpv,
-				KGPSV:             kgpsv,
-				BidID:             utils.GetOriginalBidId(bid.ID),
-				OrigBidID:         utils.GetOriginalBidId(bid.ID),
-				DefaultBidStatus:  0, // this will be always 0 , decide whether to drop this field in future
-				ServerSide:        1,
-				MatchedImpression: rCtx.MatchedImpression[seat],
-				OriginalCPM:       models.GetGrossEcpm(bidExt.OriginalBidCPM),
-				OriginalCur:       bidExt.OriginalBidCur,
-				DealID:            bid.DealID,
-				Nbr:               nbr,
-				Adformat:          adFormat,
-				NetECPM:           tracker.Tracker.PartnerInfo.NetECPM,
-				GrossECPM:         tracker.Tracker.PartnerInfo.GrossECPM,
-				PartnerSize:       tracker.Tracker.PartnerInfo.AdSize,
-				ADomain:           tracker.Tracker.PartnerInfo.Advertiser,
+				PartnerID:              partnerID,                           // prebid biddercode
+				BidderCode:             seat,                                // pubmatic biddercode: pubmatic2
+				Latency1:               rCtx.BidderResponseTimeMillis[seat], // it is set inside auctionresponsehook for all bidders
+				KGPV:                   kgpv,
+				KGPSV:                  kgpsv,
+				BidID:                  utils.GetOriginalBidId(bid.ID),
+				OrigBidID:              utils.GetOriginalBidId(bid.ID),
+				DefaultBidStatus:       0, // this will be always 0 , decide whether to drop this field in future
+				ServerSide:             1,
+				MatchedImpression:      rCtx.MatchedImpression[seat],
+				OriginalCPM:            models.GetGrossEcpm(bidExt.OriginalBidCPM),
+				OriginalCur:            bidExt.OriginalBidCur,
+				DealID:                 bid.DealID,
+				Nbr:                    nbr,
+				Adformat:               adFormat,
+				NetECPM:                tracker.Tracker.PartnerInfo.NetECPM,
+				GrossECPM:              tracker.Tracker.PartnerInfo.GrossECPM,
+				PartnerSize:            tracker.Tracker.PartnerInfo.AdSize,
+				ADomain:                tracker.Tracker.PartnerInfo.Advertiser,
+				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
+			}
+
+			if pr.MultiBidMultiFloorFlag == 0 {
+				pr.MultiBidMultiFloorFlag = models.IsMultiBidMultiFloorEnabled(bidExt.MultiBidMultiFloorValue, rCtx.AppLovinMax, impCtx.TagID)
 			}
 
 			if pr.NetECPM == 0 {

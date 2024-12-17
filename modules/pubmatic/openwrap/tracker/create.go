@@ -88,7 +88,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				floorValue, floorRuleValue                     = float64(0), float64(0)
 				partnerID                                      = seatBid.Seat
 				isRewardInventory, adduration                  = 0, 0
-				dspId                                          int
+				dspId, mbmfFlag                                int
 				eg, en                                         float64
 			)
 
@@ -107,6 +107,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					// TODO do most calculation in wt
 					// marketplace/alternatebiddercodes feature
 					bidExt := bidCtx.BidExt
+					mbmfFlag = models.IsMultiBidMultiFloorEnabled(bidExt.MultiBidMultiFloorValue, rctx.AppLovinMax, impCtx.TagID)
+
 					if bidExt.Prebid != nil {
 						if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {
 							adduration = bidExt.Prebid.Video.Duration
@@ -167,20 +169,21 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 
 			tracker.RewardedInventory = isRewardInventory
 			tracker.PartnerInfo = models.Partner{
-				PartnerID:      partnerID,
-				BidderCode:     seatBid.Seat,
-				BidID:          utils.GetOriginalBidId(bid.ID),
-				OrigBidID:      utils.GetOriginalBidId(bid.ID),
-				KGPV:           kgpv,
-				NetECPM:        en,
-				GrossECPM:      eg,
-				AdSize:         models.GetSizeForPlatform(bid.W, bid.H, rctx.Platform),
-				AdDuration:     adduration,
-				Adformat:       adformat,
-				ServerSide:     1,
-				FloorValue:     floorValue,
-				FloorRuleValue: floorRuleValue,
-				DealID:         "-1",
+				PartnerID:              partnerID,
+				BidderCode:             seatBid.Seat,
+				BidID:                  utils.GetOriginalBidId(bid.ID),
+				OrigBidID:              utils.GetOriginalBidId(bid.ID),
+				KGPV:                   kgpv,
+				NetECPM:                en,
+				GrossECPM:              eg,
+				AdSize:                 models.GetSizeForPlatform(bid.W, bid.H, rctx.Platform),
+				AdDuration:             adduration,
+				Adformat:               adformat,
+				ServerSide:             1,
+				FloorValue:             floorValue,
+				FloorRuleValue:         floorRuleValue,
+				DealID:                 "-1",
+				MultiBidMultiFloorFlag: mbmfFlag,
 			}
 			if rctx.PriceGranularity != nil {
 				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
@@ -292,6 +295,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if tracker.PartnerInfo.PriceBucket != "" {
 		v.Set(models.TRKPriceBucket, tracker.PartnerInfo.PriceBucket)
+	}
+	if tracker.PartnerInfo.MultiBidMultiFloorFlag == 1 {
+		v.Set(models.TRKMultiBidMultiFloorFlag, strconv.Itoa(tracker.PartnerInfo.MultiBidMultiFloorFlag))
 	}
 
 	//ProfileMetadata parameters
