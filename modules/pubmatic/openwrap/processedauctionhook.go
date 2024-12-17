@@ -62,10 +62,16 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 					}
 					impCtx.AdPod = true
 					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, imp, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
-					// case models.Structured:
-					// 	if _, ok := rctx.AdpodCtx[imp.Video.PodID]; !ok {
-					// 		rctx.AdpodCtx[imp.Video.PodID] = adpod.NewStructuredAdpod(imp.Video.PodID, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
-					// 	}
+				case models.Structured:
+					rctx.ImpToPodId[imp.ID] = imp.Video.PodID
+					impCtx.AdPod = true
+					podContext, ok := rctx.AdpodCtx[imp.Video.PodID]
+					if !ok {
+						podContext = adpod.NewStructuredAdpod(imp.Video.PodID, rctx.NewReqExt.AdPod)
+					}
+
+					podContext.AddImpressions(imp)
+					rctx.AdpodCtx[imp.Video.PodID] = podContext
 				}
 			}
 			rctx.ImpBidCtx[imp.ID] = impCtx

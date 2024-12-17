@@ -345,3 +345,7 @@ func (da *DynamicAdpod) GetWinningBidsIds(rctx models.RequestCtx, winningBidIds 
 	}
 	rctx.ImpBidCtx[da.AdpodBid.OriginalImpID] = impCtx
 }
+
+func (da *DynamicAdpod) AddImpressions(imp openrtb2.Imp) {
+
+}

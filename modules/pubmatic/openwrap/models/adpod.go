@@ -86,6 +86,7 @@ func (ex *Exclusion) ShouldApplyExclusion() bool {
 }
 
 type Adpod interface {
+	AddImpressions(imp openrtb2.Imp)
 	GetImpressions() []*openrtb_ext.ImpWrapper
 	CollectBid(bid *openrtb2.Bid, seat string)
 	HoldAuction()
