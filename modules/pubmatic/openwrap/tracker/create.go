@@ -107,7 +107,9 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					// TODO do most calculation in wt
 					// marketplace/alternatebiddercodes feature
 					bidExt := bidCtx.BidExt
-					mbmfFlag = models.IsMultiBidMultiFloorEnabled(bidExt.MultiBidMultiFloorValue, rctx.AppLovinMax, impCtx.TagID)
+					if bidExt.MultiBidMultiFloorValue > 0 {
+						mbmfFlag = 1
+					}
 
 					if bidExt.Prebid != nil {
 						if bidExt.Prebid.Video != nil && bidExt.Prebid.Video.Duration > 0 {

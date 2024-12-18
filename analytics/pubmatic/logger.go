@@ -436,8 +436,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
 			}
 
-			if pr.MultiBidMultiFloorFlag == 0 {
-				pr.MultiBidMultiFloorFlag = models.IsMultiBidMultiFloorEnabled(bidExt.MultiBidMultiFloorValue, rCtx.AppLovinMax, impCtx.TagID)
+			if pr.MultiBidMultiFloorFlag == 0 && bidExt.MultiBidMultiFloorValue > 0 {
+				pr.MultiBidMultiFloorFlag = 1
 			}
 
 			if pr.NetECPM == 0 {

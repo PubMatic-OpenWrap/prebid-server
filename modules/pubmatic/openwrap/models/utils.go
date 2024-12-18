@@ -473,15 +473,3 @@ func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
 }
-
-// isMultiBidMultiFloorEnabled returns 1 if MultiBidMultiFloor feature is enabled for given slot
-func IsMultiBidMultiFloorEnabled(mbmfv float64, applovinmax AppLovinMax, tagID string) int {
-	if mbmfv > 0 {
-		return 1
-	}
-
-	if applovinmax.MultiFloorsConfig.Enabled && len(applovinmax.MultiFloorsConfig.Config[tagID]) > 0 {
-		return 1
-	}
-	return 0
-}
