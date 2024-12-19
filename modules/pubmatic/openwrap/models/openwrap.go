@@ -128,8 +128,25 @@ type RequestCtx struct {
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+
+	AmpParams AmpParams
 }
 
+type AmpParams struct {
+	Slot          string
+	Width         string
+	Height        string
+	Multisize     string
+	ImpID         string
+	BidFloor      float64
+	BidFloorCur   string
+	Origin        string
+	Curl          string
+	Purl          string
+	GDPR          int
+	ConsentString string
+	ConsentType   ConsentType
+}
 type AdpodProfileConfig struct {
 	AdserverCreativeDurations              []int  `json:"videoadduration,omitempty"`         //Range of ad durations allowed in the response
 	AdserverCreativeDurationMatchingPolicy string `json:"videoaddurationmatching,omitempty"` //Flag indicating exact ad duration requirement. (default)empty/exact/round.

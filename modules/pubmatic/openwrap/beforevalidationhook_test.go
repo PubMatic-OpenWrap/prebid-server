@@ -981,7 +981,7 @@ func TestGetPubID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getPubID(tt.args.bidRequest)
+			got, err := getPubID(models.RequestCtx{}, tt.args.bidRequest)
 			if (err != nil) != tt.want.wantErr {
 				assert.Equal(t, tt.want.wantErr, err != nil)
 				return

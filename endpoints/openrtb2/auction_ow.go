@@ -86,3 +86,9 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		rCtx.WakandaDebug.SetHTTPResponseWriter(w)
 	}
 }
+
+// func (deps *endpointDeps) getOWAmpRequest(ampParams amp.Params) json.RawMessage {
+// 	impId, _ := deps.uuidGenerator.Generate()
+// 	request := `{"id":"{{UUID}},"imp":[{"id":"` + impId + `","tagid":` + ampParams.Slot + `, "banner":{}}]}"`
+// 	return json.RawMessage(request)
+// }
