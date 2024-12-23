@@ -93,6 +93,15 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if len(errors) > 0 {
 		return nil, errors
 	}
+
+	var headerValue interface{}
+
+	// Check if the "header" key exists and extract its value
+	if value, exists := (*requestExt)["user_headers"]; exists {
+		headerValue = value
+		// Remove the "header" key from the map
+		delete(*requestExt, "user_headers")
+	}
 	// Convert requestExt to json.RawMessage
 	extJSON, err := json.Marshal(requestExt)
 	if err != nil {
@@ -128,6 +137,21 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	headers := http.Header{}
+	// Assert headerValue to be map[string]interface{} and add to headers
+	if headerMap, ok := headerValue.(map[string]interface{}); ok {
+		for key, value := range headerMap {
+			// Convert the value to a string if possible
+			if strValue, ok := value.(string); ok {
+				headers.Add(key, strValue)
+			}
+		}
+	}
+	// Check if "Content-Type" exists and delete it
+	if _, ok := headers["Content-Type"]; ok {
+		headers.Del("Content-Type")
+	}
+
+	// Add "Content-Type: application/json"
 	headers.Add("Content-Type", "application/json")
 
 	return []*adapters.RequestData{{
@@ -137,3 +161,4 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Headers: headers,
 	}}, nil
 	}
+
