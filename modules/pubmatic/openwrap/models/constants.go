@@ -479,6 +479,7 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGeo         = "geo"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"

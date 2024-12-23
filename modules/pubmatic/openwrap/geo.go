@@ -1,18 +1,27 @@
 package openwrap
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"runtime/debug"
+	"strconv"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common/util"
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 // geo provides geo metadata from ip
 type geo struct {
-	countryCode string `json:"cc,omitempty"`
-	stateCode   string `json:"sc,omitempty"`
-	compliance  string `json:"compliance,omitempty"`
-	sectionID   string `json:"sectionId,omitempty"`
+	CountryCode string `json:"cc,omitempty"`
+	StateCode   string `json:"sc,omitempty"`
+	Compliance  string `json:"compliance,omitempty"`
+	SectionID   string `json:"sectionId,omitempty"`
 }
 
 const (
@@ -36,7 +45,66 @@ func NewGeoHandler() *geoHandler {
 	}
 }
 
+const (
+	OriginHeaderKey     = "Origin"
+	RefererKey          = "Referer"
+	GDPRCompliance      = "GDPR"
+	USPCompliance       = "USP"
+	StateCodeCalifornia = "ca"
+	CountryCodeUS       = "US"
+)
+
 // Handler for /geo endpoint
 func (handler *geoHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	var pubIdStr string
+	metricEngine := ow.GetMetricEngine()
+	defer func() {
+		if r := recover(); r != nil {
+			metricEngine.RecordOpenWrapServerPanicStats(ow.cfg.Server.HostName, "HandleGeoEndpoint")
+			glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%s]", string(debug.Stack()), r, pubIdStr)
+			return
+		}
+	}()
+	metricEngine.RecordRequest(metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK})
 
+	pubIdStr = r.URL.Query().Get(models.PublisherID)
+	_, err := strconv.Atoi(pubIdStr)
+	if err != nil {
+		glog.Errorf("[geo] error:[invalid pubid passed:%s], [requestType]:%v [url]:%v [origin]:%v [referer]:%v", err.Error(), models.EndpointGeo,
+			r.URL.RequestURI(), r.Header.Get(OriginHeaderKey), r.Header.Get(RefererKey))
+
+		//TO-Do keep this stat?
+		metricEngine.RecordBadRequests(models.EndpointGeo, pubIdStr, 0)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	metricEngine.RecordPublisherRequests(models.EndpointGeo, pubIdStr, "")
+
+	ip := util.GetIP(r)
+	w.Header().Set(headerContentType, headerContentTypeValue)
+	w.Header().Set(headerAccessControlAllowOrigin, "*")
+	success := false
+	geoInfo, _ := handler.geoService.LookUp(ip)
+	if geoInfo != nil {
+		if geoInfo.ISOCountryCode != "" {
+			success = true
+			geo := geo{
+				CountryCode: geoInfo.ISOCountryCode,
+				StateCode:   geoInfo.RegionCode,
+			}
+
+			if ow.GetFeature().IsCountryGDPREnabled(geo.CountryCode) {
+				geo.Compliance = GDPRCompliance
+			} else if geo.CountryCode == CountryCodeUS && geo.StateCode == StateCodeCalifornia {
+				geo.Compliance = USPCompliance
+			} else {
+				//check if GPP country and set sectionID
+			}
+			w.Header().Set(headerCacheControl, "max-age="+fmt.Sprint(cacheTimeout.Seconds()))
+			json.NewEncoder(w).Encode(geo)
+		}
+	}
+	if !success {
+		//globals.GetMetricsEngine().RecordGeoLookupFailure(globals.GeoEndpoint)
+	}
 }
