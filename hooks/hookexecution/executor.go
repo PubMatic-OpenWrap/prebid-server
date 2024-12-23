@@ -41,6 +41,7 @@ type StageExecutor interface {
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
 	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
+	ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError)
 }
 
 type HookStageExecutor interface {
@@ -326,6 +327,34 @@ func (e *hookExecutor) ExecuteAuctionResponseStage(response *openrtb2.BidRespons
 	e.pushStageOutcome(outcome)
 }
 
+func (e *hookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError) {
+	plan := e.planBuilder.PlanForExitPointStage(e.endpoint, e.account)
+	if len(plan) == 0 {
+		return response, headers, nil
+	}
+
+	handler := func(
+		ctx context.Context,
+		moduleCtx hookstage.ModuleInvocationContext,
+		hook hookstage.ExitPoint,
+		payload hookstage.ExitPointPayload,
+	) (hookstage.HookResult[hookstage.ExitPointPayload], error) {
+		return hook.HandleExitPointHook(ctx, moduleCtx, payload)
+	}
+
+	stageName := hooks.StageAuctionResponse.String()
+	executionCtx := e.newContext(stageName)
+	payload := hookstage.ExitPointPayload{RawResponse: response}
+
+	outcome, _, contexts, _ := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
+	outcome.Entity = entityAuctionResponse
+	outcome.Stage = stageName
+
+	e.saveModuleContexts(contexts)
+	e.pushStageOutcome(outcome)
+	return payload.RawResponse, payload.Headers, nil
+}
+
 func (e *hookExecutor) newContext(stage string) executionContext {
 	return executionContext{
 		account:         e.account,
@@ -388,4 +417,8 @@ func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidRes
 
 func (executor EmptyHookExecutor) ExecuteBeforeRequestValidationStage(_ *openrtb2.BidRequest) *RejectError {
 	return nil
+}
+
+func (executor EmptyHookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError) {
+	return nil, nil, nil
 }
