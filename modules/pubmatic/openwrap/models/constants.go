@@ -549,6 +549,7 @@ const (
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
+	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
 )
 
 // constants for owlogger Integration Type

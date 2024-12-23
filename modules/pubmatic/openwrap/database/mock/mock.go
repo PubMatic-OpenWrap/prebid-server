@@ -125,6 +125,21 @@ func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCThresholdPerDSP))
 }
 
+// GetGDPRCountryCodes mocks base method
+func (m *MockDatabase) GetGDPRCountryCodes() (map[string]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGDPRCountryCodes")
+	ret0, _ := ret[0].(map[string]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGDPRCountryCodes indicates an expected call of GetGDPRCountryCodes
+func (mr *MockDatabaseMockRecorder) GetGDPRCountryCodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGDPRCountryCodes", reflect.TypeOf((*MockDatabase)(nil).GetGDPRCountryCodes))
+}
+
 // GetMappings mocks base method
 func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMapping) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()

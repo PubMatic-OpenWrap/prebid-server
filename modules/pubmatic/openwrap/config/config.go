@@ -74,6 +74,7 @@ type Queries struct {
 	GetProfileTypePlatformMapQuery    string
 	GetAppIntegrationPathMapQuery     string
 	GetAppSubIntegrationPathMapQuery  string
+	GetGDPRCountryCodes               string
 }
 
 type Cache struct {

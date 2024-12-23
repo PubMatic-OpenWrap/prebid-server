@@ -20,6 +20,7 @@ type Cache interface {
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)
 	GetAppSubIntegrationPaths() (map[string]int, error)
+	GetGDPRCountryCodes() (map[string]struct{}, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
