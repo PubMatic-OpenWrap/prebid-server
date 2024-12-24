@@ -2045,7 +2045,7 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "All params are present",
+			name: "publisherId_adspaceId_both_are_present",
 			args: args{
 
 				width:  nil,
@@ -2059,6 +2059,66 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
 			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456"}`),
+		},
+		{
+			name: "All_params_are_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adspaceId":   "3456",
+					"adbreakId":   "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456","adbreakId": "7899"}`),
+		},
+		{
+			name: "publisherId_and_adbreakId_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adbreakId":   "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
+			name: "adspaceId_and_adbreakId_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"adspaceId": "1234",
+					"adbreakId": "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
+			name: "adbreakId_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"adbreakId": "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {

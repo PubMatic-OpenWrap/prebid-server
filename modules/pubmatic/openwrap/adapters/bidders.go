@@ -393,6 +393,10 @@ func builderSmaato(params BidderParameters) (json.RawMessage, error) {
 		fmt.Fprintf(&jsonStr, `"adspaceId":"%s"`, adspaceID)
 	}
 
+	if adbreakID, ok := getString(params.FieldMap["adbreakId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"adbreakId":"%s"`, adbreakID)
+	}
+
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
