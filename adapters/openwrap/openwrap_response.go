@@ -2,168 +2,203 @@ package openwrap
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-type ExtRequestORTB  map[string]interface{}     
+const (
+	buyId               = "buyid"
+	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_blank'><img src='CONVERT_CREATIVE'></a></div>"
+)
 
-func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, bool, error) {
-	var requestExt *ExtRequestORTB
-	var mapExt map[string]interface{}
-	debug := prebidExt.Prebid.Debug
+type pubmaticBidExt struct {
+	BidType           *int                 `json:"BidType,omitempty"`
+	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
+	Marketplace       string               `json:"marketplace,omitempty"`
+}
 
-	if prebidExt.Prebid.BidderParams != nil {
-		if err := json.Unmarshal(prebidExt.Prebid.BidderParams, &mapExt); err != nil {
-			return nil, debug, &errortypes.BadInput{
-				Message: "Impression extension not provided or can't be unmarshalled",
+func extractBillingURL(adm string) string {
+	// Define the regular expression pattern to match the URL
+	// that contains "/AdServer/AdDisplayTrackerServlet"
+	pattern := `https?://[^\s"]+/AdServer/AdDisplayTrackerServlet[^\s"]*`
+
+	// Compile the regular expression
+	re := regexp.MustCompile(pattern)
+
+	// Find the first match for the pattern in the adm string
+	match := re.FindString(adm)
+
+	return match
+}
+
+
+// Function to extract the value of wDspCampId from the input string
+func extractWDSCampID(input string) string {
+	// Define the prefix and suffix to search for
+	prefix := "&wDspCampId="
+	suffix := "&"
+
+	// Find the starting position of the prefix
+	start := strings.Index(input, prefix)
+	if start == -1 {
+		return "" // Return empty string if prefix is not found
+	}
+
+	// Move the starting position past the prefix
+	start += len(prefix)
+
+	// Find the ending position of the suffix
+	end := strings.Index(input[start:], suffix)
+	if end == -1 {
+		return "" // Return empty string if suffix is not found
+	}
+
+	// Extract and return the value between the prefix and suffix
+	return input[start : start+end]
+}
+
+type pubmaticBidExtVideo struct {
+	Duration *int `json:"duration,omitempty"`
+}
+func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	if response.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
+
+	if response.StatusCode == http.StatusBadRequest {
+		return nil, []error{&errortypes.BadInput{
+			Message: fmt.Sprintf("Unexpected status code: %d. Run with request.debug = 1 for more info", response.StatusCode),
+		}}
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, []error{fmt.Errorf("Unexpected status code: %d. Run with request.debug = 1 for more info", response.StatusCode)}
+	}
+
+	var bidResp openrtb2.BidResponse
+	if err := json.Unmarshal(response.Body, &bidResp); err != nil {
+		return nil, []error{err}
+	}
+
+	bidResponse := adapters.NewBidderResponseWithBidsCapacity(5)
+
+	var errs []error
+	for _, sb := range bidResp.SeatBid {
+		for i := 0; i < len(sb.Bid); i++ {
+			bid := sb.Bid[i]
+		
+			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
+
+			if len(bid.Cat) > 1 {
+				bid.Cat = bid.Cat[0:1]
 			}
-		}
 
-		if ext, ok := mapExt["requestExt"]; ok {
-			extBytes, err := json.Marshal(ext)
+			var bidExt *pubmaticBidExt
+			bidType := openrtb_ext.BidTypeBanner
+			err := json.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
-				return nil, debug, &errortypes.BadInput{
-					Message: "Error marshalling impression extension",
+				errs = append(errs, err)
+			} else if bidExt != nil {
+				if bidExt.VideoCreativeInfo != nil && bidExt.VideoCreativeInfo.Duration != nil {
+					impVideo.Duration = *bidExt.VideoCreativeInfo.Duration
+				}
+				bidType = getBidType(bidExt)
+			}
+
+			if bidType == openrtb_ext.BidTypeNative {
+				bid.AdM, err = getNativeAdm(bid.AdM)
+				if err != nil {
+					errs = append(errs, err)
 				}
 			}
 
-			if err := json.Unmarshal(extBytes, &requestExt); err != nil {
-				return nil, debug, &errortypes.BadInput{
-					Message: "Error unmarshalling impression extension to ExtRequestPrebidOnsite",
-				}
+			bUrl := extractBillingURL(bid.AdM)
+			bid.BURL = bUrl
+			activateCampaignId := extractWDSCampID(bid.AdM)
+			if activateCampaignId != "" {
+				bid.CID = activateCampaignId
 			}
-		} else {
-			return nil, debug, &errortypes.BadInput{
-				Message: "Impression extension not provided",
-			}
+
+			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
+			bid.AdM = updatedAdmActivate
+
+			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
+				Bid:        &bid,
+				BidType:    bidType,
+				BidVideo:   impVideo,
+				Seat:       openrtb_ext.BidderName(sb.Seat),
+			})
+
 		}
 	}
-
-	return requestExt, debug, nil
+	if bidResp.Cur != "" {
+		bidResponse.Currency = bidResp.Cur
+	}
+	return bidResponse, errs
 }
 
-func GetOWRequestExt(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, error) {
-	var requestExt openrtb_ext.ExtOWRequest
-
-	if request.Ext != nil {
-		if err := json.Unmarshal(request.Ext, &requestExt); err != nil {
-			return nil, &errortypes.BadInput{
-				Message: "Request extension not provided or can't be unmarshalled",
-			}
+func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
+	// setting "banner" as the default bid type
+	bidType := openrtb_ext.BidTypeBanner
+	if bidExt != nil && bidExt.BidType != nil {
+		switch *bidExt.BidType {
+		case 0:
+			bidType = openrtb_ext.BidTypeBanner
+		case 1:
+			bidType = openrtb_ext.BidTypeVideo
+		case 2:
+			bidType = openrtb_ext.BidTypeNative
+		default:
+			// default value is banner
+			bidType = openrtb_ext.BidTypeBanner
 		}
 	}
-
-	return &requestExt, nil
+	return bidType
 }
 
-
-func GetRequestExt(request *openrtb2.BidRequest) (
-	 *ExtRequestORTB,bool, []error) {
-	var requestOWExt *openrtb_ext.ExtOWRequest
-	var requestExtORTB *ExtRequestORTB
-	var debug bool
+func getNativeAdm(adm string) (string, error) {
 	var err error
-	var errors []error
-
-	requestOWExt, err = GetOWRequestExt(request)
+	nativeAdm := make(map[string]interface{})
+	err = json.Unmarshal([]byte(adm), &nativeAdm)
 	if err != nil {
-		errors = append(errors, err)
+		return adm, errors.New("unable to unmarshal native adm")
 	}
 
-	requestExtORTB, debug, err = GetRequestExtORTB(requestOWExt)
-	if err != nil {
-		errors = append(errors, err)
-	} else {
-
+	// move bid.adm.native to bid.adm
+	if _, ok := nativeAdm["native"]; ok {
+		//using jsonparser to avoid marshaling, encode escape, etc.
+		value, _, _, err := jsonparser.Get([]byte(adm), string(openrtb_ext.BidTypeNative))
+		if err != nil {
+			return adm, errors.New("unable to get native adm")
+		}
+		adm = string(value)
 	}
 
-	if len(errors) > 0 {
-		return nil,debug,  errors
-	}
-
-	return requestExtORTB, debug, nil
+	return adm, nil
 }
 
-func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	requestExt, debug, errors := GetRequestExt(request)
-	if len(errors) > 0 {
-		return nil, errors
-	}
-
-	var headerValue interface{}
-
-	// Check if the "header" key exists and extract its value
-	if value, exists := (*requestExt)["user_headers"]; exists {
-		headerValue = value
-		// Remove the "header" key from the map
-		delete(*requestExt, "user_headers")
-	}
-	// Convert requestExt to json.RawMessage
-	extJSON, err := json.Marshal(requestExt)
-	if err != nil {
-		return nil, []error{err}
-	}
-
-	request.Ext = extJSON
-
-	for i := 0; i < len(request.Imp); i++ {
-		var impExt map[string]interface{}
-
-		if request.Imp[i].Ext != nil {
-			var err1 error
-			if err1 = json.Unmarshal(request.Imp[i].Ext, &impExt); err1 == nil {
-				bidderExt := impExt["bidder"].(map[string]interface{})
-				impExtJSON, err3 := json.Marshal(bidderExt["impExt"])
-					if err3 != nil {
-						return nil, []error{err}
-					}
-					request.Imp[i].Ext = impExtJSON
-				
-				} else{
-					request.Imp[i].Ext = nil
-				}
-		} else{
-			request.Imp[i].Ext = nil
+//getMapFromJSON converts JSON to map
+func getMapFromJSON(source json.RawMessage) map[string]interface{} {
+	if source != nil {
+		dataMap := make(map[string]interface{})
+		err := json.Unmarshal(source, &dataMap)
+		if err == nil {
+			return dataMap
 		}
 	}
+	return nil
+}
 
-	reqJSON, err := json.Marshal(request)
-	if err != nil {
-		return nil, []error{err}
-	}
 
-	headers := http.Header{}
-	// Assert headerValue to be map[string]interface{} and add to headers
-	if headerMap, ok := headerValue.(map[string]interface{}); ok {
-		for key, value := range headerMap {
-			// Convert the value to a string if possible
-			if strValue, ok := value.(string); ok {
-				headers.Add(key, strValue)
-			}
-		}
-	}
-	// Check if "Content-Type" exists and delete it
-	if _, ok := headers["Content-Type"]; ok {
-		headers.Del("Content-Type")
-	}
 
-	// Add "Content-Type: application/json"
-	headers.Add("Content-Type", "application/json")
-	endpoint := a.endpoint
-	if debug {
-		endpoint = endpoint + "&debug=1"
-	}
-	return []*adapters.RequestData{{
-		Method:  "POST",
-		Uri:     endpoint,
-		Body:    reqJSON,
-		Headers: headers,
-	}}, nil
-	}
 
 
