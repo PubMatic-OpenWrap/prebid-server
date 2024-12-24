@@ -53,6 +53,32 @@ func getFloorCurrency(floorExt *openrtb_ext.PriceFloorRules) string {
 	return floorCur
 }
 
+// GetMaxFloorValue returns maximum floor value from imp.bidfloor and floor rule value
+func GetMaxFloorValue(impFloor float64, impFloorCur string, floorRuleValue float64, floorRuleCur string, conversions currency.Conversions) (float64, string, string) {
+	if impFloorCur == "" {
+		impFloorCur = defaultCurrency
+	}
+
+	if floorRuleCur == "" {
+		floorRuleCur = defaultCurrency
+	}
+
+	if impFloorCur != floorRuleCur {
+		rate, err := conversions.GetRate(impFloorCur, floorRuleCur)
+		if err != nil {
+			return floorRuleValue, floorRuleCur, ""
+		}
+
+		if floorVal := rate * impFloor; floorVal > floorRuleValue {
+			return impFloor, impFloorCur, openrtb_ext.RequestLocation
+		}
+	} else if impFloor > floorRuleValue {
+		return impFloor, impFloorCur, openrtb_ext.RequestLocation
+	}
+
+	return floorRuleValue, floorRuleCur, ""
+}
+
 // getMinFloorValue returns floorMin and floorMinCur,
 // values provided in impression extension are considered over floors JSON.
 func getMinFloorValue(floorExt *openrtb_ext.PriceFloorRules, imp *openrtb_ext.ImpWrapper, conversions currency.Conversions) (float64, string, error) {
@@ -121,9 +147,13 @@ func updateImpExtWithFloorDetails(imp *openrtb_ext.ImpWrapper, matchedRule strin
 	if extImpPrebid == nil {
 		extImpPrebid = &openrtb_ext.ExtImpPrebid{}
 	}
+	floorRuleValue := 0.0
+	if matchedRule != "" {
+		floorRuleValue = floorRuleVal
+	}
 	extImpPrebid.Floors = &openrtb_ext.ExtImpPrebidFloors{
 		FloorRule:      matchedRule,
-		FloorRuleValue: floorRuleVal,
+		FloorRuleValue: roundToFourDecimals(floorRuleValue),
 		FloorValue:     floorVal,
 	}
 	impExt.SetPrebid(extImpPrebid)

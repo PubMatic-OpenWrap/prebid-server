@@ -182,7 +182,7 @@
                 "origbidcpm": 0.71,
                 "prebid": {
                   "meta": {
-                  },
+                },
                   "type": "video",
                   "targeting": {
                     "hb_bidder": "appnexus",
@@ -212,7 +212,7 @@
                 "origbidcpm": 0.21,
                 "prebid": {
                   "meta": {
-                  },
+                },
                   "type": "video"
                 }
               }
@@ -227,9 +227,9 @@
               "ext": {
                 "origbidcpm": 0.61,
                 "prebid": {
-                  "meta": {
-                  },
                   "type": "video",
+                  "meta": {
+                },
                   "targeting": {
                     "hb_bidder": "appnexus",
                     "hb_cache_host": "www.pbcserver.com",

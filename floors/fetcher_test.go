@@ -12,8 +12,10 @@ import (
 
 	"github.com/alitto/pond"
 	"github.com/coocood/freecache"
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v2/config"
 	"github.com/prebid/prebid-server/v2/metrics"
+
 	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
@@ -628,6 +630,11 @@ func TestFetchFloorRulesFromURLInvalidMaxAge(t *testing.T) {
 }
 
 func TestFetchAndValidate(t *testing.T) {
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	me := &metrics.MetricsEngineMock{}
+
 	mockHandler := func(mockResponse []byte, mockStatus int) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Add(MaxAge, "30")
@@ -646,6 +653,7 @@ func TestFetchAndValidate(t *testing.T) {
 		responseStatus int
 		want           *openrtb_ext.PriceFloorRules
 		want1          int
+		setup          func()
 	}{
 		{
 			name: "Recieved valid price floor rules response",
@@ -676,6 +684,7 @@ func TestFetchAndValidate(t *testing.T) {
 			name: "No response from server",
 			args: args{
 				configs: config.AccountFloorFetch{
+					AccountID:     "5890",
 					Enabled:       true,
 					Timeout:       30,
 					MaxFileSizeKB: 700,
@@ -688,6 +697,9 @@ func TestFetchAndValidate(t *testing.T) {
 			responseStatus: 500,
 			want:           nil,
 			want1:          0,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "fetch", "1").Return()
+			},
 		},
 		{
 			name: "File is greater than MaxFileSize",
@@ -713,6 +725,7 @@ func TestFetchAndValidate(t *testing.T) {
 			name: "Malformed response : json unmarshalling failed",
 			args: args{
 				configs: config.AccountFloorFetch{
+					AccountID:     "5890",
 					Enabled:       true,
 					Timeout:       30,
 					MaxFileSizeKB: 800,
@@ -728,11 +741,15 @@ func TestFetchAndValidate(t *testing.T) {
 			responseStatus: 200,
 			want:           nil,
 			want1:          0,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "fetch", "2").Return()
+			},
 		},
 		{
 			name: "Validations failed for price floor rules response",
 			args: args{
 				configs: config.AccountFloorFetch{
+					AccountID:     "5890",
 					Enabled:       true,
 					Timeout:       30,
 					MaxFileSizeKB: 700,
@@ -748,14 +765,21 @@ func TestFetchAndValidate(t *testing.T) {
 			responseStatus: 200,
 			want:           nil,
 			want1:          0,
+			setup: func() {
+				me.On("RecordFloorStatus", "5890", "fetch", "3").Return()
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
 			mockHttpServer := httptest.NewServer(mockHandler(tt.response, tt.responseStatus))
 			defer mockHttpServer.Close()
 			ppf := PriceFloorFetcher{
-				httpClient: mockHttpServer.Client(),
+				httpClient:   mockHttpServer.Client(),
+				metricEngine: &metricsConf.NilMetricsEngine{},
 			}
 			tt.args.configs.URL = mockHttpServer.URL
 			got, got1 := ppf.fetchAndValidate(tt.args.configs)

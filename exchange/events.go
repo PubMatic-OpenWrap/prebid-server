@@ -3,6 +3,7 @@ package exchange
 import (
 	"time"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/exchange/entities"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
@@ -15,6 +16,7 @@ import (
 
 // eventTracking has configuration fields needed for adding event tracking to an auction response
 type eventTracking struct {
+	OpenWrapEventTracking
 	accountID          string
 	enabledForAccount  bool
 	enabledForRequest  bool
@@ -25,15 +27,16 @@ type eventTracking struct {
 }
 
 // getEventTracking creates an eventTracking object from the different configuration sources
-func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string) *eventTracking {
+func getEventTracking(requestExtPrebid *openrtb_ext.ExtRequestPrebid, ts time.Time, account *config.Account, bidderInfos config.BidderInfos, externalURL string, owEventTracking OpenWrapEventTracking) *eventTracking {
 	return &eventTracking{
-		accountID:          account.ID,
-		enabledForAccount:  account.Events.Enabled,
-		enabledForRequest:  requestExtPrebid != nil && requestExtPrebid.Events != nil,
-		auctionTimestampMs: ts.UnixNano() / 1e+6,
-		integrationType:    getIntegrationType(requestExtPrebid),
-		bidderInfos:        bidderInfos,
-		externalURL:        externalURL,
+		accountID:             account.ID,
+		enabledForAccount:     account.Events.Enabled,
+		enabledForRequest:     requestExtPrebid != nil && requestExtPrebid.Events != nil,
+		auctionTimestampMs:    ts.UnixNano() / 1e+6,
+		integrationType:       getIntegrationType(requestExtPrebid),
+		bidderInfos:           bidderInfos,
+		externalURL:           externalURL,
+		OpenWrapEventTracking: owEventTracking,
 	}
 }
 
@@ -45,13 +48,10 @@ func getIntegrationType(requestExtPrebid *openrtb_ext.ExtRequestPrebid) string {
 }
 
 // modifyBidsForEvents adds bidEvents and modifies VAST AdM if necessary.
-func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
+func (ev *eventTracking) modifyBidsForEvents(seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, req *openrtb2.BidRequest, trackerURL string) map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid {
 	for bidderName, seatBid := range seatBids {
-		modifyingVastXMLAllowed := ev.isModifyingVASTXMLAllowed(bidderName.String())
 		for _, pbsBid := range seatBid.Bids {
-			if modifyingVastXMLAllowed {
-				ev.modifyBidVAST(pbsBid, bidderName)
-			}
+			ev.modifyBidVAST(pbsBid, bidderName, seatBid.BidderCoreName, req, trackerURL)
 			pbsBid.BidEvents = ev.makeBidExtEvents(pbsBid, bidderName)
 		}
 	}
@@ -64,7 +64,7 @@ func (ev *eventTracking) isModifyingVASTXMLAllowed(bidderName string) bool {
 }
 
 // modifyBidVAST injects event Impression url if needed, otherwise returns original VAST string
-func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName openrtb_ext.BidderName) {
+func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName openrtb_ext.BidderName, bidderCoreName openrtb_ext.BidderName, req *openrtb2.BidRequest, trackerURL string) {
 	bid := pbsBid.Bid
 	if pbsBid.BidType != openrtb_ext.BidTypeVideo || len(bid.AdM) == 0 && len(bid.NURL) == 0 {
 		return
@@ -74,9 +74,14 @@ func (ev *eventTracking) modifyBidVAST(pbsBid *entities.PbsOrtbBid, bidderName o
 	if len(pbsBid.GeneratedBidID) > 0 {
 		bidID = pbsBid.GeneratedBidID
 	}
-	if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs, ev.integrationType); ok {
-		bid.AdM = newVastXML
+
+	if ev.isModifyingVASTXMLAllowed(bidderName.String()) { // condition added for ow fork
+		if newVastXML, ok := events.ModifyVastXmlString(ev.externalURL, vastXML, bidID, bidderName.String(), ev.accountID, ev.auctionTimestampMs, ev.integrationType); ok {
+			bid.AdM = newVastXML
+		}
 	}
+
+	ev.injectVideoEvents(req, bid, vastXML, trackerURL, bidID, bidderName.String(), bidderCoreName.String())
 }
 
 // modifyBidJSON injects "wurl" (win) event url if needed, otherwise returns original json

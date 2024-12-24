@@ -99,13 +99,14 @@ func WriteCookie(w http.ResponseWriter, encodedCookie string, cfg *config.HostCo
 		Expires: time.Now().Add(ttl),
 		Path:    "/",
 	}
+	httpCookie.Secure = true // pbs_upgrade: set secure to true without checking setSiteCookie flag
 
 	if cfg.Domain != "" {
 		httpCookie.Domain = cfg.Domain
 	}
 
 	if setSiteCookie {
-		httpCookie.Secure = true
+		// httpCookie.Secure = true
 		httpCookie.SameSite = http.SameSiteNoneMode
 	}
 

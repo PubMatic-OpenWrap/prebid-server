@@ -151,7 +151,7 @@ func (e mockTimeoutHook) HandleRawBidderResponseHook(_ context.Context, _ hookst
 	time.Sleep(20 * time.Millisecond)
 	c := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 	c.AddMutation(func(payload hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-		payload.Bids[0].BidMeta = &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "new-code"}
+		payload.BidderResponse.Bids[0].BidMeta = &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "new-code"}
 		return payload, nil
 	}, hookstage.MutationUpdate, "bidderResponse", "bidMeta.AdapterCode")
 
@@ -297,6 +297,23 @@ func (h mockFailedMutationHook) HandleAllProcessedBidResponsesHook(_ context.Con
 	return hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{ChangeSet: changeSet}, nil
 }
 
+func (e mockUpdateBidRequestHook) HandleBeforeValidationHook(_ context.Context, _ hookstage.ModuleInvocationContext, _ hookstage.BeforeValidationRequestPayload) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	c := hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{}
+	// c.AddMutation(
+	// 	func(payload hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
+	// 		payload.BidRequest.User.Yob = 2000
+	// 		return payload, nil
+	// 	}, hookstage.MutationUpdate, "bidRequest", "user.yob",
+	// ).AddMutation(
+	// 	func(payload hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
+	// 		payload.BidRequest.User.Consent = "true"
+	// 		return payload, nil
+	// 	}, hookstage.MutationUpdate, "bidRequest", "user.consent",
+	// )
+
+	return hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{ChangeSet: c}, nil
+}
+
 type mockUpdateBidRequestHook struct{}
 
 func (e mockUpdateBidRequestHook) HandleProcessedAuctionHook(_ context.Context, _ hookstage.ModuleInvocationContext, _ hookstage.ProcessedAuctionRequestPayload) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
@@ -351,7 +368,7 @@ func (e mockUpdateBidderResponseHook) HandleRawBidderResponseHook(_ context.Cont
 	c := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 	c.AddMutation(
 		func(payload hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-			payload.Bids[0].DealPriority = 10
+			payload.BidderResponse.Bids[0].DealPriority = 10
 			return payload, nil
 		}, hookstage.MutationUpdate, "bidderResponse", "bid.deal-priority",
 	)
