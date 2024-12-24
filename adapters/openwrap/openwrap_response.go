@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -23,6 +24,20 @@ type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace       string               `json:"marketplace,omitempty"`
+}
+
+func extractBillingURL(adm string) string {
+	// Define the regular expression pattern to match the URL
+	// that contains "/AdServer/AdDisplayTrackerServlet"
+	pattern := `https?://[^\s"]+/AdServer/AdDisplayTrackerServlet[^\s"]*`
+
+	// Compile the regular expression
+	re := regexp.MustCompile(pattern)
+
+	// Find the first match for the pattern in the adm string
+	match := re.FindString(adm)
+
+	return match
 }
 
 
@@ -106,6 +121,8 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 			}
 
+			bUrl := extractBillingURL(bid.AdM)
+			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
 			if activateCampaignId != "" {
 				bid.CID = activateCampaignId
@@ -180,6 +197,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
