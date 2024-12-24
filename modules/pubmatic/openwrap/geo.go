@@ -21,7 +21,7 @@ type geo struct {
 	CountryCode string `json:"cc,omitempty"`
 	StateCode   string `json:"sc,omitempty"`
 	Compliance  string `json:"compliance,omitempty"`
-	SectionID   string `json:"sectionId,omitempty"`
+	SectionID   int    `json:"sectionId,omitempty"`
 }
 
 const (
@@ -45,11 +45,20 @@ func NewGeoHandler() *geoHandler {
 	}
 }
 
+var gppSectionIDs = map[string]int{
+	"ca": 8,
+	"va": 9,
+	"co": 10,
+	"ut": 11,
+	"ct": 12,
+}
+
 const (
 	OriginHeaderKey     = "Origin"
 	RefererKey          = "Referer"
 	GDPRCompliance      = "GDPR"
 	USPCompliance       = "USP"
+	GPPCompliance       = "GPP"
 	StateCodeCalifornia = "ca"
 	CountryCodeUS       = "US"
 )
@@ -74,7 +83,7 @@ func (handler *geoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			r.URL.RequestURI(), r.Header.Get(OriginHeaderKey), r.Header.Get(RefererKey))
 
 		//TO-Do keep this stat?
-		metricEngine.RecordBadRequests(models.EndpointGeo, pubIdStr, 0)
+		metricEngine.RecordBadRequests(models.EndpointGeo, pubIdStr, -1)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -97,14 +106,16 @@ func (handler *geoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 				geo.Compliance = GDPRCompliance
 			} else if geo.CountryCode == CountryCodeUS && geo.StateCode == StateCodeCalifornia {
 				geo.Compliance = USPCompliance
-			} else {
-				//check if GPP country and set sectionID
+			} else if sectionid, ok := gppSectionIDs[geo.StateCode]; ok {
+				geo.Compliance = GPPCompliance
+				geo.SectionID = sectionid
 			}
+
 			w.Header().Set(headerCacheControl, "max-age="+fmt.Sprint(cacheTimeout.Seconds()))
 			json.NewEncoder(w).Encode(geo)
 		}
 	}
 	if !success {
-		//globals.GetMetricsEngine().RecordGeoLookupFailure(globals.GeoEndpoint)
+		metricEngine.RecordGeoLookupFailure(models.EndpointGeo)
 	}
 }

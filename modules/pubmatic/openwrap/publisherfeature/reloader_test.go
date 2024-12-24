@@ -66,6 +66,7 @@ func TestInitiateReloader(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
 			},
 		},
 	}
