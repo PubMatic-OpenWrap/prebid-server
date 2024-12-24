@@ -12,13 +12,14 @@ import (
 
 type ExtRequestORTB  map[string]interface{}     
 
-func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, error) {
+func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, bool, error) {
 	var requestExt *ExtRequestORTB
 	var mapExt map[string]interface{}
+	debug := prebidExt.Prebid.Debug
 
 	if prebidExt.Prebid.BidderParams != nil {
 		if err := json.Unmarshal(prebidExt.Prebid.BidderParams, &mapExt); err != nil {
-			return nil, &errortypes.BadInput{
+			return nil, debug, &errortypes.BadInput{
 				Message: "Impression extension not provided or can't be unmarshalled",
 			}
 		}
@@ -26,24 +27,24 @@ func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, er
 		if ext, ok := mapExt["requestExt"]; ok {
 			extBytes, err := json.Marshal(ext)
 			if err != nil {
-				return nil, &errortypes.BadInput{
+				return nil, debug, &errortypes.BadInput{
 					Message: "Error marshalling impression extension",
 				}
 			}
 
 			if err := json.Unmarshal(extBytes, &requestExt); err != nil {
-				return nil, &errortypes.BadInput{
+				return nil, debug, &errortypes.BadInput{
 					Message: "Error unmarshalling impression extension to ExtRequestPrebidOnsite",
 				}
 			}
 		} else {
-			return nil, &errortypes.BadInput{
+			return nil, debug, &errortypes.BadInput{
 				Message: "Impression extension not provided",
 			}
 		}
 	}
 
-	return requestExt, nil
+	return requestExt, debug, nil
 }
 
 func GetOWRequestExt(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, error) {
@@ -62,10 +63,10 @@ func GetOWRequestExt(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, e
 
 
 func GetRequestExt(request *openrtb2.BidRequest) (
-	 *ExtRequestORTB, []error) {
+	 *ExtRequestORTB,bool, []error) {
 	var requestOWExt *openrtb_ext.ExtOWRequest
 	var requestExtORTB *ExtRequestORTB
-
+	var debug bool
 	var err error
 	var errors []error
 
@@ -74,7 +75,7 @@ func GetRequestExt(request *openrtb2.BidRequest) (
 		errors = append(errors, err)
 	}
 
-	requestExtORTB, err = GetRequestExtORTB(requestOWExt)
+	requestExtORTB, debug, err = GetRequestExtORTB(requestOWExt)
 	if err != nil {
 		errors = append(errors, err)
 	} else {
@@ -82,14 +83,14 @@ func GetRequestExt(request *openrtb2.BidRequest) (
 	}
 
 	if len(errors) > 0 {
-		return nil, errors
+		return nil,debug,  errors
 	}
 
-	return requestExtORTB, nil
+	return requestExtORTB, debug, nil
 }
 
 func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	requestExt, errors := GetRequestExt(request)
+	requestExt, debug, errors := GetRequestExt(request)
 	if len(errors) > 0 {
 		return nil, errors
 	}
@@ -153,12 +154,16 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	// Add "Content-Type: application/json"
 	headers.Add("Content-Type", "application/json")
-
+	endpoint := a.endpoint
+	if debug {
+		endpoint = endpoint + "&debug=1"
+	}
 	return []*adapters.RequestData{{
 		Method:  "POST",
-		Uri:     a.endpoint,
+		Uri:     endpoint,
 		Body:    reqJSON,
 		Headers: headers,
 	}}, nil
 	}
+
 
