@@ -423,9 +423,7 @@ func sendAuctionResponse(
 
 	}
 
-	rawResponse, header, err := hookExecutor.ExecuteExitPointStage(rawResponse, w.Header())
-	if err != nil {
-	}
+	rawResponse, header := hookExecutor.ExecuteExitPointStage(rawResponse, w.Header())
 
 	for key, values := range header {
 		for _, value := range values {

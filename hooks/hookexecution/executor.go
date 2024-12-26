@@ -41,7 +41,7 @@ type StageExecutor interface {
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
 	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
-	ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError)
+	ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header)
 }
 
 type HookStageExecutor interface {
@@ -327,10 +327,10 @@ func (e *hookExecutor) ExecuteAuctionResponseStage(response *openrtb2.BidRespons
 	e.pushStageOutcome(outcome)
 }
 
-func (e *hookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError) {
+func (e *hookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header) {
 	plan := e.planBuilder.PlanForExitPointStage(e.endpoint, e.account)
 	if len(plan) == 0 {
-		return response, headers, nil
+		return response, headers
 	}
 
 	handler := func(
@@ -352,7 +352,7 @@ func (e *hookExecutor) ExecuteExitPointStage(response []byte, headers http.Heade
 
 	e.saveModuleContexts(contexts)
 	e.pushStageOutcome(outcome)
-	return payload.RawResponse, payload.Headers, nil
+	return payload.RawResponse, payload.Headers
 }
 
 func (e *hookExecutor) newContext(stage string) executionContext {
@@ -419,6 +419,6 @@ func (executor EmptyHookExecutor) ExecuteBeforeRequestValidationStage(_ *openrtb
 	return nil
 }
 
-func (executor EmptyHookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header, *RejectError) {
-	return nil, nil, nil
+func (executor EmptyHookExecutor) ExecuteExitPointStage(response []byte, headers http.Header) ([]byte, http.Header) {
+	return nil, nil
 }

@@ -13,9 +13,9 @@ type ExitPoint interface {
 	) (HookResult[ExitPointPayload], error)
 }
 
-// RawBidderResponsePayload consists of a list of adapters.TypedBid
-// objects representing bids returned by a particular bidder.
-// Hooks are allowed to modify bids using mutations.
+// ExitPointPayload represents the payload data for the exit point hook stage.
+// It contains the raw response body and the associated HTTP headers.
+// Hooks are allowed to modify response using mutations.
 type ExitPointPayload struct {
 	RawResponse []byte
 	Headers     http.Header
