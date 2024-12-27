@@ -40,7 +40,11 @@ func (m OpenWrap) handleExitpointHook(
 		return result, nil
 	}
 
-	response := responder.FormResponse(&bidResp)
+	response, headers, err := responder.FormResponse(&bidResp, payload.Headers)
+	if err != nil {
+		// ToDo: Form error response as per the endpoint
+		return result, nil
+	}
 	updatedRawResponse, err := json.Marshal(response)
 	if err != nil {
 		// ToDo: Form error response as per the endpoint
@@ -49,6 +53,7 @@ func (m OpenWrap) handleExitpointHook(
 
 	result.ChangeSet.AddMutation(func(ep hookstage.ExitPointPayload) (hookstage.ExitPointPayload, error) {
 		ep.RawResponse = updatedRawResponse
+		ep.Headers = headers
 		return ep, nil
 	}, hookstage.MutationUpdate, "update-response-and-headers")
 
