@@ -36,18 +36,15 @@ func (m OpenWrap) handleExitpointHook(
 	var bidResp openrtb2.BidResponse
 	err = json.Unmarshal(payload.RawResponse, &bidResp)
 	if err != nil {
-		// ToDo: Form error response as per the endpoint
 		return result, nil
 	}
 
 	response, headers, err := responder.FormResponse(&bidResp, payload.Headers)
 	if err != nil {
-		// ToDo: Form error response as per the endpoint
 		return result, nil
 	}
 	updatedRawResponse, err := json.Marshal(response)
 	if err != nil {
-		// ToDo: Form error response as per the endpoint
 		return result, nil
 	}
 
