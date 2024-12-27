@@ -17,12 +17,12 @@ func (m OpenWrap) handleExitpointHook(
 ) (result hookstage.HookResult[hookstage.ExitPointPayload], err error) {
 
 	if len(moduleCtx.ModuleContext) == 0 {
-		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleExitPointHook()")
 		return result, nil
 	}
 	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
-		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleExitPointHook()")
 		return result, nil
 	}
 
