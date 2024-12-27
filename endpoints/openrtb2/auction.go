@@ -1,6 +1,7 @@
 package openrtb2
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -415,19 +416,33 @@ func sendAuctionResponse(
 	}
 
 	// Fixes #231
-	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false)
-
 	w.Header().Set("Content-Type", "application/json")
 
-	// If an error happens when encoding the response, there isn't much we can do.
+	// Create a buffer to hold the JSON response
+	var respBuf bytes.Buffer
+
+	// Create a new JSON encoder and set the SetEscapeHTML option to false
+	enc := json.NewEncoder(&respBuf)
+	enc.SetEscapeHTML(false)
+
+	// Encode the response
+	if err := enc.Encode(response); err != nil {
+		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/auction Failed to encode response: %v", err))
+		return labels, ao
+	}
+
+	rawResponse, headers := hookExecutor.ExecuteExitPointStage(respBuf.Bytes(), w.Header())
+	for key, values := range headers {
+		w.Header()[key] = values
+	}
+
+	// If an error happens when writing the response, there isn't much we can do.
 	// If we've sent _any_ bytes, then Go would have sent the 200 status code first.
 	// That status code can't be un-sent... so the best we can do is log the error.
-	if err := enc.Encode(response); err != nil {
+	if _, err := w.Write(rawResponse); err != nil {
 		labels.RequestStatus = metrics.RequestStatusNetworkErr
 		ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/auction Failed to send response: %v", err))
 	}
-
 	return labels, ao
 }
 
