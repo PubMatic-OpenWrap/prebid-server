@@ -167,6 +167,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 				bidExt.CreativeType = models.GetCreativeType(&bid, bidExt, &impCtx)
 			}
 
+			if bidExt.CreativeType != string(openrtb_ext.BidTypeBanner) {
+				bidExt.ClickTrackers = nil
+			}
 			// set response netecpm and logger/tracker en
 			revShare := models.GetRevenueShare(rctx.PartnerConfigMap[partnerID])
 			bidExt.NetECPM = models.ToFixed(bid.Price, models.BID_PRECISION)
