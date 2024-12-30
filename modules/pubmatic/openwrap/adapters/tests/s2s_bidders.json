@@ -136,5 +136,20 @@
                 "siteId":"abcdefg"
             }
         }
+    },
+    {
+        "name": "compass_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "compass",
+            "requestJSON": {
+                "placementId": "123456",
+                "endpointId": "abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "123456"
+            }
+        }
     }
 ]
