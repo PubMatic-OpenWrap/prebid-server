@@ -116,9 +116,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidRequestExt)
 		result.Errors = append(result.Errors, "failed to get request ext: "+err.Error())
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, nil
 	}
 	rCtx.NewReqExt = requestExt
+	glog.Infoln("New Request ext: %s", rCtx.NewReqExt)
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(requestExt.Prebid.BidderParams)
 	rCtx.ReturnAllBidStatus = requestExt.Prebid.ReturnAllBidStatus
 	m.setAnanlyticsFlags(&rCtx)
@@ -141,7 +143,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
 				result.NbrCode = int(nbr.InvalidResponseFormat)
-				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+				result.Errors = append(result.Errors, models.ErrInvalidRespFormat)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 		}
@@ -154,14 +157,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
 			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
 				result.NbrCode = int(nbr.InvalidRedirectURL)
-				result.Errors = append(result.Errors, "Invalid redirect URL")
+				result.Errors = append(result.Errors, models.ErrInvalidRedirectURL)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 		}
 
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
-			result.Errors = append(result.Errors, "owRedirectURL is missing")
+			result.Errors = append(result.Errors, models.ErrMissingRedirectURL)
+			glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 			return result, nil
 		}
 	}
@@ -196,6 +201,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ABTestConfigApplied = 1
 		rCtx.PartnerConfigMap = newPartnerConfigMap
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
+		glog.Warningln("ABTestProcessing failed to update the rCtx.PartnerConfigMap with %s", result.Warnings)
 	}
 
 	//set the profile MetaData for logging and tracking
@@ -225,6 +231,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, nil
 	}
 
@@ -236,6 +243,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.AllPartnersFiltered)
 		result.Errors = append(result.Errors, "All partners filtered")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, err
 	}
 
@@ -244,6 +252,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
 		result.Errors = append(result.Errors, "failed to price granularity details: "+err.Error())
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, nil
 	}
 
@@ -284,6 +293,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = int(nbr.InvalidVideoRequest)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+			glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 			return result, nil
 		}
 	}
@@ -301,6 +311,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
 				result.Errors = append(result.Errors, err.Error())
 				rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, err
 			}
 		}
@@ -312,6 +323,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = errors.New("tagid missing for imp: " + imp.ID)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
+			glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 			return result, err
 		}
 
@@ -401,6 +413,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 
@@ -416,6 +429,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 
@@ -424,6 +438,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 
@@ -432,6 +447,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
+				glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 				return result, nil
 			}
 
@@ -616,6 +632,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = errors.New("all slots disabled")
 		}
 		result.Errors = append(result.Errors, err.Error())
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, nil
 	}
 
@@ -627,6 +644,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = errors.New("server side partner not found")
 		}
 		result.Errors = append(result.Errors, err.Error())
+		glog.Errorln(models.ErrInBeforeValidationHook, result.Errors, result.NbrCode)
 		return result, nil
 	}
 

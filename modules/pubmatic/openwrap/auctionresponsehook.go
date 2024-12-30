@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
@@ -82,6 +83,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				result.Errors = append(result.Errors, errs[i].Error())
 			}
 			result.NbrCode = int(nbr.InternalError)
+			glog.Errorln(models.ErrInAuctionResponseHook, result.Errors, result.NbrCode)
 		}
 	}
 

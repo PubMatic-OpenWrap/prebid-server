@@ -75,6 +75,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	originalRequestBody := payload.Body
+	glog.Info("Request body: %s", originalRequestBody)
 
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
@@ -93,12 +94,14 @@ func (m OpenWrap) handleEntrypointHook(
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
 		result.Errors = append(result.Errors, err.Error())
+		glog.Errorln(models.ErrInEntryPointHook, result.Errors, result.NbrCode)
 		return result, err
 	}
 
 	if requestExtWrapper.ProfileId <= 0 {
 		result.NbrCode = int(nbr.InvalidProfileID)
-		result.Errors = append(result.Errors, "ErrMissingProfileID")
+		result.Errors = append(result.Errors, models.ErrMissingProfileID)
+		glog.Errorln(models.ErrInEntryPointHook, result.Errors, result.NbrCode)
 		return result, err
 	}
 
@@ -170,13 +173,15 @@ func (m OpenWrap) handleEntrypointHook(
 	if len(errs) > 0 {
 		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, errs[0].Error())
+		glog.Errorln(models.ErrInEntryPointHook, result.Errors, result.NbrCode)
 		return result, errs[0]
 	}
 
 	rCtx.PubID, err = strconv.Atoi(pubIdStr)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		result.Errors = append(result.Errors, models.ErrInvalidPublisherID)
+		glog.Errorln(models.ErrInEntryPointHook, result.Errors, result.NbrCode)
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubIDStr = pubIdStr
