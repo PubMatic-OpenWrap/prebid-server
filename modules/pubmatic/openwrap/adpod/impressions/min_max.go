@@ -48,17 +48,17 @@ func newMinMaxAlgorithm(podMinDuration, podMaxDuration int64, p *models.AdPod) M
 	return MinMax{generator: generator, requested: generator[0].requested}
 }
 
-func initGenerator(podMinDuration, podMaxDuration int64, p *models.AdPod, minAds, maxAds int) generator {
+func initGenerator(podMinDuration, podMaxDuration int64, p *models.AdPod, minAds, maxAds *int) generator {
 	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, newVideoAdPod(p, minAds, maxAds), multipleOf)
 	return config
 }
 
-func newVideoAdPod(p *models.AdPod, minAds, maxAds int) *models.AdPod {
+func newVideoAdPod(p *models.AdPod, minAds, maxAds *int) *models.AdPod {
 
 	adpod := models.AdPod{MinDuration: p.MinDuration,
 		MaxDuration: p.MaxDuration,
 		MinAds:      minAds,
-		MaxAds:      maxAds}
+		MaxAds:      minAds}
 	return &adpod
 }
 

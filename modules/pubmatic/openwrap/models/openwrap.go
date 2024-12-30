@@ -128,6 +128,8 @@ type RequestCtx struct {
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+	AdpodCtx           map[string]Adpod
+	ImpToPodId         map[string]string
 }
 
 type AdpodProfileConfig struct {
@@ -192,6 +194,7 @@ type ImpCtx struct {
 	BidIDToAPRC    map[string]int64
 	AdserverURL    string
 	BidIDToDur     map[string]int64
+	AdPod          bool
 }
 
 type PartnerData struct {

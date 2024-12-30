@@ -176,7 +176,6 @@ func (g generator) addTime(timeForEachSlot int64, fillZeroSlotsOnPriority bool) 
 // if  any validation fails it removes all the alloated slots and  makes is of size 0
 // and sets the freeTime value as RequestedPodMaxDuration
 func (config *generator) validateSlots() {
-
 	// default return value if validation fails
 	emptySlots := make([][2]int64, 0)
 	if len(config.Slots) == 0 {

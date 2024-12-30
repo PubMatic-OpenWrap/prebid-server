@@ -1,10 +1,9 @@
-package middleware
+package adpod
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"strconv"
@@ -14,8 +13,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
@@ -57,60 +56,38 @@ var (
 	NBRFormat          = `{"` + NBR + `":%v}`
 )
 
-type vastResponse struct {
-	debug              string
-	WrapperLoggerDebug string
+type vastResp struct {
+	rctx models.RequestCtx
 }
 
-func (vr *vastResponse) addOwStatusHeader(headers map[string]string, nbr openrtb3.NoBidReason) {
-	if vr.debug == "1" {
-		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr)
-	}
+func newVastResponder(rctx models.RequestCtx) Responder {
+	return &vastResp{rctx: rctx}
 }
 
-func (vr *vastResponse) formVastResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
-	var statusCode = http.StatusOK
-	var headers = map[string]string{
-		ContentType:    ApplicationXML,
-		ContentOptions: NoSniff,
-	}
-
-	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
-		vr.addOwStatusHeader(headers, nbr.InvalidVideoRequest)
-		return EmptyVASTResponse, headers, adpodWriter.Code
-	}
-
-	response, err := io.ReadAll(adpodWriter.Response)
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-		vr.addOwStatusHeader(headers, nbr.InternalError)
-		return EmptyVASTResponse, headers, statusCode
-	}
-
-	var bidResponse *openrtb2.BidResponse
-	err = json.Unmarshal(response, &bidResponse)
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-		vr.addOwStatusHeader(headers, nbr.InternalError)
-		return EmptyVASTResponse, headers, statusCode
-	}
-
+func (vr *vastResp) FormResponse(bidResponse *openrtb2.BidResponse, headers http.Header) (interface{}, http.Header, error) {
 	if bidResponse.NBR != nil {
-		statusCode = http.StatusBadRequest
-		vr.addOwStatusHeader(headers, *bidResponse.NBR)
-		return EmptyVASTResponse, headers, statusCode
+		return EmptyVASTResponse, headers, nil
 	}
 
 	vast, nbr, err := vr.getVast(bidResponse)
+	if err != nil {
+		return nil, headers, err
+	}
 	if nbr != nil {
-		vr.addOwStatusHeader(headers, *nbr)
-		return EmptyVASTResponse, headers, statusCode
+		return EmptyVASTResponse, headers, nil
 	}
 
-	return []byte(vast), headers, statusCode
+	return vast, headers, nil
+
 }
 
-func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason, error) {
+// func (vr *vastResp) addOwStatusHeader(headers map[string]string, nbr openrtb3.NoBidReason) {
+// 	if vr.rctx.Debug {
+// 		headers[HeaderOpenWrapStatus] = fmt.Sprintf(NBRFormat, nbr)
+// 	}
+// }
+
+func (vr *vastResp) getVast(bidResponse *openrtb2.BidResponse) (string, *openrtb3.NoBidReason, error) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
 		return "", nbr.EmptySeatBid.Ptr(), errors.New("empty bid response")
 	}
@@ -143,7 +120,7 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 		return "", &nbr, errors.New("No Bid")
 	}
 
-	if vr.debug == "1" || vr.WrapperLoggerDebug == "1" {
+	if vr.rctx.Debug {
 		creative = string(addExtInfo([]byte(creative), bidResponse.Ext))
 	}
 

@@ -157,7 +157,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, a
 		return &g
 
 	case models.ByDurationRanges:
-		g := newByDurationRanges(adpodProfileCfg, int(adpod.MaxAds), adpod.MinDuration, adpod.MaxDuration)
+		g := newByDurationRanges(adpodProfileCfg, int(*adpod.MaxAds), *adpod.MinDuration, *adpod.MaxDuration)
 		return &g
 	}
 
@@ -205,10 +205,10 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod *models.AdPod) generat
 	config.requested = pod{
 		podMinDuration:  podMinDuration,
 		podMaxDuration:  podMaxDuration,
-		slotMinDuration: int64(vPod.MinDuration),
-		slotMaxDuration: int64(vPod.MaxDuration),
-		minAds:          int64(vPod.MinAds),
-		maxAds:          int64(vPod.MaxAds),
+		slotMinDuration: int64(*vPod.MinDuration),
+		slotMaxDuration: int64(*vPod.MaxDuration),
+		minAds:          int64(*vPod.MinAds),
+		maxAds:          int64(*vPod.MaxAds),
 	}
 
 	// configure internal object (FOR INTERNAL USE ONLY)

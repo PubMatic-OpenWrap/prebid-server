@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -75,8 +76,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	var winningAdpodBidIds map[string][]string
 	var errs []error
-	if rctx.IsCTVRequest {
-		winningAdpodBidIds, errs = auction.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
+	if rctx.IsCTVRequest && len(rctx.AdpodCtx) > 0 {
+		winningAdpodBidIds, errs = adpod.FormAdpodBidsAndPerformExclusion(payload.BidResponse, rctx)
 		if len(errs) > 0 {
 			for i := range errs {
 				result.Errors = append(result.Errors, errs[i].Error())
@@ -229,10 +230,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 				BidDealTierSatisfied: bidDealTierSatisfied,
 			}
 
-			var wbid models.OwBid
-			var wbids []*models.OwBid
-			var oldWinBidFound bool
-			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
+			if rctx.IsCTVRequest {
+				if bidExt.AdPod == nil {
+					bidExt.AdPod = &models.AdpodBidExt{}
+				}
+				if impCtx.AdpodConfig != nil {
+					bidExt.AdPod.IsAdpodBid = true
+				}
+			}
+
+			var (
+				wbid           models.OwBid
+				wbids          []*models.OwBid
+				oldWinBidFound bool
+			)
+			if rctx.IsCTVRequest && impCtx.AdPod {
 				if CheckWinningBidId(bid.ID, winningAdpodBidIds[impId]) {
 					winningBids.AppendBid(impId, &owbid)
 				}
@@ -254,7 +266,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				bidExt.Nbr = owbid.Nbr
 			}
 
-			if rctx.IsCTVRequest && impCtx.AdpodConfig != nil {
+			if rctx.IsCTVRequest && impCtx.AdPod {
 				bidExt.Nbr = auction.ConvertAPRCToNBRC(impCtx.BidIDToAPRC[bid.ID])
 			} else {
 				// if current bid is winner then update NonBr code for earlier winning bid
@@ -313,6 +325,14 @@ func (m OpenWrap) handleAuctionResponseHook(
 	if len(payload.BidResponse.Ext) != 0 {
 		if err := json.Unmarshal(payload.BidResponse.Ext, &responseExt); err != nil {
 			result.Errors = append(result.Errors, "failed to unmarshal response.ext err: "+err.Error())
+		}
+	}
+
+	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointVAST {
+		if len(rctx.AdpodCtx) > 0 {
+			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
+				IsPodRequest: true,
+			}
 		}
 	}
 
