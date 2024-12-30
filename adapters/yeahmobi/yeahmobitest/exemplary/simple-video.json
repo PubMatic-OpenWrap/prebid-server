@@ -97,7 +97,8 @@
           "type": "video",
           "video": {
             "duration": 300,
-            "primary_category": ""
+            "primary_category": "",
+            "vasttagid": ""
           }
         }
       ]
