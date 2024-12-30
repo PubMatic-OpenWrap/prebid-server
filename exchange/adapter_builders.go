@@ -1,8 +1,6 @@
 package exchange
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/ortbbidder"
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters"
 	ttx "github.com/prebid/prebid-server/v2/adapters/33across"
 	"github.com/prebid/prebid-server/v2/adapters/aax"
@@ -153,6 +151,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/operaads"
 	"github.com/prebid/prebid-server/v2/adapters/oraki"
 	"github.com/prebid/prebid-server/v2/adapters/orbidder"
+	"github.com/prebid/prebid-server/v2/adapters/ortbbidder"
 	"github.com/prebid/prebid-server/v2/adapters/outbrain"
 	"github.com/prebid/prebid-server/v2/adapters/ownadx"
 	"github.com/prebid/prebid-server/v2/adapters/pangle"
@@ -207,6 +206,7 @@ import (
 	"github.com/prebid/prebid-server/v2/adapters/undertone"
 	"github.com/prebid/prebid-server/v2/adapters/unicorn"
 	"github.com/prebid/prebid-server/v2/adapters/unruly"
+	"github.com/prebid/prebid-server/v2/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v2/adapters/vidazoo"
 	"github.com/prebid/prebid-server/v2/adapters/videobyte"
 	"github.com/prebid/prebid-server/v2/adapters/videoheroes"
