@@ -267,6 +267,149 @@ func Test_createTrackers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "response with all details and multibid-multifloor feature enabled",
+			args: args{
+				trackers: map[string]models.OWTracker{},
+				rctx: func() models.RequestCtx {
+					testRctx := rctx
+					testRctx.StartTime = startTime
+					pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
+					testRctx.PriceGranularity = &pg
+					testRctx.AppLovinMax = models.AppLovinMax{
+						MultiFloorsConfig: models.MultiFloorsConfig{
+							Enabled: true,
+							Config: models.ApplovinAdUnitFloors{
+								"adunit-1": []float64{1.2, 1.3, 1.4},
+							},
+						},
+					}
+					testRctx.ImpBidCtx = map[string]models.ImpCtx{
+						"impID-1": {
+							TagID:      "adunit-1",
+							AdUnitName: "adunit-1",
+							SlotName:   "impID-1_adunit-1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									MatchedSlot:      "matchedSlot",
+									PrebidBidderCode: "prebidBidderCode",
+									KGP:              "_AU_@_W_x_H_",
+								},
+								"pubmatic2": {
+									MatchedSlot:      "matchedSlot2",
+									PrebidBidderCode: "prebidBidderCode2",
+									KGP:              "_AU_@_W_x_H_",
+								},
+							},
+							BidFloor:    5.5,
+							BidFloorCur: "EUR",
+							BidCtx: map[string]models.BidCtx{
+								"bidID-1": {
+									EG: 8.7,
+									EN: 8.7,
+									BidExt: models.BidExt{
+										OriginalBidCPMUSD: 0,
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												BidId: "bidID-1",
+												Video: &openrtb_ext.ExtBidPrebidVideo{
+													Duration: 20,
+												},
+												Meta: &openrtb_ext.ExtBidPrebidMeta{
+													AdapterCode: "pubmatic",
+												},
+												Floors: &openrtb_ext.ExtBidPrebidFloors{
+													FloorRule:      "rule1",
+													FloorValue:     6.4,
+													FloorRuleValue: 4.4,
+												},
+												Type: models.Banner,
+											},
+										},
+										MultiBidMultiFloorValue: 4.5,
+									},
+								},
+							},
+						},
+					}
+					testRctx.DeviceCtx.Ext = func() *models.ExtDevice {
+						extDevice := models.ExtDevice{}
+						extDevice.UnmarshalJSON([]byte(`{"atts":1}`))
+						return &extDevice
+					}()
+					return testRctx
+				}(),
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:      "bidID-1",
+									ImpID:   "impID-1",
+									Price:   8.7,
+									W:       250,
+									H:       300,
+									ADomain: []string{"domain.com"},
+									DealID:  "deal-id-1",
+								},
+							},
+							Seat: "pubmatic",
+						},
+					},
+					Cur: models.USD,
+				},
+				pmMkt: map[string]pubmaticMarketplaceMeta{},
+			},
+			want: map[string]models.OWTracker{
+				"bidID-1": {
+					Tracker: models.Tracker{
+						PubID:     5890,
+						PageURL:   "abc.com",
+						Timestamp: startTime,
+						IID:       "loggerIID",
+						ProfileID: "1234",
+						VersionID: "1",
+						Adunit:    "adunit-1",
+						SlotID:    "impID-1_adunit-1",
+						PartnerInfo: models.Partner{
+							PartnerID:              "prebidBidderCode",
+							BidderCode:             "pubmatic",
+							KGPV:                   "adunit-1@250x300",
+							GrossECPM:              8.7,
+							NetECPM:                8.7,
+							BidID:                  "bidID-1",
+							OrigBidID:              "bidID-1",
+							AdSize:                 "250x300",
+							AdDuration:             20,
+							Adformat:               "banner",
+							ServerSide:             1,
+							Advertiser:             "domain.com",
+							FloorValue:             4.5,
+							FloorRuleValue:         4.5,
+							DealID:                 "deal-id-1",
+							PriceBucket:            "8.60",
+							MultiBidMultiFloorFlag: 1,
+						},
+						Platform:  5,
+						SSAI:      "mediatailor",
+						AdPodSlot: 0,
+						TestGroup: 1,
+						Origin:    "publisher.com",
+						ImpID:     "impID-1",
+						LoggerData: models.LoggerData{
+							KGPSV: "adunit-1@250x300",
+						},
+						CustomDimensions: "author=henry",
+						ATTS:             ptrutil.ToPtr(float64(openrtb_ext.IOSAppTrackingStatusRestricted)),
+					},
+					TrackerURL:    "https:?adv=domain.com&af=banner&aps=0&atts=1&au=adunit-1&bc=pubmatic&bidid=bidID-1&cds=author%3Dhenry&di=deal-id-1&dur=20&eg=8.7&en=8.7&frv=4.5&ft=0&fv=4.5&iid=loggerIID&kgpv=adunit-1%40250x300&mbmf=1&orig=publisher.com&origbidid=bidID-1&pb=8.60&pdvid=1&pid=1234&plt=5&pn=prebidBidderCode&psz=250x300&pubid=5890&purl=abc.com&sl=1&slot=impID-1_adunit-1&ss=1&ssai=mediatailor&tgid=1&tst=" + strconv.FormatInt(startTime, 10),
+					Price:         8.7,
+					PriceModel:    "CPM",
+					PriceCurrency: "USD",
+					BidType:       "banner",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -558,6 +701,53 @@ func TestConstructTrackerURL(t *testing.T) {
 				},
 			},
 			want: "//t.pubmatic.com/wt?adv=&af=&aip=3&ap=5&aps=0&asip=8&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pt=1&ptp=4&pubid=0&purl=&sl=1&slot=&ss=0&tgid=0&tst=0",
+		},
+		{
+			name: "all_floors_details_in_tracker_multiBidMultiFloor_enabled",
+			args: args{
+				rctx: models.RequestCtx{
+					TrackerEndpoint: "//t.pubmatic.com/wt",
+					Platform:        models.PLATFORM_APP,
+				},
+				tracker: models.Tracker{
+					PubID:             12345,
+					PageURL:           "www.abc.com",
+					IID:               "98765",
+					ProfileID:         "123",
+					VersionID:         "1",
+					SlotID:            "1234_1234",
+					Adunit:            "adunit",
+					Platform:          1,
+					Origin:            "www.publisher.com",
+					TestGroup:         1,
+					AdPodSlot:         0,
+					FloorSkippedFlag:  ptrutil.ToPtr(0),
+					FloorModelVersion: "test version",
+					FloorSource:       ptrutil.ToPtr(1),
+					FloorType:         1,
+					CustomDimensions:  "traffic=media;age=23",
+					PartnerInfo: models.Partner{
+						PartnerID:              "AppNexus",
+						BidderCode:             "AppNexus1",
+						BidID:                  "6521",
+						OrigBidID:              "6521",
+						GrossECPM:              4.3,
+						NetECPM:                2.5,
+						KGPV:                   "adunit@300x250",
+						AdDuration:             10,
+						Adformat:               models.Banner,
+						AdSize:                 "300x250",
+						ServerSide:             1,
+						Advertiser:             "fb.com",
+						DealID:                 "420",
+						FloorValue:             4.5,
+						FloorRuleValue:         4.5,
+						PriceBucket:            "2.50",
+						MultiBidMultiFloorFlag: 1,
+					},
+				},
+			},
+			want: "//t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&frv=4.5&fskp=0&fsrc=1&ft=1&fv=4.5&iid=98765&kgpv=adunit@300x250&mbmf=1&orig=www.publisher.com&origbidid=6521&pb=2.50&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&sl=1&slot=1234_1234&ss=1&tgid=1&tst=0",
 		},
 	}
 	for _, tt := range tests {

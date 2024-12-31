@@ -30,6 +30,7 @@ type BidExt struct {
 	AdPod                   *AdpodBidExt          `json:"adpod,omitempty"`
 	MultiBidMultiFloorValue float64               `json:"-"`
 	InBannerVideo           bool                  `json:"ibv,omitempty"`
+	ClickTrackers           []string              `json:"clicktrackers,omitempty"`
 }
 
 type AdpodBidExt struct {
