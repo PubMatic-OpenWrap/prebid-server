@@ -2029,7 +2029,7 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234"}`),
 		},
 		{
 			name: "publisherId & adspaceId both are missing",
@@ -2089,7 +2089,7 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234","adbreakId": "7899"}`),
 		},
 		{
 			name: "adspaceId_and_adbreakId_present",
