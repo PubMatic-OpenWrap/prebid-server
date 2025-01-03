@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.20
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250103124418-4d2e1039b322
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -36,7 +36,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.10.0
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yudai/gojsondiff v1.0.0
@@ -51,8 +51,7 @@ require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52
-	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241231130647-0d261d31ec23
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
@@ -84,7 +83,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"git.pubmatic.com/vastunwrap/unwrap"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters"
@@ -182,6 +183,12 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 			}
 		}
 	}
+}
+
+func (e *exchange) RecordFastXMLTestMetrics(ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
+	e.me.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
+	e.me.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
+	e.me.RecordXMLParserResponseMismatch("unwrap", (etreeResp != fastxmlResp))
 }
 
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
