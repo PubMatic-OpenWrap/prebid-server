@@ -17,7 +17,7 @@ func (db *mySqlDB) GetGDPRCountryCodes() (map[string]struct{}, error) {
 	}
 	defer rows.Close()
 
-	// Map to store the country codes
+	// map to store the country codes
 	countryCodes := make(map[string]struct{})
 	for rows.Next() {
 		var countryCode string
@@ -28,7 +28,6 @@ func (db *mySqlDB) GetGDPRCountryCodes() (map[string]struct{}, error) {
 		countryCodes[countryCode] = struct{}{}
 	}
 
-	//TO-DO - partial error is allowed?
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}

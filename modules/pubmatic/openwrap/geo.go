@@ -38,8 +38,8 @@ type geoHandler struct {
 	geoService netacuity.NetAcuity
 }
 
-// NewGeoHandler initializes and returns a new GeoHandler.
-func NewGeoHandler() *geoHandler {
+// NewGeo initializes and returns a new GeoHandler.
+func NewGeo() *geoHandler {
 	return &geoHandler{
 		geoService: netacuity.NetAcuity{},
 	}
@@ -64,30 +64,28 @@ const (
 )
 
 // Handler for /geo endpoint
-func (handler *geoHandler) Handle(w http.ResponseWriter, r *http.Request) {
+func (handler *geoHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	var pubIdStr string
 	metricEngine := ow.GetMetricEngine()
+	metricLabels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
 	defer func() {
+		metricEngine.RecordRequest(metricLabels)
 		if r := recover(); r != nil {
 			metricEngine.RecordOpenWrapServerPanicStats(ow.cfg.Server.HostName, "HandleGeoEndpoint")
 			glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%s]", string(debug.Stack()), r, pubIdStr)
 			return
 		}
 	}()
-	metricEngine.RecordRequest(metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK})
 
 	pubIdStr = r.URL.Query().Get(models.PublisherID)
 	_, err := strconv.Atoi(pubIdStr)
 	if err != nil {
 		glog.Errorf("[geo] error:[invalid pubid passed:%s], [requestType]:%v [url]:%v [origin]:%v [referer]:%v", err.Error(), models.EndpointGeo,
 			r.URL.RequestURI(), r.Header.Get(OriginHeaderKey), r.Header.Get(RefererKey))
-
-		//TO-Do keep this stat?
-		metricEngine.RecordBadRequests(models.EndpointGeo, pubIdStr, -1)
 		w.WriteHeader(http.StatusBadRequest)
+		metricLabels.RequestStatus = prometheus.RequestStatusBadInput
 		return
 	}
-	metricEngine.RecordPublisherRequests(models.EndpointGeo, pubIdStr, "")
 
 	ip := util.GetIP(r)
 	w.Header().Set(headerContentType, headerContentTypeValue)

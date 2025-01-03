@@ -29,7 +29,7 @@ type feature struct {
 	bidRecovery         bidRecovery
 	appLovinMultiFloors appLovinMultiFloors
 	impCountingMethod   impCountingMethod
-	gdprCountryCodes    map[string]struct{}
+	gdprCountryCodes    gdprCountryCodes
 }
 
 var fe *feature
@@ -63,7 +63,7 @@ func New(config Config) *feature {
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 			impCountingMethod: newImpCountingMethod(),
-			gdprCountryCodes:  make(map[string]struct{}),
+			gdprCountryCodes:  newGDPRCountryCodes(),
 		}
 	})
 	return fe
@@ -124,26 +124,6 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
 	fe.updateImpCountingMethodEnabledBidders()
-
-	if err != nil {
-		glog.Error(err.Error())
-	}
-}
-
-func (fe *feature) updateGDPRCountryCodes() {
-	var err error
-	//fetch gdpr countrycodes
-	gdprCountryCodes, errorGDPRCountryUpdate := fe.cache.GetGDPRCountryCodes()
-	if errorGDPRCountryUpdate != nil {
-		err = models.ErrorWrap(err, errorGDPRCountryUpdate)
-	}
-
-	//set updated countrycodes in map
-	fe.Lock()
-	if gdprCountryCodes != nil {
-		fe.gdprCountryCodes = gdprCountryCodes
-	}
-	fe.Unlock()
 
 	if err != nil {
 		glog.Error(err.Error())
