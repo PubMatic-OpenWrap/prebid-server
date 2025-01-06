@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"git.pubmatic.com/vastunwrap/unwrap"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v2/privacy"
@@ -57,7 +56,6 @@ type extCacheInstructions struct {
 type Exchange interface {
 	// HoldAuction executes an OpenRTB v2.5 Auction.
 	HoldAuction(ctx context.Context, r *AuctionRequest, debugLog *DebugLog) (*AuctionResponse, error)
-	RecordFastXMLTestMetrics(ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse)
 }
 
 // IdFetcher can find the user's ID for a specific Bidder.

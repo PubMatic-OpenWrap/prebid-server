@@ -185,10 +185,10 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 	}
 }
 
-func (e *exchange) RecordFastXMLTestMetrics(ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
-	e.me.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
-	e.me.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
-	e.me.RecordXMLParserResponseMismatch("unwrap", (etreeResp != fastxmlResp))
+func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
+	metricsEngine.RecordXMLParserResponseMismatch("unwrap", string(etreeResp.Response) != string(fastxmlResp.Response))
 }
 
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {

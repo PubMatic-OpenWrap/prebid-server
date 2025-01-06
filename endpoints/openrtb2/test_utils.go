@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"git.pubmatic.com/vastunwrap/unwrap"
 	"github.com/buger/jsonparser"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -1202,9 +1201,6 @@ func (te *exchangeTestWrapper) HoldAuction(ctx context.Context, r *exchange.Auct
 
 	// Call HoldAuction() implementation as written in the exchange package
 	return te.ex.HoldAuction(ctx, r, debugLog)
-}
-
-func (te *exchangeTestWrapper) RecordFastXMLTestMetrics(ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
 }
 
 // buildTestExchange returns an exchange with mock bidder servers and mock currency conversion server
