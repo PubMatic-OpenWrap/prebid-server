@@ -25,6 +25,7 @@ func (db *mySqlDB) GetGDPRCountryCodes() (map[string]struct{}, error) {
 			glog.Error("ErrRowScanFailed GetGDPRCountryCodes Err: ", err.Error())
 			continue
 		}
+		//TO-DO keeping case-sensitive?
 		countryCodes[countryCode] = struct{}{}
 	}
 

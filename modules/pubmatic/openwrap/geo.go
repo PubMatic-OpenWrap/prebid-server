@@ -10,7 +10,6 @@ import (
 
 	"git.pubmatic.com/PubMatic/go-common/util"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -33,18 +32,6 @@ const (
 	headerAccessControlAllowOriginValue = "*"
 )
 
-// geoHandler provides a handler for geo lookups.
-type geoHandler struct {
-	geoService netacuity.NetAcuity
-}
-
-// NewGeo initializes and returns a new GeoHandler.
-func NewGeo() *geoHandler {
-	return &geoHandler{
-		geoService: netacuity.NetAcuity{},
-	}
-}
-
 var gppSectionIDs = map[string]int{
 	"ca": 8,
 	"va": 9,
@@ -64,7 +51,7 @@ const (
 )
 
 // Handler for /geo endpoint
-func (handler *geoHandler) Handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	var pubIdStr string
 	metricEngine := ow.GetMetricEngine()
 	metricLabels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
@@ -77,6 +64,11 @@ func (handler *geoHandler) Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		metricLabels.RequestStatus = prometheus.RequestStatusBadInput
+		return
+	}
 	pubIdStr = r.URL.Query().Get(models.PublisherID)
 	_, err := strconv.Atoi(pubIdStr)
 	if err != nil {
@@ -91,7 +83,7 @@ func (handler *geoHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(headerContentType, headerContentTypeValue)
 	w.Header().Set(headerAccessControlAllowOrigin, "*")
 	success := false
-	geoInfo, _ := handler.geoService.LookUp(ip)
+	geoInfo, _ := ow.geoInfoFetcher.LookUp(ip)
 	if geoInfo != nil {
 		if geoInfo.ISOCountryCode != "" {
 			success = true
