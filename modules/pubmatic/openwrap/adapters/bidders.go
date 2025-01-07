@@ -380,23 +380,21 @@ func builderBeachfront(params BidderParameters) (json.RawMessage, error) {
 func builderSmaato(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
-	var fields []string
 
-	if publisherID, ok := getString(params.FieldMap["publisherId"]); !ok {
+	publisherID, ok := getString(params.FieldMap["publisherId"])
+	if !ok {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "publisherId")
-	} else {
-		fields = append(fields, fmt.Sprintf(`"publisherId":"%s"`, publisherID))
 	}
+	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
 
 	if adspaceID, ok := getString(params.FieldMap["adspaceId"]); ok {
-		fields = append(fields, fmt.Sprintf(`"adspaceId":"%s"`, adspaceID))
+		fmt.Fprintf(&jsonStr, `,"adspaceId":"%s"`, adspaceID)
 	}
 
 	if adbreakID, ok := getString(params.FieldMap["adbreakId"]); ok {
-		fields = append(fields, fmt.Sprintf(`"adbreakId":"%s"`, adbreakID))
+		fmt.Fprintf(&jsonStr, `,"adbreakId":"%s"`, adbreakID)
 	}
 
-	jsonStr.WriteString(strings.Join(fields, ","))
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
