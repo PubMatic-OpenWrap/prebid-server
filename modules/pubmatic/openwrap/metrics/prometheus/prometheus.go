@@ -101,6 +101,9 @@ type Metrics struct {
 
 	//IBV request
 	ibvRequests *prometheus.CounterVec
+
+	//geo lookup
+	geoLookUpFailure *prometheus.CounterVec
 }
 
 const (
@@ -399,6 +402,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count bid recovery status for secondary auction",
 		[]string{pubIDLabel, profileIDLabel, successLabel},
 	)
+
+	metrics.geoLookUpFailure = newCounter(cfg, promRegistry,
+		"geo_lookup_fail",
+		"Count of geo lookup failures",
+		[]string{endpointLabel})
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
@@ -749,4 +757,10 @@ func (m *Metrics) RecordEndpointResponseSize(endpoint string, bodySize float64) 
 	m.endpointResponseSize.With(prometheus.Labels{
 		endpointLabel: endpoint,
 	}).Observe(float64(bodySize) / 1024)
+}
+
+func (m *Metrics) RecordGeoLookupFailure(endpoint string) {
+	m.geoLookUpFailure.With(prometheus.Labels{
+		endpointLabel: endpoint,
+	}).Inc()
 }

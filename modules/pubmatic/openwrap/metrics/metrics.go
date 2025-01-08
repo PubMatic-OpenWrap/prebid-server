@@ -97,6 +97,7 @@ type MetricsEngine interface {
 	//AppLovinMax metrics
 	RecordFailedParsingItuneID(pubId, profId string)
 	RecordEndpointResponseSize(endpoint string, bodySize float64)
+	RecordGeoLookupFailure(endpoint string)
 
 	//IBV metric
 	RecordIBVRequest(pubId, profId string)

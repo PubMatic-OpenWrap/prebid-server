@@ -479,6 +479,7 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGeo         = "geo"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -549,6 +550,7 @@ const (
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
+	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
 )
 
 // constants for owlogger Integration Type

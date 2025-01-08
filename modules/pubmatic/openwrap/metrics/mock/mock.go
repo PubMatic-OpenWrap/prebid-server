@@ -130,6 +130,30 @@ func (mr *MockMetricsEngineMockRecorder) RecordBadRequests(arg0, arg1, arg2 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBadRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBadRequests), arg0, arg1, arg2)
 }
 
+// RecordBidRecoveryResponseTime mocks base method
+func (m *MockMetricsEngine) RecordBidRecoveryResponseTime(arg0, arg1 string, arg2 time.Duration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordBidRecoveryResponseTime", arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryResponseTime indicates an expected call of RecordBidRecoveryResponseTime
+func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryResponseTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryResponseTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryResponseTime), arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryStatus mocks base method
+func (m *MockMetricsEngine) RecordBidRecoveryStatus(arg0, arg1 string, arg2 bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordBidRecoveryStatus", arg0, arg1, arg2)
+}
+
+// RecordBidRecoveryStatus indicates an expected call of RecordBidRecoveryStatus
+func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryStatus), arg0, arg1, arg2)
+}
+
 // RecordBidResponseByDealCountInHB mocks base method
 func (m *MockMetricsEngine) RecordBidResponseByDealCountInHB(arg0, arg1, arg2, arg3 string) {
 	m.ctrl.T.Helper()
@@ -298,16 +322,16 @@ func (mr *MockMetricsEngineMockRecorder) RecordFailedParsingItuneID(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordFailedParsingItuneID", reflect.TypeOf((*MockMetricsEngine)(nil).RecordFailedParsingItuneID), arg0, arg1)
 }
 
-// RecordIBVRequest mocks base method
-func (m *MockMetricsEngine) RecordIBVRequest(arg0, arg1 string) {
+// RecordGeoLookupFailure mocks base method
+func (m *MockMetricsEngine) RecordGeoLookupFailure(arg0 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordIBVRequest", arg0, arg1)
+	m.ctrl.Call(m, "RecordGeoLookupFailure", arg0)
 }
 
-// RecordIBVRequest indicates an expected call of RecordIBVRequest
-func (mr *MockMetricsEngineMockRecorder) RecordIBVRequest(arg0, arg1 interface{}) *gomock.Call {
+// RecordGeoLookupFailure indicates an expected call of RecordGeoLookupFailure
+func (mr *MockMetricsEngineMockRecorder) RecordGeoLookupFailure(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIBVRequest", reflect.TypeOf((*MockMetricsEngine)(nil).RecordIBVRequest), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoLookupFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoLookupFailure), arg0)
 }
 
 // RecordGetProfileDataTime mocks base method
@@ -320,6 +344,18 @@ func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 func (mr *MockMetricsEngineMockRecorder) RecordGetProfileDataTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGetProfileDataTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGetProfileDataTime), arg0)
+}
+
+// RecordIBVRequest mocks base method
+func (m *MockMetricsEngine) RecordIBVRequest(arg0, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordIBVRequest", arg0, arg1)
+}
+
+// RecordIBVRequest indicates an expected call of RecordIBVRequest
+func (mr *MockMetricsEngineMockRecorder) RecordIBVRequest(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordIBVRequest", reflect.TypeOf((*MockMetricsEngine)(nil).RecordIBVRequest), arg0, arg1)
 }
 
 // RecordImpDisabledViaConfigStats mocks base method
@@ -838,31 +874,7 @@ func (mr *MockMetricsEngineMockRecorder) RecordVideoInstlImpsStats(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVideoInstlImpsStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordVideoInstlImpsStats), arg0, arg1)
 }
 
-// RecordBidRecoveryStatus mocks base method.
-func (m *MockMetricsEngine) RecordBidRecoveryStatus(arg0 string, arg1 string, arg2 bool) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordBidRecoveryStatus", arg0, arg1, arg2)
-}
-
-// RecordBidRecoveryStatus indicates an expected call of RecordBidRecoveryStatus.
-func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryStatus", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryStatus), arg0, arg1, arg2)
-}
-
-// RecordBidRecoveryResponseTime mocks base method.
-func (m *MockMetricsEngine) RecordBidRecoveryResponseTime(arg0 string, arg1 string, arg2 time.Duration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordBidRecoveryResponseTime", arg0, arg1, arg2)
-}
-
-// RecordBidRecoveryResponseTime indicates an expected call of RecordBidRecoveryStatus.
-func (mr *MockMetricsEngineMockRecorder) RecordBidRecoveryResponseTime(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordBidRecoveryResponseTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordBidRecoveryResponseTime), arg0, arg1, arg2)
-}
-
-// Shutdown mocks base method.
+// Shutdown mocks base method
 func (m *MockMetricsEngine) Shutdown() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Shutdown")

@@ -399,6 +399,18 @@ func TestRecordBidRecoveryResponseTime(t *testing.T) {
 	assertHistogram(t, "bid_recovery_response_time", resultingHistogram, 2, 200)
 }
 
+func TestRecordGeoLookUpFailure(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordGeoLookupFailure("geo")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "geo_lookup_fail", m.geoLookUpFailure,
+		expectedCount, prometheus.Labels{
+			endpointLabel: "geo",
+		})
+}
+
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {
