@@ -720,11 +720,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			rctx.NewReqExt = &models.RequestExt{}
 		}
 		rctx.NewReqExt.Prebid.StrictVastMode = strictVastMode
-		for i := 0; i < len(bidRequest.Imp); i++ {
-			if bidRequest.Imp[i].Video != nil {
-				bidRequest.Imp[i].Video.Protocols = UpdateImpProtocols(bidRequest.Imp[i].Video.Protocols)
-			}
-		}
 	}
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = append(bidRequest.Cur, cur)
@@ -739,18 +734,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	bidRequest.Source.TID = bidRequest.ID
 
 	for i := 0; i < len(bidRequest.Imp); i++ {
-		// TODO: move this to PBS-Core
-		if bidRequest.Imp[i].BidFloor == 0 {
-			bidRequest.Imp[i].BidFloorCur = ""
-		} else if bidRequest.Imp[i].BidFloorCur == "" {
-			bidRequest.Imp[i].BidFloorCur = "USD"
-		}
-
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
-		bidRequest.Imp[i].Ext = rctx.ImpBidCtx[bidRequest.Imp[i].ID].NewExt
+		m.applyImpChanges(rctx, &bidRequest.Imp[i])
 	}
 
 	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
@@ -839,6 +827,43 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 	}
 }
+
+func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+	// TODO: move this to PBS-Core
+	if imp.BidFloor == 0 {
+		imp.BidFloorCur = ""
+	} else if imp.BidFloorCur == "" {
+		imp.BidFloorCur = "USD"
+	}
+
+	if imp.Video != nil {
+		m.applyImpVideoChanges(rCtx, imp.Video)
+	}
+
+	//update impression extensions
+	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
+}
+
+func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
+	//update protocols
+	if rCtx.NewReqExt != nil && rCtx.NewReqExt.Prebid.StrictVastMode {
+		video.Protocols = UpdateImpProtocols(video.Protocols)
+	}
+
+	//update video.plcmt from video.placements
+	if video.Placement > 0 && video.Plcmt == 0 {
+		//TODO: move to ConvertUpTo26 once upgraded to prebid3.x version
+		switch video.Placement {
+		case adcom1.VideoPlacementInStream:
+			video.Plcmt = adcom1.VideoPlcmtInstream
+		case adcom1.VideoPlacementInBanner:
+			video.Plcmt = adcom1.VideoPlcmtNoContent
+		case adcom1.VideoPlacementAlwaysVisible:
+			video.Plcmt = adcom1.VideoPlcmtInterstitial
+		}
+	}
+}
+
 func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.AdConfig, imp *openrtb2.Imp, conversions currency.Conversions) (float64, string) {
 	bidfloor := imp.BidFloor
 	bidfloorcur := imp.BidFloorCur

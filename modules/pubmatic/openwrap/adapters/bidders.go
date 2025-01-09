@@ -381,16 +381,18 @@ func builderSmaato(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
 
-	if publisherID, ok := getString(params.FieldMap["publisherId"]); !ok {
+	publisherID, ok := getString(params.FieldMap["publisherId"])
+	if !ok {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "publisherId")
-	} else {
-		fmt.Fprintf(&jsonStr, `"publisherId":"%s",`, publisherID)
+	}
+	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
+
+	if adspaceID, ok := getString(params.FieldMap["adspaceId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"adspaceId":"%s"`, adspaceID)
 	}
 
-	if adspaceID, ok := getString(params.FieldMap["adspaceId"]); !ok {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "adspaceId")
-	} else {
-		fmt.Fprintf(&jsonStr, `"adspaceId":"%s"`, adspaceID)
+	if adbreakID, ok := getString(params.FieldMap["adbreakId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"adbreakId":"%s"`, adbreakID)
 	}
 
 	jsonStr.WriteByte('}')
@@ -744,6 +746,46 @@ func builderCompass(params BidderParameters) (json.RawMessage, error) {
 	//  len=0 (no mandatory params present)
 	if jsonStr.Len() == 1 {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}
+
+// builderOpenweb for building json object for Openweb bidder
+func builderOpenweb(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	var aid int
+	var placementID, org string
+	var ok bool
+
+	if placementID, ok = getString(params.FieldMap["placementId"]); ok {
+		fmt.Fprintf(&jsonStr, `"placementId":"%s"`, placementID)
+	}
+
+	if placementID == "" {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
+	}
+
+	oneOf := []string{"aid", "org"}
+	for _, param := range oneOf {
+		if param == "aid" {
+			if aid, ok = getInt(params.FieldMap["aid"]); ok {
+				fmt.Fprintf(&jsonStr, `,"aid":%d`, aid)
+				break
+			}
+		} else if param == "org" {
+			if org, ok = getString(params.FieldMap["org"]); ok {
+				fmt.Fprintf(&jsonStr, `,"org":"%s"`, org)
+				break
+			}
+		}
+	}
+
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['org']")
 	}
 
 	jsonStr.WriteByte('}')
