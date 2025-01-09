@@ -2002,6 +2002,19 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 		want json.RawMessage
 	}{
 		{
+			name: "all_missing",
+			args: args{
+				reqID:       "",
+				width:       nil,
+				height:      nil,
+				fieldMap:    map[string]interface{}{},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
 			name: "publisherId missing",
 			args: args{
 
@@ -2009,6 +2022,7 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				height: nil,
 				fieldMap: map[string]interface{}{
 					"adspaceId": "1234",
+					"adbreakId": "4567",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderSmaato),
@@ -2029,23 +2043,25 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234"}`),
 		},
 		{
-			name: "publisherId & adspaceId both are missing",
+			name: "adbreakId missing",
 			args: args{
-				reqID:       "",
-				width:       nil,
-				height:      nil,
-				fieldMap:    map[string]interface{}{},
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234"}`),
 		},
 		{
-			name: "All params are present",
+			name: "publisherId_adspaceId__present",
 			args: args{
 
 				width:  nil,
@@ -2059,6 +2075,53 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
 			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456"}`),
+		},
+		{
+			name: "publisherId_adbreakId__present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adbreakId":   "3456",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: json.RawMessage(`{"publisherId": "1234","adbreakId": "3456"}`),
+		},
+		{
+			name: "adspaceId_and_adbreakId_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"adspaceId": "1234",
+					"adbreakId": "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
+			name: "all_params_are_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adspaceId":   "3456",
+					"adbreakId":   "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456","adbreakId": "7899"}`),
 		},
 	}
 	for _, tt := range tests {
