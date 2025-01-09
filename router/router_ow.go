@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	unwrap "git.pubmatic.com/vastunwrap/unwrap"
-	"github.com/PubMatic-OpenWrap/prebid-server/v2/exchange"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-server/v2/exchange"
 	middleware "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/middleware/adpod"
 )
 
