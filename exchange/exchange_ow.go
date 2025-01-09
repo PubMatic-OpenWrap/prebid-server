@@ -186,6 +186,8 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 }
 
 func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ProcessingTime)
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ProcessingTime)
 	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
 	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
 	metricsEngine.RecordXMLParserResponseMismatch("unwrap", string(etreeResp.Response) != string(fastxmlResp.Response))
@@ -228,8 +230,8 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 }
 
 func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, vastBidderInfo.XMLParserTime)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, vastBidderInfo.EtreeParserTime)
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, method, vastBidderInfo.XMLParserTime)
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, method, vastBidderInfo.EtreeParserTime)
 	metricsEngine.RecordXMLParserResponseMismatch(method, vastBidderInfo.IsRespMismatch)
 }
 
