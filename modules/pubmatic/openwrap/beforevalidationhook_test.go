@@ -2375,6 +2375,229 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 	}
 }
 
+func TestOpenWrap_applyImpChanges(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputImp    *openrtb2.Imp
+		rCtx        models.RequestCtx
+		expectedImp *openrtb2.Imp
+	}{
+		{
+			name: "empty_bidfloor",
+			inputImp: &openrtb2.Imp{
+				ID:          "imp1",
+				BidFloor:    0,
+				BidFloorCur: "USD",
+			},
+			rCtx: models.RequestCtx{},
+			expectedImp: &openrtb2.Imp{
+				ID:          "imp1",
+				BidFloor:    0,
+				BidFloorCur: "",
+			},
+		},
+		{
+			name: "empty_bidfloorcur",
+			inputImp: &openrtb2.Imp{
+				ID:          "imp1",
+				BidFloor:    1.0,
+				BidFloorCur: "",
+			},
+			rCtx: models.RequestCtx{},
+			expectedImp: &openrtb2.Imp{
+				ID:          "imp1",
+				BidFloor:    1.0,
+				BidFloorCur: "USD",
+			},
+		},
+		{
+			name: "apply_imp_video_changes",
+			inputImp: &openrtb2.Imp{
+				ID: "imp3",
+				Video: &openrtb2.Video{
+					Protocols: []adcom1.MediaCreativeSubtype{
+						adcom1.CreativeVAST10,
+						adcom1.CreativeVAST20},
+					Placement: adcom1.VideoPlacementInStream,
+				},
+			},
+			rCtx: models.RequestCtx{
+				NewReqExt: &models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+								StrictVastMode: true,
+							},
+						},
+					},
+				},
+			},
+			expectedImp: &openrtb2.Imp{
+				ID: "imp3",
+				Video: &openrtb2.Video{
+					Protocols: []adcom1.MediaCreativeSubtype{
+						adcom1.CreativeVAST10,
+						adcom1.CreativeVAST20,
+						adcom1.CreativeVAST30,
+						adcom1.CreativeVAST30Wrapper,
+						adcom1.CreativeVAST40,
+						adcom1.CreativeVAST40Wrapper},
+					Placement: adcom1.VideoPlacementInStream,
+					Plcmt:     adcom1.VideoPlcmtInstream,
+				},
+			},
+		},
+		{
+			name: "Impression extensions updated",
+			inputImp: &openrtb2.Imp{
+				ID: "imp5",
+			},
+			rCtx: models.RequestCtx{
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp5": {
+						NewExt: []byte(`{"key":"value"}`),
+					},
+				},
+			},
+			expectedImp: &openrtb2.Imp{
+				ID:  "imp5",
+				Ext: []byte(`{"key":"value"}`),
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := &OpenWrap{}
+			m.applyImpChanges(test.rCtx, test.inputImp)
+			assert.Equal(t, test.expectedImp, test.inputImp)
+		})
+	}
+}
+
+func TestOpenWrap_applyImpVideoChanges(t *testing.T) {
+	tests := []struct {
+		name          string
+		inputVideo    *openrtb2.Video
+		rCtx          models.RequestCtx
+		expectedVideo *openrtb2.Video
+	}{
+		{
+			name: "strictvastmode_enabled",
+			inputVideo: &openrtb2.Video{
+				Protocols: []adcom1.MediaCreativeSubtype{
+					adcom1.CreativeVAST10,
+					adcom1.CreativeVAST20},
+			},
+			rCtx: models.RequestCtx{
+				NewReqExt: &models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+								StrictVastMode: true,
+							},
+						},
+					},
+				},
+			},
+			expectedVideo: &openrtb2.Video{
+				Protocols: []adcom1.MediaCreativeSubtype{
+					adcom1.CreativeVAST10,
+					adcom1.CreativeVAST20,
+					adcom1.CreativeVAST30,
+					adcom1.CreativeVAST30Wrapper,
+					adcom1.CreativeVAST40,
+					adcom1.CreativeVAST40Wrapper},
+			},
+		},
+		{
+			name: "video.plcmt_present",
+			inputVideo: &openrtb2.Video{
+				Placement: 0,
+				Plcmt:     adcom1.VideoPlcmtInterstitial,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: 0,
+				Plcmt:     adcom1.VideoPlcmtInterstitial,
+			},
+		},
+		{
+			name: "video.placement_video.plcmt_present",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementAlwaysVisible,
+				Plcmt:     adcom1.VideoPlcmtInterstitial,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementAlwaysVisible,
+				Plcmt:     adcom1.VideoPlcmtInterstitial,
+			},
+		},
+		{
+			name: "video.placement=instream",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInStream,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInStream,
+				Plcmt:     adcom1.VideoPlcmtInstream,
+			},
+		},
+		{
+			name: "video.placement=interstitial",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementAlwaysVisible,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementAlwaysVisible,
+				Plcmt:     adcom1.VideoPlcmtInterstitial,
+			},
+		},
+		{
+			name: "video.placement=inbanner",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInBanner,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInBanner,
+				Plcmt:     adcom1.VideoPlcmtNoContent,
+			},
+		},
+		{
+			name: "video.placement=inarticle",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInArticle,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInArticle,
+			},
+		},
+		{
+			name: "video.placement=infeed",
+			inputVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInFeed,
+			},
+			rCtx: models.RequestCtx{},
+			expectedVideo: &openrtb2.Video{
+				Placement: adcom1.VideoPlacementInFeed,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			m := &OpenWrap{}
+			m.applyImpVideoChanges(test.rCtx, test.inputVideo)
+			assert.Equal(t, test.expectedVideo, test.inputVideo)
+		})
+	}
+}
+
 func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -5041,7 +5264,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					DebugMessages: []string{`new imp: {"28635736ddc2bb2":{"ImpID":"28635736ddc2bb2","TagID":"adunit","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":1,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":false,"Video":{"mimes":["video/3gpp","video/mp4"],"minduration":10,"maxduration":40,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"Native":null,"IncomingSlots":["280x360"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@0x0","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"usepodconfig":true}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 					AnalyticsTags: hookanalytics.Analytics{},
 				},
-				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"plcmt":3,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"plcmt":3,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 				error:                 false,
 				nilCurrencyConversion: false,
 				doMutate:              true,
@@ -5176,7 +5399,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					DebugMessages: []string{`new imp: {"28635736ddc2bb2":{"AdpodConfig":null,"AdserverURL":"","AdUnitName":"adunit","Banner":false,"BannerAdUnitCtx":{"AllowedConnectionTypes":null,"AppliedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"IsRegex":false,"MatchedRegex":"","MatchedSlot":"adunit","SelectedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"UsingDefaultConfig":false},"BidCtx":{},"BidderError":"","Bidders":{"appnexus":{"IsRegex":false,"KGP":"_AU_@_W_x_H_","KGPV":"","MatchedSlot":"adunit@0x0","Params":{"adtag":"45343","placementId":0,"site":"12313"},"PartnerID":2,"PrebidBidderCode":"appnexus","VASTTagFlags":null}},"BidFloor":1,"BidFloorCur":"USD","BidIDToAPRC":null,"BidIDToDur":null,"Div":"","ImpAdPodCfg":null,"ImpID":"28635736ddc2bb2","IncomingSlots":["280x360"],"IsAdPodRequest":false,"IsRewardInventory":null,"Native":null,"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"adtag":"45343","placementId":0,"site":"12313"}}}},"NonMapped":{},"Secure":0,"SlotName":"adunit","TagID":"adunit","Type":"video","Video":{"api":[1,2],"battr":[5,6,7],"companiontype":[1,2,3],"delivery":[2],"h":360,"linearity":1,"maxbitrate":2000,"maxduration":40,"maxextended":10,"mimes":["video/3gpp","video/mp4"],"minbitrate":1000,"minduration":10,"placement":5,"playbackend":1,"playbackmethod":[1],"pos":7,"protocols":[2,3,5,6],"sequence":1,"skip":1,"skipafter":10,"skipmin":5,"startdelay":1,"w":280},"VideoAdUnitCtx":{"AllowedConnectionTypes":null,"AppliedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"IsRegex":false,"MatchedRegex":"","MatchedSlot":"adunit","SelectedSlotAdUnitConfig":{"adrule":[{"maxduration":30,"maxseq":3,"mimes":null,"minduration":20,"poddur":60,"podid":"dynamic-1"},{"maxduration":15,"mimes":null,"minduration":15,"podid":"structured-1"}],"video":{"config":{"h":480,"mimes":["video/mp4","video/mpeg"],"w":640},"enabled":true}},"UsingDefaultConfig":false}}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 					AnalyticsTags: hookanalytics.Analytics{},
 				},
-				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				bidRequest:            json.RawMessage(`{"id":"1559039248176","imp":[{"id":"28635736ddc2bb2-dynamic-1-0","video":{"mimes":["video/3gpp","video/mp4"],"minduration":20,"maxduration":30,"startdelay":1,"maxseq":3,"poddur":60,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"dynamic-1","placement":5,"plcmt":3,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}},{"id":"28635736ddc2bb2-structured-1-1","video":{"mimes":["video/3gpp","video/mp4"],"minduration":15,"maxduration":15,"startdelay":1,"protocols":[2,3,5,6],"w":280,"h":360,"podid":"structured-1","placement":5,"plcmt":3,"linearity":1,"skip":1,"skipmin":5,"skipafter":10,"sequence":1,"battr":[5,6,7],"maxextended":10,"minbitrate":1000,"maxbitrate":2000,"playbackmethod":[1],"playbackend":1,"delivery":[2],"pos":7,"api":[1,2],"companiontype":[1,2,3]},"displaymanager":"PubMaticSDK","displaymanagerver":"PubMaticSDK-1.0","instl":1,"tagid":"adunit","bidfloor":1,"bidfloorcur":"USD","secure":0,"iframebuster":["1"],"exp":1,"ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"id":"123","name":"EbayShopping","domain":"ebay.com","cat":["IAB1-5"],"sectioncat":["IAB1-5"],"pagecat":["IAB1-5"],"page":"http://ebay.com/inte/automation/s2s/pwt_parameter_validation_muti_slot_multi_size.html?appnexus_deal_priority=6\u0026appnexus_video_fixedbid=10\u0026videobid=4\u0026cat=IAB20-3","ref":"http://ebay.com/home","search":"NewCloths","mobile":1,"privacypolicy":1,"publisher":{"id":"5890","name":"Test Publisher","cat":["IAB1-5"],"domain":"publisher.com"},"content":{"id":"381d2e0b-548d-4f27-bfdd-e6e66f43557e","episode":1,"title":"StarWars","series":"StarWars","season":"Season3","artist":"GeorgeLucas","genre":"Action","album":"Action","isrc":"2","producer":{"id":"123","name":"GaryKurtz","cat":["IAB1-5","IAB1-6"],"domain":"producer.com"},"url":"http://www.pubmatic.com/test/","cat":["IAB1-1","IAB1-2"],"prodq":1,"videoquality":1,"context":1,"contentrating":"MPAA","userrating":"9-Stars","qagmediarating":1,"keywords":"ActionMovies","livestream":1,"sourcerelationship":1,"len":12000,"language":"en","embeddable":1},"keywords":"Cloths"},"device":{"dnt":0,"lmt":0,"ua":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36","ip":"172.16.8.74","ipv6":"2001:db8::8a2e:370:7334","devicetype":1,"make":"Apple","model":"iPhone X","os":"iOS","osv":"10","hwv":"10x","h":768,"w":1366,"ppi":4096,"pxratio":1.3,"js":1,"flashver":"1.1","language":"en","carrier":"VERIZON","mccmnc":"310-005","connectiontype":2,"ifa":"EA7583CD-A667-48BC-B806-42ECB2B48606","didsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","didmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","dpidmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606","macsha1":"EA7583CD-A667-48BC-B806-42ECB2B48606","macmd5":"EA7583CD-A667-48BC-B806-42ECB2B48606"},"user":{"id":"45067fec-eab7-4ca0-ad3a-87b01f21846a","buyeruid":"45067fec-eab7-4ca0-ad3a-87b01f21846a","yob":1990,"gender":"M","keywords":"Movies","customdata":"StarWars"},"at":1,"tmax":500,"source":{"fd":1,"tid":"1559039248176","pchain":"pchaintagid"},"regs":{"ext":{"gdpr":1,"us_privacy":"1YNN"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true,"includebrandcategory":{"primaryadserver":0,"publisher":"","withcategory":false,"translatecategories":false,"skipdedup":true}},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"4444","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 				error:                 false,
 				nilCurrencyConversion: false,
 				doMutate:              true,

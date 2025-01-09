@@ -46,22 +46,23 @@ type Tracker struct {
 
 // Partner partner information to be logged in tracker object
 type Partner struct {
-	PartnerID      string
-	BidderCode     string
-	KGPV           string
-	GrossECPM      float64
-	NetECPM        float64
-	BidID          string
-	OrigBidID      string
-	AdSize         string
-	AdDuration     int
-	Adformat       string
-	ServerSide     int
-	Advertiser     string
-	FloorValue     float64
-	FloorRuleValue float64
-	DealID         string
-	PriceBucket    string
+	PartnerID              string
+	BidderCode             string
+	KGPV                   string
+	GrossECPM              float64
+	NetECPM                float64
+	BidID                  string
+	OrigBidID              string
+	AdSize                 string
+	AdDuration             int
+	Adformat               string
+	ServerSide             int
+	Advertiser             string
+	FloorValue             float64
+	FloorRuleValue         float64
+	DealID                 string
+	PriceBucket            string
+	MultiBidMultiFloorFlag int
 }
 
 // LoggerData: this data to be needed in logger

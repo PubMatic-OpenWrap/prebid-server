@@ -2002,6 +2002,19 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 		want json.RawMessage
 	}{
 		{
+			name: "all_missing",
+			args: args{
+				reqID:       "",
+				width:       nil,
+				height:      nil,
+				fieldMap:    map[string]interface{}{},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
 			name: "publisherId missing",
 			args: args{
 
@@ -2009,6 +2022,7 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				height: nil,
 				fieldMap: map[string]interface{}{
 					"adspaceId": "1234",
+					"adbreakId": "4567",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderSmaato),
@@ -2029,23 +2043,25 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234"}`),
 		},
 		{
-			name: "publisherId & adspaceId both are missing",
+			name: "adbreakId missing",
 			args: args{
-				reqID:       "",
-				width:       nil,
-				height:      nil,
-				fieldMap:    map[string]interface{}{},
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.BidderSmaato),
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
-			want: nil,
+			want: json.RawMessage(`{"publisherId": "1234"}`),
 		},
 		{
-			name: "All params are present",
+			name: "publisherId_adspaceId__present",
 			args: args{
 
 				width:  nil,
@@ -2059,6 +2075,53 @@ func TestPrepareBidParamJSONForPartnerSmaato(t *testing.T) {
 				bidderCode:  string(openrtb_ext.BidderSmaato),
 			},
 			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456"}`),
+		},
+		{
+			name: "publisherId_adbreakId__present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adbreakId":   "3456",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: json.RawMessage(`{"publisherId": "1234","adbreakId": "3456"}`),
+		},
+		{
+			name: "adspaceId_and_adbreakId_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"adspaceId": "1234",
+					"adbreakId": "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: nil,
+		},
+		{
+			name: "all_params_are_present",
+			args: args{
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"publisherId": "1234",
+					"adspaceId":   "3456",
+					"adbreakId":   "7899",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.BidderSmaato),
+				bidderCode:  string(openrtb_ext.BidderSmaato),
+			},
+			want: json.RawMessage(`{"publisherId": "1234","adspaceId": "3456","adbreakId": "7899"}`),
 		},
 	}
 	for _, tt := range tests {
@@ -3113,6 +3176,53 @@ func Test_builderAidem(t *testing.T) {
 			got, err := builderAidem(tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("builderAidem() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
+
+func TestBuilderCompass(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (oneOf placementId or endpointId) is present-placementId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "dbdsfh"}}},
+			want:    json.RawMessage(`{"placementId": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placementId or endpointId) is present-endpointId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"endpointId": "dbdsfh"}}},
+			want:    json.RawMessage(`{"endpointId": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placementId or endpointId), Both are present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "sdhks", "endpointId": "sdjksd"}}},
+			want:    json.RawMessage(`{"placementId": "sdhks"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of placementId or endpointId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderCompass(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderCompass() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			AssertJSON(t, tt.want, got)

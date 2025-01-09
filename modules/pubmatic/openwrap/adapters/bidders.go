@@ -381,16 +381,18 @@ func builderSmaato(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 	jsonStr.WriteByte('{')
 
-	if publisherID, ok := getString(params.FieldMap["publisherId"]); !ok {
+	publisherID, ok := getString(params.FieldMap["publisherId"])
+	if !ok {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "publisherId")
-	} else {
-		fmt.Fprintf(&jsonStr, `"publisherId":"%s",`, publisherID)
+	}
+	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
+
+	if adspaceID, ok := getString(params.FieldMap["adspaceId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"adspaceId":"%s"`, adspaceID)
 	}
 
-	if adspaceID, ok := getString(params.FieldMap["adspaceId"]); !ok {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "adspaceId")
-	} else {
-		fmt.Fprintf(&jsonStr, `"adspaceId":"%s"`, adspaceID)
+	if adbreakID, ok := getString(params.FieldMap["adbreakId"]); ok {
+		fmt.Fprintf(&jsonStr, `,"adbreakId":"%s"`, adbreakID)
 	}
 
 	jsonStr.WriteByte('}')
@@ -728,5 +730,24 @@ func builderAidem(params BidderParameters) (json.RawMessage, error) {
 	trimComma(&jsonStr)
 	jsonStr.WriteByte('}')
 
+	return jsonStr.Bytes(), nil
+}
+
+func builderCompass(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	oneOf := []string{"placementId", "endpointId"}
+	for _, param := range oneOf {
+		if key, ok := getString(params.FieldMap[param]); ok {
+			fmt.Fprintf(&jsonStr, `"%s":"%s"`, param, key)
+			break
+		}
+	}
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
+	}
+
+	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
