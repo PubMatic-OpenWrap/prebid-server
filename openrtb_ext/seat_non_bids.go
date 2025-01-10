@@ -3,6 +3,7 @@ package openrtb_ext
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
 )
 
 // NonBidCollection contains the map of seat with list of nonBids
@@ -29,11 +30,36 @@ type NonBidParams struct {
 	BidFloors         *ExtBidPrebidFloors
 }
 
+// mock uuid instance
+const fakeUuid = "30470a14-2949-4110-abce-b62d57304ad5"
+
+type testUUIDGenerator struct{}
+
+func (testUUIDGenerator) Generate() (string, error) {
+	return fakeUuid, nil
+}
+
+func TestUuidGeneratorInstance() uuidutil.UUIDGenerator {
+	uuidGenerator = testUUIDGenerator{}
+	return uuidGenerator
+}
+
+var uuidGenerator uuidutil.UUIDGenerator = uuidutil.UUIDRandomGenerator{}
+
 // NewNonBid creates the NonBid object from NonBidParams and return it
 func NewNonBid(bidParams NonBidParams) NonBid {
 	if bidParams.Bid == nil {
 		bidParams.Bid = &openrtb2.Bid{}
 	}
+
+	var bidId string
+	if bidParams.Bid.ID == "" {
+		uuid, _ := uuidGenerator.Generate()
+		bidId = uuid
+	} else {
+		bidId = bidParams.Bid.ID
+	}
+
 	return NonBid{
 		ImpId:      bidParams.Bid.ImpID,
 		StatusCode: bidParams.NonBidReason,
@@ -52,7 +78,7 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 				OriginalBidCur: bidParams.OriginalBidCur,
 
 				//OW specific
-				ID:                bidParams.Bid.ID,
+				ID:                bidId,
 				DealPriority:      bidParams.DealPriority,
 				DealTierSatisfied: bidParams.DealTierSatisfied,
 				Meta:              bidParams.BidMeta,

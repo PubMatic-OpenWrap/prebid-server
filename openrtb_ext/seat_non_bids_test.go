@@ -16,17 +16,19 @@ func TestNewNonBid(t *testing.T) {
 		{
 			name:           "nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: nil},
-			expectedNonBid: NonBid{},
+			expectedNonBid: NonBid{ImpId: "", StatusCode: 0, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{Price: 0, ADomain: []string(nil), CatTax: 0, Cat: []string(nil), DealID: "", W: 0, H: 0, Dur: 0, MType: 0, OriginalBidCPM: 0, OriginalBidCur: "", ID: fakeUuid, DealPriority: 0, DealTierSatisfied: false, Meta: (*ExtBidPrebidMeta)(nil), Targeting: map[string]string(nil), Type: "", Video: (*ExtBidPrebidVideo)(nil), BidId: "", Floors: (*ExtBidPrebidFloors)(nil), OriginalBidCPMUSD: 0}}, IsAdPod: (*bool)(nil)}},
 		},
 		{
 			name:           "non-nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: &openrtb2.Bid{ImpID: "imp1"}, NonBidReason: 100},
-			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100},
+			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{Price: 0, ADomain: []string(nil), CatTax: 0, Cat: []string(nil), DealID: "", W: 0, H: 0, Dur: 0, MType: 0, OriginalBidCPM: 0, OriginalBidCur: "", ID: fakeUuid, DealPriority: 0, DealTierSatisfied: false, Meta: (*ExtBidPrebidMeta)(nil), Targeting: map[string]string(nil), Type: "", Video: (*ExtBidPrebidVideo)(nil), BidId: "", Floors: (*ExtBidPrebidFloors)(nil), OriginalBidCPMUSD: 0}}, IsAdPod: (*bool)(nil)}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			uuidGenerator = TestUuidGeneratorInstance()
 			nonBid := NewNonBid(tt.bidParams)
+			nonBid.Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
 			assert.Equal(t, tt.expectedNonBid, nonBid, "found incorrect nonBid")
 		})
 	}
