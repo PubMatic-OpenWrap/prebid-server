@@ -9,11 +9,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httptrace"
+	"net/url"
+	"os"
 	"sort"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -3111,9 +3115,9 @@ func TestSeatNonBid(t *testing.T) {
 		client         *http.Client
 	}
 	type expect struct {
-		seatBids   []*entities.PbsOrtbSeatBid
-		seatNonBid openrtb_ext.NonBidCollection
-		errors     []error
+		seatBids    []*entities.PbsOrtbSeatBid
+		seatNonBids openrtb_ext.SeatNonBidBuilder
+		errors      []error
 	}
 	testCases := []struct {
 		name   string
@@ -3132,44 +3136,52 @@ func TestSeatNonBid(t *testing.T) {
 				client:         &http.Client{Timeout: time.Nanosecond}, // for timeout
 			},
 			expect: expect{
-				seatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"pubmatic": {{Bid: &openrtb2.Bid{ImpID: "1234"}, NonBidReason: 101}}}),
-				errors:     []error{&errortypes.Timeout{Message: context.DeadlineExceeded.Error()}},
-				seatBids:   []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", Seat: "pubmatic", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{
+					"pubmatic": {{
+						ImpId:      "1234",
+						StatusCode: int(ErrorTimeout),
+					}},
+				},
+				errors:   []error{&errortypes.Timeout{Message: context.DeadlineExceeded.Error()}},
+				seatBids: []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", Seat: "pubmatic", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
+			},
+		}, {
+			name: "NBR_103_Bidder_Unreachable_Connection_Refused",
+			args: args{
+				Seat:         "appnexus",
+				SeatRequests: []*adapters.RequestData{{ImpIDs: []string{"1234", "4567"}}},
+				BidRequest:   &openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1234"}, {ID: "4567"}}},
+				BidderResponse: func() (*http.Response, error) {
+					return nil, &net.OpError{Err: os.NewSyscallError(syscall.ECONNREFUSED.Error(), syscall.ECONNREFUSED)}
+				},
+			},
+			expect: expect{
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{
+					"appnexus": {
+						{ImpId: "1234", StatusCode: int(ErrorBidderUnreachable)},
+						{ImpId: "4567", StatusCode: int(ErrorBidderUnreachable)},
+					},
+				},
+				seatBids: []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", Seat: "appnexus", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
+				errors:   []error{&url.Error{Op: "Get", URL: "", Err: &net.OpError{Err: os.NewSyscallError(syscall.ECONNREFUSED.Error(), syscall.ECONNREFUSED)}}},
+			},
+		}, {
+			name: "no_impids_populated_in_request_data",
+			args: args{
+				SeatRequests: []*adapters.RequestData{{
+					ImpIDs: nil, // no imp ids
+				}},
+				BidRequest: &openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1234"}}},
+				BidderResponse: func() (*http.Response, error) {
+					return nil, errors.New("some_error")
+				},
+			},
+			expect: expect{
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{},
+				seatBids:    []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
+				errors:      []error{&url.Error{Op: "Get", URL: "", Err: errors.New("some_error")}},
 			},
 		},
-		// {
-		// 	name: "NBR_103_Bidder_Unreachable_Connection_Refused",
-		// 	args: args{
-		// 		Seat:         "appnexus",
-		// 		SeatRequests: []*adapters.RequestData{{ImpIDs: []string{"1234", "4567"}}},
-		// 		BidRequest:   &openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1234"}, {ID: "4567"}}},
-		// 		BidderResponse: func() (*http.Response, error) {
-		// 			return nil, &net.OpError{Err: os.NewSyscallError(syscall.ECONNREFUSED.Error(), syscall.ECONNREFUSED)}
-		// 		},
-		// 	},
-		// 	expect: expect{
-		// 		seatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "4567"}, NonBidReason: 103}}}),
-		// 		seatBids:   []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", Seat: "appnexus", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
-		// 		errors:     []error{&url.Error{Op: "Get", URL: "", Err: &net.OpError{Err: os.NewSyscallError(syscall.ECONNREFUSED.Error(), syscall.ECONNREFUSED)}}},
-		// 	},
-		// },
-		// {
-		// 	name: "no_impids_populated_in_request_data",
-		// 	args: args{
-		// 		SeatRequests: []*adapters.RequestData{{
-		// 			ImpIDs: nil, // no imp ids
-		// 		}},
-		// 		BidRequest: &openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1234"}}},
-		// 		BidderResponse: func() (*http.Response, error) {
-		// 			return nil, errors.New("some_error")
-		// 		},
-		// 	},
-		// 	expect: expect{
-		// 		seatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{"appnexus": {{Bid: &openrtb2.Bid{ImpID: "imp1"}, NonBidReason: int(nbr.RequestBlockedPartnerThrottle)}}}),
-		// 		seatBids:   []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
-		// 		errors:     []error{&url.Error{Op: "Get", URL: "", Err: errors.New("some_error")}},
-		// 	},
-		// },
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -3200,9 +3212,9 @@ func TestSeatNonBid(t *testing.T) {
 				BidderName: openrtb_ext.BidderName(test.args.Seat),
 			}, nil, &adapters.ExtraRequestInfo{}, &MockSigner{}, bidRequestOptions{}, openrtb_ext.ExtAlternateBidderCodes{}, hookexecution.EmptyHookExecutor{}, nil)
 			assert.Equal(t, test.expect.seatBids, seatBids)
-			assert.Equal(t, test.expect.seatNonBid, responseExtra.seatNonBid)
+			assert.Equal(t, test.expect.seatNonBids, responseExtra.seatNonBidBuilder)
 			assert.Equal(t, test.expect.errors, errors)
-			for _, nonBids := range responseExtra.seatNonBid.GetSeatNonBidMap() {
+			for _, nonBids := range responseExtra.seatNonBidBuilder {
 				for _, nonBid := range nonBids {
 					for _, seatBid := range seatBids {
 						for _, bid := range seatBid.Bids {

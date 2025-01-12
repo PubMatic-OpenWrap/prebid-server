@@ -111,7 +111,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var response *openrtb2.BidResponse
 	var err error
 	var errL []error
-	seatNonBid := &openrtb_ext.NonBidCollection{}
+	seatNonBid := &openrtb_ext.SeatNonBidBuilder{}
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,

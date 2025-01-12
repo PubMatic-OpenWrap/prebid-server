@@ -172,7 +172,7 @@ func TestCharacterEscape(t *testing.T) {
 	var errList []error
 
 	// 	4) Build bid response
-	bidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, nil, nil, true, nil, "", errList, &openrtb_ext.NonBidCollection{})
+	bidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, nil, nil, true, nil, "", errList, &openrtb_ext.SeatNonBidBuilder{})
 
 	// 	5) Assert we have no errors and one '&' character as we are supposed to
 	if len(errList) > 0 {
@@ -1502,7 +1502,7 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 	var errList []error
 
 	// 	4) Build bid response
-	bid_resp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, auc, nil, true, nil, "", errList, &openrtb_ext.NonBidCollection{})
+	bid_resp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, adapterExtra, auc, nil, true, nil, "", errList, &openrtb_ext.SeatNonBidBuilder{})
 
 	expectedBidResponse := &openrtb2.BidResponse{
 		SeatBid: []openrtb2.SeatBid{
@@ -1592,7 +1592,7 @@ func TestBidReturnsCreative(t *testing.T) {
 
 	//Run tests
 	for _, test := range testCases {
-		resultingBids, resultingErrs := e.makeBid(sampleBids, sampleAuction, test.inReturnCreative, nil, &openrtb_ext.RequestWrapper{}, nil, "", "", &openrtb_ext.NonBidCollection{})
+		resultingBids, resultingErrs := e.makeBid(sampleBids, sampleAuction, test.inReturnCreative, nil, &openrtb_ext.RequestWrapper{}, nil, "", "", &openrtb_ext.SeatNonBidBuilder{})
 
 		assert.Equal(t, 0, len(resultingErrs), "%s. Test should not return errors \n", test.description)
 		assert.Equal(t, test.expectedCreativeMarkup, resultingBids[0].AdM, "%s. Ad markup string doesn't match expected \n", test.description)
@@ -1877,7 +1877,7 @@ func TestBidResponseCurrency(t *testing.T) {
 	}
 	// Run tests
 	for i := range testCases {
-		actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, testCases[i].adapterBids, bidRequest, adapterExtra, nil, bidResponseExt, true, nil, "", errList, &openrtb_ext.NonBidCollection{})
+		actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, testCases[i].adapterBids, bidRequest, adapterExtra, nil, bidResponseExt, true, nil, "", errList, &openrtb_ext.SeatNonBidBuilder{})
 		assert.Equalf(t, testCases[i].expectedBidResponse, actualBidResp, fmt.Sprintf("[TEST_FAILED] Objects must be equal for test: %s \n Expected: >>%s<< \n Actual: >>%s<< ", testCases[i].description, testCases[i].expectedBidResponse.Ext, actualBidResp.Ext))
 	}
 }
@@ -1944,7 +1944,7 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 		json.RawMessage(`{"imp_passthrough_val":1}`)}
 	expectedBidResponseExt := `{"origbidcpm":0,"prebid":{"meta":{"adaptercode":"appnexus"},"type":"video","passthrough":{"imp_passthrough_val":1}},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`
 
-	actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, nil, nil, nil, true, impExtInfo, "", errList, &openrtb_ext.NonBidCollection{})
+	actualBidResp := e.buildBidResponse(context.Background(), liveAdapters, adapterBids, bidRequest, nil, nil, nil, true, impExtInfo, "", errList, &openrtb_ext.SeatNonBidBuilder{})
 
 	resBidExt := string(actualBidResp.SeatBid[0].Bid[0].Ext)
 	assert.Equalf(t, expectedBidResponseExt, resBidExt, "Expected bid response extension is incorrect")
@@ -2389,7 +2389,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 
 	aucResponse, err := ex.HoldAuction(ctx, auctionRequest, debugLog)
 	var bid *openrtb2.BidResponse
-	var seatnonbid *openrtb_ext.NonBidCollection
+	var seatnonbid *openrtb_ext.SeatNonBidBuilder
 	if aucResponse != nil {
 		bid = aucResponse.BidResponse
 		seatnonbid = &aucResponse.SeatNonBid
@@ -2790,7 +2790,7 @@ func TestCategoryMapping(t *testing.T) {
 			},
 		},
 	})
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
@@ -2851,8 +2851,8 @@ func TestCategoryMappingNoIncludeBrandCategory(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-	expectedseatNonBids := openrtb_ext.NonBidCollection{}
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	expectedseatNonBids := openrtb_ext.SeatNonBidBuilder{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
@@ -2933,7 +2933,7 @@ func TestCategoryMappingTranslateCategoriesNil(t *testing.T) {
 			},
 		},
 	})
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
@@ -3021,8 +3021,8 @@ func TestCategoryMappingTranslateCategoriesFalse(t *testing.T) {
 	bidderName1 := openrtb_ext.BidderName("appnexus")
 
 	adapterBids[bidderName1] = &seatBid
-	expectedseatNonBids := openrtb_ext.NonBidCollection{}
-	seatNonbids := openrtb_ext.NonBidCollection{}
+	expectedseatNonBids := openrtb_ext.SeatNonBidBuilder{}
+	seatNonbids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonbids)
 
@@ -3108,7 +3108,7 @@ func TestCategoryDedupe(t *testing.T) {
 				},
 			}
 			deduplicateGenerator := fakeBooleanGenerator{value: tt.dedupeGeneratorValue}
-			bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &deduplicateGenerator, &openrtb_ext.NonBidCollection{})
+			bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &deduplicateGenerator, &openrtb_ext.SeatNonBidBuilder{})
 
 			assert.Nil(t, err)
 			assert.Equal(t, 3, len(rejections))
@@ -3182,7 +3182,7 @@ func TestNoCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &openrtb_ext.NonBidCollection{})
+		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &openrtb_ext.SeatNonBidBuilder{})
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 2, len(rejections), "There should be 2 bid rejection messages")
@@ -3251,9 +3251,9 @@ func TestCategoryMappingBidderName(t *testing.T) {
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
 
-	expectedseatNonBids := openrtb_ext.NonBidCollection{}
+	expectedseatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
@@ -3314,8 +3314,8 @@ func TestCategoryMappingBidderNameNoCategories(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid1
 	adapterBids[bidderName2] = &seatBid2
-	expectedseatNonBids := openrtb_ext.NonBidCollection{}
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	expectedseatNonBids := openrtb_ext.SeatNonBidBuilder{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
@@ -3358,7 +3358,7 @@ func TestBidRejectionErrors(t *testing.T) {
 		duration           int
 		expectedRejections []string
 		expectedCatDur     string
-		expectedSeatNonBid openrtb_ext.NonBidCollection
+		expectedSeatNonBid openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			description: "Bid should be rejected due to not containing a category",
@@ -3370,8 +3370,8 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: Bid did not contain a category",
 			},
-			expectedSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:            &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10, W: 1, H: 1, Cat: []string{}},
 					NonBidReason:   303,
@@ -3400,8 +3400,8 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: Category mapping file for primary ad server: 'dfp', publisher: 'some_publisher' not found",
 			},
-			expectedSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:            &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, W: 1, H: 1, Cat: []string{"IAB1-1"}},
 					NonBidReason:   303,
@@ -3430,8 +3430,8 @@ func TestBidRejectionErrors(t *testing.T) {
 			expectedRejections: []string{
 				"bid rejected [bid ID: bid_id1] reason: bid duration exceeds maximum allowed",
 			},
-			expectedSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:            &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, W: 1, H: 1, Cat: []string{"IAB1-1"}},
 					NonBidReason:   303,
@@ -3462,8 +3462,8 @@ func TestBidRejectionErrors(t *testing.T) {
 				"bid rejected [bid ID: bid_id1] reason: Bid was deduplicated",
 			},
 			expectedCatDur: "10.00_VideoGames_30s",
-			expectedSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:            &openrtb2.Bid{ID: "bid_id1", ImpID: "imp_id1", Price: 10.0000, W: 1, H: 1, Cat: []string{"IAB1-1"}},
 					NonBidReason:   303,
@@ -3499,7 +3499,7 @@ func TestBidRejectionErrors(t *testing.T) {
 		seatBid := entities.PbsOrtbSeatBid{Bids: innerBids, Currency: "USD"}
 
 		adapterBids[bidderName] = &seatBid
-		seatNonBids := openrtb_ext.NonBidCollection{}
+		seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, r, *test.reqExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBids)
 
 		if len(test.expectedCatDur) > 0 {
@@ -3570,7 +3570,7 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		adapterBids[bidderNameApn1] = &seatBidApn1
 		adapterBids[bidderNameApn2] = &seatBidApn2
 
-		bidCategory, _, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &openrtb_ext.NonBidCollection{})
+		bidCategory, _, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &openrtb_ext.SeatNonBidBuilder{})
 
 		assert.NoError(t, err, "Category mapping error should be empty")
 		assert.Len(t, rejections, 1, "There should be 1 bid rejection message")
@@ -3659,8 +3659,8 @@ func TestCategoryMappingTwoBiddersManyBidsEachNoCategorySamePrice(t *testing.T) 
 	adapterBids[bidderNameApn1] = &seatBidApn1
 	adapterBids[bidderNameApn2] = &seatBidApn2
 
-	expectedseatNonBids := openrtb_ext.NonBidCollection{}
-	seatNonBids := openrtb_ext.NonBidCollection{}
+	expectedseatNonBids := openrtb_ext.SeatNonBidBuilder{}
+	seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 
 	_, adapterBids, rejections, err := applyCategoryMapping(nil, r, *requestExt.Prebid.Targeting, adapterBids, categoriesFetcher, targData, &fakeBooleanGenerator{value: true}, &seatNonBids)
 
@@ -5125,7 +5125,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 		givenBids                []*entities.PbsOrtbBid
 		givenSeat                openrtb_ext.BidderName
 		expectedNumOfBids        int
-		expectedNonBids          *openrtb_ext.NonBidCollection
+		expectedNonBids          *openrtb_ext.SeatNonBidBuilder
 		expectedNumDebugErrors   int
 		expectedNumDebugWarnings int
 	}{
@@ -5136,8 +5136,8 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:          []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{Ext: json.RawMessage(`{"dsa": {"adrender":1}}`)}}, {Bid: &openrtb2.Bid{}}},
 			givenSeat:          "pubmatic",
 			expectedNumOfBids:  1,
-			expectedNonBids: func() *openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedNonBids: func() *openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:          &openrtb2.Bid{},
 					NonBidReason: 620,
@@ -5156,8 +5156,8 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:         []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{W: 200, H: 200}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{W: 50, H: 50}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:         "pubmatic",
 			expectedNumOfBids: 1,
-			expectedNonBids: func() *openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedNonBids: func() *openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:          &openrtb2.Bid{W: 200, H: 200},
 					NonBidReason: 351,
@@ -5177,7 +5177,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:              []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{W: 200, H: 200}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{W: 50, H: 50}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:              "pubmatic",
 			expectedNumOfBids:      2,
-			expectedNonBids:        &openrtb_ext.NonBidCollection{},
+			expectedNonBids:        &openrtb_ext.SeatNonBidBuilder{},
 			expectedNumDebugErrors: 1,
 		},
 		{
@@ -5186,8 +5186,8 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:         []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{AdM: "http://domain.com/invalid", ImpID: "1"}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{AdM: "https://domain.com/valid", ImpID: "2"}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:         "pubmatic",
 			expectedNumOfBids: 1,
-			expectedNonBids: func() *openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			expectedNonBids: func() *openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
 					Bid:          &openrtb2.Bid{ImpID: "1"},
 					NonBidReason: 352,
@@ -5207,7 +5207,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:              []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{AdM: "http://domain.com/invalid", ImpID: "1"}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{AdM: "https://domain.com/valid", ImpID: "2"}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:              "pubmatic",
 			expectedNumOfBids:      2,
-			expectedNonBids:        &openrtb_ext.NonBidCollection{},
+			expectedNonBids:        &openrtb_ext.SeatNonBidBuilder{},
 			expectedNumDebugErrors: 1,
 		},
 		{
@@ -5216,7 +5216,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:         []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{AdM: "http://domain.com/invalid"}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{AdM: "https://domain.com/valid"}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:         "pubmatic",
 			expectedNumOfBids: 2,
-			expectedNonBids:   &openrtb_ext.NonBidCollection{},
+			expectedNonBids:   &openrtb_ext.SeatNonBidBuilder{},
 		},
 		{
 			name:              "Creative_size_validation_skipped,_Adm_Validation_enforced,_one_of_two_bids_has_invalid_dimensions",
@@ -5224,7 +5224,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 			givenBids:         []*entities.PbsOrtbBid{{Bid: &openrtb2.Bid{W: 200, H: 200}, BidType: openrtb_ext.BidTypeBanner}, {Bid: &openrtb2.Bid{W: 50, H: 50}, BidType: openrtb_ext.BidTypeBanner}},
 			givenSeat:         "pubmatic",
 			expectedNumOfBids: 2,
-			expectedNonBids:   &openrtb_ext.NonBidCollection{},
+			expectedNonBids:   &openrtb_ext.SeatNonBidBuilder{},
 		},
 	}
 
@@ -5273,7 +5273,7 @@ func TestMakeBidWithValidation(t *testing.T) {
 			}
 			e.bidValidationEnforcement = test.givenValidations
 			sampleBids := test.givenBids
-			nonBids := &openrtb_ext.NonBidCollection{}
+			nonBids := &openrtb_ext.SeatNonBidBuilder{}
 			resultingBids, resultingErrs := e.makeBid(sampleBids, sampleAuction, true, ImpExtInfoMap, bidRequest, bidExtResponse, test.givenSeat, "", nonBids)
 
 			assert.Equal(t, 0, len(resultingErrs))
@@ -6401,9 +6401,9 @@ func TestSelectNewDuration(t *testing.T) {
 	}
 }
 
-// getNonBids is utility function which forms NonBidCollection from NonBidParams input
-func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.NonBidCollection {
-	nonBids := openrtb_ext.NonBidCollection{}
+// getNonBids is utility function which forms SeatNonBidBuilder from NonBidParams input
+func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.SeatNonBidBuilder {
+	nonBids := openrtb_ext.SeatNonBidBuilder{}
 	for bidder, bidParams := range bidParamsMap {
 		for _, bidParam := range bidParams {
 			nonBid := openrtb_ext.NewNonBid(bidParam)

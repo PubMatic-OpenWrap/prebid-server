@@ -1494,7 +1494,7 @@ type mockAmpExchange struct {
 	requestExt         json.RawMessage
 	returnError        bool
 	setBidRequestToNil bool
-	seatNonBid         openrtb_ext.NonBidCollection
+	seatNonBid         openrtb_ext.SeatNonBidBuilder
 }
 
 var expectedErrorsFromHoldAuction map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage = map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage{
@@ -1759,7 +1759,7 @@ func TestBuildAmpObject(t *testing.T) {
 		planBuilder                hooks.ExecutionPlanBuilder
 		returnErrorFromHoldAuction bool
 		setRequestToNil            bool
-		seatNonBidFromHoldAuction  openrtb_ext.NonBidCollection
+		seatNonBidFromHoldAuction  openrtb_ext.SeatNonBidBuilder
 		expectedAmpObject          *analytics.AmpObject
 	}{
 		{
@@ -2566,7 +2566,7 @@ func TestSendAmpResponse_LogsErrors(t *testing.T) {
 			account := &config.Account{DebugAllow: true}
 			reqWrapper := openrtb_ext.RequestWrapper{BidRequest: test.request}
 
-			labels, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.NonBidCollection{})
+			labels, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.SeatNonBidBuilder{})
 
 			assert.Equal(t, test.expectedErrors, ao.Errors, "Invalid errors.")
 			assert.Equal(t, test.expectedStatus, ao.Status, "Invalid HTTP response status.")
@@ -2594,7 +2594,7 @@ func TestGetExtBidResponse(t *testing.T) {
 		account         *config.Account
 		ao              analytics.AmpObject
 		errs            []error
-		seatNonBid      openrtb_ext.NonBidCollection
+		seatNonBid      openrtb_ext.SeatNonBidBuilder
 	}
 	type want struct {
 		respExt openrtb_ext.ExtBidResponse
