@@ -9,7 +9,7 @@ Script starts or continues prebid upgrade to version set in 'to_minor' variable.
 
     --restart   Restart the upgrade (deletes {Workspace}/prebid-server and {Workspace}/pbs-patch)
     --version=VERSION  Specify a particular version to upgrade to (optional)
-    --workspace=PATH   Specify a workspace path (default: /tmp).
+    --workspace=PATH   Specify a workspace path (default: /GOPATH/src).
     -h          Help
 TODO:
     - paramertrize the script
