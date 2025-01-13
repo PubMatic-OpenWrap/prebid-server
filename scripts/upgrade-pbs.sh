@@ -17,7 +17,7 @@ TODO:
     - create header-bidding PR"
 RESTART=0
 VERSION=""
-WORKSPACE="/tmp"
+WORKSPACE="${GOPATH:-$(go env GOPATH)}/src"
 
 # Process arguments
 process_arguments() {
