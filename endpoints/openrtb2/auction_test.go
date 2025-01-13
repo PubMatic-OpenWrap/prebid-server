@@ -5058,8 +5058,8 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 }
 
 func TestSendAuctionResponse(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	hookExecutor := &mockStageExecutor{
 		outcomes: []hookexecution.StageOutcome{
@@ -6358,8 +6358,8 @@ func sortUserData(user *openrtb2.User) {
 }
 
 func TestGetNonBidsFromStageOutcomes(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	tests := []struct {
 		name            string
@@ -6613,8 +6613,8 @@ func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.
 }
 
 func TestSeatNonBidInAuction(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	type args struct {
 		bidRequest                openrtb2.BidRequest

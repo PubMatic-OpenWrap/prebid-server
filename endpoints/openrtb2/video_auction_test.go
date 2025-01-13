@@ -1521,8 +1521,8 @@ func TestVideoRequestValidationFailed(t *testing.T) {
 }
 
 func TestSeatNonBidInVideoAuction(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	bidRequest := openrtb_ext.BidRequestVideo{
 		Test:            1,

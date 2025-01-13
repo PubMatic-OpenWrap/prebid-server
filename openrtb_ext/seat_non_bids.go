@@ -29,12 +29,11 @@ type NonBidParams struct {
 
 var uuidGenerator uuidutil.UUIDGenerator = uuidutil.UUIDRandomGenerator{}
 
-func SetTestFakeUUIDGenerator(id string) {
+func SetTestFakeUUIDGenerator(id string) func() {
 	uuidGenerator = uuidutil.NewFakeUUIDGenerator(id, nil)
-}
-
-func ResetFakeUUIDGenerator() {
-	uuidGenerator = uuidutil.UUIDRandomGenerator{}
+	return func() {
+		uuidGenerator = uuidutil.UUIDRandomGenerator{}
+	}
 }
 
 // NewNonBid creates the NonBid object from NonBidParams and return it
@@ -43,12 +42,9 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 		bidParams.Bid = &openrtb2.Bid{}
 	}
 
-	var bidId string
+	bidId := bidParams.Bid.ID
 	if bidParams.Bid.ID == "" {
-		uuid, _ := uuidGenerator.Generate()
-		bidId = uuid
-	} else {
-		bidId = bidParams.Bid.ID
+		bidId, _ = uuidGenerator.Generate()
 	}
 
 	return NonBid{

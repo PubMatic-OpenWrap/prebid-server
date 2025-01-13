@@ -1751,8 +1751,8 @@ func (logger mockLogger) LogAmpObject(ao *analytics.AmpObject, _ privacy.Activit
 func (logger mockLogger) Shutdown() {}
 
 func TestBuildAmpObject(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	testCases := []struct {
 		description                string
@@ -2694,8 +2694,8 @@ func (e errorResponseWriter) Write(bytes []byte) (int, error) {
 func (e errorResponseWriter) WriteHeader(statusCode int) {}
 
 func TestGetExtBidResponse(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	type args struct {
 		hookExecutor    hookexecution.HookStageExecutor

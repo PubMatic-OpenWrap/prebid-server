@@ -5115,8 +5115,8 @@ func TestValidateBidAdM(t *testing.T) {
 }
 
 func TestMakeBidWithValidation(t *testing.T) {
-	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer openrtb_ext.ResetFakeUUIDGenerator()
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 	sampleAd := "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST ...></VAST>"
 	sampleOpenrtbBid := &openrtb2.Bid{ID: "some-bid-id", AdM: sampleAd}
 

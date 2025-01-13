@@ -8,8 +8,8 @@ import (
 )
 
 func TestNewNonBid(t *testing.T) {
-	SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
-	defer ResetFakeUUIDGenerator()
+	resetFakeUUID := SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	tests := []struct {
 		name           string

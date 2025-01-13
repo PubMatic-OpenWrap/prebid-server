@@ -463,7 +463,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			if len(rejectedBids) > 0 {
 				// Record rejected bid count at account level
 				e.me.RecordRejectedBidsForAccount(r.PubID)
-				updateSeatNonBidsFloors(&seatNonBidBuilder, rejectedBids)
 			}
 
 			if responseDebugAllow {
