@@ -14,6 +14,9 @@ import (
 )
 
 func TestPrepareSeatNonBids(t *testing.T) {
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
+
 	type args struct {
 		rctx models.RequestCtx
 	}

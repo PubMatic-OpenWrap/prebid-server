@@ -1521,6 +1521,9 @@ func TestVideoRequestValidationFailed(t *testing.T) {
 }
 
 func TestSeatNonBidInVideoAuction(t *testing.T) {
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
+
 	bidRequest := openrtb_ext.BidRequestVideo{
 		Test:            1,
 		StoredRequestId: "80ce30c53c16e6ede735f123ef6e32361bfc7b22",
@@ -1613,7 +1616,6 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
-			uuidGenerator := openrtb_ext.TestUuidGeneratorInstance()
 			ex := &mockExchangeVideo{seatNonBid: test.args.nonBidsFromHoldAuction}
 			analyticsModule := mockAnalyticsModule{}
 			deps := &endpointDeps{
@@ -1644,9 +1646,6 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			deps.VideoAuctionEndpoint(recorder, req, nil)
 
-			if analyticsModule.videoObjects[0].SeatNonBid != nil {
-				analyticsModule.videoObjects[0].SeatNonBid[0].NonBid[0].Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
-			}
 			assert.Equal(t, test.want.seatNonBid, analyticsModule.videoObjects[0].SeatNonBid, "mismatched seatnonbid.")
 		})
 	}

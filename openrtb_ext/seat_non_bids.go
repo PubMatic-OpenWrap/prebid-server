@@ -27,21 +27,15 @@ type NonBidParams struct {
 	BidFloors         *ExtBidPrebidFloors
 }
 
-// mock uuid instance
-const fakeUuid = "30470a14-2949-4110-abce-b62d57304ad5"
-
-type testUUIDGenerator struct{}
-
-func (testUUIDGenerator) Generate() (string, error) {
-	return fakeUuid, nil
-}
-
-func TestUuidGeneratorInstance() uuidutil.UUIDGenerator {
-	uuidGenerator = testUUIDGenerator{}
-	return uuidGenerator
-}
-
 var uuidGenerator uuidutil.UUIDGenerator = uuidutil.UUIDRandomGenerator{}
+
+func SetTestFakeUUIDGenerator(id string) {
+	uuidGenerator = uuidutil.NewFakeUUIDGenerator(id, nil)
+}
+
+func ResetFakeUUIDGenerator() {
+	uuidGenerator = uuidutil.UUIDRandomGenerator{}
+}
 
 // NewNonBid creates the NonBid object from NonBidParams and return it
 func NewNonBid(bidParams NonBidParams) NonBid {

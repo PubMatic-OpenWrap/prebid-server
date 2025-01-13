@@ -8,6 +8,9 @@ import (
 )
 
 func TestNewNonBid(t *testing.T) {
+	SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer ResetFakeUUIDGenerator()
+
 	tests := []struct {
 		name           string
 		bidParams      NonBidParams
@@ -25,9 +28,7 @@ func TestNewNonBid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			uuidGenerator = TestUuidGeneratorInstance()
 			nonBid := NewNonBid(tt.bidParams)
-			nonBid.Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
 			assert.Equal(t, tt.expectedNonBid, nonBid, "found incorrect nonBid")
 		})
 	}

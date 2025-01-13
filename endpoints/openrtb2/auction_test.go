@@ -5058,6 +5058,9 @@ func TestValidResponseAfterExecutingStages(t *testing.T) {
 }
 
 func TestSendAuctionResponse(t *testing.T) {
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
+
 	hookExecutor := &mockStageExecutor{
 		outcomes: []hookexecution.StageOutcome{
 			{
@@ -5112,6 +5115,32 @@ func TestSendAuctionResponse(t *testing.T) {
 							{
 								ImpId:      "imp1",
 								StatusCode: int(exchange.ResponseRejectedCategoryMappingInvalid),
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 						Seat: "pubmatic",
@@ -5138,6 +5167,32 @@ func TestSendAuctionResponse(t *testing.T) {
 							{
 								ImpId:      "imp1",
 								StatusCode: int(exchange.ResponseRejectedCategoryMappingInvalid),
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 						Seat: "pubmatic",
@@ -5161,6 +5216,32 @@ func TestSendAuctionResponse(t *testing.T) {
 							{
 								ImpId:      "imp1",
 								StatusCode: int(exchange.ResponseRejectedCategoryMappingInvalid),
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 						Seat: "pubmatic",
@@ -5168,7 +5249,7 @@ func TestSendAuctionResponse(t *testing.T) {
 				},
 			},
 			expectedResponseBody: "{\"id\":\"some-id\",\"ext\":{\"prebid\":{\"modules\":{\"warnings\":{\"foobar\":{\"foo\":[\"warning message\"]}}}," +
-				"\"seatnonbid\":[{\"nonbid\":[{\"impid\":\"imp1\",\"statuscode\":303,\"ext\":{\"prebid\":{\"bid\":{}}}}],\"seat\":\"pubmatic\"}]}}}\n",
+				"\"seatnonbid\":[{\"nonbid\":[{\"impid\":\"imp1\",\"statuscode\":303,\"ext\":{\"prebid\":{\"bid\":{\"id\":\"30470a14-2949-4110-abce-b62d57304ad5\"}}}}],\"seat\":\"pubmatic\"}]}}}\n",
 			request:      &openrtb2.BidRequest{ID: "some-id", Test: 1, Ext: json.RawMessage(`"returnallbidstatus": true}}`)},
 			response:     &openrtb2.BidResponse{ID: "some-id", Ext: json.RawMessage("{}")},
 			hookExecutor: hookExecutor,
@@ -5189,6 +5270,32 @@ func TestSendAuctionResponse(t *testing.T) {
 							{
 								ImpId:      "imp1",
 								StatusCode: int(exchange.ResponseRejectedCategoryMappingInvalid),
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 						Seat: "pubmatic",
@@ -6251,6 +6358,9 @@ func sortUserData(user *openrtb2.User) {
 }
 
 func TestGetNonBidsFromStageOutcomes(t *testing.T) {
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
+
 	tests := []struct {
 		name            string
 		stageOutcomes   []hookexecution.StageOutcome
@@ -6397,99 +6507,94 @@ func TestGetNonBidsFromStageOutcomes(t *testing.T) {
 				},
 			}),
 		},
-		// {
-		// 	name: "seatNonBid for same seat from multi stage outcomes",
-		// 	stageOutcomes: []hookexecution.StageOutcome{
-		// 		{
-		// 			Stage: hooks.StageAllProcessedBidResponses.String(),
-		// 			Groups: []hookexecution.GroupOutcome{
-		// 				{
-		// 					InvocationResults: []hookexecution.HookOutcome{
-		// 						{
-		// 							Status: hookexecution.StatusSuccess,
-		// 							SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
-		// 								"pubmatic": {
-		// 									{
-		// 										Bid:          &openrtb2.Bid{ImpID: "imp1"},
-		// 										NonBidReason: 100,
-		// 									},
-		// 								},
-		// 							}),
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 		{
-		// 			Stage: hooks.StageBidderRequest.String(),
-		// 			Groups: []hookexecution.GroupOutcome{
-		// 				{
-		// 					InvocationResults: []hookexecution.HookOutcome{
-		// 						{
-		// 							Status: hookexecution.StatusSuccess,
-		// 							SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
-		// 								"pubmatic": {
-		// 									{
-		// 										Bid:          &openrtb2.Bid{ImpID: "imp2"},
-		// 										NonBidReason: 100,
-		// 									},
-		// 								},
-		// 							}),
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
-		// 		"pubmatic": {
-		// 			{
-		// 				Bid:          &openrtb2.Bid{ImpID: "imp1"},
-		// 				NonBidReason: 100,
-		// 			},
-		// 			{
-		// 				Bid:          &openrtb2.Bid{ImpID: "imp2"},
-		// 				NonBidReason: 100,
-		// 			},
-		// 		},
-		// 	}),
-		// },
-		// {
-		// 	name: "multi group outcomes with empty nonbids",
-		// 	stageOutcomes: []hookexecution.StageOutcome{
-		// 		{
-		// 			Stage: hooks.StageAllProcessedBidResponses.String(),
-		// 			Groups: []hookexecution.GroupOutcome{
-		// 				{
-		// 					InvocationResults: []hookexecution.HookOutcome{
-		// 						{
-		// 							Status:     hookexecution.StatusSuccess,
-		// 							SeatNonBid: openrtb_ext.SeatNonBidBuilder{},
-		// 						},
-		// 					},
-		// 				},
-		// 				{
-		// 					InvocationResults: []hookexecution.HookOutcome{
-		// 						{
-		// 							Status:     hookexecution.StatusSuccess,
-		// 							SeatNonBid: openrtb_ext.SeatNonBidBuilder{},
-		// 						},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	expectedNonBids: openrtb_ext.SeatNonBidBuilder{},
-		// },
+		{
+			name: "seatNonBid for same seat from multi stage outcomes",
+			stageOutcomes: []hookexecution.StageOutcome{
+				{
+					Stage: hooks.StageAllProcessedBidResponses.String(),
+					Groups: []hookexecution.GroupOutcome{
+						{
+							InvocationResults: []hookexecution.HookOutcome{
+								{
+									Status: hookexecution.StatusSuccess,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp1"},
+												NonBidReason: 100,
+											},
+										},
+									}),
+								},
+							},
+						},
+					},
+				},
+				{
+					Stage: hooks.StageBidderRequest.String(),
+					Groups: []hookexecution.GroupOutcome{
+						{
+							InvocationResults: []hookexecution.HookOutcome{
+								{
+									Status: hookexecution.StatusSuccess,
+									SeatNonBid: getNonBids(map[string][]openrtb_ext.NonBidParams{
+										"pubmatic": {
+											{
+												Bid:          &openrtb2.Bid{ImpID: "imp2"},
+												NonBidReason: 100,
+											},
+										},
+									}),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
+				"pubmatic": {
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp1"},
+						NonBidReason: 100,
+					},
+					{
+						Bid:          &openrtb2.Bid{ImpID: "imp2"},
+						NonBidReason: 100,
+					},
+				},
+			}),
+		},
+		{
+			name: "multi group outcomes with empty nonbids",
+			stageOutcomes: []hookexecution.StageOutcome{
+				{
+					Stage: hooks.StageAllProcessedBidResponses.String(),
+					Groups: []hookexecution.GroupOutcome{
+						{
+							InvocationResults: []hookexecution.HookOutcome{
+								{
+									Status:     hookexecution.StatusSuccess,
+									SeatNonBid: openrtb_ext.SeatNonBidBuilder{},
+								},
+							},
+						},
+						{
+							InvocationResults: []hookexecution.HookOutcome{
+								{
+									Status:     hookexecution.StatusSuccess,
+									SeatNonBid: openrtb_ext.SeatNonBidBuilder{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedNonBids: openrtb_ext.SeatNonBidBuilder{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			uuidGenerator := openrtb_ext.TestUuidGeneratorInstance()
 			nonBids := getNonBidsFromStageOutcomes(tt.stageOutcomes)
-			gotNonBids := nonBids.Get()
-			if gotNonBids != nil {
-				gotNonBids[0].NonBid[0].Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
-			}
 			assert.Equal(t, nonBids, tt.expectedNonBids, "getNonBidsFromStageOutcomes returned incorrect nonBids")
 		})
 	}
@@ -6508,6 +6613,9 @@ func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.
 }
 
 func TestSeatNonBidInAuction(t *testing.T) {
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
+
 	type args struct {
 		bidRequest                openrtb2.BidRequest
 		seatNonBidFromHoldAuction openrtb_ext.SeatNonBidBuilder
@@ -6953,7 +7061,6 @@ func TestSeatNonBidInAuction(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
-			uuidGenerator := openrtb_ext.TestUuidGeneratorInstance()
 			reqBody, _ := json.Marshal(test.args.bidRequest)
 			mockAnalytics := mockAnalyticsModule{}
 			deps := &endpointDeps{
@@ -6994,7 +7101,6 @@ func TestSeatNonBidInAuction(t *testing.T) {
 
 			assert.Equal(t, test.want.statusCode, recorder.Result().StatusCode, "mismatched status code.")
 			assert.Equal(t, test.want.body, recorder.Body.String(), "mismatched response body.")
-			mockAnalytics.auctionObjects[0].SeatNonBid[0].NonBid[0].Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
 			assert.ElementsMatch(t, test.want.seatNonBid, mockAnalytics.auctionObjects[0].SeatNonBid, "mismatched seat-non-bids.")
 		})
 	}

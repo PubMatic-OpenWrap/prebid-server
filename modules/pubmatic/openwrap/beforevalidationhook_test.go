@@ -3861,6 +3861,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
+	openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer openrtb_ext.ResetFakeUUIDGenerator()
 
 	type fields struct {
 		cfg          config.Config
