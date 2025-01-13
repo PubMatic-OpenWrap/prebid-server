@@ -16,16 +16,18 @@ func TestNewNonBid(t *testing.T) {
 		{
 			name:           "nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: nil},
-			expectedNonBid: NonBid{}},
+			expectedNonBid: NonBid{Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}}},
 		{
 			name:           "non-nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: &openrtb2.Bid{ImpID: "imp1"}, NonBidReason: 100},
-			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100},
+			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			uuidGenerator = TestUuidGeneratorInstance()
 			nonBid := NewNonBid(tt.bidParams)
+			nonBid.Ext.Prebid.Bid.ID, _ = uuidGenerator.Generate()
 			assert.Equal(t, tt.expectedNonBid, nonBid, "found incorrect nonBid")
 		})
 	}
