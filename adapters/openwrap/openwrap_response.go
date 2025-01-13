@@ -15,10 +15,12 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+/*
 const (
 	buyId               = "buyid"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_blank'><img src='CONVERT_CREATIVE'></a></div>"
 )
+*/
 
 type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
@@ -121,6 +123,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 			}
 
+			/*
 			bUrl := extractBillingURL(bid.AdM)
 			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
@@ -130,6 +133,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
 			bid.AdM = updatedAdmActivate
+			*/
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:        &bid,
@@ -197,8 +201,4 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
-
-
-
 
