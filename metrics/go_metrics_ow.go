@@ -54,10 +54,14 @@ func (me *Metrics) RecordPanic(hostname, method string) {
 func (me *Metrics) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }
 
-// RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+// RecordXMLParserProcessingTime records execution time for multiple parsers
+func (me *Metrics) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
 }
 
 // RecordXMLParserResponseMismatch as a noop
 func (me *Metrics) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
 }

@@ -25,16 +25,23 @@ func NewMetricsRegistry() MetricsRegistry {
 	}
 }
 
-// RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+// RecordXMLParserProcessingTime records execution time for multiple parsers
+func (me *MultiMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserResponseTime(parser, method, respTime)
+		thisME.RecordXMLParserProcessingTime(parser, method, respTime)
 	}
 }
 
 func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
 	for _, thisME := range *me {
 		thisME.RecordXMLParserResponseMismatch(method, isMismatch)
+	}
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserResponseTime(parser, method, respTime)
 	}
 }
 
@@ -122,10 +129,14 @@ func (me *NilMetricsEngine) RecordPanic(hostname, method string) {
 func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr *openrtb3.NoBidReason) {
 }
 
-// RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+// RecordXMLParserProcessingTime records execution time for multiple parsers
+func (me *NilMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
 }
 
 // RecordXMLParserResponseMismatch as a noop
 func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
+}
+
+// RecordXMLParserResponseTime records execution time for multiple parsers
+func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
 }

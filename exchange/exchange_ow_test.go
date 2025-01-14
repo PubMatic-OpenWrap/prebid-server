@@ -1843,8 +1843,8 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*10).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*20).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*10).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*20).Return()
 					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, false).Return()
 					return metricEngine
 				},
@@ -1860,8 +1860,8 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*15).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*25).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*15).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*25).Return()
 					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, true).Return()
 					return metricEngine
 				},
