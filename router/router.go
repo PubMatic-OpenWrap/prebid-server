@@ -31,6 +31,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/moduledeps"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/pbs"
 	pbc "github.com/prebid/prebid-server/v2/prebid_cache_client"
 	"github.com/prebid/prebid-server/v2/router/aspects"
@@ -125,7 +126,8 @@ type Router struct {
 	*httprouter.Router
 	MetricsEngine   *metricsConf.DetailedMetricsEngine
 	ParamsValidator openrtb_ext.BidderParamValidator
-	Shutdown        func()
+
+	shutdowns []func()
 }
 
 func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *Router, err error) {
@@ -213,10 +215,11 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	// Metrics engine
 	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
-	// todo(zachbadgett): better shutdown
-	r.Shutdown = shutdown
 
 	analyticsRunner := analyticsBuild.New(&cfg.Analytics)
+
+	// register the analytics runner for shutdown
+	r.shutdowns = append(r.shutdowns, shutdown, analyticsRunner.Shutdown)
 
 	paramsValidator, err := openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
@@ -256,24 +259,25 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		glog.Fatalf("Failed to create ads cert signer: %v", err)
 	}
 
+	requestValidator := ortb.NewRequestValidator(activeBidders, disabledBidders, paramsValidator)
 	priceFloorFetcher := floors.NewPriceFloorFetcher(cfg.PriceFloors, floorFechterHttpClient, r.MetricsEngine)
 
 	tmaxAdjustments := exchange.ProcessTMaxAdjustments(cfg.TmaxAdjustments)
 	planBuilder := hooks.NewExecutionPlanBuilder(cfg.Hooks, repo)
 	macroReplacer := macros.NewStringIndexBasedReplacer()
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, requestValidator, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
 	var uuidGenerator uuidutil.UUIDRandomGenerator
-	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
+	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, requestValidator, fetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
 	if err != nil {
 		glog.Fatalf("Failed to create the openrtb2 endpoint handler. %v", err)
 	}
 
-	ampEndpoint, err := openrtb2.NewAmpEndpoint(uuidGenerator, theExchange, paramsValidator, ampFetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
+	ampEndpoint, err := openrtb2.NewAmpEndpoint(uuidGenerator, theExchange, requestValidator, ampFetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
 	if err != nil {
 		glog.Fatalf("Failed to create the amp endpoint handler. %v", err)
 	}
 
-	videoEndpoint, err := openrtb2.NewVideoEndpoint(uuidGenerator, theExchange, paramsValidator, fetcher, videoFetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, cacheClient, tmaxAdjustments)
+	videoEndpoint, err := openrtb2.NewVideoEndpoint(uuidGenerator, theExchange, requestValidator, fetcher, videoFetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, cacheClient, tmaxAdjustments)
 	if err != nil {
 		glog.Fatalf("Failed to create the video endpoint handler. %v", err)
 	}
@@ -325,7 +329,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	g_videoFetcher = &videoFetcher
 	g_storedRespFetcher = &storedRespFetcher
 	g_analytics = &analyticsRunner
-	g_paramsValidator = &paramsValidator
+	g_requestValidator = &requestValidator
 	g_activeBidders = activeBidders
 	g_disabledBidders = disabledBidders
 	g_defReqJSON = defReqJSON
@@ -340,6 +344,15 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
 	return r, nil
+}
+
+// Shutdown closes any dependencies of the router that may need closing
+func (r *Router) Shutdown() {
+	glog.Info("[PBS Router] shutting down")
+	for _, shutdown := range r.shutdowns {
+		shutdown()
+	}
+	glog.Info("[PBS Router] shut down")
 }
 
 func checkSupportedUserSyncEndpoints(bidderInfos config.BidderInfos) error {
@@ -416,7 +429,7 @@ func readDefaultRequest(defReqConfig config.DefReqConfig) (map[string]string, []
 		}
 
 		if err := jsonutil.UnmarshalValid(defReqJSON, defReq); err != nil {
-			// we might not have aliases defined, but will atleast show that the JSON file is parsable.
+			// we might not have aliases defined, but will at least show that the JSON file is parsable.
 			glog.Fatalf("error parsing alias json in file %s: %v", defReqConfig.FileSystem.FileName, err)
 			return aliases, []byte{}
 		}

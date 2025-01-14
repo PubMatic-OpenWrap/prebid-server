@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/exp/slices" // Use standard library in next prebid upgrade
+	"slices"
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"

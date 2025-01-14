@@ -16,6 +16,7 @@ import (
 
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/privacy"
 
 	"github.com/prebid/prebid-server/v2/adapters"
@@ -98,6 +99,8 @@ type seatResponseExtra struct {
 	// httpCalls is the list of debugging info. It should only be populated if the request.test == 1.
 	// This will become response.ext.debug.httpcalls.{bidder} on the final Response.
 	HttpCalls []*openrtb_ext.ExtHttpCall
+	// NonBid contains non bid reason information
+	NonBid *openrtb_ext.NonBid
 }
 
 type bidResponseWrapper struct {
@@ -106,6 +109,7 @@ type bidResponseWrapper struct {
 	bidder                  openrtb_ext.BidderName
 	adapter                 openrtb_ext.BidderName
 	bidderResponseStartTime time.Time
+	seatNonBidBuilder       openrtb_ext.SeatNonBidBuilder
 }
 
 type BidIDGenerator interface {
@@ -136,7 +140,7 @@ func (randomDeduplicateBidBooleanGenerator) Generate() bool {
 	return rand.Intn(100) < 50
 }
 
-func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, macroReplacer macros.Replacer, priceFloorFetcher floors.FloorFetcher) Exchange {
+func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid_cache_client.Client, cfg *config.Configuration, requestValidator ortb.RequestValidator, syncersByBidder map[string]usersync.Syncer, metricsEngine metrics.MetricsEngine, infos config.BidderInfos, gdprPermsBuilder gdpr.PermissionsBuilder, currencyConverter *currency.RateConverter, categoriesFetcher stored_requests.CategoryFetcher, adsCertSigner adscert.Signer, macroReplacer macros.Replacer, priceFloorFetcher floors.FloorFetcher) Exchange {
 	bidderToSyncerKey := map[string]string{}
 	for bidder, syncer := range syncersByBidder {
 		bidderToSyncerKey[bidder] = syncer.Key()
@@ -159,6 +163,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 		gdprPermsBuilder:  gdprPermsBuilder,
 		hostSChainNode:    cfg.HostSChainNode,
 		bidderInfo:        infos,
+		requestValidator:  requestValidator,
 	}
 
 	return &exchange{
@@ -251,9 +256,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	if err != nil {
 		return nil, err
 	}
-
-	// seatNonBid will store nonbids collected inside HoldAuction function, it will not contain the nonbids from stageOutcomes
-	seatNonBid := openrtb_ext.NonBidCollection{}
 
 	// ensure prebid object always exists
 	requestExtPrebid := requestExt.GetPrebid()
@@ -351,6 +353,11 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		SChain: requestExt.GetSChain(),
 	}
 	bidderRequests, privacyLabels, errs := e.requestSplitter.cleanOpenRTBRequests(ctx, *r, requestExtLegacy, gdprSignal, gdprEnforced, bidAdjustmentFactors)
+	for _, err := range errs {
+		if errortypes.ReadCode(err) == errortypes.InvalidImpFirstPartyDataErrorCode {
+			return nil, err
+		}
+	}
 	errs = append(errs, floorErrs...)
 
 	mergedBidAdj, err := bidadjustment.Merge(r.BidRequestWrapper, r.Account.BidAdjustments)
@@ -379,7 +386,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		fledge          *openrtb_ext.Fledge
 		anyBidsReturned bool
 		// List of bidders we have requests for.
-		liveAdapters []openrtb_ext.BidderName
+		liveAdapters      []openrtb_ext.BidderName
+		seatNonBidBuilder openrtb_ext.SeatNonBidBuilder = openrtb_ext.SeatNonBidBuilder{}
 	)
 
 	if len(r.StoredAuctionResponses) > 0 {
@@ -405,13 +413,17 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		fledge = extraRespInfo.fledge
 		anyBidsReturned = extraRespInfo.bidsFound
 		r.BidderResponseStartTime = extraRespInfo.bidderResponseStartTime
+
+		if extraRespInfo.seatNonBidBuilder != nil {
+			seatNonBidBuilder = extraRespInfo.seatNonBidBuilder
+		}
 	}
 
 	if anyBidsReturned {
 		var rejectedBids []*entities.PbsOrtbSeatBid
 		adapterBids, rejectedBids = applyBidPriceThreshold(adapterBids, r.Account, conversions)
 		if len(rejectedBids) > 0 {
-			e.updateSeatNonBidsPriceThreshold(&seatNonBid, rejectedBids)
+			e.updateSeatNonBidsPriceThreshold(&seatNonBidBuilder, rejectedBids)
 		}
 	}
 
@@ -419,15 +431,13 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		auc            *auction
 		cacheErrs      []error
 		bidResponseExt *openrtb_ext.ExtBidResponse
-		seatNonBids    *openrtb_ext.NonBidCollection
 	)
-	seatNonBids = &openrtb_ext.NonBidCollection{}
 	if anyBidsReturned {
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
 
 		if requestExtPrebid.StrictVastMode {
-			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBid)
+			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBidBuilder)
 			errs = append(errs, validationErrs...)
 		}
 
@@ -447,13 +457,12 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 				}
 				nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(rejectedBid.Bids[0], rejectedBid.Seat)
 				nonBidParams.NonBidReason = int(rejectionReason)
-				seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), rejectedBid.Seat)
+				seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), rejectedBid.Seat)
 			}
 
 			if len(rejectedBids) > 0 {
 				// Record rejected bid count at account level
 				e.me.RecordRejectedBidsForAccount(r.PubID)
-				updateSeatNonBidsFloors(&seatNonBid, rejectedBids)
 			}
 
 			if responseDebugAllow {
@@ -468,7 +477,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 		}
 
-		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids, &seatNonBid)
+		adapterBids, rejections := applyAdvertiserBlocking(r, adapterBids, &seatNonBidBuilder)
 		// add advertiser blocking specific errors
 		for _, message := range rejections {
 			errs = append(errs, errors.New(message))
@@ -477,7 +486,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		//If includebrandcategory is present in ext then CE feature is on.
 		if requestExtPrebid.Targeting != nil && requestExtPrebid.Targeting.IncludeBrandCategory != nil {
 			var rejections []string
-			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r, *requestExtPrebid.Targeting, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBid)
+			bidCategory, adapterBids, rejections, err = applyCategoryMapping(ctx, r, *requestExtPrebid.Targeting, adapterBids, e.categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{}, &seatNonBidBuilder)
 			if err != nil {
 				return nil, fmt.Errorf("Error in category mapping : %s", err.Error())
 			}
@@ -585,7 +594,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	e.bidValidationEnforcement.SetBannerCreativeMaxSize(r.Account.Validations)
 
 	// Build the response
-	bidResponse := e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, r.PubID, errs, &seatNonBid)
+	bidResponse := e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, r.PubID, errs, &seatNonBidBuilder)
 	bidResponse = adservertargeting.Apply(r.BidRequestWrapper, r.ResolvedBidRequest, bidResponse, r.QueryParams, bidResponseExt, r.Account.TruncateTargetAttribute)
 
 	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
@@ -596,7 +605,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	return &AuctionResponse{
 		BidResponse:    bidResponse,
 		ExtBidResponse: bidResponseExt,
-		SeatNonBid:     seatNonBid,
+		SeatNonBid:     seatNonBidBuilder,
 	}, nil
 }
 
@@ -814,6 +823,7 @@ func (e *exchange) getAllBids(
 			// Add in time reporting
 			elapsed := time.Since(start)
 			brw.adapterSeatBids = seatBids
+			brw.seatNonBidBuilder = extraBidderRespInfo.seatNonBidBuilder
 			// Structure to record extra tracking data generated during bidding
 			ae := new(seatResponseExtra)
 			ae.ResponseTimeMillis = int(elapsed / time.Millisecond)
@@ -888,6 +898,7 @@ func (e *exchange) getAllBids(
 		}
 		//but we need to add all bidders data to adapterExtra to have metrics and other metadata
 		adapterExtra[brw.bidder] = brw.adapterExtra
+		extraRespInfo.seatNonBidBuilder.Append(brw.seatNonBidBuilder)
 	}
 	for _, adapterBid := range adapterBids {
 		if len(adapterBid.Bids) > 0 {
@@ -1025,7 +1036,7 @@ func errsToBidderWarnings(errs []error) []openrtb_ext.ExtBidderMessage {
 }
 
 // This piece takes all the bids supplied by the adapters and crafts an openRTB response to send back to the requester
-func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterSeatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, bidRequest *openrtb_ext.RequestWrapper, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, pubID string, errList []error, seatNonBids *openrtb_ext.NonBidCollection) *openrtb2.BidResponse {
+func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_ext.BidderName, adapterSeatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, bidRequest *openrtb_ext.RequestWrapper, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, bidResponseExt *openrtb_ext.ExtBidResponse, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, pubID string, errList []error, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) *openrtb2.BidResponse {
 	bidResponse := new(openrtb2.BidResponse)
 
 	bidResponse.ID = bidRequest.ID
@@ -1040,7 +1051,7 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	for a, adapterSeatBids := range adapterSeatBids {
 		//while processing every single bib, do we need to handle categories here?
 		if adapterSeatBids != nil && len(adapterSeatBids.Bids) > 0 {
-			sb := e.makeSeatBid(adapterSeatBids, a, adapterExtra, auc, returnCreative, impExtInfoMap, bidRequest, bidResponseExt, pubID, seatNonBids)
+			sb := e.makeSeatBid(adapterSeatBids, a, adapterExtra, auc, returnCreative, impExtInfoMap, bidRequest, bidResponseExt, pubID, seatNonBidBuilder)
 			seatBids = append(seatBids, *sb)
 			bidResponse.Cur = adapterSeatBids.Currency
 		}
@@ -1060,7 +1071,7 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	return buffer.Bytes(), err
 }
 
-func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBids *openrtb_ext.NonBidCollection) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
+func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	res := make(map[string]string)
 
@@ -1134,7 +1145,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 					bidsToRemove = append(bidsToRemove, bidInd)
 					rejections = updateRejections(rejections, bidID, "Bid did not contain a category")
 					nonBid := openrtb_ext.NewNonBid(nonBidParams)
-					seatNonBids.AddBid(nonBid, string(bidderName))
+					seatNonBidBuilder.AddBid(nonBid, string(bidderName))
 					continue
 				}
 				if translateCategories {
@@ -1146,7 +1157,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						bidsToRemove = append(bidsToRemove, bidInd)
 						nonBidParams.NonBidReason = int(ResponseRejectedCategoryMappingInvalid)
 						nonBid := openrtb_ext.NewNonBid(nonBidParams)
-						seatNonBids.AddBid(nonBid, string(seatBid.Seat))
+						seatNonBidBuilder.AddBid(nonBid, string(seatBid.Seat))
 
 						reason := fmt.Sprintf("Category mapping file for primary ad server: '%s', publisher: '%s' not found", primaryAdServer, publisher)
 						rejections = updateRejections(rejections, bidID, reason)
@@ -1167,7 +1178,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 				bidsToRemove = append(bidsToRemove, bidInd)
 				nonBidParams.NonBidReason = int(ResponseRejectedCategoryMappingInvalid)
 				nonBid := openrtb_ext.NewNonBid(nonBidParams)
-				seatNonBids.AddBid(nonBid, string(seatBid.Seat))
+				seatNonBidBuilder.AddBid(nonBid, string(seatBid.Seat))
 				rejections = updateRejections(rejections, bidID, err.Error())
 				continue
 			}
@@ -1220,7 +1231,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 							// An older bid from the current bidder
 							bidsToRemove = append(bidsToRemove, dupe.bidIndex)
 							nonBid := openrtb_ext.NewNonBid(nonBidParams)
-							seatNonBids.AddBid(nonBid, string(seatBid.Seat))
+							seatNonBidBuilder.AddBid(nonBid, string(seatBid.Seat))
 							rejections = updateRejections(rejections, dupe.bidID, "Bid was deduplicated")
 						} else {
 							// An older bid from a different seatBid we've already finished with
@@ -1243,7 +1254,7 @@ func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting open
 						bidsToRemove = append(bidsToRemove, bidInd)
 						nonBid := openrtb_ext.NewNonBid(nonBidParams)
 
-						seatNonBids.AddBid(nonBid, string(seatBid.Seat))
+						seatNonBidBuilder.AddBid(nonBid, string(seatBid.Seat))
 						rejections = updateRejections(rejections, bidID, "Bid was deduplicated")
 						continue
 					}
@@ -1394,14 +1405,14 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 
 // Return an openrtb seatBid for a bidder
 // buildBidResponse is responsible for ensuring nil bid seatbids are not included
-func (e *exchange) makeSeatBid(adapterBid *entities.PbsOrtbSeatBid, adapter openrtb_ext.BidderName, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, bidRequest *openrtb_ext.RequestWrapper, bidResponseExt *openrtb_ext.ExtBidResponse, pubID string, seatNonBids *openrtb_ext.NonBidCollection) *openrtb2.SeatBid {
+func (e *exchange) makeSeatBid(adapterBid *entities.PbsOrtbSeatBid, adapter openrtb_ext.BidderName, adapterExtra map[openrtb_ext.BidderName]*seatResponseExtra, auc *auction, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, bidRequest *openrtb_ext.RequestWrapper, bidResponseExt *openrtb_ext.ExtBidResponse, pubID string, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) *openrtb2.SeatBid {
 	seatBid := &openrtb2.SeatBid{
 		Seat:  adapter.String(),
 		Group: 0, // Prebid cannot support roadblocking
 	}
 
 	var errList []error
-	seatBid.Bid, errList = e.makeBid(adapterBid.Bids, auc, returnCreative, impExtInfoMap, bidRequest, bidResponseExt, adapter, pubID, seatNonBids)
+	seatBid.Bid, errList = e.makeBid(adapterBid.Bids, auc, returnCreative, impExtInfoMap, bidRequest, bidResponseExt, adapter, pubID, seatNonBidBuilder)
 	if len(errList) > 0 {
 		adapterExtra[adapter].Errors = append(adapterExtra[adapter].Errors, errsToBidderErrors(errList)...)
 	}
@@ -1409,7 +1420,7 @@ func (e *exchange) makeSeatBid(adapterBid *entities.PbsOrtbSeatBid, adapter open
 	return seatBid
 }
 
-func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, bidRequest *openrtb_ext.RequestWrapper, bidResponseExt *openrtb_ext.ExtBidResponse, adapter openrtb_ext.BidderName, pubID string, seatNonBids *openrtb_ext.NonBidCollection) ([]openrtb2.Bid, []error) {
+func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCreative bool, impExtInfoMap map[string]ImpExtInfo, bidRequest *openrtb_ext.RequestWrapper, bidResponseExt *openrtb_ext.ExtBidResponse, adapter openrtb_ext.BidderName, pubID string, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) ([]openrtb2.Bid, []error) {
 	result := make([]openrtb2.Bid, 0, len(bids))
 	errs := make([]error, 0, 1)
 
@@ -1422,14 +1433,14 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 			bidResponseExt.Warnings[adapter] = append(bidResponseExt.Warnings[adapter], dsaMessage)
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 			nonBidParams.NonBidReason = int(nbr.ResponseRejectedDSA)
-			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
+			seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 			continue // Don't add bid to result
 		}
 		if e.bidValidationEnforcement.BannerCreativeMaxSize == config.ValidationEnforce && bid.BidType == openrtb_ext.BidTypeBanner {
 			if !e.validateBannerCreativeSize(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.BannerCreativeMaxSize) {
 				nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 				nonBidParams.NonBidReason = int(ResponseRejectedCreativeSizeNotAllowed)
-				seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
+				seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 				continue // Don't add bid to result
 			}
 		} else if e.bidValidationEnforcement.BannerCreativeMaxSize == config.ValidationWarn && bid.BidType == openrtb_ext.BidTypeBanner {
@@ -1440,7 +1451,7 @@ func (e *exchange) makeBid(bids []*entities.PbsOrtbBid, auc *auction, returnCrea
 				if !e.validateBidAdM(bid, bidResponseExt, adapter, pubID, e.bidValidationEnforcement.SecureMarkup) {
 					nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, adapter.String())
 					nonBidParams.NonBidReason = int(ResponseRejectedCreativeNotSecure)
-					seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
+					seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), adapter.String())
 					continue // Don't add bid to result
 				}
 			} else if e.bidValidationEnforcement.SecureMarkup == config.ValidationWarn && (bid.BidType == openrtb_ext.BidTypeBanner || bid.BidType == openrtb_ext.BidTypeVideo) {

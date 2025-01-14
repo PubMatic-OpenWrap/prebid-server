@@ -30,7 +30,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 		return result, nil
 	}
 
-	seatNonBid := openrtb_ext.NonBidCollection{}
+	seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.BidderResponse.Bids))
 	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
 	defer close(unwrappedBidsChan)

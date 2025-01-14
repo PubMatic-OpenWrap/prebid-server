@@ -751,3 +751,43 @@ func builderCompass(params BidderParameters) (json.RawMessage, error) {
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
+
+// builderOpenweb for building json object for Openweb bidder
+func builderOpenweb(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	var aid int
+	var placementID, org string
+	var ok bool
+
+	if placementID, ok = getString(params.FieldMap["placementId"]); ok {
+		fmt.Fprintf(&jsonStr, `"placementId":"%s"`, placementID)
+	}
+
+	if placementID == "" {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['placementId']")
+	}
+
+	oneOf := []string{"aid", "org"}
+	for _, param := range oneOf {
+		if param == "aid" {
+			if aid, ok = getInt(params.FieldMap["aid"]); ok {
+				fmt.Fprintf(&jsonStr, `,"aid":%d`, aid)
+				break
+			}
+		} else if param == "org" {
+			if org, ok = getString(params.FieldMap["org"]); ok {
+				fmt.Fprintf(&jsonStr, `,"org":"%s"`, org)
+				break
+			}
+		}
+	}
+
+	//  len=0 (no mandatory params present)
+	if jsonStr.Len() == 1 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "['org']")
+	}
+
+	jsonStr.WriteByte('}')
+	return jsonStr.Bytes(), nil
+}

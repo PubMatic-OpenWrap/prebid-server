@@ -24,6 +24,7 @@ import (
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/stored_requests"
 	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
 )
@@ -173,7 +174,8 @@ func ctvTestEndpoint(test ctvtestCase, cfg *config.Configuration) (httprouter.Ha
 	}
 	mockCurrencyRatesServer := httptest.NewServer(http.HandlerFunc(mockCurrencyConversionService.handle))
 
-	testExchange, mockBidServersArray := testCTVExchange(test.Config, adapterMap, mockBidServersArray, mockCurrencyRatesServer, bidderInfos, cfg, met, mockFetcher)
+	requestValidator := ortb.NewRequestValidator(bidderMap, disabledBidders, paramValidator)
+	testExchange, mockBidServersArray := testCTVExchange(test.Config, adapterMap, mockBidServersArray, mockCurrencyRatesServer, bidderInfos, cfg, met, mockFetcher, requestValidator)
 
 	planBuilder := test.planBuilder
 	if planBuilder == nil {
@@ -182,7 +184,7 @@ func ctvTestEndpoint(test ctvtestCase, cfg *config.Configuration) (httprouter.Ha
 
 	endpoint, err := NewCTVEndpoint(
 		testExchange,
-		paramValidator,
+		requestValidator,
 		&mockStoredReqFetcher{},
 		&mockStoredReqFetcher{},
 		&mockAccountFetcher{},
@@ -199,7 +201,7 @@ func ctvTestEndpoint(test ctvtestCase, cfg *config.Configuration) (httprouter.Ha
 	return endpoint, testExchange.(*exchangeTestWrapper), mockBidServersArray, mockCurrencyRatesServer, err
 }
 
-func testCTVExchange(testCfg *ctvtestConfigValues, adapterMap map[openrtb_ext.BidderName]exchange.AdaptedBidder, mockBidServersArray []*httptest.Server, mockCurrencyRatesServer *httptest.Server, bidderInfos config.BidderInfos, cfg *config.Configuration, met metrics.MetricsEngine, mockFetcher stored_requests.CategoryFetcher) (exchange.Exchange, []*httptest.Server) {
+func testCTVExchange(testCfg *ctvtestConfigValues, adapterMap map[openrtb_ext.BidderName]exchange.AdaptedBidder, mockBidServersArray []*httptest.Server, mockCurrencyRatesServer *httptest.Server, bidderInfos config.BidderInfos, cfg *config.Configuration, met metrics.MetricsEngine, mockFetcher stored_requests.CategoryFetcher, paramValidator ortb.RequestValidator) (exchange.Exchange, []*httptest.Server) {
 	if len(testCfg.MockBidders) == 0 {
 		testCfg.MockBidders = append(testCfg.MockBidders, ctvMockBidderHandler{BidderName: "pubmatic", Currency: "USD", Bids: []mockBid{
 			{
@@ -227,6 +229,7 @@ func testCTVExchange(testCfg *ctvtestConfigValues, adapterMap map[openrtb_ext.Bi
 	testExchange := exchange.NewExchange(adapterMap,
 		&wellBehavedCache{},
 		cfg,
+		paramValidator,
 		nil,
 		met,
 		bidderInfos,
