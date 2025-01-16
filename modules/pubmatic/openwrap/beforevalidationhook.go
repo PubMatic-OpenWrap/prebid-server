@@ -792,7 +792,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	imp.BidFloor, imp.BidFloorCur = setImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
+	imp.BidFloor, imp.BidFloorCur = getImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
 	impBidCtx.BidFloor = imp.BidFloor
 	impBidCtx.BidFloorCur = imp.BidFloorCur
 
@@ -829,11 +829,10 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 }
 
 func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-	// TODO: move this to PBS-Core
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
-		imp.BidFloorCur = "USD"
+		imp.BidFloorCur = models.USD
 	}
 
 	if imp.Video != nil {
@@ -864,26 +863,31 @@ func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.
 	}
 }
 
-func setImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.AdConfig, imp *openrtb2.Imp, conversions currency.Conversions) (float64, string) {
+func getImpBidFloorParams(rCtx models.RequestCtx, adUnitCfg *modelsAdunitConfig.AdConfig, imp *openrtb2.Imp, conversions currency.Conversions) (float64, string) {
 	bidfloor := imp.BidFloor
 	bidfloorcur := imp.BidFloorCur
 
 	if rCtx.IsMaxFloorsEnabled && adUnitCfg.BidFloor != nil {
-		bidfloor, bidfloorcur, _ = floors.GetMaxFloorValue(imp.BidFloor, imp.BidFloorCur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, conversions)
+		bidfloor, bidfloorcur, _ = floors.GetMaxFloorValue(bidfloor, bidfloorcur, *adUnitCfg.BidFloor, *adUnitCfg.BidFloorCur, conversions)
 	} else {
-		if imp.BidFloor == 0 && adUnitCfg.BidFloor != nil {
+		if bidfloor == 0 && adUnitCfg.BidFloor != nil {
+			//use adunitconfig bidfloor and bidfloorcur
 			bidfloor = *adUnitCfg.BidFloor
-		}
+			bidfloorcur = ""
 
-		if len(imp.BidFloorCur) == 0 && adUnitCfg.BidFloorCur != nil {
-			bidfloorcur = *adUnitCfg.BidFloorCur
+			if adUnitCfg.BidFloorCur != nil {
+				bidfloorcur = *adUnitCfg.BidFloorCur
+			}
 		}
 	}
 
-	if bidfloor > 0 && len(bidfloorcur) == 0 {
+	if bidfloor == 0 {
+		//no bidfloor value
+		return 0, ""
+	}
+	if bidfloorcur == "" {
 		bidfloorcur = models.USD
 	}
-
 	return bidfloor, bidfloorcur
 }
 
@@ -898,7 +902,7 @@ func (m *OpenWrap) applyBannerAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 
 	impBidCtx := rCtx.ImpBidCtx[imp.ID]
-	imp.BidFloor, imp.BidFloorCur = setImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
+	imp.BidFloor, imp.BidFloorCur = getImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
 	impBidCtx.BidFloor = imp.BidFloor
 	impBidCtx.BidFloorCur = imp.BidFloorCur
 	rCtx.ImpBidCtx[imp.ID] = impBidCtx
