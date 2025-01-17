@@ -3861,6 +3861,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
 
 	type fields struct {
 		cfg          config.Config
@@ -7264,7 +7266,7 @@ func TestIsVastUnwrapEnabled(t *testing.T) {
 	}
 }
 
-func TestSetImpBidFloorParams(t *testing.T) {
+func TestGetImpBidFloorParams(t *testing.T) {
 	type args struct {
 		rCtx        models.RequestCtx
 		adUnitCfg   *adunitconfig.AdConfig
@@ -7344,10 +7346,91 @@ func TestSetImpBidFloorParams(t *testing.T) {
 			expBidfloor:    2.6,
 			expBidfloorCur: "USD",
 		},
+		{
+			name: "imp_bidfloor_and_bidfloorcur_present_adunit_bidfloor_bidfloorcur_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("EUR"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor:    2.6,
+					BidFloorCur: "INR",
+				},
+			},
+			expBidfloor:    2.6,
+			expBidfloorCur: "INR",
+		},
+		{
+			name: "imp_bidfloor_present_and_bidfloorcur_notpresent_adunit_bidfloor_bidfloorcur_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("INR"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloor: 2.6,
+				},
+			},
+			expBidfloor:    2.6,
+			expBidfloorCur: "USD",
+		},
+		{
+			name: "imp_level_floor_notpresent_adunit_bidfloor_bidfloorcur_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("INR"),
+				},
+				imp: &openrtb2.Imp{},
+			},
+			expBidfloor:    2.0,
+			expBidfloorCur: "INR",
+		},
+		{
+			name: "imp_bidfloor_notpresent_bidfloorcur_present_adunit_bidfloor_bidfloorcur_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor:    ptrutil.ToPtr(2.0),
+					BidFloorCur: ptrutil.ToPtr("INR"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloorCur: "EUR",
+				},
+			},
+			expBidfloor:    2.0,
+			expBidfloorCur: "INR",
+		},
+		{
+			name: "imp_adunit_bidfloor_notpresent_and_imp_adunit_bidfloorcur_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloorCur: ptrutil.ToPtr("INR"),
+				},
+				imp: &openrtb2.Imp{
+					BidFloorCur: "EUR",
+				},
+			},
+			expBidfloor:    0,
+			expBidfloorCur: "",
+		},
+		{
+			name: "imp_bidfloor_and_adunit_bidfloorcur_notpresent_and_imp_bidfloorcur_and_adunit_bidfloor_present",
+			args: args{
+				adUnitCfg: &adunitconfig.AdConfig{
+					BidFloor: ptrutil.ToPtr(2.0),
+				},
+				imp: &openrtb2.Imp{
+					BidFloorCur: "EUR",
+				},
+			},
+			expBidfloor:    2.0,
+			expBidfloorCur: "USD",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			bidfloor, bidfloorCur := setImpBidFloorParams(tt.args.rCtx, tt.args.adUnitCfg, tt.args.imp, tt.args.conversions)
+			bidfloor, bidfloorCur := getImpBidFloorParams(tt.args.rCtx, tt.args.adUnitCfg, tt.args.imp, tt.args.conversions)
 			assert.Equal(t, tt.expBidfloor, bidfloor, tt.name)
 			assert.Equal(t, tt.expBidfloorCur, bidfloorCur, tt.name)
 		})

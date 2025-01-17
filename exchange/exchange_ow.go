@@ -107,7 +107,7 @@ func normalizeDomain(domain string) (string, error) {
 // applyAdvertiserBlocking rejects the bids of blocked advertisers mentioned in req.badv
 // the rejection is currently only applicable to vast tag bidders. i.e. not for ortb bidders
 // it returns seatbids containing valid bids and rejections containing rejected bid.id with reason
-func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBids *openrtb_ext.NonBidCollection) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
+func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) (map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string) {
 	bidRequest := r.BidRequestWrapper.BidRequest
 	rejections := []string{}
 	nBadvs := []string{}
@@ -153,7 +153,7 @@ func applyAdvertiserBlocking(r *AuctionRequest, seatBids map[openrtb_ext.BidderN
 						// Add rejected bid in seatNonBid.
 						nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(bid, seatBid.Seat)
 						nonBidParams.NonBidReason = int(ResponseRejectedCreativeAdvertiserBlocking)
-						seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seatBid.Seat)
+						seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), seatBid.Seat)
 
 						// reject the bid. bid belongs to blocked advertisers list
 						seatBid.Bids = append(seatBid.Bids[:bidIndex], seatBid.Bids[bidIndex+1:]...)
@@ -266,7 +266,7 @@ func recordPartnerTimeout(ctx context.Context, pubID, aliasBidder string) {
 }
 
 // updateSeatNonBidsFloors updates seatnonbid with rejectedBids due to floors
-func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
+func updateSeatNonBidsFloors(seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
 			var rejectionReason = ResponseRejectedBelowFloor
@@ -275,7 +275,7 @@ func updateSeatNonBidsFloors(seatNonBids *openrtb_ext.NonBidCollection, rejected
 			}
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
 			nonBidParams.NonBidReason = int(rejectionReason)
-			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
+			seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }
@@ -386,25 +386,25 @@ func logBidsAbovePriceThreshold(rejectedBids []*entities.PbsOrtbSeatBid) {
 	}
 }
 
-func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBids *openrtb_ext.NonBidCollection, rejectedBids []*entities.PbsOrtbSeatBid) {
+func (e exchange) updateSeatNonBidsPriceThreshold(seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder, rejectedBids []*entities.PbsOrtbSeatBid) {
 	for _, pbsRejSeatBid := range rejectedBids {
 		for _, pbsRejBid := range pbsRejSeatBid.Bids {
 			nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, pbsRejSeatBid.Seat)
 			nonBidParams.NonBidReason = int(ResponseRejectedBidPriceTooHigh)
-			seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
+			seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), pbsRejSeatBid.Seat)
 		}
 	}
 }
 
-func updateSeatNonBidsInvalidVastVersion(seatNonBids *openrtb_ext.NonBidCollection, seat string, rejectedBids []*entities.PbsOrtbBid) {
+func updateSeatNonBidsInvalidVastVersion(seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder, seat string, rejectedBids []*entities.PbsOrtbBid) {
 	for _, pbsRejBid := range rejectedBids {
 		nonBidParams := entities.GetNonBidParamsFromPbsOrtbBid(pbsRejBid, seat)
 		nonBidParams.NonBidReason = int(nbr.LossBidLostInVastVersionValidation)
-		seatNonBids.AddBid(openrtb_ext.NewNonBid(nonBidParams), seat)
+		seatNonBidBuilder.AddBid(openrtb_ext.NewNonBid(nonBidParams), seat)
 	}
 }
 
-func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBid *openrtb_ext.NonBidCollection) []error {
+func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) []error {
 	errs := []error{}
 	for _, seatBid := range adapterBids {
 		rejectedBid := []*entities.PbsOrtbBid{}
@@ -423,7 +423,7 @@ func filterBidsByVastVersion(adapterBids map[openrtb_ext.BidderName]*entities.Pb
 			}
 			validBids = append(validBids, pbsBid)
 		}
-		updateSeatNonBidsInvalidVastVersion(seatNonBid, seatBid.Seat, rejectedBid)
+		updateSeatNonBidsInvalidVastVersion(seatNonBidBuilder, seatBid.Seat, rejectedBid)
 		seatBid.Bids = validBids
 	}
 	return errs

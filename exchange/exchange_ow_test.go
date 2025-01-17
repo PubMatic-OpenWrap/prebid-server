@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"regexp"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +35,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 	type want struct {
 		rejectedBidIds       []string
 		validBidCountPerSeat map[string]int
-		expectedseatNonBids  openrtb_ext.NonBidCollection
+		expectedseatNonBids  openrtb_ext.SeatNonBidBuilder
 	}
 	tests := []struct {
 		name string
@@ -142,7 +141,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tab_bidder_1": 2,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -174,7 +173,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 0, // expect 0 bids. i.e. all bids are rejected
 					"rtb_bidder_1": 2, // no bid must be rejected
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -198,7 +197,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adaptor_1": 1,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -230,7 +229,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -262,7 +261,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_bidder_1": 2,
 					"rtb_bidder_1": 2,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -287,7 +286,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 			want: want{
 				rejectedBidIds:       []string{"bid_1_of_blocked_adv", "bid_2_of_blocked_adv"},
 				validBidCountPerSeat: map[string]int{"my_adapter": 1},
-				expectedseatNonBids:  openrtb_ext.NonBidCollection{},
+				expectedseatNonBids:  openrtb_ext.SeatNonBidBuilder{},
 			},
 		}, {
 			name: "multiple_badv",
@@ -329,7 +328,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		}, {
 			name: "multiple_adomain",
@@ -371,7 +370,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"tag_adapter_2": 0,
 					"rtb_adapter_1": 1,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		}, {
 			name: "case_insensitive_badv", // case of domain not matters
@@ -395,7 +394,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -420,7 +419,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_adapter_1": 0, // expect all bids are rejected as belongs to blocked advertiser
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -456,7 +455,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					"block_bidder":         0,
 					"rtb_non_block_bidder": 4,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -483,7 +482,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"block_bidder": 1,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		}, {
 			name: "only_domain_test", // do not expect bid rejection. edu is valid domain
@@ -509,7 +508,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 3,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -535,7 +534,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				validBidCountPerSeat: map[string]int{
 					"tag_bidder": 2,
 				},
-				expectedseatNonBids: openrtb_ext.NonBidCollection{},
+				expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 	}
@@ -555,7 +554,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 				seatBids[adaptor.BidderName] = sbids
 			}
 
-			seatNonBids := openrtb_ext.NonBidCollection{}
+			seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 			// applyAdvertiserBlocking internally uses tagBidders from (adapter_map.go)
 			// not testing alias here
 
@@ -589,17 +588,10 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					continue // advertiser blocking is currently enabled only for tag bidders
 				}
 
-				seatNonBidsMap := seatNonBids.GetSeatNonBidMap()
+				seatNonBids := seatNonBids.Get()
+				expectedSeatNonBids := tt.want.expectedseatNonBids.Get()
 
-				sort.Slice(seatNonBidsMap[sBid.Seat], func(i, j int) bool {
-					return seatNonBidsMap[sBid.Seat][i].Ext.Prebid.Bid.ID > seatNonBidsMap[sBid.Seat][j].Ext.Prebid.Bid.ID
-				})
-
-				expectedSeatNonBids := tt.want.expectedseatNonBids.GetSeatNonBidMap()
-				sort.Slice(expectedSeatNonBids[sBid.Seat], func(i, j int) bool {
-					return expectedSeatNonBids[sBid.Seat][i].Ext.Prebid.Bid.ID > expectedSeatNonBids[sBid.Seat][j].Ext.Prebid.Bid.ID
-				})
-				assert.Equal(t, expectedSeatNonBids, seatNonBidsMap, "SeatNonBids not matching")
+				assert.ElementsMatch(t, expectedSeatNonBids, seatNonBids, "SeatNonBids not matching")
 
 				for _, bid := range sBid.Bids {
 					if nil != bid.Bid.ADomain {
@@ -1452,21 +1444,21 @@ func TestGetPriceBucketStringOW(t *testing.T) {
 
 func Test_updateSeatNonBidsFloors(t *testing.T) {
 	type args struct {
-		seatNonBids  *openrtb_ext.NonBidCollection
+		seatNonBids  *openrtb_ext.SeatNonBidBuilder
 		rejectedBids []*entities.PbsOrtbSeatBid
 	}
 	tests := []struct {
 		name                string
 		args                args
-		expectedseatNonBids openrtb_ext.NonBidCollection
+		expectedseatNonBids openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			name: "nil rejectedBids",
 			args: args{
 				rejectedBids: nil,
-				seatNonBids:  &openrtb_ext.NonBidCollection{},
+				seatNonBids:  &openrtb_ext.SeatNonBidBuilder{},
 			},
-			expectedseatNonBids: openrtb_ext.NonBidCollection{},
+			expectedseatNonBids: openrtb_ext.SeatNonBidBuilder{},
 		},
 		{
 			name: "floors one rejectedBids in seatnonbid",
@@ -1489,7 +1481,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 						Seat: "pubmatic",
 					},
 				},
-				seatNonBids: &openrtb_ext.NonBidCollection{},
+				seatNonBids: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			expectedseatNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
 				"pubmatic": {
@@ -1552,7 +1544,7 @@ func Test_updateSeatNonBidsFloors(t *testing.T) {
 						Seat: "appnexus",
 					},
 				},
-				seatNonBids: &openrtb_ext.NonBidCollection{},
+				seatNonBids: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			expectedseatNonBids: getNonBids(map[string][]openrtb_ext.NonBidParams{
 				"pubmatic": {
@@ -1881,7 +1873,7 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 func TestFilterBidsByVastVersion(t *testing.T) {
 	type args struct {
 		adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
-		seatNonBid  *openrtb_ext.NonBidCollection
+		seatNonBid  *openrtb_ext.SeatNonBidBuilder
 	}
 	tests := []struct {
 		name string
@@ -1906,7 +1898,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -1941,7 +1933,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -1976,7 +1968,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2037,7 +2029,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder2",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2098,7 +2090,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2156,7 +2148,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder2",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2230,7 +2222,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder2",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2286,7 +2278,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2321,7 +2313,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2356,7 +2348,7 @@ func TestFilterBidsByVastVersion(t *testing.T) {
 						Seat: "bidder1",
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
 				"bidder1": {
@@ -2457,7 +2449,7 @@ func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 		name            string
 		rejectedBids    []*entities.PbsOrtbBid
 		seat            string
-		expectedNonBids openrtb_ext.NonBidCollection
+		expectedNonBids openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			name: "single_rejected_bid",
@@ -2514,13 +2506,13 @@ func TestUpdateSeatNonBidsInvalidVastVersion(t *testing.T) {
 		{
 			name:            "no_rejected_bids",
 			rejectedBids:    []*entities.PbsOrtbBid{},
-			expectedNonBids: openrtb_ext.NonBidCollection{},
+			expectedNonBids: openrtb_ext.SeatNonBidBuilder{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seatNonBids := openrtb_ext.NonBidCollection{}
+			seatNonBids := openrtb_ext.SeatNonBidBuilder{}
 			updateSeatNonBidsInvalidVastVersion(&seatNonBids, tt.seat, tt.rejectedBids)
 			assert.Equal(t, tt.expectedNonBids, seatNonBids)
 		})
