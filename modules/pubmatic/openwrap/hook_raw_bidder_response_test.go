@@ -39,7 +39,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		args           args
 		wantResult     hookstage.HookResult[hookstage.RawBidderResponsePayload]
 		setup          func()
-		wantSeatNonBid openrtb_ext.NonBidCollection
+		wantSeatNonBid openrtb_ext.SeatNonBidBuilder
 		mockHandler    http.HandlerFunc
 		wantBids       []*adapters.TypedBid
 	}{
@@ -125,6 +125,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -190,6 +191,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -266,6 +268,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any()).Times(2)
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any()).Times(2)
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -354,6 +357,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -442,6 +446,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -519,6 +524,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "1", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -581,7 +587,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 			},
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantResult:     hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -655,8 +662,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			wantBids: []*adapters.TypedBid{},
-			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			wantSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				seatNonBid.AddBid(openrtb_ext.NonBid{
 					ImpId:      fmt.Sprintf("div-adunit-%d", 123),
 					StatusCode: int(nbr.LossBidLostInVastUnwrap),
@@ -721,8 +728,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
 			wantBids: []*adapters.TypedBid{},
-			wantSeatNonBid: func() openrtb_ext.NonBidCollection {
-				seatNonBid := openrtb_ext.NonBidCollection{}
+			wantSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 				seatNonBid.AddBid(openrtb_ext.NonBid{
 					ImpId:      fmt.Sprintf("div-adunit-%d", 123),
 					StatusCode: int(nbr.LossBidLostInVastUnwrap),
@@ -944,7 +951,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
 			},
-			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantResult:     hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{
@@ -1017,6 +1025,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "1")
 				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
 			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
 			wantBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{

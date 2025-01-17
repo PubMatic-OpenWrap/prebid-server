@@ -360,6 +360,8 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		imp.Audio = nil
 	}
 
+	imp.BidFloorCur = strings.ToUpper(imp.BidFloorCur)
+
 	// Populate imp.displaymanager and imp.displaymanagerver if the SDK failed to do it.
 	if imp.DisplayManager == "" && imp.DisplayManagerVer == "" && displayManager != "" && displayManagerVer != "" {
 		imp.DisplayManager = displayManager

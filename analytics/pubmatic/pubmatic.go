@@ -106,6 +106,12 @@ func (ow HTTPLogger) LogAmpObject(ao *analytics.AmpObject) {
 func (ow HTTPLogger) LogNotificationEventObject(ne *analytics.NotificationEvent) {
 }
 
+// Shutdown - no op since the analytic module already implements system signal handling
+// and trying to close a closed channel will cause panic
+func (ow HTTPLogger) Shutdown() {
+	glog.Info("[Pubmatic] Shutdown")
+}
+
 // Method to initialize the analytic module
 func NewHTTPLogger(cfg config.PubMaticWL) analytics.Module {
 	once.Do(func() {

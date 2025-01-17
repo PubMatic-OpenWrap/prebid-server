@@ -171,7 +171,12 @@ func addBidParam(bidParams map[string]interface{}, name string, paramType string
 			return errors.New(errMsg)
 		}
 	default:
-		bidParams[name] = fmt.Sprintf("%v", value)
+		switch v := value.(type) {
+		case float64:
+			bidParams[name] = strconv.FormatFloat(v, 'f', -1, 64)
+		default:
+			bidParams[name] = fmt.Sprintf("%v", value)
+		}
 	}
 
 	return nil

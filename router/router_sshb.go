@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v2/analytics"
 	"github.com/prebid/prebid-server/v2/currency"
 	"github.com/prebid/prebid-server/v2/hooks"
+	"github.com/prebid/prebid-server/v2/ortb"
 
 	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
 	"github.com/prebid/prebid-server/v2/config"
@@ -33,7 +34,7 @@ var (
 	g_cfg                 *config.Configuration
 	g_ex                  *exchange.Exchange
 	g_accounts            *stored_requests.AccountFetcher
-	g_paramsValidator     *openrtb_ext.BidderParamValidator
+	g_requestValidator    *ortb.RequestValidator
 	g_storedReqFetcher    *stored_requests.Fetcher
 	g_storedRespFetcher   *stored_requests.Fetcher
 	g_metrics             metrics.MetricsEngine
@@ -73,7 +74,7 @@ func RegisterAnalyticsModule(anlt analytics.Module) error {
 
 // OrtbAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/auction endpoint
 func OrtbAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
-	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher, *g_planBuilder, g_tmaxAdjustments)
+	ortbAuctionEndpoint, err := openrtb2.NewEndpoint(uuidutil.UUIDRandomGenerator{}, *g_ex, *g_requestValidator, *g_storedReqFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_storedRespFetcher, *g_planBuilder, g_tmaxAdjustments)
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func GetPBSCurrencyConversion(from, to string, value float64) (float64, error) {
 
 // VideoAuctionEndpointWrapper Openwrap wrapper method for calling /openrtb2/video endpoint
 func VideoAuctionEndpointWrapper(w http.ResponseWriter, r *http.Request) error {
-	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(*g_ex, *g_paramsValidator, *g_storedReqFetcher, *g_videoFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_planBuilder, g_tmaxAdjustments)
+	videoAuctionEndpoint, err := openrtb2.NewCTVEndpoint(*g_ex, *g_requestValidator, *g_storedReqFetcher, *g_videoFetcher, *g_accounts, g_cfg, g_metrics, *g_analytics, g_disabledBidders, g_defReqJSON, g_activeBidders, *g_planBuilder, g_tmaxAdjustments)
 	if err != nil {
 		return err
 	}
