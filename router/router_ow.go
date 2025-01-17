@@ -3,7 +3,8 @@ package router
 import (
 	"net/http"
 
-	unwrap "git.pubmatic.com/vastunwrap/unwrap"
+	"git.pubmatic.com/vastunwrap/unwrap"
+	unwrapmodels "git.pubmatic.com/vastunwrap/unwrap/models"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-server/v2/exchange"
 	middleware "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/middleware/adpod"
@@ -58,7 +59,7 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 func initFastXMLTest() {
 	if g_metrics != nil {
-		unwrap.InitRecordFastXMLTestMetrics(func(ctx *unwrap.UnwrapContext, etreeResp, fastxmlResp *unwrap.UnwrapResponse) {
+		unwrap.InitRecordFastXMLTestMetrics(func(ctx *unwrapmodels.UnwrapContext, etreeResp, fastxmlResp *unwrapmodels.UnwrapResponse) {
 			exchange.RecordFastXMLTestMetrics(g_metrics, ctx, etreeResp, fastxmlResp)
 		})
 	}

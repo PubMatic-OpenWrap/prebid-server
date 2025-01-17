@@ -1829,9 +1829,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 			name: "Record_Fast_XML_Metrics_Respnse_matched",
 			args: args{
 				vastBidderInfo: &openrtb_ext.FastXMLMetrics{
-					XMLParserTime:   time.Millisecond * 10,
-					EtreeParserTime: time.Millisecond * 20,
-					IsRespMismatch:  false,
+					FastXMLParserTime: time.Millisecond * 10,
+					EtreeParserTime:   time.Millisecond * 20,
+					IsRespMismatch:    false,
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
@@ -1846,9 +1846,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 			name: "Record_Fast_XML_Metrics_Respnse_mismatched",
 			args: args{
 				vastBidderInfo: &openrtb_ext.FastXMLMetrics{
-					XMLParserTime:   time.Millisecond * 15,
-					EtreeParserTime: time.Millisecond * 25,
-					IsRespMismatch:  true,
+					FastXMLParserTime: time.Millisecond * 15,
+					EtreeParserTime:   time.Millisecond * 25,
+					IsRespMismatch:    true,
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
