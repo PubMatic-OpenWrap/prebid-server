@@ -20,6 +20,7 @@ import (
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/prebid_cache_client"
 	"github.com/prebid/prebid-server/v2/privacy"
 	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
@@ -1236,7 +1237,7 @@ func mockDepsWithMetrics(t *testing.T, ex *mockExchangeVideo) (*endpointDeps, *m
 	deps := &endpointDeps{
 		fakeUUIDGenerator{},
 		ex,
-		mockBidderParamValidator{},
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
 		&mockVideoStoredReqFetcher{},
 		&mockVideoStoredReqFetcher{},
 		&mockAccountFetcher{data: mockVideoAccountData},
@@ -1281,11 +1282,13 @@ func (m *mockAnalyticsModule) LogAmpObject(ao *analytics.AmpObject, _ privacy.Ac
 func (m *mockAnalyticsModule) LogNotificationEventObject(ne *analytics.NotificationEvent, _ privacy.ActivityControl) {
 }
 
+func (m *mockAnalyticsModule) Shutdown() {}
+
 func mockDeps(t *testing.T, ex *mockExchangeVideo) *endpointDeps {
 	return &endpointDeps{
 		fakeUUIDGenerator{},
 		ex,
-		mockBidderParamValidator{},
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
 		&mockVideoStoredReqFetcher{},
 		&mockVideoStoredReqFetcher{},
 		&mockAccountFetcher{data: mockVideoAccountData},
@@ -1310,7 +1313,7 @@ func mockDepsAppendBidderNames(t *testing.T, ex *mockExchangeAppendBidderNames) 
 	deps := &endpointDeps{
 		fakeUUIDGenerator{},
 		ex,
-		mockBidderParamValidator{},
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
 		&mockVideoStoredReqFetcher{},
 		&mockVideoStoredReqFetcher{},
 		empty_fetcher.EmptyFetcher{},
@@ -1337,7 +1340,7 @@ func mockDepsNoBids(t *testing.T, ex *mockExchangeVideoNoBids) *endpointDeps {
 	edep := &endpointDeps{
 		fakeUUIDGenerator{},
 		ex,
-		mockBidderParamValidator{},
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
 		&mockVideoStoredReqFetcher{},
 		&mockVideoStoredReqFetcher{},
 		empty_fetcher.EmptyFetcher{},
@@ -1389,7 +1392,7 @@ func (cf mockVideoStoredReqFetcher) FetchResponses(ctx context.Context, ids []st
 type mockExchangeVideo struct {
 	lastRequest *openrtb2.BidRequest
 	cache       *mockCacheClient
-	seatNonBid  openrtb_ext.NonBidCollection
+	seatNonBid  openrtb_ext.SeatNonBidBuilder
 }
 
 func (m *mockExchangeVideo) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
@@ -1518,6 +1521,9 @@ func TestVideoRequestValidationFailed(t *testing.T) {
 }
 
 func TestSeatNonBidInVideoAuction(t *testing.T) {
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
 	bidRequest := openrtb_ext.BidRequestVideo{
 		Test:            1,
 		StoredRequestId: "80ce30c53c16e6ede735f123ef6e32361bfc7b22",
@@ -1536,7 +1542,7 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 	}
 
 	type args struct {
-		nonBidsFromHoldAuction openrtb_ext.NonBidCollection
+		nonBidsFromHoldAuction openrtb_ext.SeatNonBidBuilder
 	}
 	type want struct {
 		seatNonBid []openrtb_ext.SeatNonBid
@@ -1566,6 +1572,32 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 							{
 								ImpId:      "imp",
 								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1575,7 +1607,7 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 		{
 			description: "holdAuction does not return seatNonBid",
 			args: args{
-				nonBidsFromHoldAuction: openrtb_ext.NonBidCollection{},
+				nonBidsFromHoldAuction: openrtb_ext.SeatNonBidBuilder{},
 			},
 			want: want{
 				seatNonBid: nil,
@@ -1589,7 +1621,7 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 			deps := &endpointDeps{
 				fakeUUIDGenerator{},
 				ex,
-				mockBidderParamValidator{},
+				ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
 				&mockVideoStoredReqFetcher{},
 				&mockVideoStoredReqFetcher{},
 				&mockAccountFetcher{data: mockVideoAccountData},

@@ -12,9 +12,9 @@ import (
 // currently, this function prepares and returns nonbids for partner-throttle and slot-not-mapped errors
 // prepareSeatNonBids forms the rctx.SeatNonBids map from rctx values
 // currently, this function prepares and returns nonbids for partner-throttle and slot-not-mapped errors
-func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
+func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.SeatNonBidBuilder {
 
-	var seatNonBid openrtb_ext.NonBidCollection
+	var seatNonBid openrtb_ext.SeatNonBidBuilder
 	for impID, impCtx := range rctx.ImpBidCtx {
 		// seat-non-bid for partner-throttled error
 		for bidder := range rctx.AdapterThrottleMap {
@@ -40,7 +40,7 @@ func prepareSeatNonBids(rctx models.RequestCtx) openrtb_ext.NonBidCollection {
 	return seatNonBid
 }
 
-func updateSeatNonBidsFromDefaultBids(rctx models.RequestCtx, seatNonBid *openrtb_ext.NonBidCollection) {
+func updateSeatNonBidsFromDefaultBids(rctx models.RequestCtx, seatNonBid *openrtb_ext.SeatNonBidBuilder) {
 	for impID, defaultBid := range rctx.DefaultBids {
 		for seat, bids := range defaultBid {
 			for _, bid := range bids {
@@ -126,8 +126,8 @@ func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
 	}
 }
 
-func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidationRequestPayload) openrtb_ext.NonBidCollection {
-	var seatNonBids openrtb_ext.NonBidCollection
+func getSeatNonBid(Bidders map[string]struct{}, payload hookstage.BeforeValidationRequestPayload) openrtb_ext.SeatNonBidBuilder {
+	var seatNonBids openrtb_ext.SeatNonBidBuilder
 	for bidderName := range Bidders {
 		for _, imp := range payload.BidRequest.Imp {
 			nonBid := openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{

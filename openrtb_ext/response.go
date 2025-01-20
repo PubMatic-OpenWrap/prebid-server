@@ -178,5 +178,5 @@ type NonBid struct {
 type SeatNonBid struct {
 	NonBid []NonBid        `json:"nonbid"`
 	Seat   string          `json:"seat"`
-	Ext    json.RawMessage `json:"ext"`
+	Ext    json.RawMessage `json:"ext,omitempty"`
 }

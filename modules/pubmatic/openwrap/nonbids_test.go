@@ -14,6 +14,9 @@ import (
 )
 
 func TestPrepareSeatNonBids(t *testing.T) {
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -21,7 +24,7 @@ func TestPrepareSeatNonBids(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        args
-		seatNonBids openrtb_ext.NonBidCollection
+		seatNonBids openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			name: "empty_impbidctx",
@@ -30,7 +33,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 					SeatNonBids: make(map[string][]openrtb_ext.NonBid),
 				},
 			},
-			seatNonBids: openrtb_ext.NonBidCollection{},
 		},
 		{
 			name: "empty_seatnonbids",
@@ -44,7 +46,6 @@ func TestPrepareSeatNonBids(t *testing.T) {
 					SeatNonBids: make(map[string][]openrtb_ext.NonBid),
 				},
 			},
-			seatNonBids: openrtb_ext.NonBidCollection{},
 		},
 		{
 			name: "partner_throttled_nonbids",
@@ -863,8 +864,8 @@ func TestAddLostToDealBidNonBRCode(t *testing.T) {
 	}
 }
 
-func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.NonBidCollection {
-	nonBids := openrtb_ext.NonBidCollection{}
+func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.SeatNonBidBuilder {
+	nonBids := openrtb_ext.SeatNonBidBuilder{}
 	for bidder, bidParams := range bidParamsMap {
 		for _, bidParam := range bidParams {
 			nonBid := openrtb_ext.NewNonBid(bidParam)
@@ -877,7 +878,7 @@ func getNonBids(bidParamsMap map[string][]openrtb_ext.NonBidParams) openrtb_ext.
 func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 	type args struct {
 		rctx       models.RequestCtx
-		seatNonBid *openrtb_ext.NonBidCollection
+		seatNonBid *openrtb_ext.SeatNonBidBuilder
 	}
 	tests := []struct {
 		name           string
@@ -890,7 +891,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 				rctx: models.RequestCtx{
 					DefaultBids: nil,
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			wantSeatNonBid: nil,
 		},
@@ -921,7 +922,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -951,7 +952,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 		},
 		{
@@ -981,7 +982,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			wantSeatNonBid: nil,
 		},
@@ -1012,7 +1013,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			wantSeatNonBid: []openrtb_ext.SeatNonBid{
 				{
@@ -1074,7 +1075,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			wantSeatNonBid: []openrtb_ext.SeatNonBid{
 				{
@@ -1199,7 +1200,7 @@ func TestUpdateSeatNonBidsFromDefaultBids(t *testing.T) {
 						},
 					},
 				},
-				seatNonBid: &openrtb_ext.NonBidCollection{},
+				seatNonBid: &openrtb_ext.SeatNonBidBuilder{},
 			},
 			wantSeatNonBid: []openrtb_ext.SeatNonBid{
 				{
