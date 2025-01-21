@@ -2080,7 +2080,10 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
-			assert.Equal(t, tt.partners, partners, tt.name)
+			for ind := range partners {
+				// ignore order of elements in slice while comparison
+				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
+			}
 		})
 	}
 }

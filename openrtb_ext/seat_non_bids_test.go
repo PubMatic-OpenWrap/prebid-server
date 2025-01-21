@@ -8,6 +8,9 @@ import (
 )
 
 func TestNewNonBid(t *testing.T) {
+	resetFakeUUID := SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
 	tests := []struct {
 		name           string
 		bidParams      NonBidParams
@@ -16,12 +19,11 @@ func TestNewNonBid(t *testing.T) {
 		{
 			name:           "nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: nil},
-			expectedNonBid: NonBid{},
-		},
+			expectedNonBid: NonBid{Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}}},
 		{
 			name:           "non-nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: &openrtb2.Bid{ImpID: "imp1"}, NonBidReason: 100},
-			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100},
+			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}},
 		},
 	}
 	for _, tt := range tests {
@@ -34,7 +36,7 @@ func TestNewNonBid(t *testing.T) {
 
 func TestSeatNonBidsAdd(t *testing.T) {
 	type fields struct {
-		seatNonBidsMap map[string][]NonBid
+		seatNonBidsMap SeatNonBidBuilder
 	}
 	type args struct {
 		nonbid NonBid
@@ -44,7 +46,7 @@ func TestSeatNonBidsAdd(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   map[string][]NonBid
+		want   SeatNonBidBuilder
 	}{
 		{
 			name:   "nil-seatNonBidsMap",
@@ -68,18 +70,16 @@ func TestSeatNonBidsAdd(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			snb := &NonBidCollection{
-				seatNonBidsMap: tt.fields.seatNonBidsMap,
-			}
+			snb := tt.fields.seatNonBidsMap
 			snb.AddBid(tt.args.nonbid, tt.args.seat)
-			assert.Equalf(t, tt.want, snb.seatNonBidsMap, "found incorrect seatNonBidsMap")
+			assert.Equalf(t, tt.want, snb, "found incorrect seatNonBidsMap")
 		})
 	}
 }
 
 func TestSeatNonBidsGet(t *testing.T) {
 	type fields struct {
-		snb *NonBidCollection
+		snb SeatNonBidBuilder
 	}
 	tests := []struct {
 		name   string
@@ -88,7 +88,7 @@ func TestSeatNonBidsGet(t *testing.T) {
 	}{
 		{
 			name:   "get-seat-nonbids",
-			fields: fields{&NonBidCollection{sampleSeatNonBidMap("bidder1", 2)}},
+			fields: fields{sampleSeatNonBidMap("bidder1", 2)},
 			want:   sampleSeatBids("bidder1", 2),
 		},
 		{
@@ -105,14 +105,14 @@ func TestSeatNonBidsGet(t *testing.T) {
 	}
 }
 
-var sampleSeatNonBidMap = func(seat string, nonBidCount int) map[string][]NonBid {
+var sampleSeatNonBidMap = func(seat string, nonBidCount int) SeatNonBidBuilder {
 	nonBids := make([]NonBid, 0)
 	for i := 0; i < nonBidCount; i++ {
 		nonBids = append(nonBids, NonBid{
 			Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{}}},
 		})
 	}
-	return map[string][]NonBid{
+	return SeatNonBidBuilder{
 		seat: nonBids,
 	}
 }
@@ -133,59 +133,47 @@ var sampleSeatBids = func(seat string, nonBidCount int) []SeatNonBid {
 }
 
 func TestSeatNonBidsMerge(t *testing.T) {
-	type target struct {
-		snb *NonBidCollection
-	}
+
 	tests := []struct {
-		name   string
-		fields target
-		input  NonBidCollection
-		want   *NonBidCollection
+		name  string
+		snb   SeatNonBidBuilder
+		input SeatNonBidBuilder
+		want  SeatNonBidBuilder
 	}{
 		{
-			name:   "target-NonBidCollection-is-nil",
-			fields: target{nil},
-			want:   nil,
+			name: "target-SeatNonBidBuilder-is-nil",
+			snb:  nil,
+			want: nil,
 		},
 		{
-			name:   "input-NonBidCollection-contains-nil-map",
-			fields: target{&NonBidCollection{}},
-			input:  NonBidCollection{seatNonBidsMap: nil},
-			want:   &NonBidCollection{},
+			name:  "input-SeatNonBidBuilder-contains-nil-map",
+			snb:   SeatNonBidBuilder{},
+			input: nil,
+			want:  SeatNonBidBuilder{},
 		},
 		{
-			name:   "input-NonBidCollection-contains-empty-nonBids",
-			fields: target{&NonBidCollection{}},
-			input:  NonBidCollection{seatNonBidsMap: make(map[string][]NonBid)},
-			want:   &NonBidCollection{},
+			name:  "input-SeatNonBidBuilder-contains-empty-nonBids",
+			snb:   SeatNonBidBuilder{},
+			input: SeatNonBidBuilder{},
+			want:  SeatNonBidBuilder{},
 		},
 		{
-			name:   "append-nonbids-in-empty-target-NonBidCollection",
-			fields: target{&NonBidCollection{}},
-			input: NonBidCollection{
-				seatNonBidsMap: sampleSeatNonBidMap("pubmatic", 1),
-			},
-			want: &NonBidCollection{
-				seatNonBidsMap: sampleSeatNonBidMap("pubmatic", 1),
-			},
+			name:  "append-nonbids-in-empty-target-SeatNonBidBuilder",
+			snb:   SeatNonBidBuilder{},
+			input: sampleSeatNonBidMap("pubmatic", 1),
+			want:  sampleSeatNonBidMap("pubmatic", 1),
 		},
 		{
-			name: "merge-multiple-nonbids-in-non-empty-target-NonBidCollection",
-			fields: target{&NonBidCollection{
-				seatNonBidsMap: sampleSeatNonBidMap("pubmatic", 1),
-			}},
-			input: NonBidCollection{
-				seatNonBidsMap: sampleSeatNonBidMap("pubmatic", 1),
-			},
-			want: &NonBidCollection{
-				seatNonBidsMap: sampleSeatNonBidMap("pubmatic", 2),
-			},
+			name:  "merge-multiple-nonbids-in-non-empty-target-SeatNonBidBuilder",
+			snb:   sampleSeatNonBidMap("pubmatic", 1),
+			input: sampleSeatNonBidMap("pubmatic", 1),
+			want:  sampleSeatNonBidMap("pubmatic", 2),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.fields.snb.Append(tt.input)
-			assert.Equal(t, tt.want, tt.fields.snb, "incorrect NonBidCollection generated by Append")
+			tt.snb.Append(tt.input)
+			assert.Equal(t, tt.want, tt.snb, "incorrect SeatNonBidBuilder generated by Append")
 		})
 	}
 }

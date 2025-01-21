@@ -17,6 +17,7 @@ const (
 	TmaxTimeoutErrorCode
 	FailedToMarshalErrorCode
 	FailedToUnmarshalErrorCode
+	InvalidImpFirstPartyDataErrorCode
 
 	// NYC: shall we have different range for OW error codes to avoid change in codes with introduction of new PBS error codes.
 	NoBidPriceErrorCode
