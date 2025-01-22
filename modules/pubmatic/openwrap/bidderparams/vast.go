@@ -170,15 +170,14 @@ func validateVASTTag(
 		if videoMinDuration != 0 && vastTag.Duration < int(videoMinDuration) {
 			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < video.minduration' vastTagID:%v, tag.duration:%v, video.minduration:%v", vastTag.ID, vastTag.Duration, videoMinDuration)
 		}
-
 	} else {
 		//adpod request
-		if vastTag.Duration < *adpod.MinDuration {
-			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < adpod.minduration' vastTagID:%v, tag.duration:%v, adpod.minduration:%v", vastTag.ID, vastTag.Duration, adpod.MinDuration)
+		if adpod.MinDuration != nil && vastTag.Duration < *adpod.MinDuration {
+			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < adpod.minduration' vastTagID:%v, tag.duration:%v, adpod.minduration:%v", vastTag.ID, vastTag.Duration, *adpod.MinDuration)
 		}
 
-		if vastTag.Duration > *adpod.MaxDuration {
-			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:%v, tag.duration:%v, adpod.maxduration:%v", vastTag.ID, vastTag.Duration, adpod.MaxDuration)
+		if adpod.MaxDuration != nil && vastTag.Duration > *adpod.MaxDuration {
+			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:%v, tag.duration:%v, adpod.maxduration:%v", vastTag.ID, vastTag.Duration, *adpod.MaxDuration)
 		}
 	}
 

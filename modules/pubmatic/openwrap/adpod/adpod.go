@@ -169,16 +169,20 @@ func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *mode
 		return errors.New("imp.video.minduration must be number positive number")
 	}
 
-	if videoMaxDuration <= 0 {
-		return errors.New("imp.video.maxduration must be number positive non zero number")
+	if videoMaxDuration < 0 {
+		return errors.New("imp.video.maxduration must be number positive number")
 	}
 
-	if videoMinDuration > videoMaxDuration {
+	if videoMinDuration > 0 && videoMaxDuration > 0 && videoMinDuration > videoMaxDuration {
 		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
 	}
 
 	if pod == nil {
 		return nil
+	}
+
+	if videoMaxDuration <= 0 {
+		return errors.New("imp.video.maxduration must be number positive non zero number for adpod")
 	}
 
 	if pod.MinAds != nil && *pod.MinAds <= 0 {
