@@ -6,17 +6,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-)
-
-const (
-	VersionLevelConfigID = -1
-)
-
-const (
-	SChainDBKey       = "sChain"
-	SChainObjectDBKey = "sChainObj"
-	SChainKey         = "schain"
-	//SChainConfigKey   = "config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
 
 // SupplyChainConfig reads profile level supply chain object from database
@@ -25,26 +16,29 @@ type SupplyChainConfig struct {
 	SupplyChain *openrtb2.SupplyChain `json:"config"`
 }
 
+func setSchainInRequest(requestExt *models.RequestExt, source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
+	setGlobalSchain(source, partnerConfigMap)
+	setAllBidderSchain(requestExt, partnerConfigMap)
+}
+
 func getSChainObj(partnerConfigMap map[int]map[string]string) *openrtb2.SupplyChain {
-	if partnerConfigMap != nil && partnerConfigMap[VersionLevelConfigID] != nil {
-		if partnerConfigMap[VersionLevelConfigID][SChainDBKey] == "1" {
-			sChainObjJSON := partnerConfigMap[VersionLevelConfigID][SChainObjectDBKey]
-			sChainConfig := &SupplyChainConfig{}
-			if err := json.Unmarshal([]byte(sChainObjJSON), sChainConfig); err != nil {
-				glog.Errorf(ctv.ErrJSONUnmarshalFailed, SChainKey, err.Error(), sChainObjJSON)
-				return nil
-			}
-			if sChainConfig != nil && sChainConfig.SupplyChain != nil {
-				return sChainConfig.SupplyChain
-			}
-		}
+	sChainObjJSON := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.SChainObjectDBKey)
+	if len(sChainObjJSON) == 0 {
+		return nil
+	}
+	sChainConfig := &SupplyChainConfig{}
+	if err := json.Unmarshal([]byte(sChainObjJSON), sChainConfig); err != nil {
+		glog.Errorf(ctv.ErrJSONUnmarshalFailed, models.SChainKey, err.Error(), sChainObjJSON)
+		return nil
+	}
+	if sChainConfig.SupplyChain != nil {
+		return sChainConfig.SupplyChain
 	}
 	return nil
 }
 
-// setSChainInSourceObject sets schain object in source.ext.schain
-func setSChainInSourceObject(source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
-
+// setGlobalSchain sets schain object in source.ext.schain
+func setGlobalSchain(source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
 	var sChainObj *openrtb2.SupplyChain
 	if source.SChain == nil {
 		sChainObj = getSChainObj(partnerConfigMap)
@@ -63,11 +57,29 @@ func setSChainInSourceObject(source *openrtb2.Source, partnerConfigMap map[int]m
 		if err != nil {
 			sourceExtMap = map[string]any{}
 		}
-		sourceExtMap[SChainKey] = sChainObj
+		sourceExtMap[models.SChainKey] = sChainObj
 		sourceExtBytes, err := json.Marshal(sourceExtMap)
 
 		if err == nil {
 			source.Ext = sourceExtBytes
 		}
+	}
+}
+
+// setAllBidderSchain sets All Bidder Specific Schain to ext.prebid.schains
+func setAllBidderSchain(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
+	allBidderSChainObjJSON := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.AllBidderSchainObj)
+	if len(allBidderSChainObjJSON) == 0 {
+		return
+	}
+
+	allBidderSChainConfig := []*openrtb_ext.ExtRequestPrebidSChain{}
+	if err := json.Unmarshal([]byte(allBidderSChainObjJSON), &allBidderSChainConfig); err != nil {
+		glog.Errorf(ctv.ErrJSONUnmarshalFailed, models.AllBidderSchainKey, err.Error(), allBidderSChainObjJSON)
+		return
+	}
+
+	if requestExt != nil && requestExt.Prebid.SChains == nil {
+		requestExt.Prebid.SChains = allBidderSChainConfig
 	}
 }
