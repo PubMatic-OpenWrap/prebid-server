@@ -137,41 +137,47 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, errors.New("invalid profile data")
 	}
 
-	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
-		if len(rCtx.ResponseFormat) > 0 {
-			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
-				result.NbrCode = int(nbr.InvalidResponseFormat)
-				result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+	if rCtx.IsCTVRequest {
+		if rCtx.Endpoint == models.EndpointJson {
+			if len(rCtx.ResponseFormat) > 0 {
+				if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
+					result.NbrCode = int(nbr.InvalidResponseFormat)
+					result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+					return result, nil
+				}
+			}
+
+			if len(rCtx.RedirectURL) == 0 {
+				rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
+			}
+
+			if len(rCtx.RedirectURL) > 0 {
+				rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
+				if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
+					result.NbrCode = int(nbr.InvalidRedirectURL)
+					result.Errors = append(result.Errors, "Invalid redirect URL")
+					return result, nil
+				}
+			}
+
+			if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
+				result.NbrCode = int(nbr.MissingOWRedirectURL)
+				result.Errors = append(result.Errors, "owRedirectURL is missing")
 				return result, nil
 			}
 		}
-
-		if len(rCtx.RedirectURL) == 0 {
-			rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.OwRedirectURL)
-		}
-
-		if len(rCtx.RedirectURL) > 0 {
-			rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
-			if rCtx.ResponseFormat == models.ResponseFormatRedirect && !isValidURL(rCtx.RedirectURL) {
-				result.NbrCode = int(nbr.InvalidRedirectURL)
-				result.Errors = append(result.Errors, "Invalid redirect URL")
-				return result, nil
+		videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
+		if len(videoAdDuration) > 0 {
+			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+				AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
+				AdserverCreativeDurationMatchingPolicy: models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey),
 			}
-		}
-
-		if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
-			result.NbrCode = int(nbr.MissingOWRedirectURL)
-			result.Errors = append(result.Errors, "owRedirectURL is missing")
-			return result, nil
-		}
-	}
-
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationKey)
-	policy := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDuration) > 0 {
-		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: policy,
+		} else if rCtx.IsTestRequest > 0 {
+			//Adding default durations for CTV Test requests
+			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
+				AdserverCreativeDurations:              []int{5, 10},
+				AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
+			}
 		}
 	}
 
@@ -277,14 +283,32 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 		return 0, err
 	}
-
+	var gamQueryParams url.Values
 	if rCtx.IsCTVRequest {
-		err := ctv.ValidateVideoImpressions(payload.BidRequest)
+		err := adpod.IsValidRequestAdPodExt(requestExt.AdPod)
+		if err != nil {
+			result.NbrCode = int(nbr.InvalidAdpodConfig)
+			result.Errors = append(result.Errors, "invalid adpod configurations. reason: "+err.Error())
+			return result, err
+		}
+
+		err = ctv.ValidateVideoImpressions(payload.BidRequest)
 		if err != nil {
 			result.NbrCode = int(nbr.InvalidVideoRequest)
 			result.Errors = append(result.Errors, err.Error())
 			rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 			return result, nil
+		}
+		if rCtx.Endpoint == models.EndpointJson && rCtx.RedirectURL != "" {
+			defaultAdUnitConfig, ok := rCtx.AdUnitConfig.Config[models.AdunitConfigDefaultKey]
+			if ok && defaultAdUnitConfig != nil {
+				gamRedirectURL, err := url.Parse(rCtx.RedirectURL)
+				if gamRedirectURL != nil && err == nil {
+					gamQueryParams = gamRedirectURL.Query()
+				}
+			}
+			setAppDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
+			setDeviceDetailsWithGAMParam(payload.BidRequest, gamQueryParams)
 		}
 	}
 
@@ -396,7 +420,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		var adpodConfig *models.AdPod
 		if rCtx.IsCTVRequest {
-			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, requestExt.AdPod, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, m.metricEngine)
+
+			adpodConfig, err = adpod.GetV25AdpodConfigs(imp.Video, videoAdUnitCtx.AppliedSlotAdUnitConfig, partnerConfigMap, rCtx.PubIDStr, rCtx.RedirectURL, gamQueryParams, m.metricEngine, requestExt.AdPod)
 			if err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
@@ -412,7 +437,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				}
 			}
 
-			if err := adpod.ValidateV25Configs(rCtx, adpodConfig); err != nil {
+			if err := adpod.ValidateV25Configs(rCtx, imp.Video, adpodConfig, videoAdUnitCtx.AppliedSlotAdUnitConfig); err != nil {
 				result.NbrCode = int(nbr.InvalidAdpodConfig)
 				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
 				rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest)
@@ -1387,6 +1412,33 @@ func isValidURL(urlVal string) bool {
 		return false
 	}
 	return validator.IsRequestURL(urlVal) && validator.IsURL(urlVal)
+}
+
+func setAppDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request == nil || request.App == nil {
+		return
+	}
+	if request.App.ID == "" {
+		request.App.ID = gamQueryParams.Get(models.GAMAppID)
+	}
+	if request.App.Bundle == "" {
+		request.App.Bundle = gamQueryParams.Get(models.GAMAppBundle)
+	}
+	if request.App.StoreURL == "" {
+		request.App.StoreURL = gamQueryParams.Get(models.GAMAppStoreUrl)
+	}
+}
+
+func setDeviceDetailsWithGAMParam(request *openrtb2.BidRequest, gamQueryParams url.Values) {
+	if request == nil || request.Device == nil {
+		return
+	}
+	if request.Device.IFA == "" {
+		request.Device.IFA = gamQueryParams.Get(models.GAMDeviceIFA)
+	}
+	if request.Device.Language == "" {
+		request.Device.Language = gamQueryParams.Get(models.GAMDeviceLanguage)
+	}
 }
 
 func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {

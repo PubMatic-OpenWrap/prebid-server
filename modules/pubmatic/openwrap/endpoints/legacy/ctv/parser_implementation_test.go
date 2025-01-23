@@ -36,6 +36,7 @@ func getTestValues() url.Values {
 		ORTBBidRequestBapp:    {"com.foo.mygame"},
 		ORTBBidRequestWlang:   {"EN"},
 		ORTBBidRequestBseat:   {"adserver"},
+		ORTBAdrule:            {"true"},
 
 		//Source
 		ORTBSourceFD:     {"1"},
@@ -874,7 +875,10 @@ func TestParseORTBRequest(t *testing.T) {
 			"ssauction": 0,
 			"sumry_disable": 0,
 			"supportdeals": true,
-			"versionid": 2
+			"versionid": 2,
+			"video":{
+				"adrule": true
+			}
 		  }
 		}
 	  }`
@@ -2448,7 +2452,87 @@ func TestORTBDeviceExtIfaType(t *testing.T) {
 		})
 	}
 }
+func TestORTBAdrule(t *testing.T) {
+	tests := []struct {
+		name      string
+		values    URLValues
+		ortb      *openrtb2.BidRequest
+		expected  json.RawMessage
+		expectErr bool
+	}{
+		{
+			name: "Valid Adrule True",
+			values: URLValues{
+				url.Values{
+					ORTBAdrule: {"true"},
+				},
+			},
+			ortb:      &openrtb2.BidRequest{},
+			expected:  json.RawMessage(`{"wrapper":{"video":{"adrule":true}}}`),
+			expectErr: false,
+		},
+		{
+			name: "Valid Adrule True - WrapperExt already populated",
+			values: URLValues{
+				url.Values{
+					ORTBAdrule: {"true"},
+				},
+			},
+			ortb: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"video":{}}}`),
+			},
+			expected:  json.RawMessage(`{"wrapper":{"video":{"adrule":true}}}`),
+			expectErr: false,
+		},
+		{
+			name: "Valid Adrule False",
+			values: URLValues{
+				url.Values{
+					ORTBAdrule: {"false"},
+				},
+			},
+			ortb:      &openrtb2.BidRequest{},
+			expected:  json.RawMessage(`{"wrapper":{"video":{"adrule":false}}}`),
+			expectErr: false,
+		},
+		{
+			name: "Invalid Adrule",
+			values: URLValues{
+				url.Values{
+					ORTBAdrule: {"invalid"},
+				},
+			},
+			ortb:      &openrtb2.BidRequest{},
+			expected:  nil,
+			expectErr: true,
+		},
+		{
+			name: "Missing Adrule",
+			values: URLValues{
+				url.Values{},
+			},
+			ortb:      &openrtb2.BidRequest{},
+			expected:  nil,
+			expectErr: false,
+		},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &OpenRTB{
+				values: tt.values,
+				ortb:   tt.ortb,
+			}
+			err := o.ORTBAdrule()
+			if (err != nil) != tt.expectErr {
+				t.Errorf("ORTBAdrule() error = %v, expectErr %v", err, tt.expectErr)
+				return
+			}
+
+			assert.Equal(t, tt.expected, o.ortb.Ext)
+		})
+	}
+}
 func TestOpenRTB_ORTBUserExtSessionDuration(t *testing.T) {
 	type fields struct {
 		values URLValues

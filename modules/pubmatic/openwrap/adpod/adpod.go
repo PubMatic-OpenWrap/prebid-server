@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
@@ -16,13 +20,44 @@ import (
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
 )
 
-func setDefaultValues(adpodConfig *models.AdPod) {
-	if adpodConfig.MinAds == 0 {
-		adpodConfig.MinAds = models.DefaultMinAds
+func setDefaultValues(video *openrtb2.Video, adpodConfig *models.AdPod, adUnitConfig *adunitconfig.AdConfig) {
+	if adpodConfig == nil {
+		return
 	}
 
-	if adpodConfig.MaxAds == 0 {
-		adpodConfig.MaxAds = models.DefaultMaxAds
+	podMinDuration := video.MinDuration
+	podMaxDuration := video.MaxDuration
+
+	// return nil if video is disabled as prebid will return error because of video object missing.
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil {
+
+		if podMaxDuration == 0 {
+			podMinDuration = adUnitConfig.Video.Config.MinDuration
+		}
+
+		if podMaxDuration == 0 {
+			podMaxDuration = adUnitConfig.Video.Config.MaxDuration
+		}
+	}
+
+	if adpodConfig.MinAds == nil {
+		adpodConfig.MinAds = ptrutil.ToPtr(models.DefaultMinAds)
+	}
+
+	if adpodConfig.MaxAds == nil {
+		adpodConfig.MaxAds = ptrutil.ToPtr(models.DefaultMaxAds)
+	}
+
+	//pod.MinDuration setting default adminduration
+	if adpodConfig.MinDuration == nil {
+		duration := int(podMinDuration / 2)
+		adpodConfig.MinDuration = &duration
+	}
+
+	//pod.MaxDuration setting default admaxduration
+	if adpodConfig.MaxDuration == nil {
+		duration := int(podMaxDuration / 2)
+		adpodConfig.MaxDuration = &duration
 	}
 
 	if adpodConfig.AdvertiserExclusionPercent == nil {
@@ -35,24 +70,65 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 
 }
 
-func GetV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, me metrics.MetricsEngine) (*models.AdPod, error) {
-	adpodConfigs, ok, err := resolveV25AdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
+func GetV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, redirectURL string, gamQueryParams url.Values, me metrics.MetricsEngine, requestExtAdpod *models.ExtRequestAdPod) (*models.AdPod, error) {
+	adpodConfig, ok, err := resolveV25AdpodConfigs(impVideo, adUnitConfig, pubId, me)
 	if !ok || err != nil {
 		return nil, err
 	}
 
+	mergeRequestExtAdpodConfig(adpodConfig, requestExtAdpod)
+	setImpVideoDetailsWithGAMParams(impVideo, adpodConfig, gamQueryParams)
 	// Set default value if adpod object does not exists
-	setDefaultValues(adpodConfigs)
+	setDefaultValues(impVideo, adpodConfig, adUnitConfig)
 
-	return adpodConfigs, nil
+	return adpodConfig, nil
 }
 
-func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
+func mergeRequestExtAdpodConfig(pod *models.AdPod, requestExtPod *models.ExtRequestAdPod) {
+	if requestExtPod == nil {
+		return
+	}
+
+	if pod == nil {
+		pod = &models.AdPod{}
+	}
+
+	//pod.MinAds setting default value
+	if pod.MinAds == nil {
+		pod.MinAds = requestExtPod.MinAds
+	}
+
+	//pod.MaxAds setting default value
+	if pod.MaxAds == nil {
+		pod.MaxAds = requestExtPod.MaxAds
+	}
+
+	// Add Min and Max duration from request
+	if pod.MinDuration == nil {
+		pod.MinDuration = requestExtPod.MinDuration
+	}
+
+	if pod.MaxDuration == nil {
+		pod.MaxDuration = requestExtPod.MaxDuration
+	}
+
+	//pod.AdvertiserExclusionPercent setting default value
+	if pod.AdvertiserExclusionPercent == nil {
+		pod.AdvertiserExclusionPercent = requestExtPod.AdvertiserExclusionPercent
+	}
+
+	//pod.IABCategoryExclusionPercent setting default value
+	if pod.IABCategoryExclusionPercent == nil {
+		pod.IABCategoryExclusionPercent = requestExtPod.IABCategoryExclusionPercent
+	}
+}
+
+func resolveV25AdpodConfigs(impVideo *openrtb2.Video, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
 	var adpodConfig *models.AdPod
 
 	// Check in impression extension
 	if impVideo != nil && impVideo.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
+		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.ADPOD)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithReqConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
@@ -61,8 +137,8 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.
 	}
 
 	// Check in adunit config
-	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
+		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.ADPOD)
 		if err == nil && len(adpodBytes) > 0 {
 			me.RecordCTVReqImpsWithDbConfigCount(pubId)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
@@ -73,47 +149,79 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
-	if config == nil {
+func ValidateV25Configs(rCtx models.RequestCtx, video *openrtb2.Video, pod *models.AdPod, adUnitConfig *adunitconfig.AdConfig) error {
+	videoMinDuration := video.MinDuration
+	videoMaxDuration := video.MaxDuration
+
+	// return nil if video is disabled as prebid will return error because of video object missing.
+	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled && adUnitConfig.Video.Config != nil {
+
+		if videoMinDuration == 0 {
+			videoMinDuration = adUnitConfig.Video.Config.MinDuration
+		}
+
+		if videoMaxDuration == 0 {
+			videoMaxDuration = adUnitConfig.Video.Config.MaxDuration
+		}
+	}
+
+	if videoMinDuration < 0 {
+		return errors.New("imp.video.minduration must be number positive number")
+	}
+
+	if videoMaxDuration <= 0 {
+		return errors.New("imp.video.maxduration must be number positive non zero number")
+	}
+
+	if videoMinDuration > videoMaxDuration {
+		return errors.New("imp.video.minduration must be less than imp.video.maxduration")
+	}
+
+	if pod == nil {
 		return nil
 	}
 
-	if config.MinAds <= 0 {
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
 		return errors.New("adpod.minads must be positive number")
 	}
 
-	if config.MaxAds <= 0 {
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
 		return errors.New("adpod.maxads must be positive number")
 	}
 
-	if config.MinDuration <= 0 {
+	if pod.MinDuration != nil && *pod.MinDuration < 0 {
 		return errors.New("adpod.adminduration must be positive number")
 	}
 
-	if config.MaxDuration <= 0 {
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
 		return errors.New("adpod.admaxduration must be positive number")
 	}
 
-	if (config.AdvertiserExclusionPercent != nil) && (*config.AdvertiserExclusionPercent < 0 || *config.AdvertiserExclusionPercent > 100) {
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
 		return errors.New("adpod.excladv must be number between 0 and 100")
 	}
 
-	if (config.IABCategoryExclusionPercent != nil) && (*config.IABCategoryExclusionPercent < 0 || *config.IABCategoryExclusionPercent > 100) {
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
 		return errors.New("adpod.excliabcat must be number between 0 and 100")
 	}
 
-	if config.MinAds > config.MaxAds {
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
 		return errors.New("adpod.minads must be less than adpod.maxads")
 	}
 
-	if config.MinDuration > config.MaxDuration {
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
 		return errors.New("adpod.adminduration must be less than adpod.admaxduration")
+	}
+
+	if ((*pod.MinAds * *pod.MinDuration) <= int(videoMaxDuration)) && (int(videoMinDuration) <= (*pod.MaxAds * *pod.MaxDuration)) {
+	} else {
+		return errors.New("adpod duration checks for adminduration,admaxduration,minads,maxads are not in video minduration and maxduration duration range")
 	}
 
 	if rCtx.AdpodProfileConfig != nil && len(rCtx.AdpodProfileConfig.AdserverCreativeDurations) > 0 {
 		validDurations := false
 		for _, videoDuration := range rCtx.AdpodProfileConfig.AdserverCreativeDurations {
-			if videoDuration >= config.MinDuration && videoDuration <= config.MaxDuration {
+			if videoDuration >= *pod.MinDuration && videoDuration <= *pod.MaxDuration {
 				validDurations = true
 				break
 			}
@@ -125,6 +233,7 @@ func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
 	}
 
 	return nil
+
 }
 
 func GetAdpodConfigs(rctx models.RequestCtx, cache cache.Cache, adunit *adunitconfig.AdConfig) ([]models.PodConfig, error) {
@@ -292,4 +401,137 @@ func ApplyAdpodConfigs(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 
 	bidRequest.Imp = imps
 	return bidRequest
+}
+
+func setImpVideoDetailsWithGAMParams(video *openrtb2.Video, adpodConfig *models.AdPod, gamQueryParams url.Values) {
+	if video == nil {
+		return
+	}
+	if video.MinDuration == 0 {
+		video.MinDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMinDuration), 64, 0)
+	}
+	if video.MaxDuration == 0 {
+		video.MaxDuration, _ = strconv.ParseInt(gamQueryParams.Get(models.GAMVideoMaxDuration), 64, 0)
+	}
+	if video.Linearity == 0 {
+		if linearity := gamQueryParams.Get(models.GAMVideoLinearity); len(linearity) > 0 {
+			if linearity == models.GAMVideoLinear {
+				video.Linearity = adcom1.LinearityLinear
+			} else if linearity == models.GAMVideoNonLinear {
+				video.Linearity = adcom1.LinearityNonLinear
+			}
+		}
+	}
+
+	if video.W == nil && video.H == nil {
+		if dimension := gamQueryParams.Get(models.GAMVideoDimensions); len(dimension) > 0 {
+			sizes := getDimension(dimension)
+			if len(sizes) > 1 {
+				w, err := strconv.ParseInt(sizes[0], 64, 0)
+				if err == nil {
+					h, err := strconv.ParseInt(sizes[1], 64, 0)
+					if err == nil {
+						video.W = ptrutil.ToPtr(w)
+						video.H = ptrutil.ToPtr(h)
+					}
+				}
+			}
+		}
+	}
+
+	if adpodConfig == nil {
+		return
+	}
+
+	if adpodConfig.MaxAds == nil && gamQueryParams.Has(models.GAMAdpodMaxAds) {
+		maxads, _ := strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxAds))
+		adpodConfig.MaxAds = &maxads
+	}
+	if adpodConfig.MinDuration == nil && gamQueryParams.Has(models.GAMAdpodMinDuration) {
+		mndur, _ := strconv.Atoi(models.GAMAdpodMinDuration)
+		adpodConfig.MinDuration = ptrutil.ToPtr(mndur)
+	}
+	if adpodConfig.MaxDuration == nil && gamQueryParams.Has(models.GAMAdpodMaxDuration) {
+		mxdur, _ := strconv.Atoi(gamQueryParams.Get(models.GAMAdpodMaxDuration))
+		adpodConfig.MinDuration = ptrutil.ToPtr(mxdur)
+	}
+}
+
+func getDimension(size string) []string {
+	if !strings.Contains(size, models.Pipe) {
+		return strings.Split(size, models.DelimiterX)
+	}
+	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
+}
+
+func IsValidRequestAdPodExt(pod *models.ExtRequestAdPod) error {
+	if pod == nil {
+		return nil
+	}
+
+	if pod.CrossPodAdvertiserExclusionPercent != nil &&
+		(*pod.CrossPodAdvertiserExclusionPercent < 0 || *pod.CrossPodAdvertiserExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excladv must be number between 0 and 100")
+	}
+
+	if pod.CrossPodIABCategoryExclusionPercent != nil &&
+		(*pod.CrossPodIABCategoryExclusionPercent < 0 || *pod.CrossPodIABCategoryExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excliabcat must be number between 0 and 100")
+	}
+
+	if pod.IABCategoryExclusionWindow != nil && *pod.IABCategoryExclusionWindow < 0 {
+		return errors.New("request.ext.adpod.excliabcatwindow must be postive number")
+	}
+
+	if pod.AdvertiserExclusionWindow != nil && *pod.AdvertiserExclusionWindow < 0 {
+		return errors.New("request.ext.adpod.excladvwindow must be postive number")
+	}
+
+	return isValidAdPod(&pod.AdPod)
+
+}
+
+func isValidAdPod(pod *models.AdPod) error {
+	//Validate Request Level AdPod Parameters
+	if pod == nil {
+		return nil
+	}
+
+	if pod.MinAds != nil && *pod.MinAds <= 0 {
+		return errors.New("req.ext.adpod.minads must be positive number")
+	}
+
+	if pod.MaxAds != nil && *pod.MaxAds <= 0 {
+		return errors.New("req.ext.adpod.maxads must be positive number")
+	}
+
+	if pod.MinDuration != nil && *pod.MinDuration <= 0 {
+		return errors.New("req.ext.adpod.adminduration must be positive number")
+	}
+
+	if pod.MaxDuration != nil && *pod.MaxDuration <= 0 {
+		return errors.New("req.ext.adpod.admaxduration must be positive number")
+	}
+
+	if pod.AdvertiserExclusionPercent != nil && (*pod.AdvertiserExclusionPercent < 0 || *pod.AdvertiserExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excladv must be number between 0 and 100")
+	}
+
+	if pod.IABCategoryExclusionPercent != nil && (*pod.IABCategoryExclusionPercent < 0 || *pod.IABCategoryExclusionPercent > 100) {
+		return errors.New("req.ext.adpod.excliabcat must be number between 0 and 100")
+	}
+
+	if pod.MinAds != nil && pod.MaxAds != nil && *pod.MinAds > *pod.MaxAds {
+		return errors.New("req.ext.adpod.minads must be less than req.ext.adpod.maxads")
+	}
+
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration > *pod.MaxDuration {
+		return errors.New("req.ext.adpod.adminduration must be less than req.ext.adpod.admaxduration")
+	}
+
+	if pod.MinDuration != nil && pod.MaxDuration != nil && *pod.MinDuration == *pod.MaxDuration {
+		return errors.New("req.ext.adpod.adminduration must be less than req.ext.adpod.admaxduration")
+	}
+
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 )
@@ -37,17 +37,76 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	}()
 
 	var imps []*openrtb_ext.ImpWrapper
-	var errs []error
+	//var errs []error
+	// if rctx.IsCTVRequest {
+	// 	imps, errs = impressions.GenerateImpressions(payload.Request, rctx.ImpBidCtx, rctx.AdpodProfileConfig, rctx.PubIDStr, m.metricEngine)
+	// 	if len(errs) > 0 {
+	// 		for i := range errs {
+	// 			result.Warnings = append(result.Warnings, errs[i].Error())
+	// 		}
+	// 	}
+	// 	adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
+	// }
 	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.Request, rctx.ImpBidCtx, rctx.AdpodProfileConfig, rctx.PubIDStr, m.metricEngine)
-		if len(errs) > 0 {
-			for i := range errs {
-				result.Warnings = append(result.Warnings, errs[i].Error())
+		for _, imp := range payload.Request.Imp {
+			impCtx, ok := rctx.ImpBidCtx[imp.ID]
+			if !ok {
+				continue
 			}
+			if imp.Video != nil {
+				switch adpod.GetPodType(impCtx) {
+				case models.Dynamic:
+					podId := imp.Video.PodID
+					if impCtx.AdpodConfig != nil {
+						podId = imp.ID
+					}
+					impCtx.AdPod = true
+					rctx.AdpodCtx[podId] = adpod.NewDynamicAdpod(podId, imp, impCtx, rctx.AdpodProfileConfig, rctx.NewReqExt.AdPod)
+				case models.Structured:
+					podContext, ok := rctx.AdpodCtx[imp.Video.PodID]
+					if !ok {
+						podContext = adpod.NewStructuredAdpod(imp.Video.PodID, rctx.NewReqExt.AdPod)
+						rctx.AdpodCtx[imp.Video.PodID] = podContext
+					}
+					podContext.AddImpressions(imp)
+					rctx.ImpToPodId[imp.ID] = imp.Video.PodID
+					impCtx.AdPod = true
+
+				}
+			}
+			rctx.ImpBidCtx[imp.ID] = impCtx
 		}
-		adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
 	}
 
+	if rctx.IsCTVRequest {
+		for _, impWrapper := range payload.Request.GetImp() {
+			impCtx, ok := rctx.ImpBidCtx[impWrapper.ID]
+			if !ok {
+				continue
+			}
+			if impWrapper.Video != nil {
+				switch adpod.GetPodType(impCtx) {
+				case models.Dynamic:
+					podId := impWrapper.Video.PodID
+					if impCtx.AdpodConfig != nil {
+						podId = impWrapper.ID
+					}
+					dynamicAdpod := rctx.AdpodCtx[podId].(*adpod.DynamicAdpod)
+					generatedImps := dynamicAdpod.GetImpressions()
+					for i := range generatedImps {
+						rctx.ImpToPodId[generatedImps[i].ID] = podId
+					}
+					imps = append(imps, generatedImps...)
+				case models.Structured:
+					structuredAdpod := rctx.AdpodCtx[impWrapper.Video.PodID].(*adpod.StructuredAdpod)
+					structuredAdpod.GetImpressions()
+					imps = append(imps, impWrapper)
+				}
+			}
+			//TODO: Check if we require this for structured adpod
+			adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
+		}
+	}
 	ip := rctx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {

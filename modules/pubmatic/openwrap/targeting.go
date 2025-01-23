@@ -120,12 +120,6 @@ func (m OpenWrap) addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *ope
 			bidCtx.Prebid.Targeting = newTargeting
 
 			if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
-				if bidCtx.AdPod == nil {
-					bidCtx.AdPod = &models.AdpodBidExt{}
-				}
-				if impCtx.AdpodConfig != nil {
-					bidCtx.AdPod.IsAdpodBid = true
-				}
 				bidCtx.AdPod.Targeting = GetTargettingForAdpod(bid, rctx.PartnerConfigMap[models.VersionLevelConfigID], impCtx, bidCtx, seatBid.Seat)
 				if rctx.Debug {
 					bidCtx.AdPod.Debug.Targeting = GetTargettingForDebug(rctx, bid.ID, impCtx.TagID, bidCtx)

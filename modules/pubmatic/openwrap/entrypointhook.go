@@ -141,6 +141,8 @@ func (m OpenWrap) handleEntrypointHook(
 		},
 		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
+		AdpodCtx:                        make(map[string]models.Adpod),
+		ImpToPodId:                      make(map[string]string),
 	}
 
 	if rCtx.IsCTVRequest {

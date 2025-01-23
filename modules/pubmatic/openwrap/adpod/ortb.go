@@ -1,8 +1,7 @@
-package middleware
+package adpod
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/buger/jsonparser"
@@ -11,61 +10,33 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
 )
 
-type ortbResponse struct {
-	debug              string
-	WrapperLoggerDebug string
+type ortbResp struct {
+	rctx models.RequestCtx
 }
 
-func (or *ortbResponse) formOperRTBResponse(adpodWriter *utils.HTTPResponseBufferWriter) ([]byte, map[string]string, int) {
-	var statusCode = http.StatusOK
-	var headers = map[string]string{
-		ContentType:    ApplicationJSON,
-		ContentOptions: NoSniff,
-	}
+func newOrtbResponder(rctx models.RequestCtx) Responder {
+	return &ortbResp{rctx: rctx}
+}
 
-	if adpodWriter.Code > 0 && adpodWriter.Code == http.StatusBadRequest {
-		return adpodWriter.Response.Bytes(), headers, adpodWriter.Code
-	}
-
-	response, err := io.ReadAll(adpodWriter.Response)
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-		ext := addErrorInExtension(err.Error(), nil, or.debug)
-		return formErrorBidResponse("", nbr.InternalError.Ptr(), ext), headers, statusCode
-	}
-
-	var bidResponse *openrtb2.BidResponse
-	err = json.Unmarshal(response, &bidResponse)
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-		ext := addErrorInExtension(err.Error(), nil, or.debug)
-		return formErrorBidResponse("", nbr.InternalError.Ptr(), ext), headers, statusCode
-	}
-
-	if bidResponse.NBR != nil {
-		statusCode = http.StatusBadRequest
-		return response, headers, statusCode
-	}
-
-	// TODO: Do not merge the response, respond with 2.6 response
+func (ortb *ortbResp) FormResponse(bidResponse *openrtb2.BidResponse, headers http.Header) (interface{}, http.Header, error) {
 	mergedBidResponse := mergeSeatBids(bidResponse)
 	data, err := json.Marshal(mergedBidResponse)
 	if err != nil {
-		statusCode = 500
-		var id string
-		var bidExt json.RawMessage
+		var (
+			id     string
+			bidExt json.RawMessage
+		)
 		if bidResponse != nil {
 			id = bidResponse.ID
 			bidExt = bidResponse.Ext
 		}
-		bidExt = addErrorInExtension(err.Error(), bidExt, or.debug)
-		return formErrorBidResponse(id, nbr.InternalError.Ptr(), bidExt), headers, statusCode
+		bidExt = addErrorInExtension(err.Error(), bidExt, ortb.rctx.Debug)
+		return formErrorBidResponse(id, nbr.InternalError.Ptr(), bidExt), headers, nil
 	}
 
-	return data, headers, statusCode
+	return data, headers, nil
 }
 
 func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
@@ -152,12 +123,10 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 	return seatBids
 }
 
-func formErrorBidResponse(id string, nbrCode *openrtb3.NoBidReason, ext json.RawMessage) []byte {
-	response := openrtb2.BidResponse{
+func formErrorBidResponse(id string, nbrCode *openrtb3.NoBidReason, ext json.RawMessage) openrtb2.BidResponse {
+	return openrtb2.BidResponse{
 		ID:  id,
 		NBR: nbrCode,
 		Ext: ext,
 	}
-	data, _ := json.Marshal(response)
-	return data
 }

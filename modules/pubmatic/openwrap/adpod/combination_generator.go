@@ -1,4 +1,4 @@
-package auction
+package adpod
 
 import (
 	"math/big"
