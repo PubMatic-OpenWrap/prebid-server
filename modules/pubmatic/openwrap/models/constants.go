@@ -623,6 +623,19 @@ const (
 
 const (
 	// ErrDBQueryFailed reponse error
-	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
-	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
+	ErrDBQueryFailed          = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
+	EmptyPartnerConfig        = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
+	ErrInBeforeValidationHook = `"[ErrInBeforeValidationHook] Error:[%v] with nbr:[%v]"`
+	ErrInEntryPointHook       = `"[ErrInEntryPointHook] Error:[%v] with nbr:[%v]"`
+	ErrInAuctionResponseHook  = `"[ErrInAuctionResponseHook] Error:[%v] with nbr:[%v]"`
+)
+
+const (
+	// ErrSSHBRequest sshb request error
+	ErrSSHBRequest        = "sshb request error"
+	ErrMissingProfileID   = "missing profile id"
+	ErrInvalidPublisherID = "invalid publisher id"
+	ErrInvalidRespFormat  = "Invalid response format, must be 'json' or 'redirect'"
+	ErrInvalidRedirectURL = "Invalid redirect URL"
+	ErrMissingRedirectURL = "owRedirectURL is missing"
 )
