@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.21
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250117134707-b97343806e58
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250123125015-dc60a6d46a6e
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -51,7 +51,7 @@ require (
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/51Degrees/device-detection-go/v4 v4.4.35
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250114115626-75b89b46b93d
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250123111707-e173d4775632
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
