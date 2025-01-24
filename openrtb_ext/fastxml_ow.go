@@ -2,6 +2,7 @@ package openrtb_ext
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -269,4 +270,45 @@ var bfw Writer
 func init() {
 	rg = &RandomNumberGenerator{}
 	bfw = NewFileWriter(`/var/log/ssheaderbidding/`, `fastxml`, `.txt`)
+}
+
+func getXMLData(fileName, method string) []string {
+	file, err := os.Open(fileName)
+	if err != nil {
+		glog.Errorf("[%s] error opening file: [%s]", method, err.Error())
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	re := regexp.MustCompile(`\[XML_PARSER_TEST\] method:\[(\w+)\] response:\s*\[(.+)\]`)
+
+	var decodedXMLs []string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		matches := re.FindStringSubmatch(line)
+		if len(matches) > 2 {
+			method = matches[1]
+			base64Encoded := matches[2]
+
+			data, err := base64.StdEncoding.DecodeString(base64Encoded)
+			if err != nil {
+				glog.Errorf("[%s] error decoding base64: [%s]", method, err.Error())
+				continue
+			}
+
+			decodedXMLs = append(decodedXMLs, string(data))
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		glog.Errorf("[%s] error reading file: [%s]", method, err.Error())
+		return nil
+	}
+
+	return decodedXMLs
 }
