@@ -741,7 +741,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
 	}
 
-	setSchainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
+	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)

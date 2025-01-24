@@ -16,7 +16,7 @@ type SupplyChainConfig struct {
 	SupplyChain *openrtb2.SupplyChain `json:"config"`
 }
 
-func setSchainInRequest(requestExt *models.RequestExt, source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
+func setSChainInRequest(requestExt *models.RequestExt, source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
 	setGlobalSChain(source, partnerConfigMap)
 	setAllBidderSChain(requestExt, partnerConfigMap)
 }
@@ -37,7 +37,7 @@ func getSChainObj(partnerConfigMap map[int]map[string]string) *openrtb2.SupplyCh
 	return nil
 }
 
-// setGlobalSchain sets schain object in source.ext.schain
+// setGlobalSChain sets schain object in source.ext.schain
 func setGlobalSChain(source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
 	var sChainObj *openrtb2.SupplyChain
 	if source.SChain == nil {
@@ -66,7 +66,7 @@ func setGlobalSChain(source *openrtb2.Source, partnerConfigMap map[int]map[strin
 	}
 }
 
-// setAllBidderSchain sets All Bidder Specific Schain to ext.prebid.schains
+// setAllBidderSChain sets All Bidder Specific Schain to ext.prebid.schains
 func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
 	if requestExt == nil || requestExt.Prebid.SChains != nil {
 		return
