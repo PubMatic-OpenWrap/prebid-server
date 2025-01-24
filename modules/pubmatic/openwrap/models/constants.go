@@ -296,8 +296,8 @@ const (
 	SChainObjectDBKey  = "sChainObj"
 	SChainKey          = "schain"
 	SChainConfigKey    = "config"
-	AllBidderSchainObj = "allBidderSChainObject"
-	AllBidderSchainKey = "allBidderSchain"
+	AllBidderSChainObj = "allBidderSChainObject"
+	AllBidderSChainKey = "allBidderSChain"
 
 	PriceFloorURL      = "jsonUrl"
 	FloorModuleEnabled = "floorPriceModuleEnabled"

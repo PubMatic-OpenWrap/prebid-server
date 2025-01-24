@@ -17,8 +17,8 @@ type SupplyChainConfig struct {
 }
 
 func setSchainInRequest(requestExt *models.RequestExt, source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
-	setGlobalSchain(source, partnerConfigMap)
-	setAllBidderSchain(requestExt, partnerConfigMap)
+	setGlobalSChain(source, partnerConfigMap)
+	setAllBidderSChain(requestExt, partnerConfigMap)
 }
 
 func getSChainObj(partnerConfigMap map[int]map[string]string) *openrtb2.SupplyChain {
@@ -38,7 +38,7 @@ func getSChainObj(partnerConfigMap map[int]map[string]string) *openrtb2.SupplyCh
 }
 
 // setGlobalSchain sets schain object in source.ext.schain
-func setGlobalSchain(source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
+func setGlobalSChain(source *openrtb2.Source, partnerConfigMap map[int]map[string]string) {
 	var sChainObj *openrtb2.SupplyChain
 	if source.SChain == nil {
 		sChainObj = getSChainObj(partnerConfigMap)
@@ -67,19 +67,20 @@ func setGlobalSchain(source *openrtb2.Source, partnerConfigMap map[int]map[strin
 }
 
 // setAllBidderSchain sets All Bidder Specific Schain to ext.prebid.schains
-func setAllBidderSchain(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
-	allBidderSChainObjJSON := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.AllBidderSchainObj)
+func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
+	if requestExt == nil || requestExt.Prebid.SChains != nil {
+		return
+	}
+
+	allBidderSChainObjJSON := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.AllBidderSChainObj)
 	if len(allBidderSChainObjJSON) == 0 {
 		return
 	}
 
 	allBidderSChainConfig := []*openrtb_ext.ExtRequestPrebidSChain{}
 	if err := json.Unmarshal([]byte(allBidderSChainObjJSON), &allBidderSChainConfig); err != nil {
-		glog.Errorf(ctv.ErrJSONUnmarshalFailed, models.AllBidderSchainKey, err.Error(), allBidderSChainObjJSON)
+		glog.Errorf(ctv.ErrJSONUnmarshalFailed, models.AllBidderSChainKey, err.Error(), allBidderSChainObjJSON)
 		return
 	}
-
-	if requestExt != nil && requestExt.Prebid.SChains == nil {
-		requestExt.Prebid.SChains = allBidderSChainConfig
-	}
+	requestExt.Prebid.SChains = allBidderSChainConfig
 }
