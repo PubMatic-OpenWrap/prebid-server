@@ -149,6 +149,7 @@ type PartnerRecord struct {
 	Nbr                    *openrtb3.NoBidReason `json:"nbr,omitempty"` // NonBR reason code
 	PriceBucket            string                `json:"pb,omitempty"`
 	MultiBidMultiFloorFlag int                   `json:"mbmf,omitempty"`
+	Bundle                 string                `json:"bundle"`
 }
 
 type MetaData struct {

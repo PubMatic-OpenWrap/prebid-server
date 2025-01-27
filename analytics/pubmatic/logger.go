@@ -434,6 +434,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				PartnerSize:            tracker.Tracker.PartnerInfo.AdSize,
 				ADomain:                tracker.Tracker.PartnerInfo.Advertiser,
 				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
+				Bundle:                 bid.Bid.Bundle,
 			}
 
 			if models.IsDefaultBid(bid.Bid) {
