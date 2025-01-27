@@ -24,6 +24,7 @@ type Config struct {
 	Wakanda       wakanda.Wakanda
 	GeoDB         GeoDB
 	BidCache      BidCache
+	BidderList    []string
 }
 
 type BidCache struct {

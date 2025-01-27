@@ -1,7 +1,9 @@
 package openwrap
 
 import (
+	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -37,8 +39,20 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
 	totalBidCnt := len(payload.BidderResponse.Bids)
-	// send bids for unwrap
+	var bidExt models.BidExt
 	for _, bid := range payload.BidderResponse.Bids {
+		if isBidderInList(m.cfg.BidderList, payload.Bidder) {
+			bidType := GetCreativeType(bid.Bid)
+			if bidType != "" {
+				if err := json.Unmarshal(bid.Bid.Ext, &bidExt); err != nil {
+					result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("Error unmarshaling bid extension for bidder %s: %v", payload.Bidder, err))
+				} else {
+					bidExt.Prebid.Type = openrtb_ext.BidType(bidType)
+				}
+			}
+		}
+
+		// send bids for unwrap
 		if !isEligibleForUnwrap(bid) {
 			unwrappedBids = append(unwrappedBids, bid)
 			continue
@@ -85,4 +99,8 @@ func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
 
 func rejectBid(bidUnwrapStatus string) bool {
 	return bidUnwrapStatus == models.UnwrapEmptyVASTStatus || bidUnwrapStatus == models.UnwrapInvalidVASTStatus
+}
+
+func isBidderInList(bidderList []string, bidder string) bool {
+	return slices.Contains(bidderList, bidder)
 }

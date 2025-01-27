@@ -563,3 +563,17 @@ func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.Med
 	}
 	return impProtocols
 }
+
+func GetCreativeType(bid *openrtb2.Bid) string {
+	if bid.AdM != "" {
+		if models.VideoRegex.MatchString(bid.AdM) {
+			return models.Video
+		}
+		var admJSON map[string]interface{}
+		err := json.Unmarshal([]byte(strings.Replace(bid.AdM, "/\\/g", "", -1)), &admJSON)
+		if err == nil && admJSON != nil && admJSON["native"] != nil {
+			return models.Native
+		}
+	}
+	return models.Banner
+}

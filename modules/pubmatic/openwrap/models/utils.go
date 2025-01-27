@@ -23,10 +23,10 @@ const (
 	ImpressionIDSeparator = `::`
 )
 
-var videoRegex *regexp.Regexp
+var VideoRegex *regexp.Regexp
 
 func init() {
-	videoRegex, _ = regexp.Compile("<VAST\\s+")
+	VideoRegex, _ = regexp.Compile("<VAST\\s+")
 }
 
 var SyncerMap map[string]usersync.Syncer
@@ -90,7 +90,7 @@ func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 	if bid.AdM == "" {
 		return ""
 	}
-	if videoRegex.MatchString(bid.AdM) {
+	if VideoRegex.MatchString(bid.AdM) {
 		return Video
 	}
 	if impCtx.Native != nil {
