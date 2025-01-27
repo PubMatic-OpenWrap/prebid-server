@@ -712,6 +712,120 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "log bundle field if empty string",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										ADomain: []string{
+											"http://google.com", "http://yahoo.com",
+										},
+										Bundle: "",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												BidId: "prebid-bid-id-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "prebid-bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						ADomain:          "google.com",
+						DefaultBidStatus: 1,
+						Bundle:           "",
+					},
+				},
+			},
+		},
+		{
+			name: "log bundle field if empty",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										ADomain: []string{
+											"http://google.com", "http://yahoo.com",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												BidId: "prebid-bid-id-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "prebid-bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						ADomain:          "google.com",
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
