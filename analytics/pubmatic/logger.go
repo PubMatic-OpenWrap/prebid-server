@@ -223,6 +223,7 @@ func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
 		MType:   nonBid.Ext.Prebid.Bid.MType,
 		ID:      nonBid.Ext.Prebid.Bid.ID,
 		ImpID:   nonBid.ImpId,
+		Bundle:  nonBid.Ext.Prebid.Bid.Bundle,
 	}
 	bidExt := models.BidExt{
 		OriginalBidCPM:    nonBid.Ext.Prebid.Bid.OriginalBidCPM,

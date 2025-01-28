@@ -148,6 +148,45 @@ func TestConvertNonBidToBid(t *testing.T) {
 				exchange.ResponseRejectedBelowFloor.Ptr(),
 			},
 		},
+		{
+			name: "nonbid to bidwrapper with bundle",
+			nonBid: openrtb_ext.NonBid{
+				StatusCode: int(exchange.ResponseRejectedBelowFloor),
+				ImpId:      "imp1",
+				Ext: openrtb_ext.ExtNonBid{
+					Prebid: openrtb_ext.ExtNonBidPrebid{
+						Bid: openrtb_ext.ExtNonBidPrebidBid{
+							Price:             10,
+							ADomain:           []string{"abc.com"},
+							DealID:            "d1",
+							OriginalBidCPM:    10,
+							OriginalBidCur:    models.USD,
+							OriginalBidCPMUSD: 0,
+							W:                 10,
+							H:                 50,
+							DealPriority:      1,
+							Video: &openrtb_ext.ExtBidPrebidVideo{
+								Duration: 10,
+							},
+							Bundle: "dummy_bundle",
+						},
+					},
+				},
+			},
+			bid: bidWrapper{
+				&openrtb2.Bid{
+					ImpID:   "imp1",
+					Price:   10,
+					ADomain: []string{"abc.com"},
+					DealID:  "d1",
+					W:       10,
+					H:       50,
+					Bundle:  "dummy_bundle",
+					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
+				},
+				exchange.ResponseRejectedBelowFloor.Ptr(),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
