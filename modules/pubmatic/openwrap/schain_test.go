@@ -196,6 +196,37 @@ func TestSetAllBidderSChain(t *testing.T) {
 			},
 		},
 		{
+			name: "initialized schains obj in request and valid schains present in DB",
+			args: args{
+				requestExt: &models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							SChains: []*openrtb_ext.ExtRequestPrebidSChain{},
+						},
+					},
+				},
+				partnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.AllBidderSChainObj: `[{"bidders":["bidderA"],"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com"}]}}]`,
+					},
+				},
+			},
+			want: want{
+				requestExt: &models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							SChains: []*openrtb_ext.ExtRequestPrebidSChain{
+								{
+									Bidders: []string{"bidderA"},
+									SChain:  openrtb2.SupplyChain{Ver: "1.0", Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "example.com"}}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "invalid schains in DB",
 			args: args{
 				requestExt: &models.RequestExt{},

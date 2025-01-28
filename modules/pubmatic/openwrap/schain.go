@@ -68,7 +68,11 @@ func setGlobalSChain(source *openrtb2.Source, partnerConfigMap map[int]map[strin
 
 // setAllBidderSChain sets All Bidder Specific Schain to ext.prebid.schains
 func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]map[string]string) {
-	if requestExt == nil || requestExt.Prebid.SChains != nil {
+	if requestExt == nil {
+		return
+	}
+
+	if requestExt.Prebid.SChains != nil && len(requestExt.Prebid.SChains) > 0 {
 		return
 	}
 
