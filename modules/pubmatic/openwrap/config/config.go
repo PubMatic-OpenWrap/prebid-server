@@ -11,20 +11,24 @@ import (
 
 // Config contains the values read from the config file at boot time
 type Config struct {
-	Server        Server
-	Database      Database
-	Cache         Cache
-	Timeout       Timeout
-	Tracker       Tracker
-	PixelView     PixelView
-	Features      FeatureToggle
-	Log           Log
-	Stats         stats.Stats
-	VastUnwrapCfg unWrapCfg.VastUnWrapCfg
-	Wakanda       wakanda.Wakanda
-	GeoDB         GeoDB
-	BidCache      BidCache
-	BidderList    []string
+	Server           Server
+	Database         Database
+	Cache            Cache
+	Timeout          Timeout
+	Tracker          Tracker
+	PixelView        PixelView
+	Features         FeatureToggle
+	Log              Log
+	Stats            stats.Stats
+	VastUnwrapCfg    unWrapCfg.VastUnWrapCfg
+	Wakanda          wakanda.Wakanda
+	GeoDB            GeoDB
+	BidCache         BidCache
+	ResponseOverride ResponseOverride
+}
+
+type ResponseOverride struct {
+	BidType []string
 }
 
 type BidCache struct {
