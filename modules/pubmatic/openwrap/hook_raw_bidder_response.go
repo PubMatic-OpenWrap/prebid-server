@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
@@ -39,15 +39,18 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
 	totalBidCnt := len(payload.BidderResponse.Bids)
-	var bidExt models.BidExt
 	for _, bid := range payload.BidderResponse.Bids {
-		if isBidderInList(m.cfg.BidderList, payload.Bidder) {
-			bidType := GetCreativeType(bid.Bid)
+		if isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder) {
+			bidType := GetCreativeTypeFromCreative(bid.Bid)
 			if bidType != "" {
-				if err := json.Unmarshal(bid.Bid.Ext, &bidExt); err != nil {
-					result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("Error unmarshaling bid extension for bidder %s: %v", payload.Bidder, err))
+				if updatedExt, err := jsonparser.Set(bid.Bid.Ext, []byte(fmt.Sprintf(`"%s"`, bidType)), "prebid", "type"); err != nil {
+					result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("Error updating bid extension for bidder %s: %v", payload.Bidder, err))
 				} else {
-					bidExt.Prebid.Type = openrtb_ext.BidType(bidType)
+					bid.Bid.Ext = updatedExt
+					newBidType := openrtb_ext.BidType(bidType)
+					if bid.BidType != newBidType {
+						bid.BidType = newBidType
+					}
 				}
 			}
 		}

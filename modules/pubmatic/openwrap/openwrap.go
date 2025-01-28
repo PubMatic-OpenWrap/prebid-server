@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -102,6 +103,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		return OpenWrap{}, fmt.Errorf("error while initializing profile-metadata: %v", err)
 	}
 	glog.Info("Initialized profileMetaData reloader")
+
+	// Sort bidtype from cfg.ResponseOverride.BidType list
+	sort.Strings(cfg.ResponseOverride.BidType)
 
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
