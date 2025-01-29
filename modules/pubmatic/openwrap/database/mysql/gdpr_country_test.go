@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func Test_mySqlDB_GetGDPRCountryCodes(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    map[string]struct{}
+		want    models.HashSet
 		wantErr error
 		setup   func() *sql.DB
 	}{
@@ -49,7 +50,7 @@ func Test_mySqlDB_GetGDPRCountryCodes(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]struct{}{
+			want: models.HashSet{
 				"DE": {},
 				"LV": {},
 			},
@@ -76,7 +77,7 @@ func Test_mySqlDB_GetGDPRCountryCodes(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]struct{}{},
+			want:    models.HashSet{},
 			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
@@ -98,7 +99,7 @@ func Test_mySqlDB_GetGDPRCountryCodes(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]struct{}{},
+			want:    models.HashSet{},
 			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()

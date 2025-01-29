@@ -326,7 +326,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			want: want{
-				geo:       "{\"cc\":\"US\",\"sc\":\"va\",\"compliance\":\"GPP\",\"sectionId\":9}\n",
+				geo:       "{\"cc\":\"US\",\"sc\":\"va\",\"compliance\":\"GPP\",\"sId\":9}\n",
 				statuCode: http.StatusOK,
 				header:    []string{"max-age=172800"},
 			},

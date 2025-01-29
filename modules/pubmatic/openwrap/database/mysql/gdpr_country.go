@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
-func (db *mySqlDB) GetGDPRCountryCodes() (map[string]struct{}, error) {
+func (db *mySqlDB) GetGDPRCountryCodes() (models.HashSet, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
@@ -17,15 +18,16 @@ func (db *mySqlDB) GetGDPRCountryCodes() (map[string]struct{}, error) {
 	}
 	defer rows.Close()
 
-	// map to store the country codes
-	countryCodes := make(map[string]struct{})
+	var (
+		countryCode string
+		// map to store the country codes
+		countryCodes = make(models.HashSet)
+	)
 	for rows.Next() {
-		var countryCode string
 		if err := rows.Scan(&countryCode); err != nil {
-			glog.Error("ErrRowScanFailed GetGDPRCountryCodes Err: ", err.Error())
+			glog.Errorf(models.ErrDBRowScanFailed, models.GDPRCountryCodesQuery, "", "", err.Error())
 			continue
 		}
-		//TO-DO keeping case-sensitive?
 		countryCodes[countryCode] = struct{}{}
 	}
 

@@ -126,10 +126,10 @@ func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
 }
 
 // GetGDPRCountryCodes mocks base method
-func (m *MockDatabase) GetGDPRCountryCodes() (map[string]struct{}, error) {
+func (m *MockDatabase) GetGDPRCountryCodes() (models.HashSet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGDPRCountryCodes")
-	ret0, _ := ret[0].(map[string]struct{})
+	ret0, _ := ret[0].(models.HashSet)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

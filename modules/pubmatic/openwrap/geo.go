@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"runtime/debug"
 	"strconv"
+	"time"
 
 	"git.pubmatic.com/PubMatic/go-common/util"
 	"github.com/golang/glog"
@@ -14,12 +14,32 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
+// compliance consts
+const (
+	gdprCompliance      = "GDPR"
+	uspCompliance       = "USP"
+	gppCompliance       = "GPP"
+	countryCodeUS       = "US"
+	stateCodeCalifornia = "ca"
+)
+
+// headers const
+const (
+	cacheTimeout                   = time.Duration(48) * time.Hour
+	headerAccessControlAllowOrigin = "Access-Control-Allow-Origin"
+	headerCacheControl             = "Cache-Control"
+	headerOriginKey                = "Origin"
+	headerRefererKey               = "Referer"
+)
+
+var maxAgeHeaderValue = "max-age=" + fmt.Sprint(cacheTimeout.Seconds())
+
 // geo provides geo metadata from ip
 type geo struct {
 	CountryCode string `json:"cc,omitempty"`
 	StateCode   string `json:"sc,omitempty"`
 	Compliance  string `json:"compliance,omitempty"`
-	SectionID   int    `json:"sectionId,omitempty"`
+	SectionID   int    `json:"sId,omitempty"`
 }
 
 var gppSectionIDs = map[string]int{
@@ -32,38 +52,42 @@ var gppSectionIDs = map[string]int{
 
 // Handler for /geo endpoint
 func Handler(w http.ResponseWriter, r *http.Request) {
-	var pubIdStr string
-	metricEngine := ow.GetMetricEngine()
-	metricLabels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
+	var (
+		pubIDStr     string
+		metricEngine = ow.GetMetricEngine()
+		metricLabels = metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusBadInput}
+	)
 	defer func() {
 		metricEngine.RecordRequest(metricLabels)
-		if r := recover(); r != nil {
-			metricEngine.RecordOpenWrapServerPanicStats(ow.cfg.Server.HostName, "HandleGeoEndpoint")
-			glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%s]", string(debug.Stack()), r, pubIdStr)
-			return
-		}
+		panicHandler("HandleGeoEndpoint", pubIDStr)
 	}()
 
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		metricLabels.RequestStatus = prometheus.RequestStatusBadInput
 		return
 	}
-	pubIdStr = r.URL.Query().Get(models.PublisherID)
-	_, err := strconv.Atoi(pubIdStr)
+
+	if err := r.ParseForm(); err != nil {
+		return
+	}
+
+	_, err := strconv.Atoi(r.FormValue(models.PublisherID))
 	if err != nil {
-		glog.Errorf("[geo] error:[invalid pubid passed:%s], [requestType]:%v [url]:%v [origin]:%v [referer]:%v", err.Error(), models.EndpointGeo,
-			r.URL.RequestURI(), r.Header.Get(models.HeaderOriginKey), r.Header.Get(models.HeaderRefererKey))
+		glog.Errorf("[geo] url:[%s] origin:[%s] referer:[%s] error:[%s]", r.URL.RawQuery,
+			r.Header.Get(headerOriginKey), r.Header.Get(headerRefererKey), err.Error())
 		w.WriteHeader(http.StatusBadRequest)
-		metricLabels.RequestStatus = prometheus.RequestStatusBadInput
 		return
 	}
+	metricLabels.RequestStatus = prometheus.RequestStatusOK
+	w.Header().Set(models.ContentType, models.ContentTypeApplicationJSON)
+	w.Header().Set(headerAccessControlAllowOrigin, "*")
 
 	ip := util.GetIP(r)
-	w.Header().Set(models.HeaderContentType, models.HeaderContentTypeValue)
-	w.Header().Set(models.HeaderAccessControlAllowOrigin, "*")
+	geoInfo, err := ow.geoInfoFetcher.LookUp(ip)
+	if err != nil {
+		glog.Errorf("[geo] url:[%s] ip:[%s] error:[%s]", r.URL.RawQuery, ip, err.Error())
+	}
 
-	geoInfo, _ := ow.geoInfoFetcher.LookUp(ip)
 	if geoInfo == nil || geoInfo.ISOCountryCode == "" {
 		metricEngine.RecordGeoLookupFailure(models.EndpointGeo)
 		return
@@ -73,15 +97,19 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		CountryCode: geoInfo.ISOCountryCode,
 		StateCode:   geoInfo.RegionCode,
 	}
+	updateGeoObject(&geo)
+
+	w.Header().Set(headerCacheControl, maxAgeHeaderValue)
+	json.NewEncoder(w).Encode(geo)
+}
+
+func updateGeoObject(geo *geo) {
 	if ow.GetFeature().IsCountryGDPREnabled(geo.CountryCode) {
-		geo.Compliance = models.GDPRCompliance
-	} else if geo.CountryCode == models.CountryCodeUS && geo.StateCode == models.StateCodeCalifornia {
-		geo.Compliance = models.USPCompliance
+		geo.Compliance = gdprCompliance
+	} else if geo.CountryCode == countryCodeUS && geo.StateCode == stateCodeCalifornia {
+		geo.Compliance = uspCompliance
 	} else if sectionid, ok := gppSectionIDs[geo.StateCode]; ok {
-		geo.Compliance = models.GPPCompliance
+		geo.Compliance = gppCompliance
 		geo.SectionID = sectionid
 	}
-
-	w.Header().Set(models.HeaderCacheControl, "max-age="+fmt.Sprint(models.CacheTimeout.Seconds()))
-	json.NewEncoder(w).Encode(geo)
 }

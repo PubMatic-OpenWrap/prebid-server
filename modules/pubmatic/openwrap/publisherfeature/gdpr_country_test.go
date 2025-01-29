@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,11 +36,11 @@ func TestFeatureUpdateGDPRCountryCodes(t *testing.T) {
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(nil, errors.New("QUERY FAILED"))
 			},
 			expectedGDPRCountryCodes: gdprCountryCodes{
-				codes: [2]map[string]struct{}{
-					make(map[string]struct{}),
-					make(map[string]struct{}),
+				codes: [2]models.HashSet{
+					make(models.HashSet),
+					make(models.HashSet),
 				},
-				index: 1,
+				index: 0,
 			},
 		},
 		{
@@ -49,13 +50,13 @@ func TestFeatureUpdateGDPRCountryCodes(t *testing.T) {
 				gdprCountryCodes: newGDPRCountryCodes(),
 			},
 			setup: func() {
-				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{
+				mockCache.EXPECT().GetGDPRCountryCodes().Return(models.HashSet{
 					"US": {},
 					"DE": {},
 				}, nil)
 			},
 			expectedGDPRCountryCodes: gdprCountryCodes{
-				codes: [2]map[string]struct{}{
+				codes: [2]models.HashSet{
 					{},
 					{
 						"US": {},
@@ -70,7 +71,7 @@ func TestFeatureUpdateGDPRCountryCodes(t *testing.T) {
 			fields: fields{
 				cache: mockCache,
 				gdprCountryCodes: gdprCountryCodes{
-					codes: [2]map[string]struct{}{
+					codes: [2]models.HashSet{
 						{},
 						{
 							"US": {},
@@ -81,13 +82,13 @@ func TestFeatureUpdateGDPRCountryCodes(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{
+				mockCache.EXPECT().GetGDPRCountryCodes().Return(models.HashSet{
 					"US": {},
 					"DE": {},
 				}, nil)
 			},
 			expectedGDPRCountryCodes: gdprCountryCodes{
-				codes: [2]map[string]struct{}{
+				codes: [2]models.HashSet{
 					{
 						"US": {},
 						"DE": {},
@@ -137,7 +138,7 @@ func TestFeature_IsCountryGDPREnabled(t *testing.T) {
 			},
 			fields: fields{
 				gdprCountryCodes: gdprCountryCodes{
-					codes: [2]map[string]struct{}{
+					codes: [2]models.HashSet{
 						{},
 						{
 							"LV": {},
@@ -156,7 +157,7 @@ func TestFeature_IsCountryGDPREnabled(t *testing.T) {
 			},
 			fields: fields{
 				gdprCountryCodes: gdprCountryCodes{
-					codes: [2]map[string]struct{}{
+					codes: [2]models.HashSet{
 						{},
 						{
 							"LV": {},

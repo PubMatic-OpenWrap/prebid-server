@@ -30,19 +30,19 @@ func TestCache_GetGDPRCountryCodes(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    map[string]struct{}
+		want    models.HashSet
 		setup   func()
 		wantErr bool
 	}{
 		{
 			name: "Valid Data present in DB, return same",
-			want: map[string]struct{}{
+			want: models.HashSet{
 				"US": {},
 				"LV": {},
 				"DE": {},
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{
+				mockDatabase.EXPECT().GetGDPRCountryCodes().Return(models.HashSet{
 					"US": {},
 					"LV": {},
 					"DE": {},
