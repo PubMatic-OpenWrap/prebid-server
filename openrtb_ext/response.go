@@ -125,10 +125,27 @@ const (
 	UserSyncPixel  UserSyncType = "pixel"
 )
 
+type ExtOWNonBidPrebidBid struct {
+	//OW specific fields
+	ID                string              `json:"id,omitempty"` // need to check
+	DealPriority      int                 `json:"dealpriority,omitempty"`
+	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
+	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
+	Targeting         map[string]string   `json:"targeting,omitempty"`
+	Type              BidType             `json:"type,omitempty"`
+	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
+	BidId             string              `json:"bidid,omitempty"`
+	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
+	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
+}
+
 // ExtNonBidPrebidBid is subset of Bid object with exact json signature
 // defined at https://github.com/prebid/openrtb/blob/v19.0.0/openrtb2/bid.go
 // It also contains the custom fields
 type ExtNonBidPrebidBid struct {
+	//OW specific fields
+	ExtOWNonBidPrebidBid
+
 	Price   float64                 `json:"price,omitempty"`
 	ADomain []string                `json:"adomain,omitempty"`
 	CatTax  adcom1.CategoryTaxonomy `json:"cattax,omitempty"`
@@ -142,19 +159,6 @@ type ExtNonBidPrebidBid struct {
 	// Custom Fields
 	OriginalBidCPM float64 `json:"origbidcpm,omitempty"`
 	OriginalBidCur string  `json:"origbidcur,omitempty"`
-
-	//OW specific fields
-	ID                string              `json:"id,omitempty"` // need to check
-	DealPriority      int                 `json:"dealpriority,omitempty"`
-	DealTierSatisfied bool                `json:"dealtiersatisfied,omitempty"`
-	Meta              *ExtBidPrebidMeta   `json:"meta,omitempty"`
-	Targeting         map[string]string   `json:"targeting,omitempty"`
-	Type              BidType             `json:"type,omitempty"`
-	Video             *ExtBidPrebidVideo  `json:"video,omitempty"`
-	BidId             string              `json:"bidid,omitempty"`
-	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
-	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
-	Bundle            string              `json:"bndl,omitempty"`
 }
 
 // ExtNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext
