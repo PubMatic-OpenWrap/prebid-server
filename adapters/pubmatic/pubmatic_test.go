@@ -76,6 +76,51 @@ func TestGetBidTypeForUnsupportedCode(t *testing.T) {
 	}
 }
 
+func TestGetMTypeBanner(t *testing.T) {
+	Bid := openrtb2.Bid{}
+	Bid.MType = 1
+	actualBidTypeValue := getMType(&Bid)
+	if actualBidTypeValue != string(openrtb_ext.BidTypeBanner) {
+		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeBanner, actualBidTypeValue)
+	}
+}
+
+func TestGetMTypeVideo(t *testing.T) {
+	Bid := openrtb2.Bid{}
+	Bid.MType = 2
+	actualBidTypeValue := getMType(&Bid)
+	if actualBidTypeValue != string(openrtb_ext.BidTypeVideo) {
+		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeVideo, actualBidTypeValue)
+	}
+}
+
+func TestGetMTypeAudio(t *testing.T) {
+	Bid := openrtb2.Bid{}
+	Bid.MType = 3
+	actualBidTypeValue := getMType(&Bid)
+	if actualBidTypeValue != string(openrtb_ext.BidTypeAudio) {
+		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeAudio, actualBidTypeValue)
+	}
+}
+
+func TestGetMTypeNative(t *testing.T) {
+	Bid := openrtb2.Bid{}
+	Bid.MType = 4
+	actualBidTypeValue := getMType(&Bid)
+	if actualBidTypeValue != string(openrtb_ext.BidTypeNative) {
+		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeNative, actualBidTypeValue)
+	}
+}
+
+func TestGetMTypeForUnsupportedCode(t *testing.T) {
+	Bid := openrtb2.Bid{}
+	Bid.MType = 44
+	actualBidTypeValue := getMType(&Bid)
+	if actualBidTypeValue != string(openrtb_ext.BidTypeBanner) {
+		t.Errorf("Expected Bid Type value was: %v, actual value is: %v", openrtb_ext.BidTypeBanner, actualBidTypeValue)
+	}
+}
+
 func TestParseImpressionObject(t *testing.T) {
 	type args struct {
 		imp                      *openrtb2.Imp
