@@ -2008,52 +2008,43 @@ func TestUpdateImpProtocols(t *testing.T) {
 		})
 	}
 }
+
 func TestGetCreativeTypeFromCreative(t *testing.T) {
 	tests := []struct {
 		name string
-		bid  *openrtb2.Bid
+		adm  string
 		want string
 	}{
 		{
 			name: "Video_creative",
-			bid: &openrtb2.Bid{
-				AdM: "<VAST version=\"3.0\"></VAST>",
-			},
+			adm:  "<VAST version=\"3.0\"></VAST>",
 			want: models.Video,
 		},
 		{
 			name: "Native_creative",
-			bid: &openrtb2.Bid{
-				AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}",
-			},
+			adm:  "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}",
 			want: models.Native,
 		},
 		{
 			name: "Banner_creative",
-			bid: &openrtb2.Bid{
-				AdM: "<div>Banner Ad</div>",
-			},
+			adm:  "<div>Banner Ad</div>",
 			want: models.Banner,
 		},
 		{
 			name: "Empty_AdM",
-			bid: &openrtb2.Bid{
-				AdM: "",
-			},
+			adm:  "",
 			want: "",
 		},
 		{
 			name: "Invalid_JSON_in_AdM",
-			bid: &openrtb2.Bid{
-				AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]",
-			},
+			adm:  "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]",
 			want: models.Banner,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetCreativeTypeFromCreative(tt.bid)
+			got := GetCreativeTypeFromCreative(tt.adm)
 			assert.Equal(t, tt.want, got)
 		})
 	}

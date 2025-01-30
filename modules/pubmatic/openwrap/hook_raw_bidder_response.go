@@ -125,7 +125,7 @@ func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder 
 		return adapterBid, nil
 	}
 
-	bidType := GetCreativeTypeFromCreative(adapterBid.Bid)
+	bidType := GetCreativeTypeFromCreative(adapterBid.Bid.AdM)
 	if bidType == "" {
 		return adapterBid, nil
 	}

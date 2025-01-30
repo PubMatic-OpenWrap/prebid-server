@@ -564,13 +564,16 @@ func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.Med
 	return impProtocols
 }
 
-func GetCreativeTypeFromCreative(bid *openrtb2.Bid) string {
-	if bid.AdM != "" {
-		if models.VideoRegex.MatchString(bid.AdM) {
+func GetCreativeTypeFromCreative(adm string) string {
+	if adm != "" {
+		if models.VideoRegex.MatchString(adm) {
 			return models.Video
 		}
-		for _, tag := range []string{"native", "link", "assets"} {
-			if _, _, _, err := jsonparser.Get([]byte(bid.AdM), tag); err == nil {
+
+		var admJSON map[string]interface{}
+		err := json.Unmarshal([]byte(strings.Replace(adm, "/\\/g", "", -1)), &admJSON)
+		if err == nil && admJSON != nil {
+			if admJSON["native"] != nil || admJSON["link"] != nil && admJSON["assets"] != nil {
 				return models.Native
 			}
 		}
