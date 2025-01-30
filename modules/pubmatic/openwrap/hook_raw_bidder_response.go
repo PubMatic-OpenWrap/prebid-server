@@ -130,8 +130,9 @@ func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder 
 		return adapterBid, nil
 	}
 
-	if adapterBid.BidType != bidType {
-		adapterBid.BidType = bidType
+	newBidType := openrtb_ext.BidType(bidType)
+	if adapterBid.BidType != newBidType {
+		adapterBid.BidType = newBidType
 	}
 
 	// Update the "prebid.type" field in the bid extension
