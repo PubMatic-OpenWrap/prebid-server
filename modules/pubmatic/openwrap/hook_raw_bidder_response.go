@@ -16,22 +16,46 @@ import (
 type BidUnwrapInfo struct {
 	bid          *adapters.TypedBid
 	unwrapStatus string
+	bidtype      openrtb_ext.BidType
+}
+
+func applyMutation(bidInfo []BidUnwrapInfo, result hookstage.HookResult[hookstage.RawBidderResponsePayload]) {
+	result.ChangeSet.AddMutation(func(rp hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
+		var bids []*adapters.TypedBid
+		for _, bidinfo := range bidInfo {
+			bidinfo.bid.BidType = bidinfo.bidtype
+			bids = append(bids, bidinfo.bid)
+		}
+		rp.BidderResponse.Bids = bids
+		return rp, nil
+	}, hookstage.MutationUpdate, "update-bidtype-for-multiformat-request")
 }
 
 func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
+
+	var bidInfo []BidUnwrapInfo
+
+	for _, bid := range payload.BidderResponse.Bids {
+		var bids BidUnwrapInfo
+		bid, _ = updateCreativeType(bid, m.cfg.ResponseOverride.BidType, payload.Bidder)
+		bids.bid = bid
+		bids.bidtype = bid.BidType
+		bidInfo = append(bidInfo, bids)
+	}
 	vastRequestContext, ok := miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
+		applyMutation(bidInfo, result)
 		return result, nil
 	}
 
 	if !vastRequestContext.VastUnwrapEnabled {
+		applyMutation(bidInfo, result)
 		return result, nil
 	}
-
 	seatNonBid := openrtb_ext.SeatNonBidBuilder{}
 	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.BidderResponse.Bids))
 	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
@@ -39,32 +63,19 @@ func (m OpenWrap) handleRawBidderResponseHook(
 
 	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
 	totalBidCnt := len(payload.BidderResponse.Bids)
-	for _, bid := range payload.BidderResponse.Bids {
-		if isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder) {
-			bidType := GetCreativeTypeFromCreative(bid.Bid)
-			if bidType != "" {
-				if updatedExt, err := jsonparser.Set(bid.Bid.Ext, []byte(fmt.Sprintf(`"%s"`, bidType)), "prebid", "type"); err != nil {
-					result.DebugMessages = append(result.DebugMessages, fmt.Sprintf("Error updating bid extension for bidder %s: %v", payload.Bidder, err))
-				} else {
-					bid.Bid.Ext = updatedExt
-					newBidType := openrtb_ext.BidType(bidType)
-					if bid.BidType != newBidType {
-						bid.BidType = newBidType
-					}
-				}
-			}
-		}
+	for _, bid := range bidInfo {
 
 		// send bids for unwrap
-		if !isEligibleForUnwrap(bid) {
-			unwrappedBids = append(unwrappedBids, bid)
+		if !isEligibleForUnwrap(bid.bid) {
+			unwrappedBids = append(unwrappedBids, bid.bid)
 			continue
 		}
 		unwrappedBidsCnt++
-		go func(bid adapters.TypedBid) {
+		go func(bid adapters.TypedBid, bidType openrtb_ext.BidType) {
 			unwrapStatus := m.unwrap.Unwrap(&bid, miCtx.AccountID, payload.Bidder, vastRequestContext.UA, vastRequestContext.IP)
-			unwrappedBidsChan <- BidUnwrapInfo{&bid, unwrapStatus}
-		}(*bid)
+			unwrappedBidsChan <- BidUnwrapInfo{&bid, unwrapStatus, bidType}
+		}(*bid.bid, bid.bidtype)
+
 	}
 
 	// collect bids after unwrap
@@ -106,4 +117,31 @@ func rejectBid(bidUnwrapStatus string) bool {
 
 func isBidderInList(bidderList []string, bidder string) bool {
 	return slices.Contains(bidderList, bidder)
+}
+
+func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder string) (*adapters.TypedBid, error) {
+	// Check if the bidder is in the bidders list
+	if !isBidderInList(bidders, bidder) {
+		return adapterBid, nil
+	}
+
+	bidType := GetCreativeTypeFromCreative(adapterBid.Bid)
+	if bidType == "" {
+		return adapterBid, nil
+	}
+
+	if adapterBid.BidType != bidType {
+		adapterBid.BidType = bidType
+	}
+
+	// Update the "prebid.type" field in the bid extension
+	updatedExt, err := jsonparser.Set(adapterBid.Bid.Ext, []byte(fmt.Sprintf(`"%s"`, bidType)), "prebid", "type")
+	if err != nil {
+		return adapterBid, models.ErrorWrap(err, fmt.Errorf("error updating bid extension for bidder %s, bid ID %s: %v", bidder, adapterBid.Bid.ID, err))
+	}
+
+	// Assign the updated JSON only if `jsonparser.Set` succeeds
+	adapterBid.Bid.Ext = updatedExt
+
+	return adapterBid, nil
 }

@@ -46,7 +46,30 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Empty_Request_Context",
 			args: args{
-				module: OpenWrap{},
+				module: OpenWrap{
+					cfg: config.Config{VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+						MaxWrapperSupport: 5,
+						StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+						APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+					}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "<div>This is an Ad</div>",
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 		},
@@ -1119,6 +1142,83 @@ func TestIsEligibleForUnwrap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := isEligibleForUnwrap(tt.args.bid)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+func TestUpdateCreativeType(t *testing.T) {
+	tests := []struct {
+		name     string
+		bid      *adapters.TypedBid
+		bidders  []string
+		bidder   string
+		expected *adapters.TypedBid
+		wantErr  bool
+	}{
+		{
+			name: "Bidder_not_in_list",
+			bid: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)},
+				BidType: openrtb_ext.BidTypeBanner,
+			},
+			bidders: []string{"bidderA"},
+			bidder:  "bidderB",
+			expected: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)},
+				BidType: openrtb_ext.BidTypeBanner,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Bidder_in_list_no_creative_type",
+			bid: &adapters.TypedBid{
+				Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)},
+			},
+			bidders: []string{"bidderA"},
+			bidder:  "bidderA",
+			expected: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)},
+				BidType: "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Bidder_in_list_creative_type_updated",
+			bid: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)},
+				BidType: openrtb_ext.BidTypeBanner,
+			},
+			bidders: []string{"bidderA"},
+			bidder:  "bidderA",
+			expected: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{"prebid":{"type":"video"}}`)},
+				BidType: openrtb_ext.BidTypeVideo,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error_updating_bid_extension_due_to_malformed_JSON",
+			bid: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}, // Improperly formatted JSON
+				BidType: openrtb_ext.BidTypeBanner,
+			},
+			bidders: []string{"bidderA"},
+			bidder:  "bidderA",
+			expected: &adapters.TypedBid{
+				Bid:     &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}, // Improperly formatted JSON
+				BidType: openrtb_ext.BidTypeNative,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := updateCreativeType(tt.bid, tt.bidders, tt.bidder)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("updateCreativeType() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.expected, got)
 		})
 	}
 }
