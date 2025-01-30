@@ -106,9 +106,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func updateGeoObject(geo *geo) {
 	if ow.GetFeature().IsCountryGDPREnabled(geo.CountryCode) {
 		geo.Compliance = gdprCompliance
-	} else if geo.CountryCode == countryCodeUS && geo.StateCode == stateCodeCalifornia {
+		return
+	}
+
+	if geo.CountryCode == countryCodeUS && geo.StateCode == stateCodeCalifornia {
 		geo.Compliance = uspCompliance
-	} else if sectionid, ok := gppSectionIDs[geo.StateCode]; ok {
+		return
+	}
+
+	if sectionid, ok := gppSectionIDs[geo.StateCode]; ok {
 		geo.Compliance = gppCompliance
 		geo.SectionID = sectionid
 	}

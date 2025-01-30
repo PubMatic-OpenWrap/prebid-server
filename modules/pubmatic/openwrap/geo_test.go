@@ -343,3 +343,99 @@ func TestHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateGeoObject(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	originalOw := ow
+	defer func() { ow = originalOw }()
+	ow = &OpenWrap{pubFeatures: mockFeature}
+
+	type args struct {
+		geo   *geo
+		setup func()
+	}
+	tests := []struct {
+		name string
+		args args
+		want *geo
+	}{
+		{
+			name: "gdpr compliance",
+			args: args{
+				geo: &geo{
+					CountryCode: "country",
+					StateCode:   "state",
+				},
+				setup: func() {
+					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(true)
+				},
+			},
+			want: &geo{
+				CountryCode: "country",
+				StateCode:   "state",
+				Compliance:  "GDPR",
+			},
+		},
+		{
+			name: "usp compliance",
+			args: args{
+				geo: &geo{
+					CountryCode: "US",
+					StateCode:   "ca",
+				},
+				setup: func() {
+					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
+				},
+			},
+			want: &geo{
+				CountryCode: "US",
+				StateCode:   "ca",
+				Compliance:  "USP",
+			},
+		},
+		{
+			name: "gpp compliance",
+			args: args{
+				geo: &geo{
+					CountryCode: "US",
+					StateCode:   "ct",
+				},
+				setup: func() {
+					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
+				},
+			},
+			want: &geo{
+				CountryCode: "US",
+				StateCode:   "ct",
+				Compliance:  "GPP",
+				SectionID:   12,
+			},
+		},
+		{
+			name: "no compliance",
+			args: args{
+				geo: &geo{
+					CountryCode: "country",
+					StateCode:   "state",
+				},
+				setup: func() {
+					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
+				},
+			},
+			want: &geo{
+				CountryCode: "country",
+				StateCode:   "state",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.setup()
+			updateGeoObject(tt.args.geo)
+			assert.Equal(t, tt.want, tt.args.geo, tt.name)
+		})
+	}
+}
