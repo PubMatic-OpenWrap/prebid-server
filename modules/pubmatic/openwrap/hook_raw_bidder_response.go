@@ -19,7 +19,7 @@ type BidUnwrapInfo struct {
 	bidtype      openrtb_ext.BidType
 }
 
-func applyMutation(bidInfo []BidUnwrapInfo, result hookstage.HookResult[hookstage.RawBidderResponsePayload]) {
+func applyMutation(bidInfo []BidUnwrapInfo, result *hookstage.HookResult[hookstage.RawBidderResponsePayload]) {
 	result.ChangeSet.AddMutation(func(rp hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
 		var bids []*adapters.TypedBid
 		for _, bidinfo := range bidInfo {
@@ -35,12 +35,11 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-
 	var bidInfo []BidUnwrapInfo
 
 	for _, bid := range payload.BidderResponse.Bids {
 		var bids BidUnwrapInfo
-		bid, _ = updateCreativeType(bid, m.cfg.ResponseOverride.BidType, payload.Bidder)
+		bid = updateCreativeType(bid, m.cfg.ResponseOverride.BidType, payload.Bidder)
 		bids.bid = bid
 		bids.bidtype = bid.BidType
 		bidInfo = append(bidInfo, bids)
@@ -48,12 +47,12 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	vastRequestContext, ok := miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
-		applyMutation(bidInfo, result)
+		applyMutation(bidInfo, &result)
 		return result, nil
 	}
 
 	if !vastRequestContext.VastUnwrapEnabled {
-		applyMutation(bidInfo, result)
+		applyMutation(bidInfo, &result)
 		return result, nil
 	}
 	seatNonBid := openrtb_ext.SeatNonBidBuilder{}
@@ -119,15 +118,15 @@ func isBidderInList(bidderList []string, bidder string) bool {
 	return slices.Contains(bidderList, bidder)
 }
 
-func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder string) (*adapters.TypedBid, error) {
+func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder string) *adapters.TypedBid {
 	// Check if the bidder is in the bidders list
 	if !isBidderInList(bidders, bidder) {
-		return adapterBid, nil
+		return adapterBid
 	}
 
 	bidType := GetCreativeTypeFromCreative(adapterBid.Bid.AdM)
 	if bidType == "" {
-		return adapterBid, nil
+		return adapterBid
 	}
 
 	newBidType := openrtb_ext.BidType(bidType)
@@ -136,13 +135,13 @@ func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder 
 	}
 
 	// Update the "prebid.type" field in the bid extension
-	updatedExt, err := jsonparser.Set(adapterBid.Bid.Ext, []byte(fmt.Sprintf(`"%s"`, bidType)), "prebid", "type")
+	updatedExt, err := jsonparser.Set(adapterBid.Bid.Ext, []byte(`"`+bidType+`"`), "prebid", "type")
 	if err != nil {
-		return adapterBid, models.ErrorWrap(err, fmt.Errorf("error updating bid extension for bidder %s, bid ID %s: %v", bidder, adapterBid.Bid.ID, err))
+		return adapterBid
 	}
 
 	// Assign the updated JSON only if `jsonparser.Set` succeeds
 	adapterBid.Bid.Ext = updatedExt
 
-	return adapterBid, nil
+	return adapterBid
 }
