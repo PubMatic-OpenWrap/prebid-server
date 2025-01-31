@@ -215,7 +215,6 @@ func TestSChainWriter(t *testing.T) {
 			assert.NotNil(t, writer)
 
 			writer.Write(&tt.giveRequest, tt.giveBidder)
-
 			assert.Equal(t, tt.wantRequest, tt.giveRequest, tt.description)
 		}
 	}

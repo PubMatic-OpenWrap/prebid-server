@@ -69,7 +69,13 @@ func (w SChainWriter) Write(req *openrtb2.BidRequest, bidder string) {
 		schain.SChain.Nodes = append(schain.SChain.Nodes, *w.hostSChainNode)
 	}
 
-	sourceExt, err := jsonutil.Marshal(schain)
+	ext := make(map[string]any)
+	if len(req.Source.Ext) > 0 {
+		jsonutil.Unmarshal(req.Source.Ext, &ext)
+	}
+	ext["schain"] = schain.SChain
+
+	sourceExt, err := jsonutil.Marshal(ext)
 	if err == nil {
 		req.Source.Ext = sourceExt
 	}
