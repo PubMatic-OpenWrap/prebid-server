@@ -75,11 +75,22 @@ func (w SChainWriter) Write(req *openrtb2.BidRequest, bidder string) {
 	if err != nil {
 		return
 	}
-	if len(req.Source.Ext) > 0 {
-		req.Source.Ext, _ = jsonparser.Set(req.Source.Ext, schainBytes, "schain")
+
+	var (
+		newSourceExt json.RawMessage
+		sourceExt    = req.Source.Ext
+	)
+	if len(sourceExt) > 0 {
+		newSourceExt, err = jsonparser.Set(req.Source.Ext, schainBytes, "schain")
 	} else {
-		req.Source.Ext, _ = jsonparser.Set([]byte(`{}`), schainBytes, "schain")
+		newSourceExt, err = jsonparser.Set([]byte(`{}`), schainBytes, "schain")
 	}
+
+	if err == nil {
+		req.Source.Ext = newSourceExt
+		return
+	}
+	req.Source.Ext = sourceExt
 }
 
 // extPrebidSChainExists checks if an schain exists in the ORTB 2.5 req.ext.prebid.schain location
