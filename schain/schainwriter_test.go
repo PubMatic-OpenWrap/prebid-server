@@ -192,6 +192,23 @@ func TestSChainWriter(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "OpenWrap - existing fields should be getting passed in source.ext",
+			giveRequest: openrtb2.BidRequest{
+				Ext:    nil,
+				Source: &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"pubmatic","omidpv":"1.2"}`)},
+			},
+			giveBidder: "testbidder",
+			giveHostSChain: &openrtb2.SupplyChainNode{
+				ASI: "pbshostcompany.com", SID: "00001", RID: "BidRequest", HP: openrtb2.Int8Ptr(1),
+			},
+			wantRequest: openrtb2.BidRequest{
+				Ext: nil,
+				Source: &openrtb2.Source{
+					Ext: json.RawMessage(`{"omidpn":"pubmatic","omidpv":"1.2","schain":{"complete":0,"nodes":[` + hostNode + `],"ver":"1.0"}}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -215,6 +232,7 @@ func TestSChainWriter(t *testing.T) {
 			assert.NotNil(t, writer)
 
 			writer.Write(&tt.giveRequest, tt.giveBidder)
+
 			assert.Equal(t, tt.wantRequest, tt.giveRequest, tt.description)
 		}
 	}
