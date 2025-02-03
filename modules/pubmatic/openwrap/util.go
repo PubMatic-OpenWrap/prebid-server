@@ -14,6 +14,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -27,6 +28,7 @@ import (
 )
 
 var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
+var jsonCompatible = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var (
 	widthRegEx  *regexp.Regexp
@@ -562,22 +564,4 @@ func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.Med
 		}
 	}
 	return impProtocols
-}
-
-func GetCreativeTypeFromCreative(adm string) string {
-	if adm != "" {
-		if models.VideoRegex.MatchString(adm) {
-			return models.Video
-		}
-
-		var admJSON map[string]interface{}
-		err := json.Unmarshal([]byte(strings.Replace(adm, "/\\/g", "", -1)), &admJSON)
-		if err == nil && admJSON != nil {
-			if admJSON["native"] != nil || admJSON["link"] != nil && admJSON["assets"] != nil {
-				return models.Native
-			}
-		}
-		return models.Banner
-	}
-	return ""
 }

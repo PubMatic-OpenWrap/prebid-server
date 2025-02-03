@@ -1184,6 +1184,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				assert.NoError(t, err)
 				tt.args.payload = newPayload
 			}
+
 			if tt.wantBids != nil {
 				assert.ElementsMatch(t, tt.wantBids, tt.args.payload.BidderResponse.Bids, "Mismatched response bids")
 			}
@@ -1195,7 +1196,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 
 func TestIsEligibleForUnwrap(t *testing.T) {
 	type args struct {
-		bid *adapters.TypedBid
+		result rawBidderResponseHookResult
 	}
 	tests := []struct {
 		name string
@@ -1203,115 +1204,128 @@ func TestIsEligibleForUnwrap(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Bid is nil",
-			args: args{bid: nil},
+			name: "bid_is_nil",
+			args: args{result: rawBidderResponseHookResult{bid: nil}},
 			want: false,
 		},
 		{
-			name: "Bid.Bid is nil",
-			args: args{bid: &adapters.TypedBid{Bid: nil}},
+			name: "bid_bid_is_nil",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: nil}}},
 			want: false,
 		},
 		{
-			name: "AdM is empty",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}},
+			name: "empty_adm",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}}},
 			want: false,
 		},
 		{
-			name: "BidType is not video",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeBanner}},
+			name: "bidType_video",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}}, bidtype: openrtb_ext.BidTypeBanner}},
 			want: false,
 		},
 		{
-			name: "Bid is eligible for unwrap",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeVideo}},
+			name: "bid_is_eligible_for_unwrap",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}}, bidtype: openrtb_ext.BidTypeVideo}},
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isEligibleForUnwrap(tt.args.bid)
+			got := isEligibleForUnwrap(tt.args.result)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
+
 func TestUpdateCreativeType(t *testing.T) {
 	tests := []struct {
 		name     string
-		bid      *adapters.TypedBid
+		result   *rawBidderResponseHookResult
 		bidders  []string
 		bidder   string
-		expected *adapters.TypedBid
+		expected *rawBidderResponseHookResult
 	}{
 		{
-			name: "Bidder_not_in_list",
-			bid: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)},
-				BidType: openrtb_ext.BidTypeBanner,
+			name: "bidder_not_in_list",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
 			},
 			bidders: []string{"bidderA"},
 			bidder:  "bidderB",
-			expected: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)},
-				BidType: openrtb_ext.BidTypeBanner,
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
 			},
 		},
 		{
-			name: "Bidder_in_list_no_creative_type",
-			bid: &adapters.TypedBid{
-				Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)},
+			name: "bidder_in_list_no_creative_type",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
 			},
 			bidders: []string{"bidderA"},
 			bidder:  "bidderA",
-			expected: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)},
-				BidType: "",
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
 			},
 		},
 		{
-			name: "Bidder_in_list_creative_type_updated",
-			bid: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)},
-				BidType: openrtb_ext.BidTypeBanner,
+			name: "bidder_in_list_creative_type_updated",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
 			},
 			bidders: []string{"bidderA"},
 			bidder:  "bidderA",
-			expected: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{"prebid":{"type":"video"}}`)},
-				BidType: openrtb_ext.BidTypeVideo,
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeVideo,
+				bidExt:  []byte(`{"prebid":{"type":"video"}}`),
 			},
 		},
 		{
-			name: "Error_updating_bid_extension_due_to_malformed_JSON",
-			bid: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)},
-				BidType: openrtb_ext.BidTypeBanner,
+			name: "error_updating_bid_extension_due_to_malformed_JSON",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`"{malformed}"`),
 			},
 			bidders: []string{"bidderA"},
 			bidder:  "bidderA",
-			expected: &adapters.TypedBid{
-				Bid:     &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)},
-				BidType: openrtb_ext.BidTypeNative,
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}},
+				bidtype: openrtb_ext.BidTypeNative,
+				bidExt:  []byte(`"{malformed}"`),
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updateCreativeType(tt.bid, tt.bidders, tt.bidder)
-			assert.Equal(t, tt.expected, got)
+			updateCreativeType(tt.result, tt.bidders, tt.bidder)
+			assert.Equal(t, tt.expected, tt.result)
 		})
 	}
 }
 
 func TestApplyMutation(t *testing.T) {
 	tests := []struct {
-		name     string
-		bidInfo  []BidUnwrapInfo
-		expected []*adapters.TypedBid
+		name               string
+		bidInfo            []rawBidderResponseHookResult
+		payload            hookstage.RawBidderResponsePayload
+		expected           []*adapters.TypedBid
+		expectedSeatNonBid openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			name: "Single_bid",
-			bidInfo: []BidUnwrapInfo{
+			bidInfo: []rawBidderResponseHookResult{
 				{
 					bid: &adapters.TypedBid{
 						Bid: &openrtb2.Bid{ID: "1"},
@@ -1327,8 +1341,8 @@ func TestApplyMutation(t *testing.T) {
 			},
 		},
 		{
-			name: "Multiple_bids",
-			bidInfo: []BidUnwrapInfo{
+			name: "Multiple_bids_with_rejection",
+			bidInfo: []rawBidderResponseHookResult{
 				{
 					bid: &adapters.TypedBid{
 						Bid: &openrtb2.Bid{ID: "1"},
@@ -1337,9 +1351,10 @@ func TestApplyMutation(t *testing.T) {
 				},
 				{
 					bid: &adapters.TypedBid{
-						Bid: &openrtb2.Bid{ID: "2"},
+						Bid: &openrtb2.Bid{ID: "Bid-123", W: 100, H: 50},
 					},
-					bidtype: openrtb_ext.BidTypeVideo,
+					bidtype:      openrtb_ext.BidTypeVideo,
+					unwrapStatus: models.UnwrapEmptyVASTStatus,
 				},
 			},
 			expected: []*adapters.TypedBid{
@@ -1347,32 +1362,50 @@ func TestApplyMutation(t *testing.T) {
 					Bid:     &openrtb2.Bid{ID: "1"},
 					BidType: openrtb_ext.BidTypeBanner,
 				},
-				{
-					Bid:     &openrtb2.Bid{ID: "2"},
-					BidType: openrtb_ext.BidTypeVideo,
-				},
 			},
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
+				seatNonBid.AddBid(openrtb_ext.NonBid{
+					StatusCode: int(nbr.LossBidLostInVastUnwrap),
+					Ext: openrtb_ext.ExtNonBid{
+						Prebid: openrtb_ext.ExtNonBidPrebid{
+							Bid: openrtb_ext.ExtNonBidPrebidBid{
+								Price: 2.1,
+								ID:    "Bid-123",
+								W:     100,
+								H:     50,
+								Type:  openrtb_ext.BidTypeVideo,
+							},
+						},
+					},
+				}, "pubmatic")
+				return seatNonBid
+			}(),
 		},
 		{
 			name:     "No_bids",
-			bidInfo:  []BidUnwrapInfo{},
-			expected: nil,
+			bidInfo:  []rawBidderResponseHookResult{},
+			expected: []*adapters.TypedBid{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
-			applyMutation(tt.bidInfo, &result)
-
-			// Apply the mutation to a dummy payload
 			payload := hookstage.RawBidderResponsePayload{
-				BidderResponse: &adapters.BidderResponse{},
+				BidderResponse: &adapters.BidderResponse{
+					Bids:     []*adapters.TypedBid{},
+					Currency: "USD",
+				},
 			}
+			applyMutation(tt.bidInfo, &result, payload)
+
 			for _, mut := range result.ChangeSet.Mutations() {
 				newPayload, err := mut.Apply(payload)
 				assert.NoError(t, err)
 				payload = newPayload
 			}
+
 			assert.Equal(t, tt.expected, payload.BidderResponse.Bids)
 		})
 	}

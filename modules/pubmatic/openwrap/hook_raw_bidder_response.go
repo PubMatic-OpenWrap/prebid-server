@@ -1,8 +1,9 @@
 package openwrap
 
 import (
-	"fmt"
+	"encoding/json"
 	"slices"
+	"sync"
 
 	"github.com/prebid/prebid-server/v2/adapters"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
@@ -13,20 +14,40 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookstage"
 )
 
-type BidUnwrapInfo struct {
+type rawBidderResponseHookResult struct {
 	bid          *adapters.TypedBid
 	unwrapStatus string
 	bidtype      openrtb_ext.BidType
+	bidExt       json.RawMessage
 }
 
-func applyMutation(bidInfo []BidUnwrapInfo, result *hookstage.HookResult[hookstage.RawBidderResponsePayload]) {
+func applyMutation(bidInfo []rawBidderResponseHookResult, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], payload hookstage.RawBidderResponsePayload) {
 	result.ChangeSet.AddMutation(func(rp hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-		var bids []*adapters.TypedBid
-		for _, bidinfo := range bidInfo {
-			bidinfo.bid.BidType = bidinfo.bidtype
-			bids = append(bids, bidinfo.bid)
+		newResultSet := []*adapters.TypedBid{}
+		unwrappedSuccessBidCnt := 0
+		seatNonBid := openrtb_ext.SeatNonBidBuilder{}
+		for _, bidResult := range bidInfo {
+			bidResult.bid.BidType = bidResult.bidtype
+			bidResult.bid.Bid.Ext = bidResult.bidExt
+			if !rejectBid(bidResult.unwrapStatus) {
+				unwrappedSuccessBidCnt++
+				newResultSet = append(newResultSet, bidResult.bid)
+			} else {
+				seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+					Bid:            bidResult.bid.Bid,
+					NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
+					DealPriority:   bidResult.bid.DealPriority,
+					BidMeta:        bidResult.bid.BidMeta,
+					BidType:        bidResult.bid.BidType,
+					BidVideo:       bidResult.bid.BidVideo,
+					OriginalBidCur: payload.BidderResponse.Currency,
+				}), payload.Bidder,
+				)
+			}
 		}
-		rp.BidderResponse.Bids = bids
+		rp.BidderResponse.Bids = newResultSet
+		result.SeatNonBid = seatNonBid
+
 		return rp, nil
 	}, hookstage.MutationUpdate, "update-bidtype-for-multiformat-request")
 }
@@ -34,80 +55,54 @@ func applyMutation(bidInfo []BidUnwrapInfo, result *hookstage.HookResult[hooksta
 func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
-) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-	var bidInfo []BidUnwrapInfo
+) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {	
+	//conditions
+	var (
+		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
+		rCtx, rCtxPresent = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
+		isVastUnwrapEnabled  =rCtxPresent  && rCtx.VastUnwrapEnabled
+	)
+
+	if !(isBidderCheckEnabled || isVastUnwrapEnabled) {
+		return result, nil
+	}
+
+	var resultSet []rawBidderResponseHookResult
 
 	for _, bid := range payload.BidderResponse.Bids {
-		var bids BidUnwrapInfo
-		bid = updateCreativeType(bid, m.cfg.ResponseOverride.BidType, payload.Bidder)
-		bids.bid = bid
-		bids.bidtype = bid.BidType
-		bidInfo = append(bidInfo, bids)
-	}
-	vastRequestContext, ok := miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-	if !ok {
-		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleRawBidderResponseHook()")
-		applyMutation(bidInfo, &result)
-		return result, nil
+		resultSet = append(resultSet, rawBidderResponseHookResult{
+			bid:     bid,
+			bidtype: bid.BidType,
+			bidExt:  bid.Bid.Ext,
+		})
 	}
 
-	if !vastRequestContext.VastUnwrapEnabled {
-		applyMutation(bidInfo, &result)
-		return result, nil
-	}
-	seatNonBid := openrtb_ext.SeatNonBidBuilder{}
-	unwrappedBids := make([]*adapters.TypedBid, 0, len(payload.BidderResponse.Bids))
-	unwrappedBidsChan := make(chan BidUnwrapInfo, len(payload.BidderResponse.Bids))
-	defer close(unwrappedBidsChan)
+	wg := sync.WaitGroup{}
+	for i := range resultSet {
+		bidResult := &resultSet[i]
 
-	unwrappedBidsCnt, unwrappedSuccessBidCnt := 0, 0
-	totalBidCnt := len(payload.BidderResponse.Bids)
-	for _, bid := range bidInfo {
-
-		// send bids for unwrap
-		if !isEligibleForUnwrap(bid.bid) {
-			unwrappedBids = append(unwrappedBids, bid.bid)
-			continue
+		if isBidderCheckEnabled {
+			updateCreativeType(bidResult, m.cfg.ResponseOverride.BidType, payload.Bidder)
 		}
-		unwrappedBidsCnt++
-		go func(bid adapters.TypedBid, bidType openrtb_ext.BidType) {
-			unwrapStatus := m.unwrap.Unwrap(&bid, miCtx.AccountID, payload.Bidder, vastRequestContext.UA, vastRequestContext.IP)
-			unwrappedBidsChan <- BidUnwrapInfo{&bid, unwrapStatus, bidType}
-		}(*bid.bid, bid.bidtype)
 
-	}
-
-	// collect bids after unwrap
-	for i := 0; i < unwrappedBidsCnt; i++ {
-		unwrappedBid := <-unwrappedBidsChan
-		if !rejectBid(unwrappedBid.unwrapStatus) {
-			unwrappedSuccessBidCnt++
-			unwrappedBids = append(unwrappedBids, unwrappedBid.bid)
-			continue
+		if isVastUnwrapEnabled && isEligibleForUnwrap(*bidResult) {
+			wg.Add(1)
+			go func(iBid *rawBidderResponseHookResult) {
+				defer wg.Done()
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, payload.Bidder, rCtx.UA, rCtx.IP)
+			}(bidResult)
 		}
-		seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-			Bid:            unwrappedBid.bid.Bid,
-			NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
-			DealPriority:   unwrappedBid.bid.DealPriority,
-			BidMeta:        unwrappedBid.bid.BidMeta,
-			BidType:        unwrappedBid.bid.BidType,
-			BidVideo:       unwrappedBid.bid.BidVideo,
-			OriginalBidCur: payload.BidderResponse.Currency,
-		}), payload.Bidder,
-		)
 	}
 
-	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-	changeSet.RawBidderResponse().Bids().Update(unwrappedBids)
-	result.ChangeSet = changeSet
-	result.SeatNonBid = seatNonBid
-	result.DebugMessages = append(result.DebugMessages,
-		fmt.Sprintf("For pubid:[%d] VastUnwrapEnabled: [%v] Total Input Bids: [%d] Total Bids sent for unwrapping: [%d] Total Unwrap Success: [%d]", vastRequestContext.PubID, vastRequestContext.VastUnwrapEnabled, totalBidCnt, unwrappedBidsCnt, unwrappedSuccessBidCnt))
+	wg.Wait()
+
+	applyMutation(resultSet, &result, payload)
+
 	return result, nil
 }
 
-func isEligibleForUnwrap(bid *adapters.TypedBid) bool {
-	return bid != nil && bid.BidType == openrtb_ext.BidTypeVideo && bid.Bid != nil && bid.Bid.AdM != ""
+func isEligibleForUnwrap(bidResult rawBidderResponseHookResult) bool {
+	return bidResult.bid != nil && bidResult.bidtype == openrtb_ext.BidTypeVideo && bidResult.bid.Bid != nil && bidResult.bid.Bid.AdM != ""
 }
 
 func rejectBid(bidUnwrapStatus string) bool {
@@ -118,30 +113,29 @@ func isBidderInList(bidderList []string, bidder string) bool {
 	return slices.Contains(bidderList, bidder)
 }
 
-func updateCreativeType(adapterBid *adapters.TypedBid, bidders []string, bidder string) *adapters.TypedBid {
+func updateCreativeType(adapterBid *rawBidderResponseHookResult, bidders []string, bidder string) {
 	// Check if the bidder is in the bidders list
 	if !isBidderInList(bidders, bidder) {
-		return adapterBid
+		return
 	}
 
-	bidType := GetCreativeTypeFromCreative(adapterBid.Bid.AdM)
+	bidType := openrtb_ext.GetCreativeTypeFromCreative(adapterBid.bid.Bid.AdM)
 	if bidType == "" {
-		return adapterBid
+		return
 	}
 
 	newBidType := openrtb_ext.BidType(bidType)
-	if adapterBid.BidType != newBidType {
-		adapterBid.BidType = newBidType
+	if adapterBid.bidtype != newBidType {
+		adapterBid.bidtype = newBidType
 	}
 
 	// Update the "prebid.type" field in the bid extension
-	updatedExt, err := jsonparser.Set(adapterBid.Bid.Ext, []byte(`"`+bidType+`"`), "prebid", "type")
+	updatedExt, err := jsonparser.Set(adapterBid.bidExt, []byte(`"`+bidType+`"`), "prebid", "type")
 	if err != nil {
-		return adapterBid
+		return
 	}
 
 	// Assign the updated JSON only if `jsonparser.Set` succeeds
-	adapterBid.Bid.Ext = updatedExt
-
-	return adapterBid
+	adapterBid.bidExt = updatedExt
+	return
 }

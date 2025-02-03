@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -22,12 +21,6 @@ import (
 const (
 	ImpressionIDSeparator = `::`
 )
-
-var VideoRegex *regexp.Regexp
-
-func init() {
-	VideoRegex, _ = regexp.Compile("<VAST\\s+")
-}
 
 var SyncerMap map[string]usersync.Syncer
 
@@ -90,13 +83,18 @@ func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 	if bid.AdM == "" {
 		return ""
 	}
-	if VideoRegex.MatchString(bid.AdM) {
+	if openrtb_ext.IsVideo(bid.AdM) {
 		return Video
 	}
+	// if impCtx.Native != nil {
+	// 	var admJSON map[string]interface{}
+	// 	err := json.Unmarshal([]byte(strings.Replace(bid.AdM, "/\\/g", "", -1)), &admJSON)
+	// 	if err == nil && admJSON != nil && admJSON["native"] != nil {
+	// 		return Native
+	// 	}
+	// }
 	if impCtx.Native != nil {
-		var admJSON map[string]interface{}
-		err := json.Unmarshal([]byte(strings.Replace(bid.AdM, "/\\/g", "", -1)), &admJSON)
-		if err == nil && admJSON != nil && admJSON["native"] != nil {
+		if openrtb_ext.IsNative(bid.AdM) {
 			return Native
 		}
 	}

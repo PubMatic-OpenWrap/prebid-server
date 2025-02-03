@@ -104,9 +104,6 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 	glog.Info("Initialized profileMetaData reloader")
 
-	// Sort bidtype from cfg.ResponseOverride.BidType list
-	sort.Strings(cfg.ResponseOverride.BidType)
-
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
@@ -161,4 +158,5 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 func patchConfig(cfg *config.Config) {
 	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
+	sort.Strings(cfg.ResponseOverride.BidType)
 }
