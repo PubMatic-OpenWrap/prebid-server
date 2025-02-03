@@ -21,80 +21,79 @@ type rawBidderResponseHookResult struct {
 	bidExt       json.RawMessage
 }
 
-func applyMutation(bidInfo []rawBidderResponseHookResult, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], payload hookstage.RawBidderResponsePayload) {
-	result.ChangeSet.AddMutation(func(rp hookstage.RawBidderResponsePayload) (hookstage.RawBidderResponsePayload, error) {
-		newResultSet := []*adapters.TypedBid{}
-		unwrappedSuccessBidCnt := 0
-		seatNonBid := openrtb_ext.SeatNonBidBuilder{}
-		for _, bidResult := range bidInfo {
-			bidResult.bid.BidType = bidResult.bidtype
-			bidResult.bid.Bid.Ext = bidResult.bidExt
-			if !rejectBid(bidResult.unwrapStatus) {
-				unwrappedSuccessBidCnt++
-				newResultSet = append(newResultSet, bidResult.bid)
-			} else {
-				seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
-					Bid:            bidResult.bid.Bid,
-					NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
-					DealPriority:   bidResult.bid.DealPriority,
-					BidMeta:        bidResult.bid.BidMeta,
-					BidType:        bidResult.bid.BidType,
-					BidVideo:       bidResult.bid.BidVideo,
-					OriginalBidCur: payload.BidderResponse.Currency,
-				}), payload.Bidder,
-				)
-			}
-		}
-		rp.BidderResponse.Bids = newResultSet
-		result.SeatNonBid = seatNonBid
+func applyMutation(bidInfo []*rawBidderResponseHookResult, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], payload hookstage.RawBidderResponsePayload) {
+	var (
+		newResultSet = []*adapters.TypedBid{}
+		seatNonBid   = openrtb_ext.SeatNonBidBuilder{}
+	)
 
-		return rp, nil
-	}, hookstage.MutationUpdate, "update-bidtype-for-multiformat-request")
+	for _, bidResult := range bidInfo {
+		bidResult.bid.BidType = bidResult.bidtype
+		bidResult.bid.Bid.Ext = bidResult.bidExt
+
+		if rejectBid(bidResult.unwrapStatus) {
+			seatNonBid.AddBid(openrtb_ext.NewNonBid(openrtb_ext.NonBidParams{
+				Bid:            bidResult.bid.Bid,
+				NonBidReason:   int(nbr.LossBidLostInVastUnwrap),
+				DealPriority:   bidResult.bid.DealPriority,
+				BidMeta:        bidResult.bid.BidMeta,
+				BidType:        bidResult.bid.BidType,
+				BidVideo:       bidResult.bid.BidVideo,
+				OriginalBidCur: payload.BidderResponse.Currency,
+			}), payload.Bidder)
+			continue
+		}
+
+		newResultSet = append(newResultSet, bidResult.bid)
+	}
+
+	result.ChangeSet.RawBidderResponse().Bids().Update(newResultSet)
+	result.SeatNonBid = seatNonBid
 }
 
 func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
-) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {	
-	//conditions
+) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 	var (
+		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
+		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnwrapEnabled
 		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
-		rCtx, rCtxPresent = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  =rCtxPresent  && rCtx.VastUnwrapEnabled
 	)
 
 	if !(isBidderCheckEnabled || isVastUnwrapEnabled) {
 		return result, nil
 	}
 
-	var resultSet []rawBidderResponseHookResult
-
+	resultSet := []*rawBidderResponseHookResult{}
 	for _, bid := range payload.BidderResponse.Bids {
-		resultSet = append(resultSet, rawBidderResponseHookResult{
+		resultSet = append(resultSet, &rawBidderResponseHookResult{
 			bid:     bid,
 			bidtype: bid.BidType,
 			bidExt:  bid.Bid.Ext,
 		})
 	}
 
-	wg := sync.WaitGroup{}
-	for i := range resultSet {
-		bidResult := &resultSet[i]
-
-		if isBidderCheckEnabled {
+	if isBidderCheckEnabled {
+		for _, bidResult := range resultSet {
 			updateCreativeType(bidResult, m.cfg.ResponseOverride.BidType, payload.Bidder)
-		}
-
-		if isVastUnwrapEnabled && isEligibleForUnwrap(*bidResult) {
-			wg.Add(1)
-			go func(iBid *rawBidderResponseHookResult) {
-				defer wg.Done()
-				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, payload.Bidder, rCtx.UA, rCtx.IP)
-			}(bidResult)
 		}
 	}
 
-	wg.Wait()
+	if isVastUnwrapEnabled {
+		var wg = sync.WaitGroup{}
+		for _, bidResult := range resultSet {
+			if isVastUnwrapEnabled && isEligibleForUnwrap(*bidResult) {
+				wg.Add(1)
+				go func(iBid *rawBidderResponseHookResult) {
+					defer wg.Done()
+					iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, payload.Bidder, rCtx.UA, rCtx.IP)
+					//TODO: moving iBid.bid.Adm changes in applyMutation
+				}(bidResult)
+			}
+		}
+		wg.Wait()
+	}
 
 	applyMutation(resultSet, &result, payload)
 
