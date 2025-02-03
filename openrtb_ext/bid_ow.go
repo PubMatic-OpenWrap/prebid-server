@@ -1,6 +1,7 @@
 package openrtb_ext
 
 import (
+	"encoding/json"
 	"regexp"
 
 	jsoniter "github.com/json-iterator/go"
@@ -9,7 +10,7 @@ import (
 var videoRegex *regexp.Regexp
 
 func init() {
-	videoRegex, _ = regexp.Compile("<VAST\\s+")
+	videoRegex, _ = regexp.Compile(`<VAST\s+`)
 }
 
 var jsonCompatible = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -25,6 +26,7 @@ func GetCreativeTypeFromCreative(adm string) string {
 	if adm == "" {
 		return ""
 	}
+
 	if IsVideo(adm) {
 		return Video
 	}
@@ -37,7 +39,7 @@ func GetCreativeTypeFromCreative(adm string) string {
 }
 
 func IsNative(adm string) bool {
-	var temp map[string]interface{}
+	var temp map[string]json.RawMessage
 
 	if err := jsonCompatible.UnmarshalFromString(adm, &temp); err == nil {
 		if _, exists := temp["native"]; exists {
@@ -54,8 +56,5 @@ func IsNative(adm string) bool {
 }
 
 func IsVideo(adm string) bool {
-	if videoRegex.MatchString(adm) {
-		return true
-	}
-	return false
+	return videoRegex.MatchString(adm)
 }
