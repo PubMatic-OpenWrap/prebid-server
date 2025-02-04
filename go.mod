@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.21
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250123125015-dc60a6d46a6e
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250204133001-586c8ab62f66
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -51,7 +51,7 @@ require (
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/51Degrees/device-detection-go/v4 v4.4.35
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250123111707-e173d4775632
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
@@ -104,9 +104,5 @@ require (
 )
 
 replace github.com/prebid/prebid-server/v2 => ./
-
 replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef
-
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5
-
-replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0

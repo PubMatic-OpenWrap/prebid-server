@@ -153,16 +153,16 @@ func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nur
 	if nurlPresent {
 		creative := doc.SelectElement(nil, "VAST", "Ad", "Wrapper", "Creatives")
 		if creative != nil {
-			cr := fastxml.CreateElement("Creative")
+			cr := fastxml.NewElement("Creative")
 
 			switch linearity {
 			case adcom1.LinearityLinear:
-				cr.AddChild(fastxml.CreateElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
 			case adcom1.LinearityNonLinear:
-				cr.AddChild(fastxml.CreateElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
 			default:
-				cr.AddChild(fastxml.CreateElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
-				cr.AddChild(fastxml.CreateElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
 			}
 
 			xu.AppendElement(creative, cr)
@@ -200,14 +200,14 @@ func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nur
 }
 
 func getTrackingEvents(createTrackingEvents bool, eventURLMap map[string]string) *fastxml.XMLElement {
-	te := fastxml.CreateElement("")
+	te := fastxml.NewElement("")
 	if createTrackingEvents {
 		te.SetName("TrackingEvents")
 	}
 
 	for _, event := range trackingEvents {
 		if url, ok := eventURLMap[event]; ok {
-			tracking := fastxml.CreateElement("Tracking").AddAttribute("", "event", event).SetText(url, true, fastxml.NoEscaping)
+			tracking := fastxml.NewElement("Tracking").AddAttribute("", "event", event).SetText(url, true, fastxml.NoEscaping)
 			te.AddChild(tracking)
 		}
 	}
