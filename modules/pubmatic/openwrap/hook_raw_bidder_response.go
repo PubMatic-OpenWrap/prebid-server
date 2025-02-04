@@ -28,6 +28,10 @@ func applyMutation(bidInfo []*rawBidderResponseHookResult, result *hookstage.Hoo
 	)
 
 	for _, bidResult := range bidInfo {
+		if bidResult == nil || bidResult.bid == nil {
+			continue
+		}
+
 		bidResult.bid.BidType = bidResult.bidtype
 		bidResult.bid.Bid.Ext = bidResult.bidExt
 
@@ -75,29 +79,43 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	}
 
 	if isBidderCheckEnabled {
-		for _, bidResult := range resultSet {
-			updateCreativeType(bidResult, m.cfg.ResponseOverride.BidType, payload.Bidder)
-		}
+		m.updateBidderType(resultSet, payload.Bidder)
 	}
 
 	if isVastUnwrapEnabled {
-		var wg = sync.WaitGroup{}
-		for _, bidResult := range resultSet {
-			if isVastUnwrapEnabled && isEligibleForUnwrap(*bidResult) {
-				wg.Add(1)
-				go func(iBid *rawBidderResponseHookResult) {
-					defer wg.Done()
-					iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, payload.Bidder, rCtx.UA, rCtx.IP)
-					//TODO: moving iBid.bid.Adm changes in applyMutation
-				}(bidResult)
-			}
-		}
-		wg.Wait()
+		m.processVastUnwrap(resultSet, miCtx, payload.Bidder, rCtx)
 	}
 
 	applyMutation(resultSet, &result, payload)
 
 	return result, nil
+}
+
+// updateBidderType updates the creative type if bidder check is enabled.
+func (m OpenWrap) updateBidderType(resultSet []*rawBidderResponseHookResult, bidder string) {
+	for _, bidResult := range resultSet {
+		updateCreativeType(bidResult, m.cfg.ResponseOverride.BidType, bidder)
+	}
+}
+
+// processVastUnwrap unwraps VAST creatives asynchronously if enabled.
+func (m OpenWrap) processVastUnwrap(
+	resultSet []*rawBidderResponseHookResult,
+	miCtx hookstage.ModuleInvocationContext,
+	bidder string,
+	rCtx models.RequestCtx,
+) {
+	var wg sync.WaitGroup
+	for _, bidResult := range resultSet {
+		if isEligibleForUnwrap(*bidResult) {
+			wg.Add(1)
+			go func(iBid *rawBidderResponseHookResult) {
+				defer wg.Done()
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.UA, rCtx.IP)
+			}(bidResult)
+		}
+	}
+	wg.Wait()
 }
 
 func isEligibleForUnwrap(bidResult rawBidderResponseHookResult) bool {

@@ -1318,14 +1318,14 @@ func TestUpdateCreativeType(t *testing.T) {
 func TestApplyMutation(t *testing.T) {
 	tests := []struct {
 		name               string
-		bidInfo            []rawBidderResponseHookResult
+		bidInfo            []*rawBidderResponseHookResult
 		payload            hookstage.RawBidderResponsePayload
 		expected           []*adapters.TypedBid
 		expectedSeatNonBid openrtb_ext.SeatNonBidBuilder
 	}{
 		{
 			name: "Single_bid",
-			bidInfo: []rawBidderResponseHookResult{
+			bidInfo: []*rawBidderResponseHookResult{
 				{
 					bid: &adapters.TypedBid{
 						Bid: &openrtb2.Bid{ID: "1"},
@@ -1342,7 +1342,7 @@ func TestApplyMutation(t *testing.T) {
 		},
 		{
 			name: "Multiple_bids_with_rejection",
-			bidInfo: []rawBidderResponseHookResult{
+			bidInfo: []*rawBidderResponseHookResult{
 				{
 					bid: &adapters.TypedBid{
 						Bid: &openrtb2.Bid{ID: "1"},
@@ -1384,7 +1384,7 @@ func TestApplyMutation(t *testing.T) {
 		},
 		{
 			name:     "No_bids",
-			bidInfo:  []rawBidderResponseHookResult{},
+			bidInfo:  []*rawBidderResponseHookResult{},
 			expected: []*adapters.TypedBid{},
 		},
 	}

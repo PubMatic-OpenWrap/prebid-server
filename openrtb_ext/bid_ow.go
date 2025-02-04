@@ -7,10 +7,10 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-var videoRegex *regexp.Regexp
+var VideoRegex *regexp.Regexp
 
 func init() {
-	videoRegex, _ = regexp.Compile(`<VAST\s+`)
+	VideoRegex, _ = regexp.Compile(`<VAST\s+`)
 }
 
 var jsonCompatible = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -27,7 +27,7 @@ func GetCreativeTypeFromCreative(adm string) string {
 		return ""
 	}
 
-	if IsVideo(adm) {
+	if VideoRegex.MatchString(adm) {
 		return Video
 	}
 
@@ -41,20 +41,15 @@ func GetCreativeTypeFromCreative(adm string) string {
 func IsNative(adm string) bool {
 	var temp map[string]json.RawMessage
 
-	if err := jsonCompatible.UnmarshalFromString(adm, &temp); err == nil {
-		if _, exists := temp["native"]; exists {
-			return true
-		}
-		if _, exists := temp["link"]; exists {
-			return true
-		}
-		if _, exists := temp["assets"]; exists {
+	if err := jsonCompatible.UnmarshalFromString(adm, &temp); err != nil {
+		return false
+	}
+
+	for _, tag := range []string{"native", "link", "assets"} {
+		if _, exists := temp[tag]; exists {
 			return true
 		}
 	}
-	return false
-}
 
-func IsVideo(adm string) bool {
-	return videoRegex.MatchString(adm)
+	return false
 }
