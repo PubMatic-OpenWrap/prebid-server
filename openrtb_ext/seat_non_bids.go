@@ -75,6 +75,7 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 				BidId:             bidParams.GeneratedBidID,
 				Floors:            bidParams.BidFloors,
 				OriginalBidCPMUSD: bidParams.OriginalBidCPMUSD,
+				Bundle:            bidParams.Bid.Bundle,
 			}},
 		},
 	}

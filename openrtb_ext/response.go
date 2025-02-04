@@ -147,6 +147,7 @@ type ExtNonBidPrebidBid struct {
 	BidId             string              `json:"bidid,omitempty"`
 	Floors            *ExtBidPrebidFloors `json:"floors,omitempty"`
 	OriginalBidCPMUSD float64             `json:"origbidcpmusd,omitempty"`
+	Bundle            string              `json:"bndl,omitempty"`
 }
 
 // ExtNonBidPrebid represents bidresponse.ext.prebid.seatnonbid[].nonbid[].ext

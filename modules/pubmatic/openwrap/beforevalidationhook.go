@@ -679,7 +679,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			err = ctv.IsValidSchain(ep.BidRequest.Source.SChain)
 			if err != nil {
 				schainBytes, _ := json.Marshal(ep.BidRequest.Source.SChain)
-				glog.Errorf(ctv.ErrSchainValidationFailed, SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
+				glog.Errorf(ctv.ErrSchainValidationFailed, models.SChainKey, err.Error(), rctx.PubIDStr, rctx.ProfileIDStr, string(schainBytes))
 				ep.BidRequest.Source.SChain = nil
 			}
 		}
@@ -741,7 +741,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
 	}
 
-	setSChainInSourceObject(bidRequest.Source, rctx.PartnerConfigMap)
+	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
