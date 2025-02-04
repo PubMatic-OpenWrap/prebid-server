@@ -1,9 +1,11 @@
 package schain
 
 import (
+	"encoding/json"
+
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/jsonutil"
 )
 
 // NewSChainWriter creates an ORTB 2.5 schain writer instance
@@ -69,10 +71,26 @@ func (w SChainWriter) Write(req *openrtb2.BidRequest, bidder string) {
 		schain.SChain.Nodes = append(schain.SChain.Nodes, *w.hostSChainNode)
 	}
 
-	sourceExt, err := jsonutil.Marshal(schain)
-	if err == nil {
-		req.Source.Ext = sourceExt
+	schainBytes, err := json.Marshal(schain.SChain)
+	if err != nil {
+		return
 	}
+
+	var (
+		newSourceExt json.RawMessage
+		sourceExt    = req.Source.Ext
+	)
+	if len(sourceExt) > 0 {
+		newSourceExt, err = jsonparser.Set(req.Source.Ext, schainBytes, "schain")
+	} else {
+		newSourceExt, err = jsonparser.Set([]byte(`{}`), schainBytes, "schain")
+	}
+
+	if err == nil {
+		req.Source.Ext = newSourceExt
+		return
+	}
+	req.Source.Ext = sourceExt
 }
 
 // extPrebidSChainExists checks if an schain exists in the ORTB 2.5 req.ext.prebid.schain location
