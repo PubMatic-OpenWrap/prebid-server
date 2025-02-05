@@ -2,7 +2,6 @@ package openrtb_ext
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -65,12 +64,6 @@ type ExtResponsePrebid struct {
 	// SeatNonBid holds the array of Bids which are either rejected, no bids inside bidresponse.ext.prebid.seatnonbid
 	SeatNonBid []SeatNonBid     `json:"seatnonbid,omitempty"`
 	Floors     *PriceFloorRules `json:"floors,omitempty"`
-}
-
-type FastXMLMetrics struct {
-	XMLParserTime   time.Duration `json:"xmlparsertime,omitempty"`
-	EtreeParserTime time.Duration `json:"etreeparsertime,omitempty"`
-	IsRespMismatch  bool          `json:"isrespmismatch,omitempty"`
 }
 
 // FledgeResponse defines the contract for bidresponse.ext.fledge
