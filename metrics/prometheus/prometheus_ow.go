@@ -60,8 +60,9 @@ type OWMetrics struct {
 
 	// podImpGenTimer indicates time taken by impression generator
 	// algorithm to generate impressions for given ad pod request
-	xmlParserResponseTime *prometheus.HistogramVec
-	xmlParserMismatch     *prometheus.CounterVec
+	xmlParserResponseTime   *prometheus.HistogramVec
+	xmlParserMismatch       *prometheus.CounterVec
+	xmlParserProcessingTime *prometheus.HistogramVec
 }
 
 func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
@@ -219,9 +220,9 @@ func (m *Metrics) RecordHttpCounter() {
 	m.httpCounter.Inc()
 }
 
-// RecordXMLParserResponseTime records xml parser response time
-func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
-	m.xmlParserResponseTime.With(prometheus.Labels{
+// RecordXMLParserProcessingTime records xml parser response time
+func (m *OWMetrics) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
+	m.xmlParserProcessingTime.With(prometheus.Labels{
 		xmlParserLabel: parser,
 		methodLabel:    method,
 	}).Observe(float64(respTime.Microseconds()))
@@ -237,6 +238,14 @@ func (m *OWMetrics) RecordXMLParserResponseMismatch(method string, isMismatch bo
 		methodLabel: method,
 		statusLabel: status,
 	}).Inc()
+}
+
+// RecordXMLParserResponseTime records xml parser response time
+func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+	m.xmlParserResponseTime.With(prometheus.Labels{
+		xmlParserLabel: parser,
+		methodLabel:    method,
+	}).Observe(float64(respTime.Milliseconds()))
 }
 
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
@@ -322,9 +331,9 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		"Count of bad requests from a publisher to a particular endpoint with nbr code",
 		[]string{endpointLabel, pubIDLabel, nbrLabel})
 
-	//XML Parser Response Time
-	m.xmlParserResponseTime = newHistogramVec(cfg, reg,
-		"xml_parser_response_time",
+	//XML Parser Processing Time
+	m.xmlParserProcessingTime = newHistogramVec(cfg, reg,
+		"xml_parser_processing_time",
 		"Time taken by xml parser", []string{xmlParserLabel, methodLabel},
 		//50µs, 100µs, 250µs, 500µs, 1ms, 5ms, 10ms
 		[]float64{50, 100, 250, 500, 1000, 5000, 10000})
@@ -333,4 +342,12 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		"etree_fastxml_resp_mismatch",
 		"Count of no of bids for which fast xml and etree response mismatch",
 		[]string{methodLabel, statusLabel})
+
+	//XML Parser Response Time
+	m.xmlParserResponseTime = newHistogramVec(cfg, reg,
+		"xml_parser_response_time",
+		"Time taken by xml parser", []string{xmlParserLabel, methodLabel},
+		//10ms, 25ms, 50ms, 75ms, 100ms
+		[]float64{10, 25, 50, 75, 100})
+
 }

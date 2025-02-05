@@ -544,7 +544,7 @@ func TestCompareXMLParsers(t *testing.T) {
 			fastXML, _ := injectVideoEventsFastXML(vast, eventURLMap, false, adcom1.LinearityLinear)
 
 			if vast != fastXML {
-				fastXML, etreeXML = tmpFastXMLProcessing(fastXML, etreeXML)
+				fastXML, etreeXML = openrtb_ext.FastXMLPostProcessing(fastXML, etreeXML)
 			}
 
 			if len(debugLines) > 0 {

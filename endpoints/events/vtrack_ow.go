@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 
 var (
 	errEventURLNotConfigured = errors.New("event urls not configured")
-	tmpWSRemoverRegex        = regexp.MustCompile(`>\s+<`)
 )
 
 // InjectVideoEventTrackers injects the video tracking events
@@ -62,20 +60,19 @@ func InjectVideoEventTrackers(
 
 		//temporary
 		if fastXMLResponse != vastXML {
-			fastXMLResponse, etreeXMLResponse = tmpFastXMLProcessing(fastXMLResponse, response)
-		}
-
-		isResponseMismatch := (etreeXMLResponse != fastXMLResponse)
-
-		if isResponseMismatch {
-			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+			fastXMLResponse, etreeXMLResponse = openrtb_ext.FastXMLPostProcessing(fastXMLResponse, response)
 		}
 
 		metrics = &openrtb_ext.FastXMLMetrics{
-			XMLParserTime:   fastXMLParserTime,
-			EtreeParserTime: etreeParserTime,
-			IsRespMismatch:  isResponseMismatch,
+			FastXMLParserTime: fastXMLParserTime,
+			EtreeParserTime:   etreeParserTime,
+			IsRespMismatch:    (etreeXMLResponse != fastXMLResponse),
 		}
+
+		if metrics.IsRespMismatch {
+			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+		}
+
 	}
 
 	return response, metrics, err
@@ -156,16 +153,16 @@ func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nur
 	if nurlPresent {
 		creative := doc.SelectElement(nil, "VAST", "Ad", "Wrapper", "Creatives")
 		if creative != nil {
-			cr := fastxml.CreateElement("Creative")
+			cr := fastxml.NewElement("Creative")
 
 			switch linearity {
 			case adcom1.LinearityLinear:
-				cr.AddChild(fastxml.CreateElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
 			case adcom1.LinearityNonLinear:
-				cr.AddChild(fastxml.CreateElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
 			default:
-				cr.AddChild(fastxml.CreateElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
-				cr.AddChild(fastxml.CreateElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
+				cr.AddChild(fastxml.NewElement("NonLinearAds").AddChild(getTrackingEvents(true, eventURLMap)))
 			}
 
 			xu.AppendElement(creative, cr)
@@ -197,23 +194,20 @@ func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nur
 		return vastXML, nil
 	}
 
-	//Add CDATA and Expand Inline Nodes
-	xu.ApplyXMLSettingsOperations()
-
 	var buf bytes.Buffer
 	xu.Build(&buf)
 	return buf.String(), nil
 }
 
 func getTrackingEvents(createTrackingEvents bool, eventURLMap map[string]string) *fastxml.XMLElement {
-	te := fastxml.CreateElement("")
+	te := fastxml.NewElement("")
 	if createTrackingEvents {
 		te.SetName("TrackingEvents")
 	}
 
 	for _, event := range trackingEvents {
 		if url, ok := eventURLMap[event]; ok {
-			tracking := fastxml.CreateElement("Tracking").AddAttribute("", "event", event).SetText(url, true, fastxml.NoEscaping)
+			tracking := fastxml.NewElement("Tracking").AddAttribute("", "event", event).SetText(url, true, fastxml.NoEscaping)
 			te.AddChild(tracking)
 		}
 	}
@@ -228,17 +222,4 @@ func FindCreatives(doc *etree.Document) []*etree.Element {
 	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
 	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
 	return creatives
-}
-
-func tmpFastXMLProcessing(fastXML, etreeXML string) (string, string) {
-	//replace only if trackers are injected
-	fastXML = strings.TrimSpace(fastXML)                        //step1: remove heading and trailing whitespaces
-	fastXML = tmpWSRemoverRegex.ReplaceAllString(fastXML, "><") //step2: remove inbetween whitespaces
-	fastXML = strings.ReplaceAll(fastXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
-	fastXML = strings.ReplaceAll(fastXML, "'", "\"")            //step4: convert single quote to double quote
-
-	etreeXML = tmpWSRemoverRegex.ReplaceAllString(etreeXML, "><") //step2: remove inbetween whitespaces
-	etreeXML = strings.ReplaceAll(etreeXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
-	etreeXML = strings.ReplaceAll(etreeXML, "'", "\"")
-	return fastXML, etreeXML
 }

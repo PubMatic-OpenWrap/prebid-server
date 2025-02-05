@@ -493,6 +493,63 @@ func Test_mySqlDB_getActivePartnerConfigurations(t *testing.T) {
 			},
 		},
 		{
+			name: "ignore bidderSChainObject key for all partners",
+			fields: fields{
+				cfg: config.Database{
+					Queries: config.Queries{
+						GetParterConfig: models.TestQuery,
+					},
+					MaxDbContextTimeout: 1000,
+				},
+			},
+			args: args{
+				versionID: 123,
+			},
+			want: map[int]map[string]string{
+				101: {
+					"accountId":         "1234",
+					"pubId":             "8888",
+					"rev_share":         "10",
+					"partnerId":         "101",
+					"prebidPartnerName": "FirstPartnerName",
+					"bidderCode":        "FirstBidder",
+					"sstimeout":         "200",
+					"sstimeout_test":    "350",
+					"testEnabled":       "1",
+					"isAlias":           "0",
+					"vendorId":          "76",
+				},
+				102: {
+					"k1":                "v1",
+					"k2":                "v2",
+					"partnerId":         "102",
+					"prebidPartnerName": "SecondPartnerName",
+					"bidderCode":        "SecondBidder",
+					"isAlias":           "0",
+					"vendorId":          "100",
+				},
+			},
+			wantErr: nil,
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"partnerId", "prebidPartnerName", "bidderCode", "isAlias", "entityTypeID", "testConfig", "vendorId", "keyName", "value"}).
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "accountId", "1234").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 0, 76, "sstimeout", "200").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 1, 1, 76, "sstimeout", "350").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "pubId", "8888").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "rev_share", "10").
+					AddRow(101, "FirstPartnerName", "FirstBidder", 0, 3, 0, 76, "bidderSChainObject", "{\"config\":{\"ver\":\"1.0\",\"nodes\":[{\"asi\":\"indirectseller-appnexus.com\",\"hp\":1,\"sid\":\"00002\"}],\"complete\":1},\"validation\":\"strict\"}").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k1", "v1").
+					AddRow(102, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "k2", "v2").
+					AddRow(101, "SecondPartnerName", "SecondBidder", 0, -1, 0, 100, "bidderSChainObject", "{\"config\":{\"ver\":\"1.0\",\"nodes\":[{\"asi\":\"indirectseller-appnexus.com\",\"hp\":1,\"sid\":\"00002\"}],\"complete\":1},\"validation\":\"strict\"}")
+				mock.ExpectQuery(regexp.QuoteMeta(models.TestQuery)).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
 			name: "bidder alias present",
 			fields: fields{
 				cfg: config.Database{

@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	unwrapmodels "git.pubmatic.com/vastunwrap/unwrap/models"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
@@ -184,6 +186,30 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 	}
 }
 
+func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmodels.UnwrapContext, etreeResp, fastxmlResp *unwrapmodels.UnwrapResponse) {
+	fastxmlResponse, etreeResponse := openrtb_ext.FastXMLPostProcessing(string(fastxmlResp.Response), string(etreeResp.Response))
+
+	fastxmlMetrics := openrtb_ext.FastXMLMetrics{
+		EtreeParserTime:   ctx.FastXMLTestCtx.ETreeStats.ProcessingTime,
+		FastXMLParserTime: ctx.FastXMLTestCtx.FastXMLStats.ProcessingTime,
+		IsRespMismatch:    etreeResponse != fastxmlResponse,
+	}
+
+	if fastxmlMetrics.IsRespMismatch {
+		var flog openrtb_ext.UnwrapFastXMLLog
+		flog.InputXML = string(ctx.Vast)
+		for _, mock := range ctx.FastXMLTestCtx.WrapperMock {
+			flog.VASTXmls = append(flog.VASTXmls, string(mock.GetResponseBytes()))
+		}
+		resp, _ := json.Marshal(&flog)
+		openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[unwrap] response:[%s]", base64.StdEncoding.EncodeToString([]byte(resp)))
+	}
+
+	recordFastXMLMetrics(metricsEngine, "unwrap", &fastxmlMetrics)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
+}
+
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 	for _, seatBid := range adapterBids {
 		for _, pbsBid := range seatBid.Bids {
@@ -213,17 +239,17 @@ func recordOpenWrapBidResponseMetrics(bidder *BidderAdapter, bidResponse *adapte
 		recordFastXMLMetrics(bidder.me, "vastbidder", bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
-			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", resp)
+			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", base64.StdEncoding.EncodeToString([]byte(resp)))
 		}
 	}
 
 	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
 }
 
-func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, vastBidderInfo *openrtb_ext.FastXMLMetrics) {
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, method, vastBidderInfo.XMLParserTime)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, method, vastBidderInfo.EtreeParserTime)
-	metricsEngine.RecordXMLParserResponseMismatch(method, vastBidderInfo.IsRespMismatch)
+func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, fastxmlMetrics *openrtb_ext.FastXMLMetrics) {
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, method, fastxmlMetrics.FastXMLParserTime)
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, method, fastxmlMetrics.EtreeParserTime)
+	metricsEngine.RecordXMLParserResponseMismatch(method, fastxmlMetrics.IsRespMismatch)
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {

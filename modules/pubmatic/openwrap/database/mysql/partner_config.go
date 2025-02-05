@@ -68,6 +68,10 @@ func (db *mySqlDB) getActivePartnerConfigurations(profileID, versionID int) (map
 			partnerConfigMap[partnerID][models.PartnerTestEnabledKey] = "1"
 		}
 
+		if keyName == models.BidderSChainObjectKey {
+			continue
+		}
+
 		partnerConfigMap[partnerID][keyName] = value
 
 		if _, ok := partnerConfigMap[partnerID][models.PREBID_PARTNER_NAME]; !ok && prebidPartnerName != "-" {

@@ -102,9 +102,9 @@ func (a *VASTBidder) fastXMLTesting(handler *responseHandler, responseData *adap
 	}
 
 	xmlParsingMetrics := &openrtb_ext.FastXMLMetrics{
-		XMLParserTime:   handlerTime,
-		EtreeParserTime: etreeParserTime,
-		IsRespMismatch:  isVASTMismatch,
+		FastXMLParserTime: handlerTime,
+		EtreeParserTime:   etreeParserTime,
+		IsRespMismatch:    isVASTMismatch,
 	}
 
 	responseData.FastXMLMetrics = xmlParsingMetrics
