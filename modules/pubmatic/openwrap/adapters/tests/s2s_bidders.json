@@ -1,0 +1,155 @@
+[
+    {
+        "name": "visx_client_json",
+        "args" : {
+            "adapterName": "visx",
+            "requestJSON": {
+                "uid": 123,
+                "size": [160, 600]
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "uid": "123",
+                "size": [160,600]
+            }
+        }
+    },
+    {
+        "name": "visx_client_json_string_uid",
+        "args" : {
+            "adapterName": "visx",
+            "requestJSON": {
+                "uid": "123",
+                "size": [160, 600]
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "uid": "123",
+                "size": [160,600]
+            }
+        }
+    },
+    {
+        "name": "boldwin_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "boldwin",
+            "requestJSON": {
+                "placementId": "0",
+                "endpointId":"0"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "0"
+            }
+        }
+    },
+    {
+        "name": "colossus_json_OneOf - TagID/groupId",
+        "args" : {
+            "adapterName": "colossus",
+            "requestJSON": {
+                "TagID": "1",
+                "groupId":"1"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "TagID": "1"
+            }
+        }
+    },
+    {
+        "name": "nextmillennium_json_AnyOf - placement_id/group_id",
+        "args" : {
+            "adapterName": "nextmillennium",
+            "requestJSON": {
+                "placement_id": "1234",
+                "group_id":"5678"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placement_id": "1234"
+            }
+        }
+    },
+    {
+        "name": "rise_json_OneOf - org/publisher_id",
+        "args" : {
+            "adapterName": "rise",
+            "requestJSON": {
+                "org": "1",
+                "publisher_id":"1"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "org": "1"
+            }
+        }
+    },
+    {
+        "name": "kargo_json_OneOf - placementId/adSlotID",
+        "args" : {
+            "adapterName": "kargo",
+            "requestJSON": {
+                "placementId": "sjdsdkh",
+                "adSlotID":"sjsdkj"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "sjdsdkh"
+            }
+        }
+    },
+    {
+        "name": "pgamssp_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "pgamssp",
+            "requestJSON": {
+                "placementId": "123456",
+                "endpointId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "123456"
+            }
+        }
+    },
+    {
+        "name": "aidem - publisherId&siteId",
+        "args" : {
+            "adapterName": "aidem",
+            "requestJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "publisherId": "123456",
+                "siteId":"abcdefg"
+            }
+        }
+    },
+    {
+        "name": "compass_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "compass",
+            "requestJSON": {
+                "placementId": "123456",
+                "endpointId": "abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "123456"
+            }
+        }
+    }
+]

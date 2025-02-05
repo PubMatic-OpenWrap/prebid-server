@@ -263,6 +263,8 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 		bidderRequests = append(bidderRequests, bidderRequest)
 	}
 
+	updateContentObjectForBidder(bidderRequests, requestExt)
+
 	return
 }
 
@@ -522,6 +524,7 @@ func buildRequestExtForBidder(bidder string, req *openrtb_ext.RequestWrapper, re
 		prebidNew.Sdk = prebid.Sdk
 		prebidNew.Server = prebid.Server
 		prebidNew.Targeting = buildRequestExtTargeting(prebid.Targeting)
+		prebidNew.KeyVal = prebid.KeyVal
 	}
 
 	reqExt.SetPrebid(&prebidNew)
@@ -737,6 +740,11 @@ func createSanitizedImpExt(impExt, impExtPrebid map[string]json.RawMessage) (map
 			sanitizedImpPrebidExt[k] = v
 		}
 	}
+
+	// Dont send this to adapters
+	// if v, exists := impExtPrebid["floors"]; exists {
+	// 	sanitizedImpPrebidExt["floors"] = v
+	// }
 
 	// marshal sanitized imp[].ext.prebid
 	if len(sanitizedImpPrebidExt) > 0 {

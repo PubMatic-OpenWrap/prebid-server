@@ -1,0 +1,367 @@
+[
+    {
+        "name": "pubmatic_client_json",
+        "args": {
+            "adapterName": "pubmatic",
+            "requestJSON": {
+                "wiid": "147dc5a6-cef1-4733-b7f4-fd4447bf9393-difid",
+                "publisherId": "5890",
+                "adSlot": "/43743431/DMDemo@728x90:0",
+                "kadfloor": "1.0",
+                "wrapper": {
+                    "profile": 8671,
+                    "version": 4
+                }
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "adSlot": "/43743431/DMDemo@728x90:0",
+                "publisherId": "5890",
+                "kadfloor": "1.0",
+                "wrapper": {
+                    "profile": 8671,
+                    "version": 4
+                }
+            }
+        }
+    },
+    {
+        "name": "appnexus_client_json",
+        "args": {
+            "adapterName": "appnexus",
+            "requestJSON": {
+                "placementId": "9880618"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 9880618
+            }
+        }
+    },
+    {
+        "name": "districtm_client_json",
+        "args": {
+            "adapterName": "districtm",
+            "requestJSON": {
+                "placementId": "9880618"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 9880618
+            }
+        }
+    },
+    {
+        "name": "ix_client_json",
+        "args": {
+            "adapterName": "ix",
+            "requestJSON": {
+                "siteId": "171906",
+                "id": "123",
+                "size": [
+                    160,
+                    600
+                ]
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "siteId": "171906",
+                "size": [
+                    160,
+                    600
+                ]
+            }
+        }
+    },
+    {
+        "name": "pulsepoint_client_json",
+        "args": {
+            "adapterName": "pulsepoint",
+            "requestJSON": {
+                "ct": "1300",
+                "cp": "521732",
+                "cf": "160x600"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "cp": 521732,
+                "ct": 1300,
+                "cf": "160x600"
+            }
+        }
+    },
+    {
+        "name": "rubicon_client_json",
+        "args": {
+            "adapterName": "rubicon",
+            "requestJSON": {
+                "zoneId": "498816",
+                "siteId": "70608",
+                "video": {
+                    "playerHeight": "360",
+                    "size_id": "201",
+                    "playerWidth": "640",
+                    "language": "en"
+                },
+                "accountId": "97531"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "accountId": 97531,
+                "siteId": 70608,
+                "zoneId": 498816,
+                "video": {
+                    "playerWidth": 640,
+                    "playerHeight": 360,
+                    "size_id": 201,
+                    "language": "en"
+                }
+            }
+        }
+    },
+    {
+        "name": "openx_client_json",
+        "args": {
+            "adapterName": "openx",
+            "requestJSON": {
+                "unit": "539439964",
+                "delDomain": "se-demo-d.openx.net"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "delDomain": "se-demo-d.openx.net",
+                "unit": "539439964"
+            }
+        }
+    },
+    {
+        "name": "sovrn_client_json",
+        "args": {
+            "adapterName": "sovrn",
+            "requestJSON": {
+                "tagid": "14",
+                "bidfloor": 1.2
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "tagid": "14",
+                "bidfloor": 1.200000
+            }
+        }
+    },
+    {
+        "name": "improvedigital_client_json",
+        "args": {
+            "adapterName": "improvedigital",
+            "requestJSON": {
+                "placementId": "1234567",
+                "publisherId": "5890",
+                "size": {
+                    "w": 720,
+                    "h": 120
+                }
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 1234567,
+                "publisherId": 5890,
+                "size": {
+                    "w": 720,
+                    "h": 120
+                }
+            }
+        }
+    },
+    {
+        "name": "beachfront_client_json",
+        "args": {
+            "adapterName": "beachfront",
+            "requestJSON": {
+                "appId": "11bc5dd5-7421-4dd8-c926-40fa653bec83",
+                "bidfloor": "0.01"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "appId": "11bc5dd5-7421-4dd8-c926-40fa653bec83",
+                "bidfloor": 0.01,
+                "videoResponseType": "adm"
+            }
+        }
+    },
+    {
+        "name": "smaato_client_json",
+        "args": {
+            "adapterName": "smaato",
+            "requestJSON": {
+                "app": {
+                    "geo": {
+                        "lon": -88.80000305175781,
+                        "lat": 33.29999923706055
+                    },
+                    "ifa": "56700000-9cf0-22bd-b23e-46b96e40003a"
+                },
+                "adspaceId": "130563103",
+                "publisherId": "1100042525"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "adspaceId": "130563103",
+                "publisherId": "1100042525"
+            }
+        }
+    },
+    {
+        "name": "smartadserver_client_json",
+        "args": {
+            "adapterName": "smartadserver",
+            "requestJSON": {
+                "formatId": "84313",
+                "siteId": "317777",
+                "pageId": "1232599",
+                "domain": "http://ssb-us.smartadserver.com",
+                "networkId": "458"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "formatId": 84313,
+                "networkId": 458,
+                "pageId": 1232599,
+                "siteId": 317777
+            }
+        }
+    },
+    {
+        "name": "gumgum_client_json",
+        "args": {
+            "adapterName": "gumgum",
+            "requestJSON": {
+                "inSlot": "9",
+                "inScreen": "ggumtest",
+                "zone": "APAC1234"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "zone": "APAC1234"
+            }
+        }
+    },
+    {
+        "name": "pangle_client_json",
+        "args": {
+            "adapterName": "pangle",
+            "requestJSON": {
+                "placementid": "912340000",
+                "appid": "5123400",
+                "token": "sample_token"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "appid": "5123400",
+                "placementid": "912340000",
+                "token": "sample_token"
+            }
+        }
+    },
+    {
+        "name": "sonobi_client_json",
+        "args": {
+            "adapterName": "sonobi",
+            "requestJSON": {
+                "ad_unit": "/43743431/DMDemo",
+                "placement_id": "1a2b3c4d5e6f1a2b3c4d",
+                "hfa": "123"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "TagID": "/43743431/DMDemo"
+            }
+        }
+    },
+    {
+        "name": "adf_client_json",
+        "args": {
+            "adapterName": "adf",
+            "requestJSON": {
+                "inv": 1234,
+                "priceType": "gross",
+                "mid": 12345,
+                "mname": "Leaderboard",
+                "adxDomain": "adx.adform.net"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "mid": 12345
+            }
+        }
+    },
+    {
+        "name": "criteo_client_json",
+        "args": {
+            "adapterName": "criteo",
+            "requestJSON": {
+                "zoneId": "1023914"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "zoneId": 1023914
+            }
+        }
+    },
+    {
+        "name": "apacdex_client_json",
+        "args": {
+            "adapterName": "apacdex",
+            "requestJSON": {
+                "siteId": "test123",
+                "floorPrice": 0.9333,
+                "geo": {
+                    "lat": 17.98928,
+                    "lon": 99.7741712,
+                    "accuracy": 20
+                }
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "siteId": "test123",
+                "floorPrice": 0.9333,
+                "geo": {
+                    "lat": 17.98928,
+                    "lon": 99.7741712,
+                    "accuracy": 20
+                }
+            }
+        }
+    },
+    {
+        "name": "mediafuse_client_json",
+        "args": {
+            "adapterName": "mediafuse",
+            "requestJSON": {
+                "placementId": "9880618"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": 9880618
+            }
+        }
+    }
+]

@@ -46,10 +46,10 @@ Ensure that you deploy the `/static` directory, as Prebid Server requires those 
 
 Prebid Server requires [Go](https://go.dev) version 1.22 or newer. You can develop on any operating system that Go supports; however, please note that our helper scripts are written in bash.
 
-1. Clone The Repository
-``` bash
-git clone git@github.com:prebid/prebid-server.git
-cd prebid-server
+```bash
+cd YOUR_DIRECTORY
+git clone https://github.com/PubMatic-OpenWrap/prebid-server src/github.com/PubMatic-OpenWrap/prebid-server
+cd src/github.com/PubMatic-OpenWrap/prebid-server
 ```
 
 3. Download Dependencies
@@ -103,7 +103,8 @@ Bid Adapters transform OpenRTB requests and responses for communicating with a b
 Analytics Modules enable business intelligence tools to collect data from Prebid Server to provide publishers and hosts with valuable insights into their header bidding traffic. We welcome you to contribute a module for your platform. Refer to our guide on [building an analytics module](https://docs.prebid.org/prebid-server/developers/pbs-build-an-analytics-adapter.html) for further information.
 
 ### Auction Module
-Auction Modules allow hosts to extend the behavior of Prebid Server at specfic spots in the auction pipeline using existing modules or by developing custom functionality. Auction Modules may provide creative validation, traffic optimization, and real time data services among many other potential uses. We welcome vendors and community members to contribute modules that publishers and hosts may find useful. Consult our guide on [building an auction module](https://docs.prebid.org/prebid-server/developers/add-a-module.html) for more information.
+Auction Modules allow hosts to extend the behavior of Prebid Server at specfic spots in the auction pipeline using existing modules or by developing custom functionality. Auction Modules may provide creative validation, traffic optimization, and real time data services amoung many other potential uses. We welcome vendors and community members to contribute modules that publishers and hosts may find useful. Consult our guide on [building an auction module](https://docs.prebid.org/prebid-server/developers/add-a-module.html) for more information.
+Or better yet, [open a pull request](https://github.com/PubMatic-OpenWrap/prebid-server/compare) with the changes you'd like to see.
 
 ### Feature
 We welcome everyone to contribute to this project by implementing a specification or by proposing a new feature. Please review the [prioritized project board](https://github.com/orgs/prebid/projects/4), where you can select an issue labeled "Ready For Dev". To avoid redundant effort, kindly leave a comment on the issue stating your intention to take it on. To propose a feature, [open a new issue](https://github.com/prebid/prebid-server/issues/new/choose) with as much detail as possible for consideration by the Prebid Server Committee.

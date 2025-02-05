@@ -91,6 +91,8 @@ type ExtRequestPrebid struct {
 	// - basic: excludes debugmessages and analytic_tags from output
 	// any other value or an empty string disables trace output at all.
 	Trace string `json:"trace,omitempty"`
+
+	ExtOWRequestPrebid
 }
 
 type AdServerTarget struct {
@@ -107,6 +109,15 @@ type Experiment struct {
 // AdsCert defines if Call Sign feature is enabled for request
 type AdsCert struct {
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+type TransparencyRule struct {
+	Include bool     `json:"include,omitempty"`
+	Keys    []string `json:"keys,omitempty"`
+}
+
+type TransparencyExt struct {
+	Content map[string]TransparencyRule `json:"content,omitempty"`
 }
 
 type BidderConfig struct {
@@ -208,6 +219,7 @@ type ExtIncludeBrandCategory struct {
 	Publisher           string `json:"publisher,omitempty"`
 	WithCategory        bool   `json:"withcategory"`
 	TranslateCategories *bool  `json:"translatecategories,omitempty"`
+	SkipDedup           bool   `json:"skipdedup,omitempty"`
 }
 
 // MediaTypePriceGranularity specify price granularity configuration at the bid type level
@@ -220,6 +232,7 @@ type MediaTypePriceGranularity struct {
 // PriceGranularity defines the allowed values for bidrequest.ext.prebid.targeting.pricegranularity
 // or bidrequest.ext.prebid.targeting.mediatypepricegranularity.banner|video|native
 type PriceGranularity struct {
+	Test      bool               `json:"test,omitempty"`
 	Precision *int               `json:"precision,omitempty"`
 	Ranges    []GranularityRange `json:"ranges,omitempty"`
 }
@@ -332,6 +345,23 @@ func NewPriceGranularityFromLegacyID(v string) (PriceGranularity, bool) {
 					Increment: 0.5,
 				},
 			},
+		}, true
+	case "ow-ctv-med":
+		return PriceGranularity{
+			Precision: &precision2,
+			Ranges: []GranularityRange{{
+				Min:       0,
+				Max:       100,
+				Increment: 0.5}},
+		}, true
+	case "testpg":
+		return PriceGranularity{
+			Test:      true,
+			Precision: &precision2,
+			Ranges: []GranularityRange{{
+				Min:       0,
+				Max:       50,
+				Increment: 50}},
 		}, true
 	}
 

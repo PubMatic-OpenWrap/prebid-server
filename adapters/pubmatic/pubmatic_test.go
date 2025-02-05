@@ -11,7 +11,9 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/adapters/adapterstest"
 	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -107,6 +109,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
 			},
 		},
 		{
@@ -120,6 +123,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.12,
+				impExt:   json.RawMessage(nil),
 			},
 		},
 		{
@@ -133,7 +137,9 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.12,
-			}},
+				impExt:   json.RawMessage(nil),
+			},
+		},
 		{
 			name: "imp.bidfloor_set_and_kadfloor_set_higher_imp.bidfloor",
 			args: args{
@@ -145,7 +151,9 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.12,
-			}},
+				impExt:   json.RawMessage(nil),
+			},
+		},
 		{
 			name: "imp.bidfloor_set_and_kadfloor_set,_higher_kadfloor",
 			args: args{
@@ -157,7 +165,9 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.13,
-			}},
+				impExt:   json.RawMessage(nil),
+			},
+		},
 		{
 			name: "kadfloor_string_set_with_whitespace",
 			args: args{
@@ -169,9 +179,23 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 			want: want{
 				bidfloor: 0.13,
-			}},
+				impExt:   json.RawMessage(nil),
+			},
+		},
 		{
-			name: "Populate_imp.displaymanager_and_imp.displaymanagerver_if_both_are_empty_in_imp",
+			name: "bidViewability Object is set in imp.ext.prebid.pubmatic, pass to imp.ext",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}}`),
+				},
+			},
+			want: want{
+				impExt: json.RawMessage(`{"bidViewability":{"adSizes":{"728x90":{"createdAt":1679993940011,"rendered":20,"totalViewTime":424413,"viewed":17}},"adUnit":{"createdAt":1679993940011,"rendered":25,"totalViewTime":424413,"viewed":17}}}`),
+			},
+		},
+		{
+			name: "Populate imp.displaymanager and imp.displaymanagerver if both are empty in imp",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video: &openrtb2.Video{},
@@ -188,7 +212,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "do_not_populate_imp.displaymanager_and_imp.displaymanagerver_in_imp_if_only_displaymanager_or_displaymanagerver_is_present_in_args",
+			name: "do not populate imp.displaymanager and imp.displaymanagerver in imp if only displaymanager or displaymanagerver is present in args",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video:             &openrtb2.Video{},
@@ -205,7 +229,7 @@ func TestParseImpressionObject(t *testing.T) {
 			},
 		},
 		{
-			name: "do_not_populate_imp.displaymanager_and_imp.displaymanagerver_if_already_present_in_imp",
+			name: "do not populate imp.displaymanager and imp.displaymanagerver if already present in imp",
 			args: args{
 				imp: &openrtb2.Imp{
 					Video:             &openrtb2.Video{},
@@ -226,11 +250,12 @@ func TestParseImpressionObject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			receivedWrapperExt, receivedPublisherId, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
+			receivedWrapperExt, receivedPublisherId, _, err := parseImpressionObject(tt.args.imp, tt.args.extractWrapperExtFromImp, tt.args.extractPubIDFromImp, tt.args.displayManager, tt.args.displayManagerVer)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedWrapperExt, receivedWrapperExt)
 			assert.Equal(t, tt.expectedPublisherId, receivedPublisherId)
 			assert.Equal(t, tt.want.bidfloor, tt.args.imp.BidFloor)
+			assert.Equal(t, tt.want.impExt, tt.args.imp.Ext)
 			assert.Equal(t, tt.want.displayManager, tt.args.imp.DisplayManager)
 			assert.Equal(t, tt.want.displayManagerVer, tt.args.imp.DisplayManagerVer)
 		})
@@ -245,6 +270,7 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 		name           string
 		args           args
 		expectedReqExt extRequestAdServer
+		expectedCookie []string
 		wantErr        bool
 	}{
 		{
@@ -330,12 +356,39 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "valid wrapper object and senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":true}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				SendBurl: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid wrapper object and invalid senburl true in bidderparams",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":{}}}}`),
+				},
+			},
+			expectedReqExt: extRequestAdServer{
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				SendBurl: false,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotReqExt, err := extractPubmaticExtFromRequest(tt.args.request)
+			gotReqExt, gotCookie, err := extractPubmaticExtFromRequest(tt.args.request)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.expectedReqExt, gotReqExt)
+			assert.Equal(t, tt.expectedCookie, gotCookie)
 		})
 	}
 }
@@ -363,6 +416,66 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 				request: &openrtb2.BidRequest{Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":"123"}}}`)},
 			},
 			wantErr: true,
+		},
+		{
+			name: "request with multi floor",
+			fields: fields{
+				URI: "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{"bidder":{"floors":[1.2,1.3,1.4]}}`),
+						},
+					},
+				},
+			},
+			expectedReqData: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf1"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf2"},
+				},
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+					},
+					ImpIDs: []string{"test-imp-id_mf3"},
+				},
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -398,8 +511,9 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}}], "ext": {"buyid": "testBuyId"}}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: nil,
 			wantResp: &adapters.BidderResponse{
@@ -416,11 +530,19 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
-							Ext:     json.RawMessage(`{"dspid": 6, "deal_channel": 1, "prebiddealpriority": 1}`),
+							Ext:     json.RawMessage(`{"buyid":"testBuyId","deal_channel":1,"dspid":6,"prebiddealpriority":1}`),
 						},
 						DealPriority: 1,
 						BidType:      openrtb_ext.BidTypeBanner,
 						BidVideo:     &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets:   map[string]string{"hb_buyid_pubmatic": "testBuyId"},
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdvertiserID: 958,
+							AgencyID:     958,
+							NetworkID:    6,
+							DemandSource: "6",
+							MediaType:    "banner",
+						},
 					},
 				},
 				Currency: "USD",
@@ -433,6 +555,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: nil,
 			wantResp: &adapters.BidderResponse{
@@ -451,8 +574,52 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							DealID:  "testdeal",
 							Ext:     json.RawMessage(`{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1}`),
 						},
-						BidType:  openrtb_ext.BidTypeBanner,
-						BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
+						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+							AdvertiserID: 958,
+							AgencyID:     958,
+							NetworkID:    6,
+							DemandSource: "6",
+							MediaType:    "banner",
+						},
+					},
+				},
+				Currency: "USD",
+			},
+		},
+		{
+			name: "BidExt Nil cases",
+			args: args{
+				response: &adapters.ResponseData{
+					StatusCode: http.StatusOK,
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
+			},
+			wantErr: []error{&errortypes.FailedToUnmarshal{
+				Message: "expect { or n, but found \x00",
+			}},
+			wantResp: &adapters.BidderResponse{
+				Bids: []*adapters.TypedBid{
+					{
+						Bid: &openrtb2.Bid{
+							ID:      "7706636740145184841",
+							ImpID:   "test-imp-id",
+							Price:   0.500000,
+							AdID:    "29681110",
+							AdM:     "some-test-ad",
+							ADomain: []string{"pubmatic.com"},
+							CrID:    "29681110",
+							H:       250,
+							W:       300,
+							DealID:  "testdeal",
+							Ext:     nil,
+						},
+						BidType:    openrtb_ext.BidTypeBanner,
+						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+						BidTargets: map[string]string{},
 					},
 				},
 				Currency: "USD",
@@ -465,7 +632,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 				URI: tt.fields.URI,
 			}
 			gotResp, gotErr := a.MakeBids(tt.args.internalRequest, tt.args.externalRequest, tt.args.response)
-			assert.Equal(t, tt.wantErr, gotErr, gotErr)
+			assert.Equal(t, tt.wantErr, gotErr, tt.name)
 			assert.Equal(t, tt.wantResp, gotResp)
 		})
 	}
@@ -761,6 +928,147 @@ func TestGetMapFromJSON(t *testing.T) {
 	}
 }
 
+func TestPubmaticAdapter_buildAdapterRequest(t *testing.T) {
+	type fields struct {
+		URI        string
+		bidderName string
+	}
+	type args struct {
+		request *openrtb2.BidRequest
+		cookies []string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []*adapters.RequestData
+		wantErr bool
+	}{
+		{
+			name: "failed to marshal request",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{`),
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "request with single imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+							Ext: json.RawMessage(`{}`),
+						},
+					},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12,"ext":{}}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "request with multiple imp",
+			fields: fields{
+				URI:        "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+				bidderName: "pubmatic",
+			},
+			args: args{
+				request: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					App: &openrtb2.App{
+						Name:     "AutoScout24",
+						Bundle:   "com.autoscout24",
+						StoreURL: "https://play.google.com/store/apps/details?id=com.autoscout24&hl=fr",
+					},
+					Imp: []openrtb2.Imp{
+						{
+							ID:       "test-imp-id",
+							BidFloor: 0.12,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+						},
+						{
+							ID:       "test-imp-id2",
+							BidFloor: 0.34,
+							Banner: &openrtb2.Banner{
+								W: ptrutil.ToPtr[int64](300),
+								H: ptrutil.ToPtr[int64](250),
+							},
+						},
+					},
+				},
+				cookies: []string{"test-cookie"},
+			},
+			want: []*adapters.RequestData{
+				{
+					Method: "POST",
+					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id","banner":{"w":300,"h":250},"bidfloor":0.12},{"id":"test-imp-id2","banner":{"w":300,"h":250},"bidfloor":0.34}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr"}}`),
+					Headers: http.Header{
+						"Content-Type": []string{"application/json;charset=utf-8"},
+						"Accept":       []string{"application/json"},
+						"Cookie":       []string{"test-cookie"},
+					},
+					ImpIDs: []string{"test-imp-id", "test-imp-id2"},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &PubmaticAdapter{
+				URI:        tt.fields.URI,
+				bidderName: tt.fields.bidderName,
+			}
+			got, err := a.buildAdapterRequest(tt.args.request, tt.args.cookies)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("buildAdapterRequest() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGetDisplayManagerAndVer(t *testing.T) {
 	type args struct {
 		app *openrtb2.App
@@ -775,7 +1083,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 		want want
 	}{
 		{
-			name: "request_app_object_is_not_nil_but_app.ext_has_no_source_and_version",
+			name: "request app object is not nil but app.ext has no source and version",
 			args: args{
 
 				app: &openrtb2.App{
@@ -789,7 +1097,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext_has_source_and_version",
+			name: "request app object is not nil and app.ext has source and version",
 			args: args{
 
 				app: &openrtb2.App{
@@ -803,7 +1111,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext.prebid_has_source_and_version",
+			name: "request app object is not nil and app.ext.prebid has source and version",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
@@ -816,7 +1124,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext_has_only_version",
+			name: "request app object is not nil and app.ext has only version",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
@@ -829,7 +1137,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext_has_only_source",
+			name: "request app object is not nil and app.ext has only source",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
@@ -842,7 +1150,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext_have_empty_source_but_version_is_present",
+			name: "request app object is not nil and app.ext have empty source but version is present",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
@@ -855,7 +1163,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_app.ext_have_empty_version_but_source_is_present",
+			name: "request app object is not nil and app.ext have empty version but source is present",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
@@ -868,7 +1176,7 @@ func TestGetDisplayManagerAndVer(t *testing.T) {
 			},
 		},
 		{
-			name: "request_app_object_is_not_nil_and_both_app.ext_and_app.ext.prebid_have_source_and_version",
+			name: "request app object is not nil and both app.ext and app.ext.prebid have source and version",
 			args: args{
 				app: &openrtb2.App{
 					Name: "AutoScout24",
