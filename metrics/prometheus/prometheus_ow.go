@@ -347,7 +347,7 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 	m.xmlParserResponseTime = newHistogramVec(cfg, reg,
 		"xml_parser_response_time",
 		"Time taken by xml parser", []string{xmlParserLabel, methodLabel},
-		//50ms, 100ms, 250ms, 500ms, 1000ms
-		[]float64{50, 100, 250, 500, 1000})
+		//10ms, 25ms, 50ms, 75ms, 100ms
+		[]float64{10, 25, 50, 75, 100})
 
 }
