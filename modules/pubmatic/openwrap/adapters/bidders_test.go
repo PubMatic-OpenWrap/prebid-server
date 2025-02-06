@@ -343,7 +343,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			args: args{
 				fieldMap: map[string]interface{}{
 					"zoneId": "5",
-					"uid":  "12345",
+					"uid":    "12345",
 				},
 				adapterName: string(openrtb_ext.BidderCriteo),
 			},
@@ -354,7 +354,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			args: args{
 				fieldMap: map[string]interface{}{
 					"networkId": "5",
-					"uid":     "12345",
+					"uid":       "12345",
 				},
 				adapterName: string(openrtb_ext.BidderCriteo),
 			},
@@ -376,7 +376,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 				fieldMap: map[string]interface{}{
 					"networkId": "5",
 					"pubid":     "pub123",
-					"uid":     "12345",
+					"uid":       "12345",
 				},
 				adapterName: string(openrtb_ext.BidderCriteo),
 			},
