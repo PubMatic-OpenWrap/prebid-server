@@ -292,10 +292,13 @@ const (
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"
 	PwtBuyIdPubmaticConstantKey = "pwtbuyid_pubmatic"
 
-	SChainDBKey       = "sChain"
-	SChainObjectDBKey = "sChainObj"
-	SChainKey         = "schain"
-	SChainConfigKey   = "config"
+	SChainDBKey           = "sChain"
+	SChainObjectDBKey     = "sChainObj"
+	SChainKey             = "schain"
+	SChainConfigKey       = "config"
+	BidderSChainObjectKey = "bidderSChainObject"
+	AllBidderSChainObj    = "allBidderSChainObject"
+	AllBidderSChainKey    = "allBidderSChain"
 
 	PriceFloorURL      = "jsonUrl"
 	FloorModuleEnabled = "floorPriceModuleEnabled"

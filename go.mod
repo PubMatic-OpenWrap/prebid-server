@@ -1,8 +1,8 @@
 module github.com/PubMatic-OpenWrap/prebid-server/v2
 
-go 1.20
+go 1.21
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250205073845-1bbc22d7e1b5
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -29,14 +29,13 @@ require (
 	github.com/prebid/go-gdpr v1.12.0
 	github.com/prebid/go-gpp v0.2.0
 	github.com/prebid/openrtb/v20 v20.1.0
-	github.com/prebid/prebid-server/v2 v2.10.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.11.0
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.8.1
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yudai/gojsondiff v1.0.0
@@ -48,11 +47,11 @@ require (
 )
 
 require (
-	git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3
+	git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358
 	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
-	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52
-	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000
+	github.com/51Degrees/device-detection-go/v4 v4.4.35
+	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
@@ -63,8 +62,14 @@ require (
 )
 
 require (
+	github.com/prebid/prebid-server/v2 v2.0.0-00010101000000-000000000000
+	github.com/spf13/cast v1.5.0
+	github.com/tidwall/gjson v1.17.1
+	github.com/tidwall/sjson v1.2.5
+)
+
+require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
-	github.com/beevik/etree/110 v0.0.0-00010101000000-000000000000 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -81,14 +86,16 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
-	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
+	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
@@ -101,5 +108,3 @@ replace github.com/prebid/prebid-server/v2 => ./
 replace github.com/prebid/openrtb/v20 => github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef
 
 replace github.com/beevik/etree v1.0.2 => github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5
-
-replace github.com/beevik/etree/110 => github.com/beevik/etree v1.1.0

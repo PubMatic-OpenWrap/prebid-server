@@ -223,6 +223,7 @@ func convertNonBidToBidWrapper(nonBid *openrtb_ext.NonBid) (bid bidWrapper) {
 		MType:   nonBid.Ext.Prebid.Bid.MType,
 		ID:      nonBid.Ext.Prebid.Bid.ID,
 		ImpID:   nonBid.ImpId,
+		Bundle:  nonBid.Ext.Prebid.Bid.Bundle,
 	}
 	bidExt := models.BidExt{
 		OriginalBidCPM:    nonBid.Ext.Prebid.Bid.OriginalBidCPM,
@@ -434,6 +435,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				PartnerSize:            tracker.Tracker.PartnerInfo.AdSize,
 				ADomain:                tracker.Tracker.PartnerInfo.Advertiser,
 				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
+				Bundle:                 bid.Bid.Bundle,
+			}
+
+			if models.IsDefaultBid(bid.Bid) {
+				pr.DefaultBidStatus = 1
 			}
 
 			if pr.MultiBidMultiFloorFlag == 0 && bidExt.MultiBidMultiFloorValue > 0 {

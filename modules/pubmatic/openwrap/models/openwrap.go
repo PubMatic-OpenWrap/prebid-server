@@ -2,7 +2,9 @@ package models
 
 import (
 	"encoding/json"
+	"maps"
 	"net/http"
+	"slices"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -13,9 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
 	"github.com/prebid/prebid-server/v2/usersync"
-	"github.com/prebid/prebid-server/v2/util/maputil"
 	"github.com/prebid/prebid-server/v2/util/ptrutil"
-	"github.com/prebid/prebid-server/v2/util/sliceutil"
 )
 
 type RequestCtx struct {
@@ -308,11 +308,11 @@ func (ic *ImpCtx) DeepCopy() ImpCtx {
 	impCtx.IsRewardInventory = ptrutil.Clone(ic.IsRewardInventory)
 	impCtx.Video = ortb.DeepCopyImpVideo(ic.Video)
 	impCtx.Native = ortb.DeepCopyImpNative(ic.Native)
-	impCtx.IncomingSlots = sliceutil.Clone(ic.IncomingSlots)
-	impCtx.Bidders = maputil.Clone(ic.Bidders)
-	impCtx.NonMapped = maputil.Clone(ic.NonMapped)
-	impCtx.NewExt = sliceutil.Clone(ic.NewExt)
-	impCtx.BidCtx = maputil.Clone(ic.BidCtx)
+	impCtx.IncomingSlots = slices.Clone(ic.IncomingSlots)
+	impCtx.Bidders = maps.Clone(ic.Bidders)
+	impCtx.NonMapped = maps.Clone(ic.NonMapped)
+	impCtx.NewExt = slices.Clone(ic.NewExt)
+	impCtx.BidCtx = maps.Clone(ic.BidCtx)
 
 	return impCtx
 }

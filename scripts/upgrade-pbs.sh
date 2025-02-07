@@ -3,12 +3,13 @@
 attempt=1
 
 usage="
-Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at /tmp/prebid-server and /tmp/pbs-patch
+Script starts or continues prebid upgrade to version set in 'to_minor' variable. Workspace is at {Workspace}/prebid-server and {Workspace}/pbs-patch
 
-    ./upgrade-pbs.sh [--restart] [--version=VERSION]
+    ./upgrade-pbs.sh [--restart] [--version=VERSION] [--workspace=PATH]
 
-    --restart   Restart the upgrade (deletes /tmp/prebid-server and /tmp/pbs-patch)
+    --restart   Restart the upgrade (deletes {Workspace}/prebid-server and {Workspace}/pbs-patch)
     --version=VERSION  Specify a particular version to upgrade to (optional)
+    --workspace=PATH   Specify a workspace path (default: /GOPATH/src).
     -h          Help
 TODO:
     - paramertrize the script
@@ -16,6 +17,7 @@ TODO:
     - create header-bidding PR"
 RESTART=0
 VERSION=""
+WORKSPACE="${GOPATH:-$(go env GOPATH)}/src"
 
 # Process arguments
 process_arguments() {
@@ -31,6 +33,9 @@ process_arguments() {
             --version=*)
                 VERSION="${i#*=}"
                 ;;
+            --workspace=*)
+                WORKSPACE="${i#*=}"
+                ;;    
         esac
     done
 }
@@ -38,16 +43,16 @@ process_arguments() {
 # Restart upgrade
 restart_upgrade() {
     if [ "$RESTART" -eq "1" ]; then
-        log "Restarting the upgrade: rm -rf /tmp/prebid-server /tmp/pbs-patch/"
-        rm -rf /tmp/prebid-server /tmp/pbs-patch/
-        mkdir -p /tmp/pbs-patch/
+        log "Restarting the upgrade: rm -rf $WORKSPACE/prebid-server $WORKSPACE/pbs-patch/"
+        rm -rf $WORKSPACE/prebid-server $WORKSPACE/pbs-patch/
+        mkdir -p $WORKSPACE/pbs-patch/
     fi
 }
 
 # Initialize upgrade
 initialize_upgrade() {
     checkpoint_run clone_repo
-    cd /tmp/prebid-server
+    cd $WORKSPACE/prebid-server
     log "At $(pwd)"
 
     # Get the latest tag if VERSION is not specified
@@ -57,7 +62,7 @@ initialize_upgrade() {
 
     log "Final Upgrade Version: $VERSION"
 
-    git diff tags/$VERSION..origin/master > /tmp/pbs-patch/current_ow_patch-$VERSION-origin_master-$attempt.diff
+    git diff tags/$VERSION..origin/master > $WORKSPACE/pbs-patch/current_ow_patch-$VERSION-origin_master-$attempt.diff
 }
 
 # Start validation
@@ -93,8 +98,8 @@ merge_branches() {
 
 # Generate patch file
 generate_patch() {
-    log "Generating patch file at /tmp/pbs-patch/ for $VERSION"
-    git diff tags/$VERSION..master > /tmp/pbs-patch/new_ow_patch_$VERSION-master-1.diff
+    log "Generating patch file at $WORKSPACE/pbs-patch/ for $VERSION"
+    git diff tags/$VERSION..master > $WORKSPACE/pbs-patch/new_ow_patch_$VERSION-master-1.diff
 }
 
 # Log message
@@ -127,11 +132,11 @@ clear_log() {
 
 # Clone repository
 clone_repo() {
-    if [ -d "/tmp/prebid-server" ]; then
+    if [ -d "$WORKSPACE/prebid-server" ]; then
         log "Code already cloned. Attempting to continue the upgrade!!!"
     else
-        log "Cloning repo at /tmp"
-        cd /tmp
+        log "Cloning repo at $WORKSPACE"
+        cd $WORKSPACE
         git clone https://github.com/PubMatic-OpenWrap/prebid-server.git
         cd prebid-server
 
@@ -194,7 +199,7 @@ main() {
 }
 
 # --- start ---
-CHECKLOG=/tmp/pbs-patch/checkpoints.log
+CHECKLOG=$WORKSPACE/pbs-patch/checkpoints.log
 trap 'clear_log' EXIT
 
 log "Attempt: $attempt"

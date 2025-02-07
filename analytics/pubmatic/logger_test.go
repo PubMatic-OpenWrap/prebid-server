@@ -148,6 +148,45 @@ func TestConvertNonBidToBid(t *testing.T) {
 				exchange.ResponseRejectedBelowFloor.Ptr(),
 			},
 		},
+		{
+			name: "nonbid to bidwrapper with bundle",
+			nonBid: openrtb_ext.NonBid{
+				StatusCode: int(exchange.ResponseRejectedBelowFloor),
+				ImpId:      "imp1",
+				Ext: openrtb_ext.ExtNonBid{
+					Prebid: openrtb_ext.ExtNonBidPrebid{
+						Bid: openrtb_ext.ExtNonBidPrebidBid{
+							Price:             10,
+							ADomain:           []string{"abc.com"},
+							DealID:            "d1",
+							OriginalBidCPM:    10,
+							OriginalBidCur:    models.USD,
+							OriginalBidCPMUSD: 0,
+							W:                 10,
+							H:                 50,
+							DealPriority:      1,
+							Video: &openrtb_ext.ExtBidPrebidVideo{
+								Duration: 10,
+							},
+							Bundle: "dummy_bundle",
+						},
+					},
+				},
+			},
+			bid: bidWrapper{
+				&openrtb2.Bid{
+					ImpID:   "imp1",
+					Price:   10,
+					ADomain: []string{"abc.com"},
+					DealID:  "d1",
+					W:       10,
+					H:       50,
+					Bundle:  "dummy_bundle",
+					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
+				},
+				exchange.ResponseRejectedBelowFloor.Ptr(),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -256,15 +295,16 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
-						Adformat:    models.Video,
+						PartnerID:        "pubmatic",
+						BidderCode:       "pubmatic",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						Adformat:         models.Video,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -639,15 +679,74 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "prebid-bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: models.USD,
-						ADomain:     "google.com",
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "prebid-bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						ADomain:          "google.com",
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "log bundle field if not empty",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-1",
+										ImpID: "imp1",
+										ADomain: []string{
+											"http://google.com", "http://yahoo.com",
+										},
+										Bundle: "dummy_bundle",
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{
+											Prebid: &openrtb_ext.ExtBidPrebid{
+												BidId: "prebid-bid-id-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "prebid-bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						ADomain:          "google.com",
+						DefaultBidStatus: 1,
+						Bundle:           "dummy_bundle",
 					},
 				},
 			},
@@ -889,24 +988,26 @@ func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
+						PartnerID:        "pubmatic",
+						BidderCode:       "pubmatic",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						DefaultBidStatus: 1,
 					},
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-2",
-						OrigBidID:   "bid-id-2",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-2",
+						OrigBidID:        "bid-id-2",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -957,24 +1058,26 @@ func TestGetPartnerRecordsByImpForDroppedBids(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
+						PartnerID:        "pubmatic",
+						BidderCode:       "pubmatic",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						DefaultBidStatus: 1,
 					},
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-2",
-						OrigBidID:   "bid-id-2",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-2",
+						OrigBidID:        "bid-id-2",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -1108,15 +1211,16 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-2",
-						OrigBidID:   "bid-id-2",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
-						Nbr:         exchange.ResponseRejectedBelowFloor.Ptr(),
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-2",
+						OrigBidID:        "bid-id-2",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						Nbr:              exchange.ResponseRejectedBelowFloor.Ptr(),
+						DefaultBidStatus: 1,
 					},
 					{
 						PartnerID:            "pubmatic",
@@ -1131,6 +1235,7 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 						GrossECPM:            0,
 						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
+						DefaultBidStatus:     1,
 					},
 				},
 			},
@@ -1190,17 +1295,18 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "pubmatic",
-						BidderCode:  "pubmatic",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: "USD",
-						NetECPM:     0,
-						GrossECPM:   0,
-						Nbr:         exchange.ResponseRejectedBelowFloor.Ptr(),
+						PartnerID:        "pubmatic",
+						BidderCode:       "pubmatic",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						NetECPM:          0,
+						GrossECPM:        0,
+						Nbr:              exchange.ResponseRejectedBelowFloor.Ptr(),
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -2071,7 +2177,10 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			partners := getPartnerRecordsByImp(tt.args.ao, tt.args.rCtx)
-			assert.Equal(t, tt.partners, partners, tt.name)
+			for ind := range partners {
+				// ignore order of elements in slice while comparison
+				assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name)
+			}
 		})
 	}
 }
@@ -2586,6 +2695,7 @@ func TestGetPartnerRecordsByImpForPostTimeoutBidStatus(t *testing.T) {
 						OriginalCur:          models.USD,
 						PostTimeoutBidStatus: 1,
 						Nbr:                  exchange.ErrorTimeout.Ptr(),
+						DefaultBidStatus:     1,
 					},
 				},
 			},
@@ -2839,6 +2949,7 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 						OriginalCur:          models.USD,
 						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
+						DefaultBidStatus:     1,
 					},
 				},
 			},
@@ -3153,6 +3264,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 						OriginalCur:          models.USD,
 						Nbr:                  exchange.ErrorTimeout.Ptr(),
 						PostTimeoutBidStatus: 1,
+						DefaultBidStatus:     1,
 					},
 				},
 			},
@@ -3198,6 +3310,7 @@ func TestGetPartnerRecordsByImpForBidExtFailure(t *testing.T) {
 							a := exchange.ResponseRejectedBelowDealFloor
 							return &a
 						}(),
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3272,6 +3385,7 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 						MetaData: &MetaData{
 							NetworkID: 100,
 						},
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3316,14 +3430,15 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: models.USD,
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3368,15 +3483,16 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:    "appnexus",
-						BidderCode:   "appnexus",
-						PartnerSize:  "0x0",
-						BidID:        "bid-id-1",
-						OrigBidID:    "bid-id-1",
-						DealID:       "-1",
-						ServerSide:   1,
-						OriginalCur:  models.USD,
-						DealPriority: 1,
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						DealPriority:     1,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3421,15 +3537,16 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:    "appnexus",
-						BidderCode:   "appnexus",
-						PartnerSize:  "0x0",
-						BidID:        "bid-id-1",
-						OrigBidID:    "bid-id-1",
-						DealID:       "-1",
-						ServerSide:   1,
-						OriginalCur:  models.USD,
-						DealPriority: 0,
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						DealPriority:     0,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3475,14 +3592,15 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: models.USD,
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3528,15 +3646,16 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: models.USD,
-						AdDuration:  ptrutil.ToPtr(10),
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						AdDuration:       ptrutil.ToPtr(10),
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -3580,14 +3699,15 @@ func TestGetPartnerRecordsByImpForBidExtPrebidObject(t *testing.T) {
 			partners: map[string][]PartnerRecord{
 				"imp1": {
 					{
-						PartnerID:   "appnexus",
-						BidderCode:  "appnexus",
-						PartnerSize: "0x0",
-						BidID:       "prebid-bid-id-1",
-						OrigBidID:   "bid-id-1",
-						DealID:      "-1",
-						ServerSide:  1,
-						OriginalCur: models.USD,
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						BidID:            "prebid-bid-id-1",
+						OrigBidID:        "bid-id-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      models.USD,
+						DefaultBidStatus: 1,
 					},
 				},
 			},
@@ -4951,7 +5071,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":0,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":1,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},

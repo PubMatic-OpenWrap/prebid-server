@@ -27,6 +27,7 @@ import (
 	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v2/metrics"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/privacy"
 	"github.com/prebid/prebid-server/v2/stored_requests"
 	"github.com/prebid/prebid-server/v2/usersync"
@@ -52,7 +53,7 @@ type ctvEndpointDeps struct {
 // NewCTVEndpoint new ctv endpoint object
 func NewCTVEndpoint(
 	ex exchange.Exchange,
-	validator openrtb_ext.BidderParamValidator,
+	validator ortb.RequestValidator,
 	requestsByID stored_requests.Fetcher,
 	videoFetcher stored_requests.Fetcher,
 	accounts stored_requests.AccountFetcher,
@@ -110,7 +111,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	var response *openrtb2.BidResponse
 	var err error
 	var errL []error
-	seatNonBid := &openrtb_ext.NonBidCollection{}
+	seatNonBid := &openrtb_ext.SeatNonBidBuilder{}
 
 	ao := analytics.AuctionObject{
 		Status: http.StatusOK,

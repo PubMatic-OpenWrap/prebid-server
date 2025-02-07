@@ -50,7 +50,9 @@
                 },
                 "bidType": "video",
                 "bidVideo": {
-                  "duration": 30
+                  "duration": 30,
+                  "primary_category": "",
+                  "vasttagid": ""
                 }
               }
             ],
@@ -83,7 +85,12 @@
                   "meta": {
                   },
                   "bidid": "bid-appnexus-1",
-                  "type": "video"
+                  "type": "video",
+                  "video": {
+                    "duration": 30,
+                    "primary_category": "",
+                    "vasttagid": ""
+                  }
                 }
               }
             }

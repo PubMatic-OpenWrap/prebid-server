@@ -31,6 +31,7 @@ import (
 	"github.com/prebid/prebid-server/v2/metrics"
 	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v2/ortb"
 	"github.com/prebid/prebid-server/v2/privacy"
 	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
 	"github.com/prebid/prebid-server/v2/util/jsonutil"
@@ -202,7 +203,7 @@ func TestAMPPageInfo(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{stored},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -300,10 +301,11 @@ func TestGDPRConsent(t *testing.T) {
 
 		// Build Exchange Endpoint
 		mockExchange := &mockAmpExchange{}
+
 		endpoint, _ := NewAmpEndpoint(
 			fakeUUIDGenerator{},
 			mockExchange,
-			newParamsValidator(t),
+			ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{
@@ -730,7 +732,7 @@ func TestCCPAConsent(t *testing.T) {
 		endpoint, _ := NewAmpEndpoint(
 			fakeUUIDGenerator{},
 			mockExchange,
-			newParamsValidator(t),
+			ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
@@ -844,7 +846,7 @@ func TestConsentWarnings(t *testing.T) {
 		endpoint, _ := NewAmpEndpoint(
 			fakeUUIDGenerator{},
 			mockExchange,
-			newParamsValidator(t),
+			ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
@@ -940,7 +942,7 @@ func TestNewAndLegacyConsentBothProvided(t *testing.T) {
 		endpoint, _ := NewAmpEndpoint(
 			fakeUUIDGenerator{},
 			mockExchange,
-			newParamsValidator(t),
+			ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{
@@ -998,7 +1000,7 @@ func TestAMPSiteExt(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{stored},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -1060,7 +1062,7 @@ func TestAmpBadRequests(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		&mockAmpExchange{},
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{data: mockAmpStoredReq},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -1149,7 +1151,7 @@ func TestAmpDebug(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		&mockAmpExchange{},
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -1285,7 +1287,7 @@ func TestQueryParamOverrides(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		&mockAmpExchange{},
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -1443,7 +1445,7 @@ func (s formatOverrideSpec) execute(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		&mockAmpExchange{},
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -1492,7 +1494,7 @@ type mockAmpExchange struct {
 	requestExt         json.RawMessage
 	returnError        bool
 	setBidRequestToNil bool
-	seatNonBid         openrtb_ext.NonBidCollection
+	seatNonBid         openrtb_ext.SeatNonBidBuilder
 }
 
 var expectedErrorsFromHoldAuction map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage = map[openrtb_ext.BidderName][]openrtb_ext.ExtBidderMessage{
@@ -1746,8 +1748,12 @@ func (logger mockLogger) LogNotificationEventObject(uuidObj *analytics.Notificat
 func (logger mockLogger) LogAmpObject(ao *analytics.AmpObject, _ privacy.ActivityControl) {
 	*logger.ampObject = *ao
 }
+func (logger mockLogger) Shutdown() {}
 
 func TestBuildAmpObject(t *testing.T) {
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
 	testCases := []struct {
 		description                string
 		inTagId                    string
@@ -1756,7 +1762,7 @@ func TestBuildAmpObject(t *testing.T) {
 		planBuilder                hooks.ExecutionPlanBuilder
 		returnErrorFromHoldAuction bool
 		setRequestToNil            bool
-		seatNonBidFromHoldAuction  openrtb_ext.NonBidCollection
+		seatNonBidFromHoldAuction  openrtb_ext.SeatNonBidBuilder
 		expectedAmpObject          *analytics.AmpObject
 	}{
 		{
@@ -1794,6 +1800,32 @@ func TestBuildAmpObject(t *testing.T) {
 							{
 								ImpId:      "imp",
 								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1849,6 +1881,32 @@ func TestBuildAmpObject(t *testing.T) {
 							{
 								ImpId:      "imp",
 								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1915,10 +1973,62 @@ func TestBuildAmpObject(t *testing.T) {
 							{
 								ImpId:      "imp1",
 								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 							{
 								ImpId:      "imp",
 								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -2148,7 +2258,7 @@ func ampObjectTestSetup(t *testing.T, inTagId string, inStoredRequest json.RawMe
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{id: "foo", err: nil},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		mockAmpFetcher,
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize, GenerateRequestID: generateRequestID},
@@ -2201,7 +2311,7 @@ func TestAmpAuctionResponseHeaders(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{storedRequests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -2237,7 +2347,7 @@ func TestRequestWithTargeting(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{stored},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
@@ -2563,7 +2673,7 @@ func TestSendAmpResponse_LogsErrors(t *testing.T) {
 			account := &config.Account{DebugAllow: true}
 			reqWrapper := openrtb_ext.RequestWrapper{BidRequest: test.request}
 
-			labels, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.NonBidCollection{})
+			labels, ao = sendAmpResponse(test.writer, test.hookExecutor, &exchange.AuctionResponse{BidResponse: test.response}, &reqWrapper, account, labels, ao, nil, openrtb_ext.SeatNonBidBuilder{})
 
 			assert.Equal(t, test.expectedErrors, ao.Errors, "Invalid errors.")
 			assert.Equal(t, test.expectedStatus, ao.Status, "Invalid HTTP response status.")
@@ -2584,6 +2694,9 @@ func (e errorResponseWriter) Write(bytes []byte) (int, error) {
 func (e errorResponseWriter) WriteHeader(statusCode int) {}
 
 func TestGetExtBidResponse(t *testing.T) {
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
 	type args struct {
 		hookExecutor    hookexecution.HookStageExecutor
 		auctionResponse *exchange.AuctionResponse
@@ -2591,7 +2704,7 @@ func TestGetExtBidResponse(t *testing.T) {
 		account         *config.Account
 		ao              analytics.AmpObject
 		errs            []error
-		seatNonBid      openrtb_ext.NonBidCollection
+		seatNonBid      openrtb_ext.SeatNonBidBuilder
 	}
 	type want struct {
 		respExt openrtb_ext.ExtBidResponse
@@ -2672,10 +2785,62 @@ func TestGetExtBidResponse(t *testing.T) {
 									{
 										ImpId:      "imp1",
 										StatusCode: 100,
+										Ext: openrtb_ext.ExtNonBid{
+											Prebid: openrtb_ext.ExtNonBidPrebid{
+												Bid: openrtb_ext.ExtNonBidPrebidBid{
+													Price:             0,
+													ADomain:           nil,
+													CatTax:            0,
+													Cat:               nil,
+													DealID:            "",
+													W:                 0,
+													H:                 0,
+													Dur:               0,
+													MType:             0,
+													OriginalBidCPM:    0,
+													OriginalBidCur:    "",
+													ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+													DealPriority:      0,
+													DealTierSatisfied: false,
+													Meta:              nil,
+													Type:              "",
+													Video:             nil,
+													BidId:             "",
+													Floors:            nil,
+													OriginalBidCPMUSD: 0,
+												},
+											},
+										},
 									},
 									{
 										ImpId:      "imp",
 										StatusCode: 100,
+										Ext: openrtb_ext.ExtNonBid{
+											Prebid: openrtb_ext.ExtNonBidPrebid{
+												Bid: openrtb_ext.ExtNonBidPrebidBid{
+													Price:             0,
+													ADomain:           nil,
+													CatTax:            0,
+													Cat:               nil,
+													DealID:            "",
+													W:                 0,
+													H:                 0,
+													Dur:               0,
+													MType:             0,
+													OriginalBidCPM:    0,
+													OriginalBidCur:    "",
+													ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+													DealPriority:      0,
+													DealTierSatisfied: false,
+													Meta:              nil,
+													Type:              "",
+													Video:             nil,
+													BidId:             "",
+													Floors:            nil,
+													OriginalBidCPMUSD: 0,
+												},
+											},
+										},
 									},
 								},
 								Seat: "pubmatic",
@@ -2690,10 +2855,62 @@ func TestGetExtBidResponse(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: 100,
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
+												Price:             0,
+												ADomain:           nil,
+												CatTax:            0,
+												Cat:               nil,
+												DealID:            "",
+												W:                 0,
+												H:                 0,
+												Dur:               0,
+												MType:             0,
+												OriginalBidCPM:    0,
+												OriginalBidCur:    "",
+												ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+												DealPriority:      0,
+												DealTierSatisfied: false,
+												Meta:              nil,
+												Type:              "",
+												Video:             nil,
+												BidId:             "",
+												Floors:            nil,
+												OriginalBidCPMUSD: 0,
+											},
+										},
+									},
 								},
 								{
 									ImpId:      "imp",
 									StatusCode: 100,
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
+												Price:             0,
+												ADomain:           nil,
+												CatTax:            0,
+												Cat:               nil,
+												DealID:            "",
+												W:                 0,
+												H:                 0,
+												Dur:               0,
+												MType:             0,
+												OriginalBidCPM:    0,
+												OriginalBidCur:    "",
+												ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+												DealPriority:      0,
+												DealTierSatisfied: false,
+												Meta:              nil,
+												Type:              "",
+												Video:             nil,
+												BidId:             "",
+												Floors:            nil,
+												OriginalBidCPMUSD: 0,
+											},
+										},
+									},
 								},
 							},
 							Seat: "pubmatic",
@@ -2732,6 +2949,32 @@ func TestGetExtBidResponse(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: 100,
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
+												Price:             0,
+												ADomain:           nil,
+												CatTax:            0,
+												Cat:               nil,
+												DealID:            "",
+												W:                 0,
+												H:                 0,
+												Dur:               0,
+												MType:             0,
+												OriginalBidCPM:    0,
+												OriginalBidCur:    "",
+												ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+												DealPriority:      0,
+												DealTierSatisfied: false,
+												Meta:              nil,
+												Type:              "",
+												Video:             nil,
+												BidId:             "",
+												Floors:            nil,
+												OriginalBidCPMUSD: 0,
+											},
+										},
+									},
 								},
 							},
 							Seat: "pubmatic",
@@ -2768,6 +3011,32 @@ func TestGetExtBidResponse(t *testing.T) {
 								{
 									ImpId:      "imp1",
 									StatusCode: 100,
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
+												Price:             0,
+												ADomain:           nil,
+												CatTax:            0,
+												Cat:               nil,
+												DealID:            "",
+												W:                 0,
+												H:                 0,
+												Dur:               0,
+												MType:             0,
+												OriginalBidCPM:    0,
+												OriginalBidCur:    "",
+												ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+												DealPriority:      0,
+												DealTierSatisfied: false,
+												Meta:              nil,
+												Type:              "",
+												Video:             nil,
+												BidId:             "",
+												Floors:            nil,
+												OriginalBidCPMUSD: 0,
+											},
+										},
+									},
 								},
 							},
 							Seat: "pubmatic",
@@ -2828,7 +3097,7 @@ func TestAmpAuctionDebugWarningsOnly(t *testing.T) {
 	endpoint, _ := NewAmpEndpoint(
 		fakeUUIDGenerator{},
 		exchange,
-		newParamsValidator(t),
+		ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, newParamsValidator(t)),
 		&mockAmpStoredReqFetcher{storedRequests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{

@@ -1,11 +1,12 @@
 package openrtb_ext
 
-import "github.com/prebid/openrtb/v20/openrtb2"
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v2/util/uuidutil"
+)
 
-// NonBidCollection contains the map of seat with list of nonBids
-type NonBidCollection struct {
-	seatNonBidsMap map[string][]NonBid
-}
+type SeatNonBidBuilder map[string][]NonBid
 
 // NonBidParams contains the fields that are required to form the nonBid object
 type NonBidParams struct {
@@ -26,11 +27,26 @@ type NonBidParams struct {
 	BidFloors         *ExtBidPrebidFloors
 }
 
+var uuidGenerator uuidutil.UUIDGenerator = uuidutil.UUIDRandomGenerator{}
+
+func SetTestFakeUUIDGenerator(id string) func() {
+	uuidGenerator = uuidutil.NewFakeUUIDGenerator(id, nil)
+	return func() {
+		uuidGenerator = uuidutil.UUIDRandomGenerator{}
+	}
+}
+
 // NewNonBid creates the NonBid object from NonBidParams and return it
 func NewNonBid(bidParams NonBidParams) NonBid {
 	if bidParams.Bid == nil {
 		bidParams.Bid = &openrtb2.Bid{}
 	}
+
+	bidId := bidParams.Bid.ID
+	if bidParams.Bid.ID == "" {
+		bidId, _ = uuidGenerator.Generate()
+	}
+
 	return NonBid{
 		ImpId:      bidParams.Bid.ImpID,
 		StatusCode: bidParams.NonBidReason,
@@ -49,7 +65,7 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 				OriginalBidCur: bidParams.OriginalBidCur,
 
 				//OW specific
-				ID:                bidParams.Bid.ID,
+				ID:                bidId,
 				DealPriority:      bidParams.DealPriority,
 				DealTierSatisfied: bidParams.DealTierSatisfied,
 				Meta:              bidParams.BidMeta,
@@ -59,6 +75,7 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 				BidId:             bidParams.GeneratedBidID,
 				Floors:            bidParams.BidFloors,
 				OriginalBidCPMUSD: bidParams.OriginalBidCPMUSD,
+				Bundle:            bidParams.Bid.Bundle,
 			}},
 		},
 	}
@@ -66,36 +83,33 @@ func NewNonBid(bidParams NonBidParams) NonBid {
 
 // AddBid adds the nonBid into the map against the respective seat.
 // Note: This function is not a thread safe.
-func (snb *NonBidCollection) AddBid(nonBid NonBid, seat string) {
-	if snb.seatNonBidsMap == nil {
-		snb.seatNonBidsMap = make(map[string][]NonBid)
+func (snb *SeatNonBidBuilder) AddBid(nonBid NonBid, seat string) {
+	if *snb == nil {
+		*snb = make(map[string][]NonBid)
 	}
-	snb.seatNonBidsMap[seat] = append(snb.seatNonBidsMap[seat], nonBid)
+	(*snb)[seat] = append((*snb)[seat], nonBid)
 }
 
-// Append functions appends the NonBids from the input instance into the current instance's seatNonBidsMap, creating the map if needed.
-// Note: This function is not a thread safe.
-func (snb *NonBidCollection) Append(nonbid NonBidCollection) {
-	if snb == nil || len(nonbid.seatNonBidsMap) == 0 {
+// append adds the nonBids from the input nonBids to the current nonBids.
+// This method is not thread safe as we are initializing and writing to map
+func (snb *SeatNonBidBuilder) Append(nonBids ...SeatNonBidBuilder) {
+	if *snb == nil {
 		return
 	}
-	if snb.seatNonBidsMap == nil {
-		snb.seatNonBidsMap = make(map[string][]NonBid, len(nonbid.seatNonBidsMap))
-	}
-	for seat, nonBids := range nonbid.seatNonBidsMap {
-		snb.seatNonBidsMap[seat] = append(snb.seatNonBidsMap[seat], nonBids...)
+	for _, nonBid := range nonBids {
+		for seat, nonBids := range nonBid {
+			(*snb)[seat] = append((*snb)[seat], nonBids...)
+		}
 	}
 }
 
 // Get function converts the internal seatNonBidsMap to standard openrtb seatNonBid structure and returns it
-func (snb *NonBidCollection) Get() []SeatNonBid {
-	if snb == nil {
+func (snb *SeatNonBidBuilder) Get() []SeatNonBid {
+	if *snb == nil {
 		return nil
 	}
-
-	// seatNonBid := make([]SeatNonBid, len(snb.seatNonBidsMap))
 	var seatNonBid []SeatNonBid
-	for seat, nonBids := range snb.seatNonBidsMap {
+	for seat, nonBids := range *snb {
 		seatNonBid = append(seatNonBid, SeatNonBid{
 			Seat:   seat,
 			NonBid: nonBids,
@@ -104,9 +118,18 @@ func (snb *NonBidCollection) Get() []SeatNonBid {
 	return seatNonBid
 }
 
-func (snb *NonBidCollection) GetSeatNonBidMap() map[string][]NonBid {
-	if snb == nil {
-		return nil
+// rejectImps appends a non bid object to the builder for every specified imp
+func (snb *SeatNonBidBuilder) RejectImps(impIds []string, nonBidReason openrtb3.NoBidReason, seat string) {
+	nonBids := []NonBid{}
+	for _, impId := range impIds {
+		nonBid := NonBid{
+			ImpId:      impId,
+			StatusCode: int(nonBidReason),
+		}
+		nonBids = append(nonBids, nonBid)
 	}
-	return snb.seatNonBidsMap
+
+	if len(nonBids) > 0 {
+		(*snb)[seat] = append((*snb)[seat], nonBids...)
+	}
 }

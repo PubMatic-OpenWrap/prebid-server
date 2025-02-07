@@ -2,34 +2,32 @@ package openrtb_ext
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang/glog"
+	"golang.org/x/exp/rand"
 )
 
-type RandomGenerator interface {
-	GenerateIntn(int) int
-}
+var (
+	pid               = os.Getpid()
+	tmpWSRemoverRegex = regexp.MustCompile(`>\s+<`)
+)
 
-type RandomNumberGenerator struct{}
-
-func (RandomNumberGenerator) GenerateIntn(n int) int {
-	return rand.Intn(n)
-}
-
-var pid = os.Getpid()
-
-const maxFileSize = 1 * 1024 * 1024 * 1024
-const maxBufferSize = 256 * 1024
-const maxFiles = 10
-const flushInterval = time.Second * time.Duration(300)
+const (
+	maxFileSize   = 1 * 1024 * 1024 * 1024
+	maxBufferSize = 256 * 1024
+	maxFiles      = 10
+	flushInterval = time.Second * time.Duration(300)
+)
 
 // Writer interface can be used to define variable returned by GetWriter() method
 type Writer interface {
@@ -232,10 +230,85 @@ func FastXMLLogf(format string, args ...any) {
 	}
 }
 
+func FastXMLPostProcessing(fastXML, etreeXML string) (string, string) {
+	//replace only if trackers are injected
+	fastXML = strings.TrimSpace(fastXML)                        //step1: remove heading and trailing whitespaces
+	fastXML = tmpWSRemoverRegex.ReplaceAllString(fastXML, "><") //step2: remove inbetween whitespaces
+	fastXML = strings.ReplaceAll(fastXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
+	fastXML = strings.ReplaceAll(fastXML, "'", "\"")            //step4: convert single quote to double quote
+
+	etreeXML = tmpWSRemoverRegex.ReplaceAllString(etreeXML, "><") //step2: remove inbetween whitespaces
+	etreeXML = strings.ReplaceAll(etreeXML, " ><", "><")          //step3: remove attribute endtag whitespace (this should be always before step2)
+	etreeXML = strings.ReplaceAll(etreeXML, "'", "\"")
+	return fastXML, etreeXML
+}
+
+type UnwrapFastXMLLog struct {
+	InputXML string   `json:"input"`
+	VASTXmls []string `json:"vasts"`
+}
+
+type RandomGenerator interface {
+	GenerateIntn(int) int
+}
+
+type RandomNumberGenerator struct{}
+
+func (RandomNumberGenerator) GenerateIntn(n int) int {
+	return rand.Intn(n)
+}
+
+type FastXMLMetrics struct {
+	FastXMLParserTime time.Duration `json:"xmlparsertime,omitempty"`
+	EtreeParserTime   time.Duration `json:"etreeparsertime,omitempty"`
+	IsRespMismatch    bool          `json:"isrespmismatch,omitempty"`
+}
+
 var rg RandomGenerator
 var bfw Writer
 
 func init() {
 	rg = &RandomNumberGenerator{}
 	bfw = NewFileWriter(`/var/log/ssheaderbidding/`, `fastxml`, `.txt`)
+}
+
+func getXMLData(fileName, method string) []string {
+	file, err := os.Open(fileName)
+	if err != nil {
+		glog.Errorf("[%s] error opening file: [%s]", method, err.Error())
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	re := regexp.MustCompile(`\[XML_PARSER_TEST\] method:\[(\w+)\] response:\s*\[(.+)\]`)
+
+	var decodedXMLs []string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		matches := re.FindStringSubmatch(line)
+		if len(matches) > 2 {
+			method = matches[1]
+			base64Encoded := matches[2]
+
+			data, err := base64.StdEncoding.DecodeString(base64Encoded)
+			if err != nil {
+				glog.Errorf("[%s] error decoding base64: [%s]", method, err.Error())
+				continue
+			}
+
+			decodedXMLs = append(decodedXMLs, string(data))
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		glog.Errorf("[%s] error reading file: [%s]", method, err.Error())
+		return nil
+	}
+
+	return decodedXMLs
 }
