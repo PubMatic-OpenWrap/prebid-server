@@ -376,7 +376,7 @@ func TestUpdateGeoObject(t *testing.T) {
 			want: &geo{
 				CountryCode: "country",
 				StateCode:   "state",
-				Compliance:  "GDPR",
+				Compliance:  gdprCompliance,
 			},
 		},
 		{
@@ -393,7 +393,7 @@ func TestUpdateGeoObject(t *testing.T) {
 			want: &geo{
 				CountryCode: "US",
 				StateCode:   "ca",
-				Compliance:  "USP",
+				Compliance:  uspCompliance,
 			},
 		},
 		{
@@ -410,7 +410,7 @@ func TestUpdateGeoObject(t *testing.T) {
 			want: &geo{
 				CountryCode: "US",
 				StateCode:   "ct",
-				Compliance:  "GPP",
+				Compliance:  gppCompliance,
 				SectionID:   12,
 			},
 		},

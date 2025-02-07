@@ -16,9 +16,9 @@ import (
 
 // compliance consts
 const (
-	gdprCompliance      = "GDPR"
-	uspCompliance       = "USP"
-	gppCompliance       = "GPP"
+	gdprCompliance      = 1
+	uspCompliance       = 2
+	gppCompliance       = 3
 	countryCodeUS       = "US"
 	stateCodeCalifornia = "ca"
 )
@@ -38,8 +38,8 @@ var maxAgeHeaderValue = "max-age=" + fmt.Sprint(cacheTimeout.Seconds())
 type geo struct {
 	CountryCode string `json:"cc,omitempty"`
 	StateCode   string `json:"sc,omitempty"`
-	Compliance  string `json:"compliance,omitempty"`
-	SectionID   int    `json:"sId,omitempty"`
+	Compliance  int    `json:"gc,omitempty"`
+	SectionID   int    `json:"gsId,omitempty"`
 }
 
 var gppSectionIDs = map[string]int{
