@@ -339,7 +339,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "valid_zoneId_with_pubid",
+			name: "valid_zoneId_with_uid",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"zoneId": "5",
@@ -350,7 +350,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: json.RawMessage(`{"zoneId":5,"uid":12345}`),
 		},
 		{
-			name: "valid_networkId_with_pubid",
+			name: "valid_networkId_with_uid",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"networkId": "5",
