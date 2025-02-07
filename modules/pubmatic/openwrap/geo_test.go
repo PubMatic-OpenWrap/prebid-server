@@ -272,7 +272,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			want: want{
-				geo:       "{\"cc\":\"UK\",\"sc\":\"lnd\",\"compliance\":\"GDPR\"}\n",
+				geo:       "{\"cc\":\"UK\",\"sc\":\"lnd\",\"gc\":1}\n",
 				statuCode: http.StatusOK,
 				header:    []string{"max-age=172800"},
 			},
@@ -308,7 +308,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			want: want{
-				geo:       "{\"cc\":\"US\",\"sc\":\"ca\",\"compliance\":\"USP\"}\n",
+				geo:       "{\"cc\":\"US\",\"sc\":\"ca\",\"gc\":2}\n",
 				statuCode: http.StatusOK,
 				header:    []string{"max-age=172800"},
 			},
@@ -326,7 +326,7 @@ func TestHandler(t *testing.T) {
 				},
 			},
 			want: want{
-				geo:       "{\"cc\":\"US\",\"sc\":\"va\",\"compliance\":\"GPP\",\"sId\":9}\n",
+				geo:       "{\"cc\":\"US\",\"sc\":\"va\",\"gc\":3,\"gsId\":9}\n",
 				statuCode: http.StatusOK,
 				header:    []string{"max-age=172800"},
 			},
