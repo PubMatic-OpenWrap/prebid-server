@@ -70,7 +70,7 @@ func InjectVideoEventTrackers(
 		}
 
 		if metrics.IsRespMismatch {
-			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vcr] creative:[%s]", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vcr", base64.StdEncoding.EncodeToString([]byte(vastXML)))
 		}
 
 	}

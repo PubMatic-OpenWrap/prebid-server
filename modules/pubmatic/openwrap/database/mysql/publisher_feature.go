@@ -21,16 +21,16 @@ func (db *mySqlDB) GetPublisherFeatureMap() (map[int]map[int]models.FeatureData,
 
 	publisherFeatureMap := make(map[int]map[int]models.FeatureData)
 	for rows.Next() {
-		var pubId, featureId, enabled int
+		var pubID, featureID, enabled int
 		var value sql.NullString
-		if err := rows.Scan(&pubId, &featureId, &enabled, &value); err != nil {
-			glog.Error("ErrRowScanFailed GetPublisherFeatureMap pubid: ", pubId, " err: ", err.Error())
+		if err := rows.Scan(&pubID, &featureID, &enabled, &value); err != nil {
+			glog.Errorf(models.ErrDBRowScanFailed, models.PublisherFeatureMapQuery, pubID, "", err.Error())
 			continue
 		}
-		if _, ok := publisherFeatureMap[pubId]; !ok {
-			publisherFeatureMap[pubId] = make(map[int]models.FeatureData)
+		if _, ok := publisherFeatureMap[pubID]; !ok {
+			publisherFeatureMap[pubID] = make(map[int]models.FeatureData)
 		}
-		publisherFeatureMap[pubId][featureId] = models.FeatureData{
+		publisherFeatureMap[pubID][featureID] = models.FeatureData{
 			Enabled: enabled,
 			Value:   value.String,
 		}

@@ -4,7 +4,7 @@ go 1.22
 
 retract v3.0.0 // Forgot to update major version in import path and module name
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250205073845-1bbc22d7e1b5
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250210085959-573e79ea82ec
 
 require (
 	github.com/51Degrees/device-detection-go/v4 v4.4.35

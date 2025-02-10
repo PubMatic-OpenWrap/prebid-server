@@ -254,7 +254,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 		want json.RawMessage
 	}{
 		{
-			name: "Only zoneId present",
+			name: "only_zoneId_present",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"zoneId": "1",
@@ -264,7 +264,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: json.RawMessage(`{"zoneId":1}`),
 		},
 		{
-			name: "Only networkId present",
+			name: "only_networkId_present",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"networkId": "4",
@@ -274,7 +274,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: json.RawMessage(`{"networkId":4}`),
 		},
 		{
-			name: "All params present",
+			name: "zoneId_zoneid_networkid_networkId_present",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"zoneId":    "1",
@@ -287,7 +287,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: json.RawMessage(`{"zoneId":1}`),
 		},
 		{
-			name: "No required params present",
+			name: "no_required_params_present",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"ZoneId": "5",
@@ -297,7 +297,7 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "Invalid params value",
+			name: "invalid_params_value",
 			args: args{
 				fieldMap: map[string]interface{}{
 					"zoneId": "a",
@@ -305,6 +305,97 @@ func TestPrepareBidParamJSONForPartnerCriteo(t *testing.T) {
 				adapterName: string(openrtb_ext.BidderCriteo),
 			},
 			want: nil,
+		},
+		{
+			name: "valid_zoneId_with_pubid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"zoneId": "5",
+					"pubid":  "pub123",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"zoneId":5,"pubid":"pub123"}`),
+		},
+		{
+			name: "valid_networkId_with_pubid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"networkId": "5",
+					"pubid":     "pub123",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"networkId":5,"pubid":"pub123"}`),
+		},
+		{
+			name: "valid_pubid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"pubid": "pub123",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: nil,
+		},
+		{
+			name: "valid_zoneId_with_uid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"zoneId": "5",
+					"uid":    "12345",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"zoneId":5,"uid":12345}`),
+		},
+		{
+			name: "valid_networkId_with_uid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"networkId": "5",
+					"uid":       "12345",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"networkId":5,"uid":12345}`),
+		},
+		{
+			name: "valid_uid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"uid": "12345",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: nil,
+		},
+		{
+			name: "valid_networkId_with_pubid_uid",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"networkId": "5",
+					"pubid":     "pub123",
+					"uid":       "12345",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"networkId":5,"pubid":"pub123","uid":12345}`),
+		},
+		{
+			name: "all_params_present",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"zoneId":    "1",
+					"zoneid":    "2",
+					"networkid": "3",
+					"networkId": "4",
+					"pubid":     "pub123",
+					"uid":       "12345",
+				},
+				adapterName: string(openrtb_ext.BidderCriteo),
+			},
+			want: json.RawMessage(`{"zoneId":1,"pubid":"pub123","uid":12345}`),
 		},
 	}
 	for _, tt := range tests {

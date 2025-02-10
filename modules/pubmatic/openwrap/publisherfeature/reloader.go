@@ -29,6 +29,7 @@ type feature struct {
 	bidRecovery         bidRecovery
 	appLovinMultiFloors appLovinMultiFloors
 	impCountingMethod   impCountingMethod
+	gdprCountryCodes    gdprCountryCodes
 }
 
 var fe *feature
@@ -62,6 +63,7 @@ func New(config Config) *feature {
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 			impCountingMethod: newImpCountingMethod(),
+			gdprCountryCodes:  newGDPRCountryCodes(),
 		}
 	})
 	return fe
@@ -87,6 +89,8 @@ var initReloader = func(fe *feature) {
 	for {
 		//Populating feature config maps from cache
 		fe.updateFeatureConfigMaps()
+		//update gdprCountryCodes
+		fe.updateGDPRCountryCodes()
 		select {
 		case t := <-ticker.C:
 			glog.Info("Feature Reloader loads cache @", t)

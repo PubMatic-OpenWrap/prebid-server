@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
@@ -22,7 +23,7 @@ func (db *mySqlDB) GetProfileTypePlatforms() (map[string]int, error) {
 		var ptpKey string
 		var ptpValue int
 		if err := rows.Scan(&ptpKey, &ptpValue); err != nil {
-			glog.Error("Error in getting profileTypePlatform details from DB:", err.Error())
+			glog.Errorf(models.ErrDBRowScanFailed, models.ProfileTypePlatformMapQuery, "", "", err.Error())
 			continue
 		}
 		profileTypePlatformMap[ptpKey] = ptpValue

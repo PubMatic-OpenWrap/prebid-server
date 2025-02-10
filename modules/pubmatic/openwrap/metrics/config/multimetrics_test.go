@@ -224,6 +224,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordIBVRequest("pubid", "profileid")
 	mockEngine.EXPECT().RecordBidRecoveryStatus(publisher, profile, true)
 	mockEngine.EXPECT().RecordBidRecoveryResponseTime(publisher, profile, time.Duration(200))
+	mockEngine.EXPECT().RecordGeoLookupFailure("geo")
 
 	// create the multi-metric engine
 	multiMetricEngine := MultiMetricsEngine{}
@@ -294,4 +295,5 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordIBVRequest("pubid", "profileid")
 	multiMetricEngine.RecordBidRecoveryStatus(publisher, profile, true)
 	multiMetricEngine.RecordBidRecoveryResponseTime(publisher, profile, time.Duration(200))
+	multiMetricEngine.RecordGeoLookupFailure("geo")
 }

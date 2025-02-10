@@ -509,7 +509,7 @@ func builderCriteo(params BidderParameters) (json.RawMessage, error) {
 	anyOf := []string{"zoneId", "networkId"} // not checking zoneid and networkid as client side uses only zoneId and networkId
 	for _, param := range anyOf {
 		if val, ok := getInt(params.FieldMap[param]); ok {
-			fmt.Fprintf(&jsonStr, `{"%s":%d}`, param, val)
+			fmt.Fprintf(&jsonStr, `{"%s":%d`, param, val)
 			break
 		}
 	}
@@ -517,6 +517,17 @@ func builderCriteo(params BidderParameters) (json.RawMessage, error) {
 	if jsonStr.Len() == 0 {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, anyOf)
 	}
+
+	// Optional pubid parameter
+	if pubid, ok := getString(params.FieldMap["pubid"]); ok {
+		fmt.Fprintf(&jsonStr, `,"pubid":"%s"`, pubid)
+	}
+
+	if uid, ok := getInt(params.FieldMap["uid"]); ok {
+		fmt.Fprintf(&jsonStr, `,"uid":%d`, uid)
+	}
+
+	fmt.Fprintf(&jsonStr, `}`)
 
 	return jsonStr.Bytes(), nil
 }

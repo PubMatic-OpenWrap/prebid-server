@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	unwrapmodels "git.pubmatic.com/vastunwrap/unwrap/models"
+	unwraptest "git.pubmatic.com/vastunwrap/unwrap/testsuite"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
@@ -196,13 +197,7 @@ func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmo
 	}
 
 	if fastxmlMetrics.IsRespMismatch {
-		var flog openrtb_ext.UnwrapFastXMLLog
-		flog.InputXML = string(ctx.Vast)
-		for _, mock := range ctx.FastXMLTestCtx.WrapperMock {
-			flog.VASTXmls = append(flog.VASTXmls, string(mock.GetResponseBytes()))
-		}
-		resp, _ := json.Marshal(&flog)
-		openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[unwrap] response:[%s]", base64.StdEncoding.EncodeToString([]byte(resp)))
+		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
 	}
 
 	recordFastXMLMetrics(metricsEngine, "unwrap", &fastxmlMetrics)
@@ -239,7 +234,7 @@ func recordOpenWrapBidResponseMetrics(bidder *BidderAdapter, bidResponse *adapte
 		recordFastXMLMetrics(bidder.me, "vastbidder", bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
-			openrtb_ext.FastXMLLogf("\n[XML_PARSER_TEST] method:[vast_bidder] response:[%s]", base64.StdEncoding.EncodeToString([]byte(resp)))
+			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vast_bidder", base64.StdEncoding.EncodeToString([]byte(resp)))
 		}
 	}
 

@@ -19,4 +19,5 @@ type Database interface {
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)
 	GetAppSubIntegrationPaths() (map[string]int, error)
+	GetGDPRCountryCodes() (models.HashSet, error)
 }

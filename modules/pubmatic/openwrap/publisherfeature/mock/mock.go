@@ -118,6 +118,20 @@ func (mr *MockFeatureMockRecorder) IsBidRecoveryEnabled(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBidRecoveryEnabled", reflect.TypeOf((*MockFeature)(nil).IsBidRecoveryEnabled), arg0, arg1)
 }
 
+// IsCountryGDPREnabled mocks base method
+func (m *MockFeature) IsCountryGDPREnabled(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsCountryGDPREnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsCountryGDPREnabled indicates an expected call of IsCountryGDPREnabled
+func (mr *MockFeatureMockRecorder) IsCountryGDPREnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCountryGDPREnabled", reflect.TypeOf((*MockFeature)(nil).IsCountryGDPREnabled), arg0)
+}
+
 // IsFscApplicable mocks base method
 func (m *MockFeature) IsFscApplicable(arg0 int, arg1 string, arg2 int) bool {
 	m.ctrl.T.Helper()
