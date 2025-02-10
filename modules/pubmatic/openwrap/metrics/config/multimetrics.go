@@ -557,3 +557,10 @@ func (me *MultiMetricsEngine) RecordBidRecoveryResponseTime(publisher, profile s
 		thisME.RecordBidRecoveryResponseTime(publisher, profile, responseTime)
 	}
 }
+
+// RecordGeoLookupFailure across all engines
+func (me *MultiMetricsEngine) RecordGeoLookupFailure(endpoint string) {
+	for _, thisME := range *me {
+		thisME.RecordGeoLookupFailure(endpoint)
+	}
+}
