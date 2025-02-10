@@ -250,6 +250,8 @@ type ApplovinAdUnitFloors map[string][]float64
 
 type WinningBids map[string][]*OwBid
 
+type HashSet map[string]struct{}
+
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	var isWinningBid bool
 
