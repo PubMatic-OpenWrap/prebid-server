@@ -3,7 +3,7 @@ package util
 import (
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/stretchr/testify/assert"
 )
 

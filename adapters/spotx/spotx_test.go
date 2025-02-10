@@ -6,7 +6,7 @@ import (
 
 	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters"
+	"github.com/prebid/prebid-server/v3/adapters"
 )
 
 func TestSpotxMakeBid(t *testing.T) {

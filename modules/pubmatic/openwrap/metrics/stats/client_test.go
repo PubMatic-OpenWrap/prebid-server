@@ -12,7 +12,7 @@ import (
 
 	"github.com/alitto/pond"
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/stats/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/stats/mock"
 	"github.com/stretchr/testify/assert"
 )
 

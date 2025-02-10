@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	mock_wakanda "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda/mock"
+	mock_wakanda "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda/mock"
 
 	"github.com/golang/mock/gomock"
 )

@@ -3,7 +3,7 @@ package openrtb_ext
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/util/uuidutil"
+	"github.com/prebid/prebid-server/v3/util/uuidutil"
 )
 
 type SeatNonBidBuilder map[string][]NonBid

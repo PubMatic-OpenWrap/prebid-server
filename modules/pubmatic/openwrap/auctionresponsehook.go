@@ -8,15 +8,15 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/auction"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/tracker"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/auction"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(

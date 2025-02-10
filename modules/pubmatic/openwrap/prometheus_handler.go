@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 
-	ow_metrics_prometheus "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
+	ow_metrics_prometheus "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

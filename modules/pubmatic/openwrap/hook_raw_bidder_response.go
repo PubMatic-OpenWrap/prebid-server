@@ -3,12 +3,12 @@ package openwrap
 import (
 	"fmt"
 
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 )
 
 type BidUnwrapInfo struct {
@@ -71,7 +71,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	}
 
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
-	changeSet.RawBidderResponse().Bids().Update(unwrappedBids)
+	changeSet.RawBidderResponse().Bids().UpdateBids(unwrappedBids)
 	result.ChangeSet = changeSet
 	result.SeatNonBid = seatNonBid
 	result.DebugMessages = append(result.DebugMessages,

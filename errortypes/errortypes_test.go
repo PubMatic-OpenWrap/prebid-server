@@ -55,13 +55,13 @@ func TestErrors(t *testing.T) {
 			},
 		},
 		{
-			name: `BlacklistedApp`,
+			name: `BlockedApp`,
 			args: args{
-				err: &BlacklistedApp{Message: `BlacklistedApp_ErrorMessage`},
+				err: &BlockedApp{Message: `BlockedApp_ErrorMessage`},
 			},
 			want: want{
-				errorMessage: `BlacklistedApp_ErrorMessage`,
-				code:         BlacklistedAppErrorCode,
+				errorMessage: `BlockedApp_ErrorMessage`,
+				code:         BlockedAppErrorCode,
 				severity:     SeverityFatal,
 			},
 		},
