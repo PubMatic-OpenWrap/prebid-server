@@ -72,7 +72,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 		}
 	}
 
-	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn")
+	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid")
 }
 
 func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
