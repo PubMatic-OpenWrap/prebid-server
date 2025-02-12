@@ -46,7 +46,30 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 		{
 			name: "Empty_Request_Context",
 			args: args{
-				module: OpenWrap{},
+				module: OpenWrap{
+					cfg: config.Config{VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+						MaxWrapperSupport: 5,
+						StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+						APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+					}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "<div>This is an Ad</div>",
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							}}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{DebugMessages: []string{"error: request-ctx not found in handleRawBidderResponseHook()"}},
 		},
@@ -1053,6 +1076,96 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "VASTUnwrap_Enabled_valid_Video_and_Banner_Bids_update_bidtype",
+			args: args{
+				module: OpenWrap{
+					cfg: config.Config{
+						ResponseOverride: config.ResponseOverride{BidType: []string{"pubmatic"}},
+						Features: config.FeatureToggle{
+							VASTUnwrapPercent: 100,
+						},
+						VastUnwrapCfg: unWrapCfg.VastUnWrapCfg{
+							MaxWrapperSupport: 5,
+							StatConfig:        unWrapCfg.StatConfig{Endpoint: "http://10.172.141.13:8080", PublishInterval: 1},
+							APPConfig:         unWrapCfg.AppConfig{UnwrapDefaultTimeout: 1500},
+						}},
+					metricEngine: mockMetricsEngine,
+				},
+				payload: hookstage.RawBidderResponsePayload{
+					BidderResponse: &adapters.BidderResponse{
+						Bids: []*adapters.TypedBid{
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-123",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   vastXMLAdM,
+									CrID:  "Cr-234",
+									W:     100,
+									H:     50,
+								},
+								BidType: "native",
+							},
+							{
+								Bid: &openrtb2.Bid{
+									ID:    "Bid-456",
+									ImpID: fmt.Sprintf("div-adunit-%d", 123),
+									Price: 2.1,
+									AdM:   "This is banner creative",
+									CrID:  "Cr-789",
+									W:     100,
+									H:     50,
+								},
+								BidType: "video",
+							},
+						},
+					},
+					Bidder: "pubmatic",
+				},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+			},
+			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Add("unwrap-status", "0")
+				w.Header().Add("unwrap-count", "0")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(inlineXMLAdM))
+			}),
+			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
+			setup: func() {
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestStatus("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordUnwrapWrapperCount("5890", "pubmatic", "0")
+				mockMetricsEngine.EXPECT().RecordUnwrapRequestTime("5890", "pubmatic", gomock.Any())
+				mockMetricsEngine.EXPECT().RecordUnwrapRespTime("5890", "0", gomock.Any())
+			},
+			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
+			wantBids: []*adapters.TypedBid{
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-456",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   "This is banner creative",
+						CrID:  "Cr-789",
+						W:     100,
+						H:     50,
+					},
+					BidType: "banner",
+				},
+				{
+					Bid: &openrtb2.Bid{
+						ID:    "Bid-123",
+						ImpID: fmt.Sprintf("div-adunit-%d", 123),
+						Price: 2.1,
+						AdM:   inlineXMLAdM,
+						CrID:  "Cr-234",
+						W:     100,
+						H:     50,
+					},
+					BidType: "video",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1071,6 +1184,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 				assert.NoError(t, err)
 				tt.args.payload = newPayload
 			}
+
 			if tt.wantBids != nil {
 				assert.ElementsMatch(t, tt.wantBids, tt.args.payload.BidderResponse.Bids, "Mismatched response bids")
 			}
@@ -1082,7 +1196,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 
 func TestIsEligibleForUnwrap(t *testing.T) {
 	type args struct {
-		bid *adapters.TypedBid
+		result rawBidderResponseHookResult
 	}
 	tests := []struct {
 		name string
@@ -1090,35 +1204,199 @@ func TestIsEligibleForUnwrap(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "Bid is nil",
-			args: args{bid: nil},
+			name: "bid_is_nil",
+			args: args{result: rawBidderResponseHookResult{bid: nil}},
 			want: false,
 		},
 		{
-			name: "Bid.Bid is nil",
-			args: args{bid: &adapters.TypedBid{Bid: nil}},
+			name: "bid_bid_is_nil",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: nil}}},
 			want: false,
 		},
 		{
-			name: "AdM is empty",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}},
+			name: "empty_adm",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: ""}}}},
 			want: false,
 		},
 		{
-			name: "BidType is not video",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeBanner}},
+			name: "bidType_video",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}}, bidtype: openrtb_ext.BidTypeBanner}},
 			want: false,
 		},
 		{
-			name: "Bid is eligible for unwrap",
-			args: args{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}, BidType: openrtb_ext.BidTypeVideo}},
+			name: "bid_is_eligible_for_unwrap",
+			args: args{result: rawBidderResponseHookResult{bid: &adapters.TypedBid{Bid: &openrtb2.Bid{AdM: "some_adm"}}, bidtype: openrtb_ext.BidTypeVideo}},
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isEligibleForUnwrap(tt.args.bid)
+			got := isEligibleForUnwrap(tt.args.result)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestUpdateCreativeType(t *testing.T) {
+	tests := []struct {
+		name     string
+		result   *rawBidderResponseHookResult
+		expected *rawBidderResponseHookResult
+	}{
+		{
+			name: "bidder_not_in_list",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
+			},
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
+			},
+		},
+		{
+			name: "bidder_in_list_no_creative_type",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
+			},
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
+			},
+		},
+		{
+			name: "bidder_in_list_creative_type_updated",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`{}`),
+			},
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)}},
+				bidtype: openrtb_ext.BidTypeVideo,
+				bidExt:  []byte(`{"prebid":{"type":"video"}}`),
+			},
+		},
+		{
+			name: "error_updating_bid_extension_due_to_malformed_JSON",
+			result: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}},
+				bidtype: openrtb_ext.BidTypeBanner,
+				bidExt:  []byte(`"{malformed}"`),
+			},
+			expected: &rawBidderResponseHookResult{
+				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}},
+				bidtype: openrtb_ext.BidTypeNative,
+				bidExt:  []byte(`"{malformed}"`),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateCreativeType(tt.result)
+			assert.Equal(t, tt.expected, tt.result)
+		})
+	}
+}
+
+func TestApplyMutation(t *testing.T) {
+	tests := []struct {
+		name               string
+		bidInfo            []*rawBidderResponseHookResult
+		payload            hookstage.RawBidderResponsePayload
+		expected           []*adapters.TypedBid
+		expectedSeatNonBid openrtb_ext.SeatNonBidBuilder
+	}{
+		{
+			name: "Single_bid",
+			bidInfo: []*rawBidderResponseHookResult{
+				{
+					bid: &adapters.TypedBid{
+						Bid: &openrtb2.Bid{ID: "1"},
+					},
+					bidtype: openrtb_ext.BidTypeBanner,
+				},
+			},
+			expected: []*adapters.TypedBid{
+				{
+					Bid:     &openrtb2.Bid{ID: "1"},
+					BidType: openrtb_ext.BidTypeBanner,
+				},
+			},
+		},
+		{
+			name: "Multiple_bids_with_rejection",
+			bidInfo: []*rawBidderResponseHookResult{
+				{
+					bid: &adapters.TypedBid{
+						Bid: &openrtb2.Bid{ID: "1"},
+					},
+					bidtype: openrtb_ext.BidTypeBanner,
+				},
+				{
+					bid: &adapters.TypedBid{
+						Bid: &openrtb2.Bid{ID: "Bid-123", W: 100, H: 50},
+					},
+					bidtype:      openrtb_ext.BidTypeVideo,
+					unwrapStatus: models.UnwrapEmptyVASTStatus,
+				},
+			},
+			expected: []*adapters.TypedBid{
+				{
+					Bid:     &openrtb2.Bid{ID: "1"},
+					BidType: openrtb_ext.BidTypeBanner,
+				},
+			},
+			expectedSeatNonBid: func() openrtb_ext.SeatNonBidBuilder {
+				seatNonBid := openrtb_ext.SeatNonBidBuilder{}
+				seatNonBid.AddBid(openrtb_ext.NonBid{
+					StatusCode: int(nbr.LossBidLostInVastUnwrap),
+					Ext: openrtb_ext.ExtNonBid{
+						Prebid: openrtb_ext.ExtNonBidPrebid{
+							Bid: openrtb_ext.ExtNonBidPrebidBid{
+								Price: 2.1,
+								ID:    "Bid-123",
+								W:     100,
+								H:     50,
+								Type:  openrtb_ext.BidTypeVideo,
+							},
+						},
+					},
+				}, "pubmatic")
+				return seatNonBid
+			}(),
+		},
+		{
+			name:     "No_bids",
+			bidInfo:  []*rawBidderResponseHookResult{},
+			expected: []*adapters.TypedBid{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
+			payload := hookstage.RawBidderResponsePayload{
+				BidderResponse: &adapters.BidderResponse{
+					Bids:     []*adapters.TypedBid{},
+					Currency: "USD",
+				},
+			}
+			applyMutation(tt.bidInfo, &result, payload)
+
+			for _, mut := range result.ChangeSet.Mutations() {
+				newPayload, err := mut.Apply(payload)
+				assert.NoError(t, err)
+				payload = newPayload
+			}
+
+			assert.Equal(t, tt.expected, payload.BidderResponse.Bids)
 		})
 	}
 }
