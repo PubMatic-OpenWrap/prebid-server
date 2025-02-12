@@ -482,6 +482,7 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGeo         = "geo"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -552,6 +553,7 @@ const (
 	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
+	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
 )
 
 // constants for owlogger Integration Type
@@ -626,6 +628,7 @@ const (
 
 const (
 	// ErrDBQueryFailed reponse error
-	ErrDBQueryFailed   = `"[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]"`
-	EmptyPartnerConfig = `"[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]"`
+	ErrDBQueryFailed   = `[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]`
+	ErrDBRowScanFailed = `[DBRowsError] query:[%s] pubid:[%v] profileid:[%v] err:[%s]`
+	EmptyPartnerConfig = `[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]`
 )

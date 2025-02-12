@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -564,4 +565,12 @@ func UpdateImpProtocols(impProtocols []adcom1.MediaCreativeSubtype) []adcom1.Med
 		}
 	}
 	return impProtocols
+}
+
+func panicHandler(funcName, pubID string) {
+	if errInterface := recover(); errInterface != nil {
+		ow.GetMetricEngine().RecordOpenWrapServerPanicStats(ow.cfg.Server.HostName, funcName)
+		glog.Errorf("stacktrace:[%s], error:[%v], pubid:[%s]", string(debug.Stack()), errInterface, pubID)
+		return
+	}
 }

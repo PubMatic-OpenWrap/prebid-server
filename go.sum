@@ -49,12 +49,12 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3 h1:Ea8zwi1eeX4kqvi9RyyXrizIIRcstM0XBwf8U7NHrno=
-git.pubmatic.com/PubMatic/go-common v0.0.0-20240313090142-97ff3d63b7c3/go.mod h1:c/I6IcDn4Mtq4mmw8wGJN3v0o10nIMX7VTuQnsalUw0=
+git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358 h1:A+ohfTqsSCfiLybo+tRQ+YXqCPTYiBp0U9lA8gv8MS8=
+git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358/go.mod h1:I6yt+Te6PaQdUW+pq7/LHNWZ6/+5SSlExknAr3Mfv58=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b h1:7AsXylZJDwq514L8KE0Id079VNfUsDEMUIYMlRYH+0Y=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20240827084017-0e392d3beb8b/go.mod h1:kcoJf7k+xug8X8fLWmsiKhPnYP+k7RZkfUoUo5QF+KA=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250210085959-573e79ea82ec h1:dEh/vyjhX23aL9k5PS9Atmk3crb+DOeuXs2qFc0KriQ=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250210085959-573e79ea82ec/go.mod h1:BQb932Y+uo9qla+S7CIlaaTS2gjz3/ds9xAo5MNdvMA=
 github.com/51Degrees/device-detection-go/v4 v4.4.35 h1:qhP2tzoXhGE1aYY3NftMJ+ccxz0+2kM8aF4SH7fTyuA=
 github.com/51Degrees/device-detection-go/v4 v4.4.35/go.mod h1:dbdG1fySqdY+a5pUnZ0/G0eD03G6H3Vh8kRC+1f9qSc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -69,8 +69,8 @@ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMo
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5 h1:uNJ9lOn3q677J2PbR9wbnHec8452lHYvUZCfqMUxk0s=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52 h1:n1pLyiO0A0dUwvYjktIIRd6Kikm//msfvV6JO7m3lIE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20241125102315-0d8f851a6e52/go.mod h1:TGGzSA5ziWpfLsKvqOzgdPGEZ7SJIQjHbcJw6lWoyHU=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb h1:lbvtgin0ZO95N6yfJkSkpofQvUkUSBsEX1n51Pu94tM=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb/go.mod h1:h3KCtxPGi4/UjwtoWu2Vt07zOxPyLH46za2L74KH0NY=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef h1:CXsyYtEgZz/0++fiug6QZXrRYG6BBrl9IGveCxsnhiE=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20240222072752-2d647d1707ef/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -91,8 +91,6 @@ github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d/go.mod h1:W
 github.com/aws/aws-sdk-go v1.36.29/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df h1:GSoSVRLoBaFpOOds6QyY1L8AX7uoY+Ln3BHc22W40X0=
 github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df/go.mod h1:hiVxq5OP2bUGBRNS3Z/bt/reCLFNbdcST6gISi1fiOM=
-github.com/beevik/etree v1.1.0 h1:T0xke/WvNtMoCqgzPhkX2r4rjY3GDZFi+FjpRZY2Jbs=
-github.com/beevik/etree v1.1.0/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
@@ -505,9 +503,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
+github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
-github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
 func (db *mySqlDB) GetAppIntegrationPaths() (map[string]int, error) {
@@ -22,7 +23,7 @@ func (db *mySqlDB) GetAppIntegrationPaths() (map[string]int, error) {
 		var aipKey string
 		var aipValue int
 		if err := rows.Scan(&aipKey, &aipValue); err != nil {
-			glog.Error("Error in getting AppIntegrationPath details from DB:", err.Error())
+			glog.Errorf(models.ErrDBRowScanFailed, models.AppIntegrationPathMapQuery, "", "", err.Error())
 			continue
 		}
 		appIntegrationPathMap[aipKey] = aipValue
