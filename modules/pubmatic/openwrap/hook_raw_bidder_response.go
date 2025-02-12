@@ -131,10 +131,6 @@ func isBidderInList(bidderList []string, bidder string) bool {
 }
 
 func updateCreativeType(adapterBid *rawBidderResponseHookResult, bidders []string, bidder string) {
-	// Check if the bidder is in the bidders list
-	if !isBidderInList(bidders, bidder) {
-		return
-	}
 
 	bidType := openrtb_ext.GetCreativeTypeFromCreative(adapterBid.bid.Bid.AdM)
 	if bidType == "" {
