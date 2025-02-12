@@ -61,16 +61,16 @@ func (me *MetricsEngineMock) RecordBadRequest(endpoint string, pubId string, nbr
 }
 
 // RecordXMLParserProcessingTime records execution time for multiple parsers
-func (me *MetricsEngineMock) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
-	me.Called(parser, method, respTime)
+func (me *MetricsEngineMock) RecordXMLParserProcessingTime(parser string, method string, param string, respTime time.Duration) {
+	me.Called(parser, method, param, respTime)
 }
 
 // RecordXMLParserResponseMismatch mock
-func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
-	me.Called(method, isMismatch)
+func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, param string, isMismatch bool) {
+	me.Called(method, param, isMismatch)
 }
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
-	me.Called(parser, method, respTime)
+func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
+	me.Called(parser, method, param, respTime)
 }

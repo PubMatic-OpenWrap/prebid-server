@@ -1815,6 +1815,7 @@ func TestIsUrl(t *testing.T) {
 
 func TestRecordFastXMLMetrics(t *testing.T) {
 	testMethodName := "test"
+	testParam := "0"
 
 	type args struct {
 		vastBidderInfo   *openrtb_ext.FastXMLMetrics
@@ -1835,9 +1836,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*10).Return()
-					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*20).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, false).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, testParam, time.Millisecond*10).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, testParam, time.Millisecond*20).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, testParam, false).Return()
 					return metricEngine
 				},
 			},
@@ -1852,9 +1853,9 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 				},
 				getMetricsEngine: func() *metrics.MetricsEngineMock {
 					metricEngine := &metrics.MetricsEngineMock{}
-					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, time.Millisecond*15).Return()
-					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, time.Millisecond*25).Return()
-					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, true).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelFastXML, testMethodName, testParam, time.Millisecond*15).Return()
+					metricEngine.Mock.On("RecordXMLParserProcessingTime", metrics.XMLParserLabelETree, testMethodName, testParam, time.Millisecond*25).Return()
+					metricEngine.Mock.On("RecordXMLParserResponseMismatch", testMethodName, testParam, true).Return()
 					return metricEngine
 				},
 			},
@@ -1864,7 +1865,7 @@ func TestRecordFastXMLMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockMetricEngine := tt.args.getMetricsEngine()
-			recordFastXMLMetrics(mockMetricEngine, testMethodName, tt.args.vastBidderInfo)
+			recordFastXMLMetrics(mockMetricEngine, testMethodName, testParam, tt.args.vastBidderInfo)
 			mockMetricEngine.AssertExpectations(t)
 		})
 	}

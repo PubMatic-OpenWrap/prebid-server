@@ -196,13 +196,18 @@ func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmo
 		IsRespMismatch:    etreeResponse != fastxmlResponse,
 	}
 
+	openrtb_ext.FastXMLLogf("[XML_PARSER_TEST] method:[%v] wrapper_count:[%v] etree:[%s] fastxml:[%s] diff:[%s]",
+		"unwrap_log", etreeResp.WrapperCount, ctx.FastXMLTestCtx.ETreeStats.String(), ctx.FastXMLTestCtx.FastXMLStats.String(),
+		ctx.FastXMLTestCtx.ETreeStats.Diff(ctx.FastXMLTestCtx.FastXMLStats).String())
+
 	if fastxmlMetrics.IsRespMismatch {
 		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
 	}
 
-	recordFastXMLMetrics(metricsEngine, "unwrap", &fastxmlMetrics)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
+	wrapperCount := strconv.Itoa(etreeResp.WrapperCount)
+	recordFastXMLMetrics(metricsEngine, "unwrap", wrapperCount, &fastxmlMetrics)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", wrapperCount, ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
+	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", wrapperCount, ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
 }
 
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
@@ -231,7 +236,7 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 	}
 
 	if bidResponse.FastXMLMetrics != nil {
-		recordFastXMLMetrics(bidder.me, "vastbidder", bidResponse.FastXMLMetrics)
+		recordFastXMLMetrics(bidder.me, "vastbidder", "0", bidResponse.FastXMLMetrics)
 		if bidResponse.FastXMLMetrics.IsRespMismatch {
 			resp, _ := jsonutil.Marshal(bidResponse)
 			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vast_bidder", base64.StdEncoding.EncodeToString([]byte(resp)))
@@ -241,10 +246,10 @@ func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapte
 	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
 }
 
-func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, fastxmlMetrics *openrtb_ext.FastXMLMetrics) {
-	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, method, fastxmlMetrics.FastXMLParserTime)
-	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, method, fastxmlMetrics.EtreeParserTime)
-	metricsEngine.RecordXMLParserResponseMismatch(method, fastxmlMetrics.IsRespMismatch)
+func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, param string, fastxmlMetrics *openrtb_ext.FastXMLMetrics) {
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, method, param, fastxmlMetrics.FastXMLParserTime)
+	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, method, param, fastxmlMetrics.EtreeParserTime)
+	metricsEngine.RecordXMLParserResponseMismatch(method, param, fastxmlMetrics.IsRespMismatch)
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {

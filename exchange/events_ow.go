@@ -29,6 +29,6 @@ func (ev *eventTracking) injectVideoEvents(
 	}
 
 	if metrics != nil && ev.me != nil {
-		recordFastXMLMetrics(ev.me, "vcr", metrics)
+		recordFastXMLMetrics(ev.me, "vcr", "0", metrics)
 	}
 }
