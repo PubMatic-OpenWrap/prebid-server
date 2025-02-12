@@ -79,7 +79,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	}
 
 	if isBidderCheckEnabled {
-		m.updateBidderType(resultSet, payload.Bidder)
+		m.updateBidderType(resultSet)
 	}
 
 	if isVastUnwrapEnabled {
@@ -92,9 +92,9 @@ func (m OpenWrap) handleRawBidderResponseHook(
 }
 
 // updateBidderType updates the creative type if bidder check is enabled.
-func (m OpenWrap) updateBidderType(resultSet []*rawBidderResponseHookResult, bidder string) {
+func (m OpenWrap) updateBidderType(resultSet []*rawBidderResponseHookResult) {
 	for _, bidResult := range resultSet {
-		updateCreativeType(bidResult, m.cfg.ResponseOverride.BidType, bidder)
+		updateCreativeType(bidResult)
 	}
 }
 
@@ -130,7 +130,7 @@ func isBidderInList(bidderList []string, bidder string) bool {
 	return slices.Contains(bidderList, bidder)
 }
 
-func updateCreativeType(adapterBid *rawBidderResponseHookResult, bidders []string, bidder string) {
+func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 
 	bidType := openrtb_ext.GetCreativeTypeFromCreative(adapterBid.bid.Bid.AdM)
 	if bidType == "" {

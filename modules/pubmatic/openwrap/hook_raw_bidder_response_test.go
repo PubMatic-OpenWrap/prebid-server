@@ -1241,8 +1241,6 @@ func TestUpdateCreativeType(t *testing.T) {
 	tests := []struct {
 		name     string
 		result   *rawBidderResponseHookResult
-		bidders  []string
-		bidder   string
 		expected *rawBidderResponseHookResult
 	}{
 		{
@@ -1252,8 +1250,6 @@ func TestUpdateCreativeType(t *testing.T) {
 				bidtype: openrtb_ext.BidTypeBanner,
 				bidExt:  []byte(`{}`),
 			},
-			bidders: []string{"bidderA"},
-			bidder:  "bidderB",
 			expected: &rawBidderResponseHookResult{
 				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "1", Ext: []byte(`{}`)}},
 				bidtype: openrtb_ext.BidTypeBanner,
@@ -1267,8 +1263,6 @@ func TestUpdateCreativeType(t *testing.T) {
 				bidtype: openrtb_ext.BidTypeBanner,
 				bidExt:  []byte(`{}`),
 			},
-			bidders: []string{"bidderA"},
-			bidder:  "bidderA",
 			expected: &rawBidderResponseHookResult{
 				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "2", Ext: []byte(`{}`)}},
 				bidtype: openrtb_ext.BidTypeBanner,
@@ -1282,8 +1276,6 @@ func TestUpdateCreativeType(t *testing.T) {
 				bidtype: openrtb_ext.BidTypeBanner,
 				bidExt:  []byte(`{}`),
 			},
-			bidders: []string{"bidderA"},
-			bidder:  "bidderA",
 			expected: &rawBidderResponseHookResult{
 				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "3", AdM: "<VAST version=\"3.0\"></VAST>", Ext: []byte(`{}`)}},
 				bidtype: openrtb_ext.BidTypeVideo,
@@ -1297,8 +1289,6 @@ func TestUpdateCreativeType(t *testing.T) {
 				bidtype: openrtb_ext.BidTypeBanner,
 				bidExt:  []byte(`"{malformed}"`),
 			},
-			bidders: []string{"bidderA"},
-			bidder:  "bidderA",
 			expected: &rawBidderResponseHookResult{
 				bid:     &adapters.TypedBid{Bid: &openrtb2.Bid{ID: "4", AdM: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]}}", Ext: []byte(`"{malformed}"`)}},
 				bidtype: openrtb_ext.BidTypeNative,
@@ -1309,7 +1299,7 @@ func TestUpdateCreativeType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateCreativeType(tt.result, tt.bidders, tt.bidder)
+			updateCreativeType(tt.result)
 			assert.Equal(t, tt.expected, tt.result)
 		})
 	}
