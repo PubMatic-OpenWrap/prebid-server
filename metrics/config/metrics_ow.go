@@ -26,22 +26,22 @@ func NewMetricsRegistry() MetricsRegistry {
 }
 
 // RecordXMLParserProcessingTime records execution time for multiple parsers
-func (me *MultiMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
+func (me *MultiMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, param string, respTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserProcessingTime(parser, method, respTime)
+		thisME.RecordXMLParserProcessingTime(parser, method, param, respTime)
 	}
 }
 
-func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
+func (me *MultiMetricsEngine) RecordXMLParserResponseMismatch(method string, param string, isMismatch bool) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserResponseMismatch(method, isMismatch)
+		thisME.RecordXMLParserResponseMismatch(method, param, isMismatch)
 	}
 }
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
 	for _, thisME := range *me {
-		thisME.RecordXMLParserResponseTime(parser, method, respTime)
+		thisME.RecordXMLParserResponseTime(parser, method, param, respTime)
 	}
 }
 
@@ -130,13 +130,13 @@ func (me *NilMetricsEngine) RecordBadRequest(endpoint string, pubId string, nbr 
 }
 
 // RecordXMLParserProcessingTime records execution time for multiple parsers
-func (me *NilMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
+func (me *NilMetricsEngine) RecordXMLParserProcessingTime(parser string, method string, param string, respTime time.Duration) {
 }
 
 // RecordXMLParserResponseMismatch as a noop
-func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
+func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, param string, isMismatch bool) {
 }
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
-func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
 }

@@ -3,7 +3,6 @@ package resolver
 import (
 	"regexp"
 
-	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
@@ -78,10 +77,8 @@ func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {
 		return openrtb_ext.BidTypeVideo
 	}
 
-	for _, tag := range []string{"native", "link", "assets"} {
-		if _, _, _, err := jsonparser.Get([]byte(adm), tag); err == nil {
-			return openrtb_ext.BidTypeNative
-		}
+	if openrtb_ext.IsNative(adm) {
+		return openrtb_ext.BidTypeNative
 	}
 
 	return openrtb_ext.BidTypeBanner

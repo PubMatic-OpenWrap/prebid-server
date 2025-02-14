@@ -561,12 +561,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
-			var isValidAppStoreUrl bool
-			if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
-				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+		if rCtx.Endpoint == models.EndpointAppLovinMax {
+			if len(impExt.GpId) == 0 {
+				impExt.GpId = imp.TagID
 			}
-			rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
+			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
+				var isValidAppStoreUrl bool
+				if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+				}
+				rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
+			}
 		}
 		impExt.Wrapper = nil
 		impExt.Reward = nil

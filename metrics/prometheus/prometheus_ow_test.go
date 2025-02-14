@@ -217,6 +217,7 @@ func TestRecordXMLParserResponseMismatch(t *testing.T) {
 	type args struct {
 		method     string
 		isMismatch bool
+		param      string
 	}
 	type want struct {
 		expCount int
@@ -232,6 +233,7 @@ func TestRecordXMLParserResponseMismatch(t *testing.T) {
 			args: args{
 				method:     "xml",
 				isMismatch: true,
+				param:      "1",
 			},
 			want: want{
 				expCount: 1,
@@ -243,6 +245,7 @@ func TestRecordXMLParserResponseMismatch(t *testing.T) {
 			args: args{
 				method:     "xml",
 				isMismatch: false,
+				param:      "1",
 			},
 			want: want{
 				expCount: 1,
@@ -254,7 +257,7 @@ func TestRecordXMLParserResponseMismatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			pm := createMetricsForTesting()
-			pm.RecordXMLParserResponseMismatch(tt.args.method, tt.args.isMismatch)
+			pm.RecordXMLParserResponseMismatch(tt.args.method, tt.args.param, tt.args.isMismatch)
 			assertCounterVecValue(t,
 				"",
 				"record dynamic fetch failure",
@@ -262,6 +265,7 @@ func TestRecordXMLParserResponseMismatch(t *testing.T) {
 				float64(tt.want.expCount),
 				prometheus.Labels{
 					methodLabel: tt.args.method,
+					paramLabel:  tt.args.param,
 					statusLabel: tt.want.status,
 				})
 		})

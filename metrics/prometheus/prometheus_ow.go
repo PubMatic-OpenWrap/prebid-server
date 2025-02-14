@@ -19,6 +19,7 @@ const (
 	vastTagTypeLabel = "type"
 	hostNameLabel    = "host"
 	methodLabel      = "method"
+	paramLabel       = "param"
 	endpointLabel    = "endpoint"
 	nbrLabel         = "nbr"
 	xmlParserLabel   = "parser"
@@ -221,15 +222,16 @@ func (m *Metrics) RecordHttpCounter() {
 }
 
 // RecordXMLParserProcessingTime records xml parser response time
-func (m *OWMetrics) RecordXMLParserProcessingTime(parser string, method string, respTime time.Duration) {
+func (m *OWMetrics) RecordXMLParserProcessingTime(parser string, method string, param string, respTime time.Duration) {
 	m.xmlParserProcessingTime.With(prometheus.Labels{
 		xmlParserLabel: parser,
 		methodLabel:    method,
+		paramLabel:     param,
 	}).Observe(float64(respTime.Microseconds()))
 }
 
 // RecordVastVersion record the count of vast version labelled by bidder and vast version
-func (m *OWMetrics) RecordXMLParserResponseMismatch(method string, isMismatch bool) {
+func (m *OWMetrics) RecordXMLParserResponseMismatch(method string, param string, isMismatch bool) {
 	status := requestSuccessful
 	if isMismatch {
 		status = requestFailed
@@ -237,14 +239,16 @@ func (m *OWMetrics) RecordXMLParserResponseMismatch(method string, isMismatch bo
 	m.xmlParserMismatch.With(prometheus.Labels{
 		methodLabel: method,
 		statusLabel: status,
+		paramLabel:  param,
 	}).Inc()
 }
 
 // RecordXMLParserResponseTime records xml parser response time
-func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, respTime time.Duration) {
+func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
 	m.xmlParserResponseTime.With(prometheus.Labels{
 		xmlParserLabel: parser,
 		methodLabel:    method,
+		paramLabel:     param,
 	}).Observe(float64(respTime.Milliseconds()))
 }
 
@@ -334,19 +338,19 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 	//XML Parser Processing Time
 	m.xmlParserProcessingTime = newHistogramVec(cfg, reg,
 		"xml_parser_processing_time",
-		"Time taken by xml parser", []string{xmlParserLabel, methodLabel},
+		"Time taken by xml parser", []string{xmlParserLabel, methodLabel, paramLabel},
 		//50µs, 100µs, 250µs, 500µs, 1ms, 5ms, 10ms
 		[]float64{50, 100, 250, 500, 1000, 5000, 10000})
 
 	m.xmlParserMismatch = newCounter(cfg, reg,
 		"etree_fastxml_resp_mismatch",
 		"Count of no of bids for which fast xml and etree response mismatch",
-		[]string{methodLabel, statusLabel})
+		[]string{methodLabel, paramLabel, statusLabel})
 
 	//XML Parser Response Time
 	m.xmlParserResponseTime = newHistogramVec(cfg, reg,
 		"xml_parser_response_time",
-		"Time taken by xml parser", []string{xmlParserLabel, methodLabel},
+		"Time taken by xml parser", []string{xmlParserLabel, methodLabel, paramLabel},
 		//10ms, 25ms, 50ms, 75ms, 100ms
 		[]float64{10, 25, 50, 75, 100})
 
