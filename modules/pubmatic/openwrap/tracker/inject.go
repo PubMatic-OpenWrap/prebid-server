@@ -6,12 +6,12 @@ import (
 	"net/url"
 	"strings"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"golang.org/x/exp/slices"
 )
 
 func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (*openrtb2.BidResponse, error) {
@@ -58,6 +58,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = models.ErrorWrap(errs, errors.New(errMsg))
+				glog.Errorf("[InjectTrackers] [PubID]: %d [ProfileID]: %d [Partner]: %v [Error]: %v", rctx.PubID, rctx.ProfileID, seatBid.Seat, errMsg)
 			}
 
 		}

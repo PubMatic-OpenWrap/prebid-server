@@ -10,7 +10,7 @@ import (
 var VideoRegex *regexp.Regexp
 
 func init() {
-	VideoRegex, _ = regexp.Compile(`<VAST\s+`)
+	VideoRegex, _ = regexp.Compile(`<VAST\s*`)
 }
 
 var jsonCompatible = jsoniter.ConfigCompatibleWithStandardLibrary

@@ -78,6 +78,13 @@ func TestGetCreativeTypeFromCreative(t *testing.T) {
 			want: "",
 		},
 		{
+			name: "empty_Vast_AdM",
+			args: args{
+				adm: "<VAST></VAST>",
+			},
+			want: Video,
+		},
+		{
 			name: "invalid_json_in_adm",
 			args: args{
 				adm: "{\"native\":{\"link\":{\"url\":\"http://example.com\"},\"assets\":[]",
