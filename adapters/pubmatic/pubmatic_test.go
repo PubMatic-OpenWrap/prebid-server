@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/adapters/adapterstest"
 	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -446,7 +447,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 				{
 					Method: "POST",
 					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
-					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf1","banner":{"w":300,"h":250},"bidfloor":1.2}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
 					Headers: http.Header{
 						"Content-Type": []string{"application/json;charset=utf-8"},
 						"Accept":       []string{"application/json"},
@@ -456,7 +457,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 				{
 					Method: "POST",
 					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
-					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf2","banner":{"w":300,"h":250},"bidfloor":1.3}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
 					Headers: http.Header{
 						"Content-Type": []string{"application/json;charset=utf-8"},
 						"Accept":       []string{"application/json"},
@@ -466,7 +467,7 @@ func TestPubmaticAdapter_MakeRequests(t *testing.T) {
 				{
 					Method: "POST",
 					Uri:    "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
-					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{"prebid":{}}}`),
+					Body:   []byte(`{"id":"test-request-id","imp":[{"id":"test-imp-id_mf3","banner":{"w":300,"h":250},"bidfloor":1.4}],"app":{"name":"AutoScout24","bundle":"com.autoscout24","storeurl":"https://play.google.com/store/apps/details?id=com.autoscout24\u0026hl=fr","publisher":{}},"ext":{}}`),
 					Headers: http.Header{
 						"Content-Type": []string{"application/json;charset=utf-8"},
 						"Accept":       []string{"application/json"},
@@ -597,7 +598,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
-			wantErr: nil,
+			wantErr: []error{&errortypes.FailedToUnmarshal{Message: "expect { or n, but found \x00"}},
 			wantResp: &adapters.BidderResponse{
 				Bids: []*adapters.TypedBid{
 					{
@@ -612,7 +613,6 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
-							Ext:     json.RawMessage(`null`),
 						},
 						BidType:    openrtb_ext.BidTypeBanner,
 						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
