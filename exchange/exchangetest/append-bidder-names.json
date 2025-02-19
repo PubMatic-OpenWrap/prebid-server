@@ -155,7 +155,8 @@
                                     },
                                     "video": {
                                         "duration": 30,
-                                        "primary_category": ""
+                                        "primary_category": "",
+                                        "vasttagid": ""
                                     }
                                 }
                             }

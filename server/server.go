@@ -16,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/metrics"
 	metricsconfig "github.com/prebid/prebid-server/v3/metrics/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap"
 )
 
 // Listen blocks forever, serving PBS requests on the given port. This will block forever, until the process is shut down.
@@ -73,6 +74,7 @@ func Listen(cfg *config.Configuration, handler http.Handler, adminHandler http.H
 			prometheusServer   = newPrometheusServer(cfg, metrics)
 		)
 		stopChannels = append(stopChannels, stopPrometheus)
+		prometheusServer = openwrap.GetOpenWrapPrometheusServer(cfg, metrics.PrometheusMetrics.Gatherer, prometheusServer)
 		go shutdownAfterSignals(prometheusServer, stopPrometheus, done)
 		if prometheusListener, err = newTCPListener(prometheusServer.Addr, nil); err != nil {
 			glog.Errorf("Error listening for TCP connections on %s: %v for prometheus server", prometheusServer.Addr, err)
