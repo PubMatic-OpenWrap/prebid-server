@@ -751,7 +751,7 @@ func TestResolveFloorsWithUseDataRate(t *testing.T) {
 							},
 						},
 					},
-					FetchRate: ptrutil.ToPtr(100),
+					UseFetchDataRate: ptrutil.ToPtr(100),
 				},
 			},
 		},

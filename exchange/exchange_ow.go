@@ -230,7 +230,7 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
-func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapters.BidderResponse) {
+func recordOpenWrapBidResponseMetrics(bidder *BidderAdapter, bidResponse *adapters.BidderResponse) {
 	if bidResponse == nil {
 		return
 	}

@@ -42,26 +42,27 @@ type ctvtestCase struct {
 }
 
 type ctvtestConfigValues struct {
-	AccountRequired     bool                          `json:"accountRequired"`
-	AliasJSON           string                        `json:"aliases"`
-	BlacklistedApps     []string                      `json:"blacklistedApps"`
-	DisabledAdapters    []string                      `json:"disabledAdapters"`
-	CurrencyRates       map[string]map[string]float64 `json:"currencyRates"`
-	MockBidders         []ctvMockBidderHandler        `json:"mockBidders"`
-	RealParamsValidator bool                          `json:"realParamsValidator"`
-	AssertBidExt        bool                          `json:"assertbidext"`
+	AccountRequired     bool                           `json:"accountRequired"`
+	AliasJSON           string                         `json:"aliases"`
+	BlockedApps         []string                       `json:"blockedApps"`
+	DisabledAdapters    []string                       `json:"disabledAdapters"`
+	CurrencyRates       map[string]map[string]float64  `json:"currencyRates"`
+	MockBidders         []ctvMockBidderHandler         `json:"mockBidders"`
+	RealParamsValidator bool                           `json:"realParamsValidator"`
+	BidderInfos         map[string]bidderInfoOverrides `json:"bidderInfoOverrides"`
+	AssertBidExt        bool                           `json:"assertbidext"`
 }
 
-func (tc *ctvtestConfigValues) getBlacklistedAppMap() map[string]bool {
-	var blacklistedAppMap map[string]bool
+func (tc *ctvtestConfigValues) getBlockedAppsLookup() map[string]bool {
+	var blockedAppsLookup map[string]bool
 
-	if len(tc.BlacklistedApps) > 0 {
-		blacklistedAppMap = make(map[string]bool, len(tc.BlacklistedApps))
-		for _, app := range tc.BlacklistedApps {
-			blacklistedAppMap[app] = true
+	if len(tc.BlockedApps) > 0 {
+		blockedAppsLookup = make(map[string]bool, len(tc.BlockedApps))
+		for _, app := range tc.BlockedApps {
+			blockedAppsLookup[app] = true
 		}
 	}
-	return blacklistedAppMap
+	return blockedAppsLookup
 }
 
 type ctvMockBidderHandler struct {

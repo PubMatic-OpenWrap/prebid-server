@@ -363,12 +363,7 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 				},
 			},
 			expectedReqExt: extRequestAdServer{
-				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
-				ExtRequest: openrtb_ext.ExtRequest{
-					Prebid: openrtb_ext.ExtRequestPrebid{
-						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":true}`),
-					},
-				},
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
 				SendBurl: true,
 			},
 			wantErr: false,
@@ -381,12 +376,7 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 				},
 			},
 			expectedReqExt: extRequestAdServer{
-				Wrapper: &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
-				ExtRequest: openrtb_ext.ExtRequest{
-					Prebid: openrtb_ext.ExtRequestPrebid{
-						BidderParams: json.RawMessage(`{"wrapper":{"profile":123,"version":456},"sendburl":{}}`),
-					},
-				},
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
 				SendBurl: false,
 			},
 			wantErr: false,

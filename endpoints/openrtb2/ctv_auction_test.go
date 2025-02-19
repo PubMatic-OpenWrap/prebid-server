@@ -568,8 +568,8 @@ func TestCTVAuctionEndpointAdpod(t *testing.T) {
 				GDPR:           config.GDPR{Enabled: true},
 			}
 			if test.Config != nil {
-				cfg.BlacklistedApps = test.Config.BlacklistedApps
-				cfg.BlacklistedAppMap = test.Config.getBlacklistedAppMap()
+				cfg.BlockedApps = test.Config.BlockedApps
+				cfg.BlockedAppsLookup = test.Config.getBlockedAppsLookup()
 				cfg.AccountRequired = test.Config.AccountRequired
 			}
 

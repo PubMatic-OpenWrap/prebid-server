@@ -51,7 +51,7 @@ func applyMutation(bidInfo []*rawBidderResponseHookResult, result *hookstage.Hoo
 		newResultSet = append(newResultSet, bidResult.bid)
 	}
 
-	result.ChangeSet.RawBidderResponse().Bids().Update(newResultSet)
+	result.ChangeSet.RawBidderResponse().Bids().UpdateBids(newResultSet)
 	result.SeatNonBid = seatNonBid
 }
 

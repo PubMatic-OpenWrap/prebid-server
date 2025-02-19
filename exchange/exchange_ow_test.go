@@ -30,7 +30,7 @@ import (
 func TestApplyAdvertiserBlocking(t *testing.T) {
 	type args struct {
 		advBlockReq     *AuctionRequest
-		adaptorSeatBids map[*bidderAdapter]*entities.PbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
+		adaptorSeatBids map[*BidderAdapter]*entities.PbsOrtbSeatBid // bidder adaptor and its dummy seat bids map
 	}
 	type want struct {
 		rejectedBidIds       []string
@@ -52,7 +52,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("vast_tag_bidder"): { // tag bidder returning 1 bid from blocked advertiser
 						Bids: []*entities.PbsOrtbBid{
 							{
@@ -127,7 +127,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tab_bidder_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
@@ -152,7 +152,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1_without_adomain"}},
@@ -184,7 +184,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adaptor_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ID: "bid_without_adomain"}},
@@ -208,7 +208,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
@@ -240,7 +240,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: nil},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder_1"): {
 						Bids: []*entities.PbsOrtbBid{ // expect all bids are rejected
 							{Bid: &openrtb2.Bid{ID: "bid_1_adapter_1", ADomain: []string{"a.com"}}},
@@ -272,7 +272,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"a.com"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("my_adapter"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ID: "bid_1_of_blocked_adv", ADomain: []string{"www.a.com"}}},
@@ -296,7 +296,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com", "advertiser_2.com", "www.advertiser_3.com"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							// adomain without www prefix
@@ -338,7 +338,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"www.advertiser_3.com"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							// adomain without www prefix
@@ -380,7 +380,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"ADVERTISER_1.COM"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.com"}}},
@@ -405,7 +405,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"advertiser_1.com"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_adapter_1"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ID: "bid_1_rtb_adapter_1", ADomain: []string{"advertiser_1.COM"}}},
@@ -430,7 +430,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{BAdv: []string{"http://blockme.shri"}},
 					},
 				},
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ADomain: []string{"www.blockme.shri"}, ID: "reject_www.blockme.shri"}},
@@ -467,7 +467,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("block_bidder"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ADomain: []string{"shri.10th.college.puneunv.edu"}, ID: "reject_shri.10th.college.puneunv.edu"}},
@@ -493,7 +493,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 				},
 
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ADomain: []string{"school.edu"}, ID: "keep_bid_school.edu"}},
@@ -520,7 +520,7 @@ func TestApplyAdvertiserBlocking(t *testing.T) {
 					},
 				},
 				// co.in is valid public suffix
-				adaptorSeatBids: map[*bidderAdapter]*entities.PbsOrtbSeatBid{
+				adaptorSeatBids: map[*BidderAdapter]*entities.PbsOrtbSeatBid{
 					newTestTagAdapter("tag_bidder"): {
 						Bids: []*entities.PbsOrtbBid{
 							{Bid: &openrtb2.Bid{ADomain: []string{"a.co.in"}, ID: "allow_a.co.in"}},
@@ -672,15 +672,15 @@ func TestNormalizeDomain(t *testing.T) {
 	}
 }
 
-func newTestTagAdapter(name string) *bidderAdapter {
-	return &bidderAdapter{
+func newTestTagAdapter(name string) *BidderAdapter {
+	return &BidderAdapter{
 		Bidder:     vastbidder.NewTagBidder(openrtb_ext.BidderName(name), config.Adapter{}, 0),
 		BidderName: openrtb_ext.BidderName(name),
 	}
 }
 
-func newTestRtbAdapter(name string) *bidderAdapter {
-	return &bidderAdapter{
+func newTestRtbAdapter(name string) *BidderAdapter {
+	return &BidderAdapter{
 		Bidder:     &goodSingleBidder{},
 		BidderName: openrtb_ext.BidderName(name),
 	}
