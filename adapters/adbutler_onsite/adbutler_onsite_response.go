@@ -20,11 +20,9 @@ type AdButlerBeacon struct {
 	TrackingUrl string `json:"url,omitempty"`
 }
 
-
 const (
 	MarkupInvalid openrtb2.MarkupType = 0
 )
-
 
 type Placement struct {
 	BannerID             string `json:"banner_id,omitempty"`
@@ -158,19 +156,21 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				continue
 			}
 
-			var nURL, viewURL, clickURL string
+			var nURL, viewURL, clickURL, creativeURL string
+
+			creativeURL = CreativeId_KEY + adButlerBid.BannerID
 
 			if adButlerBid.EligibleURL != "" {
-				nURL = IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
 			} else if adButlerBid.AccupixelURL != "" {
-				nURL = IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL)
 			}
 
 			if adButlerBid.ViewableURL != "" {
-				viewURL = VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL)
+				viewURL = creativeURL + Ampersand + VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL)
 			}
 			if adButlerBid.RedirectURL != "" {
-				clickURL = CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL)
+				clickURL = creativeURL + Ampersand + CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL)
 			}
 
 			bidExt := &openrtb_ext.ExtBidCMOnsite{
@@ -185,7 +185,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				W:     int64(width),
 				H:     int64(height),
 				AdM:   adm,
-				MType:   adType,
+				MType: adType,
 			}
 
 			adapters.AddDefaultFieldsComm(bid)
@@ -284,5 +284,3 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
-
-
