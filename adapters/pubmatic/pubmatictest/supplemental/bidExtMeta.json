@@ -82,7 +82,6 @@
                         }
                     },
                     "ext": {
-                        "prebid": {},
                         "wrapper": {
                             "profile": 5123,
                             "version": 1

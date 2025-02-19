@@ -8,13 +8,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/metrics"
-	metricsConf "github.com/prebid/prebid-server/v2/metrics/config"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/jsonutil"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/metrics"
+	metricsConf "github.com/prebid/prebid-server/v3/metrics/config"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -751,7 +751,7 @@ func TestResolveFloorsWithUseDataRate(t *testing.T) {
 							},
 						},
 					},
-					FetchRate: ptrutil.ToPtr(100),
+					UseFetchDataRate: ptrutil.ToPtr(100),
 				},
 			},
 		},
@@ -911,7 +911,7 @@ func (m *MockFetchDataRate0) Fetch(configs config.AccountPriceFloors) (*openrtb_
 					},
 				},
 			},
-			FetchRate: ptrutil.ToPtr(0),
+			UseFetchDataRate: ptrutil.ToPtr(0),
 		},
 	}
 	return &priceFloors, openrtb_ext.FetchSuccess
@@ -951,7 +951,7 @@ func (m *MockFetchDataRate100) Fetch(configs config.AccountPriceFloors) (*openrt
 					},
 				},
 			},
-			FetchRate: ptrutil.ToPtr(100),
+			UseFetchDataRate: ptrutil.ToPtr(100),
 		},
 	}
 	return &priceFloors, openrtb_ext.FetchSuccess

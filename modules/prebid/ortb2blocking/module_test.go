@@ -8,12 +8,12 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/moduledeps"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/moduledeps"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -619,8 +619,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
 					},
-				},
-			}},
+				}},
+			},
 			expectedBids: []*adapters.TypedBid{
 				{
 					Bid: &openrtb2.Bid{ADomain: []string{"foo"}, ImpID: impID1},
@@ -670,8 +670,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -715,8 +715,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -758,8 +758,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": false}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -801,8 +801,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {"bidders": ["appnexus"]}, "override": false}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -844,8 +844,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "block_unknown_adomain": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -889,8 +889,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "block_unknown_adomain": true, "action_overrides": {"block_unknown_adomain": [{"conditions": {"bidders": ["appnexus"]}, "override": false}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -932,8 +932,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", ADomain: []string{"good_domain"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true, "action_overrides": {"allowed_adomain_for_deals": [{"conditions": {"deal_ids": ["acceptDealID"]}, "override": ["forbidden_domain"]}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -972,8 +972,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -999,8 +999,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"block_unknown_adomain": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1026,8 +1026,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", ADomain: []string{"forbidden_domain"}, DealID: "acceptDealID"},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"badv": {"enforce_blocks": true, "action_overrides": {"allowed_adomain_for_deals": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1056,8 +1056,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", Cat: []string{"moto"}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1098,8 +1098,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1125,8 +1125,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"block_unknown_adv_cat": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1152,8 +1152,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Cat: []string{"fishing"}, ImpID: impID1, DealID: "acceptDealID"},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"bcat": {"enforce_blocks": true, "action_overrides": {"allowed_adv_cat_for_deals": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1182,8 +1182,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1227,8 +1227,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", CatTax: 2, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"bcat":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1271,8 +1271,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", Bundle: "allowed_bundle", ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"bapp":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1313,8 +1313,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"bapp": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1340,8 +1340,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Bundle: "forbidden_bundle", ImpID: impID1, DealID: "acceptDealID"},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"bapp": {"enforce_blocks": true, "action_overrides": {"allowed_app_for_deals": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1370,8 +1370,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "2", Attr: []adcom1.CreativeAttribute{2}, ImpID: impID2},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"battr":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1412,8 +1412,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"battr": {"enforce_blocks": true, "action_overrides": {"enforce_blocks": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1439,8 +1439,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					{
 						Bid: &openrtb2.Bid{ID: "1", Attr: []adcom1.CreativeAttribute{1}, ImpID: impID1, DealID: "acceptDealID"},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes": {"battr": {"enforce_blocks": true, "action_overrides": {"allowed_banner_attr_for_deals": [{"conditions": {}}]}}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{
@@ -1485,8 +1485,8 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							ImpID:   impID2,
 						},
 					},
-				},
-			}},
+				}},
+			},
 			config: json.RawMessage(`{"attributes":{"badv":{"enforce_blocks": true}, "bcat":{"enforce_blocks": true}, "cattax":{"enforce_blocks": true}, "bapp":{"enforce_blocks": true}, "battr":{"enforce_blocks": true}}}`),
 			expectedBids: []*adapters.TypedBid{
 				{

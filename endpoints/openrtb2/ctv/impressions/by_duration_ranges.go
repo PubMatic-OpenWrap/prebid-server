@@ -1,8 +1,8 @@
 package impressions
 
 import (
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // byDurRangeConfig struct will be used for creating impressions object based on list of duration ranges

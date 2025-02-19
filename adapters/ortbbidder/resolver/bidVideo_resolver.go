@@ -1,9 +1,9 @@
 package resolver
 
 import (
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
 )
 
 // bidVideoResolver determines the duration of the bid by retrieving the video field using the bidder param location.

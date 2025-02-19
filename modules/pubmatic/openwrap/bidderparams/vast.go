@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod) (string, json.RawMessage, []string, error) {

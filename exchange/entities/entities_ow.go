@@ -1,6 +1,6 @@
 package entities
 
-import "github.com/prebid/prebid-server/v2/openrtb_ext"
+import "github.com/prebid/prebid-server/v3/openrtb_ext"
 
 // GetNonBidParamsFromPbsOrtbBid function returns NonBidParams from PbsOrtbBid
 func GetNonBidParamsFromPbsOrtbBid(bid *PbsOrtbBid, seat string) openrtb_ext.NonBidParams {

@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/stretchr/testify/assert"
 )
 
