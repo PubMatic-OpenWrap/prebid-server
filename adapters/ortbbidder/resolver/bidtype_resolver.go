@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	videoRegex = regexp.MustCompile(`<VAST\s+`)
+	videoRegex = regexp.MustCompile(`<VAST\s*`)
 )
 
 // bidTypeResolver determines the bid type based on the following hierarchy:
