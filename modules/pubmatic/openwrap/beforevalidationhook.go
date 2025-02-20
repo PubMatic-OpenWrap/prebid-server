@@ -602,6 +602,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 				AdserverURL:       adserverURL,
+				DisplayManager:    imp.DisplayManager,
+				DisplayManagerVer: imp.DisplayManagerVer,
 			}
 		}
 
