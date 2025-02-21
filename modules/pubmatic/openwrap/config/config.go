@@ -25,6 +25,7 @@ type Config struct {
 	GeoDB            GeoDB
 	BidCache         BidCache
 	ResponseOverride ResponseOverride
+	SSL_Certificates string `mapstructure:"ssl_certificates" json:"ssl_certificates"`
 }
 
 type ResponseOverride struct {
