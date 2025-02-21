@@ -3,6 +3,7 @@ package openrtb_ext
 import (
 	"encoding/json"
 	"regexp"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 )
@@ -26,11 +27,10 @@ func GetCreativeTypeFromCreative(adm string) string {
 	if adm == "" {
 		return ""
 	}
-
-	if VideoRegex.MatchString(adm) {
+	trimmedAdm := strings.TrimSpace(adm)
+	if strings.HasSuffix(trimmedAdm, "</VAST>") {
 		return Video
 	}
-
 	if IsNative(adm) {
 		return Native
 	}

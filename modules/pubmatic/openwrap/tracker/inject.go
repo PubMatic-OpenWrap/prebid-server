@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
@@ -58,7 +59,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = models.ErrorWrap(errs, errors.New(errMsg))
-				glog.Errorf("[InjectTrackers] [PubID]: %d [ProfileID]: %d [Partner]: %v [Error]: %v", rctx.PubID, rctx.ProfileID, seatBid.Seat, errMsg)
+				glog.Errorf("[TrackerInjectionError] pubid:[%d] profileid:[%d] partner:[%s] error:[%s] creative:[%s]", rctx.PubID, rctx.ProfileID, seatBid.Seat, errMsg, base64.StdEncoding.EncodeToString([]byte(bid.AdM)))
 			}
 
 		}
