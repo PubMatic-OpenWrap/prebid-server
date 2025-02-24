@@ -1,16 +1,9 @@
 package resolver
 
 import (
-	"regexp"
-	"strings"
-
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
 	"github.com/prebid/prebid-server/v2/openrtb_ext"
-)
-
-var (
-	videoRegex = regexp.MustCompile(`<VAST\s*`)
 )
 
 // bidTypeResolver determines the bid type based on the following hierarchy:
@@ -74,8 +67,7 @@ func (r *bidTypeResolver) setValue(adapterBid map[string]any, value any) error {
 }
 
 func getMediaTypeFromAdm(adm string) openrtb_ext.BidType {
-	trimmedAdm := strings.TrimSpace(adm)
-	if strings.HasSuffix(trimmedAdm, "</VAST>") {
+	if openrtb_ext.IsVideo(adm) {
 		return openrtb_ext.BidTypeVideo
 	}
 	if openrtb_ext.IsNative(adm) {
