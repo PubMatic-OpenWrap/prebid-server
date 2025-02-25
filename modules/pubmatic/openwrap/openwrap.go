@@ -61,7 +61,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 	err = patchConfig(&cfg)
 	if err != nil {
-		return OpenWrap{}, fmt.Errorf("error decoding base64 SSL certificates: %v", err)
+		return OpenWrap{}, err
 	}
 	glog.Info("Connecting to OpenWrap database...")
 	mysqlDriver, err := open("mysql", cfg.Database)
