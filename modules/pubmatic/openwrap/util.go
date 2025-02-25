@@ -572,3 +572,23 @@ func panicHandler(funcName, pubID string) {
 		return
 	}
 }
+
+// getDisplayManagerAndVer returns the display manager and version from the request.app.ext or request.app.prebid.ext source and version
+func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
+	if app == nil {
+		return "", ""
+	}
+
+	if source, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, openrtb_ext.PrebidExtKey, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+
+	if source, err := jsonparser.GetString(app.Ext, "source"); err == nil && source != "" {
+		if version, err := jsonparser.GetString(app.Ext, "version"); err == nil && version != "" {
+			return source, version
+		}
+	}
+	return "", ""
+}
