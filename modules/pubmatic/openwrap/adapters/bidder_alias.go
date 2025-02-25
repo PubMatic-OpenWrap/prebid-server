@@ -19,7 +19,7 @@ func Alias() map[string]string {
 		models.BidderMediaFuseAlias:         string(openrtb_ext.BidderAppnexus),
 		models.BidderAppStockAlias:          string(openrtb_ext.BidderLimelightDigital),
 		models.BidderAdsYieldAlias:          string(openrtb_ext.BidderLimelightDigital),
-		models.BidderIionadsAlias:           string(openrtb_ext.BidderLimelightDigital)
+		models.BidderIionadsAlias:           string(openrtb_ext.BidderLimelightDigital),
 	}
 }
 
