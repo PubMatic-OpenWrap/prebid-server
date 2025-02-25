@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,8 +59,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("invalid openwrap config: %v", err)
 	}
-	patchConfig(&cfg)
-
+	err = patchConfig(&cfg)
+	if err != nil {
+		return OpenWrap{}, err
+	}
 	glog.Info("Connecting to OpenWrap database...")
 	mysqlDriver, err := open("mysql", cfg.Database)
 	if err != nil {
@@ -155,8 +158,14 @@ func open(driverName string, cfg config.Database) (*sql.DB, error) {
 	return db, nil
 }
 
-func patchConfig(cfg *config.Config) {
+func patchConfig(cfg *config.Config) error {
 	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 	sort.Strings(cfg.ResponseOverride.BidType)
+	decodedCert, err := base64.StdEncoding.DecodeString(string(cfg.VastUnwrapCfg.HTTPConfig.Certificates))
+	if err != nil {
+		return fmt.Errorf("error decoding base64 SSL certificates: %v", err)
+	}
+	cfg.VastUnwrapCfg.HTTPConfig.Certificates = string(decodedCert)
+	return nil
 }
