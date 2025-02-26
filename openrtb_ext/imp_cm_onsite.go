@@ -33,11 +33,11 @@ type ExtRequestOnsiteParams struct {
 
 type ExtRequestPrebidOnsite struct {
 	ExtRequestOnsiteParams
-	ZoneMapping map[string]interface{} `json:"mapping,omitempty"`
+	ZoneMapping   map[string]interface{} `json:"mapping,omitempty"`
+	ReportingKeys map[string]interface{} `json:"reporting,omitempty"`
 }
 
 type ExtBidderCMOnsite struct {
 	PrebidBidderName string `json:"prebidname,omitempty"`
 	BidderCode       string `json:"biddercode,omitempty"`
 }
-
