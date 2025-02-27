@@ -582,8 +582,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
 
-		if imp.DisplayManager != "" && imp.DisplayManagerVer != "" {
+		if imp.DisplayManager != "" {
 			displaymanager = imp.DisplayManager
+		}
+		if imp.DisplayManagerVer != "" {
 			displaymanagerVer = imp.DisplayManagerVer
 		}
 		// cache the details for further processing
