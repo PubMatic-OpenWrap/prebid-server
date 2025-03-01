@@ -66,8 +66,8 @@ type ExtBidderCommerce struct {
 type ExtBidCMSponsored struct {
 	ProductId      string                 `json:"productid,omitempty"`
 	ClickUrl       string                 `json:"curl,omitempty"`
-	ConversionUrl  string                 `json:"purl,omitempty"`
 	ClickPrice     float64                `json:"clickprice,omitempty"`
 	Rate           float64                `json:"rate,omitempty"`
 	ProductDetails map[string]interface{} `json:"productdetails,omitempty"`
 }
+

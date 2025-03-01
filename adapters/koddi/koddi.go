@@ -137,12 +137,10 @@ func GetDummyBids_NoBid(impUrl , clickUrl , conversionUrl, seatName string, requ
 		bidID := adapters.GenerateUniqueBidIDComm()
 		newIurl := impUrl + "_ImpID=" +bidID
 		newCurl := clickUrl + "_ImpID=" +bidID
-		newPurl := conversionUrl + "_ImpID=" +bidID
 
 		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:  productid,
 			ClickUrl: newCurl,
-			ConversionUrl: newPurl,
 			ClickPrice: clickPrice,
 			
 		}
@@ -278,6 +276,7 @@ func (a *KoddiAdapter) buildConversionURL(hostName string) (string, error) {
 	endpointParams := macros.EndpointTemplateParams{ Host: hostName}
 	return macros.ResolveMacros(a.conversionurl, endpointParams)
 }
+
 
 
 
