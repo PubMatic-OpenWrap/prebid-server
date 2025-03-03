@@ -53,8 +53,8 @@ git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358 h1:A+ohfT
 git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358/go.mod h1:I6yt+Te6PaQdUW+pq7/LHNWZ6/+5SSlExknAr3Mfv58=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250212101310-12e058849dfd h1:oj/8gE9zuxYXd+yb2H6NOZPVHJeHFblHYFD2m/llcKo=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250212101310-12e058849dfd/go.mod h1:BQb932Y+uo9qla+S7CIlaaTS2gjz3/ds9xAo5MNdvMA=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250225064627-23bb4a59cd16 h1:8GTZgZp16f/U8Q7aYpb1SPHfttifSuaiDTyye0dZ81Y=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250225064627-23bb4a59cd16/go.mod h1:BQb932Y+uo9qla+S7CIlaaTS2gjz3/ds9xAo5MNdvMA=
 github.com/51Degrees/device-detection-go/v4 v4.4.35 h1:qhP2tzoXhGE1aYY3NftMJ+ccxz0+2kM8aF4SH7fTyuA=
 github.com/51Degrees/device-detection-go/v4 v4.4.35/go.mod h1:dbdG1fySqdY+a5pUnZ0/G0eD03G6H3Vh8kRC+1f9qSc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=

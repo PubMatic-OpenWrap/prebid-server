@@ -73,6 +73,8 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				ModuleContext: hookstage.ModuleContext{
 					"rctx": models.RequestCtx{
 						Sshb: "1",
+						IP:   "127.0.0.1",
+						UA:   "go-test",
 					},
 				},
 			},

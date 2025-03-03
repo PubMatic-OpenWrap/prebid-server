@@ -38,6 +38,8 @@ type Tracker struct {
 	FloorType         int
 	CustomDimensions  string
 	ATTS              *float64
+	DisplayManager    string
+	DisplayManagerVer string
 	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
 	ImpID  string `json:"-"`

@@ -5441,8 +5441,10 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 						BidRequest: &openrtb2.BidRequest{
 							Imp: []openrtb2.Imp{
 								{
-									ID:    "imp_1",
-									TagID: "tagid_1",
+									ID:                "imp_1",
+									TagID:             "tagid_1",
+									DisplayManager:    "pubmatic_sdk",
+									DisplayManagerVer: "1.2",
 								},
 								{
 									ID:    "imp_2",
@@ -5458,8 +5460,10 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 					Endpoint: models.EndpointV25,
 					ImpBidCtx: map[string]models.ImpCtx{
 						"imp_1": {
-							SlotName:   "imp_1_tagid_1",
-							AdUnitName: "tagid_1",
+							SlotName:          "imp_1_tagid_1",
+							AdUnitName:        "tagid_1",
+							DisplayManager:    "pubmatic_sdk",
+							DisplayManagerVer: "1.2",
 						},
 						"imp_2": {
 							AdUnitName: "tagid_2",
@@ -5471,7 +5475,7 @@ func TestSlotRecordsInGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[]},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"sid","sn":"imp_1_tagid_1","au":"tagid_1","ps":[],"dm":"pubmatic_sdk","dmv":"1.2"},{"sid":"sid","sn":"imp_2_tagid_2","au":"tagid_2","ps":[]}],"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},

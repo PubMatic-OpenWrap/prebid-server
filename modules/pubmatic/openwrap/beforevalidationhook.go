@@ -287,6 +287,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			return result, nil
 		}
 	}
+	displaymanager, displaymanagerVer := getDisplayManagerAndVer(payload.BidRequest.App)
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
@@ -581,6 +582,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
 
+		if imp.DisplayManager != "" {
+			displaymanager = imp.DisplayManager
+		}
+		if imp.DisplayManagerVer != "" {
+			displaymanagerVer = imp.DisplayManagerVer
+		}
 		// cache the details for further processing
 		if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
@@ -602,6 +609,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 				AdserverURL:       adserverURL,
+				DisplayManager:    displaymanager,
+				DisplayManagerVer: displaymanagerVer,
 			}
 		}
 

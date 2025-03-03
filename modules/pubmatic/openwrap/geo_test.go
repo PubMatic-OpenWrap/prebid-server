@@ -9,9 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
 	mock_geodb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/mock"
-	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/stretchr/testify/assert"
@@ -151,8 +149,8 @@ func TestHandler(t *testing.T) {
 					return r
 				}(),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusBadInput}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "", "")
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "", "")
 				},
 			},
 			want: want{
@@ -166,8 +164,8 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithWrongPubid, getHeaders(NoHeaders)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusBadInput}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "bad", "")
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "bad", "")
 				},
 			},
 			want: want{
@@ -181,8 +179,8 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithoutPubid, getHeaders(NoHeaders)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusBadInput}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "", "")
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "", "")
 				},
 			},
 			want: want{
@@ -196,8 +194,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(NoHeaders)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockMetrics.EXPECT().RecordGeoLookupFailure(models.EndpointGeo)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).Return(&geodb.GeoInfo{}, nil)
 				},
@@ -213,8 +210,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(GeoLookupFail)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockMetrics.EXPECT().RecordGeoLookupFailure(models.EndpointGeo)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).Return(nil, errors.New("ErrDummy"))
 				},
@@ -230,8 +226,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(NilGeo)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockMetrics.EXPECT().RecordGeoLookupFailure(models.EndpointGeo)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).Return(nil, nil)
 				},
@@ -247,8 +242,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(NonEURequest)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockMetrics.EXPECT().RecordGeoLookupFailure(models.EndpointGeo)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).Return(&geodb.GeoInfo{ISOCountryCode: ""}, nil)
 				},
@@ -264,8 +258,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(EURequest)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(true)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).
 						Return(&geodb.GeoInfo{ISOCountryCode: "UK", CountryCode: "uk", RegionCode: "lnd"}, nil)
@@ -282,8 +275,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(NonEURequest)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).
 						Return(&geodb.GeoInfo{ISOCountryCode: "IN", CountryCode: "in", RegionCode: "mh"}, nil)
@@ -300,8 +292,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(EURequest)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).
 						Return(&geodb.GeoInfo{ISOCountryCode: "US", CountryCode: "us", RegionCode: "ca"}, nil)
@@ -318,8 +309,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithPubid, getHeaders(EURequest)),
 				setup: func() {
-					labels := metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusOK}
-					mockMetrics.EXPECT().RecordRequest(labels)
+					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "23105", "")
 					mockFeature.EXPECT().IsCountryGDPREnabled(gomock.Any()).Return(false)
 					mockgeodb.EXPECT().LookUp(gomock.Any()).
 						Return(&geodb.GeoInfo{ISOCountryCode: "US", CountryCode: "us", RegionCode: "va"}, nil)

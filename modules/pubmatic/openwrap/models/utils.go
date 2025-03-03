@@ -83,7 +83,7 @@ func GetCreativeType(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 	if bid.AdM == "" {
 		return ""
 	}
-	if openrtb_ext.VideoRegex.MatchString(bid.AdM) {
+	if openrtb_ext.IsVideo(bid.AdM) {
 		return Video
 	}
 

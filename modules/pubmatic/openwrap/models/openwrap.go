@@ -163,6 +163,8 @@ type DeviceCtx struct {
 type ImpCtx struct {
 	ImpID             string
 	TagID             string
+	DisplayManager    string
+	DisplayManagerVer string
 	Div               string
 	SlotName          string
 	AdUnitName        string

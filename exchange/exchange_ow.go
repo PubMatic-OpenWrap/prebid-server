@@ -196,10 +196,6 @@ func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmo
 		IsRespMismatch:    etreeResponse != fastxmlResponse,
 	}
 
-	openrtb_ext.FastXMLLogf("[XML_PARSER_TEST] method:[%v] wrapper_count:[%v] etree:[%s] fastxml:[%s] diff:[%s]",
-		"unwrap_log", etreeResp.WrapperCount, ctx.FastXMLTestCtx.ETreeStats.String(), ctx.FastXMLTestCtx.FastXMLStats.String(),
-		ctx.FastXMLTestCtx.ETreeStats.Diff(ctx.FastXMLTestCtx.FastXMLStats).String())
-
 	if fastxmlMetrics.IsRespMismatch {
 		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
 	}

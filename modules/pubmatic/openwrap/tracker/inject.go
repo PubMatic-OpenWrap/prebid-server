@@ -1,14 +1,15 @@
 package tracker
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -58,6 +59,7 @@ func InjectTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) (
 			if errMsg != "" {
 				rctx.MetricsEngine.RecordInjectTrackerErrorCount(adformat, rctx.PubIDStr, seatBid.Seat)
 				errs = models.ErrorWrap(errs, errors.New(errMsg))
+				glog.Errorf("[TrackerInjectionError] pubid:[%d] profileid:[%d] partner:[%s] error:[%s] creative:[%s]", rctx.PubID, rctx.ProfileID, seatBid.Seat, errMsg, base64.StdEncoding.EncodeToString([]byte(bid.AdM)))
 			}
 
 		}
