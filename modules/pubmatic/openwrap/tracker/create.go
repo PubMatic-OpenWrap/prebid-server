@@ -159,6 +159,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if impCtx.AdpodConfig != nil {
 					tracker.AdPodSlot = models.AdPodEnabled
 				}
+				tracker.DisplayManager = impCtx.DisplayManager
+				tracker.DisplayManagerVer = impCtx.DisplayManagerVer
 			}
 
 			if seatBid.Seat == "pubmatic" {
@@ -317,6 +319,13 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
 		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(*rctx.AppSubIntegrationPath))
+	}
+
+	if len(tracker.DisplayManager) > 0 {
+		v.Set(models.TRKDisplayManager, tracker.DisplayManager)
+	}
+	if len(tracker.DisplayManagerVer) > 0 {
+		v.Set(models.TRKDisplayManagerVer, tracker.DisplayManagerVer)
 	}
 
 	queryString := v.Encode()

@@ -2008,3 +2008,142 @@ func TestUpdateImpProtocols(t *testing.T) {
 		})
 	}
 }
+
+func TestGetDisplayManagerAndVer(t *testing.T) {
+	type args struct {
+		app *openrtb2.App
+	}
+	type want struct {
+		displayManager    string
+		displayManagerVer string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "app not present",
+			args: args{
+				app: nil,
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil but app.ext has no source and version",
+			args: args{
+
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has source and version",
+			args: args{
+
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile","version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext.prebid has source and version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"prebid":{"source":"prebid-mobile","version":"1.0.0"}}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has only version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext has only source",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext have empty source but version is present",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"", "version":"1.0.0"}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and app.ext have empty version but source is present",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile", "version":""}`),
+				},
+			},
+			want: want{
+				displayManager:    "",
+				displayManagerVer: "",
+			},
+		},
+		{
+			name: "request app object is not nil and both app.ext and app.ext.prebid have source and version",
+			args: args{
+				app: &openrtb2.App{
+					Name: "AutoScout24",
+					Ext:  json.RawMessage(`{"source":"prebid-mobile-android","version":"2.0.0","prebid":{"source":"prebid-mobile","version":"1.0.0"}}`),
+				},
+			},
+			want: want{
+				displayManager:    "prebid-mobile",
+				displayManagerVer: "1.0.0",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			displayManager, displayManagerVer := getDisplayManagerAndVer(tt.args.app)
+			assert.Equal(t, tt.want.displayManager, displayManager)
+			assert.Equal(t, tt.want.displayManagerVer, displayManagerVer)
+		})
+	}
+}

@@ -9,8 +9,6 @@ import (
 
 	"git.pubmatic.com/PubMatic/go-common/util"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/prometheus"
 	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
 )
 
@@ -55,30 +53,33 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var (
 		pubIDStr     string
 		metricEngine = ow.GetMetricEngine()
-		metricLabels = metrics.Labels{RType: models.EndpointGeo, RequestStatus: prometheus.RequestStatusBadInput}
 	)
 	defer func() {
-		metricEngine.RecordRequest(metricLabels)
+		metricEngine.RecordPublisherRequests(models.EndpointGeo, pubIDStr, "")
 		panicHandler("HandleGeoEndpoint", pubIDStr)
 	}()
 
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
+		glog.Errorf("[geo] url:[%s] error:[%s]", r.URL.RawQuery, err.Error())
+		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
 		return
 	}
 
-	_, err := strconv.Atoi(r.FormValue(models.PublisherID))
+	pubIDStr = r.FormValue(models.PublisherID)
+	_, err := strconv.Atoi(pubIDStr)
 	if err != nil {
 		glog.Errorf("[geo] url:[%s] origin:[%s] referer:[%s] error:[%s]", r.URL.RawQuery,
 			r.Header.Get(headerOriginKey), r.Header.Get(headerRefererKey), err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
 		return
 	}
-	metricLabels.RequestStatus = prometheus.RequestStatusOK
 	w.Header().Set(models.ContentType, models.ContentTypeApplicationJSON)
 	w.Header().Set(headerAccessControlAllowOrigin, "*")
 
