@@ -149,7 +149,7 @@ func TestHandler(t *testing.T) {
 					return r
 				}(),
 				setup: func() {
-					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "", "")
+					mockMetrics.EXPECT().RecordBadRequests(models.EndpointGeo, "", 0)
 					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "", "")
 				},
 			},
@@ -164,7 +164,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithWrongPubid, getHeaders(NoHeaders)),
 				setup: func() {
-					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "bad", "")
+					mockMetrics.EXPECT().RecordBadRequests(models.EndpointGeo, "bad", 0)
 					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "bad", "")
 				},
 			},
@@ -179,7 +179,7 @@ func TestHandler(t *testing.T) {
 			args: args{
 				r: getTestHTTPRequest(geoWithoutPubid, getHeaders(NoHeaders)),
 				setup: func() {
-					mockMetrics.EXPECT().RecordPublisherInvalidProfileRequests(models.EndpointGeo, "", "")
+					mockMetrics.EXPECT().RecordBadRequests(models.EndpointGeo, "", 0)
 					mockMetrics.EXPECT().RecordPublisherRequests(models.EndpointGeo, "", "")
 				},
 			},
