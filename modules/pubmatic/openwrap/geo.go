@@ -61,13 +61,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
+		metricEngine.RecordBadRequests(models.EndpointGeo, pubIDStr, models.ErrBadRequest.Code())
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
 		glog.Errorf("[geo] url:[%s] error:[%s]", r.URL.RawQuery, err.Error())
-		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
+		metricEngine.RecordBadRequests(models.EndpointGeo, pubIDStr, models.ErrBadRequest.Code())
 		return
 	}
 
@@ -77,7 +77,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		glog.Errorf("[geo] url:[%s] origin:[%s] referer:[%s] error:[%s]", r.URL.RawQuery,
 			r.Header.Get(headerOriginKey), r.Header.Get(headerRefererKey), err.Error())
 		w.WriteHeader(http.StatusBadRequest)
-		metricEngine.RecordPublisherInvalidProfileRequests(models.EndpointGeo, pubIDStr, "")
+		metricEngine.RecordBadRequests(models.EndpointGeo, pubIDStr, models.ErrBadRequest.Code())
 		return
 	}
 	w.Header().Set(models.ContentType, models.ContentTypeApplicationJSON)
