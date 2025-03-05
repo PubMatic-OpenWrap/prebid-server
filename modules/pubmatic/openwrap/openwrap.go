@@ -162,10 +162,13 @@ func patchConfig(cfg *config.Config) error {
 	cfg.Server.HostName = GetHostName()
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 	sort.Strings(cfg.ResponseOverride.BidType)
-	decodedCert, err := base64.StdEncoding.DecodeString(string(cfg.VastUnwrapCfg.HTTPConfig.Certificates))
-	if err != nil {
-		return fmt.Errorf("error decoding base64 SSL certificates: %v", err)
+
+	if len(cfg.VastUnwrapCfg.HTTPConfig.Certificates) > 0 {
+		decodedCert, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.Certificates)
+		if err != nil {
+			return fmt.Errorf("error decoding base64 SSL certificates: %v", err)
+		}
+		cfg.VastUnwrapCfg.HTTPConfig.Certificates = string(decodedCert)
 	}
-	cfg.VastUnwrapCfg.HTTPConfig.Certificates = string(decodedCert)
 	return nil
 }
