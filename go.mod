@@ -2,7 +2,7 @@ module github.com/PubMatic-OpenWrap/prebid-server/v2
 
 go 1.21
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250225064627-23bb4a59cd16
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250304093131-032caf827367
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
