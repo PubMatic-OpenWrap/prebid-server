@@ -1,6 +1,6 @@
 module github.com/PubMatic-OpenWrap/prebid-server/v2
 
-go 1.21
+go 1.23
 
 replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250305121837-361521441322
 
