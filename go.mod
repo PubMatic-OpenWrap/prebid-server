@@ -1,10 +1,10 @@
 module github.com/PubMatic-OpenWrap/prebid-server/v3
 
-go 1.22
+go 1.23
 
 retract v3.0.0 // Forgot to update major version in import path and module name
 
-replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250225064627-23bb4a59cd16
+replace git.pubmatic.com/vastunwrap => git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250305121837-361521441322
 
 require (
 	github.com/51Degrees/device-detection-go/v4 v4.4.35
