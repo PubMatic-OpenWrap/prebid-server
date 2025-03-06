@@ -108,6 +108,8 @@ type SlotRecord struct {
 	PartnerData       []PartnerRecord `json:"ps"`
 	RewardedInventory int             `json:"rwrd,omitempty"` // Indicates if the ad slot was enabled (rwrd=1) for rewarded or disabled (rwrd=0)
 	FloorSkippedFlag  *int            `json:"fskp,omitempty"`
+	DisplayManager    string          `json:"dm,omitempty"`
+	DisplayManagerVer string          `json:"dmv,omitempty"`
 }
 
 // PartnerRecord structure for storing partner information

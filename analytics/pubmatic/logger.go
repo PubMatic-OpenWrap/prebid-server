@@ -116,6 +116,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
 			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
+			DisplayManager:    impCtx.DisplayManager,
+			DisplayManagerVer: impCtx.DisplayManagerVer,
 		})
 	}
 
