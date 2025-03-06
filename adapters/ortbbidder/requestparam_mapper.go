@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
 )
 
 // setRequestParams updates the request object by mapping bidderParams at expected location.

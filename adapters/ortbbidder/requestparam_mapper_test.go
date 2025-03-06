@@ -3,7 +3,7 @@ package ortbbidder
 import (
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/bidderparams"
 	"github.com/stretchr/testify/assert"
 )
 

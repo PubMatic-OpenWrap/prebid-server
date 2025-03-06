@@ -15,8 +15,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/rs/vast"
 )
 
@@ -120,7 +121,7 @@ func (vr *vastResponse) getVast(bidResponse *openrtb2.BidResponse) (string, *ope
 
 	creative, _ := getAdPodBidCreativeAndPrice(bidArray)
 	if len(creative) == 0 {
-		nbr := openrtb3.NoBidReason(openrtb3.NoBidGeneralError)
+		nbr := exchange.ResponseRejectedGeneral
 		return "", &nbr, errors.New("No Bid")
 	}
 

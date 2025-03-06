@@ -8,14 +8,14 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/ortb"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/usersync"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/usersync"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 type RequestCtx struct {

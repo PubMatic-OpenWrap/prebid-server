@@ -3,8 +3,8 @@ package prometheus
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

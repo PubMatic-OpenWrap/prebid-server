@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 const FloatValuePrecision = 2

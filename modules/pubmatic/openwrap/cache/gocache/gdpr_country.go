@@ -2,7 +2,7 @@ package gocache
 
 import (
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 // GetGDPRCountryCodes returns gdprcountrycodes fetched from DB which will be saved in publisherFeatureMap

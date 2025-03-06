@@ -3,7 +3,7 @@ package build
 import (
 	"fmt"
 
-	"github.com/prebid/prebid-server/v2/analytics"
+	"github.com/prebid/prebid-server/v3/analytics"
 )
 
 // EnableAnalyticsModule will add the new module into the list of enabled analytics modules

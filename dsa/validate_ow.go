@@ -1,6 +1,6 @@
 package dsa
 
-import "github.com/prebid/prebid-server/v2/openrtb_ext"
+import "github.com/prebid/prebid-server/v3/openrtb_ext"
 
 // dropDSA determines whether to drop the DSA (Digital Services Act) flag from the bid response.
 // It returns false if the 'Required' field has a value of Supported, Required, or RequiredOnlinePlatform otherwise returns true

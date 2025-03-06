@@ -6,8 +6,8 @@ import (
 	"git.pubmatic.com/vastunwrap/unwrap"
 	unwrapmodels "git.pubmatic.com/vastunwrap/unwrap/models"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-server/v2/exchange"
-	middleware "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/middleware/adpod"
+	"github.com/prebid/prebid-server/v3/exchange"
+	middleware "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/middleware/adpod"
 )
 
 const (

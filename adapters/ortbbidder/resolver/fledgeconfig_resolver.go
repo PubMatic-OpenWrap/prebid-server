@@ -1,9 +1,9 @@
 package resolver
 
 import (
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/jsonutil"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
 )
 
 // fledgeResolver retrieves the fledge auction config of the bidresponse using the bidder param location.

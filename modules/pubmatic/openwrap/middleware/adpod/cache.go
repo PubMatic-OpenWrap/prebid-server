@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	pbc "github.com/prebid/prebid-server/v2/prebid_cache_client"
+	pbc "github.com/prebid/prebid-server/v3/prebid_cache_client"
 )
 
 type CacheWrapperStruct struct {

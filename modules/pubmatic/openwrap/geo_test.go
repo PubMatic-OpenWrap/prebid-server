@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
-	mock_geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/mock"
-	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
+	mock_geodb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/mock"
+	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
 	"github.com/stretchr/testify/assert"
 )
 
