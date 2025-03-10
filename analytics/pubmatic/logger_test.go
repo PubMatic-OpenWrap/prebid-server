@@ -4291,7 +4291,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					RequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{
 							User: &openrtb2.User{
-								Ext: json.RawMessage(`{"consent": "any-random-consent-string"}`),
+								Consent: "any-random-consent-string",
 							},
 						},
 					},
@@ -4318,7 +4318,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					RequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{
 							Regs: &openrtb2.Regs{
-								Ext: json.RawMessage(`{"gdpr":1}`),
+								GDPR: openrtb2.Int8Ptr(1),
 							},
 						},
 					},

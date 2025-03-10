@@ -68,17 +68,11 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	wlog.logDeviceObject(&rCtx.DeviceCtx)
 
 	if ao.RequestWrapper.User != nil {
-		extUser := openrtb_ext.ExtUser{}
-		_ = json.Unmarshal(ao.RequestWrapper.User.Ext, &extUser)
-		wlog.ConsentString = extUser.Consent
+		wlog.ConsentString = ao.RequestWrapper.User.Consent
 	}
 
-	if ao.RequestWrapper.Regs != nil {
-		extReg := openrtb_ext.ExtRegs{}
-		_ = json.Unmarshal(ao.RequestWrapper.Regs.Ext, &extReg)
-		if extReg.GDPR != nil {
-			wlog.GDPR = *extReg.GDPR
-		}
+	if ao.RequestWrapper.Regs != nil && ao.RequestWrapper.Regs.GDPR != nil {
+		wlog.GDPR = *ao.RequestWrapper.Regs.GDPR
 	}
 
 	if ao.RequestWrapper.Site != nil {
