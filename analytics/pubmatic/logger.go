@@ -61,6 +61,10 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		},
 	}
 
+	if len(rCtx.DerivedCountryCode) > 0 {
+		wlog.Geo.CountryCode = rCtx.DerivedCountryCode
+	}
+
 	wlog.logProfileMetaData(rCtx)
 
 	wlog.logIntegrationType(rCtx.Endpoint)

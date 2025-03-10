@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -292,7 +291,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 	}
 }
 
-func TestGetCountryFromIP(t *testing.T) {
+func TestGetCountryCodes(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -303,11 +302,11 @@ func TestGetCountryFromIP(t *testing.T) {
 		geoInfoFetcher geodb.Geography
 	}
 	tests := []struct {
-		name  string
-		args  args
-		setup func()
-		want  string
-		err   error
+		name                  string
+		args                  args
+		setup                 func()
+		wantISOCountryCode    string
+		wantAlpha3CountryCode string
 	}{
 		{
 			name: "valid_ip",
@@ -320,8 +319,8 @@ func TestGetCountryFromIP(t *testing.T) {
 					CountryCode: "au", ISOCountryCode: "AU", RegionCode: "nsw", City: "brookvale", PostalCode: "", DmaCode: 36122, Latitude: -33.77000045776367, Longitude: 151.27000427246094, AreaCode: "", AlphaThreeCountryCode: "AUS",
 				}, nil)
 			},
-			want: "AUS",
-			err:  nil,
+			wantAlpha3CountryCode: "AUS",
+			wantISOCountryCode:    "AU",
 		},
 		{
 			name: "geoDB_instance_missing",
@@ -329,9 +328,9 @@ func TestGetCountryFromIP(t *testing.T) {
 				ip:             "1.179.71.255",
 				geoInfoFetcher: nil,
 			},
-			setup: func() {},
-			want:  "",
-			err:   errors.New("geoDB instance is missing"),
+			setup:                 func() {},
+			wantAlpha3CountryCode: "",
+			wantISOCountryCode:    "",
 		},
 		{
 			name: "invalid_ip",
@@ -344,8 +343,8 @@ func TestGetCountryFromIP(t *testing.T) {
 					CountryCode: "", ISOCountryCode: "", RegionCode: "", City: "", PostalCode: "", DmaCode: 0, Latitude: 0, Longitude: 0, AreaCode: "", AlphaThreeCountryCode: "",
 				}, nil)
 			},
-			want: "",
-			err:  nil,
+			wantAlpha3CountryCode: "",
+			wantISOCountryCode:    "",
 		},
 	}
 	for _, tt := range tests {
@@ -354,10 +353,9 @@ func TestGetCountryFromIP(t *testing.T) {
 			m := OpenWrap{
 				geoInfoFetcher: tt.args.geoInfoFetcher,
 			}
-			got, err := m.getCountryFromIP(tt.args.ip)
-			assert.Equal(t, got, tt.want)
-			assert.Equal(t, err, tt.err)
-
+			got1, got2 := m.getCountryCodes(tt.args.ip)
+			assert.Equal(t, got1, tt.wantISOCountryCode)
+			assert.Equal(t, got2, tt.wantAlpha3CountryCode)
 		})
 	}
 }

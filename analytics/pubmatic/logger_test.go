@@ -4277,7 +4277,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4304,7 +4304,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","cns":"any-random-consent-string","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","cns":"any-random-consent-string","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4331,7 +4331,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","gdpr":1,"sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","gdpr":1,"sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4357,7 +4357,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4384,7 +4384,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"plt":5,"ifty":8},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4414,7 +4414,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"atts":1},"ft":0}&pubid=5890`,
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{"atts":1},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4445,7 +4445,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones","cat":["IAB-1"]},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones","cat":["IAB-1"]},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4475,7 +4475,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones"},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ct":{"id":"1","ttl":"Game of thrones"},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4500,7 +4500,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{"mozilla"},
 					models.IP_HEADER:         []string{"10.10.10.10"},
@@ -4523,7 +4523,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4548,7 +4548,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4580,7 +4580,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"fp":"provider-1"}&pubid=5890`,
+				logger: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"fp":"provider-1","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4639,7 +4639,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4667,7 +4667,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4702,7 +4702,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4734,7 +4734,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4769,7 +4769,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4804,7 +4804,7 @@ func TestGetLogAuctionObjectAsURLForFloorType(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":1}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":1,"geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4881,7 +4881,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23"}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4934,7 +4934,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -4997,7 +4997,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider","cds":"author=robertshinde"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[],"fskp":1}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider","cds":"author=robertshinde","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -5070,7 +5070,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":1,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1"}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"s":[{"sid":"uuid","sn":"sn","au":"au","ps":[{"pn":"pubmatic","bc":"pubmatic","kgpv":"","kgpsv":"","psz":"0x0","af":"","eg":0,"en":0,"l1":0,"l2":0,"t":0,"wb":0,"bidid":"bid-id-1","origbidid":"bid-id-1","di":"-1","dc":"","db":1,"ss":1,"mi":0,"ocpm":0,"ocry":"USD","fv":10.1,"frv":10.1}]}],"dvc":{},"fmv":"model-version","fsrc":2,"ft":1,"ffs":2,"fp":"provider1","geo":{}}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -5172,7 +5172,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4,"ap":5,"aip":3,"asip":8}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"pt":1,"ptp":4,"ap":5,"aip":3,"asip":8}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -5232,7 +5232,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4,"asip":1}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"pt":1,"ptp":4,"asip":1}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -5293,7 +5293,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"pt":1,"ptp":4}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
@@ -5354,7 +5354,7 @@ func TestGetLogAuctionObjectAsURLForProfileMetaData(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"pt":1,"ptp":4}&pubid=5890`,
+				logger: ow.cfg.Endpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"pt":1,"ptp":4}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},

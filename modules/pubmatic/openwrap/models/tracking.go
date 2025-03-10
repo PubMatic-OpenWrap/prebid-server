@@ -55,6 +55,7 @@ const (
 	TRKMultiBidMultiFloorFlag = "mbmf"
 	TRKDisplayManager         = "dm"
 	TRKDisplayManagerVer      = "dmv"
+	TRKCountryCode            = "cc"
 )
 
 // video error tracker url parameters

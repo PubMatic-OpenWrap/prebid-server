@@ -2,7 +2,6 @@ package openwrap
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -51,10 +50,8 @@ func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
 	}
 
 	if rctx.DeviceCtx.IP != "" {
-		country, err := m.getCountryFromIP(rctx.DeviceCtx.IP)
-		if err == nil {
-			return country
-		}
+		_, alpha3CountryCode := m.getCountryCodes(rctx.DeviceCtx.IP)
+		return alpha3CountryCode
 	}
 	return ""
 }
@@ -69,13 +66,14 @@ func evaluateBiddingCondition(data, rules string) bool {
 	return strings.TrimSpace(result.String()) == "true"
 }
 
-func (m OpenWrap) getCountryFromIP(ip string) (string, error) {
+func (m OpenWrap) getCountryCodes(ip string) (string, string) {
 	if m.geoInfoFetcher == nil {
-		return "", errors.New("geoDB instance is missing")
+		return "", ""
 	}
+
 	geoData, err := m.geoInfoFetcher.LookUp(ip)
 	if err != nil {
-		return "", err
+		return "", ""
 	}
-	return geoData.AlphaThreeCountryCode, nil
+	return geoData.ISOCountryCode, geoData.AlphaThreeCountryCode
 }

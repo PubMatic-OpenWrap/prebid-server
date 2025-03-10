@@ -327,6 +327,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(tracker.DisplayManagerVer) > 0 {
 		v.Set(models.TRKDisplayManagerVer, tracker.DisplayManagerVer)
 	}
+	if len(rctx.DerivedCountryCode) > 0 {
+		v.Set(models.TRKCountryCode, rctx.DerivedCountryCode)
+	}
 
 	queryString := v.Encode()
 
