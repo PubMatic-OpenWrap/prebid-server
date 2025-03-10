@@ -66,8 +66,8 @@ func (m OpenWrap) handleEntrypointHook(
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == models.Enabled {
 		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
-		rCtx.IP = models.GetIP(payload.Request)
-		rCtx.UA = payload.Request.Header.Get("User-Agent")
+		rCtx.DeviceCtx.IP = models.GetIP(payload.Request)
+		rCtx.DeviceCtx.UA = payload.Request.Header.Get("User-Agent")
 		return result, nil
 	}
 	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
@@ -106,22 +106,22 @@ func (m OpenWrap) handleEntrypointHook(
 
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
-		StartTime:                 time.Now().Unix(),
-		Debug:                     queryParams.Get(models.Debug) == "1" || requestDebug,
-		UA:                        payload.Request.Header.Get("User-Agent"),
-		ProfileID:                 requestExtWrapper.ProfileId,
-		DisplayID:                 requestExtWrapper.VersionId,
-		DisplayVersionID:          requestExtWrapper.VersionId,
-		SupportDeals:              requestExtWrapper.SupportDeals,
-		ABTestConfig:              requestExtWrapper.ABTestConfig,
-		SSAuction:                 requestExtWrapper.SSAuctionFlag,
-		SummaryDisable:            requestExtWrapper.SumryDisableFlag,
-		LoggerImpressionID:        requestExtWrapper.LoggerImpressionID,
-		ClientConfigFlag:          requestExtWrapper.ClientConfigFlag,
-		SSAI:                      requestExtWrapper.SSAI,
-		AdruleFlag:                requestExtWrapper.Video.AdruleFlag,
-		IP:                        models.GetIP(payload.Request),
-		IsCTVRequest:              models.IsCTVAPIRequest(payload.Request.URL.Path),
+		StartTime:          time.Now().Unix(),
+		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
+		ProfileID:          requestExtWrapper.ProfileId,
+		DisplayID:          requestExtWrapper.VersionId,
+		DisplayVersionID:   requestExtWrapper.VersionId,
+		SupportDeals:       requestExtWrapper.SupportDeals,
+		ABTestConfig:       requestExtWrapper.ABTestConfig,
+		SSAuction:          requestExtWrapper.SSAuctionFlag,
+		SummaryDisable:     requestExtWrapper.SumryDisableFlag,
+		LoggerImpressionID: requestExtWrapper.LoggerImpressionID,
+		ClientConfigFlag:   requestExtWrapper.ClientConfigFlag,
+		SSAI:               requestExtWrapper.SSAI,
+		AdruleFlag:         requestExtWrapper.Video.AdruleFlag,
+		IsCTVRequest:       models.IsCTVAPIRequest(payload.Request.URL.Path),
+		DeviceCtx: models.DeviceCtx{UA: payload.Request.Header.Get("User-Agent"),
+			IP: models.GetIP(payload.Request)},
 		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
 		VideoErrorTrackerEndpoint: m.cfg.Tracker.VideoErrorTrackerEndpoint,
 		Aliases:                   make(map[string]string),

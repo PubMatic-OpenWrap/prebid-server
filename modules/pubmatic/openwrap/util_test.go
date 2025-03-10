@@ -206,8 +206,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_empty_platform",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "",
 				},
 				bidRequest: nil,
 			},
@@ -217,8 +217,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_amp",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "amp",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "amp",
 				},
 				bidRequest: nil,
 			},
@@ -228,8 +228,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_iOS_UA",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "in-app",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "in-app",
 				},
 				bidRequest: nil,
 			},
@@ -239,8 +239,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_Android_UA",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36",
-					Platform: "in-app",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36"},
+					Platform:  "in-app",
 				},
 				bidRequest: nil,
 			},
@@ -250,8 +250,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_device.os_android",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "in-app",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "in-app",
 				},
 				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
@@ -261,8 +261,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_device.os_ios",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "in-app",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "in-app",
 				},
 				bidRequest: getORTBRequest("ios", "", 0, false, true),
 			},
@@ -272,8 +272,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_device.ua_for_ios",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "in-app",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "in-app",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
 			},
@@ -283,8 +283,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_mobile",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "display",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
@@ -294,8 +294,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_tablet",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "display",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
@@ -305,8 +305,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_desktop",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "display",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DevicePC, true, false),
 			},
@@ -316,8 +316,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.ua_for_mobile",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "display",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "display",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
 			},
@@ -327,8 +327,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_without_ua,_os_&_deviceType",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "display",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "display",
 				},
 				bidRequest: getORTBRequest("", "", 0, false, true),
 			},
@@ -338,9 +338,9 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_CTV",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
-					PubIDStr: "5890",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
+					PubIDStr:  "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceTV, true, false),
 			},
@@ -350,9 +350,9 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_connected_device",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
-					PubIDStr: "5890",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
+					PubIDStr:  "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceConnected, true, false),
 			},
@@ -362,9 +362,9 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_set_top_box",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
-					PubIDStr: "5890",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
+					PubIDStr:  "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceSetTopBox, false, true),
 			},
@@ -374,8 +374,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_nil_values",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
@@ -385,8 +385,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_site_entry",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
@@ -396,8 +396,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_site_entry_and_mobile_UA",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, true, false),
 			},
@@ -407,8 +407,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_iOS_mobile_UA",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1", 0, false, true),
 			},
@@ -418,8 +418,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_android_mobile_UA",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36"},
+					Platform:  "video",
 				},
 
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36", 0, false, true),
@@ -430,8 +430,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_android_os",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
@@ -441,8 +441,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_ios_os",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: ""},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("ios", "", 0, false, true),
 			},
@@ -452,9 +452,9 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_CTV_and_device_type",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1",
-					Platform: "video",
-					PubIDStr: "5890",
+					DeviceCtx: models.DeviceCtx{UA: "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1"},
+					Platform:  "video",
+					PubIDStr:  "5890",
 				},
 				bidRequest: getORTBRequest("", "Mozilla/5.0 (SMART-TV; Linux; Tizen 4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/4.0 TV Safari/538.1", 3, false, true),
 			},
@@ -464,8 +464,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_CTV_and_no_device_type",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "AppleCoreMedia/1.0.0.20L498 (Apple TV; U; CPU OS 16_4_1 like Mac OS X; en_us)",
-					Platform: "video",
+					DeviceCtx: models.DeviceCtx{UA: "AppleCoreMedia/1.0.0.20L498 (Apple TV; U; CPU OS 16_4_1 like Mac OS X; en_us)"},
+					Platform:  "video",
 				},
 				bidRequest: getORTBRequest("", "AppleCoreMedia/1.0.0.20L498 (Apple TV; U; CPU OS 16_4_1 like Mac OS X; en_us)", 0, true, false),
 			},
@@ -475,9 +475,9 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_for_non_CTV_User_agent_with_device_type_7",
 			args: args{
 				rCtx: models.RequestCtx{
-					UA:       "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)",
-					Platform: "video",
-					PubIDStr: "5890",
+					DeviceCtx: models.DeviceCtx{UA: "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)"},
+					Platform:  "video",
+					PubIDStr:  "5890",
 				},
 				bidRequest: getORTBRequest("", "AppleCoreMedia/1.0.0.20L498 (iphone ; U; CPU OS 16_4_1 like Mac OS X; en_us)", 7, false, true),
 			},

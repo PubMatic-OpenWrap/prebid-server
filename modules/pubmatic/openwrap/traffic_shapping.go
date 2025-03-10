@@ -46,12 +46,12 @@ func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *ope
 }
 
 func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
-	if len(rctx.Country) > 0 {
-		return rctx.Country
+	if len(rctx.DeviceCtx.Country) > 0 {
+		return rctx.DeviceCtx.Country
 	}
 
-	if rctx.IP != "" {
-		country, err := m.getCountryFromIP(rctx.IP)
+	if rctx.DeviceCtx.IP != "" {
+		country, err := m.getCountryFromIP(rctx.DeviceCtx.IP)
 		if err == nil {
 			return country
 		}

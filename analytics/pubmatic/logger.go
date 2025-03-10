@@ -124,8 +124,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	wlog.Slots = slots
 
 	headers := http.Header{
-		models.USER_AGENT_HEADER: []string{rCtx.UA},
-		models.IP_HEADER:         []string{rCtx.IP},
+		models.USER_AGENT_HEADER: []string{rCtx.DeviceCtx.UA},
+		models.IP_HEADER:         []string{rCtx.DeviceCtx.IP},
 	}
 
 	// first set the floor type from bidrequest.ext

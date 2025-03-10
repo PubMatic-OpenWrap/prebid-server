@@ -111,8 +111,8 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 				moduleCtx: hookstage.ModuleInvocationContext{
 					ModuleContext: map[string]interface{}{
 						"rctx": models.RequestCtx{
-							Endpoint: models.EndpointV25,
-							IP:       "10.20.30.40",
+							Endpoint:  models.EndpointV25,
+							DeviceCtx: models.DeviceCtx{IP: "10.20.30.40"},
 						},
 					},
 				},

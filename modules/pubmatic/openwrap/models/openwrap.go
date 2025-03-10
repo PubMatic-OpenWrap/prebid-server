@@ -38,8 +38,6 @@ type RequestCtx struct {
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-	Country            string
-	IP                 string
 	TMax               int64
 
 	//NYC_TODO: use enum?
@@ -49,7 +47,6 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	UA              string
 	Cookies         string
 	UidCookie       *http.Cookie
 	KADUSERCookie   *http.Cookie
@@ -158,6 +155,9 @@ type DeviceCtx struct {
 	Ext       *ExtDevice
 	ID        string
 	Model     string
+	UA        string
+	Country   string
+	IP        string
 }
 
 type ImpCtx struct {

@@ -158,7 +158,7 @@ func TestGetFilteredBidders(t *testing.T) {
 				PubID:     1,
 				ProfileID: 2,
 				DisplayID: 3,
-				Country:   "IND",
+				DeviceCtx: models.DeviceCtx{Country: "IND"},
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
 						models.SERVER_SIDE_FLAG: "1",
@@ -187,7 +187,7 @@ func TestGetFilteredBidders(t *testing.T) {
 				PubID:     1,
 				ProfileID: 2,
 				DisplayID: 3,
-				Country:   "IND",
+				DeviceCtx: models.DeviceCtx{Country: "IND"},
 				PartnerConfigMap: map[int]map[string]string{
 					1: {
 						models.SERVER_SIDE_FLAG: "1",
@@ -244,7 +244,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "getting country from request ",
 			args: args{
 				rCtx: models.RequestCtx{
-					Country: "IND",
+					DeviceCtx: models.DeviceCtx{Country: "IND"},
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
@@ -256,7 +256,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "detecting_country_from_request_ip",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP: "101.143.255.255",
+					DeviceCtx: models.DeviceCtx{IP: "101.143.255.255"},
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},
@@ -271,7 +271,7 @@ func TestGetCountryFromRequest(t *testing.T) {
 			name: "both_ip_and_country_are_missing_in_request",
 			args: args{
 				rCtx: models.RequestCtx{
-					IP: "",
+					DeviceCtx: models.DeviceCtx{IP: ""},
 				},
 				bidRequest: &openrtb2.BidRequest{},
 			},

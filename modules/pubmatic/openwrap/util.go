@@ -83,7 +83,7 @@ func init() {
 //
 // getDevicePlatform determines the device from which request has been generated
 func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) models.DevicePlatform {
-	userAgentString := rCtx.UA
+	userAgentString := rCtx.DeviceCtx.UA
 
 	switch rCtx.Platform {
 	case models.PLATFORM_AMP:

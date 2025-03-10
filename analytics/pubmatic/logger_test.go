@@ -4492,8 +4492,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					UA:            "mozilla",
-					IP:            "10.10.10.10",
+					DeviceCtx:     models.DeviceCtx{UA: "mozilla", IP: "10.10.10.10"},
 					KADUSERCookie: &http.Cookie{Name: "uids", Value: "eidsabcd"},
 					PubID:         5890,
 				},

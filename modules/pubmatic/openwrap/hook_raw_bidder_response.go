@@ -111,7 +111,7 @@ func (m OpenWrap) processVastUnwrap(
 			wg.Add(1)
 			go func(iBid *rawBidderResponseHookResult) {
 				defer wg.Done()
-				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.UA, rCtx.IP)
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, rCtx.DeviceCtx.IP)
 			}(bidResult)
 		}
 	}
