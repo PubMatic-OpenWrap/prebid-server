@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -1458,6 +1460,139 @@ func TestToFixed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ToFixed(tt.args.num, tt.args.precision); got != tt.want {
 				t.Errorf("toFixed() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetIP(t *testing.T) {
+	type args struct {
+		in *http.Request
+	}
+	tests := []struct {
+		name  string
+		args  args
+		setup func(in *http.Request)
+		want  string
+		want1 string
+	}{
+		{
+			name: "priority to rlnclient",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{
+					"X-Forwarded-For":     []string{"1.1.1.1"},
+					"X-Device-Ip":         []string{"1.0.0.1"},
+					"Source_Ip":           []string{"0.1.1.0"},
+					"X_Cluster_Client_Ip": []string{"0.1.0.0"},
+					"Remote_Addr":         []string{"0.1.0.1"},
+				}
+				in.Header.Add(RlnClientIP, "0.0.0.0")
+			},
+			want:  "0.0.0.0",
+			want1: RlnClientIP,
+		},
+		{
+			name: "priority to X-Device-Ip",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{
+					"X-Forwarded-For":     []string{"1.1.1.1"},
+					"X-Device-Ip":         []string{"1.0.0.1"},
+					"Source_Ip":           []string{"0.1.1.0"},
+					"X_Cluster_Client_Ip": []string{"0.1.0.0"},
+					"Remote_Addr":         []string{"0.1.0.1"},
+				}
+			},
+			want:  "1.0.0.1",
+			want1: XDeviceIP,
+		},
+		{
+			name: "priority to source_ip",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{
+					"X-Forwarded-For":     []string{"1.1.1.1"},
+					"X_Cluster_Client_Ip": []string{"0.1.0.0"},
+					"Remote_Addr":         []string{"0.1.0.1"},
+				}
+				in.Header.Add(SourceIP, "0.1.1.0")
+			},
+			want: "0.1.1.0",
+		},
+		{
+			name: "priority to clusterclient",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{
+					"X-Forwarded-For": []string{"1.1.1.1"},
+					"Remote_Addr":     []string{"0.1.0.1"},
+				}
+				in.Header.Add(ClusterClientIP, "0.1.0.0")
+			},
+			want: "0.1.0.0",
+		},
+		{
+			name: "priority to x-forwarded-for",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{
+					"X-Forwarded-For": []string{"1.1.1.1"},
+					"Remote_Addr":     []string{"0.1.0.1"},
+				}
+			},
+			want: "1.1.1.1",
+		},
+		{
+			name: "only remoteaddr",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{}
+				in.Header.Add(RemoteAddr, "1.1.1.1")
+			},
+			want: "1.1.1.1",
+		},
+		{
+			name: "no headers but root level Remote Address present",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{}
+				in.RemoteAddr = "1.1.1.1:8080"
+			},
+			want: "1.1.1.1",
+		},
+		{
+			name: "no headers but root level Remote Address present without port",
+			args: args{
+				in: httptest.NewRequest("GET", "http://example.com", nil),
+			},
+			setup: func(in *http.Request) {
+				in.Header = http.Header{}
+				in.RemoteAddr = "1.1.1.1"
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(tt.args.in)
+			got := GetIP(tt.args.in)
+			if got != tt.want {
+				t.Errorf("GetIP() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
