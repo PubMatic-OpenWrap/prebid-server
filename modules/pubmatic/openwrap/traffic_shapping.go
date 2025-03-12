@@ -72,7 +72,8 @@ func (m OpenWrap) getCountryCodes(ip string) (string, string) {
 	}
 
 	geoData, err := m.geoInfoFetcher.LookUp(ip)
-	if err != nil {
+	if geoData == nil || err != nil {
+		glog.Errorf("[geolookup] ip:[%s] error:[%s]", ip, err.Error())
 		return "", ""
 	}
 	return geoData.ISOCountryCode, geoData.AlphaThreeCountryCode
