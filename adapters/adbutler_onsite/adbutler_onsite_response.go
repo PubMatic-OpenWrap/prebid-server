@@ -165,7 +165,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			height, _ := strconv.Atoi(adButlerBid.Height)
 
 			adm, adType := getADM(adButlerBid)
-			if adType == openrtb2.MarkupNative {
+			/*if adType == openrtb2.MarkupNative {
 				if adButlerBid.RedirectURL != "" && !strings.Contains(adm, "<a href=") {
 					if(adButlerBid.Target != "") {
 						result := strings.Replace(DYNAMIC_IMAGE_URL_AHREFSTART, "REDIRECT_TARGET", adButlerBid.Target, 1)
@@ -174,7 +174,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 						adm = DYNAMIC_IMAGE_URL_AHREFSTART + adm + DYNAMIC_IMAGE_URL_AHREFEND
 					}
 				}
-			}
+			}*/
 			adm = encodeRedirectURL(adm, Pattern_Click_URL, CLICK_KEY)
 
 			if adType == Adtype_Invalid {
@@ -311,5 +311,6 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
 
 
