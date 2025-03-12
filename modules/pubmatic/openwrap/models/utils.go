@@ -215,8 +215,6 @@ func GetIP(in *http.Request) string {
 		glog.Errorf("[GetIP] status:[invalid_ip] ip:[%s] error:[%s]", in.RemoteAddr, err)
 		return ""
 	}
-
-	glog.Infof("IP : %s", ip)
 	return ip
 }
 
