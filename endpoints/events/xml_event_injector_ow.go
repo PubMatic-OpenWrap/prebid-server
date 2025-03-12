@@ -2,83 +2,35 @@ package events
 
 import (
 	"bytes"
-	"encoding/base64"
-	"errors"
-	"strings"
-	"time"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
 	"github.com/prebid/openrtb/v20/adcom1"
-	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
-var (
-	errEventURLNotConfigured = errors.New("event urls not configured")
-)
-
-// InjectVideoEventTrackers injects the video tracking events
-// Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
-func InjectVideoEventTrackers(
-	bidRequest *openrtb2.BidRequest,
-	bid *openrtb2.Bid,
-	vastXML, trackerURL, prebidGenBidId, requestingBidder, bidderCoreName string,
-	timestamp int64, fastXMLExperiment bool) (response string, metrics *openrtb_ext.FastXMLMetrics, err error) {
-
-	//Maintaining BidRequest Impression Map (Copied from exchange.go#applyCategoryMapping)
-	//TODO: It should be optimized by forming once and reusing
-	var imp *openrtb2.Imp
-	for _, impr := range bidRequest.Imp {
-		if bid.ImpID == impr.ID && impr.Video != nil {
-			imp = &impr
-			break
-		}
-	}
-	if imp == nil {
-		return vastXML, nil, nil
-	}
-
-	eventURLMap := GetVideoEventTracking(bidRequest, imp, bid, trackerURL, prebidGenBidId, requestingBidder, bidderCoreName, timestamp)
-	if len(eventURLMap) == 0 {
-		return vastXML, nil, errEventURLNotConfigured
-	}
-
-	adm := strings.TrimSpace(bid.AdM)
-	nurlPresent := (adm == "" || strings.HasPrefix(adm, "http"))
-
-	_startTime := time.Now()
-	response, err = injectVideoEventsETree(vastXML, eventURLMap, nurlPresent, imp.Video.Linearity)
-	etreeParserTime := time.Since(_startTime)
-
-	if fastXMLExperiment && err == nil {
-		etreeXMLResponse := response
-
-		_startTime = time.Now()
-		fastXMLResponse, _ := injectVideoEventsFastXML(vastXML, eventURLMap, nurlPresent, imp.Video.Linearity)
-		fastXMLParserTime := time.Since(_startTime)
-
-		//temporary
-		if fastXMLResponse != vastXML {
-			fastXMLResponse, etreeXMLResponse = openrtb_ext.FastXMLPostProcessing(fastXMLResponse, response)
-		}
-
-		metrics = &openrtb_ext.FastXMLMetrics{
-			FastXMLParserTime: fastXMLParserTime,
-			EtreeParserTime:   etreeParserTime,
-			IsRespMismatch:    (etreeXMLResponse != fastXMLResponse),
-		}
-
-		if metrics.IsRespMismatch {
-			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vcr", base64.StdEncoding.EncodeToString([]byte(vastXML)))
-		}
-
-	}
-
-	return response, metrics, err
+type xmlEventInjector interface {
+	Name() string
+	Inject(vastXML string, eventURLMap map[string]string) (string, error)
 }
 
-func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (string, error) {
+type etreeEventInjector struct {
+	nurlPresent bool
+	linearity   adcom1.LinearityMode
+}
+
+func newETreeEventInjector(nurlPresent bool, linearity adcom1.LinearityMode) *etreeEventInjector {
+	return &etreeEventInjector{
+		nurlPresent: nurlPresent,
+		linearity:   linearity,
+	}
+}
+
+func (ev *etreeEventInjector) Name() string {
+	return openrtb_ext.XMLParserETree
+}
+
+func (ev *etreeEventInjector) Inject(vastXML string, eventURLMap map[string]string) (string, error) {
 
 	// parse VAST
 	doc := etree.NewDocument()
@@ -88,14 +40,14 @@ func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlP
 
 	doc.WriteSettings.CanonicalEndTags = true
 
-	creatives := FindCreatives(doc)
-	if nurlPresent {
+	creatives := ev.findCreatives(doc)
+	if ev.nurlPresent {
 		// create creative object
 		creatives = doc.FindElements("VAST/Ad/Wrapper/Creatives")
 		creative := doc.CreateElement("Creative")
 		creatives[0].AddChild(creative)
 
-		switch linearity {
+		switch ev.linearity {
 		case adcom1.LinearityLinear:
 			creative.AddChild(doc.CreateElement("Linear"))
 		case adcom1.LinearityNonLinear:
@@ -136,8 +88,33 @@ func injectVideoEventsETree(vastXML string, eventURLMap map[string]string, nurlP
 	return string(out), nil
 }
 
-func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (string, error) {
+func (ev *etreeEventInjector) findCreatives(doc *etree.Document) []*etree.Element {
+	// Find Creatives of Linear and NonLinear Type
+	// Injecting Tracking Events for Companion is not supported here
+	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
+	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
+	return creatives
+}
 
+type fastXMLEventInjector struct {
+	nurlPresent bool
+	linearity   adcom1.LinearityMode
+}
+
+func newFastXMLEventInjector(nurlPresent bool, linearity adcom1.LinearityMode) *fastXMLEventInjector {
+	return &fastXMLEventInjector{
+		nurlPresent: nurlPresent,
+		linearity:   linearity,
+	}
+}
+
+func (ev *fastXMLEventInjector) Name() string {
+	return openrtb_ext.XMLParserFastXML
+}
+
+func (ev *fastXMLEventInjector) Inject(vastXML string, eventURLMap map[string]string) (string, error) {
 	//parse vast xml
 	doc := fastxml.NewXMLReader(nil)
 	if err := doc.Parse([]byte(vastXML)); err != nil {
@@ -150,12 +127,12 @@ func injectVideoEventsFastXML(vastXML string, eventURLMap map[string]string, nur
 		ExpandInline: true,
 	})
 
-	if nurlPresent {
+	if ev.nurlPresent {
 		creative := doc.SelectElement(nil, "VAST", "Ad", "Wrapper", "Creatives")
 		if creative != nil {
 			cr := fastxml.NewElement("Creative")
 
-			switch linearity {
+			switch ev.linearity {
 			case adcom1.LinearityLinear:
 				cr.AddChild(fastxml.NewElement("Linear").AddChild(getTrackingEvents(true, eventURLMap)))
 			case adcom1.LinearityNonLinear:
@@ -214,12 +191,9 @@ func getTrackingEvents(createTrackingEvents bool, eventURLMap map[string]string)
 	return te
 }
 
-func FindCreatives(doc *etree.Document) []*etree.Element {
-	// Find Creatives of Linear and NonLinear Type
-	// Injecting Tracking Events for Companion is not supported here
-	creatives := doc.FindElements("VAST/Ad/InLine/Creatives/Creative/Linear")
-	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/Linear")...)
-	creatives = append(creatives, doc.FindElements("VAST/Ad/InLine/Creatives/Creative/NonLinearAds")...)
-	creatives = append(creatives, doc.FindElements("VAST/Ad/Wrapper/Creatives/Creative/NonLinearAds")...)
-	return creatives
+func GetXMLEventInjector(nurlPresent bool, linearity adcom1.LinearityMode) xmlEventInjector {
+	if openrtb_ext.IsFastXMLEnabled() {
+		return newFastXMLEventInjector(nurlPresent, linearity)
+	}
+	return newETreeEventInjector(nurlPresent, linearity)
 }
