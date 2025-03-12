@@ -232,7 +232,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 func getADM(adButlerBid *Placement) (string, openrtb2.MarkupType) {
 
 	if adButlerBid.Body != "" {
-		return adButlerBid.Body, openrtb2.MarkupNative
+		return adButlerBid.Body, openrtb2.MarkupBanner
 	}
 
 	if adButlerBid.ImageURL != "" {
