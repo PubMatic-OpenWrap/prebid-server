@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 const (
@@ -359,4 +361,13 @@ func (pod *VideoAdPod) ValidateAdPodDurations(minDuration, maxDuration, maxExten
 		}
 	}
 	return
+}
+
+func GetImpressionID(bidRequest *openrtb2.BidRequest, impID string) *openrtb2.Imp {
+	for _, impr := range bidRequest.Imp {
+		if impID == impr.ID {
+			return &impr
+		}
+	}
+	return nil
 }

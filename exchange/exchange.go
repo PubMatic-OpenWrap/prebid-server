@@ -182,7 +182,7 @@ func NewExchange(adapters map[openrtb_ext.BidderName]AdaptedBidder, cache prebid
 		bidIDGenerator:           &bidIDGenerator{cfg.GenerateBidID},
 		hostSChainNode:           cfg.HostSChainNode,
 		adsCertSigner:            adsCertSigner,
-		server:                   config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter, FastXMLEnabledPercentage: cfg.FastXMLEnabledPercentage},
+		server:                   config.Server{ExternalUrl: cfg.ExternalURL, GvlID: cfg.GDPR.HostVendorID, DataCenter: cfg.DataCenter},
 		bidValidationEnforcement: cfg.Validations,
 		requestSplitter:          requestSplitter,
 		macroReplacer:            macroReplacer,
@@ -510,9 +510,8 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 		evTracking := getEventTracking(requestExtPrebid, r.StartTime, &r.Account, e.bidderInfo, e.externalURL,
 			OpenWrapEventTracking{
-				enabledVideoEvents:       requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
-				fastXMLEnabledPercentage: e.server.FastXMLEnabledPercentage,
-				me:                       e.me,
+				enabledVideoEvents: requestExtPrebid == nil || !requestExtPrebid.ExtOWRequestPrebid.TrackerDisabled,
+				me:                 e.me,
 			})
 		adapterBids = evTracking.modifyBidsForEvents(adapterBids, r.BidRequestWrapper.BidRequest, e.trakerURL)
 

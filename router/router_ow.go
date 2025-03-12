@@ -60,7 +60,7 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 func initFastXMLTest() {
 	if g_metrics != nil {
 		unwrap.InitRecordFastXMLTestMetrics(func(ctx *unwrapmodels.UnwrapContext, etreeResp, fastxmlResp *unwrapmodels.UnwrapResponse) {
-			exchange.RecordFastXMLTestMetrics(g_metrics, ctx, etreeResp, fastxmlResp)
+			exchange.RecordVastUnwrapXMLMetrics(g_metrics, ctx, etreeResp, fastxmlResp)
 		})
 	}
 }

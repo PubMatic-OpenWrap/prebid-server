@@ -137,7 +137,7 @@ func TestMakeRequests(t *testing.T) {
 			RegisterNewBidderMacro(bidderName, func() IBidderMacro {
 				return newMyVastBidderMacro(tt.args.customHeaders)
 			})
-			bidder := NewTagBidder(bidderName, config.Adapter{}, 0)
+			bidder := NewTagBidder(bidderName, config.Adapter{})
 			reqData, err := bidder.MakeRequests(tt.args.req, nil)
 			assert.Nil(t, err)
 			for _, req := range reqData {

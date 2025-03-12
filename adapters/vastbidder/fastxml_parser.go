@@ -21,6 +21,10 @@ func newFastXMLParser() *fastXMLParser {
 	return &fastXMLParser{}
 }
 
+func (p *fastXMLParser) Name() string {
+	return openrtb_ext.XMLParserFastXML
+}
+
 func (p *fastXMLParser) SetVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 	p.vastTag = vastTag
 }

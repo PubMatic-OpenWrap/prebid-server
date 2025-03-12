@@ -675,10 +675,9 @@ type Debug struct {
 }
 
 type Server struct {
-	ExternalUrl              string
-	GvlID                    int
-	DataCenter               string
-	FastXMLEnabledPercentage int
+	ExternalUrl string
+	GvlID       int
+	DataCenter  string
 }
 
 func (server *Server) Empty() bool {

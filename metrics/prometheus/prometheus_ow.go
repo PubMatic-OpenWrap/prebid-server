@@ -64,6 +64,7 @@ type OWMetrics struct {
 	xmlParserResponseTime   *prometheus.HistogramVec
 	xmlParserMismatch       *prometheus.CounterVec
 	xmlParserProcessingTime *prometheus.HistogramVec
+	xmlParserError          *prometheus.CounterVec
 }
 
 func newHttpCounter(cfg config.PrometheusMetrics, registry *prometheus.Registry) prometheus.Counter {
@@ -252,6 +253,15 @@ func (m *OWMetrics) RecordXMLParserResponseTime(parser string, method string, pa
 	}).Observe(float64(respTime.Milliseconds()))
 }
 
+// RecordXMLParserError record xml parsing errors
+func (m *OWMetrics) RecordXMLParserError(parser string, method string, param string) {
+	m.xmlParserError.With(prometheus.Labels{
+		xmlParserLabel: parser,
+		methodLabel:    method,
+		paramLabel:     param,
+	}).Inc()
+}
+
 func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry) {
 	m.rejectedBids = newCounter(cfg, reg,
 		"rejected_bids",
@@ -354,4 +364,8 @@ func (m *OWMetrics) init(cfg config.PrometheusMetrics, reg *prometheus.Registry)
 		//10ms, 25ms, 50ms, 75ms, 100ms
 		[]float64{10, 25, 50, 75, 100})
 
+	m.xmlParserError = newCounter(cfg, reg,
+		"xml_parser_error",
+		"xml parsing error counts",
+		[]string{xmlParserLabel, methodLabel, paramLabel})
 }

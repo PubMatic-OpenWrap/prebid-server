@@ -65,3 +65,7 @@ func (me *Metrics) RecordXMLParserResponseMismatch(method string, param string, 
 // RecordXMLParserResponseTime records execution time for multiple parsers
 func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
 }
+
+// RecordXMLParserError records XML parsing errors
+func (me *Metrics) RecordXMLParserError(parser string, method string, param string) {
+}

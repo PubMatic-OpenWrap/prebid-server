@@ -1,6 +1,7 @@
 package vastbidder
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -54,6 +55,7 @@ func (handler *responseHandler) Validate() []error {
 
 	handler.parser.SetVASTTag(handler.vastTag)
 	if err := handler.parser.Parse(handler.response.Body); err != nil {
+		openrtb_ext.XMLLogf(openrtb_ext.XMLLogFormat, handler.parser.Name(), "vastbidder", base64.StdEncoding.EncodeToString(handler.response.Body))
 		return []error{err}
 	}
 	return nil

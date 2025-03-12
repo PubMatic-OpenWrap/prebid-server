@@ -74,3 +74,8 @@ func (me *MetricsEngineMock) RecordXMLParserResponseMismatch(method string, para
 func (me *MetricsEngineMock) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
 	me.Called(parser, method, param, respTime)
 }
+
+// RecordXMLParserError records xml parsing issue
+func (me *MetricsEngineMock) RecordXMLParserError(parser string, method string, param string) {
+	me.Called(parser, method, param)
+}
