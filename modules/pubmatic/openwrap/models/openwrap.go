@@ -39,7 +39,6 @@ type RequestCtx struct {
 	LoggerImpressionID string
 	ClientConfigFlag   int
 	TMax               int64
-	DerivedCountryCode string
 
 	//NYC_TODO: use enum?
 	IsTestRequest                     int8
@@ -150,15 +149,16 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 
 // DeviceCtx to cache device specific parameters
 type DeviceCtx struct {
-	DeviceIFA string
-	IFATypeID *DeviceIFAType
-	Platform  DevicePlatform
-	Ext       *ExtDevice
-	ID        string
-	Model     string
-	UA        string
-	Country   string
-	IP        string
+	DeviceIFA          string
+	IFATypeID          *DeviceIFAType
+	Platform           DevicePlatform
+	Ext                *ExtDevice
+	ID                 string
+	Model              string
+	UA                 string
+	Country            string
+	IP                 string
+	DerivedCountryCode string
 }
 
 type ImpCtx struct {

@@ -1477,7 +1477,7 @@ func TestGetIP(t *testing.T) {
 		want1 string
 	}{
 		{
-			name: "priority to rlnclient",
+			name: "priority_to_rlnclient",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1495,7 +1495,7 @@ func TestGetIP(t *testing.T) {
 			want1: RlnClientIP,
 		},
 		{
-			name: "priority to X-Device-Ip",
+			name: "priority_to_XDeviceIp",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1512,7 +1512,7 @@ func TestGetIP(t *testing.T) {
 			want1: XDeviceIP,
 		},
 		{
-			name: "priority to source_ip",
+			name: "priority_to_source_ip",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1527,7 +1527,7 @@ func TestGetIP(t *testing.T) {
 			want: "0.1.1.0",
 		},
 		{
-			name: "priority to clusterclient",
+			name: "priority_to_clusterclient",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1541,7 +1541,7 @@ func TestGetIP(t *testing.T) {
 			want: "0.1.0.0",
 		},
 		{
-			name: "priority to x-forwarded-for",
+			name: "priority_to_x-forwarded-for",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1554,7 +1554,7 @@ func TestGetIP(t *testing.T) {
 			want: "1.1.1.1",
 		},
 		{
-			name: "only remoteaddr",
+			name: "only_remoteaddr",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1565,7 +1565,7 @@ func TestGetIP(t *testing.T) {
 			want: "1.1.1.1",
 		},
 		{
-			name: "no headers but root level Remote Address present",
+			name: "no_headers_but_root_level_Remote_Address_present",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},
@@ -1576,7 +1576,7 @@ func TestGetIP(t *testing.T) {
 			want: "1.1.1.1",
 		},
 		{
-			name: "no headers but root level Remote Address present without port",
+			name: "no_headers_but_root_level_Remote_Address_present_without_port",
 			args: args{
 				in: httptest.NewRequest("GET", "http://example.com", nil),
 			},

@@ -546,9 +546,9 @@ func TestConstructTrackerURL(t *testing.T) {
 			name: "all_details_with_secure_enable_in_tracker",
 			args: args{
 				rctx: models.RequestCtx{
-					TrackerEndpoint:    "//t.pubmatic.com/wt",
-					Platform:           models.PLATFORM_DISPLAY,
-					DerivedCountryCode: "IN",
+					TrackerEndpoint: "//t.pubmatic.com/wt",
+					Platform:        models.PLATFORM_DISPLAY,
+					DeviceCtx:       models.DeviceCtx{DerivedCountryCode: "IN"},
 				},
 				tracker: models.Tracker{
 					PubID:             12345,

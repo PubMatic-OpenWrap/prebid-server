@@ -97,7 +97,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.UA = getUserAgent(payload.BidRequest, rCtx.DeviceCtx.UA)
 	rCtx.DeviceCtx.IP = getIP(payload.BidRequest, rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Country = getCountry(payload.BidRequest)
-	rCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)

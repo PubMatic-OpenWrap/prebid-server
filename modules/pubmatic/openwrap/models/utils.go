@@ -205,7 +205,6 @@ func GetIP(in *http.Request) string {
 		if ip := in.Header.Get(header); ip != "" {
 			// If multiple IPs are found, split and return the first one
 			ips := strings.Split(ip, ",")
-			glog.Infof("IP : %s", ips[0])
 			return ips[0]
 		}
 	}
@@ -213,7 +212,7 @@ func GetIP(in *http.Request) string {
 	// Fallback to parsing the RemoteAddr if no headers have an IP
 	ip, _, err := net.SplitHostPort(in.RemoteAddr)
 	if err != nil {
-		glog.Errorf("Parse IP failed: %s", in.RemoteAddr)
+		glog.Errorf("[GetIP] status:[invalid_ip] ip:[%s] error:[%s]", in.RemoteAddr, err)
 		return ""
 	}
 

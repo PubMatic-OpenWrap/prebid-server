@@ -206,8 +206,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_empty_platform",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "",
+					Platform: "",
 				},
 				bidRequest: nil,
 			},
@@ -217,8 +216,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_amp",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "amp",
+					Platform: "amp",
 				},
 				bidRequest: nil,
 			},
@@ -250,8 +248,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_in-app_with_device.os_android",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "in-app",
+					Platform: "in-app",
 				},
 				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
@@ -283,8 +280,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_mobile",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "display",
+					Platform: "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
@@ -294,8 +290,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_tablet",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "display",
+					Platform: "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceMobile, false, true),
 			},
@@ -305,8 +300,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_with_device.deviceType_for_desktop",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "display",
+					Platform: "display",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DevicePC, true, false),
 			},
@@ -327,8 +321,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_display_without_ua,_os_&_deviceType",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "display",
+					Platform: "display",
 				},
 				bidRequest: getORTBRequest("", "", 0, false, true),
 			},
@@ -338,9 +331,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_CTV",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
-					PubIDStr:  "5890",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceTV, true, false),
 			},
@@ -350,9 +342,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_connected_device",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
-					PubIDStr:  "5890",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceConnected, true, false),
 			},
@@ -362,9 +353,8 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_deviceType_as_set_top_box",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
-					PubIDStr:  "5890",
+					Platform: "video",
+					PubIDStr: "5890",
 				},
 				bidRequest: getORTBRequest("", "", adcom1.DeviceSetTopBox, false, true),
 			},
@@ -374,8 +364,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_nil_values",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
+					Platform: "video",
 				},
 				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
@@ -385,8 +374,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_site_entry",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
+					Platform: "video",
 				},
 				bidRequest: getORTBRequest("", "", 0, true, false),
 			},
@@ -430,8 +418,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_android_os",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
+					Platform: "video",
 				},
 				bidRequest: getORTBRequest("android", "", 0, false, true),
 			},
@@ -441,8 +428,7 @@ func TestGetDevicePlatform(t *testing.T) {
 			name: "Test_platform_video_with_app_entry_and_ios_os",
 			args: args{
 				rCtx: models.RequestCtx{
-					DeviceCtx: models.DeviceCtx{UA: ""},
-					Platform:  "video",
+					Platform: "video",
 				},
 				bidRequest: getORTBRequest("ios", "", 0, false, true),
 			},
