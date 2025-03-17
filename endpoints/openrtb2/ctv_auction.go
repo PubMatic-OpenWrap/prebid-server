@@ -148,7 +148,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	if errortypes.ContainsFatalError(errL) && writeError(errL, w, &deps.labels) {
 		return
 	}
-	if reqWrapper.RebuildRequestExt() != nil {
+	if reqWrapper.RebuildRequest() != nil {
 		return
 	}
 	request = reqWrapper.BidRequest
