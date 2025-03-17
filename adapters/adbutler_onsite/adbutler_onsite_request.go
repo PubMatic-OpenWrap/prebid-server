@@ -150,7 +150,6 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	adButlerReq.Ads = AdButler_Req_Ads
 
 	adButlerReq.Target = make(map[string]interface{})
-	adButlerReq.Reporting = make(map[string]interface{})
 
 	//Add Geo Targeting
 	if request.Device != nil && request.Device.Geo != nil {
@@ -178,8 +177,11 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		adButlerReq.Target[key] = targetObj.Value
 	}
 
-	for key, value := range requestExt.ReportingKeys {
-		adButlerReq.Reporting[key] = value
+	if len(requestExt.ReportingKeys) != 0 {
+		adButlerReq.Reporting = make(map[string]interface{})
+		for key, value := range requestExt.ReportingKeys {
+			adButlerReq.Reporting[key] = value
+		}
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence
