@@ -73,6 +73,7 @@ func GetInventoryAndAccountDetailsCMOnsite(requestExtCMOnsite *openrtb_ext.ExtRe
 			Message: "ZoneMapping not provided",
 		})
 	}
+
 	for key, value := range requestExtCMOnsite.ZoneMapping {
 		switch val := value.(type) {
 		case map[string]interface{}:

@@ -13,20 +13,21 @@ import (
 )
 
 type AdButlerOnsiteRequest struct {
-	ID          int                    `json:"ID,omitempty"`
-	Size        string                 `json:"size,omitempty"`
-	Type        string                 `json:"type,omitempty"`
-	Ads         string                 `json:"ads,omitempty"`
-	KeyWords    []string               `json:"kw,omitempty"`
-	ZoneIDs     []int                  `json:"zoneIDs,omitempty"`
-	Limit       map[int]int            `json:"limit,omitempty"`
-	Target      map[string]interface{} `json:"_abdk_json,omitempty"`
-	UserID      string                 `json:"adb_uid,omitempty"`
-	IP          string                 `json:"ip,omitempty"`
-	UserAgent   string                 `json:"ua,omitempty"`
-	Referrer    string                 `json:"referrer,omitempty"`
-	PageID		int			           `json:"pid,omitempty"`
-	Sequence    int			           `json:"place,omitempty"`
+	ID        int                    `json:"ID,omitempty"`
+	Size      string                 `json:"size,omitempty"`
+	Type      string                 `json:"type,omitempty"`
+	Ads       string                 `json:"ads,omitempty"`
+	KeyWords  []string               `json:"kw,omitempty"`
+	ZoneIDs   []int                  `json:"zoneIDs,omitempty"`
+	Limit     map[int]int            `json:"limit,omitempty"`
+	Target    map[string]interface{} `json:"_abdk_json,omitempty"`
+	Reporting map[string]interface{} `json:"_eld,omitempty"`
+	UserID    string                 `json:"adb_uid,omitempty"`
+	IP        string                 `json:"ip,omitempty"`
+	UserAgent string                 `json:"ua,omitempty"`
+	Referrer  string                 `json:"referrer,omitempty"`
+	PageID    int                    `json:"pid,omitempty"`
+	Sequence  int                    `json:"place,omitempty"`
 }
 
 // getSimpleHash generates a simple hash for a given page name
@@ -86,7 +87,7 @@ func isInventorySizeMatch(inventory openrtb_ext.CMOnsiteInventoryDetails, banner
 		return false
 	}
 
-	if(inventory.Width == 0 || inventory.Height == 0) {
+	if inventory.Width == 0 || inventory.Height == 0 {
 		return true
 	}
 
@@ -98,8 +99,7 @@ func isInventorySizeMatch(inventory openrtb_ext.CMOnsiteInventoryDetails, banner
 	return false
 }
 
-
-func getInventoryTypes( actualAdTypes string) []string {
+func getInventoryTypes(actualAdTypes string) []string {
 	// Split the actual ad types string into a slice of strings
 	actualAdTypesSlice := strings.Split(actualAdTypes, ",")
 
@@ -126,14 +126,14 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		}}
 	}
 
-	inventoryDetails, accountID, _:= adapters.GetInventoryAndAccountDetailsCMOnsite(requestExt)
-	
+	inventoryDetails, accountID, _ := adapters.GetInventoryAndAccountDetailsCMOnsite(requestExt)
+
 	if inventoryDetails == nil || accountID == "" {
 		return nil, []error{&errortypes.BadInput{
 			Message: "Missing inventory details or accountID details",
 		}}
 	}
-	
+
 	var adButlerReq AdButlerOnsiteRequest
 
 	// Convert accountID to an integer
@@ -149,7 +149,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	adButlerReq.Type = AdButler_Req_Type
 	adButlerReq.Ads = AdButler_Req_Ads
 
-    adButlerReq.Target = make(map[string]interface{})
+	adButlerReq.Target = make(map[string]interface{})
 
 	//Add Geo Targeting
 	if request.Device != nil && request.Device.Geo != nil {
@@ -177,6 +177,13 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		adButlerReq.Target[key] = targetObj.Value
 	}
 
+	if len(requestExt.ReportingKeys) != 0 {
+		adButlerReq.Reporting = make(map[string]interface{})
+		for key, value := range requestExt.ReportingKeys {
+			adButlerReq.Reporting[key] = value
+		}
+	}
+
 	adButlerReq.Sequence = requestExt.Sequence
 	adButlerReq.PageID = getSimpleHash(siteExt.Page)
 
@@ -184,13 +191,13 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	appendedZoneIDs := make(map[int]bool)
 	for _, imp := range request.Imp {
 		// Parse each imp element here
-		inventory ,ok := inventoryDetails[InventoryIDOnsite_Prefix + imp.TagID]
+		inventory, ok := inventoryDetails[InventoryIDOnsite_Prefix+imp.TagID]
 		if !ok {
 			continue
 		}
 		adButlerAdtypes := getInventoryTypes(inventory.Adtype)
 		isSizeMatch := isInventorySizeMatch(inventory, imp.Banner)
-		if(len(adButlerAdtypes) > 0 && isSizeMatch) {
+		if len(adButlerAdtypes) > 0 && isSizeMatch {
 			// Check if the ZoneID has already been appended
 			if !appendedZoneIDs[inventory.AdbulterZoneID] {
 				adButlerReq.ZoneIDs = append(adButlerReq.ZoneIDs, inventory.AdbulterZoneID)
@@ -201,14 +208,14 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 			}
 		}
 	}
-	
-	if(adButlerReq.ZoneIDs == nil || len(adButlerReq.ZoneIDs) == 0) {
+
+	if adButlerReq.ZoneIDs == nil || len(adButlerReq.ZoneIDs) == 0 {
 		return nil, []error{&errortypes.BidderFailedSchemaValidation{
 			Message: "No valid ZoneID's Present",
 		}}
 	}
 	adButlerReq.Limit = limitMap
-	
+
 	reqJSON, err := json.Marshal(adButlerReq)
 	if err != nil {
 		return nil, []error{err}
@@ -235,12 +242,3 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}}, nil
 
 }
-
-
-
-
-
-
-
-
-
