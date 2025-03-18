@@ -33,20 +33,6 @@ func (m *MockGeography) EXPECT() *MockGeographyMockRecorder {
 	return m.recorder
 }
 
-// InitGeoDBClient mocks base method
-func (m *MockGeography) InitGeoDBClient(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitGeoDBClient", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InitGeoDBClient indicates an expected call of InitGeoDBClient
-func (mr *MockGeographyMockRecorder) InitGeoDBClient(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGeoDBClient", reflect.TypeOf((*MockGeography)(nil).InitGeoDBClient), arg0)
-}
-
 // LookUp mocks base method
 func (m *MockGeography) LookUp(arg0 string) (*geodb.GeoInfo, error) {
 	m.ctrl.T.Helper()

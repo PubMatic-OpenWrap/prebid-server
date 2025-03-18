@@ -35,7 +35,10 @@ func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	}, nil
 }
 
-// InitGeoDBClient initialises the NetAcuity client
-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
-	return netacuity.InitNetacuityClient(dbPath)
+// NewNetAcuity initialises the NetAcuity client
+func NewNetAcuity(dbPath string) (*NetAcuity, error) {
+	if err := netacuity.InitNetacuityClient(dbPath); err != nil {
+		return nil, err
+	}
+	return &NetAcuity{}, nil
 }
