@@ -36,7 +36,7 @@ func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 }
 
 // NewNetAcuity initialises the NetAcuity client
-func NewNetAcuity(dbPath string) (*NetAcuity, error) {
+func NewNetacuity(dbPath string) (*NetAcuity, error) {
 	if err := netacuity.InitNetacuityClient(dbPath); err != nil {
 		return nil, err
 	}

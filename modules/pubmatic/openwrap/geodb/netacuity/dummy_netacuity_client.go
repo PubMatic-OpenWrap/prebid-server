@@ -11,8 +11,3 @@ type DummyNetAcuity struct{}
 func (geo DummyNetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	return &geodb.GeoInfo{}, nil
 }
-
-// InitGeoDBClient do nothing for non-linux platform
-func (geo DummyNetAcuity) InitGeoDBClient(dbPath string) error {
-	return nil
-}

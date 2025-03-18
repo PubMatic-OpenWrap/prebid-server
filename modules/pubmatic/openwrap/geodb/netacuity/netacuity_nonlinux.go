@@ -18,7 +18,7 @@ func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	return &geodb.GeoInfo{}, nil
 }
 
-// InitGeoDBClient do nothing for non-linux platform
-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
-	return nil
+// NewNetAcuity initialises the NetAcuity client
+func NewNetacuity(dbPath string) (*NetAcuity, error) {
+	return &NetAcuity{}, nil
 }
