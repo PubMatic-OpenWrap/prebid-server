@@ -9,9 +9,9 @@ import (
 
 	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v2/adapters"
-	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/adapters"
+	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 type Unwrap struct {

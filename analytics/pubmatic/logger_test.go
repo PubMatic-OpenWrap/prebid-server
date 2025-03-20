@@ -9,14 +9,14 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/analytics"
-	"github.com/prebid/prebid-server/v2/exchange"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -4291,7 +4291,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					RequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{
 							User: &openrtb2.User{
-								Ext: json.RawMessage(`{"consent": "any-random-consent-string"}`),
+								Consent: "any-random-consent-string",
 							},
 						},
 					},
@@ -4318,7 +4318,7 @@ func TestGetLogAuctionObjectAsURL(t *testing.T) {
 					RequestWrapper: &openrtb_ext.RequestWrapper{
 						BidRequest: &openrtb2.BidRequest{
 							Regs: &openrtb2.Regs{
-								Ext: json.RawMessage(`{"gdpr":1}`),
+								GDPR: openrtb2.Int8Ptr(1),
 							},
 						},
 					},

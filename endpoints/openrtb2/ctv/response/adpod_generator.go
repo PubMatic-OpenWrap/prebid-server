@@ -4,12 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/combination"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/util"
-	"github.com/prebid/prebid-server/v2/metrics"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/combination"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/util"
+	"github.com/prebid/prebid-server/v3/metrics"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 /********************* AdPodGenerator Functions *********************/

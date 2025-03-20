@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/metrics"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

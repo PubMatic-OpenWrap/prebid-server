@@ -5,7 +5,7 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 

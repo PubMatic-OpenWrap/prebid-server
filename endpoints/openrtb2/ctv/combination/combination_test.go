@@ -3,8 +3,8 @@ package combination
 import (
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
