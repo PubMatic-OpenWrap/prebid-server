@@ -11,22 +11,22 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters"
-	analyticsBuild "github.com/prebid/prebid-server/v2/analytics/build"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/errortypes"
-	"github.com/prebid/prebid-server/v2/exchange"
-	"github.com/prebid/prebid-server/v2/experiment/adscert"
-	"github.com/prebid/prebid-server/v2/floors"
-	"github.com/prebid/prebid-server/v2/hooks"
-	"github.com/prebid/prebid-server/v2/macros"
-	"github.com/prebid/prebid-server/v2/metrics"
-	metricsConfig "github.com/prebid/prebid-server/v2/metrics/config"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/ortb"
-	"github.com/prebid/prebid-server/v2/stored_requests"
-	"github.com/prebid/prebid-server/v2/stored_requests/backends/empty_fetcher"
+	"github.com/prebid/prebid-server/v3/adapters"
+	analyticsBuild "github.com/prebid/prebid-server/v3/analytics/build"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/errortypes"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/experiment/adscert"
+	"github.com/prebid/prebid-server/v3/floors"
+	"github.com/prebid/prebid-server/v3/hooks"
+	"github.com/prebid/prebid-server/v3/macros"
+	"github.com/prebid/prebid-server/v3/metrics"
+	metricsConfig "github.com/prebid/prebid-server/v3/metrics/config"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/ortb"
+	"github.com/prebid/prebid-server/v3/stored_requests"
+	"github.com/prebid/prebid-server/v3/stored_requests/backends/empty_fetcher"
 )
 
 type ctvtestCase struct {
@@ -42,26 +42,27 @@ type ctvtestCase struct {
 }
 
 type ctvtestConfigValues struct {
-	AccountRequired     bool                          `json:"accountRequired"`
-	AliasJSON           string                        `json:"aliases"`
-	BlacklistedApps     []string                      `json:"blacklistedApps"`
-	DisabledAdapters    []string                      `json:"disabledAdapters"`
-	CurrencyRates       map[string]map[string]float64 `json:"currencyRates"`
-	MockBidders         []ctvMockBidderHandler        `json:"mockBidders"`
-	RealParamsValidator bool                          `json:"realParamsValidator"`
-	AssertBidExt        bool                          `json:"assertbidext"`
+	AccountRequired     bool                           `json:"accountRequired"`
+	AliasJSON           string                         `json:"aliases"`
+	BlockedApps         []string                       `json:"blockedApps"`
+	DisabledAdapters    []string                       `json:"disabledAdapters"`
+	CurrencyRates       map[string]map[string]float64  `json:"currencyRates"`
+	MockBidders         []ctvMockBidderHandler         `json:"mockBidders"`
+	RealParamsValidator bool                           `json:"realParamsValidator"`
+	BidderInfos         map[string]bidderInfoOverrides `json:"bidderInfoOverrides"`
+	AssertBidExt        bool                           `json:"assertbidext"`
 }
 
-func (tc *ctvtestConfigValues) getBlacklistedAppMap() map[string]bool {
-	var blacklistedAppMap map[string]bool
+func (tc *ctvtestConfigValues) getBlockedAppsLookup() map[string]bool {
+	var blockedAppsLookup map[string]bool
 
-	if len(tc.BlacklistedApps) > 0 {
-		blacklistedAppMap = make(map[string]bool, len(tc.BlacklistedApps))
-		for _, app := range tc.BlacklistedApps {
-			blacklistedAppMap[app] = true
+	if len(tc.BlockedApps) > 0 {
+		blockedAppsLookup = make(map[string]bool, len(tc.BlockedApps))
+		for _, app := range tc.BlockedApps {
+			blockedAppsLookup[app] = true
 		}
 	}
-	return blacklistedAppMap
+	return blockedAppsLookup
 }
 
 type ctvMockBidderHandler struct {

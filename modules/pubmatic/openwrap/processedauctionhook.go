@@ -3,11 +3,11 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod/impressions"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/impressions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(

@@ -2,9 +2,9 @@ package cache
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adpodconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adpodconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 type Cache interface {

@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 const (

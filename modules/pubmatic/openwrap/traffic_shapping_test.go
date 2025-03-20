@@ -6,10 +6,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/magiconair/properties/assert"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
-	mock_geodb "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
+	mock_geodb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 func TestEvaluateBiddingCondition(t *testing.T) {

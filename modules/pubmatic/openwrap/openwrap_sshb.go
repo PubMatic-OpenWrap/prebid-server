@@ -3,12 +3,11 @@ package openwrap
 import (
 	"context"
 
-	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
-	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
+	cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature"
 )
 
 // GetConfig Temporary function to expose config to SSHB
@@ -45,11 +44,6 @@ func (ow *OpenWrap) SetMetricEngine(m metrics.MetricsEngine) {
 // GetFeature Temporary function to expose feature to SSHB
 func (ow *OpenWrap) GetFeature() publisherfeature.Feature {
 	return ow.pubFeatures
-}
-
-// GetGeoFetcher Temporary function to expose geoFetcher to SSHB
-func GetGeoFetcher() geodb.Geography {
-	return ow.geoInfoFetcher
 }
 
 // getVastUnwrapperEnable checks for Vast unwrp is enabled in given context
