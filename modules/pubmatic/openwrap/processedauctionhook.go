@@ -48,7 +48,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
 	}
 
-	ip := rctx.IP
+	ip := rctx.DeviceCtx.IP
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
 		if parp.Request != nil && parp.Request.BidRequest.Device != nil && (parp.Request.BidRequest.Device.IP == "" && parp.Request.BidRequest.Device.IPv6 == "") {

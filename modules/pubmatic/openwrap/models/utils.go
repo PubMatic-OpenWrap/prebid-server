@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -184,38 +185,37 @@ const (
 	ClusterClientIP = "X_CLUSTER_CLIENT_IP"
 	RemoteAddr      = "REMOTE_ADDR"
 	RlnClientIP     = "RLNCLIENTIPADDR"
+	XDeviceIP       = "X-Device-IP"
 )
 
+// List of IP header keys in priority order
+var ipHeaders = []string{
+	RlnClientIP,     // For API
+	XDeviceIP,       // HTTP_X-Device-IP
+	SourceIP,        // HTTP_SOURCE_IP
+	ClusterClientIP, // HTTP_X_CLUSTER_CLIENT_IP
+	XForwarded,      // HTTP_X_FORWARDED_IP
+	RemoteAddr,      // REMOTE_ADDR
+}
+
+// GetIP extracts IP considering precedence
 func GetIP(in *http.Request) string {
-	//The IP address priority is as follows:
-	//0. HTTP_RLNCLIENTIPADDR  //For API
-	//1. HTTP_X_FORWARDED_IP
-	//2. HTTP_X_CLUSTER_CLIENT_IP
-	//3. HTTP_SOURCE_IP
-	//4. REMOTE_ADDR
-	ip := in.Header.Get(RlnClientIP)
-	if ip == "" {
-		ip = in.Header.Get(SourceIP)
-		if ip == "" {
-			ip = in.Header.Get(ClusterClientIP)
-			if ip == "" {
-				ip = in.Header.Get(XForwarded)
-				if ip == "" {
-					//RemoteAddr parses the header REMOTE_ADDR
-					ip = in.Header.Get(RemoteAddr)
-					if ip == "" {
-						ip, _, _ = net.SplitHostPort(in.RemoteAddr)
-					}
-				}
-			}
+	// Iterate over the headers to find the first non-empty IP
+	for _, header := range ipHeaders {
+		if ip := in.Header.Get(header); ip != "" {
+			// If multiple IPs are found, split and return the first one
+			ips := strings.Split(ip, ",")
+			return ips[0]
 		}
 	}
-	ips := strings.Split(ip, ",")
-	if len(ips) != 0 {
-		return ips[0]
-	}
 
-	return ""
+	// Fallback to parsing the RemoteAddr if no headers have an IP
+	ip, _, err := net.SplitHostPort(in.RemoteAddr)
+	if err != nil {
+		glog.Errorf("[GetIP] status:[invalid_ip] ip:[%s] error:[%s]", in.RemoteAddr, err)
+		return ""
+	}
+	return ip
 }
 
 func Atof(value string, decimalplaces int) (float64, error) {

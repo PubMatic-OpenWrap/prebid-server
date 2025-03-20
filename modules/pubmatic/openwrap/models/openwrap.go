@@ -38,8 +38,6 @@ type RequestCtx struct {
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-	Country            string
-	IP                 string
 	TMax               int64
 
 	//NYC_TODO: use enum?
@@ -49,7 +47,6 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	UA              string
 	Cookies         string
 	UidCookie       *http.Cookie
 	KADUSERCookie   *http.Cookie
@@ -152,12 +149,16 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 
 // DeviceCtx to cache device specific parameters
 type DeviceCtx struct {
-	DeviceIFA string
-	IFATypeID *DeviceIFAType
-	Platform  DevicePlatform
-	Ext       *ExtDevice
-	ID        string
-	Model     string
+	DeviceIFA          string
+	IFATypeID          *DeviceIFAType
+	Platform           DevicePlatform
+	Ext                *ExtDevice
+	ID                 string
+	Model              string
+	UA                 string
+	Country            string
+	IP                 string
+	DerivedCountryCode string
 }
 
 type ImpCtx struct {
