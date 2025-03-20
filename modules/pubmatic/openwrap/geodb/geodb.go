@@ -23,7 +23,7 @@ type Geography interface {
 }
 
 // InitGeography initializes geoDBclient
-func InitGeography(g Geography) {
+func SetGeography(g Geography) {
 	g_geography = g
 }
 
