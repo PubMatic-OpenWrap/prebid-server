@@ -332,7 +332,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Data.PbAdslot = imp.TagID
 		}
 
-		var videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx
+		var videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {
 				if payload.BidRequest.App != nil && payload.BidRequest.App.Content != nil {
@@ -357,6 +357,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			//banner can not be disabled for AMP requests through adunit config
 			if rCtx.Endpoint != models.EndpointAMP {
 				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
+			}
+			// Do we need to check for endpoint here?
+			if rCtx.Endpoint == models.EndpointV25 {
+				nativeAdUnitCtx = adunitconfig.UpdateNativeObjectWithAdunitConfig(rCtx, imp, div)
 			}
 		}
 
@@ -384,7 +388,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		adUnitName := getAdunitName(imp.TagID, impExt)
 
 		// ignore adunit config status for native as it is not supported for native
-		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx) {
+		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx) {
 			disabledSlots++
 
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
@@ -620,6 +624,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.NonMapped = nonMapped
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
+		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
 
@@ -753,6 +758,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
+		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
 	}
 
@@ -1157,7 +1163,7 @@ func getValidLanguage(language string) string {
 	return language
 }
 
-func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUnitCtx) bool {
+func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx) bool {
 	videoEnabled := true
 	if imp.Video == nil || (videoAdUnitCtx.AppliedSlotAdUnitConfig != nil && videoAdUnitCtx.AppliedSlotAdUnitConfig.Video != nil &&
 		videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled != nil && !*videoAdUnitCtx.AppliedSlotAdUnitConfig.Video.Enabled) {
@@ -1171,7 +1177,8 @@ func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx models.AdUn
 	}
 
 	nativeEnabled := true
-	if imp.Native == nil {
+	if imp.Native == nil || (nativeAdUnitCtx.AppliedSlotAdUnitConfig != nil && nativeAdUnitCtx.AppliedSlotAdUnitConfig.Native != nil &&
+		nativeAdUnitCtx.AppliedSlotAdUnitConfig.Native.Enabled != nil && !*nativeAdUnitCtx.AppliedSlotAdUnitConfig.Native.Enabled) {
 		nativeEnabled = false
 	}
 
@@ -1456,4 +1463,34 @@ func extractItunesIdFromAppStoreUrl(url string) string {
 		}
 	}
 	return itunesID
+}
+
+func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+	if imp.Native == nil {
+		return
+	}
+
+	adUnitCfg := rCtx.ImpBidCtx[imp.ID].NativeAdUnitCtx.AppliedSlotAdUnitConfig
+	if adUnitCfg == nil {
+		return
+	}
+
+	impBidCtx := rCtx.ImpBidCtx[imp.ID]
+	imp.BidFloor, imp.BidFloorCur = getImpBidFloorParams(rCtx, adUnitCfg, imp, m.rateConvertor.Rates())
+	impBidCtx.BidFloor = imp.BidFloor
+	impBidCtx.BidFloorCur = imp.BidFloorCur
+	rCtx.ImpBidCtx[imp.ID] = impBidCtx
+
+	if adUnitCfg.Exp != nil {
+		imp.Exp = int64(*adUnitCfg.Exp)
+	}
+
+	if adUnitCfg.Native == nil {
+		return
+	}
+
+	if adUnitCfg.Native.Enabled != nil && !*adUnitCfg.Native.Enabled {
+		imp.Native = nil
+		return
+	}
 }

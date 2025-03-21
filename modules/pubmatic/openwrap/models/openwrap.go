@@ -184,6 +184,7 @@ type ImpCtx struct {
 	BidCtx            map[string]BidCtx
 	BannerAdUnitCtx   AdUnitCtx
 	VideoAdUnitCtx    AdUnitCtx
+	NativeAdUnitCtx   AdUnitCtx
 
 	//temp
 	BidderError string
