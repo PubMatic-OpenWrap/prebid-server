@@ -102,6 +102,10 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 		slotConfig.Video = defaultConfig.Video
 	}
 
+	if slotConfig.Native == nil {
+		slotConfig.Native = defaultConfig.Native
+	}
+
 	if slotConfig.Floors == nil {
 		slotConfig.Floors = defaultConfig.Floors
 	}
