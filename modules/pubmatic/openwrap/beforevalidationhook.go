@@ -102,6 +102,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
+	rCtx.HostName = m.cfg.Server.HostName
+
 	if rCtx.IsCTVRequest {
 		m.metricEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
 	}
@@ -358,7 +360,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if rCtx.Endpoint != models.EndpointAMP {
 				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 			}
-			// Do we need to check for endpoint here?
+
 			if rCtx.Endpoint == models.EndpointV25 {
 				nativeAdUnitCtx = adunitconfig.UpdateNativeObjectWithAdunitConfig(rCtx, imp, div)
 			}
@@ -387,7 +389,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		slotName := getSlotName(imp.TagID, impExt)
 		adUnitName := getAdunitName(imp.TagID, impExt)
 
-		// ignore adunit config status for native as it is not supported for native
 		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx) {
 			disabledSlots++
 
@@ -1470,7 +1471,11 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		return
 	}
 
-	adUnitCfg := rCtx.ImpBidCtx[imp.ID].NativeAdUnitCtx.AppliedSlotAdUnitConfig
+	impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+	if !ok {
+		return
+	}
+	adUnitCfg := impCtx.NativeAdUnitCtx.AppliedSlotAdUnitConfig
 	if adUnitCfg == nil {
 		return
 	}

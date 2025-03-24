@@ -7959,13 +7959,12 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 		imp  *openrtb2.Imp
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  *openrtb2.Imp
-		setup func()
+		name string
+		args args
+		want *openrtb2.Imp
 	}{
 		{
-			name: "native_ad_unit_config_is _il",
+			name: "native_ad_unit_config_is _nil",
 			args: args{
 				rCtx: models.RequestCtx{
 					ImpBidCtx: map[string]models.ImpCtx{
@@ -7985,7 +7984,6 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 				ID:     "imp1",
 				Native: &openrtb2.Native{},
 			},
-			setup: func() {},
 		},
 		{
 			name: "native_ad_unit_config_is_disabled",
@@ -8011,7 +8009,6 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 			want: &openrtb2.Imp{
 				ID: "imp1",
 			},
-			setup: func() {},
 		},
 		{
 			name: "native_ad_unit_config_is_enabled",
@@ -8038,7 +8035,6 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 				ID:     "imp1",
 				Native: &openrtb2.Native{},
 			},
-			setup: func() {},
 		},
 		{
 			name: "native_ad_unit_config_with_bid_floor",
@@ -8050,9 +8046,7 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
 									BidFloor:    ptrutil.ToPtr(1.5),
 									BidFloorCur: ptrutil.ToPtr("USD"),
-									Native: &adunitconfig.Native{
-										Enabled: ptrutil.ToPtr(true),
-									},
+									Native:      &adunitconfig.Native{},
 								},
 							},
 						},
@@ -8069,7 +8063,6 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 				BidFloor:    1.5,
 				BidFloorCur: "USD",
 			},
-			setup: func() {},
 		},
 		{
 			name: "native_ad_unit_config_with_expiration",
@@ -8098,12 +8091,10 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 				Native: &openrtb2.Native{},
 				Exp:    30,
 			},
-			setup: func() {},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
 			m := OpenWrap{
 				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
 				cache:         mockCache,
