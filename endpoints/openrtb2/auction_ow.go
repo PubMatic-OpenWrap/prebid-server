@@ -56,6 +56,15 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		return
 	}
 
+	if rCtx.WakandaDebug.IsEnable() {
+		http := rCtx.ResponseExt.Debug.HttpCalls
+		bytes, err := json.Marshal(http)
+		if err != nil {
+			glog.Errorf("Failed to marshal ao.Response while setting wakanda object err: %s", err.Error())
+		}
+		rCtx.WakandaDebug.SetHttpCalls(bytes)
+	}
+
 	//Send owlogger in response only in case of debug mode
 	if rCtx.Debug && !rCtx.LoggerDisabled {
 		var orignalMaxBidResponse *openrtb2.BidResponse
