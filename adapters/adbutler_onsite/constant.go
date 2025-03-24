@@ -24,6 +24,8 @@ const (
 	CLICK_KEY      = "tps_clkurl="
 	VIEW_KEY       = "tps_vwurl="
 	CreativeId_KEY = "tp_crid="
+	CampaignId_KEY = "tp_cid="
 
 	Pattern_Click_URL = `href="(https?://[^\s]+/redirect\.spark\?[^"]+)"`
 )
+

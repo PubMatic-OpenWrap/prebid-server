@@ -57,6 +57,20 @@ type AdSet struct {
 
 type AdButlerOnsiteResponse map[string]AdSet
 
+
+func getCampaignId(response string) string {
+
+	// Regular expression to find the banner ID
+	re := regexp.MustCompile(`CID=(\d+)`)
+	matches := re.FindStringSubmatch(response)
+	bannerID := ""
+	if len(matches) > 1 {
+		// The banner ID is in the second element of matches
+		bannerID = matches[1]
+	}
+	return bannerID
+}
+
 func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 
 	var errors []error
@@ -158,8 +172,10 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 
 			var nURL, viewURL, clickURL, creativeURL string
 
-			creativeURL = CreativeId_KEY + adButlerBid.BannerID
-
+			campaignId := getCampaignId(adButlerBid.ViewableURL)
+			
+			creativeURL = CreativeId_KEY + adButlerBid.BannerID + Ampersand + CampaignId_KEY + campaignId
+		
 			if adButlerBid.EligibleURL != "" {
 				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
 			} else if adButlerBid.AccupixelURL != "" {
@@ -284,3 +300,4 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
