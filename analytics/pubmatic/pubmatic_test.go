@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/analytics"
-	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -274,7 +274,7 @@ func TestLogAuctionObject(t *testing.T) {
 					PrebidHTTPResponse: nil,
 					OpenRTB:            &openrtb2.BidRequest{},
 					WinningBid:         false,
-					Logger:             json.RawMessage(`{"pubid":5890,"pid":"1234","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk"}`),
+					Logger:             json.RawMessage(`{"pubid":5890,"pid":"1234","pdvid":"0","sl":1,"dvc":{},"ft":0,"it":"sdk","geo":{}}`),
 				},
 				Config: wakanda.Wakanda{
 					SFTP: wakanda.SFTP{
@@ -378,7 +378,7 @@ func TestLogAuctionObject(t *testing.T) {
 			rctx = tt.ao.HookExecutionOutcome[0].Groups[0].InvocationResults[0].AnalyticsTags.Activities[0].Results[0].Values["request-ctx"].(*models.RequestCtx)
 		}
 		if rctx != nil {
-			assert.Equal(t, rctx.WakandaDebug, tt.wantWakanda)
+			assert.Equal(t, tt.wantWakanda, rctx.WakandaDebug, tt.name)
 		}
 	}
 }

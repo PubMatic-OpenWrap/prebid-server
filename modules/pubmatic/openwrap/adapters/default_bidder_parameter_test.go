@@ -111,7 +111,7 @@ func TestGetType(t *testing.T) {
 
 func TestParseBidderParams(t *testing.T) {
 	parseBidderParams("../../static/bidder-params")
-	assert.Equal(t, 183, len(adapterParams), "Length of expected entries should match")
+	assert.Equal(t, 198, len(adapterParams), "Length of expected entries should match")
 	// calculate this number using X-Y
 	// where X is calculated using command - `ls -l | wc -l` (substract 1 from result)
 	// Y is calculated using command `grep -EinR 'oneof|not|anyof|dependenc' static/bidder-params | grep -v "description" | grep -oE './.*.json'  | uniq | wc -l`
@@ -119,7 +119,7 @@ func TestParseBidderParams(t *testing.T) {
 
 func TestParseBidderSchemaDefinitions(t *testing.T) {
 	schemaDefinitions, _ := parseBidderSchemaDefinitions("../../../../static/bidder-params")
-	assert.Equal(t, 227, len(schemaDefinitions), "Length of expected entries should match")
+	assert.Equal(t, 243, len(schemaDefinitions), "Length of expected entries should match")
 	// calculate this number using command - `ls -l | wc -l` (substract 1 from result)
 }
 

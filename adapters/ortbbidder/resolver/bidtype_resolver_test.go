@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -234,7 +234,7 @@ func TestBidTypeResolverAutoDetect(t *testing.T) {
 			{
 				name: "Auto detect with Video Adm",
 				bid: map[string]any{
-					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 				},
 				expectedValue: openrtb_ext.BidTypeVideo,
 				expectedError: false,
@@ -363,7 +363,7 @@ func TestGetMediaTypeFromAdm(t *testing.T) {
 	}{
 		{
 			name:     "Video Adm",
-			adm:      "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+			adm:      "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 			expected: openrtb_ext.BidTypeVideo,
 		},
 		{

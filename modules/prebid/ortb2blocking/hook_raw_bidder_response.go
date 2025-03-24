@@ -7,9 +7,9 @@ import (
 
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 )
 
 func handleRawBidderResponseHook(
@@ -78,7 +78,7 @@ func handleRawBidderResponseHook(
 
 	changeSet := hookstage.ChangeSet[hookstage.RawBidderResponsePayload]{}
 	if len(payload.BidderResponse.Bids) != len(allowedBids) {
-		changeSet.RawBidderResponse().Bids().Update(allowedBids)
+		changeSet.RawBidderResponse().Bids().UpdateBids(allowedBids)
 		result.ChangeSet = changeSet
 	}
 

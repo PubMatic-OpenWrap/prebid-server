@@ -8,14 +8,14 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/ortb"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/usersync"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/usersync"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 type RequestCtx struct {
@@ -38,8 +38,6 @@ type RequestCtx struct {
 	Platform           string
 	LoggerImpressionID string
 	ClientConfigFlag   int
-	Country            string
-	IP                 string
 	TMax               int64
 
 	//NYC_TODO: use enum?
@@ -49,7 +47,6 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	UA              string
 	Cookies         string
 	UidCookie       *http.Cookie
 	KADUSERCookie   *http.Cookie
@@ -95,6 +92,7 @@ type RequestCtx struct {
 	Endpoint                        string
 	PubIDStr, ProfileIDStr          string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine                   metrics.MetricsEngine
+	HostName                        string
 	ReturnAllBidStatus              bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 	Sshb                            string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
 	DCName                          string
@@ -152,17 +150,23 @@ func (r RequestCtx) GetVersionLevelKey(key string) string {
 
 // DeviceCtx to cache device specific parameters
 type DeviceCtx struct {
-	DeviceIFA string
-	IFATypeID *DeviceIFAType
-	Platform  DevicePlatform
-	Ext       *ExtDevice
-	ID        string
-	Model     string
+	DeviceIFA          string
+	IFATypeID          *DeviceIFAType
+	Platform           DevicePlatform
+	Ext                *ExtDevice
+	ID                 string
+	Model              string
+	UA                 string
+	Country            string
+	IP                 string
+	DerivedCountryCode string
 }
 
 type ImpCtx struct {
 	ImpID             string
 	TagID             string
+	DisplayManager    string
+	DisplayManagerVer string
 	Div               string
 	SlotName          string
 	AdUnitName        string

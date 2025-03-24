@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/xeipuuv/gojsonschema"
 )

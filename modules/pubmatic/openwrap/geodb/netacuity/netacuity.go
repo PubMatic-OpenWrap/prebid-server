@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"git.pubmatic.com/PubMatic/go-netacuity-client"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
 )
 
 type NetAcuity struct{}
@@ -35,7 +35,10 @@ func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	}, nil
 }
 
-// InitGeoDBClient initialises the NetAcuity client
-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
-	return netacuity.InitNetacuityClient(dbPath)
+// NewNetAcuity initialises the NetAcuity client
+func NewNetacuity(dbPath string) (*NetAcuity, error) {
+	if err := netacuity.InitNetacuityClient(dbPath); err != nil {
+		return nil, err
+	}
+	return &NetAcuity{}, nil
 }

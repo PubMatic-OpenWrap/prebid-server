@@ -12,6 +12,7 @@ import (
 func UpdateNativeObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp, div string) (adUnitCtx models.AdUnitCtx) {
 	defer func() {
 		if r := recover(); r != nil {
+			rCtx.MetricsEngine.RecordOpenWrapServerPanicStats(rCtx.HostName, "UpdateNativeObjectWithAdunitConfig")
 			glog.Error(string(debug.Stack()))
 		}
 	}()

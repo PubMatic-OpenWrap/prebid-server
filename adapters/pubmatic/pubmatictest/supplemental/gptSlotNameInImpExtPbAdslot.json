@@ -101,11 +101,6 @@
               "profile": 5123,
               "version": 1,
               "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
-            },
-            "prebid": {
-              "bidderparams": {
-                "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
-              }
             }
           }
         },

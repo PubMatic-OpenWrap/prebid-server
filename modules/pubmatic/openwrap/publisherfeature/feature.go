@@ -1,6 +1,6 @@
 package publisherfeature
 
-import "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+import "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 
 type Feature interface {
 	IsFscApplicable(pubId int, seat string, dspId int) bool

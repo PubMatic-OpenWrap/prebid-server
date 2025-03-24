@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -221,12 +221,12 @@ func TestResolveTypeBid(t *testing.T) {
 			name: "fail to detect from location, fallback to Auto detect",
 			bid: map[string]any{
 				"id":  "123",
-				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 			},
 			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
-					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 				},
 			},
 			bidderResponse: map[string]any{
@@ -237,7 +237,7 @@ func TestResolveTypeBid(t *testing.T) {
 						"bid": []any{
 							map[string]any{
 								"id":  "123",
-								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 							},
 						},
 					},
@@ -248,7 +248,7 @@ func TestResolveTypeBid(t *testing.T) {
 			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
-					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 				},
 				"BidType": openrtb_ext.BidType("video"),
 			},
@@ -261,12 +261,12 @@ func TestResolveTypeBid(t *testing.T) {
 			name: "Auto detect",
 			bid: map[string]any{
 				"id":  "123",
-				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+				"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 			},
 			typeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
-					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 				},
 			},
 			bidderResponse: map[string]any{
@@ -276,7 +276,7 @@ func TestResolveTypeBid(t *testing.T) {
 						"bid": []any{
 							map[string]any{
 								"id":  "123",
-								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+								"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 							},
 						},
 					},
@@ -287,7 +287,7 @@ func TestResolveTypeBid(t *testing.T) {
 			expectedTypeBid: map[string]any{
 				"Bid": map[string]any{
 					"id":  "123",
-					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI>",
+					"adm": "<VAST version=\"3.0\"><Ad><Wrapper><VASTAdTagURI></VAST>",
 				},
 				"BidType": openrtb_ext.BidType("video"),
 			},

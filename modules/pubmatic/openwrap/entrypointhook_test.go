@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
-	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	mock_feature "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,7 +72,8 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
 					"rctx": models.RequestCtx{
-						Sshb: "1",
+						Sshb:      "1",
+						DeviceCtx: models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 					},
 				},
 			},
@@ -116,8 +117,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						DisplayVersionID:          1,
 						SSAuction:                 -1,
 						Debug:                     true,
-						UA:                        "go-test",
-						IP:                        "127.0.0.1",
+						DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:              false,
 						TrackerEndpoint:           "t.pubmatic.com",
 						VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
@@ -184,8 +184,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						DisplayVersionID:                1,
 						SSAuction:                       -1,
 						Debug:                           true,
-						UA:                              "go-test",
-						IP:                              "127.0.0.1",
+						DeviceCtx:                       models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:                    false,
 						TrackerEndpoint:                 "t.pubmatic.com",
 						VideoErrorTrackerEndpoint:       "t.pubmatic.com/error",
@@ -270,8 +269,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						DisplayVersionID: 1,
 						SSAuction:        -1,
 						Debug:            true,
-						UA:               "go-test",
-						IP:               "127.0.0.1",
+						DeviceCtx:        models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:     false,
 						UidCookie: &http.Cookie{
 							Name:  "uids",
@@ -332,8 +330,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						DisplayVersionID: 1,
 						SSAuction:        -1,
 						Debug:            true,
-						UA:               "go-test",
-						IP:               "127.0.0.1",
+						DeviceCtx:        models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:     false,
 						UidCookie: &http.Cookie{
 							Name:  "uids",
@@ -494,8 +491,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						DisplayVersionID:          1,
 						SSAuction:                 -1,
 						Debug:                     true,
-						UA:                        "go-test",
-						IP:                        "127.0.0.1",
+						DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:              false,
 						TrackerEndpoint:           "t.pubmatic.com",
 						VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
@@ -569,8 +565,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						SSAuction:                 -1,
 						ClientConfigFlag:          1,
 						Debug:                     true,
-						UA:                        "go-test",
-						IP:                        "127.0.0.1",
+						DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:              false,
 						TrackerEndpoint:           "t.pubmatic.com",
 						VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
@@ -655,8 +650,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						SSAuction:                 -1,
 						ClientConfigFlag:          1,
 						Debug:                     true,
-						UA:                        "go-test",
-						IP:                        "127.0.0.1",
+						DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 						IsCTVRequest:              false,
 						TrackerEndpoint:           "t.pubmatic.com",
 						VideoErrorTrackerEndpoint: "t.pubmatic.com/error",

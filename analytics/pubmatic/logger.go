@@ -10,14 +10,14 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/analytics"
-	"github.com/prebid/prebid-server/v2/exchange"
-	"github.com/prebid/prebid-server/v2/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -61,6 +61,10 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		},
 	}
 
+	if len(rCtx.DeviceCtx.DerivedCountryCode) > 0 {
+		wlog.Geo.CountryCode = rCtx.DeviceCtx.DerivedCountryCode
+	}
+
 	wlog.logProfileMetaData(rCtx)
 
 	wlog.logIntegrationType(rCtx.Endpoint)
@@ -68,17 +72,11 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 	wlog.logDeviceObject(&rCtx.DeviceCtx)
 
 	if ao.RequestWrapper.User != nil {
-		extUser := openrtb_ext.ExtUser{}
-		_ = json.Unmarshal(ao.RequestWrapper.User.Ext, &extUser)
-		wlog.ConsentString = extUser.Consent
+		wlog.ConsentString = ao.RequestWrapper.User.Consent
 	}
 
-	if ao.RequestWrapper.Regs != nil {
-		extReg := openrtb_ext.ExtRegs{}
-		_ = json.Unmarshal(ao.RequestWrapper.Regs.Ext, &extReg)
-		if extReg.GDPR != nil {
-			wlog.GDPR = *extReg.GDPR
-		}
+	if ao.RequestWrapper.Regs != nil && ao.RequestWrapper.Regs.GDPR != nil {
+		wlog.GDPR = *ao.RequestWrapper.Regs.GDPR
 	}
 
 	if ao.RequestWrapper.Site != nil {
@@ -116,14 +114,16 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
 			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
+			DisplayManager:    impCtx.DisplayManager,
+			DisplayManagerVer: impCtx.DisplayManagerVer,
 		})
 	}
 
 	wlog.Slots = slots
 
 	headers := http.Header{
-		models.USER_AGENT_HEADER: []string{rCtx.UA},
-		models.IP_HEADER:         []string{rCtx.IP},
+		models.USER_AGENT_HEADER: []string{rCtx.DeviceCtx.UA},
+		models.IP_HEADER:         []string{rCtx.DeviceCtx.IP},
 	}
 
 	// first set the floor type from bidrequest.ext

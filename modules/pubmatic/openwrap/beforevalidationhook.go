@@ -16,21 +16,21 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/floors"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/floors"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -94,12 +94,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
-	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
-	rCtx.Country = getCountry(payload.BidRequest)
+	rCtx.DeviceCtx.UA = getUserAgent(payload.BidRequest, rCtx.DeviceCtx.UA)
+	rCtx.DeviceCtx.IP = getIP(payload.BidRequest, rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.Country = getCountry(payload.BidRequest)
+	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
+
+	rCtx.HostName = m.cfg.Server.HostName
 
 	if rCtx.IsCTVRequest {
 		m.metricEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
@@ -287,6 +290,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			return result, nil
 		}
 	}
+	displaymanager, displaymanagerVer := getDisplayManagerAndVer(payload.BidRequest.App)
 
 	aliasgvlids := make(map[string]uint16)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
@@ -356,7 +360,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if rCtx.Endpoint != models.EndpointAMP {
 				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
 			}
-			// Do we need to check for endpoint here?
 			if rCtx.Endpoint == models.EndpointV25 {
 				nativeAdUnitCtx = adunitconfig.UpdateNativeObjectWithAdunitConfig(rCtx, imp, div)
 			}
@@ -385,7 +388,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		slotName := getSlotName(imp.TagID, impExt)
 		adUnitName := getAdunitName(imp.TagID, impExt)
 
-		// ignore adunit config status for native as it is not supported for native
 		if !isSlotEnabled(imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx) {
 			disabledSlots++
 
@@ -585,6 +587,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
 
+		if imp.DisplayManager != "" {
+			displaymanager = imp.DisplayManager
+		}
+		if imp.DisplayManagerVer != "" {
+			displaymanagerVer = imp.DisplayManagerVer
+		}
 		// cache the details for further processing
 		if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
 			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
@@ -606,6 +614,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				SlotName:          slotName,
 				AdUnitName:        adUnitName,
 				AdserverURL:       adserverURL,
+				DisplayManager:    displaymanager,
+				DisplayManagerVer: displaymanagerVer,
 			}
 		}
 
@@ -756,7 +766,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-	bidRequest.Device.IP = rctx.IP
+	bidRequest.Device.IP = rctx.DeviceCtx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 
@@ -1460,7 +1470,11 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		return
 	}
 
-	adUnitCfg := rCtx.ImpBidCtx[imp.ID].NativeAdUnitCtx.AppliedSlotAdUnitConfig
+	impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+	if !ok {
+		return
+	}
+	adUnitCfg := impCtx.NativeAdUnitCtx.AppliedSlotAdUnitConfig
 	if adUnitCfg == nil {
 		return
 	}

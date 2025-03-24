@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/exchange"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 )
 
 // pubmatic's KGP details per impression
@@ -159,6 +159,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				if impCtx.AdpodConfig != nil {
 					tracker.AdPodSlot = models.AdPodEnabled
 				}
+				tracker.DisplayManager = impCtx.DisplayManager
+				tracker.DisplayManagerVer = impCtx.DisplayManagerVer
 			}
 
 			if seatBid.Seat == "pubmatic" {
@@ -317,6 +319,16 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
 		v.Set(models.TRKAppSubIntegrationPath, strconv.Itoa(*rctx.AppSubIntegrationPath))
+	}
+
+	if len(tracker.DisplayManager) > 0 {
+		v.Set(models.TRKDisplayManager, tracker.DisplayManager)
+	}
+	if len(tracker.DisplayManagerVer) > 0 {
+		v.Set(models.TRKDisplayManagerVer, tracker.DisplayManagerVer)
+	}
+	if len(rctx.DeviceCtx.DerivedCountryCode) > 0 {
+		v.Set(models.TRKCountryCode, rctx.DeviceCtx.DerivedCountryCode)
 	}
 
 	queryString := v.Encode()

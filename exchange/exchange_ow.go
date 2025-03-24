@@ -15,18 +15,18 @@ import (
 	unwraptest "git.pubmatic.com/vastunwrap/unwrap/testsuite"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/errortypes"
-	"github.com/prebid/prebid-server/v2/exchange/entities"
-	"github.com/prebid/prebid-server/v2/metrics"
-	pubmaticstats "github.com/prebid/prebid-server/v2/metrics/pubmatic_stats"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/ortb"
-	"github.com/prebid/prebid-server/v2/util/jsonutil"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/errortypes"
+	"github.com/prebid/prebid-server/v3/exchange/entities"
+	"github.com/prebid/prebid-server/v3/metrics"
+	pubmaticstats "github.com/prebid/prebid-server/v3/metrics/pubmatic_stats"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/ortb"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -196,10 +196,6 @@ func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmo
 		IsRespMismatch:    etreeResponse != fastxmlResponse,
 	}
 
-	openrtb_ext.FastXMLLogf("[XML_PARSER_TEST] method:[%v] wrapper_count:[%v] etree:[%s] fastxml:[%s] diff:[%s]",
-		"unwrap_log", etreeResp.WrapperCount, ctx.FastXMLTestCtx.ETreeStats.String(), ctx.FastXMLTestCtx.FastXMLStats.String(),
-		ctx.FastXMLTestCtx.ETreeStats.Diff(ctx.FastXMLTestCtx.FastXMLStats).String())
-
 	if fastxmlMetrics.IsRespMismatch {
 		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
 	}
@@ -230,7 +226,7 @@ func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[open
 	}
 }
 
-func recordOpenWrapBidResponseMetrics(bidder *bidderAdapter, bidResponse *adapters.BidderResponse) {
+func recordOpenWrapBidResponseMetrics(bidder *BidderAdapter, bidResponse *adapters.BidderResponse) {
 	if bidResponse == nil {
 		return
 	}

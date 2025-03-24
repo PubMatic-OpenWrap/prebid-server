@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 )
 
 func enrichRequestBody(r *http.Request) error {

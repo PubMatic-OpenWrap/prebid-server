@@ -2,9 +2,9 @@ package adunitconfig
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 // TODO use this
@@ -100,6 +100,10 @@ func getFinalSlotAdUnitConfig(slotConfig, defaultConfig *adunitconfig.AdConfig) 
 
 	if slotConfig.Video == nil {
 		slotConfig.Video = defaultConfig.Video
+	}
+
+	if slotConfig.Native == nil {
+		slotConfig.Native = defaultConfig.Native
 	}
 
 	if slotConfig.Floors == nil {

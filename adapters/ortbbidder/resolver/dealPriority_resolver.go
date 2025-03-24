@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
 )
 
 // bidDealPriorityResolver retrieves the priority of the deal bid using the bidder param location.
