@@ -39,7 +39,7 @@ func UpdateNativeObjectWithAdunitConfig(rCtx models.RequestCtx, imp openrtb2.Imp
 		}
 	}
 
-	adUnitCtx.SelectedSlotAdUnitConfig, adUnitCtx.MatchedSlot, adUnitCtx.IsRegex, adUnitCtx.MatchedRegex = selectSlot(rCtx, 0, 0, imp.TagID, div, rCtx.Source)
+	adUnitCtx.SelectedSlotAdUnitConfig, adUnitCtx.MatchedSlot, adUnitCtx.IsRegex, adUnitCtx.MatchedRegex = selectSlot(rCtx, 1, 1, imp.TagID, div, rCtx.Source)
 	if adUnitCtx.SelectedSlotAdUnitConfig != nil && adUnitCtx.SelectedSlotAdUnitConfig.Native != nil {
 		adUnitCtx.UsingDefaultConfig = false
 

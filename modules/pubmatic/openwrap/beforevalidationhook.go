@@ -679,12 +679,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
 
-	if rCtx.Debug {
-		newImp, _ := json.Marshal(rCtx.ImpBidCtx)
-		result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
-		newReqExt, _ := json.Marshal(rCtx.NewReqExt)
-		result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
-	}
+	// if rCtx.Debug {
+	// 	newImp, _ := json.Marshal(rCtx.ImpBidCtx)
+	// 	result.DebugMessages = append(result.DebugMessages, "new imp: "+string(newImp))
+	// 	newReqExt, _ := json.Marshal(rCtx.NewReqExt)
+	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
+	// }
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
