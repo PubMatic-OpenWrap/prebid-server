@@ -237,19 +237,18 @@ func getADM(adButlerBid *Placement, width int, height int) (string, openrtb2.Mar
 
 	if adButlerBid.ImageURL != "" {
 		if(adButlerBid.Target != "") {
-			result := ""
+			result := strings.Replace(IMAGE_URL_TEMPLATE_TARGET, "REDIRECT_TARGET", adButlerBid.Target, 1)
+			result = fmt.Sprintf(result, adButlerBid.ImageURL)
 			if width == 0 && height == 0  {
-				result = strings.Replace(IMAGE_URL_TEMPLATE_TARGET_0x0, "REDIRECT_TARGET", adButlerBid.Target, 1)
-			} else {
-				result = strings.Replace(IMAGE_URL_TEMPLATE_TARGET, "REDIRECT_TARGET", adButlerBid.Target, 1)
-			}
-			return fmt.Sprintf(result, adButlerBid.ImageURL), openrtb2.MarkupBanner
+				result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
+			} 
+			return result, openrtb2.MarkupBanner
 		}
+		result := fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.ImageURL)
 		if width == 0 && height == 0  {
-			return fmt.Sprintf(IMAGE_URL_TEMPLATE_0x0, adButlerBid.ImageURL), openrtb2.MarkupBanner
-		} else {
-			return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.ImageURL), openrtb2.MarkupBanner
-		}
+			result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
+		} 
+		return result, openrtb2.MarkupBanner
 	} 
 
 	return "", MarkupInvalid
@@ -320,6 +319,7 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
+
 
 
 
