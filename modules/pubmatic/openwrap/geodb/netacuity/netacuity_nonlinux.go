@@ -8,7 +8,7 @@
 package netacuity
 
 import (
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
 )
 
 type NetAcuity struct{}
@@ -18,7 +18,7 @@ func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
 	return &geodb.GeoInfo{}, nil
 }
 
-// InitGeoDBClient do nothing for non-linux platform
-func (geo NetAcuity) InitGeoDBClient(dbPath string) error {
-	return nil
+// NewNetAcuity initialises the NetAcuity client
+func NewNetacuity(dbPath string) (*NetAcuity, error) {
+	return &NetAcuity{}, nil
 }

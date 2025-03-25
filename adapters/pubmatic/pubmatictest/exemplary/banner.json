@@ -46,9 +46,8 @@
 		    	  "publisher": {
 			        	"id": "1234"
 		      	}
-          }
-     },
-  
+		      }
+     }, 
     "httpCalls": [
       {
         "expectedRequest": {
@@ -91,13 +90,7 @@
                     "version":1,
                     "wiid" : "dwzafakjflan-tygannnvlla-mlljvj"
                 },
-                "acat": ["drg","dlu","ssr"],
-                "prebid": {
-                  "bidderparams": {
-                    "acat": ["drg","dlu","ssr"],
-                    "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
-                  }
-                }
+                "acat": ["drg","dlu","ssr"]
             }
           },
           "impIDs":["test-imp-id"]

@@ -1,8 +1,8 @@
 package exchange
 
 import (
-	"github.com/prebid/prebid-server/v2/config"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/config"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // floorsEnabled will return true if floors are enabled in both account and request level

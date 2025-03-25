@@ -147,12 +147,6 @@
               "ext":{}
             },
             "ext": {
-              "prebid": {
-                "bidderparams": {
-                  "acat": ["drg","dlu","ssr"],
-                  "wiid": "dwzafakjflan-tygannnvlla-mlljvj"
-                }
-              },
                 "wrapper": {
                     "profile": 5123,
                     "version":1,

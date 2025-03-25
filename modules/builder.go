@@ -1,9 +1,9 @@
 package modules
 
 import (
-	fiftyonedegreesDevicedetection "github.com/prebid/prebid-server/v2/modules/fiftyonedegrees/devicedetection"
-	prebidOrtb2blocking "github.com/prebid/prebid-server/v2/modules/prebid/ortb2blocking"
-	pubmaticOpenwrap "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap"
+	fiftyonedegreesDevicedetection "github.com/prebid/prebid-server/v3/modules/fiftyonedegrees/devicedetection"
+	prebidOrtb2blocking "github.com/prebid/prebid-server/v3/modules/prebid/ortb2blocking"
+	pubmaticOpenwrap "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap"
 )
 
 // builders returns mapping between module name and its builder

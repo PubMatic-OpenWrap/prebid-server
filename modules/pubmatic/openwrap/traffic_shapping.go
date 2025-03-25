@@ -2,14 +2,13 @@ package openwrap
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/diegoholiveira/jsonlogic/v3"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) (map[string]struct{}, bool) {
@@ -46,15 +45,13 @@ func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *ope
 }
 
 func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
-	if len(rctx.Country) > 0 {
-		return rctx.Country
+	if len(rctx.DeviceCtx.Country) > 0 {
+		return rctx.DeviceCtx.Country
 	}
 
-	if rctx.IP != "" {
-		country, err := m.getCountryFromIP(rctx.IP)
-		if err == nil {
-			return country
-		}
+	if rctx.DeviceCtx.IP != "" {
+		_, alpha3CountryCode := m.getCountryCodes(rctx.DeviceCtx.IP)
+		return alpha3CountryCode
 	}
 	return ""
 }
@@ -69,13 +66,15 @@ func evaluateBiddingCondition(data, rules string) bool {
 	return strings.TrimSpace(result.String()) == "true"
 }
 
-func (m OpenWrap) getCountryFromIP(ip string) (string, error) {
+func (m OpenWrap) getCountryCodes(ip string) (string, string) {
 	if m.geoInfoFetcher == nil {
-		return "", errors.New("geoDB instance is missing")
+		return "", ""
 	}
+
 	geoData, err := m.geoInfoFetcher.LookUp(ip)
-	if err != nil {
-		return "", err
+	if geoData == nil || err != nil {
+		glog.Errorf("[geolookup] ip:[%s] error:[%s]", ip, err.Error())
+		return "", ""
 	}
-	return geoData.AlphaThreeCountryCode, nil
+	return geoData.ISOCountryCode, geoData.AlphaThreeCountryCode
 }

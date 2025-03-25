@@ -3,11 +3,11 @@ package openwrap
 import (
 	"context"
 
-	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
-	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
+	cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature"
 )
 
 // GetConfig Temporary function to expose config to SSHB

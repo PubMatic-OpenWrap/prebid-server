@@ -4,7 +4,7 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/prebid/prebid-server/v2/errortypes"
+	"github.com/prebid/prebid-server/v3/errortypes"
 )
 
 const (

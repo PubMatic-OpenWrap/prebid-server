@@ -15,7 +15,7 @@ test: deps
 ifeq "$(adapter)" ""
 	./validate.sh
 else
-	go test github.com/prebid/prebid-server/v2/adapters/$(adapter) -bench=.
+	go test github.com/prebid/prebid-server/v3/adapters/$(adapter) -bench=.
 endif
 
 # build-modules generates modules/builder.go file which provides a list of all available modules
@@ -47,32 +47,32 @@ mockgeninstall:
 mockgendb:
 	mkdir -p modules/pubmatic/openwrap/database/mock modules/pubmatic/openwrap/database/mock_driver
 	mockgen database/sql/driver Driver,Connector,Conn,DriverContext > modules/pubmatic/openwrap/database/mock_driver/mock.go
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/database Database > modules/pubmatic/openwrap/database/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/database Database > modules/pubmatic/openwrap/database/mock/mock.go
 
 mockgencache:
 	mkdir -p modules/pubmatic/openwrap/cache/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/cache Cache > modules/pubmatic/openwrap/cache/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/cache Cache > modules/pubmatic/openwrap/cache/mock/mock.go
 
 mockgenmetrics:
 	mkdir -p modules/pubmatic/openwrap/metrics/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/metrics MetricsEngine > modules/pubmatic/openwrap/metrics/mock/mock.go
 
 mockgengeodb:
 	mkdir -p modules/pubmatic/openwrap/geodb/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
+	mockgen github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb Geography > modules/pubmatic/openwrap/geodb/mock/mock.go
 
 mockgenlogger:
 	mkdir -p analytics/pubmatic/mhttp/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/analytics/pubmatic/mhttp HttpCallInterface,MultiHttpContextInterface > analytics/pubmatic/mhttp/mock/mock.go
 
 mockgenpublisherfeature:
 	mkdir -p modules/pubmatic/openwrap/publisherfeature
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature Feature > modules/pubmatic/openwrap/publisherfeature/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature Feature > modules/pubmatic/openwrap/publisherfeature/mock/mock.go
 
 mockgenwakanda: 
 	mkdir -p modules/pubmatic/openwrap/wakanda/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/wakanda Commands,DebugInterface > modules/pubmatic/openwrap/wakanda/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/wakanda Commands,DebugInterface > modules/pubmatic/openwrap/wakanda/mock/mock.go
 
 mockgenprofilemetadata:
 	mkdir -p modules/pubmatic/openwrap/profilemetadata/mock
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata ProfileMetaData > modules/pubmatic/openwrap/profilemetadata/mock/mock.go
+	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata ProfileMetaData > modules/pubmatic/openwrap/profilemetadata/mock/mock.go

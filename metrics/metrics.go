@@ -3,7 +3,7 @@ package metrics
 import (
 	"time"
 
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // Labels defines the labels that can be attached to the metrics.
@@ -243,7 +243,7 @@ const (
 	RequestStatusBadInput         RequestStatus = "badinput"
 	RequestStatusErr              RequestStatus = "err"
 	RequestStatusNetworkErr       RequestStatus = "networkerr"
-	RequestStatusBlacklisted      RequestStatus = "blacklistedacctorapp"
+	RequestStatusBlockedApp       RequestStatus = "blockedapp"
 	RequestStatusQueueTimeout     RequestStatus = "queuetimeout"
 	RequestStatusAccountConfigErr RequestStatus = "acctconfigerr"
 )
@@ -254,7 +254,7 @@ func RequestStatuses() []RequestStatus {
 		RequestStatusBadInput,
 		RequestStatusErr,
 		RequestStatusNetworkErr,
-		RequestStatusBlacklisted,
+		RequestStatusBlockedApp,
 		RequestStatusQueueTimeout,
 		RequestStatusAccountConfigErr,
 	}
@@ -370,7 +370,7 @@ const (
 	SyncerCookieSyncOK               SyncerCookieSyncStatus = "ok"
 	SyncerCookieSyncPrivacyBlocked   SyncerCookieSyncStatus = "privacy_blocked"
 	SyncerCookieSyncAlreadySynced    SyncerCookieSyncStatus = "already_synced"
-	SyncerCookieSyncTypeNotSupported SyncerCookieSyncStatus = "type_not_supported"
+	SyncerCookieSyncRejectedByFilter SyncerCookieSyncStatus = "rejected_by_filter"
 )
 
 // SyncerRequestStatuses returns possible syncer statuses.
@@ -379,7 +379,7 @@ func SyncerRequestStatuses() []SyncerCookieSyncStatus {
 		SyncerCookieSyncOK,
 		SyncerCookieSyncPrivacyBlocked,
 		SyncerCookieSyncAlreadySynced,
-		SyncerCookieSyncTypeNotSupported,
+		SyncerCookieSyncRejectedByFilter,
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 // return the list of active server side header bidding partners

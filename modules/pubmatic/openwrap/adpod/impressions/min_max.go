@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 // keyDelim used as separator in forming key of maxExpectedDurationMap
