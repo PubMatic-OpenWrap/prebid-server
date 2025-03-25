@@ -95,6 +95,7 @@ type RequestCtx struct {
 	Endpoint                        string
 	PubIDStr, ProfileIDStr          string // TODO: remove this once we completely move away from header-bidding
 	MetricsEngine                   metrics.MetricsEngine
+	HostName                        string
 	ReturnAllBidStatus              bool   // ReturnAllBidStatus stores the value of request.ext.prebid.returnallbidstatus
 	Sshb                            string //Sshb query param to identify that the request executed heder-bidding or not, sshb=1(executed HB(8001)), sshb=2(reverse proxy set from HB(8001->8000)), sshb=""(direct request(8000)).
 	DCName                          string
@@ -183,6 +184,7 @@ type ImpCtx struct {
 	BidCtx            map[string]BidCtx
 	BannerAdUnitCtx   AdUnitCtx
 	VideoAdUnitCtx    AdUnitCtx
+	NativeAdUnitCtx   AdUnitCtx
 
 	//temp
 	BidderError string
