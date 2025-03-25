@@ -487,6 +487,7 @@ const (
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
 	ImpTypeVideo    = "video"
+	ImpTypeNative   = "native"
 	ContentTypeSite = "site"
 	ContentTypeApp  = "app"
 )
