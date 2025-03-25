@@ -281,7 +281,8 @@ func TestUpdateNativeObjectWithAdunitConfig(t *testing.T) {
 									Enabled: ptrutil.ToPtr(true),
 									Config: &adunitconfig.NativeConfig{
 										Native: openrtb2.Native{
-											Request: "Native_Reuqest",
+											Request: "Native_Reuqest_Default",
+											Ver:     "1.2",
 										},
 									},
 								},
