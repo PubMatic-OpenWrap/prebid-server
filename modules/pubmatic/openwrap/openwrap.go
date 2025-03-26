@@ -170,5 +170,12 @@ func patchConfig(cfg *config.Config) error {
 		}
 		cfg.VastUnwrapCfg.HTTPConfig.Certificates = string(decodedCert)
 	}
+	if len(cfg.VastUnwrapCfg.HTTPConfig.Key) > 0 {
+		decodedKey, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.Key)
+		if err != nil {
+			return fmt.Errorf("error decoding base64 SSL Key: %v", err)
+		}
+		cfg.VastUnwrapCfg.HTTPConfig.Key = string(decodedKey)
+	}
 	return nil
 }
