@@ -2,6 +2,8 @@ package openwrap
 
 import (
 	"context"
+	"encoding/json"
+	"log"
 
 	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
@@ -31,6 +33,21 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
 		return result, nil
+	}
+
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
+
+		bidderHttpCalls := make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall)
+		for abc, http := range payload.Responses {
+			bidderHttpCalls[abc] = append(bidderHttpCalls[abc], http.HttpCalls...)
+		}
+
+		wakandaDebugData, err := json.Marshal(bidderHttpCalls)
+		if err != nil {
+			log.Printf("Error marshaling bidderHttpCalls: %v", err)
+		} else {
+			rCtx.WakandaDebug.SetHttpCalls(json.RawMessage(wakandaDebugData))
+		}
 	}
 
 	//Do not execute the module for requests processed in SSHB(8001)
