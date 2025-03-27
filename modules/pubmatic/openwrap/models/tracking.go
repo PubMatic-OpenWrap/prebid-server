@@ -1,6 +1,6 @@
 package models
 
-import "github.com/prebid/prebid-server/v2/openrtb_ext"
+import "github.com/prebid/prebid-server/v3/openrtb_ext"
 
 // impression tracker url parameters
 const (
@@ -55,6 +55,7 @@ const (
 	TRKMultiBidMultiFloorFlag = "mbmf"
 	TRKDisplayManager         = "dm"
 	TRKDisplayManagerVer      = "dmv"
+	TRKCountryCode            = "cc"
 )
 
 // video error tracker url parameters

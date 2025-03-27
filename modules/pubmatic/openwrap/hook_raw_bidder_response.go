@@ -5,13 +5,13 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 )
 
 type rawBidderResponseHookResult struct {
@@ -51,7 +51,7 @@ func applyMutation(bidInfo []*rawBidderResponseHookResult, result *hookstage.Hoo
 		newResultSet = append(newResultSet, bidResult.bid)
 	}
 
-	result.ChangeSet.RawBidderResponse().Bids().Update(newResultSet)
+	result.ChangeSet.RawBidderResponse().Bids().UpdateBids(newResultSet)
 	result.SeatNonBid = seatNonBid
 }
 
@@ -111,7 +111,7 @@ func (m OpenWrap) processVastUnwrap(
 			wg.Add(1)
 			go func(iBid *rawBidderResponseHookResult) {
 				defer wg.Done()
-				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.UA, rCtx.IP)
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, rCtx.DeviceCtx.IP)
 			}(bidResult)
 		}
 	}

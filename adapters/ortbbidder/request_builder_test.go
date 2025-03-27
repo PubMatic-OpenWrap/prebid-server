@@ -8,8 +8,8 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/prebid/prebid-server/v2/adapters"
-	"github.com/prebid/prebid-server/v2/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/bidderparams"
 	"github.com/stretchr/testify/assert"
 )
 

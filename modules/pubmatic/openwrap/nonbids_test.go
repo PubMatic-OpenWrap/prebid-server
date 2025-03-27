@@ -6,10 +6,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/exchange"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 

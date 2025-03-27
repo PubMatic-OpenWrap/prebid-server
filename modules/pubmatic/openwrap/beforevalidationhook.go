@@ -16,21 +16,21 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/floors"
-	"github.com/prebid/prebid-server/v2/hooks/hookstage"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adpod"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	modelsAdunitConfig "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/floors"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
@@ -94,9 +94,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(payload.BidRequest)
 	rCtx.PageURL = getPageURL(payload.BidRequest)
 	rCtx.Platform = getPlatformFromRequest(payload.BidRequest)
-	rCtx.UA = getUserAgent(payload.BidRequest, rCtx.UA)
-	rCtx.IP = getIP(payload.BidRequest, rCtx.IP)
-	rCtx.Country = getCountry(payload.BidRequest)
+	rCtx.DeviceCtx.UA = getUserAgent(payload.BidRequest, rCtx.DeviceCtx.UA)
+	rCtx.DeviceCtx.IP = getIP(payload.BidRequest, rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.Country = getCountry(payload.BidRequest)
+	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
@@ -764,7 +765,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-	bidRequest.Device.IP = rctx.IP
+	bidRequest.Device.IP = rctx.DeviceCtx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
 	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
 

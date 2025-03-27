@@ -5,8 +5,8 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // WloggerRecord structure for wrapper analytics logger object
@@ -15,43 +15,43 @@ type WloggerRecord struct {
 }
 
 type record struct {
-	Timeout           int              `json:"to,omitempty"`
-	PubID             int              `json:"pubid,omitempty"`
-	PageURL           string           `json:"purl,omitempty"`
-	Timestamp         int64            `json:"tst,omitempty"`
-	IID               string           `json:"iid,omitempty"`
-	ProfileID         string           `json:"pid,omitempty"`
-	VersionID         string           `json:"pdvid,omitempty"`
-	IP                string           `json:"-"`
-	UserAgent         string           `json:"-"`
-	UID               string           `json:"-"`
-	GDPR              int8             `json:"gdpr,omitempty"`
-	ConsentString     string           `json:"cns,omitempty"`
-	PubmaticConsent   int              `json:"pmc,omitempty"`
-	UserID            string           `json:"uid,omitempty"` // Not logged currently
-	PageValue         float64          `json:"pv,omitempty"`  //sum of all winning bids // Not logged currently
-	ServerLogger      int              `json:"sl,omitempty"`
-	Slots             []SlotRecord     `json:"s,omitempty"`
-	CachePutMiss      int              `json:"cm,omitempty"`
-	Origin            string           `json:"orig,omitempty"`
-	Device            Device           `json:"dvc,omitempty"`
-	AdPodPercentage   *AdPodPercentage `json:"aps,omitempty"`
-	Content           *Content         `json:"ct,omitempty"`
-	TestConfigApplied int              `json:"tgid,omitempty"`
-	FloorModelVersion string           `json:"fmv,omitempty"`
-	FloorSource       *int             `json:"fsrc,omitempty"`
-	FloorType         int              `json:"ft"`
-	IntegrationType   string           `json:"it,omitempty"`
-	FloorFetchStatus  *int             `json:"ffs,omitempty"`
-	FloorProvider     string           `json:"fp,omitempty"`
-	PDC               string           `json:"pdc,omitempty"`
-	CustomDimensions  string           `json:"cds,omitempty"`
-	//Geo             GeoRecord    	`json:"geo,omitempty"`
-	ProfileType           int  `json:"pt,omitempty"`
-	ProfileTypePlatform   int  `json:"ptp,omitempty"`
-	AppPlatform           int  `json:"ap,omitempty"`
-	AppIntegrationPath    *int `json:"aip,omitempty"`
-	AppSubIntegrationPath *int `json:"asip,omitempty"`
+	Timeout               int              `json:"to,omitempty"`
+	PubID                 int              `json:"pubid,omitempty"`
+	PageURL               string           `json:"purl,omitempty"`
+	Timestamp             int64            `json:"tst,omitempty"`
+	IID                   string           `json:"iid,omitempty"`
+	ProfileID             string           `json:"pid,omitempty"`
+	VersionID             string           `json:"pdvid,omitempty"`
+	IP                    string           `json:"-"`
+	UserAgent             string           `json:"-"`
+	UID                   string           `json:"-"`
+	GDPR                  int8             `json:"gdpr,omitempty"`
+	ConsentString         string           `json:"cns,omitempty"`
+	PubmaticConsent       int              `json:"pmc,omitempty"`
+	UserID                string           `json:"uid,omitempty"` // Not logged currently
+	PageValue             float64          `json:"pv,omitempty"`  //sum of all winning bids // Not logged currently
+	ServerLogger          int              `json:"sl,omitempty"`
+	Slots                 []SlotRecord     `json:"s,omitempty"`
+	CachePutMiss          int              `json:"cm,omitempty"`
+	Origin                string           `json:"orig,omitempty"`
+	Device                Device           `json:"dvc,omitempty"`
+	AdPodPercentage       *AdPodPercentage `json:"aps,omitempty"`
+	Content               *Content         `json:"ct,omitempty"`
+	TestConfigApplied     int              `json:"tgid,omitempty"`
+	FloorModelVersion     string           `json:"fmv,omitempty"`
+	FloorSource           *int             `json:"fsrc,omitempty"`
+	FloorType             int              `json:"ft"`
+	IntegrationType       string           `json:"it,omitempty"`
+	FloorFetchStatus      *int             `json:"ffs,omitempty"`
+	FloorProvider         string           `json:"fp,omitempty"`
+	PDC                   string           `json:"pdc,omitempty"`
+	CustomDimensions      string           `json:"cds,omitempty"`
+	Geo                   GeoRecord        `json:"geo,omitempty"`
+	ProfileType           int              `json:"pt,omitempty"`
+	ProfileTypePlatform   int              `json:"ptp,omitempty"`
+	AppPlatform           int              `json:"ap,omitempty"`
+	AppIntegrationPath    *int             `json:"aip,omitempty"`
+	AppSubIntegrationPath *int             `json:"asip,omitempty"`
 }
 
 // Device struct for storing device information
@@ -63,12 +63,10 @@ type Device struct {
 	Model    string                `json:"md,omitempty"`
 }
 
-/*
-//GeoRecord structure for storing geo information
+// GeoRecord structure for storing geo information
 type GeoRecord struct {
 	CountryCode string `json:"cc,omitempty"`
 }
-*/
 
 // AdPodPercentage will store adpod percentage value comes in request
 type AdPodPercentage struct {

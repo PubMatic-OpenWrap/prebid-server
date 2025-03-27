@@ -15,22 +15,22 @@ import (
 	vastunwrap "git.pubmatic.com/vastunwrap"
 	"github.com/golang/glog"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/prebid-server/v2/currency"
-	"github.com/prebid/prebid-server/v2/modules/moduledeps"
-	ow_adapters "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/adapters"
-	cache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache"
-	ow_gocache "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/cache/gocache"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/database/mysql"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/geodb/netacuity"
-	metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics"
-	metrics_cfg "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/config"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/profilemetadata"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/publisherfeature"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/unwrap"
-	"github.com/prebid/prebid-server/v2/util/uuidutil"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/modules/moduledeps"
+	ow_adapters "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	ow_gocache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/gocache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/netacuity"
+	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	metrics_cfg "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/unwrap"
+	"github.com/prebid/prebid-server/v3/util/uuidutil"
 )
 
 const (
@@ -115,11 +115,11 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	initOpenWrapServer(&cfg)
 
 	// init geoDBClient
-	geoDBClient := netacuity.NetAcuity{}
-	err = geoDBClient.InitGeoDBClient(cfg.GeoDB.Location)
+	netacuityClient, err := netacuity.NewNetacuity(cfg.GeoDB.Location)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error initializing geoDB client host:[%s] err:[%v]", GetHostName(), err)
 	}
+	geodb.SetGeography(netacuityClient)
 
 	once.Do(func() {
 		ow = &OpenWrap{
@@ -127,7 +127,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			cache:           owCache,
 			metricEngine:    &metricEngine,
 			rateConvertor:   moduleDeps.RateConvertor,
-			geoInfoFetcher:  geoDBClient,
+			geoInfoFetcher:  geodb.GetGeography(),
 			pubFeatures:     pubFeatures,
 			unwrap:          uw,
 			profileMetaData: profileMetaData,

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 type fastXMLParser struct {

@@ -8,15 +8,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v2/analytics"
-	"github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp"
-	mock_mhttp "github.com/prebid/prebid-server/v2/analytics/pubmatic/mhttp/mock"
-	mock_metrics "github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v2/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v2/openrtb_ext"
-	"github.com/prebid/prebid-server/v2/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
+	mock_mhttp "github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp/mock"
+	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -53,7 +53,7 @@ func TestPrepareLoggerURL(t *testing.T) {
 				loggerURL:   "http://t.pubmatic.com/wl",
 				gdprEnabled: 1,
 			},
-			owlogger: `http://t.pubmatic.com/wl?gdEn=1&json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0}&pubid=10`,
+			owlogger: `http://t.pubmatic.com/wl?gdEn=1&json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0,"geo":{}}&pubid=10`,
 		},
 		{
 			name: "gdprEnabled=0",
@@ -69,7 +69,7 @@ func TestPrepareLoggerURL(t *testing.T) {
 				loggerURL:   "http://t.pubmatic.com/wl",
 				gdprEnabled: 0,
 			},
-			owlogger: `http://t.pubmatic.com/wl?json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0,"cds":"age=23;traffic=media"}&pubid=10`,
+			owlogger: `http://t.pubmatic.com/wl?json={"pubid":10,"pid":"1","pdvid":"0","dvc":{},"ft":0,"cds":"age=23;traffic=media","geo":{}}&pubid=10`,
 		},
 		{
 			name: "private endpoint",
@@ -85,7 +85,7 @@ func TestPrepareLoggerURL(t *testing.T) {
 				loggerURL:   "http://10.172.141.11/wl",
 				gdprEnabled: 0,
 			},
-			owlogger: `http://10.172.141.11/wl?json={"pubid":5,"pid":"5","pdvid":"1","dvc":{},"ft":0,"cds":"age=23;traffic=media"}&pubid=5`,
+			owlogger: `http://10.172.141.11/wl?json={"pubid":5,"pid":"5","pdvid":"1","dvc":{},"ft":0,"cds":"age=23;traffic=media","geo":{}}&pubid=5`,
 		},
 	}
 	for _, tt := range tests {
