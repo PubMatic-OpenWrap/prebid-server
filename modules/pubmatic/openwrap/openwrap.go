@@ -163,19 +163,19 @@ func patchConfig(cfg *config.Config) error {
 	models.TrackerCallWrapOMActive = strings.Replace(models.TrackerCallWrapOMActive, "${OMScript}", cfg.PixelView.OMScript, 1)
 	sort.Strings(cfg.ResponseOverride.BidType)
 
-	if len(cfg.VastUnwrapCfg.HTTPConfig.Certificates) > 0 {
-		decodedCert, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.Certificates)
+	if len(cfg.VastUnwrapCfg.HTTPConfig.SSLCertificates) > 0 {
+		decodedCert, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.SSLCertificates)
 		if err != nil {
 			return fmt.Errorf("error decoding base64 SSL certificates: %v", err)
 		}
-		cfg.VastUnwrapCfg.HTTPConfig.Certificates = string(decodedCert)
+		cfg.VastUnwrapCfg.HTTPConfig.SSLCertificates = string(decodedCert)
 	}
-	if len(cfg.VastUnwrapCfg.HTTPConfig.Key) > 0 {
-		decodedKey, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.Key)
+	if len(cfg.VastUnwrapCfg.HTTPConfig.SSLKey) > 0 {
+		decodedKey, err := base64.StdEncoding.DecodeString(cfg.VastUnwrapCfg.HTTPConfig.SSLKey)
 		if err != nil {
 			return fmt.Errorf("error decoding base64 SSL Key: %v", err)
 		}
-		cfg.VastUnwrapCfg.HTTPConfig.Key = string(decodedKey)
+		cfg.VastUnwrapCfg.HTTPConfig.SSLKey = string(decodedKey)
 	}
 	return nil
 }
