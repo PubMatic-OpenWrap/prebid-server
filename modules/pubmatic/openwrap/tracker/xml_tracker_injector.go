@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 
@@ -170,7 +169,9 @@ func (ti *fastXMLTrackerInjector) Parse(vast string) error {
 	//GetVersion
 	ti.version = ti.doc.SelectAttrValue(ti.vastTag, models.VideoVASTVersion, models.VideoVASTVersion2_0)
 
-	ti.xu = fastxml.NewXMLUpdater(ti.doc, fastxml.WriteSettings{CDATAWrap: true})
+	ti.xu = fastxml.NewXMLUpdater(ti.doc, fastxml.WriteSettings{
+		CDATAWrap:          true,
+		CompressWhitespace: true})
 
 	return nil
 }
@@ -213,9 +214,10 @@ func (ti *fastXMLTrackerInjector) Inject(videoParams []models.OWTracker, skipTra
 		}
 	}
 
-	buf := &bytes.Buffer{}
-	ti.xu.Build(buf)
-	return buf.String(), nil
+	// buf := &bytes.Buffer{}
+	// ti.xu.Build(buf)
+	// return buf.String(), nil
+	return ti.xu.String(), nil
 }
 
 func (ti *fastXMLTrackerInjector) injectPricingNodeInExtension(adTypeElement *fastxml.Element, price float64, model string, currency string) {

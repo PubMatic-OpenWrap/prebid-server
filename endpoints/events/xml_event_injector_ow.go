@@ -1,8 +1,6 @@
 package events
 
 import (
-	"bytes"
-
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
 	"github.com/prebid/openrtb/v20/adcom1"
@@ -171,9 +169,10 @@ func (ev *fastXMLEventInjector) Inject(vastXML string, eventURLMap map[string]st
 		return vastXML, nil
 	}
 
-	var buf bytes.Buffer
-	xu.Build(&buf)
-	return buf.String(), nil
+	// var buf bytes.Buffer
+	// xu.Build(&buf)
+	// return buf.String(), nil
+	return xu.String(), nil
 }
 
 func getTrackingEvents(createTrackingEvents bool, eventURLMap map[string]string) *fastxml.XMLElement {

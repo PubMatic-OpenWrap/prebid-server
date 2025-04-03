@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"strconv"
@@ -165,9 +164,10 @@ func (ab *adpodBuilderFastXML) Build() (string, error) {
 	}
 	ab.vast.AddAttribute("", VASTVersionAttribute, VASTVersionsStr[int(ab.version)])
 
-	buf := &bytes.Buffer{}
-	ab.vast.Write(buf, nil)
-	return buf.String(), nil
+	// buf := &bytes.Buffer{}
+	// ab.vast.Write(buf, nil)
+	// return buf.String(), nil
+	return ab.vast.String(nil), nil
 }
 
 func GetAdPodBuilder() AdpodBuilder {
