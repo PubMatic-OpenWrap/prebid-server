@@ -86,6 +86,16 @@ var ortbMapper = &ParserMap{
 		ORTBSiteContentLanguage:           Parser.ORTBSiteContentLanguage,
 		ORTBSiteContentEmbeddable:         Parser.ORTBSiteContentEmbeddable,
 
+		//Site.Content.Network
+		ORTBSiteContentNetworkID:     Parser.ORTBSiteContentNetworkID,
+		ORTBSiteContentNetworkName:   Parser.ORTBSiteContentNetworkName,
+		ORTBSiteContentNetworkDomain: Parser.ORTBSiteContentNetworkDomain,
+
+		//Site.Content.Channel
+		ORTBSiteContentChannelID:     Parser.ORTBSiteContentChannelID,
+		ORTBSiteContentChannelName:   Parser.ORTBSiteContentChannelName,
+		ORTBSiteContentChannelDomain: Parser.ORTBSiteContentChannelDomain,
+
 		//Site.Content.Producer
 		ORTBSiteContentProducerID:     Parser.ORTBSiteContentProducerID,
 		ORTBSiteContentProducerName:   Parser.ORTBSiteContentProducerName,
@@ -136,6 +146,16 @@ var ortbMapper = &ParserMap{
 		ORTBAppContentLen:                Parser.ORTBAppContentLen,
 		ORTBAppContentLanguage:           Parser.ORTBAppContentLanguage,
 		ORTBAppContentEmbeddable:         Parser.ORTBAppContentEmbeddable,
+
+		//App.Content.Network
+		ORTBAppContentNetworkID:     Parser.ORTBAppContentNetworkID,
+		ORTBAppContentNetworkName:   Parser.ORTBAppContentNetworkName,
+		ORTBAppContentNetworkDomain: Parser.ORTBAppContentNetworkDomain,
+
+		//App.Content.Channel
+		ORTBAppContentChannelID:     Parser.ORTBAppContentChannelID,
+		ORTBAppContentChannelName:   Parser.ORTBAppContentChannelName,
+		ORTBAppContentChannelDomain: Parser.ORTBAppContentChannelDomain,
 
 		//App.Content.Producer
 		ORTBAppContentProducerID:     Parser.ORTBAppContentProducerID,
@@ -419,6 +439,16 @@ type Parser interface {
 	ORTBSiteContentLanguage() error
 	ORTBSiteContentEmbeddable() error
 
+	//Site.Content.Network
+	ORTBSiteContentNetworkID() error
+	ORTBSiteContentNetworkName() error
+	ORTBSiteContentNetworkDomain() error
+
+	//Site.Content.Channel
+	ORTBSiteContentChannelID() error
+	ORTBSiteContentChannelName() error
+	ORTBSiteContentChannelDomain() error
+
 	//Site.Content.Producer
 	ORTBSiteContentProducerID() error
 	ORTBSiteContentProducerName() error
@@ -469,6 +499,16 @@ type Parser interface {
 	ORTBAppContentLen() error
 	ORTBAppContentLanguage() error
 	ORTBAppContentEmbeddable() error
+
+	//App.Content.Network
+	ORTBAppContentNetworkID() error
+	ORTBAppContentNetworkName() error
+	ORTBAppContentNetworkDomain() error
+
+	//App.Content.Channel
+	ORTBAppContentChannelID() error
+	ORTBAppContentChannelName() error
+	ORTBAppContentChannelDomain() error
 
 	//App.Content.Producer
 	ORTBAppContentProducerID() error
