@@ -180,6 +180,10 @@ func createNewContentObject(contentObject *openrtb2.Content, include bool, keys 
 				newContentObject.Embeddable = ptrutil.ToPtr[int8](0)
 			case "data":
 				newContentObject.Data = nil
+			case "network":
+				newContentObject.Network = nil
+			case "channel":
+				newContentObject.Channel = nil
 			case "ext":
 				newContentObject.Ext = nil
 			}
@@ -251,6 +255,10 @@ func createNewContentObject(contentObject *openrtb2.Content, include bool, keys 
 			if contentObject.Data != nil {
 				newContentObject.Data = contentObject.Data
 			}
+		case "network":
+			newContentObject.Network = contentObject.Network
+		case "channel":
+			newContentObject.Channel = contentObject.Channel
 		case "ext":
 			newContentObject.Ext = contentObject.Ext
 		}
