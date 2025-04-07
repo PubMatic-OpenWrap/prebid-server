@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -86,6 +87,16 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
+	}
+
+	if endpoint == models.EndpointGoogleSDK {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-google-sdk-request")
 	}
 
 	// init default for all modules
@@ -234,6 +245,8 @@ func GetEndpoint(path, source string, agent string) string {
 			switch agent {
 			case models.AppLovinMaxAgent:
 				return models.EndpointAppLovinMax
+			case models.GoogleSDKAgent:
+				return models.EndpointGoogleSDK
 			}
 			return models.EndpointV25
 		default:

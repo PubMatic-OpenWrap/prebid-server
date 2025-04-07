@@ -482,6 +482,7 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGoogleSDK   = "googlesdk"
 	EndpointGeo         = "geo"
 
 	Openwrap        = "openwrap"
@@ -612,6 +613,7 @@ const (
 const (
 	Agent                   = "agent"
 	AppLovinMaxAgent        = "max"
+	GoogleSDKAgent          = "googlesdk"
 	TypeRewarded            = "rewarded"
 	SignalData              = "signaldata"
 	OwSspBurl               = "owsspburl"
