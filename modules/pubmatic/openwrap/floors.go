@@ -29,7 +29,7 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 		requestExt.Prebid.Floors.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
 	}
 
-	if (requestExt.Prebid.Floors.Enforcement.FloorDeals == nil || !*requestExt.Prebid.Floors.Enforcement.FloorDeals) && configMap[-1]["platform"] == "in-app" {
+	if configMap[-1]["platform"] == models.PLATFORM_APP && requestExt.Prebid.Floors.Enforcement.FloorDeals == nil {
 		requestExt.Prebid.Floors.Enforcement.FloorDeals = ptrutil.ToPtr(true)
 	}
 

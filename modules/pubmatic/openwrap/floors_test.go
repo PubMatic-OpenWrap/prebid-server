@@ -384,7 +384,7 @@ func TestSetFloorsExt(t *testing.T) {
 				requestExt: &models.RequestExt{},
 				configMap: map[int]map[string]string{
 					-1: {
-						"platform": "in-app",
+						"platform": models.PLATFORM_APP,
 					},
 				},
 			},
@@ -425,7 +425,7 @@ func TestSetFloorsExt(t *testing.T) {
 				}(),
 				configMap: map[int]map[string]string{
 					-1: {
-						"platform": "in-app",
+						"platform": models.PLATFORM_APP,
 					},
 				},
 			},
@@ -466,7 +466,7 @@ func TestSetFloorsExt(t *testing.T) {
 				}(),
 				configMap: map[int]map[string]string{
 					-1: {
-						"platform": "in-app",
+						"platform": models.PLATFORM_APP,
 					},
 				},
 			},
@@ -477,7 +477,7 @@ func TestSetFloorsExt(t *testing.T) {
 							Floors: &openrtb_ext.PriceFloorRules{
 								Enabled: &enable,
 								Enforcement: &openrtb_ext.PriceFloorEnforcement{
-									FloorDeals: &enable,
+									FloorDeals: &disable,
 									EnforcePBS: &enable,
 								},
 							},
@@ -505,7 +505,7 @@ func TestSetFloorsExt(t *testing.T) {
 				}(),
 				configMap: map[int]map[string]string{
 					-1: {
-						"platform": "in-app",
+						"platform": models.PLATFORM_APP,
 					},
 				},
 			},
