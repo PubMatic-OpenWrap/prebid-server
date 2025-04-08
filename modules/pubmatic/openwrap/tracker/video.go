@@ -17,7 +17,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 	}
 
 	injectImpressionTracker := true
-	if rctx.Endpoint == models.EndpointAppLovinMax {
+	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK {
 		injectImpressionTracker = false
 	}
 

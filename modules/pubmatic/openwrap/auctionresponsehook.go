@@ -69,7 +69,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	//Impression counting method enabled bidders
-	if rctx.Endpoint == models.EndpointV25 || rctx.Endpoint == models.EndpointAppLovinMax {
+	if rctx.Endpoint == models.EndpointV25 || rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK {
 		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
 	}
 
@@ -369,6 +369,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
+	rctx.GoogleSDK.Reject = setGoogleSDKResponseReject(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -409,6 +410,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}
+		ap.BidResponse = applyGoogleSDKResponse(rctx, ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 

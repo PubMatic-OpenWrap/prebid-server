@@ -675,6 +675,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 	}
+	rCtx.GoogleSDK.SDKRenderedAdID = setSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil

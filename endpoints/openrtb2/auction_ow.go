@@ -59,14 +59,14 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	//Send owlogger in response only in case of debug mode
 	if rCtx.Debug && !rCtx.LoggerDisabled {
 		var orignalMaxBidResponse *openrtb2.BidResponse
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
 			orignalMaxBidResponse = new(openrtb2.BidResponse)
 			*orignalMaxBidResponse = *bidResponse
 			pubmatic.RestoreBidResponse(rCtx, ao)
 		}
 
 		owlogger, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
 			*bidResponse = *orignalMaxBidResponse
 		}
 		if len(bidResponse.Ext) == 0 {

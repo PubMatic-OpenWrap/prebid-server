@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/analytics"
@@ -81,7 +82,11 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 
 // RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
 func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
-	if rctx.Endpoint != models.EndpointAppLovinMax || rctx.AppLovinMax.Reject {
+	if rctx.Endpoint != models.EndpointAppLovinMax && rctx.Endpoint != models.EndpointGoogleSDK {
+		return nil
+	}
+
+	if rctx.AppLovinMax.Reject || rctx.GoogleSDK.Reject {
 		return nil
 	}
 
@@ -89,21 +94,31 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 		return nil
 	}
 
-	signalData := map[string]string{}
 	if len(ao.Response.SeatBid) == 0 || len(ao.Response.SeatBid[0].Bid) == 0 {
 		return errors.New("seatbid or bid not found in the response")
 	}
-	if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
-		return err
-	}
-
-	if val, ok := signalData[models.SignalData]; !ok || val == "" {
-		return errors.New("signal data not found in the response")
-	}
 
 	orignalResponse := &openrtb2.BidResponse{}
-	if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
-		return err
+	if rctx.Endpoint == models.EndpointAppLovinMax {
+		signalData := map[string]string{}
+		if err := json.Unmarshal(ao.Response.SeatBid[0].Bid[0].Ext, &signalData); err != nil {
+			return err
+		}
+
+		if val, ok := signalData[models.SignalData]; !ok || val == "" {
+			return errors.New("signal data not found in the response")
+		}
+
+		if err := json.Unmarshal([]byte(signalData[models.SignalData]), orignalResponse); err != nil {
+			return err
+		}
+	}
+
+	if rctx.Endpoint == models.EndpointGoogleSDK {
+		renderingData, err := jsonparser.GetString(ao.Response.SeatBid[0].Bid[0].Ext, "sdk_rendered_ad", "rendering_data")
+		if err = json.Unmarshal([]byte(renderingData), orignalResponse); err != nil {
+			return err
+		}
 	}
 
 	*ao.Response = *orignalResponse

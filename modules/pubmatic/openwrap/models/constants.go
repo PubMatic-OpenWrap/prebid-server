@@ -483,6 +483,7 @@ const (
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
 	EndpointGeo         = "geo"
+	EndpointGoogleSDK   = "googlesdk"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -620,6 +621,11 @@ const (
 	AppStoreUrl             = "appStoreUrl"
 	SendBurl                = "sendburl"
 	MultiBidMultiFloorValue = "mbmfv"
+)
+
+// constants for googlesdk requests
+const (
+	ProcessingTime = "processing_time_ms"
 )
 
 // constants for log level
