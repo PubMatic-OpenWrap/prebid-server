@@ -406,12 +406,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
 		ap.BidResponse.Ext = responseExtjson
 
+		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}
-		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 
