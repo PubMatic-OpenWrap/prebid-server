@@ -609,7 +609,7 @@ const (
 	FeatureImpCountingMethod   = 8
 )
 
-// constants for applovinmax requests
+// constants for sdk integrations
 const (
 	Agent                   = "agent"
 	AppLovinMaxAgent        = "max"
@@ -622,6 +622,7 @@ const (
 	AppStoreUrl             = "appStoreUrl"
 	SendBurl                = "sendburl"
 	MultiBidMultiFloorValue = "mbmfv"
+	ProcessingTime          = "processing_time_ms"
 )
 
 // constants for log level

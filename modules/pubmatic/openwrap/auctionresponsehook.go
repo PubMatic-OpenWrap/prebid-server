@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -69,7 +70,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	//Impression counting method enabled bidders
-	if rctx.Endpoint == models.EndpointV25 || rctx.Endpoint == models.EndpointAppLovinMax {
+	if rctx.Endpoint == models.EndpointV25 || rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK {
 		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
 	}
 
@@ -369,6 +370,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
+	rctx.GoogleSDK.Reject = googlesdk.SetGoogleSDKResponseReject(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -404,6 +406,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse, err = m.applyDefaultBids(rctx, ap.BidResponse)
 		ap.BidResponse.Ext = responseExtjson
 
+		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax {
