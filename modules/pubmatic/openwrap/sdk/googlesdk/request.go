@@ -3,6 +3,7 @@ package googlesdk
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
@@ -343,7 +344,7 @@ func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp, wra
 	requestImps[0].Ext = modifyImpExtension(requestImps[0].Ext, signalImps[0].Ext)
 
 	//Set gpid
-	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(requestImps[0].TagID), "gpid")
+	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(strconv.Quote(requestImps[0].TagID)), "gpid")
 
 	// Update tagId from adunit mapping in request
 	requestImps[0].TagID = wrapperData.TagId
