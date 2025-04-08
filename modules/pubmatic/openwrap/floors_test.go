@@ -378,6 +378,292 @@ func TestSetFloorsExt(t *testing.T) {
 				return &res
 			}(),
 		},
+		{
+			name: "floor_not_present_for_in-app",
+			args: args{
+				requestExt: &models.RequestExt{},
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "in-app",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									FloorDeals: &enable,
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_present_with_floordeal_true_for_in-app",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &enable,
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										FloorDeals: &enable,
+									},
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "in-app",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									FloorDeals: &enable,
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_present_with_floordeal_false_for_in-app",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &enable,
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										FloorDeals: &disable,
+									},
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "in-app",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									FloorDeals: &enable,
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_disable_for_in-app",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					disable := false
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &disable,
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "in-app",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &disable,
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_not_present_for_ctv",
+			args: args{
+				requestExt: &models.RequestExt{},
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "ctv",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_present_with_floordeal_true_for_ctv",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &enable,
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										FloorDeals: &enable,
+									},
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "ctv",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									FloorDeals: &enable,
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_present_with_floordeal_false_for_ctv",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &enable,
+									Enforcement: &openrtb_ext.PriceFloorEnforcement{
+										FloorDeals: &disable,
+									},
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "ctv",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &enable,
+								Enforcement: &openrtb_ext.PriceFloorEnforcement{
+									FloorDeals: &disable,
+									EnforcePBS: &enable,
+								},
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
+		{
+			name: "floor_is_disable_for_ctv",
+			args: args{
+				requestExt: func() *models.RequestExt {
+					res := models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								Floors: &openrtb_ext.PriceFloorRules{
+									Enabled: &disable,
+								},
+							},
+						},
+					}
+					return &res
+				}(),
+				configMap: map[int]map[string]string{
+					-1: {
+						"platform": "ctv",
+					},
+				},
+			},
+			want: func() *models.RequestExt {
+				res := models.RequestExt{
+					ExtRequest: openrtb_ext.ExtRequest{
+						Prebid: openrtb_ext.ExtRequestPrebid{
+							Floors: &openrtb_ext.PriceFloorRules{
+								Enabled: &disable,
+							},
+						},
+					},
+				}
+				return &res
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
