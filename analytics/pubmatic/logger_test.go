@@ -4881,7 +4881,7 @@ func TestGetLogAuctionObjectAsURLForFloorDetailsAndCDS(t *testing.T) {
 				forRespExt: true,
 			},
 			want: want{
-				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23","geo":{}}&pubid=5890`,
+				logger: `http://t.pubmatic.com/wl?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"fmv":"model-version","fsrc":2,"ft":0,"ffs":3,"fp":"provider","cds":"traffic=media;age=23","geo":{},"fskp":1}&pubid=5890`,
 				header: http.Header{
 					models.USER_AGENT_HEADER: []string{""},
 					models.IP_HEADER:         []string{""},
