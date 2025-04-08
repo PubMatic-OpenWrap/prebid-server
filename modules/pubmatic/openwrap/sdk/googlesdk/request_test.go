@@ -144,179 +144,135 @@ func TestGetSignalData(t *testing.T) {
 		})
 	}
 }
-
 func TestGetWrapperData(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected *wrapperData
-		wantErr  bool
+		name        string
+		input       string
+		expected    *wrapperData
+		expectedErr string
 	}{
 		{
-			name:     "Empty body",
-			input:    "",
-			expected: nil,
-			wantErr:  true,
+			name:        "Empty body",
+			input:       "",
+			expected:    nil,
+			expectedErr: "empty request body",
 		},
 		{
-			name:     "Invalid JSON",
-			input:    "{invalid-json",
-			expected: nil,
-			wantErr:  true,
+			name:        "Invalid JSON",
+			input:       "{invalid-json",
+			expected:    nil,
+			expectedErr: "failed to get Keyval object",
 		},
 		{
-			name:     "Missing imp array",
-			input:    `{"someKey": "someValue"}`,
-			expected: nil,
-			wantErr:  true,
+			name:        "Missing imp array",
+			input:       `{"someKey": "someValue"}`,
+			expected:    nil,
+			expectedErr: "failed to get Keyval object",
 		},
 		{
-			name:     "Missing ad_unit_mapping",
-			input:    `{"imp": [{"ext": {}}]}`,
-			expected: nil,
-			wantErr:  true,
+			name:        "Empty imp array",
+			input:       `{"imp": []}`,
+			expected:    nil,
+			expectedErr: "failed to get Keyval object",
 		},
 		{
-			name:     "Missing Keyval",
-			input:    `{"imp": [{"ext": {"ad_unit_mapping": {}}}]}`,
-			expected: nil,
-			wantErr:  true,
+			name:        "Missing ext in imp",
+			input:       `{"imp": [{"id": "1"}]}`,
+			expected:    nil,
+			expectedErr: "failed to get Keyval object",
 		},
 		{
-			name:     "Keyval not an array",
-			input:    `{"imp": [{"ext": {"ad_unit_mapping": {"Keyval": {}}}}]}`,
-			expected: nil,
-			wantErr:  true,
+			name:        "Missing Keyval in ad_unit_mapping",
+			input:       `{"imp": [{"ext": {"ad_unit_mapping": {}}}]}`,
+			expected:    nil,
+			expectedErr: "failed to get Keyval object",
 		},
 		{
-			name: "Empty Keyval array",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": []
-						}
-					}
-				}]
-			}`,
-			expected: nil,
-			wantErr:  false,
-		},
-		{
-			name: "Invalid Keyval array element",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [123]
-						}
-					}
-				}]
-			}`,
-			expected: nil,
-			wantErr:  false,
-		},
-		{
-			name: "Empty values in Keyval",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [{
-								"publisher_id": "",
-								"profile_id": "",
-								"ad_unit_id": ""
-							}]
-						}
-					}
-				}]
-			}`,
-			expected: nil,
-			wantErr:  false,
-		},
-		{
-			name: "Complete valid data",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [{
-								"publisher_id": "5890",
-								"profile_id": "2345",
-								"ad_unit_id": "/tag/id"
-							}]
-						}
-					}
-				}]
-			}`,
-			expected: &wrapperData{
-				PublisherId: "5890",
-				ProfileId:   "2345",
-				TagId:       "/tag/id",
-			},
-			wantErr: false,
-		},
-		{
-			name: "Multiple Keyval elements with data spread",
+			name: "Valid wrapper data",
 			input: `{
 				"imp": [{
 					"ext": {
 						"ad_unit_mapping": {
 							"Keyval": [
-								{
-									"publisher_id": "5890",
-									"profile_id": "2345"
-								},
-								{
-									"ad_unit_id": "/tag/id"
-								}
+								{"key": "publisher_id", "value": "12345"},
+								{"key": "profile_id", "value": "67890"},
+								{"key": "ad_unit_id", "value": "tag-123"}
 							]
 						}
 					}
 				}]
 			}`,
 			expected: &wrapperData{
-				PublisherId: "5890",
-				ProfileId:   "2345",
-				TagId:       "/tag/id",
+				PublisherId: "12345",
+				ProfileId:   "67890",
+				TagId:       "tag-123",
 			},
-			wantErr: false,
+			expectedErr: "",
 		},
 		{
-			name: "Partial data with only publisher_id",
+			name: "Partial wrapper data",
 			input: `{
 				"imp": [{
 					"ext": {
 						"ad_unit_mapping": {
-							"Keyval": [{
-								"publisher_id": "5890"
-							}]
+							"Keyval": [
+								{"key": "publisher_id", "value": "12345"}
+							]
 						}
 					}
 				}]
 			}`,
 			expected: &wrapperData{
-				PublisherId: "5890",
+				PublisherId: "12345",
 			},
-			wantErr: false,
+			expectedErr: "",
+		},
+		{
+			name: "Invalid Keyval structure",
+			input: `{
+				"imp": [{
+					"ext": {
+						"ad_unit_mapping": {
+							"Keyval": [
+								{"key": "publisher_id"}
+							]
+						}
+					}
+				}]
+			}`,
+			expected:    nil,
+			expectedErr: "",
+		},
+		{
+			name: "No matching keys in Keyval",
+			input: `{
+				"imp": [{
+					"ext": {
+						"ad_unit_mapping": {
+							"Keyval": [
+								{"key": "unknown_key", "value": "value"}
+							]
+						}
+					}
+				}]
+			}`,
+			expected:    nil,
+			expectedErr: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := getWrapperData([]byte(tt.input))
-			if tt.wantErr {
-				assert.Error(t, err, "Expected error for test: %s", tt.name)
+			if tt.expectedErr != "" {
 				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
+				assert.EqualError(t, err, tt.expectedErr, "Unexpected error for test: %s", tt.name)
 				return
 			}
 
-			if tt.expected == nil {
-				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
-			} else {
-				assert.NoError(t, err, "Unexpected error for test: %s", tt.name)
-				assert.Equal(t, tt.expected, result, "Unexpected result for test: %s", tt.name)
-			}
+			assert.NoError(t, err, "Unexpected error for test: %s", tt.name)
+			assert.Equal(t, tt.expected, result, "Unexpected result for test: %s", tt.name)
 		})
 	}
 }
+

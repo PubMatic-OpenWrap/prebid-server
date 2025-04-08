@@ -68,39 +68,44 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		return nil, errors.New("failed to get Keyval object")
 	}
 
-	var wprData *wrapperData
-
-	// Helper function to set field if valid
-	setField := func(value string, setter func(*wrapperData, string)) {
-		if len(value) > 0 {
-			if wprData == nil {
-				wprData = &wrapperData{}
-			}
-			setter(wprData, value)
-		}
-	}
+	// Use a switch-based approach for better performance
+	wprData := &wrapperData{}
+	found := false
 
 	// Process each Keyval object
-	_, err = jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
+	if _, err = jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || dataType != jsonparser.Object {
 			return
 		}
 
-		// Extract and set fields using the helper
-		if pubId, err := jsonparser.GetString(values, "publisher_id"); err == nil {
-			setField(pubId, func(w *wrapperData, v string) { w.PublisherId = v })
+		// Get key and value in a single block to reduce error checking
+		key, err := jsonparser.GetString(values, "key")
+		if err != nil || key == "" {
+			return
 		}
-		if profileId, err := jsonparser.GetString(values, "profile_id"); err == nil {
-			setField(profileId, func(w *wrapperData, v string) { w.ProfileId = v })
+		value, err := jsonparser.GetString(values, "value")
+		if err != nil || value == "" {
+			return
 		}
-		if tagId, err := jsonparser.GetString(values, "ad_unit_id"); err == nil {
-			setField(tagId, func(w *wrapperData, v string) { w.TagId = v })
-		}
-	})
 
-	// Handle array processing error
-	if err != nil {
+		// Use switch for better performance than if-else chain
+		switch key {
+		case "publisher_id":
+			wprData.PublisherId = value
+			found = true
+		case "profile_id":
+			wprData.ProfileId = value
+			found = true
+		case "ad_unit_id":
+			wprData.TagId = value
+			found = true
+		}
+	}); err != nil {
 		return nil, errors.New("failed to process wrapper data")
+	}
+
+	if !found {
+		return nil, nil
 	}
 
 	return wprData, nil
