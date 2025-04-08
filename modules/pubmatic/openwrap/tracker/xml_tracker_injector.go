@@ -156,7 +156,7 @@ type fastXMLTrackerInjector struct {
 }
 
 func (ti *fastXMLTrackerInjector) Parse(vast string) error {
-	ti.doc = fastxml.NewXMLReader(nil)
+	ti.doc = fastxml.NewXMLReader()
 	if err := ti.doc.Parse([]byte(vast)); err != nil {
 		return err
 	}

@@ -114,7 +114,7 @@ func (ev *fastXMLEventInjector) Name() string {
 
 func (ev *fastXMLEventInjector) Inject(vastXML string, eventURLMap map[string]string) (string, error) {
 	//parse vast xml
-	doc := fastxml.NewXMLReader(nil)
+	doc := fastxml.NewXMLReader()
 	if err := doc.Parse([]byte(vastXML)); err != nil {
 		return vastXML, err
 	}

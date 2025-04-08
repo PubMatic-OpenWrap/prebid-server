@@ -30,7 +30,7 @@ func (p *fastXMLParser) SetVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 }
 
 func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
-	p.reader = fastxml.NewXMLReader(nil)
+	p.reader = fastxml.NewXMLReader()
 
 	//parse vast xml
 	if err := p.reader.Parse(vastXML); err != nil {

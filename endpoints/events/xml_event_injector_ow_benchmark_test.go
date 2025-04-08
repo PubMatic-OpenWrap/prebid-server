@@ -35,6 +35,6 @@ func BenchmarkETreeVideoInjector(b *testing.B) {
 
 func BenchmarkFastXMLVideoInjector(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		etreeEJ.Inject(benchMarkVAST, eventURLMap)
+		fastxmlEJ.Inject(benchMarkVAST, eventURLMap)
 	}
 }

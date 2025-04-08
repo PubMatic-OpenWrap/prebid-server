@@ -123,7 +123,7 @@ func (ab *adpodBuilderFastXML) Append(bid *openrtb2.Bid) error {
 		wrapper := fastxml.NewElement(constant.VASTWrapperElement).AddChild(vastAdTagURI)
 		adElement.AddChild(wrapper)
 	} else {
-		adDoc := fastxml.NewXMLReader(nil)
+		adDoc := fastxml.NewXMLReader()
 		if err := adDoc.Parse([]byte(bid.AdM)); err != nil {
 			return err
 		}
