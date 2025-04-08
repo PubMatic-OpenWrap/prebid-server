@@ -482,8 +482,8 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
-	EndpointGeo         = "geo"
 	EndpointGoogleSDK   = "googlesdk"
+	EndpointGeo         = "geo"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -609,7 +609,7 @@ const (
 	FeatureImpCountingMethod   = 8
 )
 
-// constants for applovinmax requests
+// constants for sdk integrations
 const (
 	Agent                   = "agent"
 	AppLovinMaxAgent        = "max"
@@ -621,11 +621,7 @@ const (
 	AppStoreUrl             = "appStoreUrl"
 	SendBurl                = "sendburl"
 	MultiBidMultiFloorValue = "mbmfv"
-)
-
-// constants for googlesdk requests
-const (
-	ProcessingTime = "processing_time_ms"
+	ProcessingTime          = "processing_time_ms"
 )
 
 // constants for log level

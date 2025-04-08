@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -369,7 +370,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
-	rctx.GoogleSDK.Reject = setGoogleSDKResponseReject(rctx, payload.BidResponse)
+	rctx.GoogleSDK.Reject = googlesdk.SetGoogleSDKResponseReject(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -410,7 +411,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}
-		ap.BidResponse = applyGoogleSDKResponse(rctx, ap.BidResponse)
+		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
 		return ap, err
 	}, hookstage.MutationUpdate, "response-body-with-sshb-format")
 

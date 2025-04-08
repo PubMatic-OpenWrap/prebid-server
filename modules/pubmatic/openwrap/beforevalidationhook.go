@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -675,7 +676,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 	}
-	rCtx.GoogleSDK.SDKRenderedAdID = setSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
+	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil

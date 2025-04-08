@@ -1,4 +1,4 @@
-package openwrap
+package googlesdk
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ import (
 
 const videoClickThroughTagPath = "./VAST/Ad/InLine/Creatives/Creative/Linear/VideoClicks/ClickThrough"
 
-func setGoogleSDKResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) bool {
+func SetGoogleSDKResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) bool {
 	reject := false
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
@@ -28,7 +28,7 @@ func setGoogleSDKResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.Bi
 	return reject
 }
 
-func applyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if rctx.Endpoint != models.EndpointGoogleSDK {
 		return bidResponse
 	}
@@ -135,7 +135,7 @@ func getVideoClickThroughURL(bid openrtb2.Bid) string {
 	return clickThrough.Text()
 }
 
-func setSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
+func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 	if endpoint != models.EndpointGoogleSDK || app == nil || app.Ext == nil {
 		return ""
 	}
