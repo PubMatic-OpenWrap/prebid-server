@@ -33,8 +33,13 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 		return bidResponse
 	}
 
-	if rctx.Debug && (len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0) {
-		return bidResponse
+	if rctx.Debug {
+		if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+			return bidResponse
+		}
+		if bidResponse.NBR != nil {
+			return bidResponse
+		}
 	}
 
 	if rctx.GoogleSDK.Reject {
@@ -80,8 +85,8 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 			RenderingData: string(resp),
 			DeclaredAd:    getDeclaredAd(rctx, bid),
 		},
-		EventNotificationToken: models.EventNotificationToken{Payload: ""},
-		BillingID:              "",
+		//EventNotificationToken: &models.EventNotificationToken{Payload: ""},
+		BillingID: "",
 	}
 	bid.AdM = ""
 
@@ -114,7 +119,7 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 	if err := json.Unmarshal([]byte(bid.AdM), &nativeResp); err != nil {
 		glog.Errorf("[googlesdk] native:[%s] error:[%s]", bid.AdM, err.Error())
 	}
-	declaredAd.NativeResponse = nativeResp
+	declaredAd.NativeResponse = &nativeResp
 	declaredAd.ClickThroughURL = nativeResp.Link.URL
 	return declaredAd
 }

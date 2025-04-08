@@ -5,10 +5,10 @@ import (
 )
 
 type GoogleSDKBidExt struct {
-	SDKRenderedAd          SDKRenderedAd          `json:"sdk_rendered_ad,omitempty"`
-	EventNotificationToken EventNotificationToken `json:"event_notification_token,omitempty"`
-	BillingID              string                 `json:"billing_id,omitempty"`
-	ProcessingTime         int                    `json:"processing_time_ms,omitempty"`
+	SDKRenderedAd          SDKRenderedAd           `json:"sdk_rendered_ad,omitempty"`
+	EventNotificationToken *EventNotificationToken `json:"event_notification_token,omitempty"`
+	BillingID              string                  `json:"billing_id,omitempty"`
+	ProcessingTime         int                     `json:"processing_time_ms,omitempty"`
 }
 
 type SDKRenderedAd struct {
@@ -18,10 +18,10 @@ type SDKRenderedAd struct {
 }
 
 type DeclaredAd struct {
-	ClickThroughURL string                  `json:"click_through_url,omitempty"`
-	HTMLSnippet     string                  `json:"html_snippet,omitempty"`
-	VideoVastXML    string                  `json:"video_vast_xml,omitempty"`
-	NativeResponse  nativeResponse.Response `json:"native_response,omitempty"`
+	ClickThroughURL string                   `json:"click_through_url,omitempty"`
+	HTMLSnippet     string                   `json:"html_snippet,omitempty"`
+	VideoVastXML    string                   `json:"video_vast_xml,omitempty"`
+	NativeResponse  *nativeResponse.Response `json:"native_response,omitempty"`
 }
 
 type EventNotificationToken struct {
