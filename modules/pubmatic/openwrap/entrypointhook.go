@@ -234,6 +234,8 @@ func GetEndpoint(path, source string, agent string) string {
 			switch agent {
 			case models.AppLovinMaxAgent:
 				return models.EndpointAppLovinMax
+			case models.GoogleSDKAgent:
+				return models.EndpointGoogleSDK
 			}
 			return models.EndpointV25
 		default:

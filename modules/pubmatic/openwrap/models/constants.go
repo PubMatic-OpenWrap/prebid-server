@@ -613,6 +613,7 @@ const (
 const (
 	Agent                   = "agent"
 	AppLovinMaxAgent        = "max"
+	GoogleSDKAgent          = "googlesdk"
 	TypeRewarded            = "rewarded"
 	SignalData              = "signaldata"
 	OwSspBurl               = "owsspburl"
