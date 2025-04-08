@@ -33,7 +33,11 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 		return bidResponse
 	}
 
-	if rctx.GoogleSDK.Reject && !rctx.Debug {
+	if rctx.Debug && (len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0) {
+		return bidResponse
+	}
+
+	if rctx.GoogleSDK.Reject {
 		processingTimeValue := time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()
 		ext := json.RawMessage([]byte(fmt.Sprintf(`{"%s":%d}`, models.ProcessingTime, processingTimeValue)))
 		*bidResponse = openrtb2.BidResponse{
@@ -44,7 +48,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 		return bidResponse
 	}
 
-	bid, ok := customizeBid(rctx, bidResponse)
+	bids, ok := customizeBid(rctx, bidResponse)
 	if !ok {
 		return bidResponse
 	}
@@ -55,7 +59,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 		Cur:   bidResponse.Cur,
 		SeatBid: []openrtb2.SeatBid{
 			{
-				Bid: bid,
+				Bid: bids,
 			},
 		},
 	}
