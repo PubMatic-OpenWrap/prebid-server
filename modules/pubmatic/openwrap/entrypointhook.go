@@ -18,6 +18,7 @@ import (
 	v25 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/usersync"
@@ -88,6 +89,16 @@ func (m OpenWrap) handleEntrypointHook(
 		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
 	}
 
+	if endpoint == models.EndpointGoogleSDK {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-google-sdk-request")
+	}
+
 	// init default for all modules
 	result.Reject = true
 
@@ -141,7 +152,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl:                        endpoint == models.EndpointAppLovinMax || getSendBurl(payload.Body),
+		SendBurl:                        endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || getSendBurl(payload.Body),
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
