@@ -8,6 +8,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
@@ -55,7 +56,14 @@ func (wd *wrapperData) setTagId(request *openrtb2.BidRequest) {
 	request.Imp[0].TagID = wd.TagId
 }
 
-func getSignalData(body []byte) *openrtb2.BidRequest {
+func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData) *openrtb2.BidRequest {
+	var found bool
+	defer func() {
+		if !found {
+			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.MissingSignal)
+		}
+	}()
+
 	if len(body) == 0 {
 		return nil
 	}
@@ -66,8 +74,6 @@ func getSignalData(body []byte) *openrtb2.BidRequest {
 	}
 
 	var signalData *openrtb2.BidRequest
-
-	// Process each element in buyer_generated_request_data
 	_, err = jsonparser.ArrayEach(data, func(sdkData []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || dataType != jsonparser.Object {
 			return
@@ -83,10 +89,16 @@ func getSignalData(body []byte) *openrtb2.BidRequest {
 			return
 		}
 
+		// Signal data found
+		found = true
+
 		signalData = &openrtb2.BidRequest{}
 		if err := json.Unmarshal([]byte(signal), signalData); err != nil {
+			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
 			signalData = nil
+			return
 		}
+
 	})
 	if err != nil {
 		return nil
@@ -105,17 +117,14 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		return nil, errors.New("failed to get Keyval object")
 	}
 
-	// Use a switch-based approach for better performance
 	wprData := &wrapperData{}
 	found := false
 
-	// Process each Keyval object
 	if _, err = jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || dataType != jsonparser.Object {
 			return
 		}
 
-		// Get key and value in a single block to reduce error checking
 		key, err := jsonparser.GetString(values, "key")
 		if err != nil || key == "" {
 			return
@@ -125,7 +134,6 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 			return
 		}
 
-		// Use switch for better performance than if-else chain
 		switch key {
 		case "publisher_id":
 			wprData.PublisherId = value
@@ -148,7 +156,7 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
+func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
 	}
@@ -159,7 +167,7 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 		return requestBody
 	}
 
-	signalData := getSignalData(requestBody)
+	signalData := getSignalData(requestBody, rctx, wrapperData)
 	// if signal data is not present, forward request without patching
 	if signalData == nil {
 		return requestBody
@@ -195,6 +203,24 @@ func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openr
 	modifyDevice(request.Device, signalData.Device)
 	modifyRegs(request.Regs, signalData.Regs)
 	modifySource(request.Source, signalData.Source)
+	modifyUser(request.User, signalData.User)
+}
+
+func modifyUser(requestUser *openrtb2.User, signalUser *openrtb2.User) {
+	if signalUser == nil {
+		return
+	}
+
+	if requestUser == nil {
+		requestUser = &openrtb2.User{}
+	}
+
+	if requestUser.Ext == nil {
+		requestUser.Ext = []byte(`{}`)
+	}
+
+	requestUser.Ext, _ = sdkutils.CopyPath(signalUser.Ext, requestUser.Ext, "sessionduration")
+	requestUser.Ext, _ = sdkutils.CopyPath(signalUser.Ext, requestUser.Ext, "impdepth")
 }
 
 func modifySource(requestSource *openrtb2.Source, signalSource *openrtb2.Source) {

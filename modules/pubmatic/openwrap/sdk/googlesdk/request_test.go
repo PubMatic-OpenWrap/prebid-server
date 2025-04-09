@@ -4,39 +4,62 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSignalData(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
 	tests := []struct {
 		name     string
 		input    string
+		setup    func()
 		expected *openrtb2.BidRequest
 	}{
 		{
-			name:     "Empty body",
-			input:    "",
+			name:  "Empty body",
+			input: "",
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
-			name:     "Invalid JSON",
-			input:    "{invalid-json",
+			name:  "Invalid JSON",
+			input: "{invalid-json",
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
-			name:     "Missing imp array",
-			input:    `{"someKey": "someValue"}`,
+			name:  "Missing imp array",
+			input: `{"someKey": "someValue"}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
-			name:     "Empty imp array",
-			input:    `{"imp": []}`,
+			name:  "Empty imp array",
+			input: `{"imp": []}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
-			name:     "Missing ext in imp",
-			input:    `{"imp": [{"id": "1"}]}`,
+			name:  "Missing ext in imp",
+			input: `{"imp": [{"id": "1"}]}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
@@ -51,6 +74,9 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
@@ -84,6 +110,9 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.InvalidSignal)
+			},
 			expected: nil,
 		},
 		{
@@ -98,6 +127,9 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
 			expected: nil,
 		},
 		{
@@ -129,7 +161,17 @@ func TestGetSignalData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := getSignalData([]byte(tt.input))
+			if tt.setup != nil {
+				tt.setup()
+			}
+
+			result := getSignalData([]byte(tt.input), models.RequestCtx{
+				MetricsEngine: mockEngine,
+			}, &wrapperData{
+				PublisherId: "5890",
+				ProfileId:   "123",
+			})
+
 			if tt.expected == nil {
 				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
 				return
@@ -275,4 +317,3 @@ func TestGetWrapperData(t *testing.T) {
 		})
 	}
 }
-
