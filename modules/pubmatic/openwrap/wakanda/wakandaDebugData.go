@@ -21,7 +21,7 @@ type DebugData struct {
 	PrebidHTTPResponse *httptest.ResponseRecorder
 	Logger             json.RawMessage
 	WinningBid         bool
-	HttpCalls          json.RawMessage
+	HTTPCalls          json.RawMessage
 }
 
 type request struct {
@@ -91,7 +91,7 @@ type logRecord struct {
 	PrebidResp     response             `json:"PrebidResp,omitempty"`
 	Logger         json.RawMessage      `json:"Logger,omitempty"`
 	WinningBid     bool                 `json:"WinningBid,omitempty"`
-	HttpCalls      json.RawMessage      `json:"HttpCalls,omitempty"`
+	HTTPCalls      json.RawMessage      `json:"HTTPCalls,omitempty"`
 }
 
 // NewLogRecord returns logRecord from wakanda DebugData
@@ -104,7 +104,7 @@ func NewLogRecord(wD *DebugData) *logRecord {
 	record.HTTPResp.setResponseWriter(wD.HTTPResponse, wD.HTTPResponseBody)
 	record.PrebidReq.set(wD.PrebidHTTPRequest, wD.PrebidRequestBody)
 	record.PrebidResp.setResponseRecorder(wD.PrebidHTTPResponse)
-	record.HttpCalls = wD.HttpCalls
+	record.HTTPCalls = wD.HTTPCalls
 	record.Logger = wD.Logger
 
 	return record

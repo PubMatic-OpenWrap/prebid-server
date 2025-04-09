@@ -35,20 +35,7 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 		return result, nil
 	}
 
-	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
-
-		bidderHttpCalls := make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall)
-		for abc, http := range payload.Responses {
-			bidderHttpCalls[abc] = append(bidderHttpCalls[abc], http.HttpCalls...)
-		}
-
-		wakandaDebugData, err := json.Marshal(bidderHttpCalls)
-		if err != nil {
-			log.Printf("Error marshaling bidderHttpCalls: %v", err)
-		} else {
-			rCtx.WakandaDebug.SetHttpCalls(json.RawMessage(wakandaDebugData))
-		}
-	}
+	updateWakandaHTTPCalls(&rCtx, payload)
 
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" || rCtx.Endpoint == models.EndpointHybrid {
@@ -67,6 +54,24 @@ func updateBidIds(bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSe
 	for _, seatBid := range bidderResponses {
 		for i := range seatBid.Bids {
 			seatBid.Bids[i].Bid.ID = utils.SetUniqueBidID(seatBid.Bids[i].Bid.ID, seatBid.Bids[i].GeneratedBidID)
+		}
+	}
+}
+
+func updateWakandaHTTPCalls(rCtx *models.RequestCtx, payload hookstage.AllProcessedBidResponsesPayload) {
+
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
+
+		bidderHttpCalls := make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall)
+		for abc, http := range payload.Responses {
+			bidderHttpCalls[abc] = append(bidderHttpCalls[abc], http.HttpCalls...)
+		}
+
+		wakandaDebugData, err := json.Marshal(bidderHttpCalls)
+		if err != nil {
+			log.Printf("Error marshaling bidderHttpCalls: %v", err)
+		} else {
+			rCtx.WakandaDebug.SetHttpCalls(json.RawMessage(wakandaDebugData))
 		}
 	}
 }

@@ -63,8 +63,8 @@ func (wD *Debug) SetWinningBid(WinningBid bool) {
 	wD.DebugData.WinningBid = WinningBid
 }
 
-func (wD *Debug) SetHttpCalls(HttpCalls json.RawMessage) {
-	wD.DebugData.HttpCalls = HttpCalls
+func (wD *Debug) SetHttpCalls(HTTPCalls json.RawMessage) {
+	wD.DebugData.HTTPCalls = HTTPCalls
 }
 
 // EnableIfRequired will check if rule is applicable or not
