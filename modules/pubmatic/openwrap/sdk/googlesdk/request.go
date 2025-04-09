@@ -19,6 +19,42 @@ type wrapperData struct {
 	TagId       string
 }
 
+func (wd *wrapperData) setProfileID(request *openrtb2.BidRequest) {
+	if len(wd.ProfileId) == 0 {
+		return
+	}
+
+	if request.Ext == nil {
+		request.Ext = []byte(`{}`)
+	}
+
+	request.Ext, _ = jsonparser.Set(request.Ext, []byte(wd.ProfileId), "prebid", "bidderparams", "pubmatic", "wrapper", "profileid")
+}
+
+func (wd *wrapperData) setPublisherId(request *openrtb2.BidRequest) {
+	if len(wd.PublisherId) == 0 {
+		return
+	}
+
+	if request.App == nil {
+		request.App = &openrtb2.App{}
+	}
+
+	if request.App.Publisher == nil {
+		request.App.Publisher = &openrtb2.Publisher{}
+	}
+
+	request.App.Publisher.ID = wd.PublisherId
+}
+
+func (wd *wrapperData) setTagId(request *openrtb2.BidRequest) {
+	if len(wd.TagId) == 0 || len(request.Imp) == 0 {
+		return
+	}
+
+	request.Imp[0].TagID = wd.TagId
+}
+
 func getSignalData(body []byte) *openrtb2.BidRequest {
 	if len(body) == 0 {
 		return nil
@@ -112,15 +148,6 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func setProfileID(requestBody []byte, wrapperData *wrapperData) []byte {
-	if wrapperData == nil || len(wrapperData.ProfileId) == 0 {
-		return requestBody
-	}
-
-	requestBody, _ = jsonparser.Set(requestBody, []byte(wrapperData.ProfileId), "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid")
-	return requestBody
-}
-
 func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
@@ -131,9 +158,6 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 	if err != nil {
 		return requestBody
 	}
-
-	// Set profile Id at ext.prebid.bidderparams.pubmatic.wrapper.profileid
-	requestBody = setProfileID(requestBody, wrapperData)
 
 	signalData := getSignalData(requestBody)
 	// if signal data is not present, forward request without patching
@@ -148,6 +172,15 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 
 	modifyRequestWithSignalData(sdkRequest, signalData, wrapperData)
 
+	// Set Publisher Id
+	wrapperData.setPublisherId(sdkRequest)
+
+	// Set profile Id at ext.prebid.bidderparams.pubmatic.wrapper.profileid
+	wrapperData.setProfileID(sdkRequest)
+
+	// Set Tag Id
+	wrapperData.setTagId(sdkRequest)
+
 	modifiedRequest, err := json.Marshal(sdkRequest)
 	if err != nil {
 		return requestBody
@@ -157,8 +190,8 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest, wrapperData *wrapperData) {
-	modifyImpression(request.Imp, signalData.Imp, wrapperData)
-	modifyApp(request.App, signalData.App, wrapperData)
+	modifyImpression(request.Imp, signalData.Imp)
+	modifyApp(request.App, signalData.App)
 	modifyDevice(request.Device, signalData.Device)
 	modifyRegs(request.Regs, signalData.Regs)
 	modifySource(request.Source, signalData.Source)
@@ -222,7 +255,7 @@ func modifyDevice(requestDevice *openrtb2.Device, signalDevice *openrtb2.Device)
 	}
 }
 
-func modifyApp(requestApp *openrtb2.App, signalApp *openrtb2.App, wrapperData *wrapperData) {
+func modifyApp(requestApp *openrtb2.App, signalApp *openrtb2.App) {
 	if signalApp == nil {
 		return
 	}
@@ -246,12 +279,6 @@ func modifyApp(requestApp *openrtb2.App, signalApp *openrtb2.App, wrapperData *w
 	if len(signalApp.StoreURL) > 0 {
 		requestApp.StoreURL = signalApp.StoreURL
 	}
-
-	if requestApp.Publisher == nil {
-		requestApp.Publisher = &openrtb2.Publisher{}
-	}
-
-	requestApp.Publisher.ID = wrapperData.PublisherId
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
@@ -300,7 +327,7 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	return requestImpExt
 }
 
-func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp, wrapperData *wrapperData) {
+func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp) {
 	if len(requestImps) == 0 || len(signalImps) == 0 {
 		return
 	}
@@ -345,7 +372,4 @@ func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp, wra
 
 	//Set gpid
 	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(strconv.Quote(requestImps[0].TagID)), "gpid")
-
-	// Update tagId from adunit mapping in request
-	requestImps[0].TagID = wrapperData.TagId
 }
