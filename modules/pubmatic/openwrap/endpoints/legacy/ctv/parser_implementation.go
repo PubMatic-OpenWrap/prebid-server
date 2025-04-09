@@ -4238,6 +4238,64 @@ func (o *OpenRTB) ORTBSiteExt(key string, value *string) (err error) {
 	return
 }
 
+// ORTBSiteContentNetworkExt will read and set ortb Site.Content.Network.Ext parameter
+func (o *OpenRTB) ORTBSiteContentNetworkExt(key string, value *string) (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Network == nil {
+		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Network.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Network.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Producer.Ext = data
+	return
+}
+
+// ORTBSiteContentChannelExt will read and set ortb Site.Content.Channel.Ext parameter
+func (o *OpenRTB) ORTBSiteContentChannelExt(key string, value *string) (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Channel == nil {
+		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Channel.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Channel.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Producer.Ext = data
+	return
+}
+
 // ORTBAppExt will read and set ortb App.Ext parameter
 func (o *OpenRTB) ORTBAppExt(key string, value *string) (err error) {
 	if o.ortb.App == nil {
@@ -4259,6 +4317,64 @@ func (o *OpenRTB) ORTBAppExt(key string, value *string) (err error) {
 	}
 
 	o.ortb.App.Ext = data
+	return
+}
+
+// ORTBAppContentNetworkExt will read and set ortb App.Content.Network.Ext parameter
+func (o *OpenRTB) ORTBAppContentNetworkExt(key string, value *string) (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Network == nil {
+		o.ortb.App.Content.Network = &openrtb2.Network{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Network.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Network.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Producer.Ext = data
+	return
+}
+
+// ORTBAppContentChannelExt will read and set ortb App.Content.Channel.Ext parameter
+func (o *OpenRTB) ORTBAppContentChannelExt(key string, value *string) (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Channel == nil {
+		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Channel.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Channel.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Producer.Ext = data
 	return
 }
 

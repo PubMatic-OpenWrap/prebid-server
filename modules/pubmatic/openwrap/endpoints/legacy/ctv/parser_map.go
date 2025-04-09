@@ -344,7 +344,11 @@ var ortbMapper = &ParserMap{
 		ORTBImpExt:                 Parser.ORTBImpExt,
 		ORTBImpVideoExt:            Parser.ORTBImpVideoExt,
 		ORTBSiteExt:                Parser.ORTBSiteExt,
+		ORTBSiteContentNetworkExt:  Parser.ORTBSiteContentNetworkExt,
+		ORTBSiteContentChannelExt:  Parser.ORTBSiteContentChannelExt,
 		ORTBAppExt:                 Parser.ORTBAppExt,
+		ORTBAppContentNetworkExt:   Parser.ORTBAppContentNetworkExt,
+		ORTBAppContentChannelExt:   Parser.ORTBAppContentChannelExt,
 		ORTBSitePublisherExt:       Parser.ORTBSitePublisherExt,
 		ORTBSiteContentExt:         Parser.ORTBSiteContentExt,
 		ORTBSiteContentProducerExt: Parser.ORTBSiteContentProducerExt,
@@ -703,7 +707,11 @@ type Parser interface {
 	ORTBImpExt(string, *string) error
 	ORTBImpVideoExt(string, *string) error
 	ORTBSiteExt(string, *string) error
+	ORTBSiteContentNetworkExt(string, *string) error
+	ORTBSiteContentChannelExt(string, *string) error
 	ORTBAppExt(string, *string) error
+	ORTBAppContentNetworkExt(string, *string) error
+	ORTBAppContentChannelExt(string, *string) error
 	ORTBSitePublisherExt(string, *string) error
 	ORTBSiteContentExt(string, *string) error
 	ORTBSiteContentProducerExt(string, *string) error
