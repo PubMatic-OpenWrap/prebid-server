@@ -29,6 +29,7 @@ type WakandaDebug interface {
 	SetOpenRTB(OpenRTB *openrtb2.BidRequest)
 	SetLogger(Logger json.RawMessage)
 	SetWinningBid(WinningBid bool)
+	SetHttpCalls(HttpCalls json.RawMessage)
 	EnableIfRequired(pubIDStr string, profIDStr string)
 	WriteLogToFiles()
 }
@@ -60,6 +61,10 @@ func (wD *Debug) SetLogger(Logger json.RawMessage) {
 
 func (wD *Debug) SetWinningBid(WinningBid bool) {
 	wD.DebugData.WinningBid = WinningBid
+}
+
+func (wD *Debug) SetHttpCalls(HTTPCalls json.RawMessage) {
+	wD.DebugData.HTTPCalls = HTTPCalls
 }
 
 // EnableIfRequired will check if rule is applicable or not
