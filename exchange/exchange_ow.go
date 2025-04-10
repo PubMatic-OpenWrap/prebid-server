@@ -453,3 +453,12 @@ func validateVastVersion(adM string) (bool, string) {
 	}
 	return validVastVersions[int(vastVersionFloat)], matches[1]
 }
+
+func upadteOWDebugLog(requestExtPrebid *openrtb_ext.ExtRequestPrebid, debugLog *DebugLog) {
+	if requestExtPrebid == nil || debugLog == nil {
+		return
+	}
+	if !debugLog.DebugOverride {
+		debugLog.DebugOverride = requestExtPrebid.ExtOWRequestPrebid.DebugOverride
+	}
+}

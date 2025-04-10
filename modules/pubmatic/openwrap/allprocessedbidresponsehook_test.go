@@ -2,6 +2,9 @@ package openwrap
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -242,6 +246,109 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			}
 			assert.Equal(t, tt.want.DebugMessages, got.DebugMessages, "Debug messages should be equal")
 			assert.Equal(t, tt.want.Reject, false, "Reject should be equal")
+		})
+	}
+}
+
+func TestUpdateWakandaHTTPCalls(t *testing.T) {
+	tests := []struct {
+		name          string
+		rCtx          *models.RequestCtx
+		payload       hookstage.AllProcessedBidResponsesPayload
+		expectedCalls wakanda.WakandaDebug
+	}{
+		{
+			name: "Debug enabled with valid payload",
+			rCtx: &models.RequestCtx{
+				WakandaDebug: &wakanda.Debug{Enabled: true},
+			},
+			payload: hookstage.AllProcessedBidResponsesPayload{
+				Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						HttpCalls: []*openrtb_ext.ExtHttpCall{{}},
+					},
+					"bidder2": {
+						HttpCalls: []*openrtb_ext.ExtHttpCall{{}},
+					},
+				},
+			},
+			expectedCalls: &wakanda.Debug{
+				Enabled:     true,
+				FolderPaths: nil,
+				DebugData: wakanda.DebugData{
+					HTTPCalls: json.RawMessage(`{"bidder1":[{"uri":"","requestbody":"","requestheaders":null,"responsebody":"","status":0}],"bidder2":[{"uri":"","requestbody":"","requestheaders":null,"responsebody":"","status":0}]}`),
+				},
+			},
+		},
+		{
+			name: "Debug disabled",
+			rCtx: &models.RequestCtx{
+				WakandaDebug: &wakanda.Debug{},
+			},
+			payload: hookstage.AllProcessedBidResponsesPayload{
+				Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+			},
+			expectedCalls: &wakanda.Debug{
+				Enabled:     false,
+				FolderPaths: []string(nil),
+				DebugLevel:  0,
+				DebugData: wakanda.DebugData{
+					HTTPRequest:        (*http.Request)(nil),
+					HTTPRequestBody:    json.RawMessage(nil),
+					HTTPResponse:       http.ResponseWriter(nil),
+					HTTPResponseBody:   "",
+					OpenRTB:            (*openrtb2.BidRequest)(nil),
+					PrebidHTTPRequest:  (*http.Request)(nil),
+					PrebidRequestBody:  json.RawMessage(nil),
+					PrebidHTTPResponse: (*httptest.ResponseRecorder)(nil),
+					Logger:             json.RawMessage(nil),
+					WinningBid:         false,
+					HTTPCalls:          json.RawMessage(nil)},
+				Config: wakanda.Wakanda{SFTP: wakanda.SFTP{User: "", Password: "", ServerIP: "", Destination: ""},
+					HostName: "", DCName: "", PodName: "", MaxDurationInMin: 0, CleanupFrequencyInMin: 0,
+				},
+			},
+		},
+		{
+			name: "Error in marshaling",
+			rCtx: &models.RequestCtx{
+				WakandaDebug: &wakanda.Debug{},
+			},
+			payload: hookstage.AllProcessedBidResponsesPayload{
+				Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"bidder1": {
+						HttpCalls: []*openrtb_ext.ExtHttpCall{{}}, // Example HttpCalls
+					},
+				},
+			},
+			expectedCalls: &wakanda.Debug{
+				Enabled:     false,
+				FolderPaths: []string(nil),
+				DebugLevel:  0,
+				DebugData: wakanda.DebugData{
+					HTTPRequest:        (*http.Request)(nil),
+					HTTPRequestBody:    json.RawMessage(nil),
+					HTTPResponse:       http.ResponseWriter(nil),
+					HTTPResponseBody:   "",
+					OpenRTB:            (*openrtb2.BidRequest)(nil),
+					PrebidHTTPRequest:  (*http.Request)(nil),
+					PrebidRequestBody:  json.RawMessage(nil),
+					PrebidHTTPResponse: (*httptest.ResponseRecorder)(nil),
+					Logger:             json.RawMessage(nil),
+					WinningBid:         false,
+					HTTPCalls:          json.RawMessage(nil)},
+				Config: wakanda.Wakanda{SFTP: wakanda.SFTP{User: "", Password: "", ServerIP: "", Destination: ""},
+					HostName: "", DCName: "", PodName: "", MaxDurationInMin: 0, CleanupFrequencyInMin: 0,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			updateWakandaHTTPCalls(tt.rCtx, tt.payload)
+
+			assert.Equal(t, tt.expectedCalls, tt.rCtx.WakandaDebug)
 		})
 	}
 }
