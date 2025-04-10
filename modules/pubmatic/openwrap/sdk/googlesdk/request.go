@@ -167,18 +167,15 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
+	//Fetch Signal data
 	signalData := getSignalData(requestBody, rctx, wrapperData)
-	// if signal data is not present, forward request without patching
-	if signalData == nil {
-		return requestBody
-	}
 
 	sdkRequest := &openrtb2.BidRequest{}
 	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
 		return requestBody
 	}
 
-	modifyRequestWithSignalData(sdkRequest, signalData, wrapperData)
+	modifyRequestWithSignalData(sdkRequest, signalData)
 
 	// Set Publisher Id
 	wrapperData.setPublisherId(sdkRequest)
@@ -197,7 +194,10 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	return modifiedRequest
 }
 
-func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest, wrapperData *wrapperData) {
+func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
+	if signalData == nil {
+		return
+	}
 	modifyImpression(request.Imp, signalData.Imp)
 	modifyApp(request.App, signalData.App)
 	modifyDevice(request.Device, signalData.Device)
@@ -335,7 +335,7 @@ func modifyNative(requestNative *openrtb2.Native, signalNative *openrtb2.Native)
 	}
 
 	if len(signalNative.API) > 0 {
-		requestNative.API = signalNative.API
+		requestNative.API = append(requestNative.API, signalNative.API...)
 	}
 }
 
