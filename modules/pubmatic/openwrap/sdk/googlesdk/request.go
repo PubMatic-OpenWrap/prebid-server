@@ -279,6 +279,10 @@ func modifyDevice(requestDevice *openrtb2.Device, signalDevice *openrtb2.Device)
 	if signalDevice.Geo != nil {
 		requestDevice.Geo = signalDevice.Geo
 	}
+
+	if signalDevice.HWV != "" {
+		requestDevice.HWV = signalDevice.HWV
+	}
 }
 
 func modifyApp(requestApp *openrtb2.App, signalApp *openrtb2.App) {
