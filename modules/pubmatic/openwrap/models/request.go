@@ -33,6 +33,19 @@ type AdPod struct {
 	IABCategoryExclusionPercent *int `json:"excliabcat,omitempty"`    // Percent value 0 means all ads should be of different IAB categories.
 }
 
+type BuyerCreative struct {
+	BuyerCreativeId string `json:"buyer_creative_id,omitempty"`
+}
+
+type GoogleSDKParams struct {
+	BillingIds                []int64         `json:"billing_id,omitempty"`
+	PublisherSettingListIds   []int64         `json:"publisher_setting_list_id,omitempty"`
+	AllowedVendorType         []int32         `json:"allowed_vendor_type,omitempty"`
+	ExcludedCreatives         []BuyerCreative `json:"excluded_creatives,omitempty"`
+	IsAppOpenAd               bool            `json:"is_app_open_ad,omitempty"`
+	AllowedRestrictedCategory int32           `json:"allowed_restricted_category,omitempty"`
+}
+
 // ImpExtension - Impression Extension
 type ImpExtension struct {
 	Wrapper *ExtImpWrapper `json:"wrapper,omitempty"`
@@ -44,6 +57,9 @@ type ImpExtension struct {
 	Data        openrtb_ext.ExtImpData   `json:"data,omitempty"`
 	GpId        string                   `json:"gpid,omitempty"`
 	Prebid      openrtb_ext.ExtImpPrebid `json:"prebid,omitempty"`
+
+	//Google Sdk
+	GoogleSDKParams
 }
 
 // BidderExtension - Bidder specific items
