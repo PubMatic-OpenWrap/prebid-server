@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -72,6 +73,56 @@ func deepCopyContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Co
 		site := *request.Site
 		site.Content = contentObject
 		request.Site = &site
+	}
+	DeepCopyContentNetworkObj(request, isApp)
+	DeepCopyContentChannelObj(request, isApp)
+}
+
+func DeepCopyContentNetworkObj(request *openrtb2.BidRequest, isApp bool) *openrtb2.Network {
+	if request == nil || request.App == nil || request.Site == nil {
+		return nil
+	}
+
+	if isApp {
+		appContentNetwork := request.App.Content.Network
+		appContentNetworkCopy := *appContentNetwork
+		appContentNetworkCopy.ID = appContentNetwork.ID
+		appContentNetworkCopy.Name = appContentNetwork.Name
+		appContentNetworkCopy.Domain = appContentNetwork.Domain
+		appContentNetworkCopy.Ext = slices.Clone(appContentNetwork.Ext)
+		return &appContentNetworkCopy
+	} else {
+		siteContentNetwork := request.Site.Content.Network
+		siteContentNetworkCopy := *siteContentNetwork
+		siteContentNetworkCopy.ID = siteContentNetwork.ID
+		siteContentNetworkCopy.Name = siteContentNetwork.Name
+		siteContentNetworkCopy.Domain = siteContentNetwork.Domain
+		siteContentNetworkCopy.Ext = slices.Clone(siteContentNetwork.Ext)
+		return &siteContentNetworkCopy
+	}
+}
+
+func DeepCopyContentChannelObj(request *openrtb2.BidRequest, isApp bool) *openrtb2.Channel {
+	if request == nil || request.App == nil || request.Site == nil {
+		return nil
+	}
+
+	if isApp {
+		appContentChannel := request.App.Content.Channel
+		appContentChannelCopy := *appContentChannel
+		appContentChannelCopy.ID = appContentChannel.ID
+		appContentChannelCopy.Name = appContentChannel.Name
+		appContentChannelCopy.Domain = appContentChannel.Domain
+		appContentChannelCopy.Ext = slices.Clone(appContentChannel.Ext)
+		return &appContentChannelCopy
+	} else {
+		siteContentChannel := request.Site.Content.Channel
+		siteContentChannelCopy := *siteContentChannel
+		siteContentChannelCopy.ID = siteContentChannel.ID
+		siteContentChannelCopy.Name = siteContentChannel.Name
+		siteContentChannelCopy.Domain = siteContentChannel.Domain
+		siteContentChannelCopy.Ext = slices.Clone(siteContentChannel.Ext)
+		return &siteContentChannelCopy
 	}
 }
 
