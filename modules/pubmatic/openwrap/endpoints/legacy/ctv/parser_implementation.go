@@ -4263,7 +4263,7 @@ func (o *OpenRTB) ORTBSiteContentNetworkExt(key string, value *string) (err erro
 		return
 	}
 
-	o.ortb.Site.Content.Producer.Ext = data
+	o.ortb.Site.Content.Network.Ext = data
 	return
 }
 
@@ -4292,7 +4292,7 @@ func (o *OpenRTB) ORTBSiteContentChannelExt(key string, value *string) (err erro
 		return
 	}
 
-	o.ortb.Site.Content.Producer.Ext = data
+	o.ortb.Site.Content.Channel.Ext = data
 	return
 }
 
@@ -4332,8 +4332,8 @@ func (o *OpenRTB) ORTBAppContentNetworkExt(key string, value *string) (err error
 		o.ortb.App.Content.Network = &openrtb2.Network{}
 	}
 	ext := JSONNode{}
-	if o.ortb.Site.Content.Network.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Network.Ext, &ext)
+	if o.ortb.App.Content.Network.Ext != nil {
+		err = json.Unmarshal(o.ortb.App.Content.Network.Ext, &ext)
 		if err != nil {
 			return
 		}
@@ -4345,7 +4345,7 @@ func (o *OpenRTB) ORTBAppContentNetworkExt(key string, value *string) (err error
 		return
 	}
 
-	o.ortb.Site.Content.Producer.Ext = data
+	o.ortb.App.Content.Network.Ext = data
 	return
 }
 
@@ -4361,8 +4361,8 @@ func (o *OpenRTB) ORTBAppContentChannelExt(key string, value *string) (err error
 		o.ortb.App.Content.Channel = &openrtb2.Channel{}
 	}
 	ext := JSONNode{}
-	if o.ortb.Site.Content.Channel.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Channel.Ext, &ext)
+	if o.ortb.App.Content.Channel.Ext != nil {
+		err = json.Unmarshal(o.ortb.App.Content.Channel.Ext, &ext)
 		if err != nil {
 			return
 		}
@@ -4374,7 +4374,7 @@ func (o *OpenRTB) ORTBAppContentChannelExt(key string, value *string) (err error
 		return
 	}
 
-	o.ortb.Site.Content.Producer.Ext = data
+	o.ortb.App.Content.Channel.Ext = data
 	return
 }
 
