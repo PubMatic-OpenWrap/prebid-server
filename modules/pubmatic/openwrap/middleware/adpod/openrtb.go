@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -112,35 +114,47 @@ func getPrebidCTVSeatBid(bidsMap map[string][]openrtb2.Bid) []openrtb2.SeatBid {
 	seatBids := []openrtb2.SeatBid{}
 
 	for impId, bids := range bidsMap {
-		bid := openrtb2.Bid{}
+		bid := openrtb2.Bid{
+			ImpID: impId,
+		}
+
 		bidID, err := uuid.NewV4()
 		if err == nil {
 			bid.ID = bidID.String()
 		} else {
 			bid.ID = bids[0].ID
 		}
-		creative, price := getAdPodBidCreativeAndPrice(bids)
-		bid.AdM = creative
-		bid.Price = price
-		bid.ImpID = impId
 
 		// Get Categories and ad domain
-		category := make(map[string]bool)
-		addomain := make(map[string]bool)
+		builder := GetAdPodBuilder()
+		category := make(map[string]struct{})
+		addomain := make(map[string]struct{})
+
 		for _, eachBid := range bids {
-			for _, cat := range eachBid.Cat {
-				if _, ok := category[cat]; !ok {
-					category[cat] = true
-					bid.Cat = append(bid.Cat, cat)
-				}
+			err := builder.Append(&eachBid)
+			if err != nil {
+				glog.Errorf("[CTV] type:[adpod_builder_append] parser:[%s] error:[%s] creative:[%s]", builder.Name(), err.Error(), base64.StdEncoding.EncodeToString([]byte(eachBid.AdM)))
+				continue
 			}
+
+			bid.Price += eachBid.Price
+			for _, cat := range eachBid.Cat {
+				category[cat] = struct{}{}
+			}
+
 			for _, domain := range eachBid.ADomain {
-				if _, ok := addomain[domain]; !ok {
-					addomain[domain] = true
-					bid.ADomain = append(bid.ADomain, domain)
-				}
+				addomain[domain] = struct{}{}
 			}
 		}
+
+		bid.AdM, err = builder.Build()
+		if err != nil {
+			glog.Errorf("[CTV] type:[adpod_builder_build] parser:[%s] error:[%s]", builder.Name(), err.Error())
+			continue
+		}
+
+		bid.Cat = map2array(category)
+		bid.ADomain = map2array(addomain)
 
 		seatBid := openrtb2.SeatBid{}
 		seatBid.Seat = models.BidderOWPrebidCTV
@@ -160,4 +174,12 @@ func formErrorBidResponse(id string, nbrCode *openrtb3.NoBidReason, ext json.Raw
 	}
 	data, _ := json.Marshal(response)
 	return data
+}
+
+func map2array(m map[string]struct{}) []string {
+	var result []string
+	for key := range m {
+		result = append(result, key)
+	}
+	return result[:]
 }

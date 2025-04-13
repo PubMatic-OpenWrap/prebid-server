@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,8 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	unwrapmodels "git.pubmatic.com/vastunwrap/unwrap/models"
-	unwraptest "git.pubmatic.com/vastunwrap/unwrap/testsuite"
+	unwrapmodels "git.pubmatic.com/vastunwrap/models"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
@@ -25,7 +23,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/ortb"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"golang.org/x/net/publicsuffix"
 )
@@ -187,25 +184,6 @@ func recordBids(ctx context.Context, metricsEngine metrics.MetricsEngine, pubID 
 	}
 }
 
-func RecordFastXMLTestMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmodels.UnwrapContext, etreeResp, fastxmlResp *unwrapmodels.UnwrapResponse) {
-	fastxmlResponse, etreeResponse := openrtb_ext.FastXMLPostProcessing(string(fastxmlResp.Response), string(etreeResp.Response))
-
-	fastxmlMetrics := openrtb_ext.FastXMLMetrics{
-		EtreeParserTime:   ctx.FastXMLTestCtx.ETreeStats.ProcessingTime,
-		FastXMLParserTime: ctx.FastXMLTestCtx.FastXMLStats.ProcessingTime,
-		IsRespMismatch:    etreeResponse != fastxmlResponse,
-	}
-
-	if fastxmlMetrics.IsRespMismatch {
-		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
-	}
-
-	wrapperCount := strconv.Itoa(etreeResp.WrapperCount)
-	recordFastXMLMetrics(metricsEngine, "unwrap", wrapperCount, &fastxmlMetrics)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelFastXML, "unwrap", wrapperCount, ctx.FastXMLTestCtx.FastXMLStats.ResponseTime)
-	metricsEngine.RecordXMLParserResponseTime(metrics.XMLParserLabelETree, "unwrap", wrapperCount, ctx.FastXMLTestCtx.ETreeStats.ResponseTime)
-}
-
 func recordVastVersion(metricsEngine metrics.MetricsEngine, adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 	for _, seatBid := range adapterBids {
 		for _, pbsBid := range seatBid.Bids {
@@ -231,21 +209,11 @@ func recordOpenWrapBidResponseMetrics(bidder *BidderAdapter, bidResponse *adapte
 		return
 	}
 
-	if bidResponse.FastXMLMetrics != nil {
-		recordFastXMLMetrics(bidder.me, "vastbidder", "0", bidResponse.FastXMLMetrics)
-		if bidResponse.FastXMLMetrics.IsRespMismatch {
-			resp, _ := jsonutil.Marshal(bidResponse)
-			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vast_bidder", base64.StdEncoding.EncodeToString([]byte(resp)))
-		}
+	if bidResponse.XMLMetrics != nil {
+		bidder.me.RecordXMLParserProcessingTime(bidResponse.XMLMetrics.ParserName, "vastbidder", "", bidResponse.XMLMetrics.ParsingTime)
 	}
 
 	recordVASTTagType(bidder.me, bidResponse, bidder.BidderName)
-}
-
-func recordFastXMLMetrics(metricsEngine metrics.MetricsEngine, method string, param string, fastxmlMetrics *openrtb_ext.FastXMLMetrics) {
-	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelFastXML, method, param, fastxmlMetrics.FastXMLParserTime)
-	metricsEngine.RecordXMLParserProcessingTime(metrics.XMLParserLabelETree, method, param, fastxmlMetrics.EtreeParserTime)
-	metricsEngine.RecordXMLParserResponseMismatch(method, param, fastxmlMetrics.IsRespMismatch)
 }
 
 func recordVASTTagType(metricsEngine metrics.MetricsEngine, adapterBids *adapters.BidderResponse, bidder openrtb_ext.BidderName) {
@@ -462,3 +430,34 @@ func upadteOWDebugLog(requestExtPrebid *openrtb_ext.ExtRequestPrebid, debugLog *
 		debugLog.DebugOverride = requestExtPrebid.ExtOWRequestPrebid.DebugOverride
 	}
 }
+
+func RecordVASTUnwrapperMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmodels.UnwrapContext) {
+	metricsEngine.RecordXMLParserResponseTime(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount), ctx.Stats.ResponseTime)
+	if ctx.Stats.ErrorCode == 0 {
+		metricsEngine.RecordXMLParserProcessingTime(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount), (ctx.Stats.ResponseTime - ctx.Stats.VASTAdTagURLFetchTime))
+	} else {
+		metricsEngine.RecordXMLParserError(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount))
+	}
+}
+
+/*
+func RecordVastUnwrapXMLMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmodels.UnwrapContext, etreeResp, fastxmlResp *unwrapmodels.UnwrapResponse) {
+	fastxmlResponse, etreeResponse := openrtb_ext.NormalizeXML(string(fastxmlResp.Response)), openrtb_ext.NormalizeXML(string(etreeResp.Response))
+
+	fastxmlMetrics := openrtb_ext.XMLMetrics{
+		EtreeParserTime:   ctx.FastXMLTestCtx.ETreeStats.ProcessingTime,
+		FastXMLParserTime: ctx.FastXMLTestCtx.FastXMLStats.ProcessingTime,
+		IsRespMismatch:    etreeResponse != fastxmlResponse,
+	}
+
+	if fastxmlMetrics.IsRespMismatch {
+		openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "unwrap", unwraptest.Base64Encode(ctx))
+	}
+
+	if ctx.XMLTestCtx.Enabled {
+		wrapperCount := strconv.Itoa(etreeResp.WrapperCount)
+		metricsEngine.RecordXMLParserResponseTime(ctx.XMLTestCtx.UnwrapperStats[0].Parser, "unwrap", wrapperCount, ctx.XMLTestCtx.UnwrapperStats[0].ResponseTime)
+		metricsEngine.RecordXMLParserResponseTime(ctx.XMLTestCtx.UnwrapperStats[1].Parser, "unwrap", wrapperCount, ctx.XMLTestCtx.UnwrapperStats[1].ResponseTime)
+	}
+}
+*/

@@ -20,6 +20,10 @@ func newETreeXMLParser() *etreeXMLParser {
 	return &etreeXMLParser{}
 }
 
+func (p *etreeXMLParser) Name() string {
+	return openrtb_ext.XMLParserETree
+}
+
 func (p *etreeXMLParser) SetVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 	p.vastTag = vastTag
 }
