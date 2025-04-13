@@ -96,6 +96,10 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.Model = signalDevice.Model
 	}
 
+	if signalDevice.UA != "" {
+		maxRequest.Device.UA = signalDevice.UA
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {
