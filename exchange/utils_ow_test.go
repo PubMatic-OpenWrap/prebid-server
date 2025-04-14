@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -94,7 +95,6 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 						Name: "Site1",
 					},
 				},
-
 				requestExt: &openrtb_ext.ExtRequest{
 					Prebid: openrtb_ext.ExtRequestPrebid{
 						ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
@@ -200,7 +200,6 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 		{
 			name: "Include All keys for bidder",
 			args: args{
-
 				BidRequest: &openrtb2.BidRequest{
 					ID: "1",
 					Site: &openrtb2.Site{
@@ -261,7 +260,6 @@ func Test_updateContentObjectForBidder(t *testing.T) {
 		{
 			name: "Exclude All keys for pubmatic bidder",
 			args: args{
-
 				BidRequest: &openrtb2.BidRequest{
 					ID: "1",
 					App: &openrtb2.App{
@@ -1072,6 +1070,202 @@ func Benchmark_updateContentObjectForBidder(b *testing.B) {
 				updateContentObjectForBidder(allBidderRequests, tt.args.requestExt)
 			}
 			//assert.Equal(t, tt.wantedAllBidderRequests, allBidderRequests, tt.name)
+		})
+	}
+}
+
+func TestDeepCopyAppContentNetworkObj(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *openrtb2.Network
+		expected *openrtb2.Network
+	}{
+		{
+			name:  "Nil input",
+			input: nil,
+		},
+		{
+			name: "Valid Network object",
+			input: &openrtb2.Network{
+				ID:     "123",
+				Name:   "Test Network",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+			expected: &openrtb2.Network{
+				ID:     "123",
+				Name:   "Test Network",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+		},
+		{
+			name: "Network object with empty Ext",
+			input: &openrtb2.Network{
+				ID:     "456",
+				Name:   "Another Network",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`), // Empty JSON object
+			},
+			expected: &openrtb2.Network{
+				ID:     "456",
+				Name:   "Another Network",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DeepCopyAppContentNetworkObj(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDeepCopySiteContentNetworkObj(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *openrtb2.Network
+		expected *openrtb2.Network
+	}{
+		{
+			name:  "Nil input",
+			input: nil,
+		},
+		{
+			name: "Valid Network object",
+			input: &openrtb2.Network{
+				ID:     "123",
+				Name:   "Test Network",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+			expected: &openrtb2.Network{
+				ID:     "123",
+				Name:   "Test Network",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+		},
+		{
+			name: "Network object with empty Ext",
+			input: &openrtb2.Network{
+				ID:     "456",
+				Name:   "Another Network",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`), // Empty JSON object
+			},
+			expected: &openrtb2.Network{
+				ID:     "456",
+				Name:   "Another Network",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DeepCopySiteContentNetworkObj(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDeepCopyAppContentChannelObj(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *openrtb2.Channel
+		expected *openrtb2.Channel
+	}{
+		{
+			name:  "Nil input",
+			input: nil,
+		},
+		{
+			name: "Valid Channel object",
+			input: &openrtb2.Channel{
+				ID:     "123",
+				Name:   "Test Channel",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+			expected: &openrtb2.Channel{
+				ID:     "123",
+				Name:   "Test Channel",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+		},
+		{
+			name: "Channel object with empty Ext",
+			input: &openrtb2.Channel{
+				ID:     "456",
+				Name:   "Another Channel",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`), // Empty JSON object
+			},
+			expected: &openrtb2.Channel{
+				ID:     "456",
+				Name:   "Another Channel",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DeepCopyAppContentChannelObj(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestDeepCopySiteContentChannelObj(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *openrtb2.Channel
+		expected *openrtb2.Channel
+	}{
+		{
+			name:  "Nil input",
+			input: nil,
+		},
+		{
+			name: "Valid Channel object",
+			input: &openrtb2.Channel{
+				ID:     "123",
+				Name:   "Test Channel",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+			expected: &openrtb2.Channel{
+				ID:     "123",
+				Name:   "Test Channel",
+				Domain: "test.com",
+				Ext:    json.RawMessage(`{"key1": "value1", "key2": "value2"}`),
+			},
+		},
+		{
+			name: "Channel object with empty Ext",
+			input: &openrtb2.Channel{
+				ID:     "456",
+				Name:   "Another Channel",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`), // Empty JSON object
+			},
+			expected: &openrtb2.Channel{
+				ID:     "456",
+				Name:   "Another Channel",
+				Domain: "another.com",
+				Ext:    json.RawMessage(`{}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DeepCopySiteContentChannelObj(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

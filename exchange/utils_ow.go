@@ -68,62 +68,72 @@ func deepCopyContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Co
 	if isApp {
 		app := *request.App
 		app.Content = contentObject
+		if contentObject != nil && contentObject.Network != nil && contentObject.Channel != nil {
+			app.Content.Network = DeepCopyAppContentNetworkObj(contentObject.Network)
+			app.Content.Channel = DeepCopyAppContentChannelObj(contentObject.Channel)
+		}
 		request.App = &app
 	} else {
 		site := *request.Site
 		site.Content = contentObject
+		if contentObject != nil && contentObject.Network != nil && contentObject.Channel != nil {
+			site.Content.Network = DeepCopySiteContentNetworkObj(contentObject.Network)
+			site.Content.Channel = DeepCopySiteContentChannelObj(contentObject.Channel)
+		}
 		request.Site = &site
 	}
-	DeepCopyContentNetworkObj(request, isApp)
-	DeepCopyContentChannelObj(request, isApp)
 }
 
-func DeepCopyContentNetworkObj(request *openrtb2.BidRequest, isApp bool) *openrtb2.Network {
-	if request == nil || request.App == nil || request.Site == nil {
+func DeepCopyAppContentNetworkObj(appContentNetwork *openrtb2.Network) *openrtb2.Network {
+	if appContentNetwork == nil {
 		return nil
 	}
 
-	if isApp {
-		appContentNetwork := request.App.Content.Network
-		appContentNetworkCopy := *appContentNetwork
-		appContentNetworkCopy.ID = appContentNetwork.ID
-		appContentNetworkCopy.Name = appContentNetwork.Name
-		appContentNetworkCopy.Domain = appContentNetwork.Domain
-		appContentNetworkCopy.Ext = slices.Clone(appContentNetwork.Ext)
-		return &appContentNetworkCopy
-	} else {
-		siteContentNetwork := request.Site.Content.Network
-		siteContentNetworkCopy := *siteContentNetwork
-		siteContentNetworkCopy.ID = siteContentNetwork.ID
-		siteContentNetworkCopy.Name = siteContentNetwork.Name
-		siteContentNetworkCopy.Domain = siteContentNetwork.Domain
-		siteContentNetworkCopy.Ext = slices.Clone(siteContentNetwork.Ext)
-		return &siteContentNetworkCopy
-	}
+	appContentNetworkCopy := appContentNetwork
+	appContentNetworkCopy.ID = appContentNetwork.ID
+	appContentNetworkCopy.Name = appContentNetwork.Name
+	appContentNetworkCopy.Domain = appContentNetwork.Domain
+	appContentNetworkCopy.Ext = slices.Clone(appContentNetwork.Ext)
+	return appContentNetworkCopy
 }
 
-func DeepCopyContentChannelObj(request *openrtb2.BidRequest, isApp bool) *openrtb2.Channel {
-	if request == nil || request.App == nil || request.Site == nil {
+func DeepCopySiteContentNetworkObj(siteContentNetwork *openrtb2.Network) *openrtb2.Network {
+	if siteContentNetwork == nil {
 		return nil
 	}
 
-	if isApp {
-		appContentChannel := request.App.Content.Channel
-		appContentChannelCopy := *appContentChannel
-		appContentChannelCopy.ID = appContentChannel.ID
-		appContentChannelCopy.Name = appContentChannel.Name
-		appContentChannelCopy.Domain = appContentChannel.Domain
-		appContentChannelCopy.Ext = slices.Clone(appContentChannel.Ext)
-		return &appContentChannelCopy
-	} else {
-		siteContentChannel := request.Site.Content.Channel
-		siteContentChannelCopy := *siteContentChannel
-		siteContentChannelCopy.ID = siteContentChannel.ID
-		siteContentChannelCopy.Name = siteContentChannel.Name
-		siteContentChannelCopy.Domain = siteContentChannel.Domain
-		siteContentChannelCopy.Ext = slices.Clone(siteContentChannel.Ext)
-		return &siteContentChannelCopy
+	siteContentNetworkCopy := siteContentNetwork
+	siteContentNetworkCopy.ID = siteContentNetwork.ID
+	siteContentNetworkCopy.Name = siteContentNetwork.Name
+	siteContentNetworkCopy.Domain = siteContentNetwork.Domain
+	siteContentNetworkCopy.Ext = slices.Clone(siteContentNetwork.Ext)
+	return siteContentNetworkCopy
+}
+
+func DeepCopyAppContentChannelObj(appContentChannel *openrtb2.Channel) *openrtb2.Channel {
+	if appContentChannel == nil {
+		return nil
 	}
+
+	appContentChannelCopy := appContentChannel
+	appContentChannelCopy.ID = appContentChannel.ID
+	appContentChannelCopy.Name = appContentChannel.Name
+	appContentChannelCopy.Domain = appContentChannel.Domain
+	appContentChannelCopy.Ext = slices.Clone(appContentChannel.Ext)
+	return appContentChannelCopy
+}
+
+func DeepCopySiteContentChannelObj(siteContentChannel *openrtb2.Channel) *openrtb2.Channel {
+	if siteContentChannel == nil {
+		return nil
+	}
+
+	siteContentChannelCopy := siteContentChannel
+	siteContentChannelCopy.ID = siteContentChannel.ID
+	siteContentChannelCopy.Name = siteContentChannel.Name
+	siteContentChannelCopy.Domain = siteContentChannel.Domain
+	siteContentChannelCopy.Ext = slices.Clone(siteContentChannel.Ext)
+	return siteContentChannelCopy
 }
 
 // func createNewContentObject(contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
