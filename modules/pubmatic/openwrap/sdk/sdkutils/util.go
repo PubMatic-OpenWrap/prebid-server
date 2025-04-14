@@ -3,6 +3,10 @@ package sdkutils
 import "github.com/buger/jsonparser"
 
 func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
+	if source == nil {
+		return target, nil
+	}
+
 	// Initialize target if nil
 	if target == nil {
 		target = []byte(`{}`)
