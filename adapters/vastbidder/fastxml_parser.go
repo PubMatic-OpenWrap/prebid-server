@@ -21,12 +21,16 @@ func newFastXMLParser() *fastXMLParser {
 	return &fastXMLParser{}
 }
 
+func (p *fastXMLParser) Name() string {
+	return openrtb_ext.XMLParserFastXML
+}
+
 func (p *fastXMLParser) SetVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag) {
 	p.vastTag = vastTag
 }
 
 func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
-	p.reader = fastxml.NewXMLReader(nil)
+	p.reader = fastxml.NewXMLReader()
 
 	//parse vast xml
 	if err := p.reader.Parse(vastXML); err != nil {
@@ -40,7 +44,7 @@ func (p *fastXMLParser) Parse(vastXML []byte) (err error) {
 	}
 
 	//validate vast version
-	versionStr := p.reader.SelectAttrValue(vast, "version")
+	versionStr := p.reader.SelectAttrValue(vast, "version", "2.0")
 	p.vastVersion, err = parseVASTVersion(versionStr)
 	if err != nil {
 		return err
@@ -69,7 +73,7 @@ func (p *fastXMLParser) GetPricingDetails() (price float64, currency string) {
 		return 0.0, ""
 	}
 
-	if currency = p.reader.SelectAttrValue(node, "currency"); currency == "" {
+	if currency = p.reader.SelectAttrValue(node, "currency", "USD"); currency == "" {
 		currency = "USD"
 	}
 
@@ -92,7 +96,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 	switch int(p.vastVersion) {
 	case vastVersion2x, vastVersion3x:
 		for _, ext := range p.reader.SelectElements(p.adElement, "Extensions", "Extension") {
-			if p.reader.SelectAttrValue(ext, "type") == "advertiser" {
+			if p.reader.SelectAttrValue(ext, "type", "") == "advertiser" {
 				ele := p.reader.SelectElement(ext, "Advertiser")
 				if ele != nil {
 					if value := strings.TrimSpace(p.reader.Text(ele)); len(value) > 0 {
@@ -115,7 +119,7 @@ func (p *fastXMLParser) GetAdvertiser() (advertisers []string) {
 
 func (p *fastXMLParser) GetCreativeID() string {
 	if p.crID == "" && p.creativeElement != nil {
-		p.crID = p.reader.SelectAttrValue(p.creativeElement, "id")
+		p.crID = p.reader.SelectAttrValue(p.creativeElement, "id", "")
 	}
 
 	if p.crID == "" {

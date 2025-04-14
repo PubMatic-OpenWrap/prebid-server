@@ -1,6 +1,7 @@
 package vastbidder
 
 import (
+	"encoding/base64"
 	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -12,9 +13,8 @@ import (
 // VASTBidder is default implementation of ITagBidder
 type VASTBidder struct {
 	adapters.Bidder
-	bidderName               openrtb_ext.BidderName
-	adapterConfig            *config.Adapter
-	fastXMLEnabledPercentage int
+	bidderName    openrtb_ext.BidderName
+	adapterConfig *config.Adapter
 }
 
 // MakeRequests will contains default definition for processing queries
@@ -66,7 +66,7 @@ func (a *VASTBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapter
 
 // MakeBids makes bids
 func (a *VASTBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	parser := getXMLParser(etreeXMLParserType)
+	parser := getXMLParser()
 	handler := newResponseHandler(internalRequest, externalRequest, response, parser)
 
 	_start := time.Now()
@@ -75,52 +75,29 @@ func (a *VASTBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequ
 	}
 
 	responseData, errs := handler.MakeBids()
+	if len(errs) > 0 {
+		openrtb_ext.XMLLogf(openrtb_ext.XMLLogFormat, handler.parser.Name(), "vastbidder", base64.StdEncoding.EncodeToString(handler.response.Body))
+		return nil, errs[:]
+	}
 
-	if openrtb_ext.IsFastXMLEnabled(a.fastXMLEnabledPercentage) && len(errs) == 0 {
-		a.fastXMLTesting(
-			newResponseHandler(internalRequest, externalRequest, response, getXMLParser(fastXMLParserType)),
-			responseData,
-			time.Since(_start))
+	responseData.XMLMetrics = &openrtb_ext.XMLMetrics{
+		ParserName:  parser.Name(),
+		ParsingTime: time.Since(_start),
 	}
 
 	return responseData, errs
 }
 
-func (a *VASTBidder) fastXMLTesting(handler *responseHandler, responseData *adapters.BidderResponse, etreeParserTime time.Duration) {
-	var (
-		handlerTime    time.Duration
-		isVASTMismatch bool
-	)
-
-	_start := time.Now()
-	if err := handler.Validate(); len(err) == 0 {
-		_, errs := handler.MakeBids()
-		handlerTime = time.Since(_start)
-		if len(errs) > 0 {
-			isVASTMismatch = true
-		}
-	}
-
-	xmlParsingMetrics := &openrtb_ext.FastXMLMetrics{
-		FastXMLParserTime: handlerTime,
-		EtreeParserTime:   etreeParserTime,
-		IsRespMismatch:    isVASTMismatch,
-	}
-
-	responseData.FastXMLMetrics = xmlParsingMetrics
-}
-
 // NewTagBidder is an constructor for TagBidder
-func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter, enableFastXML int) *VASTBidder {
+func NewTagBidder(bidderName openrtb_ext.BidderName, config config.Adapter) *VASTBidder {
 	obj := &VASTBidder{
-		bidderName:               bidderName,
-		adapterConfig:            &config,
-		fastXMLEnabledPercentage: enableFastXML,
+		bidderName:    bidderName,
+		adapterConfig: &config,
 	}
 	return obj
 }
 
 // Builder builds a new instance of the 33Across adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, serverConfig config.Server) (adapters.Bidder, error) {
-	return NewTagBidder(bidderName, config, serverConfig.FastXMLEnabledPercentage), nil
+	return NewTagBidder(bidderName, config), nil
 }

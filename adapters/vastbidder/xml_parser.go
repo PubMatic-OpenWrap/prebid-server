@@ -3,6 +3,7 @@ package vastbidder
 import "github.com/prebid/prebid-server/v3/openrtb_ext"
 
 type xmlParser interface {
+	Name() string
 	Parse([]byte) error
 	SetVASTTag(vastTag *openrtb_ext.ExtImpVASTBidderTag)
 	GetAdvertiser() []string
@@ -11,16 +12,8 @@ type xmlParser interface {
 	GetDuration() (int, error)
 }
 
-type xmlParserType int
-
-const (
-	unknownXMLParserType xmlParserType = iota
-	etreeXMLParserType
-	fastXMLParserType
-)
-
-func getXMLParser(ty xmlParserType) xmlParser {
-	if ty == fastXMLParserType {
+func getXMLParser() xmlParser {
+	if openrtb_ext.IsFastXMLEnabled() {
 		return newFastXMLParser()
 	}
 	return newETreeXMLParser()
