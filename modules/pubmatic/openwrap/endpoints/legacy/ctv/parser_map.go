@@ -86,6 +86,16 @@ var ortbMapper = &ParserMap{
 		ORTBSiteContentLanguage:           Parser.ORTBSiteContentLanguage,
 		ORTBSiteContentEmbeddable:         Parser.ORTBSiteContentEmbeddable,
 
+		//Site.Content.Network
+		ORTBSiteContentNetworkID:     Parser.ORTBSiteContentNetworkID,
+		ORTBSiteContentNetworkName:   Parser.ORTBSiteContentNetworkName,
+		ORTBSiteContentNetworkDomain: Parser.ORTBSiteContentNetworkDomain,
+
+		//Site.Content.Channel
+		ORTBSiteContentChannelID:     Parser.ORTBSiteContentChannelID,
+		ORTBSiteContentChannelName:   Parser.ORTBSiteContentChannelName,
+		ORTBSiteContentChannelDomain: Parser.ORTBSiteContentChannelDomain,
+
 		//Site.Content.Producer
 		ORTBSiteContentProducerID:     Parser.ORTBSiteContentProducerID,
 		ORTBSiteContentProducerName:   Parser.ORTBSiteContentProducerName,
@@ -136,6 +146,16 @@ var ortbMapper = &ParserMap{
 		ORTBAppContentLen:                Parser.ORTBAppContentLen,
 		ORTBAppContentLanguage:           Parser.ORTBAppContentLanguage,
 		ORTBAppContentEmbeddable:         Parser.ORTBAppContentEmbeddable,
+
+		//App.Content.Network
+		ORTBAppContentNetworkID:     Parser.ORTBAppContentNetworkID,
+		ORTBAppContentNetworkName:   Parser.ORTBAppContentNetworkName,
+		ORTBAppContentNetworkDomain: Parser.ORTBAppContentNetworkDomain,
+
+		//App.Content.Channel
+		ORTBAppContentChannelID:     Parser.ORTBAppContentChannelID,
+		ORTBAppContentChannelName:   Parser.ORTBAppContentChannelName,
+		ORTBAppContentChannelDomain: Parser.ORTBAppContentChannelDomain,
 
 		//App.Content.Producer
 		ORTBAppContentProducerID:     Parser.ORTBAppContentProducerID,
@@ -324,7 +344,11 @@ var ortbMapper = &ParserMap{
 		ORTBImpExt:                 Parser.ORTBImpExt,
 		ORTBImpVideoExt:            Parser.ORTBImpVideoExt,
 		ORTBSiteExt:                Parser.ORTBSiteExt,
+		ORTBSiteContentNetworkExt:  Parser.ORTBSiteContentNetworkExt,
+		ORTBSiteContentChannelExt:  Parser.ORTBSiteContentChannelExt,
 		ORTBAppExt:                 Parser.ORTBAppExt,
+		ORTBAppContentNetworkExt:   Parser.ORTBAppContentNetworkExt,
+		ORTBAppContentChannelExt:   Parser.ORTBAppContentChannelExt,
 		ORTBSitePublisherExt:       Parser.ORTBSitePublisherExt,
 		ORTBSiteContentExt:         Parser.ORTBSiteContentExt,
 		ORTBSiteContentProducerExt: Parser.ORTBSiteContentProducerExt,
@@ -419,6 +443,16 @@ type Parser interface {
 	ORTBSiteContentLanguage() error
 	ORTBSiteContentEmbeddable() error
 
+	//Site.Content.Network
+	ORTBSiteContentNetworkID() error
+	ORTBSiteContentNetworkName() error
+	ORTBSiteContentNetworkDomain() error
+
+	//Site.Content.Channel
+	ORTBSiteContentChannelID() error
+	ORTBSiteContentChannelName() error
+	ORTBSiteContentChannelDomain() error
+
 	//Site.Content.Producer
 	ORTBSiteContentProducerID() error
 	ORTBSiteContentProducerName() error
@@ -469,6 +503,16 @@ type Parser interface {
 	ORTBAppContentLen() error
 	ORTBAppContentLanguage() error
 	ORTBAppContentEmbeddable() error
+
+	//App.Content.Network
+	ORTBAppContentNetworkID() error
+	ORTBAppContentNetworkName() error
+	ORTBAppContentNetworkDomain() error
+
+	//App.Content.Channel
+	ORTBAppContentChannelID() error
+	ORTBAppContentChannelName() error
+	ORTBAppContentChannelDomain() error
 
 	//App.Content.Producer
 	ORTBAppContentProducerID() error
@@ -663,7 +707,11 @@ type Parser interface {
 	ORTBImpExt(string, *string) error
 	ORTBImpVideoExt(string, *string) error
 	ORTBSiteExt(string, *string) error
+	ORTBSiteContentNetworkExt(string, *string) error
+	ORTBSiteContentChannelExt(string, *string) error
 	ORTBAppExt(string, *string) error
+	ORTBAppContentNetworkExt(string, *string) error
+	ORTBAppContentChannelExt(string, *string) error
 	ORTBSitePublisherExt(string, *string) error
 	ORTBSiteContentExt(string, *string) error
 	ORTBSiteContentProducerExt(string, *string) error
