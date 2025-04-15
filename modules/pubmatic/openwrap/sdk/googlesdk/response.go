@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"golang.org/x/net/html"
 )
 
 const videoClickThroughTagPath = "./VAST/Ad/InLine/Creatives/Creative/Linear/VideoClicks/ClickThrough"
@@ -107,13 +108,13 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 
 	if bidType == models.Banner {
 		declaredAd.HTMLSnippet = bid.AdM
-		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid)
+		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid.AdM)
 		return declaredAd
 	}
 
 	if bidType == models.Video || rctx.Platform == models.PLATFORM_VIDEO {
 		declaredAd.VideoVastXML = bid.AdM
-		declaredAd.ClickThroughURL = getVideoClickThroughURL(bid)
+		declaredAd.ClickThroughURL = getVideoClickThroughURL(bid.AdM)
 		return declaredAd
 	}
 
@@ -125,12 +126,8 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 	return declaredAd
 }
 
-func getBannerClickThroughURL(bid openrtb2.Bid) string {
-	return ""
-}
-
-func getVideoClickThroughURL(bid openrtb2.Bid) string {
-	videoCreative := strings.TrimSpace(bid.AdM)
+func getVideoClickThroughURL(creative string) string {
+	videoCreative := strings.TrimSpace(creative)
 	doc := etree.NewDocument()
 
 	if err := doc.ReadFromString(videoCreative); err != nil {
@@ -152,6 +149,90 @@ func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 
 	if sdkRenderedAdID, err := jsonparser.GetString(app.Ext, "installed_sdk", "id"); err == nil {
 		return sdkRenderedAdID
+	}
+	return ""
+}
+
+func getBannerClickThroughURL(creative string) string {
+	if strings.TrimSpace(creative) == "" {
+		return ""
+	}
+
+	url := extractClickURLFromJSON(creative)
+	if url != "" {
+		return url
+	}
+	return extractClickURLFromHTML(creative)
+}
+
+// extractClickURLFromJSON Extracts click URL from JSON creative
+func extractClickURLFromJSON(creative string) string {
+	creative = strings.TrimSpace(creative)
+	idx := strings.Index(creative, "click_urls")
+	if idx == -1 {
+		return ""
+	}
+
+	// move ahead to find colon
+	colonIdx := strings.Index(creative[idx:], ":")
+	if colonIdx == -1 {
+		return ""
+	}
+	startIdx := idx + colonIdx + 1
+
+	// Trim leading whitespace
+	trimmed := strings.TrimLeft(creative[startIdx:], " \n\r\t")
+
+	// Check if it's array or string
+	if strings.HasPrefix(trimmed, "[") {
+		// It's an array
+		end := strings.Index(trimmed, "]")
+		if end == -1 {
+			return ""
+		}
+		arrayContent := trimmed[1:end]
+		parts := strings.Split(arrayContent, ",")
+		if len(parts) == 0 {
+			return ""
+		}
+		return strings.Trim(parts[0], `" '`)
+
+	} else if strings.HasPrefix(trimmed, "\"") || strings.HasPrefix(trimmed, "'") {
+		quoteChar := trimmed[0] // either ' or "
+		endIdx := strings.Index(trimmed[1:], string(quoteChar))
+		if endIdx != -1 {
+			return trimmed[1 : 1+endIdx]
+		}
+	}
+
+	return ""
+}
+
+// extractClickURLFromHTML Parse HTML and find first anchor tag href
+func extractClickURLFromHTML(htmlStr string) string {
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil || doc == nil {
+		return ""
+	}
+	return findFirstHref(doc)
+}
+
+// findFirstHref Recursively walks HTML tree and returns first <a href="">
+func findFirstHref(n *html.Node) string {
+	if n == nil {
+		return ""
+	}
+	if n.Type == html.ElementNode && n.Data == "a" {
+		for _, attr := range n.Attr {
+			if attr.Key == "href" {
+				return attr.Val
+			}
+		}
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if result := findFirstHref(c); result != "" {
+			return result
+		}
 	}
 	return ""
 }
