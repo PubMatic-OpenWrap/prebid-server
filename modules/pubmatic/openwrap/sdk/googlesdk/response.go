@@ -12,6 +12,7 @@ import (
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 )
 
 const videoClickThroughTagPath = "./VAST/Ad/InLine/Creatives/Creative/Linear/VideoClicks/ClickThrough"
@@ -60,7 +61,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 
 	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
-		BidID: bidResponse.SeatBid[0].Bid[0].ID,
+		BidID: utils.GetOriginalBidId(bidResponse.SeatBid[0].Bid[0].ID),
 		Cur:   bidResponse.Cur,
 		SeatBid: []openrtb2.SeatBid{
 			{
