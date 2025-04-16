@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -166,6 +167,21 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
 			result.Errors = append(result.Errors, "owRedirectURL is missing")
 			return result, nil
+		}
+	}
+
+	// Country filter
+	if shouldApplyCountryFilter(rCtx.Endpoint) {
+		country := m.getCountryFromContext(rCtx)
+		if country != "" {
+			mode, countryCodes := m.getCountryFilterConfig(partnerConfigMap)
+			if !m.isCountryAllowed(country, mode, countryCodes) {
+				result.Reject = true
+				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+				// result.NbrCode = int(nbr.InvalidRequestCountryFiltered)
+				result.Errors = append(result.Errors, "Request rejected due to country filter")
+				return result, nil
+			}
 		}
 	}
 
@@ -1497,4 +1513,54 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Native = nil
 		return
 	}
+}
+
+func (m *OpenWrap) getCountryFromContext(rCtx models.RequestCtx) string {
+	if len(rCtx.DeviceCtx.Country) > 2 {
+		return rCtx.DeviceCtx.Country
+	}
+
+	if rCtx.DeviceCtx.IP != "" {
+		code, _ := m.getCountryCodes(rCtx.DeviceCtx.IP)
+		return code
+	}
+	return ""
+}
+
+func (m *OpenWrap) getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes []string) {
+	mode = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryFilterModeKey)
+	if mode == "" {
+		return "", nil
+	}
+
+	codesStr := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryCodesKey)
+	if codesStr == "" {
+		return mode, nil
+	}
+
+	if err := json.Unmarshal([]byte(codesStr), &countryCodes); err != nil {
+		return mode, countryCodes
+	}
+
+	return mode, countryCodes
+}
+
+func (m *OpenWrap) isCountryAllowed(country string, mode string, countryCodes []string) bool {
+	if mode == "" {
+		return true
+	}
+
+	if len(countryCodes) == 0 {
+		return true
+	}
+
+	found := slices.Contains(countryCodes, country)
+
+	// For allowlist (mode "1"), return true if country is found
+	// For blocklist (mode "0"), return true if country is not found
+	return (mode == "1" && found) || (mode == "0" && !found)
+}
+
+func shouldApplyCountryFilter(endpoint string) bool {
+	return endpoint == models.EndpointAppLovinMax
 }
