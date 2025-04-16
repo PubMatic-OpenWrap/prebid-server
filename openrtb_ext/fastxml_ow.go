@@ -8,18 +8,18 @@ import (
 	"regexp"
 	"runtime/debug"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
-	unwraptest "git.pubmatic.com/vastunwrap/unwrap/testsuite"
 	"github.com/golang/glog"
 	"golang.org/x/exp/rand"
 )
 
 var (
-	pid               = os.Getpid()
-	tmpWSRemoverRegex = regexp.MustCompile(`>\s+<`)
-	FastXMLLogFormat  = "\n[XML_PARSER_TEST] method:[%s] response:[%s]"
+	pid            = os.Getpid()
+	wsRemoverRegex = regexp.MustCompile(`>\s+<`)
+	XMLLogFormat   = "\n[XML_PARSER] parser:[%s] method:[%s] response:[%s]"
 )
 
 const (
@@ -27,6 +27,11 @@ const (
 	maxBufferSize = 256 * 1024
 	maxFiles      = 10
 	flushInterval = time.Second * time.Duration(300)
+)
+
+const (
+	XMLParserETree   = "etree"
+	XMLParserFastXML = "fastxml"
 )
 
 // Writer interface can be used to define variable returned by GetWriter() method
@@ -220,20 +225,6 @@ func fileNameFormat(name, ext string, t time.Time) string {
 		ext)
 }
 
-func IsFastXMLEnabled(enabledPercentage int) bool {
-	return enabledPercentage > 0 && enabledPercentage >= rg.GenerateIntn(enabledPercentage)
-}
-
-func FastXMLLogf(format string, args ...any) {
-	if bfw != nil {
-		fmt.Fprintf(bfw, format, args...)
-	}
-}
-
-func FastXMLPostProcessing(fastXML, etreeXML string) (string, string) {
-	return unwraptest.FastXMLPostProcessing(fastXML, etreeXML)
-}
-
 type RandomGenerator interface {
 	GenerateIntn(int) int
 }
@@ -244,16 +235,54 @@ func (RandomNumberGenerator) GenerateIntn(n int) int {
 	return rand.Intn(n)
 }
 
-type FastXMLMetrics struct {
-	FastXMLParserTime time.Duration `json:"xmlparsertime,omitempty"`
-	EtreeParserTime   time.Duration `json:"etreeparsertime,omitempty"`
-	IsRespMismatch    bool          `json:"isrespmismatch,omitempty"`
+func XMLLogf(format string, args ...any) {
+	if bfw != nil {
+		fmt.Fprintf(bfw, format, args...)
+	}
 }
 
-var rg RandomGenerator
-var bfw Writer
+func NormalizeXML(xml string) string {
+	//replace only if trackers are injected
+	xml = strings.TrimSpace(xml)                     //step1: remove heading and trailing whitespaces
+	xml = wsRemoverRegex.ReplaceAllString(xml, "><") //step2: remove inbetween whitespaces
+	xml = strings.ReplaceAll(xml, " = ", "=")        //step3: remove whitespaces near attribute
+	xml = strings.ReplaceAll(xml, " ><", "><")       //step4: remove attribute endtag whitespace (this should be always before step2)
+	xml = strings.ReplaceAll(xml, "'", "\"")         //step5: convert single quote to double quote
+	return xml
+}
+
+func SetFastXMLEnablingPercentage(percentage int) {
+	gFastXMLEnablingPercentage = percentage
+}
+
+func IsFastXMLEnabled() bool {
+	return gFastXMLEnablingPercentage > 0 && gFastXMLEnablingPercentage >= rg.GenerateIntn(gFastXMLEnablingPercentage)
+}
+
+func IsXMLComparingModeEnabled() bool {
+	return false
+}
+
+type XMLMetricsStats struct {
+	ParserName  string
+	ParsingTime time.Duration
+	HasError    bool
+}
+
+type XMLMetrics struct {
+	ParserName  string
+	ParsingTime time.Duration
+	HasError    bool
+}
+
+var (
+	rg                         RandomGenerator
+	bfw                        Writer
+	gFastXMLEnablingPercentage int
+)
 
 func init() {
 	rg = &RandomNumberGenerator{}
 	bfw = NewFileWriter(`/var/log/ssheaderbidding/`, `fastxml`, `.txt`)
+	gFastXMLEnablingPercentage = 0
 }

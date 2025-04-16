@@ -831,6 +831,100 @@ func (o *OpenRTB) ORTBSiteContentEmbeddable() (err error) {
 	return
 }
 
+/********************** Site.Content.Network **********************/
+
+// ORTBSiteContentNetworkID will read and set ortb Site.Content.Network.Id parameter
+func (o *OpenRTB) ORTBSiteContentNetworkID() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Network == nil {
+		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.Site.Content.Network.ID = o.values.Get(ORTBSiteContentNetworkID)
+	return
+}
+
+// ORTBSiteContentNetworkName will read and set ortb Site.Content.Network.Name parameter
+func (o *OpenRTB) ORTBSiteContentNetworkName() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Network == nil {
+		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.Site.Content.Network.Name = o.values.Get(ORTBSiteContentNetworkName)
+	return
+}
+
+// ORTBSiteContentNetworkDomain will read and set ortb Site.Content.Network.Domain parameter
+func (o *OpenRTB) ORTBSiteContentNetworkDomain() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Network == nil {
+		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.Site.Content.Network.Domain = o.values.Get(ORTBSiteContentNetworkDomain)
+	return
+}
+
+/********************** Site.Content.Channel **********************/
+
+// ORTBSiteContentChannelID will read and set ortb Site.Content.Channel.Id parameter
+func (o *OpenRTB) ORTBSiteContentChannelID() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Channel == nil {
+		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.Site.Content.Channel.ID = o.values.Get(ORTBSiteContentChannelID)
+	return
+}
+
+// ORTBSiteContentChannelName will read and set ortb Site.Content.Channel.Name parameter
+func (o *OpenRTB) ORTBSiteContentChannelName() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Channel == nil {
+		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.Site.Content.Channel.Name = o.values.Get(ORTBSiteContentChannelName)
+	return
+}
+
+// ORTBSiteContentChannelDomain will read and set ortb Site.Content.Channel.Domain parameter
+func (o *OpenRTB) ORTBSiteContentChannelDomain() (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Channel == nil {
+		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.Site.Content.Channel.Domain = o.values.Get(ORTBSiteContentChannelDomain)
+	return
+}
+
 /********************** Site.Content.Producer **********************/
 
 // ORTBSiteContentProducerID will read and set ortb Site.Content.Producer.ID parameter
@@ -1485,6 +1579,100 @@ func (o *OpenRTB) ORTBAppContentEmbeddable() (err error) {
 		o.ortb.App.Content = &openrtb2.Content{}
 	}
 	o.ortb.App.Content.Embeddable = ptrutil.ToPtr(int8(val))
+	return
+}
+
+/********************** App.Content.Network **********************/
+
+// ORTBAppContentNetworkID will read and set ortb App.Content.Network.Id parameter
+func (o *OpenRTB) ORTBAppContentNetworkID() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Network == nil {
+		o.ortb.App.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.App.Content.Network.ID = o.values.Get(ORTBAppContentNetworkID)
+	return
+}
+
+// ORTBAppContentNetworkName will read and set ortb App.Content.Network.Name parameter
+func (o *OpenRTB) ORTBAppContentNetworkName() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Network == nil {
+		o.ortb.App.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.App.Content.Network.Name = o.values.Get(ORTBAppContentNetworkName)
+	return
+}
+
+// ORTBAppContentNetworkDomain will read and set ortb App.Content.Network.Domain parameter
+func (o *OpenRTB) ORTBAppContentNetworkDomain() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Network == nil {
+		o.ortb.App.Content.Network = &openrtb2.Network{}
+	}
+	o.ortb.App.Content.Network.Domain = o.values.Get(ORTBAppContentNetworkDomain)
+	return
+}
+
+/********************** App.Content.Channel **********************/
+
+// ORTBAppContentChannelID will read and set ortb App.Content.Channel.Id parameter
+func (o *OpenRTB) ORTBAppContentChannelID() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Channel == nil {
+		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.App.Content.Channel.ID = o.values.Get(ORTBAppContentChannelID)
+	return
+}
+
+// ORTBAppContentChannelName will read and set ortb App.Content.Channel.Name parameter
+func (o *OpenRTB) ORTBAppContentChannelName() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Channel == nil {
+		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.App.Content.Channel.Name = o.values.Get(ORTBAppContentChannelName)
+	return
+}
+
+// ORTBAppContentChannelDomain will read and set ortb App.Content.Channel.Domain parameter
+func (o *OpenRTB) ORTBAppContentChannelDomain() (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Channel == nil {
+		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	}
+	o.ortb.App.Content.Channel.Domain = o.values.Get(ORTBAppContentChannelDomain)
 	return
 }
 
@@ -4050,6 +4238,64 @@ func (o *OpenRTB) ORTBSiteExt(key string, value *string) (err error) {
 	return
 }
 
+// ORTBSiteContentNetworkExt will read and set ortb Site.Content.Network.Ext parameter
+func (o *OpenRTB) ORTBSiteContentNetworkExt(key string, value *string) (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Network == nil {
+		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Network.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Network.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Network.Ext = data
+	return
+}
+
+// ORTBSiteContentChannelExt will read and set ortb Site.Content.Channel.Ext parameter
+func (o *OpenRTB) ORTBSiteContentChannelExt(key string, value *string) (err error) {
+	if o.ortb.Site == nil {
+		o.ortb.Site = &openrtb2.Site{}
+	}
+	if o.ortb.Site.Content == nil {
+		o.ortb.Site.Content = &openrtb2.Content{}
+	}
+	if o.ortb.Site.Content.Channel == nil {
+		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	}
+	ext := JSONNode{}
+	if o.ortb.Site.Content.Channel.Ext != nil {
+		err = json.Unmarshal(o.ortb.Site.Content.Channel.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Site.Content.Channel.Ext = data
+	return
+}
+
 // ORTBAppExt will read and set ortb App.Ext parameter
 func (o *OpenRTB) ORTBAppExt(key string, value *string) (err error) {
 	if o.ortb.App == nil {
@@ -4071,6 +4317,64 @@ func (o *OpenRTB) ORTBAppExt(key string, value *string) (err error) {
 	}
 
 	o.ortb.App.Ext = data
+	return
+}
+
+// ORTBAppContentNetworkExt will read and set ortb App.Content.Network.Ext parameter
+func (o *OpenRTB) ORTBAppContentNetworkExt(key string, value *string) (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Network == nil {
+		o.ortb.App.Content.Network = &openrtb2.Network{}
+	}
+	ext := JSONNode{}
+	if o.ortb.App.Content.Network.Ext != nil {
+		err = json.Unmarshal(o.ortb.App.Content.Network.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.App.Content.Network.Ext = data
+	return
+}
+
+// ORTBAppContentChannelExt will read and set ortb App.Content.Channel.Ext parameter
+func (o *OpenRTB) ORTBAppContentChannelExt(key string, value *string) (err error) {
+	if o.ortb.App == nil {
+		o.ortb.App = &openrtb2.App{}
+	}
+	if o.ortb.App.Content == nil {
+		o.ortb.App.Content = &openrtb2.Content{}
+	}
+	if o.ortb.App.Content.Channel == nil {
+		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	}
+	ext := JSONNode{}
+	if o.ortb.App.Content.Channel.Ext != nil {
+		err = json.Unmarshal(o.ortb.App.Content.Channel.Ext, &ext)
+		if err != nil {
+			return
+		}
+	}
+	SetValue(ext, key, value)
+
+	data, err := json.Marshal(ext)
+	if err != nil {
+		return
+	}
+
+	o.ortb.App.Content.Channel.Ext = data
 	return
 }
 

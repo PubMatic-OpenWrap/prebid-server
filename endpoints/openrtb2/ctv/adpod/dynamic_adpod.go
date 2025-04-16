@@ -2,18 +2,13 @@ package adpod
 
 import (
 	"encoding/json"
-	"fmt"
-	"math"
-	"net/url"
+	"errors"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/beevik/etree"
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/endpoints/events"
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/combination"
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/constant"
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/impressions"
@@ -21,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/types"
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/v3/metrics"
+	middleware "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/middleware/adpod"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
@@ -335,7 +331,13 @@ func (da *dynamicAdpod) getBidResponseSeatBids() []openrtb2.SeatBid {
 // getAdPodBid
 func (da *dynamicAdpod) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 	bid := types.Bid{
-		Bid: &openrtb2.Bid{},
+		Bid: &openrtb2.Bid{
+			ImpID:   adpod.OriginalImpID,
+			Price:   adpod.Price,
+			ADomain: adpod.ADomain[:],
+			Cat:     adpod.Cat[:],
+			Ext:     getAdPodBidExtension(adpod),
+		},
 	}
 
 	//TODO: Write single for loop to get all details
@@ -346,117 +348,12 @@ func (da *dynamicAdpod) getAdPodBid(adpod *types.AdPodBid) *types.Bid {
 		bid.ID = adpod.Bids[0].ID
 	}
 
-	bid.ImpID = adpod.OriginalImpID
-	bid.Price = adpod.Price
-	bid.ADomain = adpod.ADomain[:]
-	bid.Cat = adpod.Cat[:]
-	bid.AdM = *getAdPodBidCreative(adpod, true)
-	bid.Ext = getAdPodBidExtension(adpod)
-	return &bid
-}
-
-// getAdPodBidCreative get commulative adpod bid details
-func getAdPodBidCreative(adpod *types.AdPodBid, generatedBidID bool) *string {
-	doc := etree.NewDocument()
-	vast := doc.CreateElement(constant.VASTElement)
-	sequenceNumber := 1
-	var version float64 = 2.0
-
-	for _, bid := range adpod.Bids {
-		var newAd *etree.Element
-
-		if strings.HasPrefix(bid.AdM, constant.HTTPPrefix) {
-			newAd = etree.NewElement(constant.VASTAdElement)
-			wrapper := newAd.CreateElement(constant.VASTWrapperElement)
-			vastAdTagURI := wrapper.CreateElement(constant.VASTAdTagURIElement)
-			vastAdTagURI.CreateCharData(bid.AdM)
-		} else {
-			adDoc := etree.NewDocument()
-			if err := adDoc.ReadFromString(bid.AdM); err != nil {
-				continue
-			}
-
-			if generatedBidID == false {
-				// adjust bidid in video event trackers and update
-				adjustBidIDInVideoEventTrackers(adDoc, bid.Bid)
-				adm, err := adDoc.WriteToString()
-				if nil != err {
-					util.JLogf("ERROR, %v", err.Error())
-				} else {
-					bid.AdM = adm
-				}
-			}
-
-			vastTag := adDoc.SelectElement(constant.VASTElement)
-			if vastTag == nil {
-				util.Logf("error:[vast_element_missing_in_adm] seat:[%s] adm:[%s]", bid.Seat, bid.AdM)
-				continue
-			}
-
-			//Get Actual VAST Version
-			bidVASTVersion, _ := strconv.ParseFloat(vastTag.SelectAttrValue(constant.VASTVersionAttribute, constant.VASTDefaultVersionStr), 64)
-			version = math.Max(version, bidVASTVersion)
-
-			ads := vastTag.SelectElements(constant.VASTAdElement)
-			if len(ads) > 0 {
-				newAd = ads[0].Copy()
-			}
-		}
-
-		if nil != newAd {
-			//creative.AdId attribute needs to be updated
-			newAd.CreateAttr(constant.VASTSequenceAttribute, fmt.Sprint(sequenceNumber))
-			vast.AddChild(newAd)
-			sequenceNumber++
-		}
-	}
-
-	if int(version) > len(constant.VASTVersionsStr) {
-		version = constant.VASTMaxVersion
-	}
-
-	vast.CreateAttr(constant.VASTVersionAttribute, constant.VASTVersionsStr[int(version)])
-	bidAdM, err := doc.WriteToString()
-	if err != nil {
-		fmt.Printf("ERROR, %v", err.Error())
+	if bid.AdM, err = mergeAdPodBids(adpod); err != nil {
+		//TODO: log stats
 		return nil
 	}
-	return &bidAdM
-}
 
-func adjustBidIDInVideoEventTrackers(doc *etree.Document, bid *openrtb2.Bid) {
-	// adjusment: update bid.id with ctv module generated bid.id
-	creatives := events.FindCreatives(doc)
-	for _, creative := range creatives {
-		trackingEvents := creative.FindElements("TrackingEvents/Tracking")
-		if nil != trackingEvents {
-			// update bidid= value with ctv generated bid id for this bid
-			for _, trackingEvent := range trackingEvents {
-				u, e := url.Parse(trackingEvent.Text())
-				if nil == e {
-					values, e := url.ParseQuery(u.RawQuery)
-					// only do replacment if operId=8
-					if nil == e && nil != values["bidid"] && nil != values["operId"] && values["operId"][0] == "8" {
-						values.Set("bidid", bid.ID)
-					} else {
-						continue
-					}
-
-					//OTT-183: Fix
-					if nil != values["operId"] && values["operId"][0] == "8" {
-						operID := values.Get("operId")
-						values.Del("operId")
-						values.Add("_operId", operID) // _ (underscore) will keep it as first key
-					}
-
-					u.RawQuery = values.Encode() // encode sorts query params by key. _ must be first (assuing no other query param with _)
-					// replace _operId with operId
-					u.RawQuery = strings.ReplaceAll(u.RawQuery, "_operId", "operId")
-					trackingEvent.SetText(u.String())
-				}
-			}
-		}
-	}
+	return &bid
 }
 
 // getAdPodBidExtension get commulative adpod bid details
@@ -531,4 +428,23 @@ func (da *dynamicAdpod) setBidExtParams() {
 		}
 	}
 
+}
+
+// mergeAdPodBids get commulative adpod bid details
+func mergeAdPodBids(adpod *types.AdPodBid) (string, error) {
+	if adpod == nil || len(adpod.Bids) == 0 {
+		return "", errors.New("empty bid response")
+	}
+
+	builder := middleware.GetAdPodBuilder()
+	for _, bid := range adpod.Bids {
+		if bid.Price <= 0 {
+			continue
+		}
+		if err := builder.Append(bid.Bid); err != nil {
+			return "", err
+		}
+	}
+
+	return builder.Build()
 }

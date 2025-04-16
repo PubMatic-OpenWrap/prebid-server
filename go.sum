@@ -53,8 +53,8 @@ git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358 h1:A+ohfT
 git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358/go.mod h1:I6yt+Te6PaQdUW+pq7/LHNWZ6/+5SSlExknAr3Mfv58=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
 git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250305121837-361521441322 h1:SsZgEGvU3hZnDb4nMP2MDX3/AsT7cncWP0gDbuZ0zLc=
-git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250305121837-361521441322/go.mod h1:BQb932Y+uo9qla+S7CIlaaTS2gjz3/ds9xAo5MNdvMA=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250413103331-eb94f23db3f9 h1:7Py1K7/++5Ob85kvPSIJSwfUo4Zyb4KgueRFK05lqHk=
+git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250413103331-eb94f23db3f9/go.mod h1:pKlYgzQa/b4uwwik5ilkiwRRgF6cV00bBj5mAPqaebk=
 github.com/51Degrees/device-detection-go/v4 v4.4.35 h1:qhP2tzoXhGE1aYY3NftMJ+ccxz0+2kM8aF4SH7fTyuA=
 github.com/51Degrees/device-detection-go/v4 v4.4.35/go.mod h1:dbdG1fySqdY+a5pUnZ0/G0eD03G6H3Vh8kRC+1f9qSc=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -69,8 +69,8 @@ github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMo
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5 h1:uNJ9lOn3q677J2PbR9wbnHec8452lHYvUZCfqMUxk0s=
 github.com/PubMatic-OpenWrap/etree v1.0.2-0.20241125102329-0b5c47d99ad5/go.mod h1:5Y8qgcuDoy3XXG907UXkGnVTwihF16rXyJa4zRT7hOE=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb h1:lbvtgin0ZO95N6yfJkSkpofQvUkUSBsEX1n51Pu94tM=
-github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250204132803-401d27cd39bb/go.mod h1:h3KCtxPGi4/UjwtoWu2Vt07zOxPyLH46za2L74KH0NY=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250413102522-1b08a22c067a h1:Hvitu/hPfn9I5X2liSAbIBrHHA5sNqZ7YRFlQbqtM9U=
+github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250413102522-1b08a22c067a/go.mod h1:h3KCtxPGi4/UjwtoWu2Vt07zOxPyLH46za2L74KH0NY=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20250205103645-df6428f5ca27 h1:cdVamIOq0VmxjEYRPgnea5XL0Q/XRpK3okMqzkD8Seo=
 github.com/PubMatic-OpenWrap/prebid-openrtb/v20 v20.0.0-20250205103645-df6428f5ca27/go.mod h1:hLBrA/APkSrxs5MaW639l+y/EAHivDfRagO2TX/wbSc=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

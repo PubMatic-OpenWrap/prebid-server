@@ -29,6 +29,10 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 		requestExt.Prebid.Floors.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
 	}
 
+	if configMap[models.VersionLevelConfigID][models.PLATFORM_KEY] == models.PLATFORM_APP && requestExt.Prebid.Floors.Enforcement.FloorDeals == nil {
+		requestExt.Prebid.Floors.Enforcement.FloorDeals = ptrutil.ToPtr(true)
+	}
+
 	if requestExt.Prebid.Floors.Enforcement.EnforcePBS == nil {
 		// By default enforcemnt will be true i.e hard floor
 		requestExt.Prebid.Floors.Enforcement.EnforcePBS = ptrutil.ToPtr(true)

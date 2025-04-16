@@ -2,11 +2,11 @@ package exchange
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func JLogf(msg string, obj interface{}) {
@@ -23,19 +23,19 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 	}
 
 	rules := requestExt.Prebid.Transparency.Content
-
 	if len(rules) == 0 {
 		return
 	}
 
-	var contentObject *openrtb2.Content
+	var content *openrtb2.Content
 	isApp := false
 	bidderRequest := allBidderRequests[0]
+
 	if bidderRequest.BidRequest.App != nil && bidderRequest.BidRequest.App.Content != nil {
-		contentObject = bidderRequest.BidRequest.App.Content
+		content = bidderRequest.BidRequest.App.Content
 		isApp = true
 	} else if bidderRequest.BidRequest.Site != nil && bidderRequest.BidRequest.Site.Content != nil {
-		contentObject = bidderRequest.BidRequest.Site.Content
+		content = bidderRequest.BidRequest.Site.Content
 	} else {
 		return
 	}
@@ -47,23 +47,17 @@ func updateContentObjectForBidder(allBidderRequests []BidderRequest, requestExt 
 	}
 
 	for _, bidderRequest := range allBidderRequests {
-		var newContentObject *openrtb2.Content
-
 		rule, ok := rules[string(bidderRequest.BidderName)]
 		if !ok {
 			rule = defaultRule
 		}
 
-		if len(rule.Keys) != 0 {
-			newContentObject = createNewContentObject(contentObject, rule.Include, rule.Keys)
-		} else if rule.Include {
-			newContentObject = contentObject
-		}
-		deepCopyContentObj(bidderRequest.BidRequest, newContentObject, isApp)
+		newContentObject := deepCopyContentObj(content, rule.Include, rule.Keys)
+		updateContentObj(bidderRequest.BidRequest, newContentObject, isApp)
 	}
 }
 
-func deepCopyContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) {
+func updateContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Content, isApp bool) {
 	if isApp {
 		app := *request.App
 		app.Content = contentObject
@@ -75,185 +69,211 @@ func deepCopyContentObj(request *openrtb2.BidRequest, contentObject *openrtb2.Co
 	}
 }
 
-// func createNewContentObject(contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
-// 	if include {
-// 		return includeKeys(contentObject, keys)
-// 	}
-// 	return excludeKeys(contentObject, keys)
+func deepCopyContentNetworkObj(network *openrtb2.Network) *openrtb2.Network {
+	if network == nil {
+		return nil
+	}
 
-// }
+	return &openrtb2.Network{
+		ID:     network.ID,
+		Name:   network.Name,
+		Domain: network.Domain,
+		Ext:    slices.Clone(network.Ext),
+	}
+}
 
-// func excludeKeys(contentObject *openrtb2.Content, keys []string) *openrtb2.Content {
-// 	newContentObject := *contentObject
+func deepCopyContentChannelObj(channel *openrtb2.Channel) *openrtb2.Channel {
+	if channel == nil {
+		return nil
+	}
 
-// 	keyMap := make(map[string]struct{}, 1)
-// 	for _, key := range keys {
-// 		keyMap[key] = struct{}{}
-// 	}
+	return &openrtb2.Channel{
+		ID:     channel.ID,
+		Name:   channel.Name,
+		Domain: channel.Domain,
+		Ext:    slices.Clone(channel.Ext),
+	}
+}
 
-// 	rt := reflect.TypeOf(newContentObject)
-// 	for i := 0; i < rt.NumField(); i++ {
-// 		key := strings.Split(rt.Field(i).Tag.Get("json"), ",")[0] // remove omitempty, etc
-// 		if _, ok := keyMap[key]; ok {
-// 			reflect.ValueOf(&newContentObject).Elem().FieldByName(rt.Field(i).Name).Set(reflect.Zero(rt.Field(i).Type))
-// 		}
-// 	}
+func deepCopyContentProducer(producer *openrtb2.Producer) *openrtb2.Producer {
+	if producer == nil {
+		return nil
+	}
 
-// 	return &newContentObject
-// }
+	return &openrtb2.Producer{
+		ID:     producer.ID,
+		Name:   producer.Name,
+		Cat:    slices.Clone(producer.Cat),
+		Domain: producer.Domain,
+		Ext:    slices.Clone(producer.Ext),
+	}
+}
 
-// func includeKeys(contentObject *openrtb2.Content, keys []string) *openrtb2.Content {
-// 	newContentObject := openrtb2.Content{}
-// 	v := reflect.ValueOf(contentObject).Elem()
-// 	keyMap := make(map[string]struct{}, 1)
-// 	for _, key := range keys {
-// 		keyMap[key] = struct{}{}
-// 	}
+func deepCopyContentObj(contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
+	if contentObject == nil {
+		return nil
+	}
 
-// 	rt := reflect.TypeOf(newContentObject)
-// 	rvElem := reflect.ValueOf(&newContentObject).Elem()
-// 	for i := 0; i < rt.NumField(); i++ {
-// 		field := rt.Field(i)
-// 		key := strings.Split(field.Tag.Get("json"), ",")[0] // remove omitempty, etc
-// 		if _, ok := keyMap[key]; ok {
-// 			rvElem.FieldByName(field.Name).Set(v.FieldByName(field.Name))
-// 		}
-// 	}
+	if !include && len(keys) == 0 {
+		return nil
+	}
 
-// 	return &newContentObject
-// }
+	// Create a deep copy of the content object first
+	newContentObject := &openrtb2.Content{
+		ID:             contentObject.ID,
+		Episode:        contentObject.Episode,
+		Title:          contentObject.Title,
+		Series:         contentObject.Series,
+		Season:         contentObject.Season,
+		Artist:         contentObject.Artist,
+		Genre:          contentObject.Genre,
+		Album:          contentObject.Album,
+		ISRC:           contentObject.ISRC,
+		URL:            contentObject.URL,
+		Cat:            slices.Clone(contentObject.Cat),
+		Context:        contentObject.Context,
+		ContentRating:  contentObject.ContentRating,
+		UserRating:     contentObject.UserRating,
+		QAGMediaRating: contentObject.QAGMediaRating,
+		Keywords:       contentObject.Keywords,
+		Len:            contentObject.Len,
+		Language:       contentObject.Language,
+	}
 
-func createNewContentObject(contentObject *openrtb2.Content, include bool, keys []string) *openrtb2.Content {
-	newContentObject := &openrtb2.Content{}
-	if !include {
-		*newContentObject = *contentObject
-		for _, key := range keys {
+	// Deep copy pointer fields
+	if contentObject.Producer != nil {
+		newContentObject.Producer = deepCopyContentProducer(contentObject.Producer)
+	}
+	if contentObject.ProdQ != nil {
+		prodQ := *contentObject.ProdQ
+		newContentObject.ProdQ = &prodQ
+	}
+	if contentObject.VideoQuality != nil {
+		videoQuality := *contentObject.VideoQuality
+		newContentObject.VideoQuality = &videoQuality
+	}
+	if contentObject.LiveStream != nil {
+		liveStream := *contentObject.LiveStream
+		newContentObject.LiveStream = &liveStream
+	}
+	if contentObject.SourceRelationship != nil {
+		sourceRel := *contentObject.SourceRelationship
+		newContentObject.SourceRelationship = &sourceRel
+	}
+	if contentObject.Embeddable != nil {
+		embeddable := *contentObject.Embeddable
+		newContentObject.Embeddable = &embeddable
+	}
+	if contentObject.Data != nil {
+		newContentObject.Data = slices.Clone(contentObject.Data)
+	}
+	if contentObject.Network != nil {
+		newContentObject.Network = deepCopyContentNetworkObj(contentObject.Network)
+	}
+	if contentObject.Channel != nil {
+		newContentObject.Channel = deepCopyContentChannelObj(contentObject.Channel)
+	}
+	newContentObject.Ext = slices.Clone(contentObject.Ext)
 
-			switch key {
-			case "id":
-				newContentObject.ID = ""
-			case "episode":
-				newContentObject.Episode = 0
-			case "title":
-				newContentObject.Title = ""
-			case "series":
-				newContentObject.Series = ""
-			case "season":
-				newContentObject.Season = ""
-			case "artist":
-				newContentObject.Artist = ""
-			case "genre":
-				newContentObject.Genre = ""
-			case "album":
-				newContentObject.Album = ""
-			case "isrc":
-				newContentObject.ISRC = ""
-			case "producer":
-				newContentObject.Producer = nil
-			case "url":
-				newContentObject.URL = ""
-			case "cat":
-				newContentObject.Cat = nil
-			case "prodq":
-				newContentObject.ProdQ = nil
-			case "videoquality":
-				newContentObject.VideoQuality = nil
-			case "context":
-				newContentObject.Context = 0
-			case "contentrating":
-				newContentObject.ContentRating = ""
-			case "userrating":
-				newContentObject.UserRating = ""
-			case "qagmediarating":
-				newContentObject.QAGMediaRating = 0
-			case "keywords":
-				newContentObject.Keywords = ""
-			case "livestream":
-				newContentObject.LiveStream = ptrutil.ToPtr[int8](0)
-			case "sourcerelationship":
-				newContentObject.SourceRelationship = ptrutil.ToPtr[int8](0)
-			case "len":
-				newContentObject.Len = 0
-			case "language":
-				newContentObject.Language = ""
-			case "embeddable":
-				newContentObject.Embeddable = ptrutil.ToPtr[int8](0)
-			case "data":
-				newContentObject.Data = nil
-			case "ext":
-				newContentObject.Ext = nil
-			}
-
-		}
+	if include && len(keys) == 0 {
 		return newContentObject
 	}
 
+	// Create a map for O(1) key lookups
+	keyMap := make(map[string]bool, len(keys))
 	for _, key := range keys {
-		switch key {
-		case "id":
-			newContentObject.ID = contentObject.ID
-		case "episode":
-			newContentObject.Episode = contentObject.Episode
-		case "title":
-			newContentObject.Title = contentObject.Title
-		case "series":
-			newContentObject.Series = contentObject.Series
-		case "season":
-			newContentObject.Season = contentObject.Season
-		case "artist":
-			newContentObject.Artist = contentObject.Artist
-		case "genre":
-			newContentObject.Genre = contentObject.Genre
-		case "album":
-			newContentObject.Album = contentObject.Album
-		case "isrc":
-			newContentObject.ISRC = contentObject.ISRC
-		case "producer":
-			if contentObject.Producer != nil {
-				producer := *contentObject.Producer
-				newContentObject.Producer = &producer
-			}
-		case "url":
-			newContentObject.URL = contentObject.URL
-		case "cat":
-			newContentObject.Cat = contentObject.Cat
-		case "prodq":
-			if contentObject.ProdQ != nil {
-				prodQ := *contentObject.ProdQ
-				newContentObject.ProdQ = &prodQ
-			}
-		case "videoquality":
-			if contentObject.VideoQuality != nil {
-				videoQuality := *contentObject.VideoQuality
-				newContentObject.VideoQuality = &videoQuality
-			}
-		case "context":
-			newContentObject.Context = contentObject.Context
-		case "contentrating":
-			newContentObject.ContentRating = contentObject.ContentRating
-		case "userrating":
-			newContentObject.UserRating = contentObject.UserRating
-		case "qagmediarating":
-			newContentObject.QAGMediaRating = contentObject.QAGMediaRating
-		case "keywords":
-			newContentObject.Keywords = contentObject.Keywords
-		case "livestream":
-			newContentObject.LiveStream = contentObject.LiveStream
-		case "sourcerelationship":
-			newContentObject.SourceRelationship = contentObject.SourceRelationship
-		case "len":
-			newContentObject.Len = contentObject.Len
-		case "language":
-			newContentObject.Language = contentObject.Language
-		case "embeddable":
-			newContentObject.Embeddable = contentObject.Embeddable
-		case "data":
-			if contentObject.Data != nil {
-				newContentObject.Data = contentObject.Data
-			}
-		case "ext":
-			newContentObject.Ext = contentObject.Ext
-		}
+		keyMap[key] = true
+	}
+
+	// Function to clear a field if it's in the keys
+	clearField := func(key string) bool {
+		return (!include && keyMap[key]) || (include && !keyMap[key])
+	}
+
+	// Clear or keep fields based on include flag and keys
+	if clearField("id") {
+		newContentObject.ID = ""
+	}
+	if clearField("episode") {
+		newContentObject.Episode = 0
+	}
+	if clearField("title") {
+		newContentObject.Title = ""
+	}
+	if clearField("series") {
+		newContentObject.Series = ""
+	}
+	if clearField("season") {
+		newContentObject.Season = ""
+	}
+	if clearField("artist") {
+		newContentObject.Artist = ""
+	}
+	if clearField("genre") {
+		newContentObject.Genre = ""
+	}
+	if clearField("album") {
+		newContentObject.Album = ""
+	}
+	if clearField("isrc") {
+		newContentObject.ISRC = ""
+	}
+	if clearField("producer") {
+		newContentObject.Producer = nil
+	}
+	if clearField("url") {
+		newContentObject.URL = ""
+	}
+	if clearField("cat") {
+		newContentObject.Cat = nil
+	}
+	if clearField("prodq") {
+		newContentObject.ProdQ = nil
+	}
+	if clearField("videoquality") {
+		newContentObject.VideoQuality = nil
+	}
+	if clearField("context") {
+		newContentObject.Context = 0
+	}
+	if clearField("contentrating") {
+		newContentObject.ContentRating = ""
+	}
+	if clearField("userrating") {
+		newContentObject.UserRating = ""
+	}
+	if clearField("qagmediarating") {
+		newContentObject.QAGMediaRating = 0
+	}
+	if clearField("keywords") {
+		newContentObject.Keywords = ""
+	}
+	if clearField("livestream") {
+		newContentObject.LiveStream = nil
+	}
+	if clearField("sourcerelationship") {
+		newContentObject.SourceRelationship = nil
+	}
+	if clearField("len") {
+		newContentObject.Len = 0
+	}
+	if clearField("language") {
+		newContentObject.Language = ""
+	}
+	if clearField("embeddable") {
+		newContentObject.Embeddable = nil
+	}
+	if clearField("data") {
+		newContentObject.Data = nil
+	}
+	if clearField("network") {
+		newContentObject.Network = nil
+	}
+	if clearField("channel") {
+		newContentObject.Channel = nil
+	}
+	if clearField("ext") {
+		newContentObject.Ext = nil
 	}
 
 	return newContentObject
