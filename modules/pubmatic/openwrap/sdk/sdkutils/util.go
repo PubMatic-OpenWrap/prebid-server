@@ -7,14 +7,14 @@ func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
 		return target, nil
 	}
 
+	value, dataType, _, err := jsonparser.Get(source, path...)
+	if value == nil || err != nil {
+		return target, err
+	}
+
 	// Initialize target if nil
 	if target == nil {
 		target = []byte(`{}`)
-	}
-
-	value, dataType, _, err := jsonparser.Get(source, path...)
-	if err != nil {
-		return nil, err
 	}
 
 	// Early return for null values

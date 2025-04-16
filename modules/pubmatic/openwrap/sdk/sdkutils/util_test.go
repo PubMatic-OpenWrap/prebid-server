@@ -1,6 +1,7 @@
 package sdkutils
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -100,7 +101,7 @@ func TestCopyPath(t *testing.T) {
 			source:    []byte(`{"key":"value"}`),
 			target:    []byte(`{}`),
 			path:      []string{"invalid"},
-			expected:  nil,
+			expected:  []byte(`{}`),
 			expectErr: true,
 		},
 		{
@@ -134,9 +135,9 @@ func TestCopyPath(t *testing.T) {
 			result, err := CopyPath(tt.source, tt.target, tt.path...)
 			if tt.expectErr {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.JSONEq(t, string(tt.expected), string(result))
+			}
+			if !reflect.DeepEqual(tt.expected, result) {
+				t.Errorf("Expected %v, but got %v", tt.expected, result)
 			}
 		})
 	}
