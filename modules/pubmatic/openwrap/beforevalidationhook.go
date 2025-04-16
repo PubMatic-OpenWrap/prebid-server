@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -141,6 +140,21 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, errors.New("invalid profile data")
 	}
 
+	// Country filter
+	if shouldApplyCountryFilter(rCtx.Endpoint) {
+		country := m.getCountryFromContext(rCtx)
+		if country != "" {
+			mode, countryCodes := m.getCountryFilterConfig(partnerConfigMap)
+			if !m.isCountryAllowed(country, mode, countryCodes) {
+				result.Reject = true
+				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+				m.metricEngine.RecordPublisherGeoFilteredRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr, result.NbrCode)
+				result.Errors = append(result.Errors, "Request rejected due to country filter")
+				return result, nil
+			}
+		}
+	}
+
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
@@ -167,21 +181,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.NbrCode = int(nbr.MissingOWRedirectURL)
 			result.Errors = append(result.Errors, "owRedirectURL is missing")
 			return result, nil
-		}
-	}
-
-	// Country filter
-	if shouldApplyCountryFilter(rCtx.Endpoint) {
-		country := m.getCountryFromContext(rCtx)
-		if country != "" {
-			mode, countryCodes := m.getCountryFilterConfig(partnerConfigMap)
-			if !m.isCountryAllowed(country, mode, countryCodes) {
-				result.Reject = true
-				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
-				// result.NbrCode = int(nbr.InvalidRequestCountryFiltered)
-				result.Errors = append(result.Errors, "Request rejected due to country filter")
-				return result, nil
-			}
 		}
 	}
 
@@ -1516,7 +1515,7 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 }
 
 func (m *OpenWrap) getCountryFromContext(rCtx models.RequestCtx) string {
-	if len(rCtx.DeviceCtx.Country) > 2 {
+	if len(rCtx.DeviceCtx.Country) == 2 {
 		return rCtx.DeviceCtx.Country
 	}
 
@@ -1527,34 +1526,23 @@ func (m *OpenWrap) getCountryFromContext(rCtx models.RequestCtx) string {
 	return ""
 }
 
-func (m *OpenWrap) getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes []string) {
+func (m *OpenWrap) getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes string) {
 	mode = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryFilterModeKey)
 	if mode == "" {
-		return "", nil
+		return "", ""
 	}
 
-	codesStr := models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryCodesKey)
-	if codesStr == "" {
-		return mode, nil
-	}
-
-	if err := json.Unmarshal([]byte(codesStr), &countryCodes); err != nil {
-		return mode, countryCodes
-	}
-
+	countryCodes = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryCodesKey)
 	return mode, countryCodes
+
 }
 
-func (m *OpenWrap) isCountryAllowed(country string, mode string, countryCodes []string) bool {
-	if mode == "" {
+func (m *OpenWrap) isCountryAllowed(country string, mode string, countryCodes string) bool {
+	if mode == "" || countryCodes == "" {
 		return true
 	}
 
-	if len(countryCodes) == 0 {
-		return true
-	}
-
-	found := slices.Contains(countryCodes, country)
+	found := strings.Contains(countryCodes, country)
 
 	// For allowlist (mode "1"), return true if country is found
 	// For blocklist (mode "0"), return true if country is not found
