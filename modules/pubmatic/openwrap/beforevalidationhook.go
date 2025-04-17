@@ -148,7 +148,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if !m.isCountryAllowed(country, mode, countryCodes) {
 				result.Reject = true
 				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
-				m.metricEngine.RecordPublisherGeoFilteredRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr, result.NbrCode)
 				result.Errors = append(result.Errors, "Request rejected due to country filter")
 				return result, nil
 			}
