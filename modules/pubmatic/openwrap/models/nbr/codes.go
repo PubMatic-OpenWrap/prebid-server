@@ -36,5 +36,4 @@ const (
 	InvalidResponseFormat          openrtb3.NoBidReason = 618
 	MissingOWRedirectURL           openrtb3.NoBidReason = 619
 	ResponseRejectedDSA            openrtb3.NoBidReason = 620 // Response Rejected - DSA
-	InvalidRequestCountryFiltered  openrtb3.NoBidReason = 621
 )
