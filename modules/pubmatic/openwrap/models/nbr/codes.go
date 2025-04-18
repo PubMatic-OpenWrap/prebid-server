@@ -11,6 +11,7 @@ const (
 	RequestBlockedPartnerFiltered      openrtb3.NoBidReason = 505
 	LossBidLostInVastUnwrap            openrtb3.NoBidReason = 506
 	LossBidLostInVastVersionValidation openrtb3.NoBidReason = 507
+	RequestBlockedGeoFiltered          openrtb3.NoBidReason = 508
 )
 
 // Openwrap module specific codes
@@ -35,4 +36,5 @@ const (
 	InvalidResponseFormat          openrtb3.NoBidReason = 618
 	MissingOWRedirectURL           openrtb3.NoBidReason = 619
 	ResponseRejectedDSA            openrtb3.NoBidReason = 620 // Response Rejected - DSA
+	InvalidRequestCountryFiltered  openrtb3.NoBidReason = 621
 )

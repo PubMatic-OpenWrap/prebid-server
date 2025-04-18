@@ -140,6 +140,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, errors.New("invalid profile data")
 	}
 
+	// Country filter
+	if shouldApplyCountryFilter(rCtx.Endpoint) {
+		country := m.getCountryFromContext(rCtx)
+		if country != "" {
+			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
+			if !isCountryAllowed(country, mode, countryCodes) {
+				result.Reject = true
+				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+				result.Errors = append(result.Errors, "Request rejected due to country filter")
+				return result, nil
+			}
+		}
+	}
+
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
