@@ -3,9 +3,6 @@ package openwrap
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
-	mock_geodb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -106,35 +103,35 @@ func TestIsCountryAllowed(t *testing.T) {
 			name:         "include_mode_country_in_list",
 			country:      "US",
 			mode:         "1",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         true,
 		},
 		{
 			name:         "include_mode_country_not_in_list",
 			country:      "FR",
 			mode:         "1",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         false,
 		},
 		{
 			name:         "exclude_mode_country_in_list",
 			country:      "US",
 			mode:         "0",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         false,
 		},
 		{
 			name:         "exclude_mode_country_not_in_list",
 			country:      "FR",
 			mode:         "0",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         true,
 		},
 		{
 			name:         "empty_mode",
 			country:      "US",
 			mode:         "",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         true,
 		},
 		{
@@ -148,21 +145,21 @@ func TestIsCountryAllowed(t *testing.T) {
 			name:         "empty_country",
 			country:      "",
 			mode:         "1",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         true,
 		},
 		{
 			name:         "invalid_mode",
 			country:      "US",
 			mode:         "invalid",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         false,
 		},
 		{
 			name:         "case_insensitive_country_match",
 			country:      "us",
 			mode:         "1",
-			countryCodes: "US,UK,IN",
+			countryCodes: "[\"US\",\"UK\",\"IN\"]",
 			want:         false,
 		},
 	}
@@ -176,15 +173,10 @@ func TestIsCountryAllowed(t *testing.T) {
 }
 
 func TestGetCountryFromContext(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockGeoDb := mock_geodb.NewMockGeography(ctrl)
-
 	tests := []struct {
-		name  string
-		rCtx  models.RequestCtx
-		setup func()
-		want  string
+		name string
+		rCtx models.RequestCtx
+		want string
 	}{
 		{
 			name: "getting_country_from_request",
@@ -199,13 +191,8 @@ func TestGetCountryFromContext(t *testing.T) {
 			name: "detecting_country_from_request_ip",
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{
-					IP: "101.143.255.255",
+					DerivedCountryCode: "JP",
 				},
-			},
-			setup: func() {
-				mockGeoDb.EXPECT().LookUp("101.143.255.255").Return(&geodb.GeoInfo{
-					CountryCode: "jp", ISOCountryCode: "JP", RegionCode: "13", City: "tokyo", PostalCode: "", DmaCode: 392001, Latitude: 35.68000030517578, Longitude: 139.75, AreaCode: "", AlphaThreeCountryCode: "JPN",
-				}, nil)
 			},
 			want: "JP",
 		},
@@ -219,10 +206,10 @@ func TestGetCountryFromContext(t *testing.T) {
 			want: "",
 		},
 		{
-			name: "empty_ip_present_in_device_ctx",
+			name: "empty_derived_country_present_in_device_ctx",
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{
-					Country: "",
+					DerivedCountryCode: "",
 				},
 			},
 			want: "",
@@ -231,13 +218,7 @@ func TestGetCountryFromContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ow := OpenWrap{
-				geoInfoFetcher: mockGeoDb,
-			}
-			if tt.setup != nil {
-				tt.setup()
-			}
-			got := ow.getCountryFromContext(tt.rCtx)
+			got := getCountryFromContext(tt.rCtx)
 			assert.Equal(t, tt.want, got)
 		})
 	}

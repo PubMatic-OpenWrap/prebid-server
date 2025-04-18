@@ -142,7 +142,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	// Country filter
 	if shouldApplyCountryFilter(rCtx.Endpoint) {
-		country := m.getCountryFromContext(rCtx)
+		country := getCountryFromContext(rCtx)
 		if country != "" {
 			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
 			if !isCountryAllowed(country, mode, countryCodes) {

@@ -6,16 +6,12 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func (m *OpenWrap) getCountryFromContext(rCtx models.RequestCtx) string {
+func getCountryFromContext(rCtx models.RequestCtx) string {
 	if len(rCtx.DeviceCtx.Country) == 2 {
 		return rCtx.DeviceCtx.Country
 	}
 
-	if rCtx.DeviceCtx.IP != "" {
-		code, _ := m.getCountryCodes(rCtx.DeviceCtx.IP)
-		return code
-	}
-	return ""
+	return rCtx.DeviceCtx.DerivedCountryCode
 }
 
 func getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes string) {
