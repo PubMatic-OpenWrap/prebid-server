@@ -26,6 +26,8 @@ const (
 	PriceGranularityKey         = "priceGranularity"
 	VideoAdDurationKey          = "videoAdDuration"
 	VideoAdDurationMatchingKey  = "videoAdDurationMatching"
+	CountryFilterModeKey        = "countryFilterMode"
+	CountryCodesKey             = "countryCodes"
 	REVSHARE                    = "rev_share"
 	THROTTLE                    = "throttle"
 	REFRESH_INTERVAL            = "refreshInterval"
