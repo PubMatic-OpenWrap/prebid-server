@@ -44,6 +44,8 @@ type Metrics struct {
 	// publisher-profile-endpoint level metrics
 	pubProfEndpointInvalidRequests *prometheus.CounterVec
 
+	geoFilteredRequests *prometheus.CounterVec
+
 	// endpoint level metrics
 	endpointBadRequest *prometheus.CounterVec //TODO: should we add pub+prof labels ; also NBR is INT should it be string
 
@@ -267,6 +269,13 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"invalid_requests",
 		"Count invalid requests at publisher, profile, endpoint level.",
 		[]string{pubIDLabel, profileIDLabel, endpointLabel},
+	)
+
+	// geo filtered requests
+	metrics.geoFilteredRequests = newCounter(cfg, promRegistry,
+		"geo_filtered_requests",
+		"Count of geo filtered requests",
+		[]string{pubIDLabel, profileIDLabel, endpointLabel, nbrLabel},
 	)
 
 	// endpoint level metrics
@@ -545,6 +554,15 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 		pubIDLabel:     publisherID,
 		profileIDLabel: profileID,
 		endpointLabel:  endpoint,
+	}).Inc()
+}
+
+func (m *Metrics) RecordPublisherGeoFilteredRequests(endpoint, publisherID, profileID string, nbr int) {
+	m.geoFilteredRequests.With(prometheus.Labels{
+		pubIDLabel:     publisherID,
+		profileIDLabel: profileID,
+		endpointLabel:  endpoint,
+		nbrLabel:       strconv.Itoa(nbr),
 	}).Inc()
 }
 

@@ -622,6 +622,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordPublisherInvalidProfileRequests(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherInvalidProfileRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherInvalidProfileRequests), arg0, arg1, arg2)
 }
 
+// RecordPublisherGeoFilteredRequests mocks base method
+func (m *MockMetricsEngine) RecordPublisherGeoFilteredRequests(arg0, arg1, arg2 string, arg3 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPublisherGeoFilteredRequests", arg0, arg1, arg2, arg3)
+}
+
+// RecordPublisherGeoFilteredRequests indicates an expected call of RecordPublisherGeoFilteredRequests
+func (mr *MockMetricsEngineMockRecorder) RecordPublisherGeoFilteredRequests(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPublisherGeoFilteredRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPublisherGeoFilteredRequests), arg0, arg1, arg2, arg3)
+}
+
 // RecordPublisherPartnerNoCookieStats mocks base method
 func (m *MockMetricsEngine) RecordPublisherPartnerNoCookieStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()

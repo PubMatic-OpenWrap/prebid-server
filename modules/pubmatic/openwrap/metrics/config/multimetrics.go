@@ -180,6 +180,13 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 	}
 }
 
+// RecordPublisherGeoFilteredRequests across all engines
+func (me *MultiMetricsEngine) RecordPublisherGeoFilteredRequests(endpoint, publisher, profileID string, nbr int) {
+	for _, thisME := range *me {
+		thisME.RecordPublisherGeoFilteredRequests(endpoint, publisher, profileID, nbr)
+	}
+}
+
 // RecordBadRequests across all engines
 func (me *MultiMetricsEngine) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	for _, thisME := range *me {
