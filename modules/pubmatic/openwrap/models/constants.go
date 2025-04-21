@@ -485,6 +485,7 @@ const (
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
 	EndpointGeo         = "geo"
+	EndpointInvalid     = "invalid"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
