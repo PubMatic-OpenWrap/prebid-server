@@ -386,6 +386,9 @@ func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp) {
 	// Update imp extension
 	requestImps[0].Ext = modifyImpExtension(requestImps[0].Ext, signalImps[0].Ext)
 
+	// Remove metric
+	requestImps[0].Metric = nil
+
 	//Set gpid
 	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(strconv.Quote(requestImps[0].TagID)), "gpid")
 }
