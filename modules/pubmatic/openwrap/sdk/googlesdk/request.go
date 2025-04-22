@@ -329,20 +329,6 @@ func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner)
 	}
 }
 
-func modifyNative(requestNative *openrtb2.Native, signalNative *openrtb2.Native) {
-	if requestNative == nil || signalNative == nil {
-		return
-	}
-
-	if len(signalNative.Ver) > 0 {
-		requestNative.Ver = signalNative.Ver
-	}
-
-	if len(signalNative.API) > 0 {
-		requestNative.API = append(requestNative.API, signalNative.API...)
-	}
-}
-
 func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	if signalImpExt == nil {
 		return requestImpExt
@@ -395,7 +381,7 @@ func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp) {
 	}
 
 	// Update native
-	modifyNative(requestImps[0].Native, signalImp.Native)
+	requestImps[0].Native = signalImp.Native
 
 	// Update imp extension
 	requestImps[0].Ext = modifyImpExtension(requestImps[0].Ext, signalImps[0].Ext)

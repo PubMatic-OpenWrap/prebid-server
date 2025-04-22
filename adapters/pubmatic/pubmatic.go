@@ -63,22 +63,9 @@ type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
 
-type BuyerCreative struct {
-	BuyerCreativeId string `json:"buyer_creative_id,omitempty"`
-}
-
-type GoogleSDKParams struct {
-	BillingIds                []int64         `json:"billing_id,omitempty"`
-	PublisherSettingListIds   []int64         `json:"publisher_setting_list_id,omitempty"`
-	AllowedVendorType         []int32         `json:"allowed_vendor_type,omitempty"`
-	ExcludedCreatives         []BuyerCreative `json:"excluded_creatives,omitempty"`
-	IsAppOpenAd               bool            `json:"is_app_open_ad,omitempty"`
-	AllowedRestrictedCategory int32           `json:"allowed_restricted_category,omitempty"`
-}
-
 type ExtImpBidderPubmatic struct {
+	openrtb_ext.GoogleSDKParams
 	adapters.ExtImpBidder
-	GoogleSDKParams
 	Data        json.RawMessage `json:"data,omitempty"`
 	AE          int             `json:"ae,omitempty"`
 	GpId        string          `json:"gpid,omitempty"`
@@ -460,22 +447,8 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[gpIdKey] = bidderExt.GpId
 	}
 
-	// Google SDK Params
-	if len(bidderExt.BillingIds) > 0 {
-		extMap["billing_id"] = bidderExt.BillingIds
-	}
-	if len(bidderExt.PublisherSettingListIds) > 0 {
-		extMap["publisher_setting_list_id"] = bidderExt.PublisherSettingListIds
-	}
-	if len(bidderExt.ExcludedCreatives) > 0 {
-		extMap["excluded_creatives"] = bidderExt.ExcludedCreatives
-	}
-	if bidderExt.IsAppOpenAd {
-		extMap["is_app_open_ad"] = bidderExt.IsAppOpenAd
-	}
-	if bidderExt.AllowedRestrictedCategory != 0 {
-		extMap["allowed_restricted_category"] = bidderExt.AllowedRestrictedCategory
-	}
+	//Google Sdk
+	addGoogleSDKParamsToBidExt(extMap, bidderExt)
 
 	imp.Ext = nil
 	if len(extMap) > 0 {
