@@ -174,6 +174,18 @@ const (
 	ORTBSiteContentLanguage           = "site.cnt.language"           //ORTBSiteContentLanguage get api parameter site.cnt.language
 	ORTBSiteContentEmbeddable         = "site.cnt.embeddable"         //ORTBSiteContentEmbeddable get api parameter site.cnt.embeddable
 
+	//Site.Content.Network level parameters
+	ORTBSiteContentNetworkID     = "site.cnt.net.id"     //ORTBSiteContentNetworkID get api parameter site.cnt.net.id
+	ORTBSiteContentNetworkName   = "site.cnt.net.name"   //ORTBSiteContentNetworkName get api parameter site.cnt.net.name
+	ORTBSiteContentNetworkDomain = "site.cnt.net.domain" //ORTBSiteContentNetworkDomain get api parameter site.cnt.net.domain
+	ORTBSiteContentNetworkExt    = "site.cnt.net.ext"    //ORTBSiteContentNetworkExt get api parameter site.cnt.net.ext
+
+	//Site.Content.Channel level parameters
+	ORTBSiteContentChannelID     = "site.cnt.chan.id"     //ORTBSiteContentChannelID get api parameter site.cnt.chan.id
+	ORTBSiteContentChannelName   = "site.cnt.chan.name"   //ORTBSiteContentChannelName get api parameter site.cnt.chan.name
+	ORTBSiteContentChannelDomain = "site.cnt.chan.domain" //ORTBSiteContentChannelDomain get api parameter site.cnt.chan.domain
+	ORTBSiteContentChannelExt    = "site.cnt.chan.ext"    //ORTBSiteContentChannelExt get api parameter site.cnt.chan.ext
+
 	// Site.Producer level parameters
 	ORTBSiteContentProducerID     = "site.cnt.prod.id"     //ORTBSiteContentProducerID get api parameter site.cnt.prod.id
 	ORTBSiteContentProducerName   = "site.cnt.prod.name"   //ORTBSiteContentProducerName get api parameter site.cnt.prod.name
@@ -210,6 +222,18 @@ const (
 	ORTBAppContentLen                = "app.cnt.len"                //ORTBAppContentLen get api parameter app.cnt.len
 	ORTBAppContentLanguage           = "app.cnt.language"           //ORTBAppContentLanguage get api parameter app.cnt.language
 	ORTBAppContentEmbeddable         = "app.cnt.embeddable"         //ORTBAppContentEmbeddable get api parameter app.cnt.embeddable
+
+	//App.Content.Network level parameters
+	ORTBAppContentNetworkID     = "app.cnt.net.id"     //ORTBAppContentNetworkID get api parameter app.cnt.net.id
+	ORTBAppContentNetworkName   = "app.cnt.net.name"   //ORTBAppContentNetworkName get api parameter app.cnt.net.name
+	ORTBAppContentNetworkDomain = "app.cnt.net.domain" //ORTBAppContentNetworkDomain get api parameter app.cnt.net.domain
+	ORTBAppContentNetworkExt    = "app.cnt.net.ext"    //ORTBAppContentNetworkExt get api parameter app.cnt.net.ext
+
+	//App.Content.Channel level parameters
+	ORTBAppContentChannelID     = "app.cnt.chan.id"     //ORTBAppContentChannelID get api parameter app.cnt.chan.id
+	ORTBAppContentChannelName   = "app.cnt.chan.name"   //ORTBAppContentChannelName get api parameter app.cnt.chan.name
+	ORTBAppContentChannelDomain = "app.cnt.chan.domain" //ORTBAppContentChannelDomain get api parameter app.cnt.chan.domain
+	ORTBAppContentChannelExt    = "app.cnt.chan.ext"    //ORTBAppContentChannelExt get api parameter app.cnt.chan.ext
 
 	// App.Producer level parameters
 	ORTBAppContentProducerID     = "app.cnt.prod.id"     //ORTBAppContentProducerID get api parameter app.cnt.prod.id

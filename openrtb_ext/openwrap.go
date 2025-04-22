@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
 const (
@@ -44,6 +46,7 @@ type ExtOWRequestPrebid struct {
 	KeyVal          map[string]interface{} `json:"keyval,omitempty"`
 	TrackerDisabled bool                   `json:"tracker_disabled,omitempty"`
 	StrictVastMode  bool                   `json:"strictvastmode,omitempty"`
+	DebugOverride   bool                   `json:"debug_override,omitempty"`
 }
 
 // ExtCTVBid defines the contract for bidresponse.seatbid.bid[i].ext
@@ -359,4 +362,13 @@ func (pod *VideoAdPod) ValidateAdPodDurations(minDuration, maxDuration, maxExten
 		}
 	}
 	return
+}
+
+func GetImpressionID(bidRequest *openrtb2.BidRequest, impID string) *openrtb2.Imp {
+	for _, impr := range bidRequest.Imp {
+		if impID == impr.ID {
+			return &impr
+		}
+	}
+	return nil
 }

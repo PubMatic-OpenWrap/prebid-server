@@ -45,6 +45,13 @@ func (me *MultiMetricsEngine) RecordXMLParserResponseTime(parser string, method 
 	}
 }
 
+// RecordXMLParserError record xml parsing errors
+func (me *MultiMetricsEngine) RecordXMLParserError(parser string, method string, param string) {
+	for _, thisME := range *me {
+		thisME.RecordXMLParserError(parser, method, param)
+	}
+}
+
 func (me *MultiMetricsEngine) RecordVASTTagType(biddder, vastTag string) {
 	for _, thisME := range *me {
 		thisME.RecordVASTTagType(biddder, vastTag)
@@ -139,4 +146,8 @@ func (me *NilMetricsEngine) RecordXMLParserResponseMismatch(method string, param
 
 // RecordXMLParserResponseTime records execution time for multiple parsers
 func (me *NilMetricsEngine) RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration) {
+}
+
+// RecordXMLParserError records XML parsing errors
+func (me *NilMetricsEngine) RecordXMLParserError(parser string, method string, param string) {
 }

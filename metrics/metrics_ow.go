@@ -27,4 +27,6 @@ type OWMetricsEngine interface {
 	RecordXMLParserResponseMismatch(method string, param string, isMismatch bool)
 	//RecordXMLParserResponseTime records execution time for multiple parsers
 	RecordXMLParserResponseTime(parser string, method string, param string, respTime time.Duration)
+	//RecordXMLParserError records xml parsing issue
+	RecordXMLParserError(parser string, method string, param string)
 }

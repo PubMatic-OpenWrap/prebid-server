@@ -26,6 +26,8 @@ const (
 	PriceGranularityKey         = "priceGranularity"
 	VideoAdDurationKey          = "videoAdDuration"
 	VideoAdDurationMatchingKey  = "videoAdDurationMatching"
+	CountryFilterModeKey        = "countryFilterMode"
+	CountryCodesKey             = "countryCodes"
 	REVSHARE                    = "rev_share"
 	THROTTLE                    = "throttle"
 	REFRESH_INTERVAL            = "refreshInterval"
@@ -484,6 +486,7 @@ const (
 	EndpointAppLovinMax = "applovinmax"
 	EndpointGoogleSDK   = "googlesdk"
 	EndpointGeo         = "geo"
+	EndpointInvalid     = "invalid"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"

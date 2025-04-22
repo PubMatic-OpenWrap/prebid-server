@@ -435,10 +435,9 @@ func TestSetBidExtParams(t *testing.T) {
 	}
 }
 
-func TestGetAdPodBidCreative(t *testing.T) {
+func TestMergeAdPodBids(t *testing.T) {
 	type args struct {
-		adpod          *types.AdPodBid
-		generatedBidID bool
+		adpod *types.AdPodBid
 	}
 	tests := []struct {
 		name string
@@ -452,14 +451,14 @@ func TestGetAdPodBidCreative(t *testing.T) {
 					Bids: []*types.Bid{
 						{
 							Bid: &openrtb2.Bid{
-								AdM: "<xml>any_creative_without_vast</xml>",
+								Price: 1.0,
+								AdM:   "<xml>any_creative_without_vast</xml>",
 							},
 						},
 					},
 				},
-				generatedBidID: false,
 			},
-			want: "<VAST version=\"2.0\"/>",
+			want: "",
 		},
 		{
 			name: "VAST_element_present_in_adm",
@@ -468,20 +467,20 @@ func TestGetAdPodBidCreative(t *testing.T) {
 					Bids: []*types.Bid{
 						{
 							Bid: &openrtb2.Bid{
-								AdM: "<VAST><Ad>url_creative</Ad></VAST>",
+								Price: 1.0,
+								AdM:   "<VAST><Ad>url_creative</Ad></VAST>",
 							},
 						},
 					},
 				},
-				generatedBidID: false,
 			},
 			want: "<VAST version=\"2.0\"><Ad sequence=\"1\"><![CDATA[url_creative]]></Ad></VAST>",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getAdPodBidCreative(tt.args.adpod, tt.args.generatedBidID)
-			assert.Equalf(t, tt.want, *got, "found incorrect creative")
+			got, _ := mergeAdPodBids(tt.args.adpod)
+			assert.Equalf(t, tt.want, got, "found incorrect creative")
 		})
 	}
 }

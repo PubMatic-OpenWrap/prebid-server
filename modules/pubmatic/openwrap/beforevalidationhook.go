@@ -141,6 +141,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, errors.New("invalid profile data")
 	}
 
+	// Country filter
+	if shouldApplyCountryFilter(rCtx.Endpoint) {
+		country := getCountryFromContext(rCtx)
+		if country != "" {
+			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
+			if !isCountryAllowed(country, mode, countryCodes) {
+				result.Reject = true
+				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+				result.Errors = append(result.Errors, "Request rejected due to country filter")
+				return result, nil
+			}
+		}
+	}
+
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
@@ -255,6 +269,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
 	requestExt.Prebid.Debug = rCtx.Debug
+	requestExt.Prebid.DebugOverride = rCtx.WakandaDebug.IsEnable()
 	requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
 	requestExt.Prebid.ExtOWRequestPrebid.TrackerDisabled = rCtx.TrackerDisabled
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
