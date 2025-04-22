@@ -13,4 +13,9 @@ type Feature interface {
 	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
 	GetImpCountingMethodEnabledBidders() map[string]struct{}
 	IsCountryGDPREnabled(countryCode string) bool
+	//GetMbmfEnabledCountries() models.HashSet
+	IsMBMFCountry(countryCode string) bool
+	IsMBMFPublisherEnabled(pubID int) bool
+	IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool
+	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) models.MultiFloors
 }

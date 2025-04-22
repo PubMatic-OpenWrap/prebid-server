@@ -121,7 +121,7 @@ type RequestCtx struct {
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
-
+	MultiBidMultiFloors             MultiBidMultiFloors
 	// Adpod
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
@@ -256,6 +256,21 @@ type ApplovinAdUnitFloors map[string][]float64
 type WinningBids map[string][]*OwBid
 
 type HashSet map[string]struct{}
+
+type ProfileAdUnitMultiFloors map[int]map[string]MultiFloors
+
+type MultiFloors struct {
+	IsEnabled bool `json:"isEnabled,omitempty"`
+	Tier1     int  `json:"tier1,omitempty"`
+	Tier2     int  `json:"tier2,omitempty"`
+	Tier3     int  `json:"tier3,omitempty"`
+}
+
+type MultiBidMultiFloors struct {
+	ProfileAdUnitMultiFloors ProfileAdUnitMultiFloors
+	InstlFloors              map[int]MultiFloors
+	RwddFloors               map[int]MultiFloors
+}
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	var isWinningBid bool
