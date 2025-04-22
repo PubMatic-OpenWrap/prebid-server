@@ -15,7 +15,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 	}
 
 	skipTracker := false
-	if rctx.Endpoint == models.EndpointAppLovinMax  || rctx.Endpoint == models.EndpointGoogleSDK {
+	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK {
 		skipTracker = true
 	}
 
