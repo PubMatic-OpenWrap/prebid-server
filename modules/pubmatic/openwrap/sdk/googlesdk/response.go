@@ -80,6 +80,10 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 		return nil, false
 	}
 
+	if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		return nil, false
+	}
+
 	bid := bidResponse.SeatBid[0].Bid[0]
 	bidExt := models.GoogleSDKBidExt{
 		SDKRenderedAd: models.SDKRenderedAd{
@@ -118,11 +122,13 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 		return declaredAd
 	}
 
-	if err := json.Unmarshal([]byte(bid.AdM), &nativeResp); err != nil {
-		glog.Errorf("[googlesdk] native:[%s] error:[%s]", bid.AdM, err.Error())
+	if bidType == models.Native {
+		if err := json.Unmarshal([]byte(bid.AdM), &nativeResp); err != nil {
+			glog.Errorf("[googlesdk] native:[%s] error:[%s]", bid.AdM, err.Error())
+		}
+		declaredAd.NativeResponse = &nativeResp
+		declaredAd.ClickThroughURL = nativeResp.Link.URL
 	}
-	declaredAd.NativeResponse = &nativeResp
-	declaredAd.ClickThroughURL = nativeResp.Link.URL
 	return declaredAd
 }
 
@@ -150,6 +156,11 @@ func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 	if sdkRenderedAdID, err := jsonparser.GetString(app.Ext, "installed_sdk", "id"); err == nil {
 		return sdkRenderedAdID
 	}
+
+	if sdkRenderedAdID, err := jsonparser.GetString(app.Ext, "installed_sdk", "[0]", "id"); err == nil {
+		return sdkRenderedAdID
+	}
+
 	return ""
 }
 
