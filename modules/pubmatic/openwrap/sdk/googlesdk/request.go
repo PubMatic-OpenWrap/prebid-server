@@ -119,15 +119,19 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		return nil, errors.New("empty request body")
 	}
 
-	keyVal, dataType, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "Keyval")
-	if err != nil || dataType != jsonparser.Array {
-		return nil, errors.New("failed to get Keyval object")
+	keyVal, _, _, _ := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "Keyval")
+	if keyVal == nil {
+		keyVal, _, _, _ = jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "keyvals")
+	}
+
+	if len(keyVal) == 0 {
+		return nil, errors.New("failed to get key values from ad unit mapping")
 	}
 
 	wprData := &wrapperData{}
 	found := false
 
-	if _, err = jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
+	if _, err := jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || dataType != jsonparser.Object {
 			return
 		}
@@ -192,6 +196,11 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 
 	// Set Tag Id
 	wrapperData.setTagId(sdkRequest)
+
+	// Remove metric
+	if len(sdkRequest.Imp) > 0 {
+		sdkRequest.Imp[0].Metric = nil
+	}
 
 	modifiedRequest, err := json.Marshal(sdkRequest)
 	if err != nil {
@@ -392,9 +401,6 @@ func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp) {
 
 	// Update imp extension
 	requestImps[0].Ext = modifyImpExtension(requestImps[0].Ext, signalImps[0].Ext)
-
-	// Remove metric
-	requestImps[0].Metric = nil
 
 	//Set gpid
 	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(strconv.Quote(requestImps[0].TagID)), "gpid")
