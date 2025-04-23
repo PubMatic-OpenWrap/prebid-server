@@ -82,7 +82,7 @@ func TestGetDeclaredAd(t *testing.T) {
 			},
 			want: models.DeclaredAd{
 				HTMLSnippet:     "<a href='http://example.com'>Click</a>",
-				ClickThroughURL: "http://example.com",
+				ClickThroughURL: []string{"http://example.com"},
 			},
 		},
 		{
@@ -98,7 +98,7 @@ func TestGetDeclaredAd(t *testing.T) {
 			},
 			want: models.DeclaredAd{
 				HTMLSnippet:     `{"click_urls":["http://array-url.com"]}`,
-				ClickThroughURL: "http://array-url.com",
+				ClickThroughURL: []string{"http://array-url.com"},
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func TestGetDeclaredAd(t *testing.T) {
 			},
 			want: models.DeclaredAd{
 				VideoVastXML:    "<VAST><Ad><InLine><Creatives><Creative><Linear><VideoClicks><ClickThrough>http://example.com</ClickThrough></VideoClicks></Linear></Creative></Creatives></InLine></Ad></VAST>",
-				ClickThroughURL: "http://example.com",
+				ClickThroughURL: []string{"http://example.com"},
 			},
 		},
 		{
@@ -134,7 +134,7 @@ func TestGetDeclaredAd(t *testing.T) {
 						URL: "http://example.com",
 					},
 				},
-				ClickThroughURL: "http://example.com",
+				ClickThroughURL: []string{"http://example.com"},
 			},
 		},
 	}
@@ -190,22 +190,22 @@ func TestGetBannerClickThroughURL(t *testing.T) {
 	tests := []struct {
 		name     string
 		creative string
-		want     string
+		want     []string
 	}{
 		{
 			name:     "Empty creative",
 			creative: "",
-			want:     "",
+			want:     []string{},
 		},
 		{
 			name:     "JSON creative with click_urls array",
 			creative: `{"click_urls":["http://example.com"]}`,
-			want:     "http://example.com",
+			want:     []string{"http://example.com"},
 		},
 		{
 			name:     "HTML creative with anchor tag",
 			creative: `<a href="http://example.com">Click</a>`,
-			want:     "http://example.com",
+			want:     []string{"http://example.com"},
 		},
 	}
 

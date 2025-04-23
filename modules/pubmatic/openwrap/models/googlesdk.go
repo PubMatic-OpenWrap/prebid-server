@@ -18,7 +18,7 @@ type SDKRenderedAd struct {
 }
 
 type DeclaredAd struct {
-	ClickThroughURL string                   `json:"click_through_url,omitempty"`
+	ClickThroughURL []string                 `json:"click_through_url,omitempty"`
 	HTMLSnippet     string                   `json:"html_snippet,omitempty"`
 	VideoVastXML    string                   `json:"video_vast_xml,omitempty"`
 	NativeResponse  *nativeResponse.Response `json:"native_response,omitempty"`

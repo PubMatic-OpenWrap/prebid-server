@@ -127,25 +127,25 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 			glog.Errorf("[googlesdk] native:[%s] error:[%s]", bid.AdM, err.Error())
 		}
 		declaredAd.NativeResponse = &nativeResp
-		declaredAd.ClickThroughURL = nativeResp.Link.URL
+		declaredAd.ClickThroughURL = []string{nativeResp.Link.URL}
 	}
 	return declaredAd
 }
 
-func getVideoClickThroughURL(creative string) string {
+func getVideoClickThroughURL(creative string) []string {
 	videoCreative := strings.TrimSpace(creative)
 	doc := etree.NewDocument()
 
 	if err := doc.ReadFromString(videoCreative); err != nil {
 		glog.Errorf("[googlesdk] video_creative:[%s] error:[%s]", videoCreative, err.Error())
-		return ""
+		return []string{}
 	}
 
 	clickThrough := doc.Element.FindElement(videoClickThroughTagPath)
 	if clickThrough == nil {
-		return ""
+		return []string{}
 	}
-	return clickThrough.Text()
+	return []string{clickThrough.Text()}
 }
 
 func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
@@ -164,16 +164,16 @@ func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 	return ""
 }
 
-func getBannerClickThroughURL(creative string) string {
+func getBannerClickThroughURL(creative string) []string {
 	if strings.TrimSpace(creative) == "" {
-		return ""
+		return []string{}
 	}
 
 	url := extractClickURLFromJSON(creative)
 	if url != "" {
-		return url
+		return []string{url}
 	}
-	return extractClickURLFromHTML(creative)
+	return []string{extractClickURLFromHTML(creative)}
 }
 
 // extractClickURLFromJSON Extracts click URL from JSON creative
