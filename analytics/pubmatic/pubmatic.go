@@ -61,7 +61,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}
 
 	var orignalMaxBidResponse *openrtb2.BidResponse
-	if rCtx.Endpoint == models.EndpointAppLovinMax {
+	if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
 		orignalMaxBidResponse = new(openrtb2.BidResponse)
 		*orignalMaxBidResponse = *ao.Response
 	}
@@ -80,7 +80,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax {
+	if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
 		ao.Response = orignalMaxBidResponse
 	}
 	setWakandaObject(rCtx, ao, loggerURL)

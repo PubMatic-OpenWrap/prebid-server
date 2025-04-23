@@ -64,6 +64,7 @@ type pubmaticBidExtVideo struct {
 }
 
 type ExtImpBidderPubmatic struct {
+	openrtb_ext.GoogleSDKParams
 	adapters.ExtImpBidder
 	Data        json.RawMessage `json:"data,omitempty"`
 	AE          int             `json:"ae,omitempty"`
@@ -442,13 +443,12 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[ae] = bidderExt.AE
 	}
 
-	if bidderExt.AE != 0 {
-		extMap[ae] = bidderExt.AE
-	}
-
 	if bidderExt.GpId != "" {
 		extMap[gpIdKey] = bidderExt.GpId
 	}
+
+	//Google Sdk
+	addGoogleSDKParamsToBidExt(extMap, bidderExt)
 
 	imp.Ext = nil
 	if len(extMap) > 0 {
