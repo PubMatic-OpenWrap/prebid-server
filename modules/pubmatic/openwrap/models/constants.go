@@ -484,6 +484,7 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGoogleSDK   = "googlesdk"
 	EndpointGeo         = "geo"
 	EndpointInvalid     = "invalid"
 
@@ -611,10 +612,11 @@ const (
 	FeatureImpCountingMethod   = 8
 )
 
-// constants for applovinmax requests
+// constants for sdk integrations
 const (
 	Agent                   = "agent"
 	AppLovinMaxAgent        = "max"
+	GoogleSDKAgent          = "googlesdk"
 	TypeRewarded            = "rewarded"
 	SignalData              = "signaldata"
 	OwSspBurl               = "owsspburl"
@@ -623,6 +625,7 @@ const (
 	AppStoreUrl             = "appStoreUrl"
 	SendBurl                = "sendburl"
 	MultiBidMultiFloorValue = "mbmfv"
+	ProcessingTime          = "processing_time_ms"
 )
 
 // constants for log level
