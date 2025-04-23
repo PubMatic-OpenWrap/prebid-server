@@ -1,6 +1,7 @@
 package googlesdk
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"strconv"
@@ -89,11 +90,17 @@ func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData
 			return
 		}
 
+		// decode base64 signal
+		decodedSignal, err := base64.StdEncoding.DecodeString(signal)
+		if err != nil {
+			return
+		}
+
 		// Signal data found
 		found = true
 
 		signalData = &openrtb2.BidRequest{}
-		if err := json.Unmarshal([]byte(signal), signalData); err != nil {
+		if err := json.Unmarshal(decodedSignal, signalData); err != nil {
 			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
 			signalData = nil
 			return
