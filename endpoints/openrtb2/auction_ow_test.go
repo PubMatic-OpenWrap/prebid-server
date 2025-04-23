@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -734,6 +736,99 @@ func TestUpdateResponseExtOW(t *testing.T) {
 			assert.Equal(t, tt.RestoredResponse, tt.args.ao.Response)
 			if tt.rejectResponse {
 				assert.Equal(t, http.StatusNoContent, tt.args.w.(*httptest.ResponseRecorder).Code, tt.name)
+			}
+		})
+	}
+}
+
+func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
+	t.Cleanup(func() { glog.Flush() })
+
+	tests := []struct {
+		name        string
+		inputSB     *openrtb_ext.SeatNonBidBuilder
+		wantSB      openrtb_ext.SeatNonBidBuilder
+		wantAoSeats []openrtb_ext.SeatNonBid
+	}{
+		{
+			name: "SeatNonBid with length=1",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "imp1", StatusCode: 0},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "imp1", StatusCode: 0},
+				},
+			},
+			wantAoSeats: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "imp1", StatusCode: 0},
+				}},
+			},
+		},
+		{
+			name: "Default and bid rejected due to floors",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impB", StatusCode: 301},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impB", StatusCode: 301},
+				},
+			},
+			wantAoSeats: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impB", StatusCode: 301},
+				}},
+			},
+		},
+		{
+			name: "multiple seats independent",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"a": {
+					{ImpId: "ax", StatusCode: 0},
+					{ImpId: "ay", StatusCode: 301},
+				},
+				"b": {
+					{ImpId: "bz", StatusCode: 302},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"a": {
+					{ImpId: "ay", StatusCode: 301},
+				},
+				"b": {
+					{ImpId: "bz", StatusCode: 302},
+				},
+			},
+			wantAoSeats: []openrtb_ext.SeatNonBid{
+				{Seat: "a", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "ay", StatusCode: 301},
+				}},
+				{Seat: "b", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "bz", StatusCode: 302},
+				}},
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ao := &analytics.AuctionObject{}
+			removeDefaultBidsFromSeatNonBid(tc.inputSB, ao)
+
+			if !reflect.DeepEqual(*tc.inputSB, tc.wantSB) {
+				t.Errorf("SeatNonBidBuilder mismatch\n got: %+v\nwant: %+v",
+					*tc.inputSB, tc.wantSB)
+			}
+			if !reflect.DeepEqual(ao.SeatNonBid, tc.wantAoSeats) {
+				t.Errorf("AuctionObject.SeatNonBid mismatch\n got: %+v\nwant: %+v",
+					ao.SeatNonBid, tc.wantAoSeats)
 			}
 		})
 	}

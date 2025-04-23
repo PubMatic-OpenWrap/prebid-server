@@ -87,20 +87,20 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	}
 }
 
-func UpdateSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, ao *analytics.AuctionObject) {
+func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, ao *analytics.AuctionObject) {
 	for seat, nonBids := range *seatNonBid {
 		if len(nonBids) == 1 {
 			continue
 		}
-		filteredBids := make([]openrtb_ext.NonBid, 0, len(nonBids)-1)
+		cleanedNonSeatBids := make([]openrtb_ext.NonBid, 0, len(nonBids)-1)
 		for _, bid := range nonBids {
 			if bid.StatusCode == 0 {
-				glog.Errorf("Removing Default bid from seatNonBid:")
+				glog.Infoln("Removing Default bid from seatNonBid")
 				continue
 			}
-			filteredBids = append(filteredBids, bid)
+			cleanedNonSeatBids = append(cleanedNonSeatBids, bid)
 		}
-		(*seatNonBid)[seat] = filteredBids
+		(*seatNonBid)[seat] = cleanedNonSeatBids
 	}
 	ao.SeatNonBid = seatNonBid.Get()
 }
