@@ -390,6 +390,7 @@ func sendAuctionResponse(
 
 	if response != nil {
 		ao.HookExecutionOutcome = stageOutcomes
+		UpdateSeatNonBid(seatNonBid, &ao)
 		UpdateResponseExtOW(w, response, ao)
 		err := setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
 		if err != nil {
