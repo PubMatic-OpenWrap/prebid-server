@@ -88,14 +88,22 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 }
 
 func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, ao *analytics.AuctionObject) {
+	if seatNonBid == nil {
+		return
+	}
+
 	for seat, nonBids := range *seatNonBid {
-		if len(nonBids) == 1 {
-			continue
-		}
-		cleanedNonSeatBids := make([]openrtb_ext.NonBid, 0, len(nonBids)-1)
+		// First pass: count number of bids per ImpID
+		impCount := make(map[string]int)
 		for _, bid := range nonBids {
-			if bid.StatusCode == 0 {
-				glog.Infoln("Removing Default bid from seatNonBid")
+			impCount[bid.ImpId]++
+		}
+
+		// Second pass: remove default bids with StatusCode == 0 only if that ImpID has >1 bid
+		cleanedNonSeatBids := make([]openrtb_ext.NonBid, 0, len(nonBids))
+		for _, bid := range nonBids {
+			if bid.StatusCode == 0 && impCount[bid.ImpId] > 1 {
+				glog.V(3).Infof("Removing Default bid from seatNonBid of seat %s and impid %s", seat, bid.ImpId)
 				continue
 			}
 			cleanedNonSeatBids = append(cleanedNonSeatBids, bid)

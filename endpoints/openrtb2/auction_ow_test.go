@@ -745,13 +745,25 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 	t.Cleanup(func() { glog.Flush() })
 
 	tests := []struct {
-		name        string
-		inputSB     *openrtb_ext.SeatNonBidBuilder
-		wantSB      openrtb_ext.SeatNonBidBuilder
-		wantAoSeats []openrtb_ext.SeatNonBid
+		name             string
+		inputSB          *openrtb_ext.SeatNonBidBuilder
+		wantSB           openrtb_ext.SeatNonBidBuilder
+		wantAOSeatNonBid []openrtb_ext.SeatNonBid
 	}{
 		{
-			name: "SeatNonBid with length=1",
+			name:             "Nil_SeatNonBid",
+			inputSB:          nil,
+			wantSB:           nil,
+			wantAOSeatNonBid: nil,
+		},
+		{
+			name:             "Empty_SeatNonBid",
+			inputSB:          &openrtb_ext.SeatNonBidBuilder{},
+			wantSB:           openrtb_ext.SeatNonBidBuilder{},
+			wantAOSeatNonBid: nil,
+		},
+		{
+			name: "SeatNonBid_with_default_bid",
 			inputSB: &openrtb_ext.SeatNonBidBuilder{
 				"seat1": {
 					{ImpId: "imp1", StatusCode: 0},
@@ -762,56 +774,107 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 					{ImpId: "imp1", StatusCode: 0},
 				},
 			},
-			wantAoSeats: []openrtb_ext.SeatNonBid{
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
 				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
 					{ImpId: "imp1", StatusCode: 0},
 				}},
 			},
 		},
 		{
-			name: "Default and bid rejected due to floors",
+			name: "Default_bid_and_bid_rejected_due_to_floors_for_impA",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+			},
+		},
+		{
+			name: "Default_bid_and_bid_rejected_due_to_floors_for_multi_imp",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				}},
+			},
+		},
+		{
+			name: "Multiple_seats_with_all_bids_rejected_due_to_floors",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+				{Seat: "seat2", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+			},
+		},
+		{
+			name: "Multiple_seats_independent",
 			inputSB: &openrtb_ext.SeatNonBidBuilder{
 				"seat1": {
 					{ImpId: "impA", StatusCode: 0},
 					{ImpId: "impB", StatusCode: 301},
 				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 302},
+				},
 			},
 			wantSB: openrtb_ext.SeatNonBidBuilder{
 				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
 					{ImpId: "impB", StatusCode: 301},
 				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 302},
+				},
 			},
-			wantAoSeats: []openrtb_ext.SeatNonBid{
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
 				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 0},
 					{ImpId: "impB", StatusCode: 301},
 				}},
-			},
-		},
-		{
-			name: "multiple seats independent",
-			inputSB: &openrtb_ext.SeatNonBidBuilder{
-				"a": {
-					{ImpId: "ax", StatusCode: 0},
-					{ImpId: "ay", StatusCode: 301},
-				},
-				"b": {
-					{ImpId: "bz", StatusCode: 302},
-				},
-			},
-			wantSB: openrtb_ext.SeatNonBidBuilder{
-				"a": {
-					{ImpId: "ay", StatusCode: 301},
-				},
-				"b": {
-					{ImpId: "bz", StatusCode: 302},
-				},
-			},
-			wantAoSeats: []openrtb_ext.SeatNonBid{
-				{Seat: "a", NonBid: []openrtb_ext.NonBid{
-					{ImpId: "ay", StatusCode: 301},
-				}},
-				{Seat: "b", NonBid: []openrtb_ext.NonBid{
-					{ImpId: "bz", StatusCode: 302},
+				{Seat: "seat2", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 302},
 				}},
 			},
 		},
@@ -822,13 +885,18 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 			ao := &analytics.AuctionObject{}
 			removeDefaultBidsFromSeatNonBid(tc.inputSB, ao)
 
-			if !reflect.DeepEqual(*tc.inputSB, tc.wantSB) {
-				t.Errorf("SeatNonBidBuilder mismatch\n got: %+v\nwant: %+v",
-					*tc.inputSB, tc.wantSB)
+			if tc.inputSB == nil && tc.wantSB != nil {
+				t.Errorf("Expected nil SeatNonBidBuilder, got: %+v", tc.inputSB)
+			} else if tc.inputSB != nil && tc.wantSB == nil {
+				t.Errorf("Expected non-nil SeatNonBidBuilder, got nil")
+			} else if tc.inputSB != nil && tc.wantSB != nil {
+				if !reflect.DeepEqual(*tc.inputSB, tc.wantSB) {
+					t.Errorf("SeatNonBidBuilder mismatch\n got: %+v\nwant: %+v", *tc.inputSB, tc.wantSB)
+				}
 			}
-			if !reflect.DeepEqual(ao.SeatNonBid, tc.wantAoSeats) {
-				t.Errorf("AuctionObject.SeatNonBid mismatch\n got: %+v\nwant: %+v",
-					ao.SeatNonBid, tc.wantAoSeats)
+
+			if !reflect.DeepEqual(ao.SeatNonBid, tc.wantAOSeatNonBid) {
+				t.Errorf("AuctionObject.SeatNonBid mismatch\n got: %+v\nwant: %+v", ao.SeatNonBid, tc.wantAOSeatNonBid)
 			}
 		})
 	}
