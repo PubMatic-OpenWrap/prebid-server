@@ -86,7 +86,7 @@ func TestGetSignalData(t *testing.T) {
 					"ext": {
 						"buyer_generated_request_data": [{
 							"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
-							"data": "{\"id\":\"test-id\",\"app\":{\"id\":\"app-123\"}}"
+							"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
 						}]
 					}
 				}]
@@ -111,7 +111,7 @@ func TestGetSignalData(t *testing.T) {
 				}]
 			}`,
 			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.InvalidSignal)
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
 			},
 			expected: nil,
 		},
@@ -144,7 +144,7 @@ func TestGetSignalData(t *testing.T) {
 							},
 							{
 								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
-								"data": "{\"id\":\"test-id\",\"app\":{\"id\":\"app-123\"}}"
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
 							}
 						]
 					}
@@ -203,44 +203,46 @@ func TestGetWrapperData(t *testing.T) {
 			name:        "Invalid JSON",
 			input:       "{invalid-json",
 			expected:    nil,
-			expectedErr: "failed to get Keyval object",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name:        "Missing imp array",
 			input:       `{"someKey": "someValue"}`,
 			expected:    nil,
-			expectedErr: "failed to get Keyval object",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name:        "Empty imp array",
 			input:       `{"imp": []}`,
 			expected:    nil,
-			expectedErr: "failed to get Keyval object",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name:        "Missing ext in imp",
 			input:       `{"imp": [{"id": "1"}]}`,
 			expected:    nil,
-			expectedErr: "failed to get Keyval object",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name:        "Missing Keyval in ad_unit_mapping",
 			input:       `{"imp": [{"ext": {"ad_unit_mapping": {}}}]}`,
 			expected:    nil,
-			expectedErr: "failed to get Keyval object",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name: "Valid wrapper data",
 			input: `{
 				"imp": [{
 					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [
-								{"key": "publisher_id", "value": "12345"},
-								{"key": "profile_id", "value": "67890"},
-								{"key": "ad_unit_id", "value": "tag-123"}
-							]
+						"ad_unit_mapping": [
+							{
+								"keyvals": [
+									{"key": "publisher_id", "value": "12345"},
+									{"key": "profile_id", "value": "67890"},
+									{"key": "ad_unit_id", "value": "tag-123"}
+								]
 						}
+						]
 					}
 				}]
 			}`,
@@ -256,11 +258,13 @@ func TestGetWrapperData(t *testing.T) {
 			input: `{
 				"imp": [{
 					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [
-								{"key": "publisher_id", "value": "12345"}
-							]
-						}
+						"ad_unit_mapping": [
+							{
+								"keyvals": [
+									{"key": "publisher_id", "value": "12345"}
+								]
+							}
+						]
 					}
 				}]
 			}`,
@@ -274,27 +278,27 @@ func TestGetWrapperData(t *testing.T) {
 			input: `{
 				"imp": [{
 					"ext": {
-						"ad_unit_mapping": {
+						"ad_unit_mapping": [{
 							"Keyval": [
 								{"key": "publisher_id"}
 							]
-						}
+						}]
 					}
 				}]
 			}`,
 			expected:    nil,
-			expectedErr: "",
+			expectedErr: "failed to get key values from ad unit mapping",
 		},
 		{
 			name: "No matching keys in Keyval",
 			input: `{
 				"imp": [{
 					"ext": {
-						"ad_unit_mapping": {
-							"Keyval": [
+						"ad_unit_mapping": [{
+							"keyvals": [
 								{"key": "unknown_key", "value": "value"}
 							]
-						}
+						}]
 					}
 				}]
 			}`,

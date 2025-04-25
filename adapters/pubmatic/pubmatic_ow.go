@@ -201,10 +201,10 @@ func addGoogleSDKParamsToBidExt(bidExtMap map[string]interface{}, bidderExt ExtI
 	if len(bidderExt.ExcludedCreatives) > 0 {
 		bidExtMap[excludedCreatives] = bidderExt.ExcludedCreatives
 	}
-	if bidderExt.IsAppOpenAd {
+	if bidderExt.IsAppOpenAd == 1 {
 		bidExtMap[isAppOpenAd] = bidderExt.IsAppOpenAd
 	}
-	if bidderExt.AllowedRestrictedCategory != 0 {
+	if len(bidderExt.AllowedRestrictedCategory) > 0 {
 		bidExtMap[allowedRestrictedCategory] = bidderExt.AllowedRestrictedCategory
 	}
 	if bidderExt.CreativeEnforcementSettings != nil {

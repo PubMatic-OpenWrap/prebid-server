@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -119,12 +120,9 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		return nil, errors.New("empty request body")
 	}
 
-	keyVal, _, _, _ := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "Keyval")
-	if keyVal == nil {
-		keyVal, _, _, _ = jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "keyvals")
-	}
-
-	if len(keyVal) == 0 {
+	keyVal, dataType, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "[0]", "keyvals")
+	if len(keyVal) == 0 || err != nil || dataType != jsonparser.Array {
+		glog.Errorf("[GoogleSDK] [Error]: failed to get key values from ad unit mapping %v", err)
 		return nil, errors.New("failed to get key values from ad unit mapping")
 	}
 
