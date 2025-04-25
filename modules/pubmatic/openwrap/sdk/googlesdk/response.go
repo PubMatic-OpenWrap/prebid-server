@@ -112,7 +112,7 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 
 	if bidType == models.Banner {
 		declaredAd.HTMLSnippet = bid.AdM
-		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid.AdM)
+		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid)
 		return declaredAd
 	}
 
@@ -164,16 +164,20 @@ func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 	return ""
 }
 
-func getBannerClickThroughURL(creative string) []string {
-	if strings.TrimSpace(creative) == "" {
+func getBannerClickThroughURL(bid openrtb2.Bid) []string {
+	if strings.TrimSpace(bid.AdM) == "" {
 		return []string{}
 	}
 
-	url := extractClickURLFromJSON(creative)
+	url := extractClickURLFromJSON(bid.AdM)
 	if url != "" {
 		return []string{url}
 	}
-	return []string{extractClickURLFromHTML(creative)}
+
+	if url := extractClickURLFromHTML(bid.AdM); url != "" {
+		return []string{url}
+	}
+	return bid.ADomain
 }
 
 // extractClickURLFromJSON Extracts click URL from JSON creative

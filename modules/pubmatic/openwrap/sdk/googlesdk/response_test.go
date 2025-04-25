@@ -188,30 +188,35 @@ func TestSetSDKRenderedAdID(t *testing.T) {
 
 func TestGetBannerClickThroughURL(t *testing.T) {
 	tests := []struct {
-		name     string
-		creative string
-		want     []string
+		name string
+		bid  openrtb2.Bid
+		want []string
 	}{
 		{
-			name:     "Empty creative",
-			creative: "",
-			want:     []string{},
+			name: "Empty creative",
+			bid:  openrtb2.Bid{AdM: ""},
+			want: []string{},
 		},
 		{
-			name:     "JSON creative with click_urls array",
-			creative: `{"click_urls":["http://example.com"]}`,
-			want:     []string{"http://example.com"},
+			name: "JSON creative with click_urls array",
+			bid:  openrtb2.Bid{AdM: `{"click_urls":["http://example.com"]}`},
+			want: []string{"http://example.com"},
 		},
 		{
-			name:     "HTML creative with anchor tag",
-			creative: `<a href="http://example.com">Click</a>`,
-			want:     []string{"http://example.com"},
+			name: "HTML creative with anchor tag",
+			bid:  openrtb2.Bid{AdM: `<a href="http://example.com">Click</a>`},
+			want: []string{"http://example.com"},
+		},
+		{
+			name: "Creative with ADomain",
+			bid:  openrtb2.Bid{AdM: `<script url="http://example.com">Click</script>`, ADomain: []string{"http://example.com"}},
+			want: []string{"http://example.com"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getBannerClickThroughURL(tt.creative)
+			got := getBannerClickThroughURL(tt.bid)
 			assert.Equal(t, tt.want, got)
 		})
 	}
