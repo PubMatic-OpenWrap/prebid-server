@@ -35,15 +35,14 @@ type AdPod struct {
 
 // ImpExtension - Impression Extension
 type ImpExtension struct {
-	Wrapper *ExtImpWrapper `json:"wrapper,omitempty"`
-	Reward  *int8          `json:"reward,omitempty"`
-
-	Bidder map[string]*BidderExtension `json:"bidder,omitempty"`
-
-	SKAdnetwork json.RawMessage          `json:"skadn,omitempty"`
-	Data        openrtb_ext.ExtImpData   `json:"data,omitempty"`
-	GpId        string                   `json:"gpid,omitempty"`
-	Prebid      openrtb_ext.ExtImpPrebid `json:"prebid,omitempty"`
+	openrtb_ext.GoogleSDKParams
+	Wrapper     *ExtImpWrapper              `json:"wrapper,omitempty"`
+	Reward      *int8                       `json:"reward,omitempty"`
+	Bidder      map[string]*BidderExtension `json:"bidder,omitempty"`
+	SKAdnetwork json.RawMessage             `json:"skadn,omitempty"`
+	Data        openrtb_ext.ExtImpData      `json:"data,omitempty"`
+	GpId        string                      `json:"gpid,omitempty"`
+	Prebid      openrtb_ext.ExtImpPrebid    `json:"prebid,omitempty"`
 }
 
 // BidderExtension - Bidder specific items

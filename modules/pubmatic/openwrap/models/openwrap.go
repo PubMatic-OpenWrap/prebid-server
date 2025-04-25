@@ -121,11 +121,17 @@ type RequestCtx struct {
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
+	GoogleSDK                       GoogleSDK
 
 	// Adpod
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+}
+
+type GoogleSDK struct {
+	Reject          bool
+	SDKRenderedAdID string
 }
 
 type AdpodProfileConfig struct {

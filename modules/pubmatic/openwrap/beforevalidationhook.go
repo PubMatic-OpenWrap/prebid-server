@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -138,6 +139,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		return result, errors.New("invalid profile data")
+	}
+
+	// Country filter
+	if shouldApplyCountryFilter(rCtx.Endpoint) {
+		country := getCountryFromContext(rCtx)
+		if country != "" {
+			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
+			if !isCountryAllowed(country, mode, countryCodes) {
+				result.Reject = true
+				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+				result.Errors = append(result.Errors, "Request rejected due to country filter")
+				return result, nil
+			}
+		}
 	}
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
@@ -676,6 +691,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 	}
+	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
