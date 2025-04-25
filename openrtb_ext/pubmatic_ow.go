@@ -11,11 +11,11 @@ type CreativeEnforcementSettings struct {
 }
 
 type GoogleSDKParams struct {
-	BillingIds                  []int64                      `json:"billing_id,omitempty"`
-	PublisherSettingListIds     []int64                      `json:"publisher_setting_list_id,omitempty"`
-	AllowedVendorType           []int32                      `json:"allowed_vendor_type,omitempty"`
+	BillingIds                  []string                     `json:"billing_id,omitempty"`
+	PublisherSettingListIds     []string                     `json:"publisher_setting_list_id,omitempty"`
+	AllowedVendorType           []int                        `json:"allowed_vendor_type,omitempty"`
 	ExcludedCreatives           []BuyerCreative              `json:"excluded_creatives,omitempty"`
-	IsAppOpenAd                 bool                         `json:"is_app_open_ad,omitempty"`
-	AllowedRestrictedCategory   int32                        `json:"allowed_restricted_category,omitempty"`
+	IsAppOpenAd                 int8                         `json:"is_app_open_ad,omitempty"`
+	AllowedRestrictedCategory   []int                        `json:"allowed_restricted_category,omitempty"`
 	CreativeEnforcementSettings *CreativeEnforcementSettings `json:"creative_enforcement_settings,omitempty"`
 }
