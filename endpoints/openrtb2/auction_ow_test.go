@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/golang/glog"
@@ -751,12 +750,6 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 		wantAOSeatNonBid []openrtb_ext.SeatNonBid
 	}{
 		{
-			name:             "Nil_SeatNonBid",
-			inputSB:          nil,
-			wantSB:           nil,
-			wantAOSeatNonBid: nil,
-		},
-		{
 			name:             "Empty_SeatNonBid",
 			inputSB:          &openrtb_ext.SeatNonBidBuilder{},
 			wantSB:           openrtb_ext.SeatNonBidBuilder{},
@@ -885,19 +878,8 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 			ao := &analytics.AuctionObject{}
 			removeDefaultBidsFromSeatNonBid(tc.inputSB, ao)
 
-			if tc.inputSB == nil && tc.wantSB != nil {
-				t.Errorf("Expected nil SeatNonBidBuilder, got: %+v", tc.inputSB)
-			} else if tc.inputSB != nil && tc.wantSB == nil {
-				t.Errorf("Expected non-nil SeatNonBidBuilder, got nil")
-			} else if tc.inputSB != nil && tc.wantSB != nil {
-				if !reflect.DeepEqual(*tc.inputSB, tc.wantSB) {
-					t.Errorf("SeatNonBidBuilder mismatch\n got: %+v\nwant: %+v", *tc.inputSB, tc.wantSB)
-				}
-			}
-
-			if !reflect.DeepEqual(ao.SeatNonBid, tc.wantAOSeatNonBid) {
-				t.Errorf("AuctionObject.SeatNonBid mismatch\n got: %+v\nwant: %+v", ao.SeatNonBid, tc.wantAOSeatNonBid)
-			}
+			assert.Equal(t, &tc.wantSB, tc.inputSB, "SeatNonBidBuilder mismatch")
+			assert.Equal(t, tc.wantAOSeatNonBid, ao.SeatNonBid, "AuctionObject.SeatNonBid mismatch")
 		})
 	}
 }

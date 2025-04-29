@@ -102,7 +102,7 @@ func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, 
 		// Second pass: remove default bids with StatusCode == 0 only if that ImpID has >1 bid
 		cleanedNonSeatBids := make([]openrtb_ext.NonBid, 0, len(nonBids))
 		for _, bid := range nonBids {
-			if bid.StatusCode == 0 && impCount[bid.ImpId] > 1 {
+			if impCount[bid.ImpId] > 1 && bid.StatusCode == 0 {
 				glog.V(3).Infof("Removing Default bid from seatNonBid of seat %s and impid %s", seat, bid.ImpId)
 				continue
 			}
