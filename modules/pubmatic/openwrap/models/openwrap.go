@@ -121,7 +121,7 @@ type RequestCtx struct {
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
-	MultiBidMultiFloors             MultiBidMultiFloors
+	MultiFloors                     MultiFloors         // impression level floors
 	// Adpod
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
@@ -163,30 +163,30 @@ type DeviceCtx struct {
 }
 
 type ImpCtx struct {
-	ImpID             string
-	TagID             string
-	DisplayManager    string
-	DisplayManagerVer string
-	Div               string
-	SlotName          string
-	AdUnitName        string
-	Secure            int
-	BidFloor          float64
-	BidFloorCur       string
-	IsRewardInventory *int8
-	Banner            bool
-	Video             *openrtb2.Video
-	Native            *openrtb2.Native
-	IncomingSlots     []string
-	Type              string // banner, video, native, etc
-	Bidders           map[string]PartnerData
-	NonMapped         map[string]struct{}
-	NewExt            json.RawMessage
-	BidCtx            map[string]BidCtx
-	BannerAdUnitCtx   AdUnitCtx
-	VideoAdUnitCtx    AdUnitCtx
-	NativeAdUnitCtx   AdUnitCtx
-
+	ImpID              string
+	TagID              string
+	DisplayManager     string
+	DisplayManagerVer  string
+	Div                string
+	SlotName           string
+	AdUnitName         string
+	Secure             int
+	BidFloor           float64
+	BidFloorCur        string
+	IsRewardInventory  *int8
+	Banner             bool
+	Video              *openrtb2.Video
+	Native             *openrtb2.Native
+	IncomingSlots      []string
+	Type               string // banner, video, native, etc
+	Bidders            map[string]PartnerData
+	NonMapped          map[string]struct{}
+	NewExt             json.RawMessage
+	BidCtx             map[string]BidCtx
+	BannerAdUnitCtx    AdUnitCtx
+	VideoAdUnitCtx     AdUnitCtx
+	NativeAdUnitCtx    AdUnitCtx
+	AppliedMultiFloors []float64
 	//temp
 	BidderError string
 
@@ -260,16 +260,10 @@ type HashSet map[string]struct{}
 type ProfileAdUnitMultiFloors map[int]map[string]MultiFloors
 
 type MultiFloors struct {
-	IsEnabled bool `json:"isEnabled,omitempty"`
-	Tier1     int  `json:"tier1,omitempty"`
-	Tier2     int  `json:"tier2,omitempty"`
-	Tier3     int  `json:"tier3,omitempty"`
-}
-
-type MultiBidMultiFloors struct {
-	ProfileAdUnitMultiFloors ProfileAdUnitMultiFloors
-	InstlFloors              map[int]MultiFloors
-	RwddFloors               map[int]MultiFloors
+	IsEnabled bool    `json:"isEnabled,omitempty"`
+	Tier1     float64 `json:"tier1,omitempty"`
+	Tier2     float64 `json:"tier2,omitempty"`
+	Tier3     float64 `json:"tier3,omitempty"`
 }
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {

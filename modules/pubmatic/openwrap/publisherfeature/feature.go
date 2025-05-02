@@ -15,7 +15,9 @@ type Feature interface {
 	IsCountryGDPREnabled(countryCode string) bool
 	//GetMbmfEnabledCountries() models.HashSet
 	IsMBMFCountry(countryCode string) bool
+	IsMBMFPublisherInDB(pubID int) bool
 	IsMBMFPublisherEnabled(pubID int) bool
 	IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool
 	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) models.MultiFloors
+	GetProfileAdUnitMultiFloors(profileID int) map[string]models.MultiFloors
 }

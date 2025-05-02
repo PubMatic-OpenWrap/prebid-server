@@ -340,8 +340,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// reuse the existing impExt instead of allocating a new one
-		reward := impExt.Reward
-		if reward != nil {
+		var reward *int8
+		if imp.Rwdd == 1 {
+			reward = openrtb2.Int8Ptr(1)
+		}
+		if reward == nil && impExt.Reward != nil {
+			reward = impExt.Reward
 			impExt.Prebid.IsRewardedInventory = reward
 		}
 		// if imp.ext.data.pbadslot is absent then set it to tagId
@@ -460,6 +464,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
+		rCtx.MultiFloors = m.getMultiFloors(rCtx, reward, imp)
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
@@ -493,10 +498,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 				continue
 			}
 
-			var isRegex bool
-			var slot, kgpv string
-			var bidderParams json.RawMessage
-			var matchedSlotKeysVAST []string
+			var (
+				isRegex             bool
+				slot, kgpv          string
+				bidderParams        json.RawMessage
+				matchedSlotKeysVAST []string
+			)
 			switch prebidBidderCode {
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)

@@ -9,11 +9,12 @@ import (
 )
 
 type mbmf struct {
-	enabledCountries  [2]models.HashSet
-	enabledPublishers [2]map[int]bool
-	instlFloors       [2]map[int]models.MultiFloors
-	rwddFloors        [2]map[int]models.MultiFloors
-	index             int32
+	enabledCountries         [2]models.HashSet
+	enabledPublishers        [2]map[int]bool
+	profileAdUnitLevelFloors [2]models.ProfileAdUnitMultiFloors
+	instlFloors              [2]map[int]models.MultiFloors
+	rwddFloors               [2]map[int]models.MultiFloors
+	index                    int32
 }
 
 func newMBMF() mbmf {
@@ -25,6 +26,10 @@ func newMBMF() mbmf {
 		enabledPublishers: [2]map[int]bool{
 			make(map[int]bool),
 			make(map[int]bool),
+		},
+		profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{
+			make(models.ProfileAdUnitMultiFloors),
+			make(models.ProfileAdUnitMultiFloors),
 		},
 		instlFloors: [2]map[int]models.MultiFloors{
 			make(map[int]models.MultiFloors),
@@ -46,7 +51,17 @@ func (fe *feature) updateMBMF() {
 	fe.updateMBMFPublishers()
 	fe.updateMbmfInstlFloors()
 	fe.updateMbmfRwddFloors()
+	fe.updateProfileAdUnitLevelFloors()
 	fe.mbmf.index ^= 1
+}
+
+// updateGDPRCountryCodes updates gdprCountryCodes fetched from DB to pubFeatureMap
+func (fe *feature) updateProfileAdUnitLevelFloors() {
+	floors, err := fe.cache.GetProfileAdUnitMultiFloors()
+	if err != nil || floors == nil {
+		return
+	}
+	fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index^1] = floors
 }
 
 func (fe *feature) updateMBMFCountries() {
@@ -132,11 +147,11 @@ func (fe *feature) IsMBMFPublisherEnabled(pubID int) bool {
 
 // IsMBMFEnabledForAdUnitFormat returns true if publisher specified for MBMF in DB
 func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool {
-	if adUnitFormat == "instl" {
+	if adUnitFormat == models.AdUnitFormatInstl {
 		_, present := fe.mbmf.instlFloors[fe.mbmf.index][pubID]
 		return present
 	}
-	if adUnitFormat == "rwddvideo" {
+	if adUnitFormat == models.AdUnitFormatRwddVideo {
 		_, present := fe.mbmf.rwddFloors[fe.mbmf.index][pubID]
 		return present
 	}
@@ -145,14 +160,30 @@ func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) 
 
 // GetMBMFFloorsForAdUnitFormat returns floors for publisher specified for MBMF in DB
 func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) models.MultiFloors {
-	if !fe.IsMBMFEnabledForAdUnitFormat(pubID, adUnitFormat) {
+	var floors map[int]models.MultiFloors
+
+	switch adUnitFormat {
+	case models.AdUnitFormatInstl:
+		floors = fe.mbmf.instlFloors[fe.mbmf.index]
+	case models.AdUnitFormatRwddVideo:
+		floors = fe.mbmf.rwddFloors[fe.mbmf.index]
+	default:
 		return models.MultiFloors{}
 	}
-	if adUnitFormat == models.AdUnitFormatInstl {
-		return fe.mbmf.instlFloors[fe.mbmf.index][pubID]
+
+	adFormatFloors, ok := floors[pubID]
+	if !ok {
+		return floors[models.DefaultAdUnitFormatFloors]
 	}
-	if adUnitFormat == models.AdUnitFormatRwddVideo {
-		return fe.mbmf.rwddFloors[fe.mbmf.index][pubID]
+	return adFormatFloors
+}
+
+// GetProfileAdUnitMultiFloors returns adunitlevel floors for publisher specified for MBMF in DB
+func (fe *feature) GetProfileAdUnitMultiFloors(profileID int) map[string]models.MultiFloors {
+	profileAdUnitfloors := fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index]
+	adunitFloors, ok := profileAdUnitfloors[profileID]
+	if !ok {
+		return nil
 	}
-	return models.MultiFloors{}
+	return adunitFloors
 }

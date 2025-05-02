@@ -592,3 +592,69 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 	}
 	return "", ""
 }
+
+func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
+	if reward != nil && imp.Video != nil {
+		return models.AdUnitFormatRwddVideo
+	}
+
+	if imp.Instl == 1 {
+		return models.AdUnitFormatInstl
+	}
+	return ""
+}
+
+// getMultiFloors returns all adunitlevel multifloors or to be applied adunitformat multifloors for give imp.
+func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openrtb2.Imp) *models.MultiFloors {
+	if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
+		return nil
+	}
+
+	adunitFormat := getAdunitFormat(reward, imp)
+	if !m.pubFeatures.IsMBMFPublisherInDB(rctx.PubID) {
+		//default adunitformat floors if pub doesn't exist in DB
+		defaultadunitFormatFloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(models.DefaultAdUnitFormatFloors, adunitFormat)
+		return &defaultadunitFormatFloors
+	}
+
+	//don't apply mbmf if it is not enabled
+	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
+		return nil
+	}
+
+	//don't apply mbmf if pub is not enabled for adunitFormat
+	if !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+		return nil
+	}
+
+	adunitLevelMultiFloors := m.pubFeatures.GetProfileAdUnitMultiFloors(rctx.ProfileID)
+	multifloors, ok := adunitLevelMultiFloors[imp.TagID]
+	if ok {
+		return &multifloors
+	}
+	multifloors = m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	return &multifloors
+}
+
+// GetMultiFloors return to be applied multifloors for respective slot or inventory
+func (m OpenWrap) GetMultiFloors(rctx models.RequestCtx, imp openrtb2.Imp) []float64 {
+	// if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+	// 	return nil
+	// }
+	// if applovinFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[imp.TagID]; ok {
+	// 	return applovinFloors
+	// }
+	// return nil
+
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
+
+	adunitFloors, ok := rctx.MultiBidMultiFloors.AdunitLevelFloors[imp.TagID]
+	if ok && adunitFloors.IsEnabled {
+		return []float64{adunitFloors.Tier1, adunitFloors.Tier2, adunitFloors.Tier3}
+	}
+
+	adunitFormatFloors := rctx.MultiBidMultiFloors.AdunitFormatFloors
+	return []float64{adunitFormatFloors.Tier1, adunitFloors.Tier2, adunitFloors.Tier3}
+}

@@ -76,6 +76,20 @@ func (mr *MockFeatureMockRecorder) GetMBMFFloorsForAdUnitFormat(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFFloorsForAdUnitFormat", reflect.TypeOf((*MockFeature)(nil).GetMBMFFloorsForAdUnitFormat), arg0, arg1)
 }
 
+// GetProfileAdUnitMultiFloors mocks base method.
+func (m *MockFeature) GetProfileAdUnitMultiFloors(arg0 int) map[string]models.MultiFloors {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfileAdUnitMultiFloors", arg0)
+	ret0, _ := ret[0].(map[string]models.MultiFloors)
+	return ret0
+}
+
+// GetProfileAdUnitMultiFloors indicates an expected call of GetProfileAdUnitMultiFloors.
+func (mr *MockFeatureMockRecorder) GetProfileAdUnitMultiFloors(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileAdUnitMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetProfileAdUnitMultiFloors), arg0)
+}
+
 // IsAmpMultiformatEnabled mocks base method.
 func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
@@ -201,6 +215,20 @@ func (m *MockFeature) IsMBMFPublisherEnabled(arg0 int) bool {
 func (mr *MockFeatureMockRecorder) IsMBMFPublisherEnabled(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFPublisherEnabled", reflect.TypeOf((*MockFeature)(nil).IsMBMFPublisherEnabled), arg0)
+}
+
+// IsMBMFPublisherInDB mocks base method.
+func (m *MockFeature) IsMBMFPublisherInDB(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMBMFPublisherInDB", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMBMFPublisherInDB indicates an expected call of IsMBMFPublisherInDB.
+func (mr *MockFeatureMockRecorder) IsMBMFPublisherInDB(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFPublisherInDB", reflect.TypeOf((*MockFeature)(nil).IsMBMFPublisherInDB), arg0)
 }
 
 // IsMaxFloorsEnabled mocks base method.

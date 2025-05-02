@@ -15,7 +15,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
 		Keywords:    getImpExtPubMaticKeyWords(impExt, rctx.PartnerConfigMap[partnerID][models.BidderCode]),
-		Floors:      getApplovinBidFloors(rctx, imp),
+		Floors:      []float64{rctx.MultiFloors.Tier1, rctx.MultiFloors.Tier2, rctx.MultiFloors.Tier3},
 	}
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
