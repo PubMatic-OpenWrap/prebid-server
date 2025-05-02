@@ -121,7 +121,7 @@ type RequestCtx struct {
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
-	MultiFloors                     MultiFloors         // impression level floors
+	MultiFloors                     *MultiFloors        // impression level floors
 	// Adpod
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig

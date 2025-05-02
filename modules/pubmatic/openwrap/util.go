@@ -606,6 +606,10 @@ func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
 
 // getMultiFloors returns all adunitlevel multifloors or to be applied adunitformat multifloors for give imp.
 func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openrtb2.Imp) *models.MultiFloors {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
+
 	if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
 		return nil
 	}
@@ -628,33 +632,13 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	}
 
 	adunitLevelMultiFloors := m.pubFeatures.GetProfileAdUnitMultiFloors(rctx.ProfileID)
-	multifloors, ok := adunitLevelMultiFloors[imp.TagID]
-	if ok {
-		return &multifloors
+	if adunitLevelMultiFloors != nil {
+		multifloors, ok := adunitLevelMultiFloors[imp.TagID]
+		if ok {
+			return &multifloors
+		}
 	}
-	multifloors = m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	//return adunitformat multifloors for pubid, if not present then return default multifloors
+	multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
 	return &multifloors
-}
-
-// GetMultiFloors return to be applied multifloors for respective slot or inventory
-func (m OpenWrap) GetMultiFloors(rctx models.RequestCtx, imp openrtb2.Imp) []float64 {
-	// if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
-	// 	return nil
-	// }
-	// if applovinFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[imp.TagID]; ok {
-	// 	return applovinFloors
-	// }
-	// return nil
-
-	if rctx.Endpoint != models.EndpointAppLovinMax {
-		return nil
-	}
-
-	adunitFloors, ok := rctx.MultiBidMultiFloors.AdunitLevelFloors[imp.TagID]
-	if ok && adunitFloors.IsEnabled {
-		return []float64{adunitFloors.Tier1, adunitFloors.Tier2, adunitFloors.Tier3}
-	}
-
-	adunitFormatFloors := rctx.MultiBidMultiFloors.AdunitFormatFloors
-	return []float64{adunitFormatFloors.Tier1, adunitFloors.Tier2, adunitFloors.Tier3}
 }

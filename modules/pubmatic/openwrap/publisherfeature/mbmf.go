@@ -49,19 +49,10 @@ func (fe *feature) updateMBMF() {
 	}
 	fe.updateMBMFCountries()
 	fe.updateMBMFPublishers()
+	fe.updateProfileAdUnitLevelFloors()
 	fe.updateMbmfInstlFloors()
 	fe.updateMbmfRwddFloors()
-	fe.updateProfileAdUnitLevelFloors()
 	fe.mbmf.index ^= 1
-}
-
-// updateGDPRCountryCodes updates gdprCountryCodes fetched from DB to pubFeatureMap
-func (fe *feature) updateProfileAdUnitLevelFloors() {
-	floors, err := fe.cache.GetProfileAdUnitMultiFloors()
-	if err != nil || floors == nil {
-		return
-	}
-	fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index^1] = floors
 }
 
 func (fe *feature) updateMBMFCountries() {
@@ -90,6 +81,16 @@ func (fe *feature) updateMBMFPublishers() {
 	fe.mbmf.enabledPublishers[fe.mbmf.index^1] = enabledPublishers
 }
 
+// updateProfileAdUnitLevelFloors updates profileAdUnitLevelFloors fetched from DB to pubFeatureMap
+func (fe *feature) updateProfileAdUnitLevelFloors() {
+	floors, err := fe.cache.GetProfileAdUnitMultiFloors()
+	if err != nil || floors == nil {
+		return
+	}
+	fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index^1] = floors
+}
+
+// updateMbmfInstlFloors updates mbmfInstlFloors fetched from DB to pubFeatureMap
 func (fe *feature) updateMbmfInstlFloors() {
 	instlFloors := make(map[int]models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
@@ -105,6 +106,7 @@ func (fe *feature) updateMbmfInstlFloors() {
 	fe.mbmf.instlFloors[fe.mbmf.index^1] = instlFloors
 }
 
+// updateMbmfRwddFloors updates mbmfRwddFloors fetched from DB to pubFeatureMap
 func (fe *feature) updateMbmfRwddFloors() {
 	rwddFloors := make(map[int]models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
@@ -119,10 +121,6 @@ func (fe *feature) updateMbmfRwddFloors() {
 	}
 	fe.mbmf.rwddFloors[fe.mbmf.index^1] = rwddFloors
 }
-
-// func (fe *feature) GetMbmfEnabledCountries() models.HashSet {
-// 	return fe.mbmf.enabledCountries[fe.mbmf.index]
-// }
 
 // IsMBMFCountry returns true if country specified for MBMF in DB
 func (fe *feature) IsMBMFCountry(countryCode string) bool {
