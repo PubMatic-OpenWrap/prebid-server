@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common/util"
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
@@ -83,7 +82,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(models.ContentType, models.ContentTypeApplicationJSON)
 	w.Header().Set(headerAccessControlAllowOrigin, "*")
 
-	ip := util.GetIP(r)
+	ip := models.GetIP(r)
 	geoInfo, err := ow.geoInfoFetcher.LookUp(ip)
 	if err != nil {
 		glog.Errorf("[geo] url:[%s] ip:[%s] error:[%s]", r.URL.RawQuery, ip, err.Error())
