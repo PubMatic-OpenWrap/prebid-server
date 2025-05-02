@@ -19,6 +19,12 @@ const (
 	multiFloors                  = "_mf"
 	appLovinMaxImpressionPattern = `_mf[0-9]+$`
 	multiBidMultiFloorValueKey   = "mbmfv"
+	billingId                    = "billing_id"
+	publisherSettingListId       = "publisher_setting_list_id"
+	excludedCreatives            = "excluded_creatives"
+	isAppOpenAd                  = "is_app_open_ad"
+	allowedRestrictedCategory    = "allowed_restricted_category"
+	creativeEnforcementSettings  = "creative_enforcement_settings"
 )
 
 var (
@@ -182,4 +188,26 @@ func updateBidExtWithMultiFloor(bidImpID string, bidExt, reqBody []byte) []byte 
 		return updatedBidExt
 	}
 	return bidExt
+}
+
+func addGoogleSDKParamsToBidExt(bidExtMap map[string]interface{}, bidderExt ExtImpBidderPubmatic) {
+	// Google SDK Params
+	if len(bidderExt.BillingIds) > 0 {
+		bidExtMap[billingId] = bidderExt.BillingIds
+	}
+	if len(bidderExt.PublisherSettingListIds) > 0 {
+		bidExtMap[publisherSettingListId] = bidderExt.PublisherSettingListIds
+	}
+	if len(bidderExt.ExcludedCreatives) > 0 {
+		bidExtMap[excludedCreatives] = bidderExt.ExcludedCreatives
+	}
+	if bidderExt.IsAppOpenAd == 1 {
+		bidExtMap[isAppOpenAd] = bidderExt.IsAppOpenAd
+	}
+	if len(bidderExt.AllowedRestrictedCategory) > 0 {
+		bidExtMap[allowedRestrictedCategory] = bidderExt.AllowedRestrictedCategory
+	}
+	if bidderExt.CreativeEnforcementSettings != nil {
+		bidExtMap[creativeEnforcementSettings] = bidderExt.CreativeEnforcementSettings
+	}
 }

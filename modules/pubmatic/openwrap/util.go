@@ -314,6 +314,9 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 
 	case nbr.AllPartnersFiltered:
 		return 26
+
+	case nbr.RequestBlockedGeoFiltered:
+		return int(nbr.RequestBlockedGeoFiltered)
 	}
 
 	return -1

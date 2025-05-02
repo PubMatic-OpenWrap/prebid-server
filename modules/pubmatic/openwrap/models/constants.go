@@ -484,7 +484,9 @@ const (
 	EndPointCTV         = "ctv"
 	EndpointHybrid      = "hybrid"
 	EndpointAppLovinMax = "applovinmax"
+	EndpointGoogleSDK   = "googlesdk"
 	EndpointGeo         = "geo"
+	EndpointInvalid     = "invalid"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -615,10 +617,11 @@ const (
 	FeatureMBMFRwddFloors      = 12
 )
 
-// constants for applovinmax requests
+// constants for sdk integrations
 const (
 	Agent                     = "agent"
 	AppLovinMaxAgent          = "max"
+	GoogleSDKAgent            = "googlesdk"
 	TypeRewarded              = "rewarded"
 	SignalData                = "signaldata"
 	OwSspBurl                 = "owsspburl"
@@ -627,6 +630,7 @@ const (
 	AppStoreUrl               = "appStoreUrl"
 	SendBurl                  = "sendburl"
 	MultiBidMultiFloorValue   = "mbmfv"
+	ProcessingTime            = "processing_time_ms"
 	AdUnitFormatInstl         = "instl"
 	AdUnitFormatRwddVideo     = "rwddvideo"
 	DefaultAdUnitFormatFloors = 0
