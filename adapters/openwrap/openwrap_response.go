@@ -18,6 +18,8 @@ import (
 const (
 	buyId               = "buyid"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
+	landingUrl 			= "https://cmpbid.pubmatic.com/convert/onsite/dv/redirect?redirectURL='CONVERT_LANDING_PAGE_DV'&dvURL='DV_CLICK_URL'"
+	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
 
 type pubmaticBidExt struct {
@@ -114,12 +116,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bidType = getBidType(bidExt)
 			}
 
-			if bidType == openrtb_ext.BidTypeNative {
-				bid.AdM, err = getNativeAdm(bid.AdM)
-				if err != nil {
-					errs = append(errs, err)
-				}
-			}
+
 
 			bUrl := extractBillingURL(bid.AdM)
 			bid.BURL = bUrl
@@ -129,7 +126,35 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			}
 
 			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
-			bid.AdM = updatedAdmActivate
+			if bid.MType ==  openrtb2.MarkupBanner{
+				bid.AdM = updatedAdmActivate
+			} else if bid.MType ==  openrtb2.MarkupNative{
+				// Define a structure to unmarshal the adm string.
+				var admData struct {
+					Native struct {
+						Link struct {
+							URL string `json:"url"`
+						} `json:"link"`
+						Imptrackers []string `json:"imptrackers"`
+					} `json:"native"`
+				}
+				// Unmarshal the adm JSON string.
+				json.Unmarshal([]byte(bid.AdM), &admData)
+				
+				// Extract the link URL.
+				linkURL := admData.Native.Link.URL
+				// Join imptrackers into a single string (if you need them as one string;
+				// otherwise, they are available as a slice).
+				impTrackersStr := admData.Native.Imptrackers[0]
+				
+				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
+				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
+
+				updatedAdmActivateNative := strings.Replace(updatedAdmActivate, "CONVERT_LANDING_PAGE", updatedFinalLandingUrl, 1)
+				bid.AdM = updatedAdmActivateNative
+				bid.MType = openrtb2.MarkupBanner
+				bid.BURL = impTrackersStr
+			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:        &bid,
@@ -197,6 +222,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
