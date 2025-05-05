@@ -588,12 +588,23 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 				var isValidAppStoreUrl bool
-				if rCtx.AppLovinMax.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
 					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
 				}
-				rCtx.PageURL = rCtx.AppLovinMax.AppStoreUrl
+				rCtx.PageURL = rCtx.AppStoreUrl
 			}
 		}
+
+		if rCtx.Endpoint == models.EndpointGoogleSDK {
+			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
+				var isValidAppStoreUrl bool
+				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
+					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
+				}
+				rCtx.PageURL = rCtx.AppStoreUrl
+			}
+		}
+
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -746,10 +757,15 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 
 	if rctx.Endpoint == models.EndpointAppLovinMax {
-		if rctx.AppLovinMax.AppStoreUrl != "" {
-			bidRequest.App.StoreURL = rctx.AppLovinMax.AppStoreUrl
+		if rctx.AppStoreUrl != "" {
+			bidRequest.App.StoreURL = rctx.AppStoreUrl
 		}
 	}
+
+	if rctx.Endpoint == models.EndpointGoogleSDK && bidRequest.App != nil && bidRequest.App.StoreURL == "" && rctx.AppStoreUrl != "" {
+		bidRequest.App.StoreURL = rctx.AppStoreUrl
+	}
+
 	strictVastMode := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
 	if strictVastMode {
 		if rctx.NewReqExt == nil {
@@ -1347,7 +1363,6 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 }
 
 func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
-
 	if imp.Video.W == nil {
 		imp.Video.W = getW(imp)
 	}
@@ -1431,12 +1446,12 @@ func getProfileAppStoreUrl(rctx models.RequestCtx) (string, bool) {
 	isValidAppStoreUrl := false
 	appStoreUrl := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AppStoreUrl]
 	if appStoreUrl == "" {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: app store url not present in DB", rctx.PubID, rctx.ProfileID)
+		glog.Errorf("[PubID]: %d [ProfileID]: %d [Error]: app store url not present in DB", rctx.PubID, rctx.ProfileID)
 		return appStoreUrl, isValidAppStoreUrl
 	}
 	appStoreUrl = strings.TrimSpace(appStoreUrl)
 	if !isValidURL(appStoreUrl) {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
+		glog.Errorf("[PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: Invalid app store url", rctx.PubID, rctx.ProfileID, appStoreUrl)
 		return appStoreUrl, isValidAppStoreUrl
 	}
 	isValidAppStoreUrl = true
@@ -1449,19 +1464,19 @@ func (m *OpenWrap) updateSkadnSourceapp(rctx models.RequestCtx, bidRequest *open
 	}
 
 	if impExt == nil || impExt.SKAdnetwork == nil {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID)
+		glog.Errorf("[PubID]: %d [ProfileID]: %d [Error]: skadn is missing in imp.ext", rctx.PubID, rctx.ProfileID)
 		return
 	}
 
-	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppLovinMax.AppStoreUrl)
+	itunesID := extractItunesIdFromAppStoreUrl(rctx.AppStoreUrl)
 	if itunesID == "" {
 		m.metricEngine.RecordFailedParsingItuneID(rctx.PubIDStr, rctx.ProfileIDStr)
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl)
+		glog.Errorf("[PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: itunes id is missing in app store url", rctx.PubID, rctx.ProfileID, rctx.AppStoreUrl)
 		return
 	}
 
 	if updatedSKAdnetwork, err := jsonparser.Set(impExt.SKAdnetwork, []byte(strconv.Quote(itunesID)), "sourceapp"); err != nil {
-		glog.Errorf("[AppLovinMax] [PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, rctx.AppLovinMax.AppStoreUrl, err.Error())
+		glog.Errorf("[PubID]: %d [ProfileID]: %d [AppStoreUrl]: %s [Error]: %s", rctx.PubID, rctx.ProfileID, rctx.AppStoreUrl, err.Error())
 	} else {
 		impExt.SKAdnetwork = updatedSKAdnetwork
 	}

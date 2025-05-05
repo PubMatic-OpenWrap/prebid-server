@@ -203,31 +203,31 @@ func TestGetWrapperData(t *testing.T) {
 			name:        "Invalid JSON",
 			input:       "{invalid-json",
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "failed to get ad unit mapping",
 		},
 		{
 			name:        "Missing imp array",
 			input:       `{"someKey": "someValue"}`,
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "failed to get ad unit mapping",
 		},
 		{
 			name:        "Empty imp array",
 			input:       `{"imp": []}`,
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "failed to get ad unit mapping",
 		},
 		{
 			name:        "Missing ext in imp",
 			input:       `{"imp": [{"id": "1"}]}`,
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "failed to get ad unit mapping",
 		},
 		{
 			name:        "Missing Keyval in ad_unit_mapping",
-			input:       `{"imp": [{"ext": {"ad_unit_mapping": {}}}]}`,
+			input:       `{"imp":[{"ext":{"ad_unit_mapping":[{"format":1}]}}]}`,
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "wrapper data not found in ad unit mapping",
 		},
 		{
 			name: "Valid wrapper data",
@@ -287,7 +287,7 @@ func TestGetWrapperData(t *testing.T) {
 				}]
 			}`,
 			expected:    nil,
-			expectedErr: "failed to get key values from ad unit mapping",
+			expectedErr: "wrapper data not found in ad unit mapping",
 		},
 		{
 			name: "No matching keys in Keyval",
@@ -303,7 +303,7 @@ func TestGetWrapperData(t *testing.T) {
 				}]
 			}`,
 			expected:    nil,
-			expectedErr: "",
+			expectedErr: "wrapper data not found in ad unit mapping",
 		},
 	}
 
