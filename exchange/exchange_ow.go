@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -433,9 +434,10 @@ func upadteOWDebugLog(requestExtPrebid *openrtb_ext.ExtRequestPrebid, debugLog *
 
 func RecordVASTUnwrapperMetrics(metricsEngine metrics.MetricsEngine, ctx *unwrapmodels.UnwrapContext) {
 	metricsEngine.RecordXMLParserResponseTime(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount), ctx.Stats.ResponseTime)
-	if ctx.Stats.ErrorCode == 0 {
-		metricsEngine.RecordXMLParserProcessingTime(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount), (ctx.Stats.ResponseTime - ctx.Stats.VASTAdTagURLFetchTime))
-	} else {
+	metricsEngine.RecordXMLParserProcessingTime(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount), (ctx.Stats.ResponseTime - ctx.Stats.VASTAdTagURLFetchTime))
+
+	if ctx.Stats.ErrorCode != 0 {
+		openrtb_ext.XMLLogf(openrtb_ext.XMLLogFormat, "unwrap", base64.StdEncoding.EncodeToString(ctx.Vast))
 		metricsEngine.RecordXMLParserError(ctx.Stats.ParserName, "unwrap", strconv.Itoa(ctx.Stats.WrapperCount))
 	}
 }
