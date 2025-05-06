@@ -19,11 +19,11 @@ func TestNewNonBid(t *testing.T) {
 		{
 			name:           "nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: nil},
-			expectedNonBid: NonBid{Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}}},
+			expectedNonBid: NonBid{Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ExtOWNonBidPrebidBid: ExtOWNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}}}},
 		{
 			name:           "non-nil-bid-present-in-bidparams",
 			bidParams:      NonBidParams{Bid: &openrtb2.Bid{ImpID: "imp1"}, NonBidReason: 100},
-			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}},
+			expectedNonBid: NonBid{ImpId: "imp1", StatusCode: 100, Ext: ExtNonBid{Prebid: ExtNonBidPrebid{Bid: ExtNonBidPrebidBid{ExtOWNonBidPrebidBid: ExtOWNonBidPrebidBid{ID: "30470a14-2949-4110-abce-b62d57304ad5"}}}}},
 		},
 	}
 	for _, tt := range tests {
