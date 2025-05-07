@@ -12,6 +12,7 @@ import (
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"golang.org/x/net/html"
 )
@@ -85,11 +86,25 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 	}
 
 	bid := bidResponse.SeatBid[0].Bid[0]
+	declaredAd := getDeclaredAd(rctx, bid)
+
+	//reject response if clickthroughURL is empty
+	if len(declaredAd.ClickThroughURL) == 0 {
+		processingTimeValue := time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()
+		ext := json.RawMessage([]byte(fmt.Sprintf(`{"%s":%d}`, models.ProcessingTime, processingTimeValue)))
+		*bidResponse = openrtb2.BidResponse{
+			ID:  bidResponse.ID,
+			NBR: nbr.ResponseRejectedMissingParam.Ptr(),
+			Ext: ext,
+		}
+		return nil, false
+	}
+
 	bidExt := models.GoogleSDKBidExt{
 		SDKRenderedAd: models.SDKRenderedAd{
 			ID:            rctx.GoogleSDK.SDKRenderedAdID,
 			RenderingData: string(resp),
-			DeclaredAd:    getDeclaredAd(rctx, bid),
+			DeclaredAd:    declaredAd,
 		},
 		//EventNotificationToken: &models.EventNotificationToken{Payload: ""},
 		BillingID: "",
