@@ -144,7 +144,7 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		}
 
 		for _, kv := range keyvals {
-			kvMap, ok := kv.(map[string]interface{})
+			kvMap, ok := kv.(map[string]any)
 			if !ok {
 				continue
 			}
@@ -166,6 +166,11 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 			case "ad_unit_id":
 				wprData.TagId = value
 			}
+		}
+
+		// Check if all values are found
+		if len(wprData.PublisherId) > 0 && len(wprData.ProfileId) > 0 && len(wprData.TagId) > 0 {
+			break
 		}
 	}
 
