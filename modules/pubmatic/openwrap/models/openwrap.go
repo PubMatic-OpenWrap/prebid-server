@@ -122,6 +122,7 @@ type RequestCtx struct {
 	SendBurl                        bool
 	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
 	GoogleSDK                       GoogleSDK
+	AppStoreUrl                     string
 
 	// Adpod
 	AdruleFlag         bool
@@ -249,7 +250,6 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject            bool
 	MultiFloorsConfig MultiFloorsConfig
-	AppStoreUrl       string
 }
 
 type MultiFloorsConfig struct {
