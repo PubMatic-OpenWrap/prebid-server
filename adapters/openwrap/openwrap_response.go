@@ -141,14 +141,23 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					} `json:"native"`
 				}
 				// Unmarshal the adm JSON string.
-				json.Unmarshal([]byte(bid.AdM), &admData)
+				// Unmarshal the adm JSON string and check for errors.
+				if err := json.Unmarshal([]byte(bid.AdM), &admData); err != nil {
+					continue // or handle the error as appropriate
+				}
+				// Check if imptrackers and clicktrackers slices contain at least one element.
+				if len(admData.Native.Imptrackers) == 0 {
+					continue // or handle the situation as needed
+				}
+				if len(admData.Native.Clicktrackers) == 0 {
+					continue // or handle the situation as needed
+				}
 				
 				// Extract the link URL.
 				linkURL := admData.Native.Link.URL
-				// Join imptrackers into a single string (if you need them as one string;
-				// otherwise, they are available as a slice).
 				impTrackersStr := admData.Native.Imptrackers[0]
 				clickTrackersStr := admData.Native.Clicktrackers[0]
+	
 				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "PUB_CLICK_URL", adapters.EncodeURL(clickTrackersStr), 1)
@@ -224,6 +233,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 

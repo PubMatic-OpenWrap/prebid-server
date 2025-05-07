@@ -149,7 +149,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			}
 		}
 		// Build the native request JSON with dynamic width and height values.
-		nativeReq := fmt.Sprintf(`{ "ver": "1.1", "context": 1, "contextsubtype": 11, "plcmttype": 1, "plcmtcnt": 1, "assets": [ { "id": 1, "required": 1, "img": { "w": %d, "h": %d, "type": 3 } } ], "eventtrackers": [ { "event": 1, "methods": [ 1, 2 ] } ] }`, width, height)
+		nativeReq := fmt.Sprintf(`{ "ver": "1.1", "assets": [ { "id": 1, "required": 1, "img": { "w": %d, "h": %d, "type": 3 } }, { "id": 2, "required": 1, "img": { "type": 1 } }, { "id": 12, "required": 1, "data": { "type": 2 } }], "eventtrackers": [ { "event": 1, "methods": [ 1, 2 ] } ] }`, width, height)
 		request.Imp[i].Native = &openrtb2.Native{
 			Request: nativeReq,
 			Ver:     "1.1",
@@ -189,6 +189,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Headers: headers,
 	}}, nil
 	}
+
 
 
 
