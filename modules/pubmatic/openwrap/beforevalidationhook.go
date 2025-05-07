@@ -586,6 +586,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 			if len(impExt.GpId) == 0 {
 				impExt.GpId = imp.TagID
 			}
+		}
+
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
 			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 				var isValidAppStoreUrl bool
 				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {

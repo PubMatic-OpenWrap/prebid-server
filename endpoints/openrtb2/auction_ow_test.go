@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -735,6 +736,150 @@ func TestUpdateResponseExtOW(t *testing.T) {
 			if tt.rejectResponse {
 				assert.Equal(t, http.StatusNoContent, tt.args.w.(*httptest.ResponseRecorder).Code, tt.name)
 			}
+		})
+	}
+}
+
+func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
+	t.Cleanup(func() { glog.Flush() })
+
+	tests := []struct {
+		name             string
+		inputSB          *openrtb_ext.SeatNonBidBuilder
+		wantSB           openrtb_ext.SeatNonBidBuilder
+		wantAOSeatNonBid []openrtb_ext.SeatNonBid
+	}{
+		{
+			name:             "Empty_SeatNonBid",
+			inputSB:          &openrtb_ext.SeatNonBidBuilder{},
+			wantSB:           openrtb_ext.SeatNonBidBuilder{},
+			wantAOSeatNonBid: nil,
+		},
+		{
+			name: "SeatNonBid_with_default_bid",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "imp1", StatusCode: 0},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "imp1", StatusCode: 0},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "imp1", StatusCode: 0},
+				}},
+			},
+		},
+		{
+			name: "Default_bid_and_bid_rejected_due_to_floors_for_impA",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+			},
+		},
+		{
+			name: "Default_bid_and_bid_rejected_due_to_floors_for_multi_imp",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+					{ImpId: "impB", StatusCode: 0},
+				}},
+			},
+		},
+		{
+			name: "Multiple_seats_with_all_bids_rejected_due_to_floors",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 301},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+				{Seat: "seat2", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 301},
+				}},
+			},
+		},
+		{
+			name: "Multiple_seats_independent",
+			inputSB: &openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impB", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 302},
+				},
+			},
+			wantSB: openrtb_ext.SeatNonBidBuilder{
+				"seat1": {
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impB", StatusCode: 301},
+				},
+				"seat2": {
+					{ImpId: "impA", StatusCode: 302},
+				},
+			},
+			wantAOSeatNonBid: []openrtb_ext.SeatNonBid{
+				{Seat: "seat1", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 0},
+					{ImpId: "impB", StatusCode: 301},
+				}},
+				{Seat: "seat2", NonBid: []openrtb_ext.NonBid{
+					{ImpId: "impA", StatusCode: 302},
+				}},
+			},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ao := &analytics.AuctionObject{}
+			removeDefaultBidsFromSeatNonBid(tc.inputSB, ao)
+
+			assert.Equal(t, &tc.wantSB, tc.inputSB, "SeatNonBidBuilder mismatch")
+			assert.Equal(t, tc.wantAOSeatNonBid, ao.SeatNonBid, "AuctionObject.SeatNonBid mismatch")
 		})
 	}
 }

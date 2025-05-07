@@ -86,3 +86,29 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		rCtx.WakandaDebug.SetHTTPResponseWriter(w)
 	}
 }
+
+func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, ao *analytics.AuctionObject) {
+	if seatNonBid == nil {
+		return
+	}
+
+	for seat, nonBids := range *seatNonBid {
+		// First pass: count number of bids per ImpID
+		impCount := make(map[string]int)
+		for _, bid := range nonBids {
+			impCount[bid.ImpId]++
+		}
+
+		// Second pass: remove default bids with StatusCode == 0 only if that ImpID has >1 bid
+		cleanedNonSeatBids := make([]openrtb_ext.NonBid, 0, len(nonBids))
+		for _, bid := range nonBids {
+			if impCount[bid.ImpId] > 1 && bid.StatusCode == 0 {
+				glog.V(3).Infof("Removing Default bid from seatNonBid of seat %s and impid %s", seat, bid.ImpId)
+				continue
+			}
+			cleanedNonSeatBids = append(cleanedNonSeatBids, bid)
+		}
+		(*seatNonBid)[seat] = cleanedNonSeatBids
+	}
+	ao.SeatNonBid = seatNonBid.Get()
+}
