@@ -267,11 +267,10 @@ type HashSet map[string]struct{}
 type ProfileAdUnitMultiFloors map[int]map[string]MultiFloors
 
 type MultiFloors struct {
-	IsActive  bool   `json:"isActive,omitempty"`
-	Tier1     string `json:"tier1,omitempty"`
-	Tier2     string `json:"tier2,omitempty"`
-	Tier3     string `json:"tier3,omitempty"`
-	ProfileID int    `json:"profileId,omitempty"`
+	IsActive bool    `json:"isActive,omitempty"`
+	Tier1    float64 `json:"tier1,omitempty"`
+	Tier2    float64 `json:"tier2,omitempty"`
+	Tier3    float64 `json:"tier3,omitempty"`
 }
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {

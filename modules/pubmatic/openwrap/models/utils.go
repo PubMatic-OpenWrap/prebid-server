@@ -470,18 +470,5 @@ func GetMultiFloors(rctx RequestCtx) []float64 {
 	if rctx.MultiFloors == nil {
 		return nil
 	}
-	tiers := []string{rctx.MultiFloors.Tier1, rctx.MultiFloors.Tier2, rctx.MultiFloors.Tier3}
-	floors := make([]float64, 0, len(tiers))
-	for _, tier := range tiers {
-		val, err := strconv.ParseFloat(tier, 64)
-		if err != nil {
-			glog.Errorf("Failed to parse MBMF floors for pubid:[%d] profileid:[%d] error:[%s]", rctx.PubID, rctx.ProfileID, err.Error())
-			break
-		}
-		floors = append(floors, val)
-	}
-	if len(floors) == len(tiers) {
-		return floors
-	}
-	return nil
+	return []float64{rctx.MultiFloors.Tier1, rctx.MultiFloors.Tier2, rctx.MultiFloors.Tier3}
 }
