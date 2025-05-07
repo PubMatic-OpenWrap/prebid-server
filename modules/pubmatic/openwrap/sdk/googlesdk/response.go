@@ -11,7 +11,9 @@ import (
 	"github.com/golang/glog"
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"golang.org/x/net/html"
 )
@@ -45,13 +47,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 	}
 
 	if rctx.GoogleSDK.Reject {
-		processingTimeValue := time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()
-		ext := json.RawMessage([]byte(fmt.Sprintf(`{"%s":%d}`, models.ProcessingTime, processingTimeValue)))
-		*bidResponse = openrtb2.BidResponse{
-			ID:  bidResponse.ID,
-			NBR: bidResponse.NBR,
-			Ext: ext,
-		}
+		*bidResponse = getRejectedResponse(bidResponse.ID, rctx, bidResponse.NBR)
 		return bidResponse
 	}
 
@@ -85,11 +81,19 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 	}
 
 	bid := bidResponse.SeatBid[0].Bid[0]
+	declaredAd := getDeclaredAd(rctx, bid)
+
+	//reject response if clickthroughURL is empty
+	if len(declaredAd.ClickThroughURL) == 0 {
+		*bidResponse = getRejectedResponse(bidResponse.ID, rctx, nbr.ResponseRejectedMissingParam.Ptr())
+		return nil, false
+	}
+
 	bidExt := models.GoogleSDKBidExt{
 		SDKRenderedAd: models.SDKRenderedAd{
 			ID:            rctx.GoogleSDK.SDKRenderedAdID,
 			RenderingData: string(resp),
-			DeclaredAd:    getDeclaredAd(rctx, bid),
+			DeclaredAd:    declaredAd,
 		},
 		//EventNotificationToken: &models.EventNotificationToken{Payload: ""},
 		BillingID: "",
@@ -112,7 +116,7 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 
 	if bidType == models.Banner {
 		declaredAd.HTMLSnippet = bid.AdM
-		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid.AdM)
+		declaredAd.ClickThroughURL = getBannerClickThroughURL(bid)
 		return declaredAd
 	}
 
@@ -130,6 +134,17 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 		declaredAd.ClickThroughURL = []string{nativeResp.Link.URL}
 	}
 	return declaredAd
+}
+
+// getRejsectedResponse creates a bid response with NBR code and processing time when request is rejected
+func getRejectedResponse(id string, rctx models.RequestCtx, nbrCode *openrtb3.NoBidReason) openrtb2.BidResponse {
+	processingTimeValue := time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()
+	ext := json.RawMessage([]byte(fmt.Sprintf(`{"%s":%d}`, models.ProcessingTime, processingTimeValue)))
+	return openrtb2.BidResponse{
+		ID:  id,
+		NBR: nbrCode,
+		Ext: ext,
+	}
 }
 
 func getVideoClickThroughURL(creative string) []string {
@@ -164,16 +179,20 @@ func SetSDKRenderedAdID(app *openrtb2.App, endpoint string) string {
 	return ""
 }
 
-func getBannerClickThroughURL(creative string) []string {
-	if strings.TrimSpace(creative) == "" {
+func getBannerClickThroughURL(bid openrtb2.Bid) []string {
+	if strings.TrimSpace(bid.AdM) == "" {
 		return []string{}
 	}
 
-	url := extractClickURLFromJSON(creative)
+	url := extractClickURLFromJSON(bid.AdM)
 	if url != "" {
 		return []string{url}
 	}
-	return []string{extractClickURLFromHTML(creative)}
+
+	if url := extractClickURLFromHTML(bid.AdM); url != "" {
+		return []string{url}
+	}
+	return bid.ADomain
 }
 
 // extractClickURLFromJSON Extracts click URL from JSON creative

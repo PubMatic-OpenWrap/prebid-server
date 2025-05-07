@@ -2,12 +2,14 @@ package googlesdk
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -188,30 +190,35 @@ func TestSetSDKRenderedAdID(t *testing.T) {
 
 func TestGetBannerClickThroughURL(t *testing.T) {
 	tests := []struct {
-		name     string
-		creative string
-		want     []string
+		name string
+		bid  openrtb2.Bid
+		want []string
 	}{
 		{
-			name:     "Empty creative",
-			creative: "",
-			want:     []string{},
+			name: "Empty creative",
+			bid:  openrtb2.Bid{AdM: ""},
+			want: []string{},
 		},
 		{
-			name:     "JSON creative with click_urls array",
-			creative: `{"click_urls":["http://example.com"]}`,
-			want:     []string{"http://example.com"},
+			name: "JSON creative with click_urls array",
+			bid:  openrtb2.Bid{AdM: `{"click_urls":["http://example.com"]}`},
+			want: []string{"http://example.com"},
 		},
 		{
-			name:     "HTML creative with anchor tag",
-			creative: `<a href="http://example.com">Click</a>`,
-			want:     []string{"http://example.com"},
+			name: "HTML creative with anchor tag",
+			bid:  openrtb2.Bid{AdM: `<a href="http://example.com">Click</a>`},
+			want: []string{"http://example.com"},
+		},
+		{
+			name: "Creative with ADomain",
+			bid:  openrtb2.Bid{AdM: `<script url="http://example.com">Click</script>`, ADomain: []string{"http://example.com"}},
+			want: []string{"http://example.com"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getBannerClickThroughURL(tt.creative)
+			got := getBannerClickThroughURL(tt.bid)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -281,45 +288,107 @@ func TestExtractClickURLFromHTML(t *testing.T) {
 
 func TestApplyGoogleSDKResponse(t *testing.T) {
 	tests := []struct {
-		name    string
-		rctx    models.RequestCtx
-		bidResp *openrtb2.BidResponse
-		wantID  string
-		wantNBR bool
+		name     string
+		rctx     models.RequestCtx
+		bidResp  *openrtb2.BidResponse
+		wantResp *openrtb2.BidResponse
+		wantNBR  bool
 	}{
 		{
-			name:    "Non GoogleSDK endpoint returns input",
-			rctx:    models.RequestCtx{Endpoint: "other"},
-			bidResp: &openrtb2.BidResponse{ID: "test-non-gsdk"},
-			wantID:  "test-non-gsdk",
-			wantNBR: false,
+			name:     "Non GoogleSDK endpoint returns input",
+			rctx:     models.RequestCtx{Endpoint: "other"},
+			bidResp:  &openrtb2.BidResponse{ID: "test-non-gsdk"},
+			wantResp: &openrtb2.BidResponse{ID: "test-non-gsdk"},
+			wantNBR:  false,
 		},
 		{
-			name:    "GoogleSDK endpoint, debug true, empty SeatBid",
-			rctx:    models.RequestCtx{Endpoint: models.EndpointGoogleSDK, Debug: true},
-			bidResp: &openrtb2.BidResponse{ID: "test-debug-empty"},
-			wantID:  "test-debug-empty",
-			wantNBR: false,
+			name:     "GoogleSDK endpoint, debug true, empty SeatBid",
+			rctx:     models.RequestCtx{Endpoint: models.EndpointGoogleSDK, Debug: true},
+			bidResp:  &openrtb2.BidResponse{ID: "test-debug-empty"},
+			wantResp: &openrtb2.BidResponse{ID: "test-debug-empty"},
+			wantNBR:  false,
 		},
 		{
-			name:    "GoogleSDK endpoint, debug true, NBR present",
-			rctx:    models.RequestCtx{Endpoint: models.EndpointGoogleSDK, Debug: true},
-			bidResp: &openrtb2.BidResponse{ID: "test-debug-nbr", NBR: openrtb3.NoBidUnknownError.Ptr()},
-			wantID:  "test-debug-nbr",
-			wantNBR: true,
+			name:     "GoogleSDK endpoint, debug true, NBR present",
+			rctx:     models.RequestCtx{Endpoint: models.EndpointGoogleSDK, Debug: true},
+			bidResp:  &openrtb2.BidResponse{ID: "test-debug-nbr", NBR: openrtb3.NoBidUnknownError.Ptr()},
+			wantResp: &openrtb2.BidResponse{ID: "test-debug-nbr", NBR: openrtb3.NoBidUnknownError.Ptr()},
+			wantNBR:  true,
 		},
 		{
-			name:    "GoogleSDK endpoint, reject true sets NBR",
-			rctx:    models.RequestCtx{Endpoint: models.EndpointGoogleSDK, GoogleSDK: models.GoogleSDK{Reject: true}, StartTime: 0},
-			bidResp: &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr()},
-			wantID:  "test-reject",
-			wantNBR: true,
+			name:     "GoogleSDK endpoint, reject true sets NBR",
+			rctx:     models.RequestCtx{Endpoint: models.EndpointGoogleSDK, GoogleSDK: models.GoogleSDK{Reject: true}, StartTime: 0},
+			bidResp:  &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr()},
+			wantResp: &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr(), Ext: json.RawMessage(`{"processing_time_ms":0}`)},
+			wantNBR:  true,
 		},
 		{
-			name:    "GoogleSDK endpoint, customizeBid path",
-			rctx:    models.RequestCtx{Endpoint: models.EndpointGoogleSDK},
-			bidResp: &openrtb2.BidResponse{ID: "test-customok", Cur: "USD", SeatBid: []openrtb2.SeatBid{{Bid: []openrtb2.Bid{{ID: "bid1"}}}}},
-			wantID:  "test-customok",
+			name: "GoogleSDK endpoint, reject missing clickthrough URL",
+			rctx: models.RequestCtx{
+				Endpoint:  models.EndpointGoogleSDK,
+				StartTime: 1234567890,
+				Trackers: map[string]models.OWTracker{
+					"bid1": {
+						BidType: models.Banner,
+					},
+				},
+			},
+			bidResp: &openrtb2.BidResponse{
+				ID:  "test-reject-clickthrough",
+				Cur: "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "bid1",
+								AdM: "<html><body>No clickthrough URL</body></html>",
+							},
+						},
+					},
+				},
+			},
+			wantResp: &openrtb2.BidResponse{ID: "test-reject-clickthrough", NBR: nbr.ResponseRejectedMissingParam.Ptr(), Ext: json.RawMessage(`{"processing_time_ms":0}`)},
+			wantNBR:  true,
+		},
+		{
+			name: "GoogleSDK endpoint, customizeBid path",
+			rctx: models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+				Trackers: map[string]models.OWTracker{
+					"bid1": {
+						BidType: models.Banner,
+					},
+				},
+			},
+			bidResp: &openrtb2.BidResponse{
+				ID:  "test-customok",
+				Cur: "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "bid1",
+								AdM: "<html><body><a href=\"http://example.com/click\">Click here</a></body></html>",
+							},
+						},
+					},
+				},
+			},
+			wantResp: &openrtb2.BidResponse{
+				ID:    "test-customok",
+				BidID: "bid1",
+				Cur:   "USD",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "bid1",
+								Ext: json.RawMessage(`{"sdk_rendered_ad":{"rendering_data":"{\"id\":\"test-customok\",\"seatbid\":[{\"bid\":[{\"id\":\"bid1\",\"impid\":\"\",\"price\":0,\"adm\":\"\\u003chtml\\u003e\\u003cbody\\u003e\\u003ca href=\\\"http://example.com/click\\\"\\u003eClick here\\u003c/a\\u003e\\u003c/body\\u003e\\u003c/html\\u003e\"}]}],\"cur\":\"USD\"}","declared_ad":{"click_through_url":["http://example.com/click"],"html_snippet":"\u003chtml\u003e\u003cbody\u003e\u003ca href=\"http://example.com/click\"\u003eClick here\u003c/a\u003e\u003c/body\u003e\u003c/html\u003e"}}}`),
+							},
+						},
+					},
+				},
+			},
 			wantNBR: false,
 		},
 	}
@@ -327,9 +396,13 @@ func TestApplyGoogleSDKResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := ApplyGoogleSDKResponse(tt.rctx, tt.bidResp)
-			assert.Equal(t, tt.wantID, got.ID)
-			if tt.wantNBR {
-				assert.NotNil(t, got.NBR)
+			// For cases with processing time, only compare NBR and ID
+			if got.Ext != nil && strings.Contains(string(got.Ext), "processing_time_ms") {
+				assert.Equal(t, tt.wantResp.NBR, got.NBR)
+				assert.Equal(t, tt.wantResp.ID, got.ID)
+				assert.Contains(t, string(got.Ext), "processing_time_ms")
+			} else {
+				assert.Equal(t, tt.wantResp, got)
 			}
 		})
 	}
@@ -387,22 +460,63 @@ func TestCustomizeBid(t *testing.T) {
 				GoogleSDK: models.GoogleSDK{
 					SDKRenderedAdID: "sdkrenderedaid",
 				},
+				StartTime: 1234567890,
+				Endpoint:  models.EndpointGoogleSDK,
+				Trackers: map[string]models.OWTracker{
+					"bidid": {
+						BidType: models.Banner,
+					},
+				},
 			},
 			bidResponse: &openrtb2.BidResponse{
 				ID: "id",
 				SeatBid: []openrtb2.SeatBid{
-					{Bid: []openrtb2.Bid{{ID: "bidid"}}},
+					{Bid: []openrtb2.Bid{
+						{
+							ID:  "bidid",
+							AdM: `<html><body><a href="http://example.com/click">Click here</a></body></html>`,
+						},
+					}},
 				},
 			},
 			want: want{
 				bids: []openrtb2.Bid{
 					{
 						ID:  "bidid",
-						Ext: json.RawMessage(`{"sdk_rendered_ad":{"id":"sdkrenderedaid","rendering_data":"{\"id\":\"id\",\"seatbid\":[{\"bid\":[{\"id\":\"bidid\",\"impid\":\"\",\"price\":0}]}]}","declared_ad":{}}}`),
+						Ext: json.RawMessage(`{"sdk_rendered_ad":{"id":"sdkrenderedaid","rendering_data":"{\"id\":\"id\",\"seatbid\":[{\"bid\":[{\"id\":\"bidid\",\"impid\":\"\",\"price\":0,\"adm\":\"\\u003chtml\\u003e\\u003cbody\\u003e\\u003ca href=\\\"http://example.com/click\\\"\\u003eClick here\\u003c/a\\u003e\\u003c/body\\u003e\\u003c/html\\u003e\"}]}]}","declared_ad":{"click_through_url":["http://example.com/click"],"html_snippet":"\u003chtml\u003e\u003cbody\u003e\u003ca href=\"http://example.com/click\"\u003eClick here\u003c/a\u003e\u003c/body\u003e\u003c/html\u003e"}}}`),
 						AdM: "",
 					},
 				},
 				wantOK: true,
+			},
+		},
+		{
+			name: "reject_empty_clickthrough_url",
+			rctx: models.RequestCtx{
+				StartTime: 1234567890,
+				Endpoint:  models.EndpointGoogleSDK,
+				Trackers: map[string]models.OWTracker{
+					"bidid": {
+						BidType: models.Banner,
+					},
+				},
+			},
+			bidResponse: &openrtb2.BidResponse{
+				ID: "responseid",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:  "bidid",
+								AdM: "<html><body>No clickthrough URL</body></html>",
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				bids:   nil,
+				wantOK: false,
 			},
 		},
 	}
