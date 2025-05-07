@@ -18,7 +18,7 @@ import (
 const (
 	buyId               = "buyid"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
-	landingUrl 			= "https://cmpbid.pubmatic.com/convert/onsite/dv/redirect?redirectURL='CONVERT_LANDING_PAGE_DV'&dvURL='DV_CLICK_URL'"
+	landingUrl 			= "https://cmpbid.pubmatic.com/convert/onsite/dv/redirect?redirectURL='CONVERT_LANDING_PAGE_DV'&dvURL='DV_CLICK_URL'&pubURL='PUB_CLICK_URL'"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
 
@@ -136,6 +136,8 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 							URL string `json:"url"`
 						} `json:"link"`
 						Imptrackers []string `json:"imptrackers"`
+						Clicktrackers []string `json:"clicktrackers"`
+
 					} `json:"native"`
 				}
 				// Unmarshal the adm JSON string.
@@ -146,10 +148,10 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				// Join imptrackers into a single string (if you need them as one string;
 				// otherwise, they are available as a slice).
 				impTrackersStr := admData.Native.Imptrackers[0]
-				
+				clickTrackersStr := admData.Native.Clicktrackers[0]
 				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
-
+				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "PUB_CLICK_URL", adapters.EncodeURL(clickTrackersStr), 1)
 				updatedAdmActivateNative := strings.Replace(updatedAdmActivate, "CONVERT_LANDING_PAGE", updatedFinalLandingUrl, 1)
 				bid.AdM = updatedAdmActivateNative
 				bid.MType = openrtb2.MarkupBanner
@@ -222,6 +224,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
