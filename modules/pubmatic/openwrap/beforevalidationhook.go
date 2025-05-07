@@ -598,16 +598,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
-				var isValidAppStoreUrl bool
-				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
-					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
-				}
-				rCtx.PageURL = rCtx.AppStoreUrl
-			}
-		}
-
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
