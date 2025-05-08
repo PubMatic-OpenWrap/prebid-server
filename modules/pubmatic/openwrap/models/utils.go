@@ -466,9 +466,12 @@ func ToFixed(num float64, precision int) float64 {
 	return float64(round(num*output)) / output
 }
 
-func GetMultiFloors(rctx RequestCtx) []float64 {
+func GetMultiFloors(rctx RequestCtx, impID string) []float64 {
 	if rctx.MultiFloors == nil {
 		return nil
 	}
-	return []float64{rctx.MultiFloors.Tier1, rctx.MultiFloors.Tier2, rctx.MultiFloors.Tier3}
+	if _, ok := rctx.MultiFloors[impID]; !ok || rctx.MultiFloors[impID] == nil {
+		return nil
+	}
+	return []float64{rctx.MultiFloors[impID].Tier1, rctx.MultiFloors[impID].Tier2, rctx.MultiFloors[impID].Tier3}
 }

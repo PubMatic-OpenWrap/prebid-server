@@ -120,8 +120,8 @@ type RequestCtx struct {
 	PriceGranularity                *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
-	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
-	MultiFloors                     *MultiFloors        // impression level floors
+	ImpCountingMethodEnabledBidders map[string]struct{}     // Bidders who have enabled ImpCountingMethod feature
+	MultiFloors                     map[string]*MultiFloors // impression level floors
 	GoogleSDK                       GoogleSDK
 
 	// Adpod

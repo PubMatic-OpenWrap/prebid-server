@@ -182,7 +182,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 
 	// MultiBidMultiFloor is only supported for AppLovinMax
-	if rctx.Endpoint != models.EndpointAppLovinMax || !rctx.AppLovinMax.MultiFloorsConfig.Enabled {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
 		return rctx.DefaultBids
 	}
 
@@ -203,8 +203,9 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-		adunitFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
-		if !ok || len(adunitFloors) == 0 {
+		//adunitFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
+		adunitFloors := models.GetMultiFloors(*rctx, impID)
+		if len(adunitFloors) == 0 {
 			continue
 		}
 		for bidder := range impCtx.Bidders {

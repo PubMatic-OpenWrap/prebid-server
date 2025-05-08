@@ -309,6 +309,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	displaymanager, displaymanagerVer := getDisplayManagerAndVer(payload.BidRequest.App)
 
 	aliasgvlids := make(map[string]uint16)
+	rCtx.MultiFloors = make(map[string]*models.MultiFloors)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
 		imp := payload.BidRequest.Imp[i]
@@ -465,7 +466,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		rCtx.MultiFloors = m.getMultiFloors(rCtx, reward, imp)
+		rCtx.MultiFloors[imp.ID] = m.getMultiFloors(rCtx, reward, imp)
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
