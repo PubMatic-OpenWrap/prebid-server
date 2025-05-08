@@ -18,7 +18,7 @@ import (
 const (
 	buyId               = "buyid"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
-	landingUrl 			= "https://cmpbid.pubmatic.com/convert/onsite/dv/redirect?redirectURL='CONVERT_LANDING_PAGE_DV'&dvURL='DV_CLICK_URL'&pubURL='PUB_CLICK_URL'"
+	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL='CONVERT_LANDING_PAGE_DV'&dvURL='DV_CLICK_URL'&pubURL='PUB_CLICK_URL'"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
 
