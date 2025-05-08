@@ -131,14 +131,11 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			} else if bid.MType ==  openrtb2.MarkupNative{
 				// Define a structure to unmarshal the adm string.
 				var admData struct {
-					Native struct {
-						Link struct {
-							URL string `json:"url"`
-						} `json:"link"`
-						Imptrackers []string `json:"imptrackers"`
+					Link struct {
+						URL string `json:"url"`
 						Clicktrackers []string `json:"clicktrackers"`
-
-					} `json:"native"`
+					} `json:"link"`
+					Imptrackers []string `json:"imptrackers"`
 				}
 				// Unmarshal the adm JSON string.
 				// Unmarshal the adm JSON string and check for errors.
@@ -146,17 +143,17 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					continue // or handle the error as appropriate
 				}
 				// Check if imptrackers and clicktrackers slices contain at least one element.
-				if len(admData.Native.Imptrackers) == 0 {
+				if len(admData.Imptrackers) == 0 {
 					continue // or handle the situation as needed
 				}
-				if len(admData.Native.Clicktrackers) == 0 {
+				if len(admData.Link.Clicktrackers) == 0 {
 					continue // or handle the situation as needed
 				}
 				
 				// Extract the link URL.
-				linkURL := admData.Native.Link.URL
-				impTrackersStr := admData.Native.Imptrackers[0]
-				clickTrackersStr := admData.Native.Clicktrackers[0]
+				linkURL := admData.Link.URL
+				impTrackersStr := admData.Imptrackers[0]
+				clickTrackersStr := admData.Link.Clicktrackers[0]
 	
 				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
@@ -165,6 +162,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.AdM = updatedAdmActivateNative
 				bid.MType = openrtb2.MarkupBanner
 				bid.BURL = impTrackersStr
+				bidType = openrtb_ext.BidTypeBanner
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
@@ -233,6 +231,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
