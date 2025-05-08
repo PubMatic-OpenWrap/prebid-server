@@ -123,6 +123,7 @@ type RequestCtx struct {
 	ImpCountingMethodEnabledBidders map[string]struct{}     // Bidders who have enabled ImpCountingMethod feature
 	MultiFloors                     map[string]*MultiFloors // impression level floors
 	GoogleSDK                       GoogleSDK
+	AppStoreUrl                     string
 
 	// Adpod
 	AdruleFlag         bool
@@ -250,7 +251,6 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject            bool
 	MultiFloorsConfig MultiFloorsConfig
-	AppStoreUrl       string
 }
 
 type MultiFloorsConfig struct {

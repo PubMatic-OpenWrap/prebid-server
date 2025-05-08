@@ -8,13 +8,17 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
-const AppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
+const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
+const iOSAppId = "GADMediationAdapterPubMatic"
+
+var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type wrapperData struct {
 	PublisherId string
@@ -82,7 +86,7 @@ func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData
 		}
 
 		id, err := jsonparser.GetString(sdkData, "source_app", "id")
-		if err != nil || id != AppId {
+		if err != nil || (id != androidAppId && id != iOSAppId) {
 			return
 		}
 
@@ -101,7 +105,7 @@ func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData
 		found = true
 
 		signalData = &openrtb2.BidRequest{}
-		if err := json.Unmarshal(decodedSignal, signalData); err != nil {
+		if err := jsoniterator.Unmarshal(decodedSignal, signalData); err != nil {
 			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
 			signalData = nil
 			return
@@ -120,46 +124,59 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 		return nil, errors.New("empty request body")
 	}
 
-	keyVal, dataType, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping", "[0]", "keyvals")
-	if len(keyVal) == 0 || err != nil || dataType != jsonparser.Array {
-		glog.Errorf("[GoogleSDK] [Error]: failed to get key values from ad unit mapping %v", err)
-		return nil, errors.New("failed to get key values from ad unit mapping")
+	adunitMappingByte, datatype, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping")
+	if adunitMappingByte == nil || err != nil || datatype != jsonparser.Array {
+		glog.Errorf("[GoogleSDK] [Error]: failed to get ad unit mapping %v", err)
+		return nil, errors.New("failed to get ad unit mapping")
+	}
+
+	var adunitMapping []map[string]interface{}
+	if err := json.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal ad unit mapping %v", err)
+		return nil, errors.New("failed to unmarshal ad unit mapping")
 	}
 
 	wprData := &wrapperData{}
-	found := false
-
-	if _, err := jsonparser.ArrayEach(keyVal, func(values []byte, dataType jsonparser.ValueType, offset int, err error) {
-		if err != nil || dataType != jsonparser.Object {
-			return
+	for _, mapping := range adunitMapping {
+		keyvals, ok := mapping["keyvals"].([]interface{})
+		if !ok {
+			continue
 		}
 
-		key, err := jsonparser.GetString(values, "key")
-		if err != nil || key == "" {
-			return
-		}
-		value, err := jsonparser.GetString(values, "value")
-		if err != nil || value == "" {
-			return
+		for _, kv := range keyvals {
+			kvMap, ok := kv.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			key, ok := kvMap["key"].(string)
+			if !ok {
+				continue
+			}
+			value, ok := kvMap["value"].(string)
+			if !ok {
+				continue
+			}
+
+			switch key {
+			case "publisher_id":
+				wprData.PublisherId = value
+			case "profile_id":
+				wprData.ProfileId = value
+			case "ad_unit_id":
+				wprData.TagId = value
+			}
 		}
 
-		switch key {
-		case "publisher_id":
-			wprData.PublisherId = value
-			found = true
-		case "profile_id":
-			wprData.ProfileId = value
-			found = true
-		case "ad_unit_id":
-			wprData.TagId = value
-			found = true
+		// Check if all values are found
+		if len(wprData.PublisherId) > 0 && len(wprData.ProfileId) > 0 && len(wprData.TagId) > 0 {
+			break
 		}
-	}); err != nil {
-		return nil, errors.New("failed to process wrapper data")
 	}
 
-	if !found {
-		return nil, nil
+	if len(wprData.PublisherId) == 0 && len(wprData.ProfileId) == 0 && len(wprData.TagId) == 0 {
+		glog.Errorf("[GoogleSDK] [Error]: wrapper data not found in ad unit mapping")
+		return nil, errors.New("wrapper data not found in ad unit mapping")
 	}
 
 	return wprData, nil
@@ -209,119 +226,115 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
-	if signalData == nil {
+	if signalData == nil || request == nil {
 		return
 	}
-	modifyImpression(request.Imp, signalData.Imp)
-	modifyApp(request.App, signalData.App)
-	modifyDevice(request.Device, signalData.Device)
-	modifyRegs(request.Regs, signalData.Regs)
-	modifySource(request.Source, signalData.Source)
-	modifyUser(request.User, signalData.User)
+	modifyImpression(request, signalData.Imp)
+	modifyApp(request, signalData.App)
+	modifyDevice(request, signalData.Device)
+	modifyRegs(request, signalData.Regs)
+	modifySource(request, signalData.Source)
+	modifyUser(request, signalData.User)
 }
 
-func modifyUser(requestUser *openrtb2.User, signalUser *openrtb2.User) {
+func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 	if signalUser == nil {
 		return
 	}
 
-	if requestUser == nil {
-		requestUser = &openrtb2.User{}
+	if request.User == nil {
+		request.User = &openrtb2.User{}
 	}
 
-	if requestUser.Ext == nil {
-		requestUser.Ext = []byte(`{}`)
+	if request.User.Ext == nil {
+		request.User.Ext = []byte(`{}`)
 	}
 
-	requestUser.Ext, _ = sdkutils.CopyPath(signalUser.Ext, requestUser.Ext, "sessionduration")
-	requestUser.Ext, _ = sdkutils.CopyPath(signalUser.Ext, requestUser.Ext, "impdepth")
+	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "sessionduration")
+	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "impdepth")
 }
 
-func modifySource(requestSource *openrtb2.Source, signalSource *openrtb2.Source) {
+func modifySource(request *openrtb2.BidRequest, signalSource *openrtb2.Source) {
 	if signalSource == nil {
 		return
 	}
 
-	if requestSource == nil {
-		requestSource = &openrtb2.Source{}
+	if request.Source == nil {
+		request.Source = &openrtb2.Source{}
 	}
 
-	requestSource.Ext, _ = sdkutils.CopyPath(signalSource.Ext, requestSource.Ext, "omidpn")
-	requestSource.Ext, _ = sdkutils.CopyPath(signalSource.Ext, requestSource.Ext, "omidpv")
+	request.Source.Ext, _ = sdkutils.CopyPath(signalSource.Ext, request.Source.Ext, "omidpn")
+	request.Source.Ext, _ = sdkutils.CopyPath(signalSource.Ext, request.Source.Ext, "omidpv")
 }
 
-func modifyRegs(requestRegs *openrtb2.Regs, signalRegs *openrtb2.Regs) {
+func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 	if signalRegs == nil {
 		return
 	}
 
-	if requestRegs == nil {
-		requestRegs = &openrtb2.Regs{}
+	if request.Regs == nil {
+		request.Regs = &openrtb2.Regs{}
 	}
 
-	requestRegs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, requestRegs.Ext, "dsa", "dsarequired")
-	requestRegs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, requestRegs.Ext, "dsa", "pubrender")
-	requestRegs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, requestRegs.Ext, "dsa", "datatopub")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "dsarequired")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "pubrender")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
 
 }
 
-func modifyDevice(requestDevice *openrtb2.Device, signalDevice *openrtb2.Device) {
+func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	if signalDevice == nil {
 		return
 	}
 
-	if requestDevice == nil {
-		requestDevice = &openrtb2.Device{}
+	if request.Device == nil {
+		request.Device = &openrtb2.Device{}
 	}
 
 	if len(signalDevice.UA) > 0 {
-		requestDevice.UA = signalDevice.UA
+		request.Device.UA = signalDevice.UA
 	}
 
 	if len(signalDevice.Make) > 0 {
-		requestDevice.Make = signalDevice.Make
+		request.Device.Make = signalDevice.Make
 	}
 
 	if len(signalDevice.Model) > 0 {
-		requestDevice.Model = signalDevice.Model
+		request.Device.Model = signalDevice.Model
 	}
 
 	if signalDevice.JS != nil {
-		requestDevice.JS = signalDevice.JS
+		request.Device.JS = signalDevice.JS
 	}
 
 	if signalDevice.Geo != nil {
-		requestDevice.Geo = signalDevice.Geo
+		request.Device.Geo = signalDevice.Geo
 	}
 
 	if signalDevice.HWV != "" {
-		requestDevice.HWV = signalDevice.HWV
+		request.Device.HWV = signalDevice.HWV
 	}
 }
 
-func modifyApp(requestApp *openrtb2.App, signalApp *openrtb2.App) {
+func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if signalApp == nil {
 		return
 	}
 
-	if requestApp == nil {
-		requestApp = &openrtb2.App{}
+	if request.App == nil {
+		request.App = &openrtb2.App{}
 	}
 
 	if len(signalApp.Domain) > 0 {
-		requestApp.Domain = signalApp.Domain
+		request.App.Domain = signalApp.Domain
 	}
 
 	if signalApp.Paid != nil {
-		requestApp.Paid = signalApp.Paid
+		request.App.Paid = signalApp.Paid
 	}
 
 	if len(signalApp.Keywords) > 0 {
-		requestApp.Keywords = signalApp.Keywords
-	}
-
-	if len(signalApp.StoreURL) > 0 {
-		requestApp.StoreURL = signalApp.StoreURL
+		request.App.Keywords = signalApp.Keywords
 	}
 }
 
@@ -357,7 +370,8 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	return requestImpExt
 }
 
-func modifyImpression(requestImps []openrtb2.Imp, signalImps []openrtb2.Imp) {
+func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
+	requestImps := request.Imp
 	if len(requestImps) == 0 || len(signalImps) == 0 {
 		return
 	}
