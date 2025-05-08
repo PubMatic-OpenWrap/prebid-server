@@ -5584,6 +5584,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsMBMFCountry(gomock.Any()).Return(false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{

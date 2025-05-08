@@ -1609,6 +1609,9 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							},
 						},
 					},
+					MultiFloors: map[string]*models.MultiFloors{
+						"111": {Tier1: 1.5, Tier2: 1.2, Tier3: 2.2},
+					},
 				},
 				cache: mockCache,
 				impExt: models.ImpExtension{
