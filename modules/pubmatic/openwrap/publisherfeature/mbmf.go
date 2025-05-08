@@ -157,7 +157,7 @@ func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) 
 }
 
 // GetMBMFFloorsForAdUnitFormat returns floors for publisher specified for MBMF in DB
-func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) models.MultiFloors {
+func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) *models.MultiFloors {
 	var floors map[int]models.MultiFloors
 
 	switch adUnitFormat {
@@ -166,14 +166,15 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) 
 	case models.AdUnitFormatRwddVideo:
 		floors = fe.mbmf.rwddFloors[fe.mbmf.index]
 	default:
-		return models.MultiFloors{}
+		return nil
 	}
 
 	adFormatFloors, ok := floors[pubID]
 	if !ok {
-		return floors[models.DefaultAdUnitFormatFloors]
+		defaultFloors := floors[models.DefaultAdUnitFormatFloors]
+		return &defaultFloors
 	}
-	return adFormatFloors
+	return &adFormatFloors
 }
 
 // GetProfileAdUnitMultiFloors returns adunitlevel floors for publisher specified for MBMF in DB

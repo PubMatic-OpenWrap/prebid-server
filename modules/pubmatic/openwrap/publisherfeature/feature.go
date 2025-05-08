@@ -18,6 +18,6 @@ type Feature interface {
 	IsMBMFPublisherInDB(pubID int) bool
 	IsMBMFPublisherEnabled(pubID int) bool
 	IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool
-	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) models.MultiFloors
+	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) *models.MultiFloors
 	GetProfileAdUnitMultiFloors(profileID int) map[string]models.MultiFloors
 }

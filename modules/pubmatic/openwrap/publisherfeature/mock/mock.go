@@ -63,10 +63,10 @@ func (mr *MockFeatureMockRecorder) GetImpCountingMethodEnabledBidders() *gomock.
 }
 
 // GetMBMFFloorsForAdUnitFormat mocks base method.
-func (m *MockFeature) GetMBMFFloorsForAdUnitFormat(arg0 int, arg1 string) models.MultiFloors {
+func (m *MockFeature) GetMBMFFloorsForAdUnitFormat(arg0 int, arg1 string) *models.MultiFloors {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMBMFFloorsForAdUnitFormat", arg0, arg1)
-	ret0, _ := ret[0].(models.MultiFloors)
+	ret0, _ := ret[0].(*models.MultiFloors)
 	return ret0
 }
 

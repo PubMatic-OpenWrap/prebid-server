@@ -620,8 +620,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	adunitFormat := getAdunitFormat(reward, imp)
 	if !m.pubFeatures.IsMBMFPublisherInDB(rctx.PubID) {
 		//default adunitformat floors if pub doesn't exist in DB
-		defaultadunitFormatFloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(models.DefaultAdUnitFormatFloors, adunitFormat)
-		return &defaultadunitFormatFloors
+		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(models.DefaultAdUnitFormatFloors, adunitFormat)
 	}
 
 	//don't apply mbmf if it is not enabled
@@ -642,6 +641,5 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		}
 	}
 	//return adunitformat multifloors for pubid, if not present then return default multifloors
-	multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
-	return &multifloors
+	return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
 }
