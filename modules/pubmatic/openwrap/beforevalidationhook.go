@@ -885,6 +885,11 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 		m.applyImpVideoChanges(rCtx, imp.Video)
 	}
 
+	//update secure for applovin
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
+		imp.Secure = openrtb2.Int8Ptr(1)
+	}
+
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
 }
