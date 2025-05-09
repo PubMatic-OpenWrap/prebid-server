@@ -1938,7 +1938,8 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 				ID: "testID",
 				Imp: []openrtb2.Imp{
 					{
-						ID: "testImp1",
+						ID:     "testImp1",
+						Secure: openrtb2.Int8Ptr(1),
 						Video: &openrtb2.Video{
 							W:     ptrutil.ToPtr[int64](200),
 							H:     ptrutil.ToPtr[int64](300),
