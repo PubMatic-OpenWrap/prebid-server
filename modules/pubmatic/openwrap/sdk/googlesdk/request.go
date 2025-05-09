@@ -235,6 +235,9 @@ func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openr
 	modifyRegs(request, signalData.Regs)
 	modifySource(request, signalData.Source)
 	modifyUser(request, signalData.User)
+
+	// Request Ext
+	request.Ext, _ = sdkutils.CopyPath(signalData.Ext, request.Ext, "wrapper", "clientconfig")
 }
 
 func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
@@ -279,7 +282,8 @@ func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "dsarequired")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "pubrender")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
-
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp_sid")
 }
 
 func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
@@ -367,6 +371,7 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "versions")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
 	return requestImpExt
 }
 
