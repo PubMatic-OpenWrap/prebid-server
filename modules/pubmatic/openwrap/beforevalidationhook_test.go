@@ -1901,10 +1901,8 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 							models.AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
 						},
 					},
-					Endpoint: models.EndpointAppLovinMax,
-					AppLovinMax: models.AppLovinMax{
-						AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
-					},
+					Endpoint:    models.EndpointAppLovinMax,
+					AppStoreUrl: "https://itunes.apple.com/us/app/angry-birds/id343200656",
 					ImpBidCtx: map[string]models.ImpCtx{
 						"testImp1": {
 							NewExt: json.RawMessage(`{"skadn":{"sourceapp":"343200656"}}`),
@@ -7718,9 +7716,7 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
 				},
-				AppLovinMax: models.AppLovinMax{
-					AppStoreUrl: "https://apps.apple.com/app/id123456789",
-				},
+				AppStoreUrl: "https://apps.apple.com/app/id123456789",
 			},
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
@@ -7750,9 +7746,7 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id",
 					},
 				},
-				AppLovinMax: models.AppLovinMax{
-					AppStoreUrl: "https://apps.apple.com/app/id",
-				},
+				AppStoreUrl: "https://apps.apple.com/app/id",
 			},
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
@@ -7778,9 +7772,7 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/id123456789",
 					},
 				},
-				AppLovinMax: models.AppLovinMax{
-					AppStoreUrl: "https://apps.apple.com/app/id123456789",
-				},
+				AppStoreUrl: "https://apps.apple.com/app/id123456789",
 			},
 			bidRequest: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
@@ -7807,9 +7799,7 @@ func TestUpdateSkadnSourceapp(t *testing.T) {
 						models.AppStoreUrl: "https://apps.apple.com/app/",
 					},
 				},
-				AppLovinMax: models.AppLovinMax{
-					AppStoreUrl: "https://apps.apple.com/app/",
-				},
+				AppStoreUrl:  "https://apps.apple.com/app/",
 				PubIDStr:     "5890",
 				ProfileIDStr: "1234",
 			},
