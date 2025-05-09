@@ -28,6 +28,28 @@ type pubmaticBidExt struct {
 	Marketplace       string               `json:"marketplace,omitempty"`
 }
 
+// Adm represents the top-level object for the adm.
+type Adm struct {
+	Ver    string  `json:"ver"`
+	Assets []Asset `json:"assets"`
+}
+// Asset represents an asset within the adm.
+type Asset struct {
+	Id   int         `json:"id"`
+	Data *AssetData  `json:"data,omitempty"`
+	Img  *AssetImage `json:"img,omitempty"`
+}
+// AssetData represents the data asset (e.g. text).
+type AssetData struct {
+	Value string `json:"value"`
+}
+// AssetImage represents the image asset (e.g. url, w, h).
+type AssetImage struct {
+	Url string `json:"url"`
+	W   int64    `json:"w"`
+	H   int64    `json:"h"`
+}
+
 func extractBillingURL(adm string) string {
 	// Define the regular expression pattern to match the URL
 	// that contains "/AdServer/AdDisplayTrackerServlet"
@@ -116,8 +138,6 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bidType = getBidType(bidExt)
 			}
 
-
-
 			bUrl := extractBillingURL(bid.AdM)
 			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
@@ -137,6 +157,22 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					} `json:"link"`
 					Imptrackers []string `json:"imptrackers"`
 				}
+
+				var adm Adm
+				var width, height int64
+
+				err := json.Unmarshal([]byte(bid.AdM), &adm)
+				if err != nil {
+					continue
+				}
+				// Iterate over assets to find asset with id==1.
+				for _, asset := range adm.Assets {
+					if asset.Id == 1 && asset.Img != nil {
+						width = asset.Img.W
+						height = asset.Img.H
+					}
+				}
+
 				// Unmarshal the adm JSON string.
 				// Unmarshal the adm JSON string and check for errors.
 				if err := json.Unmarshal([]byte(bid.AdM), &admData); err != nil {
@@ -163,6 +199,11 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.MType = openrtb2.MarkupBanner
 				bid.BURL = impTrackersStr
 				bidType = openrtb_ext.BidTypeBanner
+
+				if width != 0 && height != 0 {
+					bid.W = width
+					bid.H = height
+				} 
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
@@ -231,6 +272,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
