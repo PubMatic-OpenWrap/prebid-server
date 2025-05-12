@@ -18,6 +18,7 @@ import (
 const (
 	buyId               = "buyid"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
+	admActivateNative   = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
 	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
@@ -191,13 +192,19 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				impTrackersStr := admData.Imptrackers[0]
 				clickTrackersStr := admData.Link.Clicktrackers[0]
 	
+				updatedAdmActivate := strings.Replace(admActivateNative, "CONVERT_CREATIVE", bid.IURL, 1)
+				updatedAdmActivate = strings.Replace(updatedAdmActivate, "DSP_IMP_URL", impTrackersStr, 1)
+				if( len(admData.Imptrackers) > 1) {
+					updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
+				}
+
 				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
 				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "PUB_CLICK_URL", adapters.EncodeURL(clickTrackersStr), 1)
 				updatedAdmActivateNative := strings.Replace(updatedAdmActivate, "CONVERT_LANDING_PAGE", updatedFinalLandingUrl, 1)
 				bid.AdM = updatedAdmActivateNative
 				bid.MType = openrtb2.MarkupBanner
-				bid.BURL = impTrackersStr
+				bid.BURL = ""
 				bidType = openrtb_ext.BidTypeBanner
 
 				if width != 0 && height != 0 {
@@ -272,6 +279,7 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
+
 
 
 
