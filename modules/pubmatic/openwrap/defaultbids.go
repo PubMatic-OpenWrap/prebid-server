@@ -203,7 +203,6 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	}
 
 	for impID, impCtx := range rctx.ImpBidCtx {
-		//adunitFloors, ok := rctx.AppLovinMax.MultiFloorsConfig.Config[impCtx.TagID]
 		adunitFloors := models.GetMultiFloors(*rctx, impID)
 		if len(adunitFloors) == 0 {
 			continue

@@ -193,7 +193,6 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubIDStr = pubIdStr
-	//rCtx.AppLovinMax.MultiFloorsConfig = m.getApplovinMultiFloors(rCtx)
 
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {

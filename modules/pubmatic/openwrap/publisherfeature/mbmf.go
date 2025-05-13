@@ -129,18 +129,14 @@ func (fe *feature) IsMBMFCountry(countryCode string) bool {
 	return isPresent
 }
 
-// IsMBMFPublisherInDB returns true if publisher specified for MBMF in DB
-func (fe *feature) IsMBMFPublisherInDB(pubID int) bool {
-	publishers := fe.mbmf.enabledPublishers[fe.mbmf.index]
-	_, isPresent := publishers[pubID]
-	return isPresent
-}
-
-// IsMBMFPublisherEnabled returns true if publisher specified for MBMF in DB
+// IsMBMFPublisherEnabled returns true if publisher not present in DB or it is present in is_enabled=1
 func (fe *feature) IsMBMFPublisherEnabled(pubID int) bool {
 	publishers := fe.mbmf.enabledPublishers[fe.mbmf.index]
 	isPublisherEnabled, isPresent := publishers[pubID]
-	return isPresent && isPublisherEnabled
+	if !isPresent {
+		return true
+	}
+	return isPublisherEnabled
 }
 
 // IsMBMFEnabledForAdUnitFormat returns true if publisher specified for MBMF in DB
@@ -171,8 +167,10 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) 
 
 	adFormatFloors, ok := floors[pubID]
 	if !ok {
-		defaultFloors := floors[models.DefaultAdUnitFormatFloors]
-		return &defaultFloors
+		if defaultFloors, ok := floors[models.DefaultAdUnitFormatFloors]; ok {
+			return &defaultFloors
+		}
+		return nil
 	}
 	return &adFormatFloors
 }

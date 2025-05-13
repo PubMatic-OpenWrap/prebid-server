@@ -617,19 +617,15 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	adunitFormat := getAdunitFormat(reward, imp)
-	if !m.pubFeatures.IsMBMFPublisherInDB(rctx.PubID) {
-		//default adunitformat floors if pub doesn't exist in DB
-		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(models.DefaultAdUnitFormatFloors, adunitFormat)
-	}
-
-	//don't apply mbmf if it is not enabled
+	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf-> check For adunitformat disable -> profileadunitlevel -> adunitformat
+	//if pub entry present as is_enabled=0 -> don't apply mbmf
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
 		return nil
 	}
 
+	adunitFormat := getAdunitFormat(reward, imp)
 	//don't apply mbmf if pub is not enabled for adunitFormat
-	if !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
 		return nil
 	}
 
@@ -640,6 +636,10 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 			return &multifloors
 		}
 	}
-	//return adunitformat multifloors for pubid, if not present then return default multifloors
-	return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+
+	if adunitFormat != "" {
+		//return adunitformat multifloors for pubid, if not present then return default multifloors
+		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	}
+	return nil
 }

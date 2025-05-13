@@ -171,30 +171,29 @@ type DeviceCtx struct {
 }
 
 type ImpCtx struct {
-	ImpID              string
-	TagID              string
-	DisplayManager     string
-	DisplayManagerVer  string
-	Div                string
-	SlotName           string
-	AdUnitName         string
-	Secure             int
-	BidFloor           float64
-	BidFloorCur        string
-	IsRewardInventory  *int8
-	Banner             bool
-	Video              *openrtb2.Video
-	Native             *openrtb2.Native
-	IncomingSlots      []string
-	Type               string // banner, video, native, etc
-	Bidders            map[string]PartnerData
-	NonMapped          map[string]struct{}
-	NewExt             json.RawMessage
-	BidCtx             map[string]BidCtx
-	BannerAdUnitCtx    AdUnitCtx
-	VideoAdUnitCtx     AdUnitCtx
-	NativeAdUnitCtx    AdUnitCtx
-	AppliedMultiFloors []float64
+	ImpID             string
+	TagID             string
+	DisplayManager    string
+	DisplayManagerVer string
+	Div               string
+	SlotName          string
+	AdUnitName        string
+	Secure            int
+	BidFloor          float64
+	BidFloorCur       string
+	IsRewardInventory *int8
+	Banner            bool
+	Video             *openrtb2.Video
+	Native            *openrtb2.Native
+	IncomingSlots     []string
+	Type              string // banner, video, native, etc
+	Bidders           map[string]PartnerData
+	NonMapped         map[string]struct{}
+	NewExt            json.RawMessage
+	BidCtx            map[string]BidCtx
+	BannerAdUnitCtx   AdUnitCtx
+	VideoAdUnitCtx    AdUnitCtx
+	NativeAdUnitCtx   AdUnitCtx
 	//temp
 	BidderError string
 
@@ -249,8 +248,7 @@ type FeatureData struct {
 }
 
 type AppLovinMax struct {
-	Reject            bool
-	MultiFloorsConfig MultiFloorsConfig
+	Reject bool
 }
 
 type MultiFloorsConfig struct {
