@@ -2,12 +2,15 @@ package googlesdk
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -318,6 +321,881 @@ func TestGetWrapperData(t *testing.T) {
 
 			assert.NoError(t, err, "Unexpected error for test: %s", tt.name)
 			assert.Equal(t, tt.expected, result, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyImpression(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalImps     []openrtb2.Imp
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "No request impressions",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{},
+			},
+			signalImps:     []openrtb2.Imp{},
+			expectedResult: &openrtb2.BidRequest{Imp: []openrtb2.Imp{}},
+		},
+		{
+			name: "No signal impressions",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1"},
+				},
+			},
+			signalImps:     []openrtb2.Imp{},
+			expectedResult: &openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "imp1"}}},
+		},
+		{
+			name: "Update DisplayManager and DisplayManagerVer",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1"},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					DisplayManager:    "dm",
+					DisplayManagerVer: "1.0",
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:                "imp1",
+						DisplayManager:    "dm",
+						DisplayManagerVer: "1.0",
+					},
+				},
+			},
+		},
+		{
+			name: "Update ClickBrowser",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1"},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ClickBrowser: ptrutil.ToPtr(int8(1)),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:           "imp1",
+						ClickBrowser: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Update Banner",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1", Banner: &openrtb2.Banner{}},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					Banner: &openrtb2.Banner{
+						MIMEs: []string{"image/jpeg"},
+						API:   []adcom1.APIFramework{adcom1.APIVPAID10},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "imp1",
+						Banner: &openrtb2.Banner{
+							MIMEs: []string{"image/jpeg"},
+							API:   []adcom1.APIFramework{adcom1.APIVPAID10},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Update Video",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "imp1",
+						Video: &openrtb2.Video{
+							BAttr: []adcom1.CreativeAttribute{12233},
+							MIMEs: []string{"video/mp4", "video/x-ms-wmv"},
+							W:     ptrutil.ToPtr(int64(640)),
+							H:     ptrutil.ToPtr(int64(480)),
+						},
+					},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					Video: &openrtb2.Video{
+						MIMEs: []string{"video/mp4"},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "imp1",
+						Video: &openrtb2.Video{
+							MIMEs: []string{"video/mp4"},
+							BAttr: []adcom1.CreativeAttribute{12233},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Update Native and Secure",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1"},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					Native: &openrtb2.Native{
+						Request: `{"ver": "1","privacy": 1}`,
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "imp1",
+						Native: &openrtb2.Native{
+							Request: `{"ver": "1"}`,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Update Imp Extension and GPID",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "imp1", TagID: "tag-123"},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					Ext: []byte(`{"skadn": {"version": "2.0", "skoverlay": 1, "productpage": "page1", "versions": ["1.0"]}}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:    "imp1",
+						TagID: "tag-123",
+						Ext:   []byte(`{"skadn":{"versions":["1.0"],"version":"2.0","skoverlay":1,"productpage":"page1"}}`),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyImpression(tt.request, tt.signalImps)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyApp(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalApp      *openrtb2.App
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "Signal app is nil",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+			},
+			signalApp: nil,
+			expectedResult: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+			},
+		},
+		{
+			name: "Request app is nil, signal app has data",
+			request: &openrtb2.BidRequest{
+				App: nil,
+			},
+			signalApp: &openrtb2.App{
+				Domain:   "example.com",
+				Paid:     ptrutil.ToPtr(int8(1)),
+				Keywords: "sports,news",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+			},
+		},
+		{
+			name: "Update domain and keywords, keep existing paid value",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Paid: ptrutil.ToPtr(int8(0)),
+				},
+			},
+			signalApp: &openrtb2.App{
+				Domain:   "example.org",
+				Keywords: "tech,science",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.org",
+					Paid:     ptrutil.ToPtr(int8(0)),
+					Keywords: "tech,science",
+				},
+			},
+		},
+		{
+			name: "Signal app has empty domain and keywords, no changes",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+			},
+			signalApp: &openrtb2.App{
+				Domain:   "",
+				Keywords: "",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+			},
+		},
+		{
+			name: "Signal app updates all fields",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+			},
+			signalApp: &openrtb2.App{
+				Domain:   "example.net",
+				Paid:     ptrutil.ToPtr(int8(1)),
+				Keywords: "movies,entertainment",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Domain:   "example.net",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "movies,entertainment",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyApp(tt.request, tt.signalApp)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyDevice(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalDevice   *openrtb2.Device
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "Signal device is nil",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Apple",
+					Model: "iPhone",
+				},
+			},
+			signalDevice: nil,
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Apple",
+					Model: "iPhone",
+				},
+			},
+		},
+		{
+			name: "Request device is nil, signal device has data",
+			request: &openrtb2.BidRequest{
+				Device: nil,
+			},
+			signalDevice: &openrtb2.Device{
+				UA:    "Mozilla/5.0",
+				Make:  "Samsung",
+				Model: "Galaxy",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Samsung",
+					Model: "Galaxy",
+				},
+			},
+		},
+		{
+			name: "Update UA and Model, keep existing Make",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Make: "Google",
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				UA:    "Mozilla/5.0",
+				Model: "Pixel",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Google",
+					Model: "Pixel",
+				},
+			},
+		},
+		{
+			name: "Signal device has empty UA and Model, no changes",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Apple",
+					Model: "iPhone",
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				UA:    "",
+				Model: "",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Apple",
+					Model: "iPhone",
+				},
+			},
+		},
+		{
+			name: "Signal device updates all fields",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{},
+			},
+			signalDevice: &openrtb2.Device{
+				UA:    "Mozilla/5.0",
+				Make:  "Samsung",
+				Model: "Galaxy",
+				JS:    ptrutil.ToPtr(int8(1)),
+				Geo: &openrtb2.Geo{
+					Lat: ptrutil.ToPtr(float64(37.7749)),
+					Lon: ptrutil.ToPtr(float64(-122.4194)),
+				},
+				HWV: "SM-G991B",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Samsung",
+					Model: "Galaxy",
+					JS:    ptrutil.ToPtr(int8(1)),
+					Geo: &openrtb2.Geo{
+						Lat: ptrutil.ToPtr(float64(37.7749)),
+						Lon: ptrutil.ToPtr(float64(-122.4194)),
+					},
+					HWV: "SM-G991B",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyDevice(tt.request, tt.signalDevice)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyRegs(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalRegs     *openrtb2.Regs
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "Signal regs is nil",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true}}`),
+				},
+			},
+			signalRegs: nil,
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true}}`),
+				},
+			},
+		},
+		{
+			name: "Request regs is nil, signal regs has data",
+			request: &openrtb2.BidRequest{
+				Regs: nil,
+			},
+			signalRegs: &openrtb2.Regs{
+				Ext: []byte(`{"dsa":{"dsarequired":true,"pubrender":false},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true,"pubrender":false},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+				},
+			},
+		},
+		{
+			name: "Update regs ext with signal regs data",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"datatopub":true}}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				Ext: []byte(`{"dsa":{"dsarequired":true,"pubrender":false},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"datatopub":true,"dsarequired":true,"pubrender":false},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+				},
+			},
+		},
+		{
+			name: "Signal regs has empty ext, no changes",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true}}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				Ext: []byte(`{}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true}}`),
+				},
+			},
+		},
+		{
+			name: "Signal regs updates all fields in ext",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				Ext: []byte(`{"dsa":{"dsarequired":true,"pubrender":false,"datatopub":true},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true,"pubrender":false,"datatopub":true},"gpp":"some-gpp-data","gpp_sid":["sid1","sid2"]}`),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyRegs(tt.request, tt.signalRegs)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifySource(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalSource   *openrtb2.Source
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "Signal source is nil",
+			request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic"}`),
+				},
+			},
+			signalSource: nil,
+			expectedResult: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic"}`),
+				},
+			},
+		},
+		{
+			name: "Request source is nil, signal source has data",
+			request: &openrtb2.BidRequest{
+				Source: nil,
+			},
+			signalSource: &openrtb2.Source{
+				Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+				},
+			},
+		},
+		{
+			name: "Update source ext with signal source data",
+			request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"existing"}`),
+				},
+			},
+			signalSource: &openrtb2.Source{
+				Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+				},
+			},
+		},
+		{
+			name: "Signal source has empty ext, no changes",
+			request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic"}`),
+				},
+			},
+			signalSource: &openrtb2.Source{
+				Ext: []byte(`{}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic"}`),
+				},
+			},
+		},
+		{
+			name: "Signal source updates all fields in ext",
+			request: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{}`),
+				},
+			},
+			signalSource: &openrtb2.Source{
+				Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifySource(tt.request, tt.signalSource)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyUser(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		signalUser     *openrtb2.User
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "Signal user is nil",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+			signalUser: nil,
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+		},
+		{
+			name: "Request user is nil, signal user has data",
+			request: &openrtb2.BidRequest{
+				User: nil,
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+				},
+			},
+		},
+		{
+			name: "Update user ext with signal user data",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue","sessionduration":3600,"impdepth":5}`),
+				},
+			},
+		},
+		{
+			name: "Signal user has empty ext, no changes",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+		},
+		{
+			name: "Signal user updates all fields in ext",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyUser(tt.request, tt.signalUser)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
+	tests := []struct {
+		name           string
+		requestBody    string
+		setup          func()
+		expectedResult string
+	}{
+		{
+			name: "Valid request with wrapper and signal data",
+			requestBody: `{
+					"id": "123",
+					"imp": [{
+					    "id": "imp1",
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}]
+				}`,
+			setup: nil,
+			expectedResult: `{
+					"id": "123",
+					"imp": [{
+						"id": "imp1",
+						"tagid": "tag-123",
+						"secure": 1,
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}],
+					"app": {
+						"publisher": {
+							"id": "12345"
+						}
+					},
+					"ext": {
+						"prebid": {
+							"bidderparams": {
+								"pubmatic": {
+									"wrapper": {
+										"profileid": 67890
+									}
+								}
+							}
+						}
+					}
+				}`,
+		},
+		{
+			name: "Missing wrapper data",
+			requestBody: `{
+					"imp": [{
+						"ext": {
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}]
+				}`,
+			expectedResult: `{
+					"imp": [{
+						"ext": {
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}]
+				}`,
+		},
+		{
+			name: "Missing signal data",
+			requestBody: `{
+					"id": "123",
+					"imp": [{
+						"id": "imp1",
+						"tagid": "tag-gp-123",
+						"metric": [
+							{
+								"type": "ow"
+							}
+						],
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							]
+						}
+					}]
+				}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("12345", "67890", models.MissingSignal)
+			},
+			expectedResult: `{
+					"id": "123",
+					"imp": [{
+						"id": "imp1",
+						"tagid": "tag-123",
+						"secure": 1,
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"gpid": "tag-gp-123"
+						}
+					}],
+					"app": {
+						"publisher": {
+							"id": "12345"
+						}
+					},
+					"ext": {
+						"prebid": {
+							"bidderparams": {
+								"pubmatic": {
+									"wrapper": {
+										"profileid": 67890
+									}
+								}
+							}
+						}
+					}
+				}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup()
+			}
+
+			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), models.RequestCtx{
+				MetricsEngine: mockEngine,
+			})
+
+			fmt.Printf("expectedResult: %s\n", tt.expectedResult)
+			fmt.Println("actual result: ", string(result))
+			assert.JSONEq(t, tt.expectedResult, string(result), "Unexpected result for test: %s", tt.name)
 		})
 	}
 }
