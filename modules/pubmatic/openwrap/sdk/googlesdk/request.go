@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/prebid-server/v3/util/ptrutil"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
@@ -14,6 +13,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
