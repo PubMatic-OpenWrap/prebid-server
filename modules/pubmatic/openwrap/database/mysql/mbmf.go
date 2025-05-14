@@ -35,8 +35,12 @@ func (db *mySqlDB) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloor
 			glog.Errorf(models.ErrMBMFFloorsUnmarshal, "", profileID, err.Error())
 			continue
 		}
+		// Skip inactive/is_enabled=0 entries
+		if !adUnitMultiFloors.IsActive {
+			continue
+		}
 		// Ensure nested map exists
-		if _, ok := profileAdUnitMultiFloors[profileID]; !ok && adUnitMultiFloors.IsActive {
+		if _, ok := profileAdUnitMultiFloors[profileID]; !ok {
 			profileAdUnitMultiFloors[profileID] = make(map[string]models.MultiFloors)
 		}
 		profileAdUnitMultiFloors[profileID][adunitName] = adUnitMultiFloors
