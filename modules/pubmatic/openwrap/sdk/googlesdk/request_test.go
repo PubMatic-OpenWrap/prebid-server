@@ -1181,6 +1181,80 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 					}
 				}`,
 		},
+		{
+			name: "Request with native and empty signal data",
+			requestBody: `{
+							"id": "123",
+							"imp": [
+								{
+								"id": "imp1",
+								"tagid": "tag-gp-123",
+								"native": {
+									"request": "{\"ver\": \"1\",\"privacy\": 1}"
+								},
+								"ext": {
+									"ad_unit_mapping": [
+									{
+										"keyvals": [
+										{
+											"key": "publisher_id",
+											"value": "12345"
+										},
+										{
+											"key": "profile_id",
+											"value": "67890"
+										},
+										{
+											"key": "ad_unit_id",
+											"value": "tag-123"
+										}
+										]
+									}
+									]
+								}
+								}
+							]
+						}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("12345", "67890", models.MissingSignal)
+			},
+			expectedResult: `{
+				"id": "123",
+				"imp": [{
+					"id": "imp1",
+					"tagid": "tag-123",
+					"secure": 1,
+					"ext": {
+						"ad_unit_mapping": [
+							{
+								"keyvals": [
+									{"key": "publisher_id", "value": "12345"},
+									{"key": "profile_id", "value": "67890"},
+									{"key": "ad_unit_id", "value": "tag-123"}
+								]
+							}
+						],
+						"gpid": "tag-gp-123"
+					}
+				}],
+				"app": {
+					"publisher": {
+						"id": "12345"
+					}
+				},
+				"ext": {
+					"prebid": {
+						"bidderparams": {
+							"pubmatic": {
+								"wrapper": {
+									"profileid": 67890
+								}
+							}
+						}
+					}
+				}
+			}`,
+		},
 	}
 
 	for _, tt := range tests {

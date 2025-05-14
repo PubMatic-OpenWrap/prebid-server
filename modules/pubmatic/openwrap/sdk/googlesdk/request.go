@@ -244,6 +244,9 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		request.Imp[0].Banner = nil
 	}
 
+	// Remove native from request
+	request.Imp[0].Native = nil
+
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
@@ -257,6 +260,7 @@ func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openr
 	if signalData == nil {
 		return
 	}
+
 	modifyImpression(request, signalData.Imp)
 	modifyApp(request, signalData.App)
 	modifyDevice(request, signalData.Device)
