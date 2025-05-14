@@ -36,7 +36,7 @@ func (db *mySqlDB) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloor
 			continue
 		}
 		// Ensure nested map exists
-		if _, ok := profileAdUnitMultiFloors[profileID]; !ok {
+		if _, ok := profileAdUnitMultiFloors[profileID]; !ok && adUnitMultiFloors.IsActive {
 			profileAdUnitMultiFloors[profileID] = make(map[string]models.MultiFloors)
 		}
 		profileAdUnitMultiFloors[profileID][adunitName] = adUnitMultiFloors
