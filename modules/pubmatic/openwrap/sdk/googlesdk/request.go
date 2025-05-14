@@ -239,6 +239,11 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		request.Imp[0].Metric = nil
 	}
 
+	// Remove banner if impression is rewarded and banner and video both are present
+	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
+		request.Imp[0].Banner = nil
+	}
+
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {

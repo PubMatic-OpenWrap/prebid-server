@@ -1199,3 +1199,112 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 		})
 	}
 }
+func TestModifyRequestWithStaticData(t *testing.T) {
+	tests := []struct {
+		name           string
+		request        *openrtb2.BidRequest
+		expectedResult *openrtb2.BidRequest
+	}{
+		{
+			name: "No impressions in request",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{},
+			},
+		},
+		{
+			name: "Set secure to 1 and add gpid",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID: "tag-123",
+						Ext:   []byte(`{}`),
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID:  "tag-123",
+						Secure: ptrutil.ToPtr(int8(1)),
+						Ext:    []byte(`{"gpid":"tag-123"}`),
+					},
+				},
+			},
+		},
+		{
+			name: "Remove metric from impression",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Metric: []openrtb2.Metric{
+							{Type: "viewability"},
+						},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Metric: nil,
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Remove banner if impression is rewarded and both banner and video are present",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Rwdd:   1,
+						Banner: &openrtb2.Banner{},
+						Video:  &openrtb2.Video{},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Rwdd:   1,
+						Banner: nil,
+						Video:  &openrtb2.Video{},
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Do not remove banner if impression is not rewarded",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Rwdd:   0,
+						Banner: &openrtb2.Banner{},
+						Video:  &openrtb2.Video{},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Rwdd:   0,
+						Banner: &openrtb2.Banner{},
+						Video:  &openrtb2.Video{},
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modifyRequestWithStaticData(tt.request)
+			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+
