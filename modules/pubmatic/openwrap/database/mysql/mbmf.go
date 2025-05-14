@@ -30,16 +30,16 @@ func (db *mySqlDB) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloor
 			continue
 		}
 
-		var adUnitMultiFloors models.MultiFloors
+		adUnitMultiFloors := models.MultiFloors{}
 		if err := json.Unmarshal([]byte(value), &adUnitMultiFloors); err != nil {
 			glog.Errorf(models.ErrMBMFFloorsUnmarshal, "", profileID, err.Error())
 			continue
 		}
 		// Ensure nested map exists
 		if _, ok := profileAdUnitMultiFloors[profileID]; !ok {
-			profileAdUnitMultiFloors[profileID] = make(map[string]models.MultiFloors)
+			profileAdUnitMultiFloors[profileID] = make(map[string]*models.MultiFloors)
 		}
-		profileAdUnitMultiFloors[profileID][adunitName] = adUnitMultiFloors
+		profileAdUnitMultiFloors[profileID][adunitName] = &adUnitMultiFloors
 	}
 
 	if err := rows.Err(); err != nil {

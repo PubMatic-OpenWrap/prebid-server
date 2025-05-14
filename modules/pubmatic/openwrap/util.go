@@ -631,9 +631,11 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	adunitLevelMultiFloors := m.pubFeatures.GetProfileAdUnitMultiFloors(rctx.ProfileID)
 	if adunitLevelMultiFloors != nil {
-		multifloors, ok := adunitLevelMultiFloors[imp.TagID]
-		if ok && multifloors.IsActive {
-			return &multifloors
+		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
+			if !multifloors.IsActive {
+				return nil
+			}
+			return multifloors
 		}
 	}
 

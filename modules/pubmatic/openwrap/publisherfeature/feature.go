@@ -17,5 +17,5 @@ type Feature interface {
 	IsMBMFPublisherEnabled(pubID int) bool
 	IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool
 	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) *models.MultiFloors
-	GetProfileAdUnitMultiFloors(profileID int) map[string]models.MultiFloors
+	GetProfileAdUnitMultiFloors(profileID int) map[string]*models.MultiFloors
 }

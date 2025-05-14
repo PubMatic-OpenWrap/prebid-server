@@ -262,7 +262,7 @@ type WinningBids map[string][]*OwBid
 
 type HashSet map[string]struct{}
 
-type ProfileAdUnitMultiFloors map[int]map[string]MultiFloors
+type ProfileAdUnitMultiFloors map[int]map[string]*MultiFloors
 
 type MultiFloors struct {
 	IsActive bool    `json:"isActive,omitempty"`

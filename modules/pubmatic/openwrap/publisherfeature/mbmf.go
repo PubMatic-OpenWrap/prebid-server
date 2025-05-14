@@ -199,7 +199,7 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 }
 
 // GetProfileAdUnitMultiFloors returns adunitlevel floors for publisher specified for MBMF in DB
-func (fe *feature) GetProfileAdUnitMultiFloors(profileID int) map[string]models.MultiFloors {
+func (fe *feature) GetProfileAdUnitMultiFloors(profileID int) map[string]*models.MultiFloors {
 	profileAdUnitfloors := fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index]
 	adunitFloors, ok := profileAdUnitfloors[profileID]
 	if !ok {
