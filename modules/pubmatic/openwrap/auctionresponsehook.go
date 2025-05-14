@@ -3,6 +3,7 @@ package openwrap
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"strconv"
 	"time"
 
@@ -317,6 +318,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		}
 	}
 
+	if responseExt.Debug != nil {
+		updateWakandaHTTPCalls(&rctx, *responseExt.Debug)
+	}
+
 	if rctx.IsCTVRequest && rctx.Endpoint == models.EndpointJson {
 		if len(rctx.RedirectURL) > 0 {
 			responseExt.Wrapper = &openrtb_ext.ExtWrapper{
@@ -516,4 +521,22 @@ func CheckWinningBidId(bidId string, wbidIds []string) bool {
 	}
 
 	return false
+}
+
+func updateWakandaHTTPCalls(rCtx *models.RequestCtx, http openrtb_ext.ExtResponseDebug) {
+
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
+
+		bidderHttpCalls := make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall)
+		for abc, http := range http.HttpCalls {
+			bidderHttpCalls[abc] = append(bidderHttpCalls[abc], http...)
+		}
+
+		wakandaDebugData, err := json.Marshal(bidderHttpCalls)
+		if err != nil {
+			log.Printf("Error marshaling bidderHttpCalls: %v", err)
+		} else {
+			rCtx.WakandaDebug.SetHttpCalls(json.RawMessage(wakandaDebugData))
+		}
+	}
 }
