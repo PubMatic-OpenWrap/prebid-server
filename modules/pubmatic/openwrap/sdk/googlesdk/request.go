@@ -199,6 +199,9 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
+	// Modify request with static data
+	modifyRequestWithStaticData(sdkRequest)
+
 	//Fetch Signal data and modify request
 	signalData := getSignalData(requestBody, rctx, wrapperData)
 	modifyRequestWithSignalData(sdkRequest, signalData)
@@ -249,14 +252,7 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
-	if request == nil {
-		return
-	}
-
-	// modify static data in impression
-	modifyRequestWithStaticData(request)
-
-	if signalData == nil {
+	if request == nil || signalData == nil {
 		return
 	}
 

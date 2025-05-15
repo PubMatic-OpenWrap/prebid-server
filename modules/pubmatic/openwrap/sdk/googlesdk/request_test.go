@@ -1495,33 +1495,6 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "Nil signalData only modifies static data",
-			args: args{
-				request: &openrtb2.BidRequest{
-					Imp: []openrtb2.Imp{
-						{
-							TagID: "tag-1",
-							Ext:   []byte(`{}`),
-							Metric: []openrtb2.Metric{
-								{Type: "viewability"},
-							},
-						},
-					},
-				},
-				signalData: nil,
-			},
-			expected: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						TagID:  "tag-1",
-						Secure: ptrutil.ToPtr(int8(1)),
-						Ext:    []byte(`{"gpid":"tag-1"}`),
-						Metric: nil,
-					},
-				},
-			},
-		},
-		{
 			name: "All fields updated from signalData",
 			args: args{
 				request: &openrtb2.BidRequest{
@@ -1598,7 +1571,6 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 					{
 						ID:                "imp1",
 						TagID:             "tag-1",
-						Secure:            ptrutil.ToPtr(int8(1)),
 						DisplayManager:    "dm",
 						DisplayManagerVer: "1.0",
 						ClickBrowser:      ptrutil.ToPtr(int8(1)),
@@ -1613,7 +1585,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						Native: &openrtb2.Native{
 							Request: `{"ver":"2"}`,
 						},
-						Ext: []byte(`{"gpid":"tag-1","skadn":{"version":"2.0"}}`),
+						Ext: []byte(`{"skadn":{"version":"2.0"}}`),
 					},
 				},
 				App: &openrtb2.App{
@@ -1671,8 +1643,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
 					{
-						ID:     "imp1",
-						Secure: ptrutil.ToPtr(int8(1)),
+						ID: "imp1",
 					},
 				},
 				App:    &openrtb2.App{Domain: "keep.com"},
