@@ -2,7 +2,6 @@ package googlesdk
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -160,6 +159,53 @@ func TestGetSignalData(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Invalid buyer_generated_request_data structure",
+			input: `{
+				"imp": [{
+					"ext": {
+						"buyer_generated_request_data": [
+							"Invalid data"
+						]
+					}
+				}]
+			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
+			expected: nil,
+		},
+		{
+			name: "Invalid signal data unmarshalling failure",
+			input: `{
+				"imp": [{
+					"ext": {
+						"buyer_generated_request_data": [{
+							"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+							"data": "eyJpZCI6"
+						}]
+					}
+				}]
+			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.InvalidSignal)
+			},
+			expected: nil,
+		},
+		{
+			name: "empty buyer generated request data",
+			input: `{
+				"imp": [{
+					"ext": {
+						"buyer_generated_request_data": [{],
+					},
+				}]
+			}`,
+			setup: func() {
+				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
+			},
+			expected: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -300,6 +346,36 @@ func TestGetWrapperData(t *testing.T) {
 						"ad_unit_mapping": [{
 							"keyvals": [
 								{"key": "unknown_key", "value": "value"}
+							]
+						}]
+					}
+				}]
+			}`,
+			expected:    nil,
+			expectedErr: "wrapper data not found in ad unit mapping",
+		},
+		{
+			name: "Invalid adunit mapping structure",
+			input: `{
+				"imp": [{
+					"ext": {
+						"ad_unit_mapping": [{]
+					}
+				}]
+			}`,
+			expected:    nil,
+			expectedErr: "failed to unmarshal ad unit mapping",
+		},
+		{
+			name: "Not valid key value structure",
+			input: `{
+				"imp": [{
+					"ext": {
+						"ad_unit_mapping": [{
+							"keyvals": [
+								{"key": 123, "value": "12345"},
+								{"key": "profile_id", "value": 67890},
+								"abc"
 							]
 						}]
 					}
@@ -1028,7 +1104,19 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 		requestBody    string
 		setup          func()
 		expectedResult string
+		expectError    bool
 	}{
+		{
+			name:           "empty request",
+			requestBody:    "",
+			expectedResult: "",
+		},
+		{
+			name:           "Invalid sdk request",
+			requestBody:    `{`,
+			expectedResult: `{`,
+			expectError:    true,
+		},
 		{
 			name: "Valid request with wrapper and signal data",
 			requestBody: `{
@@ -1267,8 +1355,15 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 				MetricsEngine: mockEngine,
 			})
 
-			fmt.Printf("expectedResult: %s\n", tt.expectedResult)
-			fmt.Println("actual result: ", string(result))
+			if tt.expectError {
+				assert.Equal(t, tt.expectedResult, string(result), "Actual and expected result does not match: %s", tt.name)
+				return
+			}
+
+			if tt.expectedResult == "" {
+				assert.Empty(t, result, "Expected nil result for test: %s", tt.name)
+				return
+			}
 			assert.JSONEq(t, tt.expectedResult, string(result), "Unexpected result for test: %s", tt.name)
 		})
 	}
@@ -1378,6 +1473,464 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			modifyRequestWithStaticData(tt.request)
 			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestModifyRequestWithSignalData(t *testing.T) {
+	type args struct {
+		request    *openrtb2.BidRequest
+		signalData *openrtb2.BidRequest
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name: "Nil request does nothing",
+			args: args{
+				request:    nil,
+				signalData: &openrtb2.BidRequest{},
+			},
+			expected: nil,
+		},
+		{
+			name: "Nil signalData only modifies static data",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							TagID: "tag-1",
+							Ext:   []byte(`{}`),
+							Metric: []openrtb2.Metric{
+								{Type: "viewability"},
+							},
+						},
+					},
+				},
+				signalData: nil,
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID:  "tag-1",
+						Secure: ptrutil.ToPtr(int8(1)),
+						Ext:    []byte(`{"gpid":"tag-1"}`),
+						Metric: nil,
+					},
+				},
+			},
+		},
+		{
+			name: "All fields updated from signalData",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							ID:     "imp1",
+							TagID:  "tag-1",
+							Ext:    []byte(`{}`),
+							Banner: &openrtb2.Banner{},
+							Video: &openrtb2.Video{
+								BAttr: []adcom1.CreativeAttribute{adcom1.CreativeAttribute(1)},
+							},
+							Native: &openrtb2.Native{
+								Request: `{"ver":"1","privacy":1}`,
+							},
+						},
+					},
+					App:    &openrtb2.App{},
+					Device: &openrtb2.Device{},
+					Regs:   &openrtb2.Regs{Ext: []byte(`{}`)},
+					Source: &openrtb2.Source{Ext: []byte(`{}`)},
+					User:   &openrtb2.User{Ext: []byte(`{}`)},
+					Ext:    []byte(`{}`),
+				},
+				signalData: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{
+							DisplayManager:    "dm",
+							DisplayManagerVer: "1.0",
+							ClickBrowser:      ptrutil.ToPtr(int8(1)),
+							Banner: &openrtb2.Banner{
+								MIMEs: []string{"image/png"},
+								API:   []adcom1.APIFramework{adcom1.APIVPAID10},
+							},
+							Video: &openrtb2.Video{
+								MIMEs: []string{"video/mp4"},
+							},
+							Native: &openrtb2.Native{
+								Request: `{"ver":"2","privacy":1}`,
+							},
+							Ext: []byte(`{"skadn":{"version":"2.0"}}`),
+						},
+					},
+					App: &openrtb2.App{
+						Domain:   "example.com",
+						Paid:     ptrutil.ToPtr(int8(1)),
+						Keywords: "sports,news",
+					},
+					Device: &openrtb2.Device{
+						UA:    "Mozilla/5.0",
+						Make:  "Samsung",
+						Model: "Galaxy",
+						JS:    ptrutil.ToPtr(int8(1)),
+						Geo: &openrtb2.Geo{
+							Lat: ptrutil.ToPtr(float64(1.23)),
+							Lon: ptrutil.ToPtr(float64(4.56)),
+						},
+						HWV: "SM-G991B",
+					},
+					Regs: &openrtb2.Regs{
+						Ext: []byte(`{"dsa":{"dsarequired":true},"gpp":"gppdata"}`),
+					},
+					Source: &openrtb2.Source{
+						Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+					},
+					User: &openrtb2.User{
+						Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+					},
+					Ext: []byte(`{"wrapper":{"clientconfig":{"foo":"bar"}}}`),
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:                "imp1",
+						TagID:             "tag-1",
+						Secure:            ptrutil.ToPtr(int8(1)),
+						DisplayManager:    "dm",
+						DisplayManagerVer: "1.0",
+						ClickBrowser:      ptrutil.ToPtr(int8(1)),
+						Banner: &openrtb2.Banner{
+							MIMEs: []string{"image/png"},
+							API:   []adcom1.APIFramework{adcom1.APIVPAID10},
+						},
+						Video: &openrtb2.Video{
+							MIMEs: []string{"video/mp4"},
+							BAttr: []adcom1.CreativeAttribute{adcom1.CreativeAttribute(1)},
+						},
+						Native: &openrtb2.Native{
+							Request: `{"ver":"2"}`,
+						},
+						Ext: []byte(`{"gpid":"tag-1","skadn":{"version":"2.0"}}`),
+					},
+				},
+				App: &openrtb2.App{
+					Domain:   "example.com",
+					Paid:     ptrutil.ToPtr(int8(1)),
+					Keywords: "sports,news",
+				},
+				Device: &openrtb2.Device{
+					UA:    "Mozilla/5.0",
+					Make:  "Samsung",
+					Model: "Galaxy",
+					JS:    ptrutil.ToPtr(int8(1)),
+					Geo: &openrtb2.Geo{
+						Lat: ptrutil.ToPtr(float64(1.23)),
+						Lon: ptrutil.ToPtr(float64(4.56)),
+					},
+					HWV: "SM-G991B",
+				},
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"dsa":{"dsarequired":true},"gpp":"gppdata"}`),
+				},
+				Source: &openrtb2.Source{
+					Ext: []byte(`{"omidpn":"pubmatic","omidpv":"1.3.15"}`),
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+				},
+				Ext: []byte(`{"wrapper":{"clientconfig":{"foo":"bar"}}}`),
+			},
+		},
+		{
+			name: "SignalData with nil subfields does not overwrite request fields",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+					App:    &openrtb2.App{Domain: "keep.com"},
+					Device: &openrtb2.Device{UA: "keep-ua"},
+					Regs:   &openrtb2.Regs{Ext: []byte(`{"dsa":{"dsarequired":false}}`)},
+					Source: &openrtb2.Source{Ext: []byte(`{"omidpn":"keep"}`)},
+					User:   &openrtb2.User{Ext: []byte(`{"existing":1}`)},
+					Ext:    []byte(`{"existing":"yes"}`),
+				},
+				signalData: &openrtb2.BidRequest{
+					Imp:    nil,
+					App:    nil,
+					Device: nil,
+					Regs:   nil,
+					Source: nil,
+					User:   nil,
+					Ext:    nil,
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:     "imp1",
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				App:    &openrtb2.App{Domain: "keep.com"},
+				Device: &openrtb2.Device{UA: "keep-ua"},
+				Regs:   &openrtb2.Regs{Ext: []byte(`{"dsa":{"dsarequired":false}}`)},
+				Source: &openrtb2.Source{Ext: []byte(`{"omidpn":"keep"}`)},
+				User:   &openrtb2.User{Ext: []byte(`{"existing":1}`)},
+				Ext:    []byte(`{"existing":"yes"}`),
+			},
+		},
+		{
+			name: "SignalData with only Ext updates request Ext",
+			args: args{
+				request: &openrtb2.BidRequest{
+					Ext: []byte(`{"existing":"yes"}`),
+				},
+				signalData: &openrtb2.BidRequest{
+					Ext: []byte(`{"wrapper":{"clientconfig":{"foo":"bar"}}}`),
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Ext: []byte(`{"existing":"yes","wrapper":{"clientconfig":{"foo":"bar"}}}`),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Deep copy request to avoid mutation between tests
+			var reqCopy *openrtb2.BidRequest
+			if tt.args.request != nil {
+				b, _ := json.Marshal(tt.args.request)
+				_ = json.Unmarshal(b, &reqCopy)
+			}
+			modifyRequestWithSignalData(reqCopy, tt.args.signalData)
+			if tt.expected == nil {
+				assert.Nil(t, reqCopy)
+				return
+			}
+			// Compare JSON for Ext fields to avoid ordering issues
+			if reqCopy != nil && tt.expected != nil {
+				if len(reqCopy.Ext) > 0 || len(tt.expected.Ext) > 0 {
+					assert.JSONEq(t, string(tt.expected.Ext), string(reqCopy.Ext), "Ext mismatch for test: %s", tt.name)
+					reqCopy.Ext = nil
+					tt.expected.Ext = nil
+				}
+				if reqCopy.Regs != nil && tt.expected.Regs != nil && (len(reqCopy.Regs.Ext) > 0 || len(tt.expected.Regs.Ext) > 0) {
+					assert.JSONEq(t, string(tt.expected.Regs.Ext), string(reqCopy.Regs.Ext), "Regs.Ext mismatch for test: %s", tt.name)
+					reqCopy.Regs.Ext = nil
+					tt.expected.Regs.Ext = nil
+				}
+				if reqCopy.Source != nil && tt.expected.Source != nil && (len(reqCopy.Source.Ext) > 0 || len(tt.expected.Source.Ext) > 0) {
+					assert.JSONEq(t, string(tt.expected.Source.Ext), string(reqCopy.Source.Ext), "Source.Ext mismatch for test: %s", tt.name)
+					reqCopy.Source.Ext = nil
+					tt.expected.Source.Ext = nil
+				}
+				if reqCopy.User != nil && tt.expected.User != nil && (len(reqCopy.User.Ext) > 0 || len(tt.expected.User.Ext) > 0) {
+					assert.JSONEq(t, string(tt.expected.User.Ext), string(reqCopy.User.Ext), "User.Ext mismatch for test: %s", tt.name)
+					reqCopy.User.Ext = nil
+					tt.expected.User.Ext = nil
+				}
+				if len(reqCopy.Imp) > 0 && len(tt.expected.Imp) > 0 && (len(reqCopy.Imp[0].Ext) > 0 || len(tt.expected.Imp[0].Ext) > 0) {
+					assert.JSONEq(t, string(tt.expected.Imp[0].Ext), string(reqCopy.Imp[0].Ext), "Imp[0].Ext mismatch for test: %s", tt.name)
+					reqCopy.Imp[0].Ext = nil
+					tt.expected.Imp[0].Ext = nil
+				}
+			}
+			assert.Equal(t, tt.expected, reqCopy, "Unexpected result for test: %s", tt.name)
+		})
+	}
+}
+func TestWrapperData_setProfileID(t *testing.T) {
+	tests := []struct {
+		name         string
+		wrapper      *wrapperData
+		request      *openrtb2.BidRequest
+		expectedJSON string
+	}{
+		{
+			name: "ProfileId is empty, does nothing",
+			wrapper: &wrapperData{
+				ProfileId: "",
+			},
+			request:      &openrtb2.BidRequest{Ext: []byte(`{}`)},
+			expectedJSON: `{}`,
+		},
+		{
+			name: "Request.Ext is nil, sets profileid",
+			wrapper: &wrapperData{
+				ProfileId: "67890",
+			},
+			request:      &openrtb2.BidRequest{Ext: nil},
+			expectedJSON: `{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":67890}}}}}`,
+		},
+		{
+			name: "Request.Ext is empty, sets profileid",
+			wrapper: &wrapperData{
+				ProfileId: "12345",
+			},
+			request:      &openrtb2.BidRequest{Ext: []byte(`{}`)},
+			expectedJSON: `{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":12345}}}}}`,
+		},
+		{
+			name: "Request.Ext has existing prebid, merges profileid",
+			wrapper: &wrapperData{
+				ProfileId: "555",
+			},
+			request: &openrtb2.BidRequest{
+				Ext: []byte(`{"prebid":{"other":"value"}}`),
+			},
+			expectedJSON: `{"prebid":{"other":"value","bidderparams":{"pubmatic":{"wrapper":{"profileid":555}}}}}`,
+		},
+		{
+			name: "Request.Ext has existing profileid, overwrites it",
+			wrapper: &wrapperData{
+				ProfileId: "999",
+			},
+			request: &openrtb2.BidRequest{
+				Ext: []byte(`{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":123}}}}}`),
+			},
+			expectedJSON: `{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":999}}}}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wrapper.setProfileID(tt.request)
+			assert.JSONEq(t, tt.expectedJSON, string(tt.request.Ext), "Unexpected Ext for test: %s", tt.name)
+		})
+	}
+}
+func TestWrapperData_setPublisherId(t *testing.T) {
+	tests := []struct {
+		name        string
+		wrapper     *wrapperData
+		request     *openrtb2.BidRequest
+		expectedApp *openrtb2.App
+	}{
+		{
+			name: "PublisherId is empty, does nothing",
+			wrapper: &wrapperData{
+				PublisherId: "",
+			},
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{ID: "old-id"},
+				},
+			},
+			expectedApp: &openrtb2.App{
+				Publisher: &openrtb2.Publisher{ID: "old-id"},
+			},
+		},
+		{
+			name: "App is nil, sets PublisherId",
+			wrapper: &wrapperData{
+				PublisherId: "pub-123",
+			},
+			request:     &openrtb2.BidRequest{App: nil},
+			expectedApp: &openrtb2.App{Publisher: &openrtb2.Publisher{ID: "pub-123"}},
+		},
+		{
+			name: "App.Publisher is nil, sets PublisherId",
+			wrapper: &wrapperData{
+				PublisherId: "pub-456",
+			},
+			request:     &openrtb2.BidRequest{App: &openrtb2.App{Publisher: nil}},
+			expectedApp: &openrtb2.App{Publisher: &openrtb2.Publisher{ID: "pub-456"}},
+		},
+		{
+			name: "App.Publisher exists, overwrites PublisherId",
+			wrapper: &wrapperData{
+				PublisherId: "pub-789",
+			},
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Publisher: &openrtb2.Publisher{ID: "old-id"},
+				},
+			},
+			expectedApp: &openrtb2.App{
+				Publisher: &openrtb2.Publisher{ID: "pub-789"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wrapper.setPublisherId(tt.request)
+			if tt.expectedApp == nil {
+				assert.Nil(t, tt.request.App)
+			} else {
+				assert.NotNil(t, tt.request.App)
+				assert.Equal(t, tt.expectedApp.Publisher, tt.request.App.Publisher)
+			}
+		})
+	}
+}
+func TestWrapperData_setTagId(t *testing.T) {
+	tests := []struct {
+		name        string
+		wrapper     *wrapperData
+		request     *openrtb2.BidRequest
+		expectedTag string
+	}{
+		{
+			name: "TagId is empty, does nothing",
+			wrapper: &wrapperData{
+				TagId: "",
+			},
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{TagID: "existing-tag"},
+				},
+			},
+			expectedTag: "existing-tag",
+		},
+		{
+			name: "No impressions, does nothing",
+			wrapper: &wrapperData{
+				TagId: "new-tag",
+			},
+			request:     &openrtb2.BidRequest{Imp: []openrtb2.Imp{}},
+			expectedTag: "",
+		},
+		{
+			name: "Sets TagId on first impression",
+			wrapper: &wrapperData{
+				TagId: "new-tag",
+			},
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{TagID: "old-tag"},
+					{TagID: "second-tag"},
+				},
+			},
+			expectedTag: "new-tag",
+		},
+		{
+			name: "Sets TagId when first impression TagID is empty",
+			wrapper: &wrapperData{
+				TagId: "filled-tag",
+			},
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{TagID: ""},
+				},
+			},
+			expectedTag: "filled-tag",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wrapper.setTagId(tt.request)
+			if len(tt.request.Imp) > 0 {
+				assert.Equal(t, tt.expectedTag, tt.request.Imp[0].TagID, "Unexpected TagID for test: %s", tt.name)
+			} else {
+				assert.Empty(t, tt.expectedTag, "Expected empty TagID for test: %s", tt.name)
+			}
 		})
 	}
 }

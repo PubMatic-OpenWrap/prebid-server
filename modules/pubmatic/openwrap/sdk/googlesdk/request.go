@@ -188,20 +188,19 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
+	sdkRequest := &openrtb2.BidRequest{}
+	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
+		return requestBody
+	}
+
 	// Get wrapper data
 	wrapperData, err := getWrapperData(requestBody)
 	if err != nil {
 		return requestBody
 	}
 
-	//Fetch Signal data
+	//Fetch Signal data and modify request
 	signalData := getSignalData(requestBody, rctx, wrapperData)
-
-	sdkRequest := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
-		return requestBody
-	}
-
 	modifyRequestWithSignalData(sdkRequest, signalData)
 
 	// Set Publisher Id
