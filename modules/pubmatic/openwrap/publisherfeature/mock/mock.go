@@ -5,35 +5,36 @@
 package mock_publisherfeature
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	reflect "reflect"
 )
 
-// MockFeature is a mock of Feature interface
+// MockFeature is a mock of Feature interface.
 type MockFeature struct {
 	ctrl     *gomock.Controller
 	recorder *MockFeatureMockRecorder
 }
 
-// MockFeatureMockRecorder is the mock recorder for MockFeature
+// MockFeatureMockRecorder is the mock recorder for MockFeature.
 type MockFeatureMockRecorder struct {
 	mock *MockFeature
 }
 
-// NewMockFeature creates a new mock instance
+// NewMockFeature creates a new mock instance.
 func NewMockFeature(ctrl *gomock.Controller) *MockFeature {
 	mock := &MockFeature{ctrl: ctrl}
 	mock.recorder = &MockFeatureMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFeature) EXPECT() *MockFeatureMockRecorder {
 	return m.recorder
 }
 
-// GetApplovinMultiFloors mocks base method
+// GetApplovinMultiFloors mocks base method.
 func (m *MockFeature) GetApplovinMultiFloors(arg0 int, arg1 string) models.ApplovinAdUnitFloors {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetApplovinMultiFloors", arg0, arg1)
@@ -41,13 +42,13 @@ func (m *MockFeature) GetApplovinMultiFloors(arg0 int, arg1 string) models.Applo
 	return ret0
 }
 
-// GetApplovinMultiFloors indicates an expected call of GetApplovinMultiFloors
+// GetApplovinMultiFloors indicates an expected call of GetApplovinMultiFloors.
 func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
-// GetImpCountingMethodEnabledBidders mocks base method
+// GetImpCountingMethodEnabledBidders mocks base method.
 func (m *MockFeature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImpCountingMethodEnabledBidders")
@@ -55,13 +56,41 @@ func (m *MockFeature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
 	return ret0
 }
 
-// GetImpCountingMethodEnabledBidders indicates an expected call of GetImpCountingMethodEnabledBidders
+// GetImpCountingMethodEnabledBidders indicates an expected call of GetImpCountingMethodEnabledBidders.
 func (mr *MockFeatureMockRecorder) GetImpCountingMethodEnabledBidders() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImpCountingMethodEnabledBidders", reflect.TypeOf((*MockFeature)(nil).GetImpCountingMethodEnabledBidders))
 }
 
-// IsAmpMultiformatEnabled mocks base method
+// GetMBMFFloorsForAdUnitFormat mocks base method.
+func (m *MockFeature) GetMBMFFloorsForAdUnitFormat(arg0 int, arg1 string) *models.MultiFloors {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMBMFFloorsForAdUnitFormat", arg0, arg1)
+	ret0, _ := ret[0].(*models.MultiFloors)
+	return ret0
+}
+
+// GetMBMFFloorsForAdUnitFormat indicates an expected call of GetMBMFFloorsForAdUnitFormat.
+func (mr *MockFeatureMockRecorder) GetMBMFFloorsForAdUnitFormat(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFFloorsForAdUnitFormat", reflect.TypeOf((*MockFeature)(nil).GetMBMFFloorsForAdUnitFormat), arg0, arg1)
+}
+
+// GetProfileAdUnitMultiFloors mocks base method.
+func (m *MockFeature) GetProfileAdUnitMultiFloors(arg0 int) map[string]*models.MultiFloors {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProfileAdUnitMultiFloors", arg0)
+	ret0, _ := ret[0].(map[string]*models.MultiFloors)
+	return ret0
+}
+
+// GetProfileAdUnitMultiFloors indicates an expected call of GetProfileAdUnitMultiFloors.
+func (mr *MockFeatureMockRecorder) GetProfileAdUnitMultiFloors(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileAdUnitMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetProfileAdUnitMultiFloors), arg0)
+}
+
+// IsAmpMultiformatEnabled mocks base method.
 func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsAmpMultiformatEnabled", arg0)
@@ -69,13 +98,13 @@ func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	return ret0
 }
 
-// IsAmpMultiformatEnabled indicates an expected call of IsAmpMultiformatEnabled
+// IsAmpMultiformatEnabled indicates an expected call of IsAmpMultiformatEnabled.
 func (mr *MockFeatureMockRecorder) IsAmpMultiformatEnabled(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAmpMultiformatEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultiformatEnabled), arg0)
 }
 
-// IsAnalyticsTrackingThrottled mocks base method
+// IsAnalyticsTrackingThrottled mocks base method.
 func (m *MockFeature) IsAnalyticsTrackingThrottled(arg0, arg1 int) (bool, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsAnalyticsTrackingThrottled", arg0, arg1)
@@ -84,13 +113,13 @@ func (m *MockFeature) IsAnalyticsTrackingThrottled(arg0, arg1 int) (bool, bool) 
 	return ret0, ret1
 }
 
-// IsAnalyticsTrackingThrottled indicates an expected call of IsAnalyticsTrackingThrottled
+// IsAnalyticsTrackingThrottled indicates an expected call of IsAnalyticsTrackingThrottled.
 func (mr *MockFeatureMockRecorder) IsAnalyticsTrackingThrottled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAnalyticsTrackingThrottled", reflect.TypeOf((*MockFeature)(nil).IsAnalyticsTrackingThrottled), arg0, arg1)
 }
 
-// IsApplovinMultiFloorsEnabled mocks base method
+// IsApplovinMultiFloorsEnabled mocks base method.
 func (m *MockFeature) IsApplovinMultiFloorsEnabled(arg0 int, arg1 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsApplovinMultiFloorsEnabled", arg0, arg1)
@@ -98,13 +127,13 @@ func (m *MockFeature) IsApplovinMultiFloorsEnabled(arg0 int, arg1 string) bool {
 	return ret0
 }
 
-// IsApplovinMultiFloorsEnabled indicates an expected call of IsApplovinMultiFloorsEnabled
+// IsApplovinMultiFloorsEnabled indicates an expected call of IsApplovinMultiFloorsEnabled.
 func (mr *MockFeatureMockRecorder) IsApplovinMultiFloorsEnabled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsApplovinMultiFloorsEnabled", reflect.TypeOf((*MockFeature)(nil).IsApplovinMultiFloorsEnabled), arg0, arg1)
 }
 
-// IsBidRecoveryEnabled mocks base method
+// IsBidRecoveryEnabled mocks base method.
 func (m *MockFeature) IsBidRecoveryEnabled(arg0, arg1 int) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsBidRecoveryEnabled", arg0, arg1)
@@ -112,13 +141,13 @@ func (m *MockFeature) IsBidRecoveryEnabled(arg0, arg1 int) bool {
 	return ret0
 }
 
-// IsBidRecoveryEnabled indicates an expected call of IsBidRecoveryEnabled
+// IsBidRecoveryEnabled indicates an expected call of IsBidRecoveryEnabled.
 func (mr *MockFeatureMockRecorder) IsBidRecoveryEnabled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBidRecoveryEnabled", reflect.TypeOf((*MockFeature)(nil).IsBidRecoveryEnabled), arg0, arg1)
 }
 
-// IsCountryGDPREnabled mocks base method
+// IsCountryGDPREnabled mocks base method.
 func (m *MockFeature) IsCountryGDPREnabled(arg0 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsCountryGDPREnabled", arg0)
@@ -126,13 +155,13 @@ func (m *MockFeature) IsCountryGDPREnabled(arg0 string) bool {
 	return ret0
 }
 
-// IsCountryGDPREnabled indicates an expected call of IsCountryGDPREnabled
+// IsCountryGDPREnabled indicates an expected call of IsCountryGDPREnabled.
 func (mr *MockFeatureMockRecorder) IsCountryGDPREnabled(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCountryGDPREnabled", reflect.TypeOf((*MockFeature)(nil).IsCountryGDPREnabled), arg0)
 }
 
-// IsFscApplicable mocks base method
+// IsFscApplicable mocks base method.
 func (m *MockFeature) IsFscApplicable(arg0 int, arg1 string, arg2 int) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsFscApplicable", arg0, arg1, arg2)
@@ -140,13 +169,55 @@ func (m *MockFeature) IsFscApplicable(arg0 int, arg1 string, arg2 int) bool {
 	return ret0
 }
 
-// IsFscApplicable indicates an expected call of IsFscApplicable
+// IsFscApplicable indicates an expected call of IsFscApplicable.
 func (mr *MockFeatureMockRecorder) IsFscApplicable(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFscApplicable", reflect.TypeOf((*MockFeature)(nil).IsFscApplicable), arg0, arg1, arg2)
 }
 
-// IsMaxFloorsEnabled mocks base method
+// IsMBMFCountry mocks base method.
+func (m *MockFeature) IsMBMFCountry(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMBMFCountry", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMBMFCountry indicates an expected call of IsMBMFCountry.
+func (mr *MockFeatureMockRecorder) IsMBMFCountry(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFCountry", reflect.TypeOf((*MockFeature)(nil).IsMBMFCountry), arg0)
+}
+
+// IsMBMFEnabledForAdUnitFormat mocks base method.
+func (m *MockFeature) IsMBMFEnabledForAdUnitFormat(arg0 int, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMBMFEnabledForAdUnitFormat", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMBMFEnabledForAdUnitFormat indicates an expected call of IsMBMFEnabledForAdUnitFormat.
+func (mr *MockFeatureMockRecorder) IsMBMFEnabledForAdUnitFormat(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFEnabledForAdUnitFormat", reflect.TypeOf((*MockFeature)(nil).IsMBMFEnabledForAdUnitFormat), arg0, arg1)
+}
+
+// IsMBMFPublisherEnabled mocks base method.
+func (m *MockFeature) IsMBMFPublisherEnabled(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMBMFPublisherEnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMBMFPublisherEnabled indicates an expected call of IsMBMFPublisherEnabled.
+func (mr *MockFeatureMockRecorder) IsMBMFPublisherEnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFPublisherEnabled", reflect.TypeOf((*MockFeature)(nil).IsMBMFPublisherEnabled), arg0)
+}
+
+// IsMaxFloorsEnabled mocks base method.
 func (m *MockFeature) IsMaxFloorsEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsMaxFloorsEnabled", arg0)
@@ -154,13 +225,13 @@ func (m *MockFeature) IsMaxFloorsEnabled(arg0 int) bool {
 	return ret0
 }
 
-// IsMaxFloorsEnabled indicates an expected call of IsMaxFloorsEnabled
+// IsMaxFloorsEnabled indicates an expected call of IsMaxFloorsEnabled.
 func (mr *MockFeatureMockRecorder) IsMaxFloorsEnabled(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMaxFloorsEnabled", reflect.TypeOf((*MockFeature)(nil).IsMaxFloorsEnabled), arg0)
 }
 
-// IsTBFFeatureEnabled mocks base method
+// IsTBFFeatureEnabled mocks base method.
 func (m *MockFeature) IsTBFFeatureEnabled(arg0, arg1 int) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsTBFFeatureEnabled", arg0, arg1)
@@ -168,7 +239,7 @@ func (m *MockFeature) IsTBFFeatureEnabled(arg0, arg1 int) bool {
 	return ret0
 }
 
-// IsTBFFeatureEnabled indicates an expected call of IsTBFFeatureEnabled
+// IsTBFFeatureEnabled indicates an expected call of IsTBFFeatureEnabled.
 func (mr *MockFeatureMockRecorder) IsTBFFeatureEnabled(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTBFFeatureEnabled", reflect.TypeOf((*MockFeature)(nil).IsTBFFeatureEnabled), arg0, arg1)

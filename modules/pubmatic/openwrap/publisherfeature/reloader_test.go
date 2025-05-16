@@ -67,6 +67,7 @@ func TestInitiateReloader(t *testing.T) {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 		},
 	}
@@ -146,6 +147,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
 					6: 100,
 				}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -190,6 +192,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -244,6 +247,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -310,6 +314,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
