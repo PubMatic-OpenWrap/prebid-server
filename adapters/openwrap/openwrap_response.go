@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -17,8 +18,9 @@ import (
 
 const (
 	buyId               = "buyid"
+	clickScript         = "<script>function handleAdClick_VALID_IMP_INDEX(redirectUrl, clickUrls) {clickUrls.forEach(url => { if (navigator.sendBeacon) { navigator.sendBeacon(url);} else {const img = new Image(); img.src = url; }});window.top.location.href = redirectUrl;}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
-	admActivateNative   = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
+	admActivateNative   = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
 	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
@@ -197,11 +199,12 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				if( len(admData.Imptrackers) > 1) {
 					updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
 				}
+				combinedClicks := "\"" + linkURL + "\",\""  + clickTrackersStr + "\""
+				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
+				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", combinedClicks, 1)
+				updatedAdmActivateNative := finalClickScript +  updatedAdmActivate
+				updatedAdmActivateNative = strings.Replace(updatedAdmActivateNative, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
 
-				updatedFinalLandingUrl := strings.Replace(landingUrl, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
-				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "DV_CLICK_URL", adapters.EncodeURL(linkURL), 1)
-				updatedFinalLandingUrl = strings.Replace(updatedFinalLandingUrl, "PUB_CLICK_URL", adapters.EncodeURL(clickTrackersStr), 1)
-				updatedAdmActivateNative := strings.Replace(updatedAdmActivate, "CONVERT_LANDING_PAGE", updatedFinalLandingUrl, 1)
 				bid.AdM = updatedAdmActivateNative
 				bid.MType = openrtb2.MarkupBanner
 				bid.BURL = ""
@@ -279,15 +282,5 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
 
 
