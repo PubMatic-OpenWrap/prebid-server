@@ -617,11 +617,13 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf-> check For adunitformat disable -> profileadunitlevel -> adunitformat
+	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf
 	//if pub entry present as is_enabled=0 -> don't apply mbmf
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
 		return nil
 	}
+
+	//for phase 1 mbmf, we directly check for adunitlevel floors without having check on adunitformat enabled
 
 	adunitFormat := getAdunitFormat(reward, imp)
 	//don't apply mbmf if pub is not enabled for adunitFormat
@@ -632,11 +634,13 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	adunitLevelMultiFloors := m.pubFeatures.GetProfileAdUnitMultiFloors(rctx.ProfileID)
 	if adunitLevelMultiFloors != nil {
 		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
+			//if profile adunitlevel floors present and is_active=0, don't apply mbmf
 			if !multifloors.IsActive {
 				return nil
 			}
 			return multifloors
 		}
+		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
 	}
 
 	if adunitFormat != "" {

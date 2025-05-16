@@ -94,19 +94,8 @@ func (fe *feature) updateProfileAdUnitLevelFloors() {
 func (fe *feature) updateMBMFInstlFloors() {
 	instlFloors := make(map[int]*models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureMBMFInstlFloors]; ok {
-			// If is_enabled is 0, set multifloors IsActive false for publisher
-			if val.Enabled == 0 {
-				instlFloors[pubID] = &models.MultiFloors{IsActive: false}
-				continue
-			}
-
-			floors := models.MultiFloors{IsActive: true}
-			if err := json.Unmarshal([]byte(val.Value), &floors); err != nil {
-				glog.Errorf(models.ErrMBMFFloorsUnmarshal, pubID, "", err.Error())
-				continue
-			}
-			instlFloors[pubID] = &floors
+		if floors := extractMultiFloors(feature, models.FeatureMBMFInstlFloors, pubID); floors != nil {
+			instlFloors[pubID] = floors
 		}
 	}
 	fe.mbmf.instlFloors[fe.mbmf.index^1] = instlFloors
@@ -116,19 +105,8 @@ func (fe *feature) updateMBMFInstlFloors() {
 func (fe *feature) updateMBMFRwddFloors() {
 	rwddFloors := make(map[int]*models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureMBMFRwddFloors]; ok {
-			// If is_enabled is 0, set multifloors IsActive false for publisher
-			if val.Enabled == 0 {
-				rwddFloors[pubID] = &models.MultiFloors{IsActive: false}
-				continue
-			}
-
-			floors := models.MultiFloors{IsActive: true}
-			if err := json.Unmarshal([]byte(val.Value), &floors); err != nil {
-				glog.Errorf(models.ErrMBMFFloorsUnmarshal, pubID, "", err.Error())
-				continue
-			}
-			rwddFloors[pubID] = &floors
+		if floors := extractMultiFloors(feature, models.FeatureMBMFRwddFloors, pubID); floors != nil {
+			rwddFloors[pubID] = floors
 		}
 	}
 	fe.mbmf.rwddFloors[fe.mbmf.index^1] = rwddFloors
@@ -151,25 +129,23 @@ func (fe *feature) IsMBMFPublisherEnabled(pubID int) bool {
 	return isPublisherEnabled
 }
 
-// IsMBMFEnabledForAdUnitFormat returns true if publisher entry no present OR it is present but is_enabled=1 for given adformat
-func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool {
-	if adUnitFormat == models.AdUnitFormatInstl {
-		instlFloors := fe.mbmf.instlFloors[fe.mbmf.index]
-		multiFloors, isPresent := instlFloors[pubID]
-		//(pub entry not present or value stored in DB is incorrect) OR (pub entry present and it is enabled)
-		if !isPresent || multiFloors.IsActive {
-			return true
-		}
+// IsMBMFEnabledForAdUnitFormat returns true if publisher entry is not present
+// OR it is present and is_enabled=1 for the given adunit format.
+func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adunitFormat string) bool {
+	var floors map[int]*models.MultiFloors
+
+	switch adunitFormat {
+	case models.AdUnitFormatInstl:
+		floors = fe.mbmf.instlFloors[fe.mbmf.index]
+	case models.AdUnitFormatRwddVideo:
+		floors = fe.mbmf.rwddFloors[fe.mbmf.index]
+	default:
+		return false
 	}
-	if adUnitFormat == models.AdUnitFormatRwddVideo {
-		rwddFloors := fe.mbmf.rwddFloors[fe.mbmf.index]
-		multiFloors, isPresent := rwddFloors[pubID]
-		//(pub entry not present or value stored in DB is incorrect) OR (pub entry present and it is enabled)
-		if !isPresent || multiFloors.IsActive {
-			return true
-		}
-	}
-	return false
+
+	multiFloors, isPresent := floors[pubID]
+	// Return true if no entry is present or if present and active
+	return !isPresent || multiFloors.IsActive
 }
 
 // GetMBMFFloorsForAdUnitFormat returns floors for publisher specified for MBMF in DB
@@ -206,4 +182,22 @@ func (fe *feature) GetProfileAdUnitMultiFloors(profileID int) map[string]*models
 		return nil
 	}
 	return adunitFloors
+}
+
+// extractMultiFloors handles extraction of MultiFloors for a given feature key and publisher
+func extractMultiFloors(featureMap map[int]models.FeatureData, featureKey int, pubID int) *models.MultiFloors {
+	if val, ok := featureMap[featureKey]; ok {
+		// If is_enabled is 0, set multifloors IsActive false for publisher
+		if val.Enabled == 0 {
+			return &models.MultiFloors{IsActive: false}
+		}
+
+		floors := models.MultiFloors{IsActive: true}
+		if err := json.Unmarshal([]byte(val.Value), &floors); err != nil {
+			glog.Errorf(models.ErrMBMFFloorsUnmarshal, pubID, "", err.Error())
+			return nil
+		}
+		return &floors
+	}
+	return nil
 }

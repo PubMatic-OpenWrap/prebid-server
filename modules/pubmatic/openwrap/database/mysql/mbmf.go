@@ -43,7 +43,8 @@ func (db *mySqlDB) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloor
 	}
 
 	if err := rows.Err(); err != nil {
-		return profileAdUnitMultiFloors, err
+		glog.Errorf("Failed to fetch profile ad unit multi floors row from DB with` error: %s", err.Error())
+		return models.ProfileAdUnitMultiFloors{}, err
 	}
 	return profileAdUnitMultiFloors, nil
 }
