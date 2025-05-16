@@ -45,7 +45,7 @@ func TestMySqlDBGetProfileAdUnitMultiFloors(t *testing.T) {
 				return db
 			},
 			want:    models.ProfileAdUnitMultiFloors{},
-			wantErr: nil,
+			wantErr: errors.New("row error"),
 		},
 		{
 			name: "Success case",
