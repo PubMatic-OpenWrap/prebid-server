@@ -408,6 +408,83 @@ func TestApplyGoogleSDKResponse(t *testing.T) {
 	}
 }
 
+func TestGetVideoClickThroughURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		bid      openrtb2.Bid
+		expected []string
+	}{
+		{
+			name: "Valid VAST with ClickThrough",
+			bid: openrtb2.Bid{
+				AdM: `<?xml version="1.0"?>
+				<VAST version="2.0">
+					<Ad>
+						<InLine>
+							<Creatives>
+								<Creative>
+									<Linear>
+										<VideoClicks>
+											<ClickThrough>http://example.com/click</ClickThrough>
+										</VideoClicks>
+									</Linear>
+								</Creative>
+							</Creatives>
+						</InLine>
+					</Ad>
+				</VAST>`,
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"http://example.com/click"},
+		},
+		{
+			name: "Invalid XML",
+			bid: openrtb2.Bid{
+				AdM:     "<invalid>xml",
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+		{
+			name: "Valid XML but no ClickThrough",
+			bid: openrtb2.Bid{
+				AdM: `<?xml version="1.0"?>
+				<VAST version="2.0">
+					<Ad>
+						<InLine>
+							<Creatives>
+								<Creative>
+									<Linear>
+										<VideoClicks>
+										</VideoClicks>
+									</Linear>
+								</Creative>
+							</Creatives>
+						</InLine>
+					</Ad>
+				</VAST>`,
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+		{
+			name: "Empty AdM",
+			bid: openrtb2.Bid{
+				AdM:     "",
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getVideoClickThroughURL(tt.bid)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestCustomizeBid(t *testing.T) {
 	type want struct {
 		bids   []openrtb2.Bid

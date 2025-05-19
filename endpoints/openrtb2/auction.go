@@ -410,6 +410,7 @@ func sendAuctionResponse(
 			ao.Errors = append(ao.Errors, warns...)
 		}
 	}
+	response = getGoogleSDKRejectedResponse(response, ao)
 
 	// Fixes #231
 	enc := json.NewEncoder(w)

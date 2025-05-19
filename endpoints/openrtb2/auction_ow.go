@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
@@ -111,4 +112,30 @@ func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, 
 		(*seatNonBid)[seat] = cleanedNonSeatBids
 	}
 	ao.SeatNonBid = seatNonBid.Get()
+}
+
+func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.AuctionObject) *openrtb2.BidResponse {
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if response == nil || rCtx == nil || rCtx.Endpoint != models.EndpointGoogleSDK {
+		return response
+	}
+
+	if !rCtx.GoogleSDK.Reject && response.NBR == nil {
+		return response
+	}
+
+	processingTimeValue := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+	if len(response.Ext) == 0 || !rCtx.Debug {
+		response.Ext = []byte("{}")
+	}
+	//append processing time
+	if updatedExt, err := jsonparser.Set([]byte(response.Ext), []byte(strconv.FormatInt(processingTimeValue, 10)), models.ProcessingTime); err == nil {
+		response.Ext = updatedExt
+	}
+
+	return &openrtb2.BidResponse{
+		ID:  response.ID,
+		NBR: response.NBR,
+		Ext: response.Ext,
+	}
 }

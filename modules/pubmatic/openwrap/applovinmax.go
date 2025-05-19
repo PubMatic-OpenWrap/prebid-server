@@ -288,8 +288,11 @@ func setProfileID(requestBody []byte) ([]byte, string) {
 }
 
 func updateAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) models.AppLovinMax {
-	rctx.AppLovinMax.Reject = false
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return rctx.AppLovinMax
+	}
 
+	rctx.AppLovinMax.Reject = false
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
 			rctx.AppLovinMax.Reject = true

@@ -2,16 +2,13 @@ package googlesdk
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/beevik/etree"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -21,6 +18,10 @@ import (
 const videoClickThroughTagPath = "./VAST/Ad/InLine/Creatives/Creative/Linear/VideoClicks/ClickThrough"
 
 func SetGoogleSDKResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) bool {
+	if rctx.Endpoint != models.EndpointGoogleSDK {
+		return false
+	}
+
 	reject := false
 	if bidResponse.NBR != nil {
 		if !rctx.Debug {
@@ -33,21 +34,7 @@ func SetGoogleSDKResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.Bi
 }
 
 func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
-	if rctx.Endpoint != models.EndpointGoogleSDK {
-		return bidResponse
-	}
-
-	if rctx.Debug {
-		if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
-			return bidResponse
-		}
-		if bidResponse.NBR != nil {
-			return bidResponse
-		}
-	}
-
-	if rctx.GoogleSDK.Reject {
-		*bidResponse = getRejectedResponse(bidResponse.ID, rctx, bidResponse.NBR)
+	if rctx.Endpoint != models.EndpointGoogleSDK || rctx.GoogleSDK.Reject || bidResponse.NBR != nil {
 		return bidResponse
 	}
 
@@ -85,7 +72,7 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 
 	//reject response if clickthroughURL is empty
 	if len(declaredAd.ClickThroughURL) == 0 {
-		*bidResponse = getRejectedResponse(bidResponse.ID, rctx, nbr.ResponseRejectedMissingParam.Ptr())
+		*bidResponse.NBR = nbr.ResponseRejectedMissingParam
 		return nil, false
 	}
 
@@ -122,7 +109,7 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 
 	if bidType == models.Video || rctx.Platform == models.PLATFORM_VIDEO {
 		declaredAd.VideoVastXML = bid.AdM
-		declaredAd.ClickThroughURL = getVideoClickThroughURL(bid.AdM)
+		declaredAd.ClickThroughURL = getVideoClickThroughURL(bid)
 		return declaredAd
 	}
 
@@ -136,29 +123,18 @@ func getDeclaredAd(rctx models.RequestCtx, bid openrtb2.Bid) models.DeclaredAd {
 	return declaredAd
 }
 
-// getRejsectedResponse creates a bid response with NBR code and processing time when request is rejected
-func getRejectedResponse(id string, rctx models.RequestCtx, nbrCode *openrtb3.NoBidReason) openrtb2.BidResponse {
-	processingTimeValue := time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()
-	ext := json.RawMessage([]byte(fmt.Sprintf(`{"%s":%d}`, models.ProcessingTime, processingTimeValue)))
-	return openrtb2.BidResponse{
-		ID:  id,
-		NBR: nbrCode,
-		Ext: ext,
-	}
-}
-
-func getVideoClickThroughURL(creative string) []string {
-	videoCreative := strings.TrimSpace(creative)
+func getVideoClickThroughURL(bid openrtb2.Bid) []string {
+	videoCreative := strings.TrimSpace(bid.AdM)
 	doc := etree.NewDocument()
 
 	if err := doc.ReadFromString(videoCreative); err != nil {
 		glog.Errorf("[googlesdk] video_creative:[%s] error:[%s]", videoCreative, err.Error())
-		return []string{}
+		return bid.ADomain
 	}
 
 	clickThrough := doc.Element.FindElement(videoClickThroughTagPath)
-	if clickThrough == nil {
-		return []string{}
+	if clickThrough == nil || clickThrough.Text() == "" {
+		return bid.ADomain
 	}
 	return []string{clickThrough.Text()}
 }
