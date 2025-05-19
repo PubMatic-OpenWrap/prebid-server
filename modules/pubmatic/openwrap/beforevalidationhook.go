@@ -25,7 +25,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
@@ -600,7 +599,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			rCtx.GoogleSDK.FlexSlot = googlesdk.GetFlexSlotSizes(imp.Banner, m.features[feature.FeatureNameGoogleSDK])
+			rCtx.GoogleSDK.FlexSlot = googlesdk.GetFlexSlotSizes(imp.Banner, m.features)
 		}
 
 		impExt.Wrapper = nil

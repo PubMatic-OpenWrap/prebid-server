@@ -10,9 +10,6 @@ const (
 )
 
 func (fl *FeatureLoader) LoadGoogleSDKFeatures() []Feature {
-	// Load Google SDK features from the database
-	features := make([]Feature, 0)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(fl.cfg.MaxDbContextTimeout)))
 	defer cancel()
 
@@ -30,7 +27,6 @@ func (fl *FeatureLoader) LoadGoogleSDKFeatures() []Feature {
 		}
 		slotSizes = append(slotSizes, slotSize)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil
 	}
@@ -41,6 +37,5 @@ func (fl *FeatureLoader) LoadGoogleSDKFeatures() []Feature {
 		Data: slotSizes,
 	}
 
-	features = append(features, flexSlot)
-	return features
+	return []Feature{flexSlot}
 }
