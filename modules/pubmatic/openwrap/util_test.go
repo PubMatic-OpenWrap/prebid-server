@@ -2457,6 +2457,28 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 			},
 		},
+		{
+			name: "phase 1 profile adunit level floors not present",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID: "adunit1234",
+				},
+			},
+			want: nil,
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

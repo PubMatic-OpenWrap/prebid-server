@@ -1646,7 +1646,7 @@ func TestGetMultiFloors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetMultiFloors(*tt.rctx, tt.impID)
+			got := GetMultiFloors(tt.rctx.MultiFloors, tt.impID)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

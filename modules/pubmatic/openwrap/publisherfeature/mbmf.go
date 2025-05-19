@@ -3,59 +3,64 @@ package publisherfeature
 import (
 	"encoding/json"
 	"strings"
+	"sync/atomic"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-type mbmf struct {
-	enabledCountries         [2]models.HashSet
-	enabledPublishers        [2]map[int]bool
-	profileAdUnitLevelFloors [2]models.ProfileAdUnitMultiFloors
-	instlFloors              [2]map[int]*models.MultiFloors
-	rwddFloors               [2]map[int]*models.MultiFloors
-	index                    int32
+// mbmfData holds all the fields that need double-buffering
+type mbmfData struct {
+	enabledCountries         models.HashSet
+	enabledPublishers        map[int]bool
+	profileAdUnitLevelFloors models.ProfileAdUnitMultiFloors
+	instlFloors              map[int]*models.MultiFloors
+	rwddFloors               map[int]*models.MultiFloors
 }
 
-func newMBMF() mbmf {
-	return mbmf{
-		enabledCountries: [2]models.HashSet{
-			make(models.HashSet),
-			make(models.HashSet),
+// mbmf represents Multi-Bid Multi-Floor settings using double-buffering
+type mbmf struct {
+	data  [2]mbmfData
+	index atomic.Int32
+}
+
+func newMBMF() *mbmf {
+	m := mbmf{
+		data: [2]mbmfData{
+			{
+				enabledCountries:         make(models.HashSet),
+				enabledPublishers:        make(map[int]bool),
+				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+				instlFloors:              make(map[int]*models.MultiFloors),
+				rwddFloors:               make(map[int]*models.MultiFloors),
+			},
+			{
+				enabledCountries:         make(models.HashSet),
+				enabledPublishers:        make(map[int]bool),
+				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+				instlFloors:              make(map[int]*models.MultiFloors),
+				rwddFloors:               make(map[int]*models.MultiFloors),
+			},
 		},
-		enabledPublishers: [2]map[int]bool{
-			make(map[int]bool),
-			make(map[int]bool),
-		},
-		profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{
-			make(models.ProfileAdUnitMultiFloors),
-			make(models.ProfileAdUnitMultiFloors),
-		},
-		instlFloors: [2]map[int]*models.MultiFloors{
-			make(map[int]*models.MultiFloors),
-			make(map[int]*models.MultiFloors),
-		},
-		rwddFloors: [2]map[int]*models.MultiFloors{
-			make(map[int]*models.MultiFloors),
-			make(map[int]*models.MultiFloors),
-		},
-		index: 0,
 	}
+	m.index.Store(0)
+	return &m
 }
 
 func (fe *feature) updateMBMF() {
 	if fe.publisherFeature == nil {
 		return
 	}
-	fe.updateMBMFCountries()
-	fe.updateMBMFPublishers()
-	fe.updateProfileAdUnitLevelFloors()
-	fe.updateMBMFInstlFloors()
-	fe.updateMBMFRwddFloors()
-	fe.mbmf.index ^= 1
+	nextIdx := fe.mbmf.index.Load() ^ 1
+	fe.updateMBMFCountries(nextIdx)
+	fe.updateMBMFPublishers(nextIdx)
+	fe.updateProfileAdUnitLevelFloors(nextIdx)
+	fe.updateMBMFInstlFloors(nextIdx)
+	fe.updateMBMFRwddFloors(nextIdx)
+	fe.mbmf.index.Store(nextIdx)
 }
 
-func (fe *feature) updateMBMFCountries() {
+func (fe *feature) updateMBMFCountries(nextIdx int32) {
 	enabledCountries := make(models.HashSet)
 	for pubID, feature := range fe.publisherFeature {
 		if val, ok := feature[models.FeatureMBMFCountry]; ok && pubID == 0 && val.Enabled == 1 {
@@ -68,60 +73,62 @@ func (fe *feature) updateMBMFCountries() {
 			}
 		}
 	}
-	fe.mbmf.enabledCountries[fe.mbmf.index^1] = enabledCountries
+	fe.mbmf.data[nextIdx].enabledCountries = enabledCountries
 }
 
-func (fe *feature) updateMBMFPublishers() {
+func (fe *feature) updateMBMFPublishers(nextIdx int32) {
 	enabledPublishers := make(map[int]bool)
 	for pubID, feature := range fe.publisherFeature {
 		if val, ok := feature[models.FeatureMBMFPublisher]; ok {
 			enabledPublishers[pubID] = val.Enabled == 1
 		}
 	}
-	fe.mbmf.enabledPublishers[fe.mbmf.index^1] = enabledPublishers
+	fe.mbmf.data[nextIdx].enabledPublishers = enabledPublishers
 }
 
 // updateProfileAdUnitLevelFloors updates profileAdUnitLevelFloors fetched from DB to pubFeatureMap
-func (fe *feature) updateProfileAdUnitLevelFloors() {
+func (fe *feature) updateProfileAdUnitLevelFloors(nextIdx int32) {
 	floors, err := fe.cache.GetProfileAdUnitMultiFloors()
 	if err != nil || floors == nil {
 		return
 	}
-	fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index^1] = floors
+	fe.mbmf.data[nextIdx].profileAdUnitLevelFloors = floors
 }
 
 // updateMBMFInstlFloors updates mbmfInstlFloors fetched from DB to pubFeatureMap
-func (fe *feature) updateMBMFInstlFloors() {
+func (fe *feature) updateMBMFInstlFloors(nextIdx int32) {
 	instlFloors := make(map[int]*models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
 		if floors := extractMultiFloors(feature, models.FeatureMBMFInstlFloors, pubID); floors != nil {
 			instlFloors[pubID] = floors
 		}
 	}
-	fe.mbmf.instlFloors[fe.mbmf.index^1] = instlFloors
+	fe.mbmf.data[nextIdx].instlFloors = instlFloors
 }
 
 // updateMBMFRwddFloors updates mbmfRwddFloors fetched from DB to pubFeatureMap
-func (fe *feature) updateMBMFRwddFloors() {
+func (fe *feature) updateMBMFRwddFloors(nextIdx int32) {
 	rwddFloors := make(map[int]*models.MultiFloors)
 	for pubID, feature := range fe.publisherFeature {
 		if floors := extractMultiFloors(feature, models.FeatureMBMFRwddFloors, pubID); floors != nil {
 			rwddFloors[pubID] = floors
 		}
 	}
-	fe.mbmf.rwddFloors[fe.mbmf.index^1] = rwddFloors
+	fe.mbmf.data[nextIdx].rwddFloors = rwddFloors
 }
 
 // IsMBMFCountry returns true if country specified for MBMF in DB
 func (fe *feature) IsMBMFCountry(countryCode string) bool {
-	countries := fe.mbmf.enabledCountries[fe.mbmf.index]
+	idx := fe.mbmf.index.Load()
+	countries := fe.mbmf.data[idx].enabledCountries
 	_, isPresent := countries[countryCode]
 	return isPresent
 }
 
 // IsMBMFPublisherEnabled returns true if publisher not present in DB or it is present in is_enabled=1
 func (fe *feature) IsMBMFPublisherEnabled(pubID int) bool {
-	publishers := fe.mbmf.enabledPublishers[fe.mbmf.index]
+	idx := fe.mbmf.index.Load()
+	publishers := fe.mbmf.data[idx].enabledPublishers
 	isPublisherEnabled, isPresent := publishers[pubID]
 	if !isPresent {
 		return true
@@ -133,12 +140,13 @@ func (fe *feature) IsMBMFPublisherEnabled(pubID int) bool {
 // OR it is present and is_enabled=1 for the given adunit format.
 func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adunitFormat string) bool {
 	var floors map[int]*models.MultiFloors
+	idx := fe.mbmf.index.Load()
 
 	switch adunitFormat {
 	case models.AdUnitFormatInstl:
-		floors = fe.mbmf.instlFloors[fe.mbmf.index]
+		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
-		floors = fe.mbmf.rwddFloors[fe.mbmf.index]
+		floors = fe.mbmf.data[idx].rwddFloors
 	default:
 		return false
 	}
@@ -151,12 +159,13 @@ func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adunitFormat string) 
 // GetMBMFFloorsForAdUnitFormat returns floors for publisher specified for MBMF in DB
 func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) *models.MultiFloors {
 	var floors map[int]*models.MultiFloors
+	idx := fe.mbmf.index.Load()
 
 	switch adunitFormat {
 	case models.AdUnitFormatInstl:
-		floors = fe.mbmf.instlFloors[fe.mbmf.index]
+		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
-		floors = fe.mbmf.rwddFloors[fe.mbmf.index]
+		floors = fe.mbmf.data[idx].rwddFloors
 	default:
 		return nil
 	}
@@ -176,7 +185,8 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 
 // GetProfileAdUnitMultiFloors returns adunitlevel floors for publisher specified for MBMF in DB
 func (fe *feature) GetProfileAdUnitMultiFloors(profileID int) map[string]*models.MultiFloors {
-	profileAdUnitfloors := fe.mbmf.profileAdUnitLevelFloors[fe.mbmf.index]
+	idx := fe.mbmf.index.Load()
+	profileAdUnitfloors := fe.mbmf.data[idx].profileAdUnitLevelFloors
 	adunitFloors, ok := profileAdUnitfloors[profileID]
 	if !ok {
 		return nil

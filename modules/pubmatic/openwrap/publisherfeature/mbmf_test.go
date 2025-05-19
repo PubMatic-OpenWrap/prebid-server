@@ -19,13 +19,13 @@ func TestFeatureUpdateMBMF(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
-		mbmf             mbmf
+		mbmf             *mbmf
 	}
 	tests := []struct {
-		name     string
-		fields   fields
-		setup    func()
-		wantMBMF mbmf
+		name   string
+		fields fields
+		setup  func()
+		want   *mbmf
 	}{
 		{
 			name: "publisherFeature_map_is_nil",
@@ -35,14 +35,28 @@ func TestFeatureUpdateMBMF(t *testing.T) {
 				mbmf:             newMBMF(),
 			},
 			setup: func() {},
-			wantMBMF: mbmf{
-				enabledCountries:         [2]models.HashSet{{}, {}},
-				enabledPublishers:        [2]map[int]bool{{}, {}},
-				profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{{}, {}},
-				instlFloors:              [2]map[int]*models.MultiFloors{{}, {}},
-				rwddFloors:               [2]map[int]*models.MultiFloors{{}, {}},
-				index:                    0,
-			},
+			want: func() *mbmf {
+				m := mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				}
+				m.index.Store(0)
+				return &m
+			}(),
 		},
 		{
 			name: "publisherFeature_map_is_empty",
@@ -54,14 +68,28 @@ func TestFeatureUpdateMBMF(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
-			wantMBMF: mbmf{
-				enabledCountries:         [2]models.HashSet{{}, {}},
-				enabledPublishers:        [2]map[int]bool{{}, {}},
-				profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{{}, {}},
-				instlFloors:              [2]map[int]*models.MultiFloors{{}, {}},
-				rwddFloors:               [2]map[int]*models.MultiFloors{{}, {}},
-				index:                    1,
-			},
+			want: func() *mbmf {
+				m := mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				}
+				m.index.Store(1)
+				return &m
+			}(),
 		},
 		{
 			name: "publisherFeature_map_contain_mbmf_country",
@@ -80,14 +108,28 @@ func TestFeatureUpdateMBMF(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
-			wantMBMF: mbmf{
-				enabledCountries:         [2]models.HashSet{{}, {"US": {}, "DE": {}}},
-				enabledPublishers:        [2]map[int]bool{{}, {}},
-				profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{{}, {}},
-				instlFloors:              [2]map[int]*models.MultiFloors{{}, {}},
-				rwddFloors:               [2]map[int]*models.MultiFloors{{}, {}},
-				index:                    1,
-			},
+			want: func() *mbmf {
+				m := mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         models.HashSet{"US": {}, "DE": {}},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				}
+				m.index.Store(1)
+				return &m
+			}(),
 		},
 		{
 			name: "publisherFeature_map_contain_mbmf_instl_floors",
@@ -112,26 +154,40 @@ func TestFeatureUpdateMBMF(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
-			wantMBMF: mbmf{
-				enabledCountries:         [2]models.HashSet{{}, {"US": {}, "DE": {}}},
-				enabledPublishers:        [2]map[int]bool{{}, {}},
-				profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{{}, {}},
-				instlFloors:              [2]map[int]*models.MultiFloors{{}, {5890: {IsActive: true, Tier1: 1.0, Tier2: 2.0, Tier3: 3.0}}},
-				rwddFloors:               [2]map[int]*models.MultiFloors{{}, {}},
-				index:                    1,
-			},
+			want: func() *mbmf {
+				m := mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         models.HashSet{"US": {}, "DE": {}},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              map[int]*models.MultiFloors{5890: {IsActive: true, Tier1: 1.0, Tier2: 2.0, Tier3: 3.0}},
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				}
+				m.index.Store(1)
+				return &m
+			}(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				cache:            tt.fields.cache,
 				publisherFeature: tt.fields.publisherFeature,
 				mbmf:             tt.fields.mbmf,
 			}
 			tt.setup()
-			fe.updateMBMF()
-			assert.Equal(t, tt.wantMBMF, fe.mbmf)
+			f.updateMBMF()
+			assert.Equal(t, tt.want, f.mbmf)
 		})
 	}
 }
@@ -140,12 +196,12 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
-		mbmf             mbmf
+		mbmf             *mbmf
 	}
 	tests := []struct {
 		name                     string
 		fields                   fields
-		wantMBMFEnabledCountries [2]models.HashSet
+		wantMBMFEnabledCountries models.HashSet
 	}{
 		{
 			name: "publisherFeature_map_is_present_but_mbmf_is_not_present_in_DB",
@@ -154,10 +210,7 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 				publisherFeature: map[int]map[int]models.FeatureData{},
 				mbmf:             newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{},
-				{},
-			},
+			wantMBMFEnabledCountries: make(models.HashSet),
 		},
 		{
 			name: "mbmf_enabled_countries",
@@ -173,12 +226,9 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{},
-				{
-					"US": {},
-					"DE": {},
-				},
+			wantMBMFEnabledCountries: models.HashSet{
+				"US": struct{}{},
+				"DE": struct{}{},
 			},
 		},
 		{
@@ -193,28 +243,11 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 						},
 					},
 				},
-				mbmf: mbmf{
-					enabledCountries: [2]models.HashSet{
-						{
-							"US": {},
-							"DE": {},
-						},
-						{
-							"CH": {},
-							"DE": {},
-						},
-					},
-				},
+				mbmf: newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{
-					"US": {},
-					"DE": {},
-				},
-				{
-					"US": {},
-					"DE": {},
-				},
+			wantMBMFEnabledCountries: models.HashSet{
+				"US": struct{}{},
+				"DE": struct{}{},
 			},
 		},
 		{
@@ -231,12 +264,9 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{},
-				{
-					"US": {},
-					"DE": {},
-				},
+			wantMBMFEnabledCountries: models.HashSet{
+				"US": struct{}{},
+				"DE": struct{}{},
 			},
 		},
 		{
@@ -253,10 +283,7 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{},
-				{},
-			},
+			wantMBMFEnabledCountries: make(models.HashSet),
 		},
 		{
 			name: "mbmf_enabled_countries_with_feature_enabled_but_empty_value",
@@ -272,24 +299,20 @@ func TestFeatureUpdateMBMFCountries(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			wantMBMFEnabledCountries: [2]models.HashSet{
-				{},
-				{},
-			},
+			wantMBMFEnabledCountries: make(models.HashSet),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var fe *feature
-			fe = &feature{
+			f := &feature{
 				publisherFeature: tt.fields.publisherFeature,
 				mbmf:             tt.fields.mbmf,
 			}
 			defer func() {
-				fe = nil
+				f = nil
 			}()
-			fe.updateMBMFCountries()
-			assert.Equal(t, tt.wantMBMFEnabledCountries, fe.mbmf.enabledCountries)
+			f.updateMBMFCountries(0)
+			assert.Equal(t, tt.wantMBMFEnabledCountries, f.mbmf.data[0].enabledCountries)
 		})
 	}
 }
@@ -298,12 +321,12 @@ func TestFeatureUpdateMBMFPublishers(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
-		mbmf             mbmf
+		mbmf             *mbmf
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   [2]map[int]bool
+		want   map[int]bool
 	}{
 		{
 			name: "empty publisherFeature map",
@@ -312,10 +335,7 @@ func TestFeatureUpdateMBMFPublishers(t *testing.T) {
 				publisherFeature: map[int]map[int]models.FeatureData{},
 				mbmf:             newMBMF(),
 			},
-			want: [2]map[int]bool{
-				make(map[int]bool),
-				make(map[int]bool),
-			},
+			want: make(map[int]bool),
 		},
 		{
 			name: "publisher feature enabled and disabled",
@@ -335,24 +355,26 @@ func TestFeatureUpdateMBMFPublishers(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			want: [2]map[int]bool{
-				make(map[int]bool),
-				{
-					123: true,
-					456: false,
-				},
+			want: map[int]bool{
+				123: true,
+				456: false,
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				publisherFeature: tt.fields.publisherFeature,
 				mbmf:             tt.fields.mbmf,
 			}
-			fe.updateMBMFPublishers()
-			assert.Equal(t, tt.want, fe.mbmf.enabledPublishers)
+			// Get current index
+			currIdx := f.mbmf.index.Load()
+			// Update using next index (currIdx ^ 1)
+			f.updateMBMFPublishers(currIdx ^ 1)
+			// Store the next index
+			f.mbmf.index.Store(currIdx ^ 1)
+			// Assert using the new index
+			assert.Equal(t, tt.want, f.mbmf.data[currIdx^1].enabledPublishers)
 		})
 	}
 }
@@ -364,13 +386,13 @@ func TestFeatureUpdateProfileAdUnitLevelFloors(t *testing.T) {
 
 	type fields struct {
 		cache cache.Cache
-		mbmf  mbmf
+		mbmf  *mbmf
 	}
 	tests := []struct {
 		name               string
 		fields             fields
 		setup              func()
-		expectedMBMFFloors [2]models.ProfileAdUnitMultiFloors
+		expectedMBMFFloors models.ProfileAdUnitMultiFloors
 	}{
 		{
 			name: "query failed",
@@ -381,10 +403,7 @@ func TestFeatureUpdateProfileAdUnitLevelFloors(t *testing.T) {
 			setup: func() {
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(nil, errors.New("QUERY FAILED"))
 			},
-			expectedMBMFFloors: [2]models.ProfileAdUnitMultiFloors{
-				{},
-				{},
-			},
+			expectedMBMFFloors: make(models.ProfileAdUnitMultiFloors),
 		},
 		{
 			name: "query success",
@@ -404,16 +423,13 @@ func TestFeatureUpdateProfileAdUnitLevelFloors(t *testing.T) {
 					},
 				}, nil)
 			},
-			expectedMBMFFloors: [2]models.ProfileAdUnitMultiFloors{
-				{},
-				{
-					123: {
-						"adunit1": &models.MultiFloors{
-							IsActive: true,
-							Tier1:    1.0,
-							Tier2:    2.0,
-							Tier3:    3.0,
-						},
+			expectedMBMFFloors: models.ProfileAdUnitMultiFloors{
+				123: {
+					"adunit1": &models.MultiFloors{
+						IsActive: true,
+						Tier1:    1.0,
+						Tier2:    2.0,
+						Tier3:    3.0,
 					},
 				},
 			},
@@ -422,15 +438,21 @@ func TestFeatureUpdateProfileAdUnitLevelFloors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			fe := &feature{
+			f := &feature{
 				cache: tt.fields.cache,
 				mbmf:  tt.fields.mbmf,
 			}
 			defer func() {
-				fe = nil
+				f = nil
 			}()
-			fe.updateProfileAdUnitLevelFloors()
-			assert.Equal(t, tt.expectedMBMFFloors, fe.mbmf.profileAdUnitLevelFloors, tt.name)
+			// Get current index
+			currIdx := f.mbmf.index.Load()
+			// Update using next index (currIdx ^ 1)
+			f.updateProfileAdUnitLevelFloors(currIdx ^ 1)
+			// Store the next index
+			f.mbmf.index.Store(currIdx ^ 1)
+			// Assert using the new index
+			assert.Equal(t, tt.expectedMBMFFloors, f.mbmf.data[currIdx^1].profileAdUnitLevelFloors, tt.name)
 		})
 	}
 }
@@ -439,12 +461,12 @@ func TestFeatureUpdateMBMFInstlFloors(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
-		mbmf             mbmf
+		mbmf             *mbmf
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   [2]map[int]*models.MultiFloors
+		want   map[int]*models.MultiFloors // Expected floors in the active buffer
 	}{
 		{
 			name: "empty publisherFeature map",
@@ -453,10 +475,7 @@ func TestFeatureUpdateMBMFInstlFloors(t *testing.T) {
 				publisherFeature: map[int]map[int]models.FeatureData{},
 				mbmf:             newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				make(map[int]*models.MultiFloors),
-			},
+			want: make(map[int]*models.MultiFloors),
 		},
 		{
 			name: "instl floors enabled and disabled",
@@ -477,18 +496,15 @@ func TestFeatureUpdateMBMFInstlFloors(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				{
-					123: {
-						IsActive: true,
-						Tier1:    1.5,
-						Tier2:    2.0,
-						Tier3:    2.5,
-					},
-					456: {
-						IsActive: false,
-					},
+			want: map[int]*models.MultiFloors{
+				123: {
+					IsActive: true,
+					Tier1:    1.5,
+					Tier2:    2.0,
+					Tier3:    2.5,
+				},
+				456: {
+					IsActive: false,
 				},
 			},
 		},
@@ -506,21 +522,31 @@ func TestFeatureUpdateMBMFInstlFloors(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				make(map[int]*models.MultiFloors),
-			},
+			want: make(map[int]*models.MultiFloors), // Should be empty due to invalid JSON
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				publisherFeature: tt.fields.publisherFeature,
 				mbmf:             tt.fields.mbmf,
 			}
-			fe.updateMBMFInstlFloors()
-			assert.Equal(t, tt.want, fe.mbmf.instlFloors)
+
+			// Get current index and calculate next index
+			currIdx := f.mbmf.index.Load()
+			nextIdx := currIdx ^ 1
+
+			// Update the next buffer
+			f.updateMBMFInstlFloors(nextIdx)
+
+			// Verify current buffer is untouched
+			assert.Empty(t, f.mbmf.data[currIdx].instlFloors, "Current buffer should be untouched")
+
+			// Switch to next buffer
+			f.mbmf.index.Store(nextIdx)
+
+			// Verify next buffer has expected floors
+			assert.Equal(t, tt.want, f.mbmf.data[nextIdx].instlFloors, "Next buffer should have expected floors")
 		})
 	}
 }
@@ -529,12 +555,12 @@ func TestFeatureUpdateMBMFRwddFloors(t *testing.T) {
 	type fields struct {
 		cache            cache.Cache
 		publisherFeature map[int]map[int]models.FeatureData
-		mbmf             mbmf
+		mbmf             *mbmf
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   [2]map[int]*models.MultiFloors
+		want   map[int]*models.MultiFloors // Expected floors in the active buffer
 	}{
 		{
 			name: "empty publisherFeature map",
@@ -543,10 +569,7 @@ func TestFeatureUpdateMBMFRwddFloors(t *testing.T) {
 				publisherFeature: map[int]map[int]models.FeatureData{},
 				mbmf:             newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				make(map[int]*models.MultiFloors),
-			},
+			want: make(map[int]*models.MultiFloors),
 		},
 		{
 			name: "rwdd floors enabled and disabled",
@@ -567,18 +590,15 @@ func TestFeatureUpdateMBMFRwddFloors(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				{
-					123: {
-						IsActive: true,
-						Tier1:    2.5,
-						Tier2:    3.0,
-						Tier3:    3.5,
-					},
-					456: {
-						IsActive: false,
-					},
+			want: map[int]*models.MultiFloors{
+				123: {
+					IsActive: true,
+					Tier1:    2.5,
+					Tier2:    3.0,
+					Tier3:    3.5,
+				},
+				456: {
+					IsActive: false,
 				},
 			},
 		},
@@ -596,28 +616,39 @@ func TestFeatureUpdateMBMFRwddFloors(t *testing.T) {
 				},
 				mbmf: newMBMF(),
 			},
-			want: [2]map[int]*models.MultiFloors{
-				make(map[int]*models.MultiFloors),
-				make(map[int]*models.MultiFloors),
-			},
+			want: make(map[int]*models.MultiFloors), // Should be empty due to invalid JSON
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				publisherFeature: tt.fields.publisherFeature,
 				mbmf:             tt.fields.mbmf,
 			}
-			fe.updateMBMFRwddFloors()
-			assert.Equal(t, tt.want, fe.mbmf.rwddFloors)
+
+			// Get current index and calculate next index
+			currIdx := f.mbmf.index.Load()
+			nextIdx := currIdx ^ 1
+
+			// Update the next buffer
+			f.updateMBMFRwddFloors(nextIdx)
+
+			// Verify current buffer is untouched
+			assert.Empty(t, f.mbmf.data[currIdx].rwddFloors, "Current buffer should be untouched")
+
+			// Switch to next buffer
+			f.mbmf.index.Store(nextIdx)
+
+			// Verify next buffer has expected floors
+			assert.Equal(t, tt.want, f.mbmf.data[nextIdx].rwddFloors, "Next buffer should have expected floors")
 		})
 	}
 }
 
 func TestFeatureIsMBMFCountry(t *testing.T) {
 	type fields struct {
-		mbmf mbmf
+		mbmf *mbmf
 	}
 	type args struct {
 		countryCode string
@@ -634,12 +665,24 @@ func TestFeatureIsMBMFCountry(t *testing.T) {
 				countryCode: "IN",
 			},
 			fields: fields{
-				mbmf: mbmf{
-					enabledCountries: [2]models.HashSet{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							"IN": {},
+							enabledCountries: models.HashSet{
+								"IN": {},
+							},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(models.HashSet),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -651,11 +694,23 @@ func TestFeatureIsMBMFCountry(t *testing.T) {
 				countryCode: "US",
 			},
 			fields: fields{
-				mbmf: mbmf{
-					enabledCountries: [2]models.HashSet{
-						make(models.HashSet),
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							"IN": {},
+							enabledCountries: models.HashSet{
+								"IN": {},
+							},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
 					},
 				},
@@ -665,10 +720,10 @@ func TestFeatureIsMBMFCountry(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				mbmf: tt.fields.mbmf,
 			}
-			got := fe.IsMBMFCountry(tt.args.countryCode)
+			got := f.IsMBMFCountry(tt.args.countryCode)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -676,7 +731,7 @@ func TestFeatureIsMBMFCountry(t *testing.T) {
 
 func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 	type fields struct {
-		mbmf mbmf
+		mbmf *mbmf
 	}
 	type args struct {
 		pubID int
@@ -693,12 +748,24 @@ func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 				pubID: 123,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					enabledPublishers: [2]map[int]bool{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: true,
+							enabledPublishers: map[int]bool{
+								123: true,
+							},
+							enabledCountries:         make(models.HashSet),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]bool),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -710,12 +777,24 @@ func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 				pubID: 456,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					enabledPublishers: [2]map[int]bool{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							456: false,
+							enabledPublishers: map[int]bool{
+								456: false,
+							},
+							enabledCountries:         make(models.HashSet),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]bool),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -727,12 +806,24 @@ func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 				pubID: 789,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					enabledPublishers: [2]map[int]bool{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: true,
+							enabledPublishers: map[int]bool{
+								123: true,
+							},
+							enabledCountries:         make(models.HashSet),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]bool),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -741,10 +832,10 @@ func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				mbmf: tt.fields.mbmf,
 			}
-			got := fe.IsMBMFPublisherEnabled(tt.args.pubID)
+			got := f.IsMBMFPublisherEnabled(tt.args.pubID)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -752,7 +843,7 @@ func TestFeatureIsMBMFPublisherEnabled(t *testing.T) {
 
 func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 	type fields struct {
-		mbmf mbmf
+		mbmf *mbmf
 	}
 	type args struct {
 		pubID        int
@@ -771,14 +862,26 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 				adunitFormat: "",
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -791,14 +894,26 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -811,14 +926,26 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatRwddVideo,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					rwddFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							1234: {
-								IsActive: true,
+							rwddFloors: map[int]*models.MultiFloors{
+								1234: {
+									IsActive: true,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -831,14 +958,26 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							456: {
-								IsActive: false,
+							instlFloors: map[int]*models.MultiFloors{
+								456: {
+									IsActive: false,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -851,14 +990,26 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -867,10 +1018,10 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				mbmf: tt.fields.mbmf,
 			}
-			got := fe.IsMBMFEnabledForAdUnitFormat(tt.args.pubID, tt.args.adunitFormat)
+			got := f.IsMBMFEnabledForAdUnitFormat(tt.args.pubID, tt.args.adunitFormat)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -878,7 +1029,7 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 
 func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 	type fields struct {
-		mbmf mbmf
+		mbmf *mbmf
 	}
 	type args struct {
 		pubID        int
@@ -897,14 +1048,26 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: "",
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -917,17 +1080,29 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
-								Tier1:    1,
-								Tier2:    3,
-								Tier3:    2,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+									Tier1:    1,
+									Tier2:    3,
+									Tier3:    2,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -945,17 +1120,29 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatRwddVideo,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					rwddFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							1234: {
-								IsActive: true,
-								Tier1:    1,
-								Tier2:    3,
-								Tier3:    2,
+							rwddFloors: map[int]*models.MultiFloors{
+								1234: {
+									IsActive: true,
+									Tier1:    1,
+									Tier2:    3,
+									Tier3:    2,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -973,17 +1160,29 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							456: {
-								IsActive: false,
-								Tier1:    1,
-								Tier2:    3,
-								Tier3:    2,
+							instlFloors: map[int]*models.MultiFloors{
+								456: {
+									IsActive: false,
+									Tier1:    1,
+									Tier2:    3,
+									Tier3:    2,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -1001,23 +1200,35 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							models.DefaultAdUnitFormatFloors: {
-								IsActive: true,
-								Tier1:    1,
-								Tier2:    2,
-								Tier3:    3,
+							instlFloors: map[int]*models.MultiFloors{
+								models.DefaultAdUnitFormatFloors: {
+									IsActive: true,
+									Tier1:    1,
+									Tier2:    2,
+									Tier3:    3,
+								},
+								123: {
+									IsActive: true,
+									Tier1:    1,
+									Tier2:    3,
+									Tier3:    2,
+								},
 							},
-							123: {
-								IsActive: true,
-								Tier1:    1,
-								Tier2:    3,
-								Tier3:    2,
-							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -1035,17 +1246,29 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 				adunitFormat: models.AdUnitFormatInstl,
 			},
 			fields: fields{
-				mbmf: mbmf{
-					instlFloors: [2]map[int]*models.MultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								IsActive: true,
-								Tier1:    1,
-								Tier2:    3,
-								Tier3:    2,
+							instlFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: true,
+									Tier1:    1,
+									Tier2:    3,
+									Tier3:    2,
+								},
 							},
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
 						},
-						make(map[int]*models.MultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -1054,10 +1277,10 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				mbmf: tt.fields.mbmf,
 			}
-			got := fe.GetMBMFFloorsForAdUnitFormat(tt.args.pubID, tt.args.adunitFormat)
+			got := f.GetMBMFFloorsForAdUnitFormat(tt.args.pubID, tt.args.adunitFormat)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -1065,7 +1288,7 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 
 func TestFeatureGetProfileAdUnitMultiFloors(t *testing.T) {
 	type fields struct {
-		mbmf mbmf
+		mbmf *mbmf
 	}
 	type args struct {
 		profileID int
@@ -1079,19 +1302,31 @@ func TestFeatureGetProfileAdUnitMultiFloors(t *testing.T) {
 		{
 			name: "profileID present",
 			fields: fields{
-				mbmf: mbmf{
-					profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								"adunit1": {
-									IsActive: true,
-									Tier1:    1,
-									Tier2:    2,
-									Tier3:    3,
+							profileAdUnitLevelFloors: models.ProfileAdUnitMultiFloors{
+								123: {
+									"adunit1": {
+										IsActive: true,
+										Tier1:    1,
+										Tier2:    2,
+										Tier3:    3,
+									},
 								},
 							},
+							enabledCountries:  make(models.HashSet),
+							enabledPublishers: make(map[int]bool),
+							instlFloors:       make(map[int]*models.MultiFloors),
+							rwddFloors:        make(map[int]*models.MultiFloors),
 						},
-						make(models.ProfileAdUnitMultiFloors),
+						{
+							enabledCountries:         make(models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
 					},
 				},
 			},
@@ -1110,19 +1345,23 @@ func TestFeatureGetProfileAdUnitMultiFloors(t *testing.T) {
 		{
 			name: "profileID not present",
 			fields: fields{
-				mbmf: mbmf{
-					profileAdUnitLevelFloors: [2]models.ProfileAdUnitMultiFloors{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
 						{
-							123: {
-								"adunit1": {
-									IsActive: true,
-									Tier1:    1,
-									Tier2:    2,
-									Tier3:    3,
+							profileAdUnitLevelFloors: models.ProfileAdUnitMultiFloors{
+								123: {
+									"adunit1": {
+										IsActive: true,
+										Tier1:    1,
+										Tier2:    2,
+										Tier3:    3,
+									},
 								},
 							},
 						},
-						make(models.ProfileAdUnitMultiFloors),
+						{
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+						},
 					},
 				},
 			},
@@ -1134,10 +1373,10 @@ func TestFeatureGetProfileAdUnitMultiFloors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fe := &feature{
+			f := &feature{
 				mbmf: tt.fields.mbmf,
 			}
-			got := fe.GetProfileAdUnitMultiFloors(tt.args.profileID)
+			got := f.GetProfileAdUnitMultiFloors(tt.args.profileID)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

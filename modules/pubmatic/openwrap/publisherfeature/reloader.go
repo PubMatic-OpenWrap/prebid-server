@@ -30,7 +30,7 @@ type feature struct {
 	appLovinMultiFloors appLovinMultiFloors
 	impCountingMethod   impCountingMethod
 	gdprCountryCodes    gdprCountryCodes
-	mbmf                mbmf
+	mbmf                *mbmf
 }
 
 var fe *feature

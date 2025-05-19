@@ -77,6 +77,7 @@ func TestInitiateReloader(t *testing.T) {
 			cache:         tt.args.cache,
 			defaultExpiry: tt.args.defaultExpiry,
 			serviceStop:   make(chan struct{}),
+			mbmf:          newMBMF(),
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -432,6 +433,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					enabledPublishers: make(map[int]struct{}),
 				},
 				impCountingMethod: newImpCountingMethod(),
+				mbmf:              newMBMF(),
 			}
 			defer func() {
 				fe = nil
