@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	nativeResponse "github.com/prebid/openrtb/v20/native1/response"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -72,6 +73,9 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 
 	//reject response if clickthroughURL is empty
 	if len(declaredAd.ClickThroughURL) == 0 {
+		if bidResponse.NBR == nil {
+			bidResponse.NBR = new(openrtb3.NoBidReason)
+		}
 		*bidResponse.NBR = nbr.ResponseRejectedMissingParam
 		return nil, false
 	}
