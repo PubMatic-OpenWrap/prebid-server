@@ -19,3 +19,12 @@ type GoogleSDKParams struct {
 	AllowedRestrictedCategory   []int                        `json:"allowed_restricted_category,omitempty"`
 	CreativeEnforcementSettings *CreativeEnforcementSettings `json:"creative_enforcement_settings,omitempty"`
 }
+
+type ExtImpBanner struct {
+	Flexslot *struct {
+		Wmin int32 `json:"wmin,omitempty"`
+		Wmax int32 `json:"wmax,omitempty"`
+		Hmin int32 `json:"hmin,omitempty"`
+		Hmax int32 `json:"hmax,omitempty"`
+	} `json:"flexslot,omitempty"`
+}

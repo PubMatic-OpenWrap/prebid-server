@@ -22,6 +22,7 @@ import (
 	ow_gocache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mysql"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb/netacuity"
 	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
@@ -47,6 +48,7 @@ type OpenWrap struct {
 	unwrap          unwrap.Unwrap
 	profileMetaData profilemetadata.ProfileMetaData
 	uuidGenerator   uuidutil.UUIDGenerator
+	features        feature.Features
 }
 
 var ow *OpenWrap
@@ -107,6 +109,10 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	}
 	glog.Info("Initialized profileMetaData reloader")
 
+	// Features
+	featureLoader := feature.NewFeatureLoader(mysqlDriver, cfg.Database)
+	features := featureLoader.LoadFeatures()
+
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
@@ -132,6 +138,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			unwrap:          uw,
 			profileMetaData: profileMetaData,
 			uuidGenerator:   uuidutil.UUIDRandomGenerator{},
+			features:        features,
 		}
 	})
 
