@@ -79,7 +79,7 @@ func updateIncomingSlotsWithFormat(incomingSlots []string, format []openrtb2.For
 		sizes[fmt.Sprintf("%dx%d", f.W, f.H)] = struct{}{}
 	}
 
-	var updatedSlots []string
+	updatedSlots := make([]string, 0, len(sizes))
 	for k := range sizes {
 		updatedSlots = append(updatedSlots, k)
 	}

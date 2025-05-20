@@ -257,3 +257,72 @@ func TestGetIncomingSlots(t *testing.T) {
 		})
 	}
 }
+func TestUpdateIncomingSlotsWithFormat(t *testing.T) {
+	tests := []struct {
+		name          string
+		incomingSlots []string
+		format        []openrtb2.Format
+		want          []string
+	}{
+		{
+			name:          "no_format_returns_incomingSlots",
+			incomingSlots: []string{"300x250", "728x90"},
+			format:        nil,
+			want:          []string{"300x250", "728x90"},
+		},
+		{
+			name:          "empty_format_returns_incomingSlots",
+			incomingSlots: []string{"300x250"},
+			format:        []openrtb2.Format{},
+			want:          []string{"300x250"},
+		},
+		{
+			name:          "add_new_format_sizes",
+			incomingSlots: []string{"300x250"},
+			format: []openrtb2.Format{
+				{W: 728, H: 90},
+				{W: 160, H: 600},
+			},
+			want: []string{"300x250", "728x90", "160x600"},
+		},
+		{
+			name:          "format_with_duplicate_sizes",
+			incomingSlots: []string{"300x250"},
+			format: []openrtb2.Format{
+				{W: 300, H: 250},
+				{W: 728, H: 90},
+			},
+			want: []string{"300x250", "728x90"},
+		},
+		{
+			name:          "empty_incomingSlots_only_format",
+			incomingSlots: []string{},
+			format: []openrtb2.Format{
+				{W: 320, H: 50},
+			},
+			want: []string{"320x50"},
+		},
+		{
+			name:          "both_empty_returns_empty",
+			incomingSlots: []string{},
+			format:        []openrtb2.Format{},
+			want:          []string{},
+		},
+		{
+			name:          "format_with_zero_values",
+			incomingSlots: []string{"300x250"},
+			format: []openrtb2.Format{
+				{W: 0, H: 0},
+			},
+			want: []string{"300x250", "0x0"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := updateIncomingSlotsWithFormat(tt.incomingSlots, tt.format)
+			assert.ElementsMatch(t, tt.want, got, "unexpected slots")
+		})
+	}
+}
+
