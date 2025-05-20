@@ -606,6 +606,109 @@ func TestCustomizeBid(t *testing.T) {
 				wantOK: false,
 			},
 		},
+		{
+			name: "update w and h according to request format",
+			rctx: models.RequestCtx{
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp1": {
+						Banner: &openrtb2.Banner{
+							Format: []openrtb2.Format{
+								{W: 400, H: 350},
+							},
+						},
+					},
+				},
+				GoogleSDK: models.GoogleSDK{
+					SDKRenderedAdID: "sdkrenderedaid",
+					FlexSlot: []openrtb2.Format{
+						{W: 400, H: 350},
+					},
+				},
+				StartTime: 1234567890,
+				Endpoint:  models.EndpointGoogleSDK,
+				Trackers: map[string]models.OWTracker{
+					"bidid": {
+						BidType: models.Banner,
+					},
+				},
+			},
+			bidResponse: &openrtb2.BidResponse{
+				ID: "id",
+				SeatBid: []openrtb2.SeatBid{
+					{Bid: []openrtb2.Bid{
+						{
+							ID:    "bidid",
+							ImpID: "imp1",
+							AdM:   `<html><body><a href="http://example.com/click">Click here</a></body></html>`,
+						},
+					}},
+				},
+			},
+			want: want{
+				bids: []openrtb2.Bid{
+					{
+						ID:    "bidid",
+						ImpID: "imp1",
+						W:     400,
+						H:     350,
+						Ext:   json.RawMessage(`{"sdk_rendered_ad":{"id":"sdkrenderedaid","rendering_data":"{\"id\":\"id\",\"seatbid\":[{\"bid\":[{\"id\":\"bidid\",\"impid\":\"imp1\",\"price\":0,\"adm\":\"\\u003chtml\\u003e\\u003cbody\\u003e\\u003ca href=\\\"http://example.com/click\\\"\\u003eClick here\\u003c/a\\u003e\\u003c/body\\u003e\\u003c/html\\u003e\"}]}]}","declared_ad":{"click_through_url":["http://example.com/click"],"html_snippet":"\u003chtml\u003e\u003cbody\u003e\u003ca href=\"http://example.com/click\"\u003eClick here\u003c/a\u003e\u003c/body\u003e\u003c/html\u003e"}}}`),
+						AdM:   "",
+					},
+				},
+				wantOK: true,
+			},
+		},
+		{
+			name: "update w and h according to request imp.banner w and h",
+			rctx: models.RequestCtx{
+				ImpBidCtx: map[string]models.ImpCtx{
+					"imp1": {
+						Banner: &openrtb2.Banner{
+							W: openrtb2.Int64Ptr(400),
+							H: openrtb2.Int64Ptr(350),
+						},
+					},
+				},
+				GoogleSDK: models.GoogleSDK{
+					SDKRenderedAdID: "sdkrenderedaid",
+					FlexSlot: []openrtb2.Format{
+						{W: 400, H: 350},
+					},
+				},
+				StartTime: 1234567890,
+				Endpoint:  models.EndpointGoogleSDK,
+				Trackers: map[string]models.OWTracker{
+					"bidid": {
+						BidType: models.Banner,
+					},
+				},
+			},
+			bidResponse: &openrtb2.BidResponse{
+				ID: "id",
+				SeatBid: []openrtb2.SeatBid{
+					{Bid: []openrtb2.Bid{
+						{
+							ID:    "bidid",
+							ImpID: "imp1",
+							AdM:   `<html><body><a href="http://example.com/click">Click here</a></body></html>`,
+						},
+					}},
+				},
+			},
+			want: want{
+				bids: []openrtb2.Bid{
+					{
+						ID:    "bidid",
+						ImpID: "imp1",
+						W:     400,
+						H:     350,
+						Ext:   json.RawMessage(`{"sdk_rendered_ad":{"id":"sdkrenderedaid","rendering_data":"{\"id\":\"id\",\"seatbid\":[{\"bid\":[{\"id\":\"bidid\",\"impid\":\"imp1\",\"price\":0,\"adm\":\"\\u003chtml\\u003e\\u003cbody\\u003e\\u003ca href=\\\"http://example.com/click\\\"\\u003eClick here\\u003c/a\\u003e\\u003c/body\\u003e\\u003c/html\\u003e\"}]}]}","declared_ad":{"click_through_url":["http://example.com/click"],"html_snippet":"\u003chtml\u003e\u003cbody\u003e\u003ca href=\"http://example.com/click\"\u003eClick here\u003c/a\u003e\u003c/body\u003e\u003c/html\u003e"}}}`),
+						AdM:   "",
+					},
+				},
+				wantOK: true,
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -133,6 +133,7 @@ type RequestCtx struct {
 type GoogleSDK struct {
 	Reject          bool
 	SDKRenderedAdID string
+	FlexSlot        []openrtb2.Format
 }
 
 type AdpodProfileConfig struct {
@@ -181,7 +182,8 @@ type ImpCtx struct {
 	BidFloor          float64
 	BidFloorCur       string
 	IsRewardInventory *int8
-	Banner            bool
+	IsBanner          bool
+	Banner            *openrtb2.Banner
 	Video             *openrtb2.Video
 	Native            *openrtb2.Native
 	IncomingSlots     []string
