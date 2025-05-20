@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -736,6 +737,135 @@ func TestUpdateResponseExtOW(t *testing.T) {
 			if tt.rejectResponse {
 				assert.Equal(t, http.StatusNoContent, tt.args.w.(*httptest.ResponseRecorder).Code, tt.name)
 			}
+		})
+	}
+}
+
+func TestGetGoogleSDKRejectedResponse(t *testing.T) {
+	tests := []struct {
+		name     string
+		response *openrtb2.BidResponse
+		ao       analytics.AuctionObject
+		want     *openrtb2.BidResponse
+	}{
+		{
+			name:     "nil response",
+			response: nil,
+			ao:       analytics.AuctionObject{},
+			want:     nil,
+		},
+		{
+			name: "nil request context",
+			response: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: json.RawMessage(`{"existing":"value"}`),
+			},
+			ao: analytics.AuctionObject{},
+			want: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: json.RawMessage(`{"existing":"value"}`),
+			},
+		},
+		{
+			name: "google-sdk reject false and NBR nil",
+			response: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: json.RawMessage(`{"existing":"value"}`),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointGoogleSDK,
+																	GoogleSDK: models.GoogleSDK{
+																		Reject: false,
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: json.RawMessage(`{"existing":"value"}`),
+			},
+		},
+		{
+			name: "google-sdk reject true with debug",
+			response: &openrtb2.BidResponse{
+				ID:  "test-id",
+				NBR: openrtb3.NoBidUnknownError.Ptr(),
+				Ext: json.RawMessage(`{"existing":"value"}`),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointGoogleSDK,
+																	GoogleSDK: models.GoogleSDK{
+																		Reject: true,
+																	},
+																	Debug: true,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "test-id",
+				NBR: openrtb3.NoBidUnknownError.Ptr(),
+				Ext: json.RawMessage(`{"existing":"value", "processing_time_ms": 1}`),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getGoogleSDKRejectedResponse(tt.response, tt.ao)
+			if tt.want == nil {
+				assert.Nil(t, got)
+				return
+			}
+			assert.Equal(t, tt.want.ID, got.ID)
+			assert.Equal(t, tt.want.NBR, got.NBR)
+			assert.NotNil(t, got.Ext)
 		})
 	}
 }

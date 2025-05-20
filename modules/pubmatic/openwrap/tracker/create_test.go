@@ -276,14 +276,7 @@ func Test_createTrackers(t *testing.T) {
 					testRctx.StartTime = startTime
 					pg, _ := openrtb_ext.NewPriceGranularityFromLegacyID("med")
 					testRctx.PriceGranularity = &pg
-					testRctx.AppLovinMax = models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.2, 1.3, 1.4},
-							},
-						},
-					}
+					testRctx.AppLovinMax = models.AppLovinMax{}
 					testRctx.ImpBidCtx = map[string]models.ImpCtx{
 						"impID-1": {
 							TagID:             "adunit-1",

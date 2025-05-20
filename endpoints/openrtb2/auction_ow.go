@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
@@ -111,4 +112,36 @@ func removeDefaultBidsFromSeatNonBid(seatNonBid *openrtb_ext.SeatNonBidBuilder, 
 		(*seatNonBid)[seat] = cleanedNonSeatBids
 	}
 	ao.SeatNonBid = seatNonBid.Get()
+}
+
+func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.AuctionObject) *openrtb2.BidResponse {
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if response == nil || rCtx == nil || rCtx.Endpoint != models.EndpointGoogleSDK {
+		return response
+	}
+
+	if !rCtx.GoogleSDK.Reject && response.NBR == nil {
+		return response
+	}
+
+	ext := []byte("{}")
+	if rCtx.Debug {
+		// Copy only "owlogger" from original Ext if it exists
+		if owLoggerVal, _, _, err := jsonparser.Get(response.Ext, models.LoggerKey); err == nil {
+			if updatedExt, err := jsonparser.Set(ext, []byte(strconv.Quote(string(owLoggerVal))), models.LoggerKey); err == nil {
+				ext = updatedExt
+			}
+		}
+	}
+	//append processing time
+	processingTimeValue := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+	if updatedExt, err := jsonparser.Set(ext, []byte(strconv.FormatInt(processingTimeValue, 10)), models.ProcessingTime); err == nil {
+		ext = updatedExt
+	}
+
+	return &openrtb2.BidResponse{
+		ID:  response.ID,
+		NBR: response.NBR,
+		Ext: ext,
+	}
 }

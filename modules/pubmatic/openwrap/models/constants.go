@@ -559,6 +559,7 @@ const (
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
 	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
+	ProfileAdUnitMultiFloorsQuery = "GetProfileAdUnitMultiFloors"
 )
 
 // constants for owlogger Integration Type
@@ -610,22 +611,29 @@ const (
 	FeatureBidRecovery         = 6
 	FeatureApplovinMultiFloors = 7
 	FeatureImpCountingMethod   = 8
+	FeatureMBMFCountry         = 9
+	FeatureMBMFPublisher       = 10
+	FeatureMBMFInstlFloors     = 11
+	FeatureMBMFRwddFloors      = 12
 )
 
 // constants for sdk integrations
 const (
-	Agent                   = "agent"
-	AppLovinMaxAgent        = "max"
-	GoogleSDKAgent          = "googlesdk"
-	TypeRewarded            = "rewarded"
-	SignalData              = "signaldata"
-	OwSspBurl               = "owsspburl"
-	MissingSignal           = "missing"
-	InvalidSignal           = "invalid"
-	AppStoreUrl             = "appStoreUrl"
-	SendBurl                = "sendburl"
-	MultiBidMultiFloorValue = "mbmfv"
-	ProcessingTime          = "processing_time_ms"
+	Agent                     = "agent"
+	AppLovinMaxAgent          = "max"
+	GoogleSDKAgent            = "googlesdk"
+	TypeRewarded              = "rewarded"
+	SignalData                = "signaldata"
+	OwSspBurl                 = "owsspburl"
+	MissingSignal             = "missing"
+	InvalidSignal             = "invalid"
+	AppStoreUrl               = "appStoreUrl"
+	SendBurl                  = "sendburl"
+	MultiBidMultiFloorValue   = "mbmfv"
+	ProcessingTime            = "processing_time_ms"
+	AdUnitFormatInstl         = "instl"
+	AdUnitFormatRwddVideo     = "rwddvideo"
+	DefaultAdUnitFormatFloors = 0
 )
 
 // constants for log level
@@ -635,7 +643,8 @@ const (
 
 const (
 	// ErrDBQueryFailed reponse error
-	ErrDBQueryFailed   = `[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]`
-	ErrDBRowScanFailed = `[DBRowsError] query:[%s] pubid:[%v] profileid:[%v] err:[%s]`
-	EmptyPartnerConfig = `[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]`
+	ErrDBQueryFailed       = `[DBError] query:[%s] pubid:[%v] profileid:[%v] error:[%s]`
+	ErrDBRowScanFailed     = `[DBRowsError] query:[%s] pubid:[%v] profileid:[%v] err:[%s]`
+	EmptyPartnerConfig     = `[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]`
+	ErrMBMFFloorsUnmarshal = `[ErrMBMFFloorsUnmarshal] pubid:[%v] profileid:[%v] error:[%s]`
 )

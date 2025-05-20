@@ -21,6 +21,7 @@ type Cache interface {
 	GetAppIntegrationPaths() (map[string]int, error)
 	GetAppSubIntegrationPaths() (map[string]int, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
+	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)

@@ -22,7 +22,7 @@ func TestSetGoogleSDKResponseReject(t *testing.T) {
 	}{
 		{
 			name: "NBR present with debug false",
-			rctx: models.RequestCtx{Debug: false},
+			rctx: models.RequestCtx{Debug: false, Endpoint: models.EndpointGoogleSDK},
 			bidResponse: &openrtb2.BidResponse{
 				NBR: openrtb3.NoBidUnknownError.Ptr(),
 			},
@@ -30,7 +30,7 @@ func TestSetGoogleSDKResponseReject(t *testing.T) {
 		},
 		{
 			name: "NBR present with debug true",
-			rctx: models.RequestCtx{Debug: true},
+			rctx: models.RequestCtx{Debug: true, Endpoint: models.EndpointGoogleSDK},
 			bidResponse: &openrtb2.BidResponse{
 				NBR: openrtb3.NoBidUnknownError.Ptr(),
 			},
@@ -38,13 +38,13 @@ func TestSetGoogleSDKResponseReject(t *testing.T) {
 		},
 		{
 			name:        "Empty bid response",
-			rctx:        models.RequestCtx{Debug: false},
+			rctx:        models.RequestCtx{Debug: false, Endpoint: models.EndpointGoogleSDK},
 			bidResponse: &openrtb2.BidResponse{},
 			want:        true,
 		},
 		{
 			name: "Valid bid response",
-			rctx: models.RequestCtx{Debug: false},
+			rctx: models.RequestCtx{Debug: false, Endpoint: models.EndpointGoogleSDK},
 			bidResponse: &openrtb2.BidResponse{
 				SeatBid: []openrtb2.SeatBid{
 					{
@@ -319,7 +319,7 @@ func TestApplyGoogleSDKResponse(t *testing.T) {
 			name:     "GoogleSDK endpoint, reject true sets NBR",
 			rctx:     models.RequestCtx{Endpoint: models.EndpointGoogleSDK, GoogleSDK: models.GoogleSDK{Reject: true}, StartTime: 0},
 			bidResp:  &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr()},
-			wantResp: &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr(), Ext: json.RawMessage(`{"processing_time_ms":0}`)},
+			wantResp: &openrtb2.BidResponse{ID: "test-reject", NBR: openrtb3.NoBidUnknownError.Ptr()},
 			wantNBR:  true,
 		},
 		{
@@ -347,8 +347,18 @@ func TestApplyGoogleSDKResponse(t *testing.T) {
 					},
 				},
 			},
-			wantResp: &openrtb2.BidResponse{ID: "test-reject-clickthrough", NBR: nbr.ResponseRejectedMissingParam.Ptr(), Ext: json.RawMessage(`{"processing_time_ms":0}`)},
-			wantNBR:  true,
+			wantResp: &openrtb2.BidResponse{
+				ID:  "test-reject-clickthrough",
+				Cur: "USD",
+				SeatBid: []openrtb2.SeatBid{{
+					Bid: []openrtb2.Bid{{
+						ID:  "bid1",
+						AdM: "<html><body>No clickthrough URL</body></html>",
+					}},
+				}},
+				NBR: nbr.ResponseRejectedMissingParam.Ptr(),
+			},
+			wantNBR: true,
 		},
 		{
 			name: "GoogleSDK endpoint, customizeBid path",
@@ -404,6 +414,83 @@ func TestApplyGoogleSDKResponse(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.wantResp, got)
 			}
+		})
+	}
+}
+
+func TestGetVideoClickThroughURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		bid      openrtb2.Bid
+		expected []string
+	}{
+		{
+			name: "Valid VAST with ClickThrough",
+			bid: openrtb2.Bid{
+				AdM: `<?xml version="1.0"?>
+				<VAST version="2.0">
+					<Ad>
+						<InLine>
+							<Creatives>
+								<Creative>
+									<Linear>
+										<VideoClicks>
+											<ClickThrough>http://example.com/click</ClickThrough>
+										</VideoClicks>
+									</Linear>
+								</Creative>
+							</Creatives>
+						</InLine>
+					</Ad>
+				</VAST>`,
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"http://example.com/click"},
+		},
+		{
+			name: "Invalid XML",
+			bid: openrtb2.Bid{
+				AdM:     "<invalid>xml",
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+		{
+			name: "Valid XML but no ClickThrough",
+			bid: openrtb2.Bid{
+				AdM: `<?xml version="1.0"?>
+				<VAST version="2.0">
+					<Ad>
+						<InLine>
+							<Creatives>
+								<Creative>
+									<Linear>
+										<VideoClicks>
+										</VideoClicks>
+									</Linear>
+								</Creative>
+							</Creatives>
+						</InLine>
+					</Ad>
+				</VAST>`,
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+		{
+			name: "Empty AdM",
+			bid: openrtb2.Bid{
+				AdM:     "",
+				ADomain: []string{"fallback.com"},
+			},
+			expected: []string{"fallback.com"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getVideoClickThroughURL(tt.bid)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

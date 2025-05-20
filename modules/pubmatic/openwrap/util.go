@@ -595,3 +595,57 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 	}
 	return "", ""
 }
+
+func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
+	if reward != nil && imp.Video != nil {
+		return models.AdUnitFormatRwddVideo
+	}
+
+	if imp.Instl == 1 {
+		return models.AdUnitFormatInstl
+	}
+	return ""
+}
+
+// getMultiFloors returns all adunitlevel multifloors or to be applied adunitformat multifloors for give imp.
+func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openrtb2.Imp) *models.MultiFloors {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return nil
+	}
+
+	if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
+		return nil
+	}
+
+	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf
+	//if pub entry present as is_enabled=0 -> don't apply mbmf
+	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
+		return nil
+	}
+
+	//for phase 1 mbmf, we directly check for adunitlevel floors without having check on adunitformat enabled
+
+	adunitFormat := getAdunitFormat(reward, imp)
+	//don't apply mbmf if pub is not enabled for adunitFormat
+	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+		return nil
+	}
+
+	adunitLevelMultiFloors := m.pubFeatures.GetProfileAdUnitMultiFloors(rctx.ProfileID)
+	if adunitLevelMultiFloors != nil {
+		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
+			//if profile adunitlevel floors present and is_active=0, don't apply mbmf
+			if !multifloors.IsActive {
+				return nil
+			}
+			return multifloors
+		}
+		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
+	}
+
+	if adunitFormat != "" {
+		//return adunitformat multifloors for pubid, if not present then return default multifloors
+		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	}
+	return nil
+}

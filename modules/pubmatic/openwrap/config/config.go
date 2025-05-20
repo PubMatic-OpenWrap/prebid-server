@@ -81,6 +81,8 @@ type Queries struct {
 	GetAppSubIntegrationPathMapQuery  string
 	GetGDPRCountryCodes               string
 	GetBannerSizesQuery               string
+	GetProfileAdUnitMultiFloors       string
+
 }
 
 type Cache struct {

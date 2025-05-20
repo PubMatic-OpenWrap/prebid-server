@@ -30,6 +30,7 @@ type feature struct {
 	appLovinMultiFloors appLovinMultiFloors
 	impCountingMethod   impCountingMethod
 	gdprCountryCodes    gdprCountryCodes
+	mbmf                *mbmf
 }
 
 var fe *feature
@@ -64,6 +65,7 @@ func New(config Config) *feature {
 			},
 			impCountingMethod: newImpCountingMethod(),
 			gdprCountryCodes:  newGDPRCountryCodes(),
+			mbmf:              newMBMF(),
 		}
 	})
 	return fe
@@ -124,6 +126,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
 	fe.updateImpCountingMethodEnabledBidders()
+	fe.updateMBMF()
 
 	if err != nil {
 		glog.Error(err.Error())
