@@ -1382,6 +1382,57 @@ func TestFeatureGetProfileAdUnitMultiFloors(t *testing.T) {
 	}
 }
 
+func TestFeatureMBMFConcurrent(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+
+	// Setup feature with test data
+	fe := &feature{
+		cache: mockCache,
+		publisherFeature: map[int]map[int]models.FeatureData{
+			5890: {
+				models.FeatureMBMFCountry: {
+					Enabled: 1,
+					Value:   `US`,
+				},
+			},
+		},
+		mbmf: newMBMF(),
+	}
+
+	// Initial index should be 0
+	initialIndex := fe.mbmf.index.Load()
+	assert.Equal(t, int32(0), initialIndex)
+
+	// Setup mock expectations
+	mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil).AnyTimes()
+
+	// Run concurrent operations
+	go func() {
+		// Reader
+		for i := 0; i < 100; i++ {
+			fe.IsMBMFCountry("US")
+			// Verify index is either 0 or 1
+			currIndex := fe.mbmf.index.Load()
+			assert.True(t, currIndex == 0 || currIndex == 1)
+		}
+	}()
+
+	// Writer
+	for i := 0; i < 100; i++ {
+		// Before update, index should be either 0 or 1
+		prevIndex := fe.mbmf.index.Load()
+		assert.True(t, prevIndex == 0 || prevIndex == 1)
+
+		fe.updateMBMF()
+
+		// After update, index should be flipped
+		currIndex := fe.mbmf.index.Load()
+		assert.Equal(t, prevIndex^1, currIndex)
+	}
+}
+
 func TestExtractMultiFloors(t *testing.T) {
 	type args struct {
 		feature    map[int]models.FeatureData
