@@ -161,6 +161,22 @@ func TestGetFlexSlotSizes(t *testing.T) {
 			}(),
 			want: nil,
 		},
+		{
+			name: "invalid flexslot range",
+			args: func() args {
+				ext := openrtb_ext.ExtImpBanner{Flexslot: &openrtb_ext.FlexSlot{Wmin: 100, Wmax: 10, Hmin: 100, Hmax: 10}}
+				extBytes, _ := json.Marshal(ext)
+				return args{
+					banner: &openrtb2.Banner{Ext: extBytes},
+					features: feature.Features{
+						feature.FeatureNameGoogleSDK: []feature.Feature{
+							{Name: feature.FeatureFlexSlot, Data: []string{"20x30", "50x50"}},
+						},
+					},
+				}
+			}(),
+			want: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -259,6 +275,19 @@ func TestSetFlexSlotSizes(t *testing.T) {
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
 			shouldChange: false,
+		},
+		{
+			name: "flexslot but nil banner format",
+			args: args{
+				banner: &openrtb2.Banner{Format: nil},
+				rCtx: models.RequestCtx{
+					GoogleSDK: models.GoogleSDK{
+						FlexSlot: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
+					},
+				},
+			},
+			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
+			shouldChange: true,
 		},
 	}
 

@@ -206,7 +206,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				if rctx.ClientConfigFlag == 1 {
 					bidExt.Video.ClientConfig = adunitconfig.GetClientConfigForMediaType(rctx, impId, "video")
 				}
-			} else if impCtx.Banner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
+			} else if impCtx.IsBanner && bidExt.CreativeType == "banner" && rctx.ClientConfigFlag == 1 {
 				cc := adunitconfig.GetClientConfigForMediaType(rctx, impId, "banner")
 				if len(cc) != 0 {
 					if bidExt.Banner == nil {

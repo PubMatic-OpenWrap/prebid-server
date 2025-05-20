@@ -11,6 +11,9 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
+// GetFlexSlotSizes extracts compatible slot sizes for a banner based on
+// flexible slot constraints defined in the banner extension and available
+// banner sizes from the DB
 func GetFlexSlotSizes(banner *openrtb2.Banner, features feature.Features) []openrtb2.Format {
 	if banner == nil || banner.Ext == nil || features == nil {
 		return nil
@@ -26,22 +29,27 @@ func GetFlexSlotSizes(banner *openrtb2.Banner, features feature.Features) []open
 		return nil
 	}
 
-	var slotSizes []string
+	if bannerExt.Flexslot.Wmin > bannerExt.Flexslot.Wmax ||
+		bannerExt.Flexslot.Hmin > bannerExt.Flexslot.Hmax {
+		return nil
+	}
+
+	var bannerSizes []string
 	for i := range gsdkFeatures {
 		if gsdkFeatures[i].Name == feature.FeatureFlexSlot {
 			if sizes, ok := gsdkFeatures[i].Data.([]string); ok {
-				slotSizes = sizes
+				bannerSizes = sizes
 				break
 			}
 		}
 	}
 
-	if len(slotSizes) == 0 {
+	if len(bannerSizes) == 0 {
 		return nil
 	}
 
 	flexSlotSizes := make([]openrtb2.Format, 0)
-	for _, size := range slotSizes {
+	for _, size := range bannerSizes {
 		dimensions := strings.Split(size, "x")
 		if len(dimensions) != 2 {
 			continue
@@ -65,23 +73,21 @@ func GetFlexSlotSizes(banner *openrtb2.Banner, features feature.Features) []open
 	return flexSlotSizes
 }
 
-func checkSlotSizeExists(bannerFormat []openrtb2.Format, inputFormat openrtb2.Format) bool {
-	for _, format := range bannerFormat {
-		if format.W == inputFormat.W && format.H == inputFormat.H {
-			return true
-		}
-	}
-	return false
-}
-
 func SetFlexSlotSizes(banner *openrtb2.Banner, rCtx models.RequestCtx) {
-	if banner == nil || rCtx.GoogleSDK.FlexSlot == nil {
+	if banner == nil || len(rCtx.GoogleSDK.FlexSlot) == 0 {
 		return
 	}
 
-	for i := range rCtx.GoogleSDK.FlexSlot {
-		if !checkSlotSizeExists(banner.Format, rCtx.GoogleSDK.FlexSlot[i]) {
-			banner.Format = append(banner.Format, rCtx.GoogleSDK.FlexSlot[i])
+	existing := make(map[[2]int64]struct{}, len(banner.Format))
+	for _, f := range banner.Format {
+		existing[[2]int64{f.W, f.H}] = struct{}{}
+	}
+
+	for _, slot := range rCtx.GoogleSDK.FlexSlot {
+		key := [2]int64{slot.W, slot.H}
+		if _, found := existing[key]; !found {
+			banner.Format = append(banner.Format, slot)
+			existing[key] = struct{}{}
 		}
 	}
 }

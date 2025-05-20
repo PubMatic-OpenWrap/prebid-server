@@ -25,101 +25,82 @@ func newMockDB(t *testing.T) *mockDB {
 	return &mockDB{mock, db}
 }
 
-// Tests
-func TestLoadGoogleSDKFeatures_Success(t *testing.T) {
-	mock := newMockDB(t)
-	defer mock.Close()
+func TestLoadGoogleSDKFeatures(t *testing.T) {
+	type testCase struct {
+		name           string
+		setupMock      func(mock *mockDB)
+		expectedResult []Feature
+		expectNil      bool
+	}
 
-	rows := sqlmock.NewRows([]string{"slot_size"}).
-		AddRow("300x250").
-		AddRow("728x90")
-
-	mock.ExpectQuery("SELECT .* FROM banner_sizes").WillReturnRows(rows)
-
-	loader := &FeatureLoader{
-		db: mock.DB,
-		cfg: config.Database{
-			MaxDbContextTimeout: 100,
-			Queries: config.Queries{
-				GetBannerSizesQuery: "SELECT slot_size FROM banner_sizes",
+	tests := []testCase{
+		{
+			name: "Success",
+			setupMock: func(mock *mockDB) {
+				rows := sqlmock.NewRows([]string{"slot_size"}).
+					AddRow("300x250").
+					AddRow("728x90")
+				mock.ExpectQuery("SELECT .* FROM banner_sizes").WillReturnRows(rows)
 			},
+			expectedResult: []Feature{{
+				Name: FeatureFlexSlot,
+				Data: []string{"300x250", "728x90"},
+			}},
+			expectNil: false,
+		},
+		{
+			name: "QueryError",
+			setupMock: func(mock *mockDB) {
+				mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnError(errors.New("db error"))
+			},
+			expectNil: true,
+		},
+		{
+			name: "ScanError",
+			setupMock: func(mock *mockDB) {
+				rows := sqlmock.NewRows([]string{"slot_size"}).
+					AddRow(nil) // will cause Scan error for string
+				mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnRows(rows)
+			},
+			expectNil: true,
+		},
+		{
+			name: "RowsError",
+			setupMock: func(mock *mockDB) {
+				rows := sqlmock.NewRows([]string{"slot_size"}).
+					AddRow("300x250")
+				rows.RowError(0, errors.New("row error"))
+				mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnRows(rows)
+			},
+			expectNil: true,
 		},
 	}
 
-	features := loader.LoadGoogleSDKFeatures()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mock := newMockDB(t)
+			defer mock.Close()
+			tc.setupMock(mock)
 
-	assert.Len(t, features, 1)
-	assert.Equal(t, FeatureFlexSlot, features[0].Name)
-	assert.ElementsMatch(t, []string{"300x250", "728x90"}, features[0].Data)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
+			loader := &FeatureLoader{
+				db: mock.DB,
+				cfg: config.Database{
+					MaxDbContextTimeout: 100,
+					Queries: config.Queries{
+						GetBannerSizesQuery: "SELECT slot_size FROM banner_sizes",
+					},
+				},
+			}
 
-func TestLoadGoogleSDKFeatures_QueryError(t *testing.T) {
-	mock := newMockDB(t)
-	defer mock.Close()
-
-	mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnError(errors.New("db error"))
-
-	loader := &FeatureLoader{
-		db: mock.DB,
-		cfg: config.Database{
-			MaxDbContextTimeout: 100,
-			Queries: config.Queries{
-				GetBannerSizesQuery: "SELECT slot_size FROM banner_sizes",
-			},
-		},
+			features := loader.LoadGoogleSDKFeatures()
+			if tc.expectNil {
+				assert.Nil(t, features)
+			} else {
+				assert.Len(t, features, len(tc.expectedResult))
+				assert.Equal(t, tc.expectedResult[0].Name, features[0].Name)
+				assert.ElementsMatch(t, tc.expectedResult[0].Data, features[0].Data)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
 	}
-
-	features := loader.LoadGoogleSDKFeatures()
-	assert.Nil(t, features)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestLoadGoogleSDKFeatures_ScanError(t *testing.T) {
-	mock := newMockDB(t)
-	defer mock.Close()
-
-	rows := sqlmock.NewRows([]string{"slot_size"}).
-		AddRow(nil) // will cause Scan error for string
-
-	mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnRows(rows)
-
-	loader := &FeatureLoader{
-		db: mock.DB,
-		cfg: config.Database{
-			MaxDbContextTimeout: 100,
-			Queries: config.Queries{
-				GetBannerSizesQuery: "SELECT slot_size FROM banner_sizes",
-			},
-		},
-	}
-
-	features := loader.LoadGoogleSDKFeatures()
-	assert.Nil(t, features)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestLoadGoogleSDKFeatures_RowsError(t *testing.T) {
-	mock := newMockDB(t)
-	defer mock.Close()
-
-	rows := sqlmock.NewRows([]string{"slot_size"}).
-		AddRow("300x250")
-	rows.RowError(0, errors.New("row error"))
-
-	mock.ExpectQuery("SELECT slot_size FROM banner_sizes").WillReturnRows(rows)
-
-	loader := &FeatureLoader{
-		db: mock.DB,
-		cfg: config.Database{
-			MaxDbContextTimeout: 100,
-			Queries: config.Queries{
-				GetBannerSizesQuery: "SELECT slot_size FROM banner_sizes",
-			},
-		},
-	}
-
-	features := loader.LoadGoogleSDKFeatures()
-	assert.Nil(t, features)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }

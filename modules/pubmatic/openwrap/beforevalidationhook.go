@@ -600,6 +600,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		if rCtx.Endpoint == models.EndpointGoogleSDK {
 			rCtx.GoogleSDK.FlexSlot = googlesdk.GetFlexSlotSizes(imp.Banner, m.features)
+			incomingSlots = updateIncomingSlotsWithFormat(incomingSlots, rCtx.GoogleSDK.FlexSlot)
 		}
 
 		impExt.Wrapper = nil
@@ -626,7 +627,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidFloor:          imp.BidFloor,
 				BidFloorCur:       imp.BidFloorCur,
 				Type:              slotType,
-				Banner:            imp.Banner != nil,
+				IsBanner:          imp.Banner != nil,
+				Banner:            imp.Banner,
 				Video:             imp.Video,
 				Native:            imp.Native,
 				IncomingSlots:     incomingSlots,
