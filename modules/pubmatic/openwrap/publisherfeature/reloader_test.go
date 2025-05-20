@@ -67,6 +67,7 @@ func TestInitiateReloader(t *testing.T) {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 		},
 	}
@@ -76,6 +77,7 @@ func TestInitiateReloader(t *testing.T) {
 			cache:         tt.args.cache,
 			defaultExpiry: tt.args.defaultExpiry,
 			serviceStop:   make(chan struct{}),
+			mbmf:          newMBMF(),
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -146,6 +148,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
 					6: 100,
 				}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -190,6 +193,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -244,6 +248,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -310,6 +315,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 			},
 			want: want{
 				fsc: fsc{
@@ -427,6 +433,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					enabledPublishers: make(map[int]struct{}),
 				},
 				impCountingMethod: newImpCountingMethod(),
+				mbmf:              newMBMF(),
 			}
 			defer func() {
 				fe = nil

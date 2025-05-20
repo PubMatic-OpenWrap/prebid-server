@@ -120,7 +120,8 @@ type RequestCtx struct {
 	PriceGranularity                *openrtb_ext.PriceGranularity
 	IsMaxFloorsEnabled              bool
 	SendBurl                        bool
-	ImpCountingMethodEnabledBidders map[string]struct{} // Bidders who have enabled ImpCountingMethod feature
+	ImpCountingMethodEnabledBidders map[string]struct{}     // Bidders who have enabled ImpCountingMethod feature
+	MultiFloors                     map[string]*MultiFloors // impression level floors
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 
@@ -193,7 +194,6 @@ type ImpCtx struct {
 	BannerAdUnitCtx   AdUnitCtx
 	VideoAdUnitCtx    AdUnitCtx
 	NativeAdUnitCtx   AdUnitCtx
-
 	//temp
 	BidderError string
 
@@ -248,8 +248,7 @@ type FeatureData struct {
 }
 
 type AppLovinMax struct {
-	Reject            bool
-	MultiFloorsConfig MultiFloorsConfig
+	Reject bool
 }
 
 type MultiFloorsConfig struct {
@@ -262,6 +261,15 @@ type ApplovinAdUnitFloors map[string][]float64
 type WinningBids map[string][]*OwBid
 
 type HashSet map[string]struct{}
+
+type ProfileAdUnitMultiFloors map[int]map[string]*MultiFloors
+
+type MultiFloors struct {
+	IsActive bool    `json:"isActive,omitempty"`
+	Tier1    float64 `json:"tier1,omitempty"`
+	Tier2    float64 `json:"tier2,omitempty"`
+	Tier3    float64 `json:"tier3,omitempty"`
+}
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	var isWinningBid bool

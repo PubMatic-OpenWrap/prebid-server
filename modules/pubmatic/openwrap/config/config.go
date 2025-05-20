@@ -80,6 +80,7 @@ type Queries struct {
 	GetAppIntegrationPathMapQuery     string
 	GetAppSubIntegrationPathMapQuery  string
 	GetGDPRCountryCodes               string
+	GetProfileAdUnitMultiFloors       string
 }
 
 type Cache struct {

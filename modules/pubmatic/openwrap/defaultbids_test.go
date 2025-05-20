@@ -261,11 +261,10 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: false,
-						},
-					},
+					MultiFloors: nil,
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "bid-1",
 				},
 			},
 			want: map[string]map[string][]openrtb2.Bid{},
@@ -286,13 +285,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 							},
 						},
 					},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
@@ -351,14 +345,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 							},
 						},
 					},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
-					},
+					MultiFloors: map[string]*models.MultiFloors{},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
 							TagID: "adunit-2",
@@ -409,14 +396,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 							},
 						},
 					},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{},
-							},
-						},
-					},
+					MultiFloors: map[string]*models.MultiFloors{},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
 							TagID: "adunit-1",
@@ -457,13 +437,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
@@ -527,13 +502,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
@@ -607,13 +577,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
@@ -707,13 +672,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"adunit-1": []float64{1.1, 2.1, 3.1},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
 					},
 					ImpBidCtx: map[string]models.ImpCtx{
 						"test-impID-1": {
