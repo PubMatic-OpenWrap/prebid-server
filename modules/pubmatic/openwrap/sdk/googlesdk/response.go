@@ -105,7 +105,6 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 	}
 
 	bid.Ext, err = json.Marshal(bidExt)
-	fmt.Println("bidExt", string(bid.Ext))
 	if err != nil {
 		glog.Errorf("[googlesdk] bidExt:[%s] error:[%s]", bidExt, err.Error())
 	}
