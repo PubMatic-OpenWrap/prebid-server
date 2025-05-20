@@ -80,6 +80,7 @@ type Queries struct {
 	GetAppIntegrationPathMapQuery     string
 	GetAppSubIntegrationPathMapQuery  string
 	GetGDPRCountryCodes               string
+	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 }
 

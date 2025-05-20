@@ -302,7 +302,7 @@ func TestGetAdFormat(t *testing.T) {
 				},
 				bidExt: &BidExt{},
 				impCtx: &ImpCtx{
-					Banner: true,
+					IsBanner: true,
 				},
 			},
 			want: Banner,
@@ -344,9 +344,9 @@ func TestGetAdFormat(t *testing.T) {
 				},
 				bidExt: &BidExt{},
 				impCtx: &ImpCtx{
-					Banner: true,
-					Native: &openrtb2.Native{},
-					Video:  &openrtb2.Video{},
+					IsBanner: true,
+					Native:   &openrtb2.Native{},
+					Video:    &openrtb2.Video{},
 				},
 			},
 			want: Banner,

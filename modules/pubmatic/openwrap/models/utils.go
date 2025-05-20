@@ -108,7 +108,7 @@ func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 		return ""
 	}
 	if IsDefaultBid(bid) {
-		if impCtx.Banner {
+		if impCtx.IsBanner {
 			return Banner
 		}
 		if impCtx.Video != nil {
