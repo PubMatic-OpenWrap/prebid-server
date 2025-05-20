@@ -82,7 +82,6 @@ type Queries struct {
 	GetGDPRCountryCodes               string
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
-
 }
 
 type Cache struct {
