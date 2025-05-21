@@ -143,10 +143,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	// Country filter
 	if shouldApplyCountryFilter(rCtx.Endpoint) {
-		country := getCountryFromContext(rCtx)
-		if country != "" {
+		if rCtx.DeviceCtx.DerivedCountryCode != "" {
 			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
-			if !isCountryAllowed(country, mode, countryCodes) {
+			if !isCountryAllowed(rCtx.DeviceCtx.DerivedCountryCode, mode, countryCodes) {
 				result.Reject = true
 				result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
 				result.Errors = append(result.Errors, "Request rejected due to country filter")
