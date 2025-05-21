@@ -30,6 +30,7 @@ type feature struct {
 	appLovinMultiFloors appLovinMultiFloors
 	impCountingMethod   impCountingMethod
 	gdprCountryCodes    gdprCountryCodes
+	countryCodesMapping models.CountryCodesMapping
 }
 
 var fe *feature
@@ -91,6 +92,8 @@ var initReloader = func(fe *feature) {
 		fe.updateFeatureConfigMaps()
 		//update gdprCountryCodes
 		fe.updateGDPRCountryCodes()
+		//update country codes mapping
+		fe.updateCountryCodesMapping()
 		select {
 		case t := <-ticker.C:
 			glog.Info("Feature Reloader loads cache @", t)

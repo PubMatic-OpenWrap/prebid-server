@@ -20,4 +20,5 @@ type Database interface {
 	GetAppIntegrationPaths() (map[string]int, error)
 	GetAppSubIntegrationPaths() (map[string]int, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
+	GetCountryCodesMapping() (models.CountryCodesMapping, error)
 }

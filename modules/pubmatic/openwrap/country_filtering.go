@@ -10,6 +10,9 @@ func getCountryFromContext(rCtx models.RequestCtx) string {
 	if len(rCtx.DeviceCtx.Country) == 2 {
 		return rCtx.DeviceCtx.Country
 	}
+	if len(rCtx.DeviceCtx.Country) == 3 {
+		return ow.GetFeature().GetAlpha2Code(rCtx.DeviceCtx.Country)
+	}
 
 	return rCtx.DeviceCtx.DerivedCountryCode
 }
@@ -38,5 +41,5 @@ func isCountryAllowed(country string, mode string, countryCodes string) bool {
 }
 
 func shouldApplyCountryFilter(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
 }

@@ -559,6 +559,7 @@ const (
 	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
 	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
+	CountryCodesMappingQuery      = "GetCountryCodesMapping"
 )
 
 // constants for owlogger Integration Type

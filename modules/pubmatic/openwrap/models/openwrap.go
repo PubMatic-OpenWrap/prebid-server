@@ -263,6 +263,11 @@ type WinningBids map[string][]*OwBid
 
 type HashSet map[string]struct{}
 
+type CountryCodesMapping map[string]struct {
+	Alpha2Code  string `json:"alpha2_code"`
+	CountryCode string `json:"country_code"`
+}
+
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
 	var isWinningBid bool
 

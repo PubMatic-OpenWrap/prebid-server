@@ -13,4 +13,5 @@ type Feature interface {
 	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
 	GetImpCountingMethodEnabledBidders() map[string]struct{}
 	IsCountryGDPREnabled(countryCode string) bool
+	GetAlpha2Code(countryCode string) string
 }
