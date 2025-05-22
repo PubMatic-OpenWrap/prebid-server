@@ -28,7 +28,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -636,7 +635,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidFloorCur:       imp.BidFloorCur,
 				Type:              slotType,
 				IsBanner:          imp.Banner != nil,
-				Banner:            ortb.DeepCopyImpBanner(imp.Banner),
+				Banner:            imp.Banner,
 				Video:             imp.Video,
 				Native:            imp.Native,
 				IncomingSlots:     incomingSlots,
