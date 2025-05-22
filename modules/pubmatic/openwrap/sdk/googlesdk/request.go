@@ -11,6 +11,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -183,7 +184,7 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx) []byte {
+func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, features feature.Features) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
 	}
@@ -215,12 +216,35 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	// Set Tag Id
 	wrapperData.setTagId(sdkRequest)
 
+	// Google SDK specific modifications
+	modifyRequestWithGoogleFeature(sdkRequest, features)
+
 	modifiedRequest, err := json.Marshal(sdkRequest)
 	if err != nil {
 		return requestBody
 	}
 
 	return modifiedRequest
+}
+
+func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features feature.Features) {
+	if request == nil || len(request.Imp) == 0 || features == nil {
+		return
+	}
+
+	for i := range request.Imp {
+		if request.Imp[i].Banner == nil {
+			continue
+		}
+
+		bannerSizes := GetFlexSlotSizes(request.Imp[i].Banner, features)
+		if len(bannerSizes) == 0 {
+			continue
+		}
+
+		SetFlexSlotSizes(request.Imp[i].Banner, bannerSizes)
+	}
+
 }
 
 func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
