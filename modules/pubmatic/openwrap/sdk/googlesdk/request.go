@@ -233,18 +233,9 @@ func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features featu
 	}
 
 	for i := range request.Imp {
-		if request.Imp[i].Banner == nil {
-			continue
-		}
-
 		bannerSizes := GetFlexSlotSizes(request.Imp[i].Banner, features)
-		if len(bannerSizes) == 0 {
-			continue
-		}
-
 		SetFlexSlotSizes(request.Imp[i].Banner, bannerSizes)
 	}
-
 }
 
 func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
