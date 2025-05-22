@@ -7,7 +7,6 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -73,8 +72,8 @@ func GetFlexSlotSizes(banner *openrtb2.Banner, features feature.Features) []open
 	return flexSlotSizes
 }
 
-func SetFlexSlotSizes(banner *openrtb2.Banner, rCtx models.RequestCtx) {
-	if banner == nil || len(rCtx.GoogleSDK.FlexSlot) == 0 {
+func SetFlexSlotSizes(banner *openrtb2.Banner, flexSlots []openrtb2.Format) {
+	if banner == nil || len(flexSlots) == 0 {
 		return
 	}
 
@@ -83,7 +82,7 @@ func SetFlexSlotSizes(banner *openrtb2.Banner, rCtx models.RequestCtx) {
 		existing[[2]int64{f.W, f.H}] = struct{}{}
 	}
 
-	for _, slot := range rCtx.GoogleSDK.FlexSlot {
+	for _, slot := range flexSlots {
 		key := [2]int64{slot.W, slot.H}
 		if _, found := existing[key]; !found {
 			banner.Format = append(banner.Format, slot)

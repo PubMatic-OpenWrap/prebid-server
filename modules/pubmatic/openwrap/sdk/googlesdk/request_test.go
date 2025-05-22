@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -1103,6 +1104,7 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 		name           string
 		requestBody    string
 		setup          func()
+		features       feature.Features
 		expectedResult string
 		expectError    bool
 	}{
@@ -1343,6 +1345,103 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 				}
 			}`,
 		},
+		{
+			name: "Valid request with flexslot for banner",
+			requestBody: `{
+					"id": "123",
+					"imp": [{
+					    "id": "imp1",
+						"banner": {
+							"w": 300,
+							"h": 250,
+							"ext": {
+								"flexslot": {
+                        			"wmin": 10,
+                        			"wmax": 1000,
+                        			"hmin": 10,
+                        			"hmax": 1000
+                    			}
+							}
+						},
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}]
+				}`,
+			setup: nil,
+			features: feature.Features{
+				feature.FeatureNameGoogleSDK: []feature.Feature{
+					{
+						Name: feature.FeatureFlexSlot,
+						Data: []string{"320x90"},
+					},
+				},
+			},
+			expectedResult: `{
+					"id": "123",
+					"imp": [{
+						"id": "imp1",
+						"tagid": "tag-123",
+						"banner": {
+							"w": 300,
+							"h": 250,
+							"format": [{"w": 320, "h": 90}],
+							"ext": {
+								"flexslot": {
+                        			"wmin": 10,
+                        			"wmax": 1000,
+                        			"hmin": 10,
+                        			"hmax": 1000
+                    			}
+							}
+						},
+						"secure": 1,
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJhcHAiOnsiaWQiOiJhcHAtMTIzIn19"
+							}]
+						}
+					}],
+					"app": {
+						"publisher": {
+							"id": "12345"
+						}
+					},
+					"ext": {
+						"prebid": {
+							"bidderparams": {
+								"pubmatic": {
+									"wrapper": {
+										"profileid": 67890
+									}
+								}
+							}
+						}
+					}
+				}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1353,7 +1452,7 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 
 			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), models.RequestCtx{
 				MetricsEngine: mockEngine,
-			})
+			}, tt.features)
 
 			if tt.expectError {
 				assert.Equal(t, tt.expectedResult, string(result), "Actual and expected result does not match: %s", tt.name)

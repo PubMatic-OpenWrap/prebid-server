@@ -607,11 +607,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			rCtx.GoogleSDK.FlexSlot = googlesdk.GetFlexSlotSizes(imp.Banner, m.features)
-			incomingSlots = updateIncomingSlotsWithFormat(incomingSlots, rCtx.GoogleSDK.FlexSlot)
-		}
-
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -741,12 +736,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
-		}
-
-		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			for i := range ep.BidRequest.Imp {
-				googlesdk.SetFlexSlotSizes(ep.BidRequest.Imp[i].Banner, rctx)
-			}
 		}
 
 		if rctx.IsCTVRequest {
