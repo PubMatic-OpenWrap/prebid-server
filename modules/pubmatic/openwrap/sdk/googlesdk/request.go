@@ -11,8 +11,10 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
@@ -182,8 +184,13 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx) []byte {
+func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, features feature.Features) []byte {
 	if len(requestBody) == 0 {
+		return requestBody
+	}
+
+	sdkRequest := &openrtb2.BidRequest{}
+	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
 		return requestBody
 	}
 
@@ -193,14 +200,11 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
-	//Fetch Signal data
+	// Modify request with static data
+	modifyRequestWithStaticData(sdkRequest)
+
+	//Fetch Signal data and modify request
 	signalData := getSignalData(requestBody, rctx, wrapperData)
-
-	sdkRequest := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
-		return requestBody
-	}
-
 	modifyRequestWithSignalData(sdkRequest, signalData)
 
 	// Set Publisher Id
@@ -212,10 +216,8 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	// Set Tag Id
 	wrapperData.setTagId(sdkRequest)
 
-	// Remove metric
-	if len(sdkRequest.Imp) > 0 {
-		sdkRequest.Imp[0].Metric = nil
-	}
+	// Google SDK specific modifications
+	modifyRequestWithGoogleFeature(sdkRequest, features)
 
 	modifiedRequest, err := json.Marshal(sdkRequest)
 	if err != nil {
@@ -225,16 +227,59 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	return modifiedRequest
 }
 
-func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
-	if signalData == nil || request == nil {
+func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features feature.Features) {
+	if request == nil || len(request.Imp) == 0 || features == nil {
 		return
 	}
+
+	for i := range request.Imp {
+		bannerSizes := GetFlexSlotSizes(request.Imp[i].Banner, features)
+		SetFlexSlotSizes(request.Imp[i].Banner, bannerSizes)
+	}
+}
+
+func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
+	if len(request.Imp) == 0 {
+		return
+	}
+
+	// Always set secure to 1
+	request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
+
+	//Set gpid
+	if len(request.Imp[0].TagID) > 0 {
+		request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+	}
+
+	// Remove metric
+	if len(request.Imp) > 0 {
+		request.Imp[0].Metric = nil
+	}
+
+	// Remove banner if impression is rewarded and banner and video both are present
+	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
+		request.Imp[0].Banner = nil
+	}
+
+	// Remove native from request
+	request.Imp[0].Native = nil
+
+}
+
+func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
+	if request == nil || signalData == nil {
+		return
+	}
+
 	modifyImpression(request, signalData.Imp)
 	modifyApp(request, signalData.App)
 	modifyDevice(request, signalData.Device)
 	modifyRegs(request, signalData.Regs)
 	modifySource(request, signalData.Source)
 	modifyUser(request, signalData.User)
+
+	// Request Ext
+	request.Ext, _ = sdkutils.CopyPath(signalData.Ext, request.Ext, "wrapper", "clientconfig")
 }
 
 func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
@@ -279,7 +324,8 @@ func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "dsarequired")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "pubrender")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
-
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp_sid")
 }
 
 func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
@@ -350,10 +396,6 @@ func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner)
 	if len(signalBanner.API) > 0 {
 		requestBanner.API = signalBanner.API
 	}
-
-	if signalBanner.Vcm != nil {
-		requestBanner.Vcm = signalBanner.Vcm
-	}
 }
 
 func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
@@ -366,54 +408,54 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	}
 
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "versions")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "version")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
 	return requestImpExt
 }
 
 func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
-	requestImps := request.Imp
-	if len(requestImps) == 0 || len(signalImps) == 0 {
+	if len(request.Imp) == 0 || len(signalImps) == 0 {
 		return
 	}
 
-	signalImp := signalImps[0]
-	if signalImp.DisplayManager != "" {
-		requestImps[0].DisplayManager = signalImp.DisplayManager
+	if signalImps[0].DisplayManager != "" {
+		request.Imp[0].DisplayManager = signalImps[0].DisplayManager
 	}
 
-	if signalImp.DisplayManagerVer != "" {
-		requestImps[0].DisplayManagerVer = signalImp.DisplayManagerVer
+	if signalImps[0].DisplayManagerVer != "" {
+		request.Imp[0].DisplayManagerVer = signalImps[0].DisplayManagerVer
 	}
 
 	// Update clickbrowser
 	// TODO: This is shallow copy, check if we need deep copy
-	if signalImp.ClickBrowser != nil {
-		requestImps[0].ClickBrowser = signalImp.ClickBrowser
+	if signalImps[0].ClickBrowser != nil {
+		request.Imp[0].ClickBrowser = signalImps[0].ClickBrowser
 	}
 
 	// Update banner
-	modifyBanner(requestImps[0].Banner, signalImp.Banner)
+	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
 	// Update video (replace entire video object from signal except battr)
 	var battrVideo []adcom1.CreativeAttribute
-	if requestImps[0].Video != nil && len(requestImps[0].Video.BAttr) > 0 {
-		battrVideo = make([]adcom1.CreativeAttribute, len(requestImps[0].Video.BAttr))
-		copy(battrVideo, requestImps[0].Video.BAttr)
+	if request.Imp[0].Video != nil && len(request.Imp[0].Video.BAttr) > 0 {
+		battrVideo = make([]adcom1.CreativeAttribute, len(request.Imp[0].Video.BAttr))
+		copy(battrVideo, request.Imp[0].Video.BAttr)
 	}
 
-	if signalImp.Video != nil {
-		requestImps[0].Video = signalImp.Video
+	if signalImps[0].Video != nil {
+		request.Imp[0].Video = signalImps[0].Video
 		if len(battrVideo) > 0 {
-			requestImps[0].Video.BAttr = battrVideo
+			request.Imp[0].Video.BAttr = battrVideo
 		}
 	}
 
 	// Update native
-	requestImps[0].Native = signalImp.Native
+	request.Imp[0].Native = signalImps[0].Native
+	if request.Imp[0].Native != nil {
+		request.Imp[0].Native.Request = string(jsonparser.Delete([]byte(request.Imp[0].Native.Request), "privacy"))
+	}
 
 	// Update imp extension
-	requestImps[0].Ext = modifyImpExtension(requestImps[0].Ext, signalImps[0].Ext)
-
-	//Set gpid
-	requestImps[0].Ext, _ = jsonparser.Set(requestImps[0].Ext, []byte(strconv.Quote(requestImps[0].TagID)), "gpid")
+	request.Imp[0].Ext = modifyImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
 }

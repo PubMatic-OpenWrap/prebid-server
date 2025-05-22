@@ -302,7 +302,7 @@ func TestGetAdFormat(t *testing.T) {
 				},
 				bidExt: &BidExt{},
 				impCtx: &ImpCtx{
-					Banner: true,
+					IsBanner: true,
 				},
 			},
 			want: Banner,
@@ -344,9 +344,9 @@ func TestGetAdFormat(t *testing.T) {
 				},
 				bidExt: &BidExt{},
 				impCtx: &ImpCtx{
-					Banner: true,
-					Native: &openrtb2.Native{},
-					Video:  &openrtb2.Video{},
+					IsBanner: true,
+					Native:   &openrtb2.Native{},
+					Video:    &openrtb2.Video{},
 				},
 			},
 			want: Banner,
@@ -1594,6 +1594,60 @@ func TestGetIP(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("GetIP() got = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestGetMultiFloors(t *testing.T) {
+	tests := []struct {
+		name  string
+		rctx  *RequestCtx
+		impID string
+		want  []float64
+	}{
+		{
+			name: "nil rctx.MultiFloors",
+			rctx: &RequestCtx{
+				MultiFloors: nil,
+			},
+			impID: "123",
+			want:  nil,
+		},
+		{
+			name: "impID not present in rctx.MultiFloors",
+			rctx: &RequestCtx{
+				MultiFloors: map[string]*MultiFloors{
+					"123": {Tier1: 1.0, Tier2: 0.8, Tier3: 0.6},
+				},
+			},
+			impID: "456",
+			want:  nil,
+		},
+		{
+			name: "impID present and multifloors nil",
+			rctx: &RequestCtx{
+				MultiFloors: map[string]*MultiFloors{
+					"123": nil,
+				},
+			},
+			impID: "123",
+			want:  nil,
+		},
+		{
+			name: "impID present with multifloors",
+			rctx: &RequestCtx{
+				MultiFloors: map[string]*MultiFloors{
+					"123": {Tier1: 1.0, Tier2: 0.8, Tier3: 0.6},
+				},
+			},
+			impID: "123",
+			want:  []float64{1.0, 0.8, 0.6},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetMultiFloors(tt.rctx.MultiFloors, tt.impID)
+			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }

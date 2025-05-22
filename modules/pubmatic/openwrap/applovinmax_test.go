@@ -893,7 +893,8 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 			name: "bidresponse contains NBR and debug is disabled",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: false,
+					Debug:    false,
+					Endpoint: models.EndpointAppLovinMax,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID:  "123",
@@ -908,7 +909,8 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 			name: "bidresponse contains NBR and debug is enabled",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: true,
+					Debug:    true,
+					Endpoint: models.EndpointAppLovinMax,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID:  "123",
@@ -923,7 +925,8 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 			name: "bidresponse seatbid is empty",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: false,
+					Debug:    false,
+					Endpoint: models.EndpointAppLovinMax,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID:      "123",
@@ -938,7 +941,8 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 			name: "bidresponse seatbid.bid is empty",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: false,
+					Debug:    false,
+					Endpoint: models.EndpointAppLovinMax,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",
@@ -957,7 +961,8 @@ func TestUpdateMaxApplovinResponse(t *testing.T) {
 			name: "No NBR and valid bidresponse",
 			args: args{
 				rctx: models.RequestCtx{
-					Debug: false,
+					Debug:    false,
+					Endpoint: models.EndpointAppLovinMax,
 				},
 				bidResponse: &openrtb2.BidResponse{
 					ID: "123",

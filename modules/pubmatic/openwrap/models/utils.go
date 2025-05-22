@@ -108,7 +108,7 @@ func GetAdFormat(bid *openrtb2.Bid, bidExt *BidExt, impCtx *ImpCtx) string {
 		return ""
 	}
 	if IsDefaultBid(bid) {
-		if impCtx.Banner {
+		if impCtx.IsBanner {
 			return Banner
 		}
 		if impCtx.Video != nil {
@@ -464,4 +464,14 @@ func GetBidAdjustmentValue(revShare float64) float64 {
 func ToFixed(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
+}
+
+func GetMultiFloors(multiFloors map[string]*MultiFloors, impID string) []float64 {
+	if multiFloors == nil {
+		return nil
+	}
+	if _, ok := multiFloors[impID]; !ok || multiFloors[impID] == nil {
+		return nil
+	}
+	return []float64{multiFloors[impID].Tier1, multiFloors[impID].Tier2, multiFloors[impID].Tier3}
 }

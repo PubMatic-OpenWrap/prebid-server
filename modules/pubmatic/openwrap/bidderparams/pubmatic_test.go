@@ -1601,13 +1601,8 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 							models.SERVER_SIDE_FLAG:    "1",
 						},
 					},
-					AppLovinMax: models.AppLovinMax{
-						MultiFloorsConfig: models.MultiFloorsConfig{
-							Enabled: true,
-							Config: models.ApplovinAdUnitFloors{
-								"/Test_Adunit1234": {1.5, 1.2, 2.2},
-							},
-						},
+					MultiFloors: map[string]*models.MultiFloors{
+						"111": {Tier1: 1.5, Tier2: 1.2, Tier3: 2.2},
 					},
 				},
 				cache: mockCache,

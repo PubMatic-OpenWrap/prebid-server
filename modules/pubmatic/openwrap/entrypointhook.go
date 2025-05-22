@@ -92,7 +92,7 @@ func (m OpenWrap) handleEntrypointHook(
 	if endpoint == models.EndpointGoogleSDK {
 		rCtx.MetricsEngine = m.metricEngine
 		// Update fields from signal
-		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx)
+		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx, m.features)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -193,8 +193,6 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubIDStr = pubIdStr
-	rCtx.AppLovinMax.MultiFloorsConfig = m.getApplovinMultiFloors(rCtx)
-
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
