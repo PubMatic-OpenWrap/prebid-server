@@ -6,14 +6,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func getCountryFromContext(rCtx models.RequestCtx) string {
-	if len(rCtx.DeviceCtx.Country) == 2 {
-		return rCtx.DeviceCtx.Country
-	}
-
-	return rCtx.DeviceCtx.DerivedCountryCode
-}
-
 func getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes string) {
 	mode = models.GetVersionLevelPropertyFromPartnerConfig(partnerConfigMap, models.CountryFilterModeKey)
 	if mode == "" {
@@ -38,5 +30,5 @@ func isCountryAllowed(country string, mode string, countryCodes string) bool {
 }
 
 func shouldApplyCountryFilter(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
 }
