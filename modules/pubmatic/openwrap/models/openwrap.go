@@ -133,7 +133,6 @@ type RequestCtx struct {
 type GoogleSDK struct {
 	Reject          bool
 	SDKRenderedAdID string
-	FlexSlot        []openrtb2.Format
 }
 
 type AdpodProfileConfig struct {
