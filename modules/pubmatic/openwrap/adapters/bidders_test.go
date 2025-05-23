@@ -3103,6 +3103,12 @@ func TestBuilderRise(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Valid Scenerio (oneOf org or publisher_id) is present with Optional field placementId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"org": "0", "placementId": "test"}}},
+			want:    json.RawMessage(`{"org": "0", "placementId": "test"}`),
+			wantErr: false,
+		},
+		{
 			name:    "Invalid Scenerio (None Of org or publisher_id) is present",
 			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
 			want:    json.RawMessage(``),
