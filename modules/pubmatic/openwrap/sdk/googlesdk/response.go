@@ -91,19 +91,6 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 	}
 	bid.AdM = ""
 
-	// update w and h with request sizes
-	if len(rctx.GoogleSDK.FlexSlot) > 0 {
-		if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok && impCtx.Banner != nil {
-			if len(impCtx.Banner.Format) > 0 {
-				bid.W = impCtx.Banner.Format[0].W
-				bid.H = impCtx.Banner.Format[0].H
-			} else if impCtx.Banner.W != nil && impCtx.Banner.H != nil {
-				bid.W = *impCtx.Banner.W
-				bid.H = *impCtx.Banner.H
-			}
-		}
-	}
-
 	bid.Ext, err = json.Marshal(bidExt)
 	if err != nil {
 		glog.Errorf("[googlesdk] bidExt:[%s] error:[%s]", bidExt, err.Error())

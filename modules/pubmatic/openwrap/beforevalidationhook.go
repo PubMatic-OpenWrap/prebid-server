@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -605,11 +606,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			rCtx.GoogleSDK.FlexSlot = googlesdk.GetFlexSlotSizes(imp.Banner, m.features)
-			incomingSlots = updateIncomingSlotsWithFormat(incomingSlots, rCtx.GoogleSDK.FlexSlot)
-		}
-
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -635,7 +631,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				BidFloorCur:       imp.BidFloorCur,
 				Type:              slotType,
 				IsBanner:          imp.Banner != nil,
-				Banner:            imp.Banner,
+				Banner:            ortb.DeepCopyImpBanner(imp.Banner),
 				Video:             imp.Video,
 				Native:            imp.Native,
 				IncomingSlots:     incomingSlots,
@@ -739,12 +735,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
-		}
-
-		if rCtx.Endpoint == models.EndpointGoogleSDK {
-			for i := range ep.BidRequest.Imp {
-				googlesdk.SetFlexSlotSizes(ep.BidRequest.Imp[i].Banner, rctx)
-			}
 		}
 
 		if rctx.IsCTVRequest {

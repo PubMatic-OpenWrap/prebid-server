@@ -7,7 +7,6 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
@@ -200,8 +199,8 @@ func TestGetFlexSlotSizes(t *testing.T) {
 }
 func TestSetFlexSlotSizes(t *testing.T) {
 	type args struct {
-		banner *openrtb2.Banner
-		rCtx   models.RequestCtx
+		banner    *openrtb2.Banner
+		flexSlots []openrtb2.Format
 	}
 	tests := []struct {
 		name         string
@@ -213,26 +212,26 @@ func TestSetFlexSlotSizes(t *testing.T) {
 		{
 			name: "nil banner",
 			args: args{
-				banner: nil,
-				rCtx:   models.RequestCtx{},
+				banner:    nil,
+				flexSlots: []openrtb2.Format{},
 			},
 			expected:     nil,
 			shouldChange: false,
 		},
 		{
-			name: "nil FlexSlot in rCtx.GoogleSDK",
+			name: "nil FlexSlot",
 			args: args{
-				banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
-				rCtx:   models.RequestCtx{},
+				banner:    &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
+				flexSlots: nil,
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}},
 			shouldChange: false,
 		},
 		{
-			name: "empty FlexSlot in rCtx.GoogleSDK",
+			name: "empty FlexSlot",
 			args: args{
-				banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
-				rCtx:   models.RequestCtx{GoogleSDK: models.GoogleSDK{FlexSlot: []openrtb2.Format{}}},
+				banner:    &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
+				flexSlots: []openrtb2.Format{},
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}},
 			shouldChange: false,
@@ -240,12 +239,8 @@ func TestSetFlexSlotSizes(t *testing.T) {
 		{
 			name: "FlexSlot with new sizes",
 			args: args{
-				banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
-				rCtx: models.RequestCtx{
-					GoogleSDK: models.GoogleSDK{
-						FlexSlot: []openrtb2.Format{{W: 30, H: 40}, {W: 50, H: 60}},
-					},
-				},
+				banner:    &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}}},
+				flexSlots: []openrtb2.Format{{W: 30, H: 40}, {W: 50, H: 60}},
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}, {W: 50, H: 60}},
 			shouldChange: true,
@@ -253,12 +248,8 @@ func TestSetFlexSlotSizes(t *testing.T) {
 		{
 			name: "FlexSlot with duplicate and new sizes",
 			args: args{
-				banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}}},
-				rCtx: models.RequestCtx{
-					GoogleSDK: models.GoogleSDK{
-						FlexSlot: []openrtb2.Format{{W: 30, H: 40}, {W: 50, H: 60}},
-					},
-				},
+				banner:    &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}}},
+				flexSlots: []openrtb2.Format{{W: 30, H: 40}, {W: 50, H: 60}},
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}, {W: 50, H: 60}},
 			shouldChange: true,
@@ -266,12 +257,8 @@ func TestSetFlexSlotSizes(t *testing.T) {
 		{
 			name: "FlexSlot with all duplicates",
 			args: args{
-				banner: &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}}},
-				rCtx: models.RequestCtx{
-					GoogleSDK: models.GoogleSDK{
-						FlexSlot: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
-					},
-				},
+				banner:    &openrtb2.Banner{Format: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}}},
+				flexSlots: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
 			shouldChange: false,
@@ -279,12 +266,8 @@ func TestSetFlexSlotSizes(t *testing.T) {
 		{
 			name: "flexslot but nil banner format",
 			args: args{
-				banner: &openrtb2.Banner{Format: nil},
-				rCtx: models.RequestCtx{
-					GoogleSDK: models.GoogleSDK{
-						FlexSlot: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
-					},
-				},
+				banner:    &openrtb2.Banner{Format: nil},
+				flexSlots: []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
 			},
 			expected:     []openrtb2.Format{{W: 10, H: 20}, {W: 30, H: 40}},
 			shouldChange: true,
@@ -299,7 +282,7 @@ func TestSetFlexSlotSizes(t *testing.T) {
 				orig = make([]openrtb2.Format, len(tt.args.banner.Format))
 				copy(orig, tt.args.banner.Format)
 			}
-			SetFlexSlotSizes(tt.args.banner, tt.args.rCtx)
+			SetFlexSlotSizes(tt.args.banner, tt.args.flexSlots)
 			if tt.args.banner == nil {
 				assert.Nil(t, tt.args.banner)
 				return
