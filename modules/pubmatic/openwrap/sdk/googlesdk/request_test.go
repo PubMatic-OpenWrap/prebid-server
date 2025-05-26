@@ -1643,6 +1643,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						Keywords: "sports,news",
 					},
 					Device: &openrtb2.Device{
+						IP:    "127.0.0.1",
 						UA:    "Mozilla/5.0",
 						Make:  "Samsung",
 						Model: "Galaxy",
@@ -1693,6 +1694,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 					Keywords: "sports,news",
 				},
 				Device: &openrtb2.Device{
+					IP:    "127.0.0.1",
 					UA:    "Mozilla/5.0",
 					Make:  "Samsung",
 					Model: "Galaxy",
