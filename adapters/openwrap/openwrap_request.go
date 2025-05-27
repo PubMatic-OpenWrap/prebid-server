@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
@@ -113,7 +114,6 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	for i := 0; i < len(request.Imp); i++ {
 		var impExt map[string]interface{}
-
 		if request.Imp[i].Ext != nil {
 			var err1 error
 			if err1 = json.Unmarshal(request.Imp[i].Ext, &impExt); err1 == nil {
@@ -129,6 +129,30 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 				}
 		} else{
 			request.Imp[i].Ext = nil
+		}
+
+		// Create the Native object and fill with the desired JSON string.
+		// This JSON string represents the native.request payload.
+		// Retrieve width and height from Banner object if available.
+		var width, height int64
+		if request.Imp[i].Banner != nil {
+			// Check if Banner has direct W and H values.
+			if request.Imp[i].Banner.W != nil && request.Imp[i].Banner.H != nil {
+				width = *request.Imp[i].Banner.W
+				height = *request.Imp[i].Banner.H
+			} else if len(request.Imp[i].Banner.Format) > 0 {
+				// Fallback: use the first format's width and height, if present.
+				if request.Imp[i].Banner.Format[0].W > 0 && request.Imp[i].Banner.Format[0].H > 0 {
+					width = request.Imp[i].Banner.Format[0].W
+					height = request.Imp[i].Banner.Format[0].H
+				}
+			}
+		}
+		// Build the native request JSON with dynamic width and height values.
+		nativeReq := fmt.Sprintf(`{ "ver": "1.1", "assets": [ { "id": 1, "required": 1, "img": { "w": %d, "h": %d, "type": 3 } }, { "id": 2, "required": 1, "img": { "type": 1 } }, { "id": 12, "required": 1, "data": { "type": 2 } }], "eventtrackers": [ { "event": 1, "methods": [ 1, 2 ] } ] }`, width, height)
+		request.Imp[i].Native = &openrtb2.Native{
+			Request: nativeReq,
+			Ver:     "1.1",
 		}
 	}
 
@@ -165,5 +189,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Headers: headers,
 	}}, nil
 	}
+
+
 
 

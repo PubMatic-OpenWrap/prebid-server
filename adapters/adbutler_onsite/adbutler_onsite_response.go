@@ -22,11 +22,9 @@ type AdButlerBeacon struct {
 	TrackingUrl string `json:"url,omitempty"`
 }
 
-
 const (
 	MarkupInvalid openrtb2.MarkupType = 0
 )
-
 
 type Placement struct {
 	BannerID             string `json:"banner_id,omitempty"`
@@ -60,6 +58,19 @@ type AdSet struct {
 }
 
 type AdButlerOnsiteResponse map[string]AdSet
+
+func getCampaignId(response string) string {
+
+	// Regular expression to find the banner ID
+	re := regexp.MustCompile(`CID=(\d+)`)
+	matches := re.FindStringSubmatch(response)
+	bannerID := ""
+	if len(matches) > 1 {
+		// The banner ID is in the second element of matches
+		bannerID = matches[1]
+	}
+	return bannerID
+}
 
 func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 
@@ -181,19 +192,23 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				continue
 			}
 
-			var nURL, viewURL, clickURL string
+			var nURL, viewURL, clickURL, creativeURL string
+
+			campaignId := getCampaignId(adButlerBid.ViewableURL)
+
+			creativeURL = CreativeId_KEY + adButlerBid.BannerID + Ampersand + CampaignId_KEY + campaignId
 
 			if adButlerBid.EligibleURL != "" {
-				nURL = IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
 			} else if adButlerBid.AccupixelURL != "" {
-				nURL = IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL)
 			}
 
 			if adButlerBid.ViewableURL != "" {
-				viewURL = VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL)
+				viewURL = creativeURL + Ampersand + VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL)
 			}
 			if adButlerBid.RedirectURL != "" {
-				clickURL = CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL)
+				clickURL = creativeURL + Ampersand + CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL)
 			}
 
 			bidExt := &openrtb_ext.ExtBidCMOnsite{
@@ -208,9 +223,9 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				W:     int64(width),
 				H:     int64(height),
 				AdM:   adm,
-				MType:   adType,
-				Price: randomPriceInRange(),  //Temporary calculation
-				CrID: adButlerBid.BannerID,
+				MType: adType,
+				Price: randomPriceInRange(), //Temporary calculation
+				CrID:  adButlerBid.BannerID,
 			}
 
 			bidExtJSON, err1 := json.Marshal(bidExt)
@@ -236,20 +251,20 @@ func getADM(adButlerBid *Placement, width int, height int) (string, openrtb2.Mar
 	}
 
 	if adButlerBid.ImageURL != "" {
-		if(adButlerBid.Target != "") {
+		if adButlerBid.Target != "" {
 			result := strings.Replace(IMAGE_URL_TEMPLATE_TARGET, "REDIRECT_TARGET", adButlerBid.Target, 1)
 			result = fmt.Sprintf(result, adButlerBid.ImageURL)
-			if width == 0 && height == 0  {
+			if width == 0 && height == 0 {
 				result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
-			} 
+			}
 			return result, openrtb2.MarkupBanner
 		}
 		result := fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.ImageURL)
-		if width == 0 && height == 0  {
+		if width == 0 && height == 0 {
 			result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
-		} 
+		}
 		return result, openrtb2.MarkupBanner
-	} 
+	}
 
 	return "", MarkupInvalid
 }
@@ -319,8 +334,3 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
-
-
-
-
-

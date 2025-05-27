@@ -114,7 +114,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 
 	bidResponse := adapters.NewBidderResponseWithBidsCapacity(len(adButlerResp.Bids))
 	var commerceExt *openrtb_ext.ExtImpCMSponsored
-	var adbutlerID, zoneID, adbUID, keyToRemove string
+	var keyToRemove string
 	var configValueMap = make(map[string]string)
 
 	if len(request.Imp) > 0 {
@@ -122,18 +122,6 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 		for _, obj := range commerceExt.Bidder.CustomConfig {
 			configValueMap[obj.Key] = obj.Value
 		}
-
-		val, ok := configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ACCOUNT_ID]
-		if ok {
-			adbutlerID = val
-		}
-
-		val, ok = configValueMap[adapters.BIDDERDETAILS_PREFIX+BD_ZONE_ID]
-		if ok {
-			zoneID = val
-		}
-		adbUID = request.User.ID
-
 	}
 
 	for index, adButlerBid := range adButlerResp.Bids {
@@ -177,7 +165,7 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 			delete(productDetails, keyToRemove)
 		}
 
-		var impressionUrl, clickUrl, conversionUrl string
+		var impressionUrl, clickUrl string
 		for _, beacon := range adButlerBid.Beacons {
 			switch beacon.Type {
 			case BEACONTYPE_IMP:
@@ -189,12 +177,11 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 			}
 		}
 
-		conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
+		//conversionUrl = GenerateConversionUrl(adbutlerID, zoneID, adbUID, productid)
 		bidExt := &openrtb_ext.ExtBidCMSponsored{
 			ProductId:      productid,
 			ClickUrl:       clickUrl,
 			ClickPrice:     clickPrice,
-			ConversionUrl:  conversionUrl,
 			ProductDetails: productDetails,
 		}
 
@@ -256,3 +243,4 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
+

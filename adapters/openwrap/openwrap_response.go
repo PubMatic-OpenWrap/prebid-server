@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/buger/jsonparser"
@@ -17,13 +18,39 @@ import (
 
 const (
 	buyId               = "buyid"
-	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_blank'><img src='CONVERT_CREATIVE'></a></div>"
+	clickScript         = "<script>function handleAdClick_VALID_IMP_INDEX(redirectUrl, clickUrls) {clickUrls.forEach(url => { if (navigator.sendBeacon) { navigator.sendBeacon(url);} else {const img = new Image(); img.src = url; }});window.top.location.href = redirectUrl;}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
+	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
+	admActivateNative   = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
+	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
+	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
 )
 
 type pubmaticBidExt struct {
 	BidType           *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace       string               `json:"marketplace,omitempty"`
+}
+
+// Adm represents the top-level object for the adm.
+type Adm struct {
+	Ver    string  `json:"ver"`
+	Assets []Asset `json:"assets"`
+}
+// Asset represents an asset within the adm.
+type Asset struct {
+	Id   int         `json:"id"`
+	Data *AssetData  `json:"data,omitempty"`
+	Img  *AssetImage `json:"img,omitempty"`
+}
+// AssetData represents the data asset (e.g. text).
+type AssetData struct {
+	Value string `json:"value"`
+}
+// AssetImage represents the image asset (e.g. url, w, h).
+type AssetImage struct {
+	Url string `json:"url"`
+	W   int64    `json:"w"`
+	H   int64    `json:"h"`
 }
 
 func extractBillingURL(adm string) string {
@@ -114,13 +141,6 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bidType = getBidType(bidExt)
 			}
 
-			if bidType == openrtb_ext.BidTypeNative {
-				bid.AdM, err = getNativeAdm(bid.AdM)
-				if err != nil {
-					errs = append(errs, err)
-				}
-			}
-
 			bUrl := extractBillingURL(bid.AdM)
 			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
@@ -129,7 +149,72 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			}
 
 			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
-			bid.AdM = updatedAdmActivate
+			if bid.MType ==  openrtb2.MarkupBanner{
+				bid.AdM = updatedAdmActivate
+			} else if bid.MType ==  openrtb2.MarkupNative{
+				// Define a structure to unmarshal the adm string.
+				var admData struct {
+					Link struct {
+						URL string `json:"url"`
+						Clicktrackers []string `json:"clicktrackers"`
+					} `json:"link"`
+					Imptrackers []string `json:"imptrackers"`
+				}
+
+				var adm Adm
+				var width, height int64
+
+				err := json.Unmarshal([]byte(bid.AdM), &adm)
+				if err != nil {
+					continue
+				}
+				// Iterate over assets to find asset with id==1.
+				for _, asset := range adm.Assets {
+					if asset.Id == 1 && asset.Img != nil {
+						width = asset.Img.W
+						height = asset.Img.H
+					}
+				}
+
+				// Unmarshal the adm JSON string.
+				// Unmarshal the adm JSON string and check for errors.
+				if err := json.Unmarshal([]byte(bid.AdM), &admData); err != nil {
+					continue // or handle the error as appropriate
+				}
+				// Check if imptrackers and clicktrackers slices contain at least one element.
+				if len(admData.Imptrackers) == 0 {
+					continue // or handle the situation as needed
+				}
+				if len(admData.Link.Clicktrackers) == 0 {
+					continue // or handle the situation as needed
+				}
+				
+				// Extract the link URL.
+				linkURL := admData.Link.URL
+				impTrackersStr := admData.Imptrackers[0]
+				clickTrackersStr := admData.Link.Clicktrackers[0]
+	
+				updatedAdmActivate := strings.Replace(admActivateNative, "CONVERT_CREATIVE", bid.IURL, 1)
+				updatedAdmActivate = strings.Replace(updatedAdmActivate, "DSP_IMP_URL", impTrackersStr, 1)
+				if( len(admData.Imptrackers) > 1) {
+					updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
+				}
+				combinedClicks := "\"" + linkURL + "\",\""  + clickTrackersStr + "\""
+				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
+				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", combinedClicks, 1)
+				updatedAdmActivateNative := finalClickScript +  updatedAdmActivate
+				updatedAdmActivateNative = strings.Replace(updatedAdmActivateNative, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
+
+				bid.AdM = updatedAdmActivateNative
+				bid.MType = openrtb2.MarkupBanner
+				bid.BURL = ""
+				bidType = openrtb_ext.BidTypeBanner
+
+				if width != 0 && height != 0 {
+					bid.W = width
+					bid.H = height
+				} 
+			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
 				Bid:        &bid,
@@ -197,8 +282,5 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
-
-
 
 
