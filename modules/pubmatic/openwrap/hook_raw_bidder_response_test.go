@@ -701,7 +701,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "pubmatic")
+				}, "")
 				return seatNonBid
 			}(),
 		},
@@ -767,7 +767,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "pubmatic")
+				}, "")
 				return seatNonBid
 			}(),
 		},

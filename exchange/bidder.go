@@ -272,6 +272,7 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 			if bidResponse != nil {
 				recordOpenWrapBidResponseMetrics(bidder, bidResponse)
 
+				bidResponse.BidderName = bidderRequest.BidderName
 				reject := hookExecutor.ExecuteRawBidderResponseStage(bidResponse, string(bidder.BidderName))
 				if reject != nil {
 					errs = append(errs, reject)
