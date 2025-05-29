@@ -18,11 +18,13 @@ import (
 
 const (
 	buyId               = "buyid"
-	clickScript         = "<script>function handleAdClick_VALID_IMP_INDEX(redirectUrl, clickUrls) {clickUrls.forEach(url => { if (navigator.sendBeacon) { navigator.sendBeacon(url);} else {const img = new Image(); img.src = url; }});window.top.location.href = redirectUrl;}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
+	clickScript         = "<script>async function handleAdClick_VALID_IMP_INDEX(redirectUrl,clickUrls){const clickPromises=clickUrls.map(url=>new Promise(resolve=>{if(navigator.sendBeacon){const success=navigator.sendBeacon(url);resolve(success)}else{const img=new Image();img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src=url;setTimeout(()=>resolve(false),1000)}}));try{await Promise.all(clickPromises)}catch(error){}finally{window.top.location.href=redirectUrl}}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
 	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
 	admActivateNative   = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
 	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
+	admActivateBanner   = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a></div>"
+	thirdPartyTagCreative = "https://go.trader.ca/wp-content/uploads/2022/02/250X250.png"
 )
 
 type pubmaticBidExt struct {
@@ -51,6 +53,53 @@ type AssetImage struct {
 	Url string `json:"url"`
 	W   int64    `json:"w"`
 	H   int64    `json:"h"`
+}
+
+func replaceAdm(adm string, replace string) string {
+    // Regular expression to match content between {<script> and </script>}
+    re := regexp.MustCompile(`\{<script>.*?</script>\}`)
+    
+    // Replace matched content with the replacement string
+    newADM := re.ReplaceAllString(adm, replace)
+    
+    return newADM
+}
+
+func getScriptContent(adm string) (string) {
+    // Regular expression to match content between {<script> and </script>}
+    re := regexp.MustCompile(`\{<script>.*?</script>\}`)
+    
+    // Find the script content
+    scriptContent := re.FindString(adm)    
+    return scriptContent
+}
+
+func parseScriptContent(script string) (string, string, string) {
+    // Regular expressions for creativeId and campaignId
+    creativeIdRegex := regexp.MustCompile(`creativeId=(\d+)`)
+    campaignIdRegex := regexp.MustCompile(`campaignId=(\d+)`)
+    
+    // For clickurl, find everything between "clickurl=" and "</script>"
+    clickurlRegex := regexp.MustCompile(`clickurl=([^<]+)</script>`)
+    // Find creativeId
+    creativeId := ""
+    creativeIdMatch := creativeIdRegex.FindStringSubmatch(script)
+    if len(creativeIdMatch) > 1 {
+        creativeId = creativeIdMatch[1]
+    }
+    // Find campaignId
+    campaignId := ""
+    campaignIdMatch := campaignIdRegex.FindStringSubmatch(script)
+    if len(campaignIdMatch) > 1 {
+        campaignId = campaignIdMatch[1]
+    }
+    // Find clickurl
+    clickurl := ""
+    clickurlMatch := clickurlRegex.FindStringSubmatch(script)
+    if len(clickurlMatch) > 1 {
+        clickurl = clickurlMatch[1]
+    }
+    return creativeId, campaignId, clickurl
 }
 
 func extractBillingURL(adm string) string {
@@ -147,9 +196,21 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			if activateCampaignId != "" {
 				bid.CID = activateCampaignId
 			}
+			if strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
+				updatedAdmActivate := strings.Replace(admActivateBanner, "CONVERT_CREATIVE", thirdPartyTagCreative, 1)
+				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 
-			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
-			if bid.MType ==  openrtb2.MarkupBanner{
+				scriptContent := getScriptContent( bid.AdM)
+				_, campaignId, clickUrl := parseScriptContent(scriptContent)
+				clickUrl = "\"" + clickUrl + "\"" 
+				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", clickUrl, 1)
+				updatedAdmActivate = finalClickScript +  updatedAdmActivate
+				updatedAdmActivate = strings.Replace(updatedAdmActivate, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
+				bid.CID = campaignId
+				bid.AdM = replaceAdm(bid.AdM, updatedAdmActivate)
+
+			} else if bid.MType ==  openrtb2.MarkupBanner{
+				updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
 				bid.AdM = updatedAdmActivate
 			} else if bid.MType ==  openrtb2.MarkupNative{
 				// Define a structure to unmarshal the adm string.
