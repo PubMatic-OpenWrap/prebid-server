@@ -3,6 +3,7 @@ package tracker
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
@@ -13,6 +14,7 @@ import (
 type trackerInjector interface {
 	Parse(vast string) error
 	Inject(videoParams []models.OWTracker, skipTracker bool) (string, error)
+	UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error)
 }
 
 type etreeTrackerInjector struct {
@@ -146,6 +148,62 @@ func (ti *etreeTrackerInjector) newPricingNode(price float64, model string, curr
 	}
 	pricing.CreateAttr(models.VideoPricingCurrency, currencyStr)
 	return pricing
+}
+
+func (ti *etreeTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error) {
+	if len(adDomain) == 0 && len(adCat) == 0 {
+		return "", errors.New("advertiser domain and category are empty")
+	}
+	adElements := ti.doc.FindElements(models.VASTAdElement)
+	for _, adElement := range adElements {
+		adTypeElement := adElement.FindElement(models.AdWrapperElement)
+		if adTypeElement == nil {
+			adTypeElement = adElement.FindElement(models.AdInlineElement)
+		}
+
+		if adTypeElement != nil {
+			domain := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoAdDomainTag)
+			if domain != nil && len(adDomain) > 0 {
+				//Already Present
+				ti.updateDomainNode(domain, adDomain)
+			} else if len(adDomain) > 0 {
+				adTypeElement.InsertChild(nil, ti.newDomainNode(adDomain))
+			}
+			Cat := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoAdCatTag)
+			if Cat != nil && len(adCat) > 0 {
+				//Already Present
+				ti.updateCatNode(Cat, adCat)
+			} else if len(adCat) > 0 {
+				adTypeElement.InsertChild(nil, ti.newCatNode(adCat))
+			}
+
+		}
+	}
+	return ti.doc.WriteToString()
+}
+
+func (ti *etreeTrackerInjector) updateDomainNode(node *etree.Element, domain string) {
+	//Update Domain
+	node.Child = nil
+	node.SetText(fmt.Sprintf("<![CDATA[%v]]>", domain))
+}
+
+func (ti *etreeTrackerInjector) newDomainNode(domain string) *etree.Element {
+	domainElement := etree.NewElement(models.VideoAdDomainTag)
+	domainElement.SetText(fmt.Sprintf("<![CDATA[%v]]>", domain))
+	return domainElement
+}
+
+func (ti *etreeTrackerInjector) updateCatNode(node *etree.Element, cat []string) {
+	//Update Category
+	node.Child = nil
+	node.SetText(fmt.Sprintf("<![CDATA[%s]]>", strings.Join(cat, ",")))
+}
+
+func (ti *etreeTrackerInjector) newCatNode(cat []string) *etree.Element {
+	catElement := etree.NewElement(models.VideoAdCatTag)
+	catElement.SetText(fmt.Sprintf("<![CDATA[%s]]>", strings.Join(cat, ",")))
+	return catElement
 }
 
 type fastXMLTrackerInjector struct {
@@ -310,4 +368,54 @@ func GetTrackerInjector() trackerInjector {
 		return &fastXMLTrackerInjector{}
 	}
 	return &etreeTrackerInjector{}
+}
+
+func (ti *fastXMLTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error) {
+	if len(adDomain) == 0 && len(adCat) == 0 {
+		return "", errors.New("advertiser domain and category are empty")
+	}
+	adElements := ti.doc.SelectElements(ti.vastTag, "Ad")
+	for _, adElement := range adElements {
+		adTypeElement := ti.doc.SelectElement(adElement, "Wrapper")
+		if adTypeElement == nil {
+			adTypeElement = ti.doc.SelectElement(adElement, "InLine")
+		}
+		if adTypeElement != nil {
+			domain := ti.doc.SelectElement(adTypeElement, models.VideoTagLookupStart+models.VideoAdDomainTag)
+			if domain != nil && len(adDomain) > 0 {
+				//Already Present
+				ti.updateDomainNode(domain, adDomain)
+			} else if len(adDomain) > 0 {
+				ti.xu.AppendElement(adTypeElement, ti.newDomainNode(adDomain))
+			}
+			Cat := ti.doc.SelectElement(adTypeElement, models.VideoTagLookupStart+models.VideoAdCatTag)
+			if Cat != nil && len(adCat) > 0 {
+				//Already Present
+				ti.updateCatNode(Cat, adCat)
+			} else if len(adCat) > 0 {
+				ti.xu.AppendElement(adTypeElement, ti.newCatNode(adCat))
+			}
+		}
+	}
+	return ti.xu.String(), nil
+
+}
+
+func (ti *fastXMLTrackerInjector) newDomainNode(domain string) *fastxml.XMLElement {
+	domainElement := fastxml.NewElement(models.VideoAdDomainTag)
+	domainElement.SetText(fmt.Sprintf("<![CDATA[%v]]>", domain), true, fastxml.NoEscaping)
+	return domainElement
+}
+func (ti *fastXMLTrackerInjector) updateDomainNode(node *fastxml.Element, domain string) {
+	ti.xu.UpdateText(node, fmt.Sprintf("<![CDATA[%v]]>", domain), true, fastxml.NoEscaping)
+}
+
+func (ti *fastXMLTrackerInjector) newCatNode(cat []string) *fastxml.XMLElement {
+	catElement := fastxml.NewElement(models.VideoAdCatTag)
+	catElement.SetText(fmt.Sprintf("<![CDATA[%v]]>", cat), true, fastxml.NoEscaping)
+	return catElement
+}
+
+func (ti *fastXMLTrackerInjector) updateCatNode(node *fastxml.Element, cat []string) {
+	ti.xu.UpdateText(node, fmt.Sprintf("<![CDATA[%v]]>", cat), true, fastxml.NoEscaping)
 }
