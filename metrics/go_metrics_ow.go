@@ -69,3 +69,7 @@ func (me *Metrics) RecordXMLParserResponseTime(parser string, method string, par
 // RecordXMLParserError records XML parsing errors
 func (me *Metrics) RecordXMLParserError(parser string, method string, param string) {
 }
+
+// RecordMBMFRequests as a noop
+func (me *Metrics) RecordMBMFRequests(publisherID string, errorCode int) {
+}

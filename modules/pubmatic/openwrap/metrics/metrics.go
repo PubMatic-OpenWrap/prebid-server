@@ -45,7 +45,6 @@ type MetricsEngine interface {
 	// CTV specific metrics (not implemented in openwrap module yet)
 	RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisher string, profile string)
 	RecordCTVRequests(endpoint string, platform string)
-	RecordMBMFRequests(publisherID string, errorCode int)
 	RecordCTVHTTPMethodRequests(endpoint string, publisher string, method string)
 	RecordCTVInvalidReasonCount(errorCode int, publisher string)
 	RecordCTVReqImpsWithDbConfigCount(publisher string)
@@ -99,6 +98,7 @@ type MetricsEngine interface {
 	RecordFailedParsingItuneID(pubId, profId string)
 	RecordEndpointResponseSize(endpoint string, bodySize float64)
 	RecordGeoLookupFailure(endpoint string)
+	RecordMBMFRequests(pubId string, errorCode int)
 
 	//IBV metric
 	RecordIBVRequest(pubId, profId string)

@@ -1,6 +1,7 @@
 package prometheus
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/prebid/prebid-server/v3/config"
@@ -260,6 +261,13 @@ func (m *Metrics) RecordUnwrapRespTime(accountId, wraperCnt string, respTime tim
 		pubIdLabel:        accountId,
 		wrapperCountLabel: wraperCnt,
 	}).Observe(float64(respTime.Milliseconds()))
+}
+
+func (m *Metrics) RecordMBMFRequests(publisherID string, errorCode int) {
+	m.mbmfRequests.With(prometheus.Labels{
+		pubIDLabel: publisherID,
+		errorLabel: strconv.Itoa(errorCode),
+	}).Inc()
 }
 
 // RecordAdruleEnabled records count of request in which adrule is present based on pubid and profileid

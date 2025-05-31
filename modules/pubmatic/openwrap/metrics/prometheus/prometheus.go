@@ -83,7 +83,6 @@ type Metrics struct {
 
 	//CTV
 	ctvRequests                    *prometheus.CounterVec
-	mbmfRequests                   *prometheus.CounterVec
 	ctvHTTPMethodRequests          *prometheus.CounterVec
 	ctvInvalidReasonCount          *prometheus.CounterVec
 	ctvReqImpsWithDbConfigCount    *prometheus.CounterVec
@@ -105,6 +104,9 @@ type Metrics struct {
 
 	//geo lookup
 	geoLookUpFailure *prometheus.CounterVec
+
+	//MBMF
+	mbmfRequests *prometheus.CounterVec
 }
 
 const (
@@ -690,12 +692,6 @@ func (m *Metrics) RecordCTVRequests(endpoint string, platform string) {
 	}).Inc()
 }
 
-func (m *Metrics) RecordMBMFRequests(publisherID string, errorCode int) {
-	m.mbmfRequests.With(prometheus.Labels{
-		pubIDLabel: publisherID,
-		errorLabel: strconv.Itoa(errorCode),
-	}).Inc()
-}
 
 func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string) {
 	m.ctvHTTPMethodRequests.With(prometheus.Labels{
