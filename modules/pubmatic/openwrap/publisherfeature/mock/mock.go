@@ -105,7 +105,6 @@ func (mr *MockFeatureMockRecorder) GetMBMFPhase1PubId() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFPhase1PubId", reflect.TypeOf((*MockFeature)(nil).GetMBMFPhase1PubId))
 }
 
-
 // IsAmpMultiformatEnabled mocks base method.
 func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
@@ -226,7 +225,6 @@ func (m *MockFeature) IsMBMFPublisherEnabled(arg0 int) bool {
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
-
 
 // IsPubIdMBMFPhase1Enabled mocks base method.
 func (m *MockFeature) IsPubIdMBMFPhase1Enabled(arg0 int) bool {
