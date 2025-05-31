@@ -676,11 +676,6 @@ func builderRise(params BidderParameters) (json.RawMessage, error) {
 		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, oneOf)
 	}
 
-	//optional placementId param
-	if placementID, ok := getString(params.FieldMap["placementId"]); ok {
-		fmt.Fprintf(&jsonStr, `,"placementId":"%s"`, placementID)
-	}
-
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
