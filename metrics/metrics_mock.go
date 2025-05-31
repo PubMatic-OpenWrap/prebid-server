@@ -246,4 +246,3 @@ func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 func (me *MetricsEngineMock) RecordFloorStatus(pubId, source, code string) {
 	me.Called(pubId, source, code)
 }
-
