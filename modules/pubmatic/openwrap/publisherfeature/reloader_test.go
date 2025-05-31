@@ -68,6 +68,7 @@ func TestInitiateReloader(t *testing.T) {
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(map[int]struct{}{}, nil)
 			},
 		},
 	}

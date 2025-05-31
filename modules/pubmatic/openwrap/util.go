@@ -651,6 +651,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
 	}
 
+	//ad unit level MBMF not found. Hence, looking up at adformat level
 	if adunitFormat != "" {
 		//return adunitformat multifloors for pubid, if not present then return default multifloors
 		multiFloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)

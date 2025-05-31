@@ -2255,9 +2255,9 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			want: nil,
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
+				mockEngine.EXPECT().RecordMBMFRequests("5890", 2)
 				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(false)
-				mockEngine.EXPECT().RecordMBMFRequests("5890", 2)
 			},
 		},
 		{
@@ -2278,11 +2278,11 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(false)
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 3)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2304,7 +2304,6 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2314,6 +2313,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 4)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2340,7 +2340,6 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3.1,
 			},
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2353,6 +2352,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 0)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2379,7 +2379,6 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3.1,
 			},
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2398,6 +2397,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 0)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2424,7 +2424,6 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3,
 			},
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2443,6 +2442,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 0)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2468,7 +2468,6 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3,
 			},
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
 					"adunit1234": {
@@ -2480,6 +2479,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 0)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
@@ -2500,11 +2500,11 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 6)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
