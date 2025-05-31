@@ -737,8 +737,8 @@ func (m *Metrics) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 // RecordMBMFRequests records count of request in which MBMF is present based on pubid and errorcode
 func (m *Metrics) RecordMBMFRequests(pubId string, errorCode int) {
 	m.mbmfRequests.With(prometheus.Labels{
-		pubIdLabel:     pubId,
-		errorCodeLabel: strconv.Itoa(errorCode),
+		pubIDLabel: pubId,
+		errorLabel: strconv.Itoa(errorCode),
 	}).Inc()
 }
 
