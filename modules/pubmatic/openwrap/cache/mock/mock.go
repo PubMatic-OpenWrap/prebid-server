@@ -141,6 +141,21 @@ func (mr *MockCacheMockRecorder) GetGDPRCountryCodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGDPRCountryCodes", reflect.TypeOf((*MockCache)(nil).GetGDPRCountryCodes))
 }
 
+// GetMBMFPhase1PubId mocks base method.
+func (m *MockCache) GetMBMFPhase1PubId() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMBMFPhase1PubId")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMBMFPhase1PubId indicates an expected call of GetMBMFPhase1PubId.
+func (mr *MockCacheMockRecorder) GetMBMFPhase1PubId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFPhase1PubId", reflect.TypeOf((*MockCache)(nil).GetMBMFPhase1PubId))
+}
+
 // GetMappingsFromCacheV25 mocks base method.
 func (m *MockCache) GetMappingsFromCacheV25(arg0 models.RequestCtx, arg1 int) map[string]models.SlotMapping {
 	m.ctrl.T.Helper()

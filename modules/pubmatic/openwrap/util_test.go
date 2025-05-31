@@ -2233,6 +2233,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			want: nil,
 			setup: func() {
 				mockFeature.EXPECT().IsMBMFCountry("IN").Return(false)
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2251,6 +2252,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			setup: func() {
 				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(false)
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2273,6 +2275,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(false)
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2301,6 +2304,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						IsActive: false,
 					},
 				})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2337,6 +2341,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						Tier3:    3.1,
 					},
 				})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2379,6 +2384,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 					Tier2:    2.1,
 					Tier3:    3.1,
 				})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2421,6 +2427,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 					Tier2:    2,
 					Tier3:    3,
 				})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2455,6 +2462,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						Tier3:    3,
 					},
 				})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 		{
@@ -2477,6 +2485,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
 	}

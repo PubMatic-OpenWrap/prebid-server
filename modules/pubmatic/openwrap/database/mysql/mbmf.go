@@ -48,3 +48,32 @@ func (db *mySqlDB) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloor
 	}
 	return profileAdUnitMultiFloors, nil
 }
+
+func (db *mySqlDB) GetMBMFPhase1PubId() (map[int]struct{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Millisecond*time.Duration(db.cfg.MaxDbContextTimeout)))
+	defer cancel()
+
+	rows, err := db.conn.QueryContext(ctx, db.cfg.Queries.GetMBMFPhase1PubId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		pubId int
+		// map to store the pubIds
+		pubIds = make(map[int]struct{})
+	)
+	for rows.Next() {
+		if err := rows.Scan(&pubId); err != nil {
+			glog.Errorf(models.ErrDBRowScanFailed, models.MBMFPhase1PubIdQuery, "", "", err.Error())
+			continue
+		}
+		pubIds[pubId] = struct{}{}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return pubIds, nil
+}

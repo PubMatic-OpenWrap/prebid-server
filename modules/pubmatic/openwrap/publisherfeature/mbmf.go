@@ -24,6 +24,10 @@ type mbmf struct {
 	index atomic.Int32
 }
 
+type mbmfPhase1PubId struct {
+	enabledPublishers map[int]struct{}
+}
+
 func newMBMF() *mbmf {
 	m := mbmf{
 		data: [2]mbmfData{
@@ -210,4 +214,19 @@ func extractMultiFloors(featureMap map[int]models.FeatureData, featureKey int, p
 		return &floors
 	}
 	return nil
+}
+
+func (fe *feature) updateMBMFPhase1PubId() {
+	pubIdMultiFloors, err := fe.cache.GetMBMFPhase1PubId()
+	if err != nil || pubIdMultiFloors == nil {
+		return
+	}
+	// assign fetched pubIds to the inactive map
+	fe.mbmfPhase1PubId.enabledPublishers = pubIdMultiFloors
+}
+
+// IsPubIdMBMFPhase1Enabled returns true if pubId is multi-floors enabled
+func (fe *feature) IsPubIdMBMFPhase1Enabled(pubId int) bool {
+	_, enabled := fe.mbmfPhase1PubId.enabledPublishers[pubId]
+	return enabled
 }

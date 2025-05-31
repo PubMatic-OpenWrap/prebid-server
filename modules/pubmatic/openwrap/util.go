@@ -613,8 +613,10 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
-		return nil
+	if !m.pubFeatures.IsPubIdMBMFPhase1Enabled(rctx.PubID) {
+		if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
+			return nil
+		}
 	}
 
 	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf

@@ -560,6 +560,7 @@ const (
 	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
 	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
 	ProfileAdUnitMultiFloorsQuery = "GetProfileAdUnitMultiFloors"
+	MBMFPhase1PubIdQuery          = "GetMBMFPhase1PubId"
 )
 
 // constants for owlogger Integration Type

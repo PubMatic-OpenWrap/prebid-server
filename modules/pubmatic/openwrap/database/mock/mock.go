@@ -245,3 +245,18 @@ func (mr *MockDatabaseMockRecorder) GetWrapperSlotMappings(arg0, arg1, arg2 inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWrapperSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetWrapperSlotMappings), arg0, arg1, arg2)
 }
+
+// GetMBMFPhase1PubId mocks base method.
+func (m *MockDatabase) GetMBMFPhase1PubId() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMBMFPhase1PubId")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMBMFPhase1PubId indicates an expected call of GetMBMFPhase1PubId.
+func (mr *MockDatabaseMockRecorder) GetMBMFPhase1PubId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFPhase1PubId", reflect.TypeOf((*MockDatabase)(nil).GetMBMFPhase1PubId))
+}
