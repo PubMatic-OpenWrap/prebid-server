@@ -222,11 +222,15 @@ func (fe *feature) updateMBMFPhase1PubId() {
 		return
 	}
 	// assign fetched pubIds to the inactive map
+	fe.Lock()
 	fe.mbmfPhase1PubId.enabledPublishers = pubIdMultiFloors
+	fe.Unlock()
 }
 
 // IsPubIdMBMFPhase1Enabled returns true if pubId is multi-floors enabled
 func (fe *feature) IsPubIdMBMFPhase1Enabled(pubId int) bool {
+	fe.RLock()
 	_, enabled := fe.mbmfPhase1PubId.enabledPublishers[pubId]
+	fe.RUnlock()
 	return enabled
 }

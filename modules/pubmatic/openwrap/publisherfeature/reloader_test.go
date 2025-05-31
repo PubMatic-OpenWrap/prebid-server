@@ -149,6 +149,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					6: 100,
 				}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(nil, errors.New("QUERY FAILED"))
 			},
 			want: want{
 				fsc: fsc{
@@ -194,6 +195,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(nil, errors.New("QUERY FAILED"))
 			},
 			want: want{
 				fsc: fsc{
@@ -249,6 +251,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(nil, errors.New("QUERY FAILED"))
 			},
 			want: want{
 				fsc: fsc{
@@ -316,6 +319,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(nil, errors.New("QUERY FAILED"))
 			},
 			want: want{
 				fsc: fsc{
@@ -384,6 +388,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetMBMFPhase1PubId().Return(nil, errors.New("QUERY FAILED"))
 			},
 			want: want{
 				fsc: fsc{
