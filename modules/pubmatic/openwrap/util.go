@@ -615,6 +615,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	if !m.pubFeatures.IsPubIdMBMFPhase1Enabled(rctx.PubID) {
 		if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
+			glog.Warning("MBMF is not enabled for pubid: %s, country: %s IID = %s", rctx.PubID, rctx.DeviceCtx.DerivedCountryCode, rctx.LoggerImpressionID)
 			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 1)
 			return nil
 		}

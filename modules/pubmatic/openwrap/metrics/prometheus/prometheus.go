@@ -692,7 +692,6 @@ func (m *Metrics) RecordCTVRequests(endpoint string, platform string) {
 	}).Inc()
 }
 
-
 func (m *Metrics) RecordCTVHTTPMethodRequests(endpoint string, publisherID string, method string) {
 	m.ctvHTTPMethodRequests.With(prometheus.Labels{
 		endpointLabel: endpoint,

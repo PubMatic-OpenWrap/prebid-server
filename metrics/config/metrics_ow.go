@@ -134,6 +134,7 @@ func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 // RecordMBMFRequests as a noop
 func (me *NilMetricsEngine) RecordMBMFRequests(pubid string, code int) {
 }
+
 // RecordRejectedBidsForBidder as a noop
 func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
 }
