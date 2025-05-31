@@ -45,11 +45,6 @@ func (me *MetricsEngineMock) RecordVastVersion(coreBidder, vastVersion string) {
 	me.Called(coreBidder, vastVersion)
 }
 
-// RecordMBMFRequests mock
-func (me *MetricsEngineMock) RecordMBMFRequests(pubid string, code int) {
-	me.Called(pubid, code)
-}
-
 // RecordVASTTagType mock
 func (me *MetricsEngineMock) RecordVASTTagType(bidder, vastTagType string) {
 	me.Called(bidder, vastTagType)
