@@ -83,6 +83,7 @@ type Metrics struct {
 
 	//CTV
 	ctvRequests                    *prometheus.CounterVec
+	mbmfRequests                   *prometheus.CounterVec
 	ctvHTTPMethodRequests          *prometheus.CounterVec
 	ctvInvalidReasonCount          *prometheus.CounterVec
 	ctvReqImpsWithDbConfigCount    *prometheus.CounterVec
@@ -335,6 +336,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"ctv_requests",
 		"Count of ctv requests",
 		[]string{endpointLabel, platformLabel},
+	)
+	metrics.mbmfRequests = newCounter(cfg, promRegistry,
+		"mbmf_requests",
+		"Count of mbmf requests with error code",
+		[]string{pubIDLabel, errorLabel},
 	)
 
 	metrics.ctvHTTPMethodRequests = newCounter(cfg, promRegistry,
@@ -681,6 +687,13 @@ func (m *Metrics) RecordCTVRequests(endpoint string, platform string) {
 	m.ctvRequests.With(prometheus.Labels{
 		endpointLabel: endpoint,
 		platformLabel: platform,
+	}).Inc()
+}
+
+func (m *Metrics) RecordMBMFRequests(publisherID string, errorCode int) {
+	m.mbmfRequests.With(prometheus.Labels{
+		pubIDLabel: publisherID,
+		errorLabel: strconv.Itoa(errorCode),
 	}).Inc()
 }
 

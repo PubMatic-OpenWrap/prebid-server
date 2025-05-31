@@ -16,6 +16,8 @@ type OWMetricsEngine interface {
 	RecordBids(pubid, profileid, bidder, deal string)
 	//RecordVastVersion record the count of vast version labelled by bidder and vast version
 	RecordVastVersion(coreBidder, vastVersion string)
+	//RecordMBMFRequests records the count of mbmf requests labelled by pubid and code
+	RecordMBMFRequests(pubid string, code int)
 	//RecordVASTTagType record the count of vast tag type labeled by bidder and vast tag
 	RecordVASTTagType(bidder, vastTagType string)
 

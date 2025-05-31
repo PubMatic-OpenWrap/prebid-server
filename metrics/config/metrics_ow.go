@@ -76,6 +76,13 @@ func (me *MultiMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 	}
 }
 
+// RecordMBMFRequests across all engines
+func (me *MultiMetricsEngine) RecordMBMFRequests(pubid string, code int) {
+	for _, thisME := range *me {
+		thisME.RecordMBMFRequests(pubid, code)
+	}
+}
+
 // RecordRejectedBidsForBidder across all engines
 func (me *MultiMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
 	for _, thisME := range *me {
@@ -124,6 +131,9 @@ func (me *NilMetricsEngine) RecordBids(pubid, profileid, biddder, deal string) {
 func (me *NilMetricsEngine) RecordVastVersion(biddder, vastVersion string) {
 }
 
+// RecordMBMFRequests as a noop
+func (me *NilMetricsEngine) RecordMBMFRequests(pubid string, code int) {
+}
 // RecordRejectedBidsForBidder as a noop
 func (me *NilMetricsEngine) RecordRejectedBidsForBidder(bidder openrtb_ext.BidderName) {
 }

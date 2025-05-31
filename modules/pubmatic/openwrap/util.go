@@ -615,6 +615,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	if !m.pubFeatures.IsPubIdMBMFPhase1Enabled(rctx.PubID) {
 		if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 1)
 			return nil
 		}
 	}
@@ -622,6 +623,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf
 	//if pub entry present as is_enabled=0 -> don't apply mbmf
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 2)
 		return nil
 	}
 
@@ -630,6 +632,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	adunitFormat := getAdunitFormat(reward, imp)
 	//don't apply mbmf if pub is not enabled for adunitFormat
 	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 3)
 		return nil
 	}
 
@@ -638,8 +641,10 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
 			//if profile adunitlevel floors present and is_active=0, don't apply mbmf
 			if !multifloors.IsActive {
+				m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 4)
 				return nil
 			}
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 0)
 			return multifloors
 		}
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
@@ -647,7 +652,15 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	if adunitFormat != "" {
 		//return adunitformat multifloors for pubid, if not present then return default multifloors
-		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+		multiFloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+		if multiFloors == nil {
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 5)
+			return nil
+		}
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 0)
+		return multiFloors
 	}
+
+	m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 6)
 	return nil
 }
