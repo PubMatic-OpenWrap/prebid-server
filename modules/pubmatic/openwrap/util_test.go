@@ -2488,6 +2488,40 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 			},
 		},
+		{
+			name: "phase_1_profile_All_country_request_should_be_allowed",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "IN",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID: "adunit1234",
+				},
+			},
+			want: &models.MultiFloors{
+				IsActive: true,
+				Tier1:    1,
+				Tier2:    2,
+				Tier3:    3,
+			},
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
+					"adunit1234": {
+						IsActive: true,
+						Tier1:    1,
+						Tier2:    2,
+						Tier3:    3,
+					},
+				})
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
