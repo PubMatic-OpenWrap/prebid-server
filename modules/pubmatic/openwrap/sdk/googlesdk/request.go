@@ -352,10 +352,6 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.JS = signalDevice.JS
 	}
 
-	if signalDevice.IP != "" {
-		request.Device.IP = signalDevice.IP
-	}
-
 	if signalDevice.Geo != nil {
 		request.Device.Geo = signalDevice.Geo
 	}

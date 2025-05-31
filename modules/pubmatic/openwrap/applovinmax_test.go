@@ -148,7 +148,7 @@ func TestUpdateDevice(t *testing.T) {
 		want *openrtb2.Device
 	}{
 		{
-			name: "sdkDevice_nil",
+			name: "sdkDevice nil",
 			args: args{
 				sdkDevice:  nil,
 				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
@@ -156,31 +156,7 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{DeviceType: 5},
 		},
 		{
-			name: "sdkDevice_has_ip",
-			args: args{
-				sdkDevice:  &openrtb2.Device{IP: "127.0.0.1"},
-				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
-			},
-			want: &openrtb2.Device{DeviceType: 5, IP: "127.0.0.1"},
-		},
-		{
-			name: "maxrequest_has_ip",
-			args: args{
-				sdkDevice:  nil,
-				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{IP: "10.0.0.1"}},
-			},
-			want: &openrtb2.Device{IP: "10.0.0.1"},
-		},
-		{
-			name: "sdkDevice_and_maxrequest_both_has_ip",
-			args: args{
-				sdkDevice:  &openrtb2.Device{IP: "127.0.0.1"},
-				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{IP: "10.0.0.1"}},
-			},
-			want: &openrtb2.Device{IP: "127.0.0.1"},
-		},
-		{
-			name: "sdkDevice_has_mccmnc_connectiontype",
+			name: "sdkDevice has mccmnc,connectiontype",
 			args: args{
 				sdkDevice:  &openrtb2.Device{MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr()},
 				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
@@ -188,7 +164,7 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{DeviceType: 5, MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr()},
 		},
 		{
-			name: "sdkDevice_has_model",
+			name: "sdkDevice has model",
 			args: args{
 				sdkDevice:  &openrtb2.Device{MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr(), Model: "phone"},
 				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
@@ -196,7 +172,7 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{DeviceType: 5, MCCMNC: "mccmnc", ConnectionType: adcom1.Connection2G.Ptr(), Model: "phone"},
 		},
 		{
-			name: "sdkDevice_has_ext_atts",
+			name: "sdkDeviceExt has atts",
 			args: args{
 				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"atts":3}`)},
 				maxRequest: &openrtb2.BidRequest{},
@@ -204,7 +180,7 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{Ext: json.RawMessage(`{"atts":3}`)},
 		},
 		{
-			name: "sdkDevice_has_geo_city_and_utcoffset",
+			name: "sdkDevice has geo city and utcoffset",
 			args: args{
 				sdkDevice:  &openrtb2.Device{Geo: &openrtb2.Geo{City: "Delhi", UTCOffset: 3}, Ext: json.RawMessage(`{"atts":3}`)},
 				maxRequest: &openrtb2.BidRequest{},
