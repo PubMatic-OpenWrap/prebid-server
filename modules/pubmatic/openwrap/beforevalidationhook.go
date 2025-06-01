@@ -342,8 +342,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// reuse the existing impExt instead of allocating a new one
-		reward := impExt.Reward
-		if reward != nil {
+		var reward *int8
+		if imp.Rwdd == 1 {
+			reward = openrtb2.Int8Ptr(1)
+		}
+		if reward == nil && impExt.Reward != nil {
+			reward = impExt.Reward
 			impExt.Prebid.IsRewardedInventory = reward
 		}
 		// if imp.ext.data.pbadslot is absent then set it to tagId
