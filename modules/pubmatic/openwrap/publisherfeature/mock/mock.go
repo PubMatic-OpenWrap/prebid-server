@@ -90,6 +90,21 @@ func (mr *MockFeatureMockRecorder) GetProfileAdUnitMultiFloors(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileAdUnitMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetProfileAdUnitMultiFloors), arg0)
 }
 
+// GetMBMFPhase1PubId mocks base method.
+func (m *MockFeature) GetMBMFPhase1PubId() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMBMFPhase1PubId")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMBMFPhase1PubId indicates an expected call of GetMBMFPhase1PubId.
+func (mr *MockFeatureMockRecorder) GetMBMFPhase1PubId() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMBMFPhase1PubId", reflect.TypeOf((*MockFeature)(nil).GetMBMFPhase1PubId))
+}
+
 // IsAmpMultiformatEnabled mocks base method.
 func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
 	m.ctrl.T.Helper()
@@ -209,6 +224,20 @@ func (m *MockFeature) IsMBMFPublisherEnabled(arg0 int) bool {
 	ret := m.ctrl.Call(m, "IsMBMFPublisherEnabled", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
+}
+
+// IsPubIdMBMFPhase1Enabled mocks base method.
+func (m *MockFeature) IsPubIdMBMFPhase1Enabled(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPubIdMBMFPhase1Enabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsPubIdMBMFPhase1Enabled indicates an expected call of IsPubIdMBMFPhase1Enabled.
+func (mr *MockFeatureMockRecorder) IsPubIdMBMFPhase1Enabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPubIdMBMFPhase1Enabled", reflect.TypeOf((*MockFeature)(nil).IsPubIdMBMFPhase1Enabled), arg0)
 }
 
 // IsMBMFPublisherEnabled indicates an expected call of IsMBMFPublisherEnabled.

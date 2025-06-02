@@ -31,6 +31,7 @@ type feature struct {
 	impCountingMethod   impCountingMethod
 	gdprCountryCodes    gdprCountryCodes
 	mbmf                *mbmf
+	mbmfPhase1PubId     mbmfPhase1PubId
 }
 
 var fe *feature
@@ -66,6 +67,9 @@ func New(config Config) *feature {
 			impCountingMethod: newImpCountingMethod(),
 			gdprCountryCodes:  newGDPRCountryCodes(),
 			mbmf:              newMBMF(),
+			mbmfPhase1PubId: mbmfPhase1PubId{
+				enabledPublishers: make(map[int]struct{}),
+			},
 		}
 	})
 	return fe
@@ -127,6 +131,8 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateApplovinMultiFloorsFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
+	//update phase1PubIdMultiFloors
+	fe.updateMBMFPhase1PubId()
 
 	if err != nil {
 		glog.Error(err.Error())

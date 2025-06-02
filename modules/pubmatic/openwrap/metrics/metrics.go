@@ -98,6 +98,7 @@ type MetricsEngine interface {
 	RecordFailedParsingItuneID(pubId, profId string)
 	RecordEndpointResponseSize(endpoint string, bodySize float64)
 	RecordGeoLookupFailure(endpoint string)
+	RecordMBMFRequests(pubId string, errorCode int)
 
 	//IBV metric
 	RecordIBVRequest(pubId, profId string)

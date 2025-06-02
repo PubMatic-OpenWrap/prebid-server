@@ -21,4 +21,5 @@ type Database interface {
 	GetAppSubIntegrationPaths() (map[string]int, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
+	GetMBMFPhase1PubId() (map[int]struct{}, error)
 }

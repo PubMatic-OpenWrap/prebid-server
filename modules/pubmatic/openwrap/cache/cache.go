@@ -22,6 +22,7 @@ type Cache interface {
 	GetAppSubIntegrationPaths() (map[string]int, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
+	GetMBMFPhase1PubId() (map[int]struct{}, error)
 
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)

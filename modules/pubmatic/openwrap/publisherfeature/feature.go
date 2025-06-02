@@ -18,4 +18,5 @@ type Feature interface {
 	IsMBMFEnabledForAdUnitFormat(pubID int, adUnitFormat string) bool
 	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) *models.MultiFloors
 	GetProfileAdUnitMultiFloors(profileID int) map[string]*models.MultiFloors
+	IsPubIdMBMFPhase1Enabled(pubID int) bool
 }

@@ -15,3 +15,14 @@ func (c *cache) GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, 
 	}
 	return profileAdUnitMultiFloors, nil
 }
+
+// GetMBMFPhase1PubId returns phase1pubidmultifloors fetched from DB which will be saved in publisherFeatureMap
+func (c *cache) GetMBMFPhase1PubId() (map[int]struct{}, error) {
+	pubIdMultiFloors, err := c.db.GetMBMFPhase1PubId()
+	if err != nil {
+		c.metricEngine.RecordDBQueryFailure(models.MBMFPhase1PubIdQuery, "", "")
+		glog.Errorf(models.ErrDBQueryFailed, models.MBMFPhase1PubIdQuery, "", "", err)
+		return pubIdMultiFloors, err
+	}
+	return pubIdMultiFloors, nil
+}
