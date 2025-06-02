@@ -4008,7 +4008,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 		fields fields
 		args   args
 		want   want
-		setup  func()
+		setup  func(mockEngine *mock_metrics.MockMetricsEngine)
 	}{
 		{
 			name: "request_with_sshb=1",
@@ -4111,7 +4111,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, "5890", getPubmaticErrorCode(nbr.InvalidRequestExt))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidRequestExt))
@@ -4142,7 +4142,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4190,7 +4190,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
@@ -4225,7 +4225,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4272,7 +4272,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4322,7 +4322,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4383,7 +4383,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4435,7 +4435,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4489,7 +4489,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4539,7 +4539,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4619,7 +4619,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4715,7 +4715,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PARTNER_ID:          "2",
@@ -4830,7 +4830,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 					2: {
 						models.PREBID_PARTNER_NAME: "appnexus",
@@ -4909,7 +4909,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -5030,7 +5030,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -5102,7 +5102,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, "1234", 18)
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
 			},
@@ -5130,7 +5130,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointV25, "1234", 18)
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("1234", 604)
 			},
@@ -5185,7 +5185,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -5302,7 +5302,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@0x0": {
 						SlotName: "adunit@0x0",
@@ -5439,7 +5439,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@0x0": {
 						SlotName: "adunit@0x0",
@@ -5545,7 +5545,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockEngine,
 			},
-			setup: func() {
+			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
 					"adunit@700x900": {
 						SlotName: "adunit@700x900",
@@ -5587,8 +5587,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsMBMFCountry(gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
+				mockFeature.EXPECT().IsApplovinMultiFloorsEnabled(5890, "1234").Return(false)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{"adunit": {IsActive: true, Tier1: 1.1, Tier2: 2.1, Tier3: 3.1}})
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockEngine.EXPECT().RecordMBMFRequests("5890", 0)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5608,7 +5610,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setup != nil {
-				tt.setup()
+				tt.setup(mockEngine)
 			}
 			m := OpenWrap{
 				cfg:             tt.fields.cfg,

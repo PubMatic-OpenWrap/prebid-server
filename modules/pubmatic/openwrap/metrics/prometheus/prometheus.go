@@ -104,6 +104,9 @@ type Metrics struct {
 
 	//geo lookup
 	geoLookUpFailure *prometheus.CounterVec
+
+	//MBMF
+	mbmfRequests *prometheus.CounterVec
 }
 
 const (
@@ -127,6 +130,7 @@ const (
 	adpodImpCountLabel = "adpod_imp_count"
 	bidderCodeLabel    = "bidder_code"
 	adapterCodeLabel   = "adapter_code"
+	errorCodeLabel     = "error_code"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
@@ -335,6 +339,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"ctv_requests",
 		"Count of ctv requests",
 		[]string{endpointLabel, platformLabel},
+	)
+
+	metrics.mbmfRequests = newCounter(cfg, promRegistry,
+		"mbmf_requests",
+		"Count of mbmf requests with error code",
+		[]string{pubIDLabel, errorLabel},
 	)
 
 	metrics.ctvHTTPMethodRequests = newCounter(cfg, promRegistry,
@@ -722,6 +732,14 @@ func (m *Metrics) RecordCTVReqCountWithAdPod(publisherID, profileID string) {
 	m.ctvReqCountWithAdPod.With(prometheus.Labels{
 		pubIdLabel:     publisherID,
 		profileIDLabel: profileID,
+	}).Inc()
+}
+
+// RecordMBMFRequests records count of request in which MBMF is present based on pubid and errorcode
+func (m *Metrics) RecordMBMFRequests(pubId string, errorCode int) {
+	m.mbmfRequests.With(prometheus.Labels{
+		pubIDLabel: pubId,
+		errorLabel: strconv.Itoa(errorCode),
 	}).Inc()
 }
 

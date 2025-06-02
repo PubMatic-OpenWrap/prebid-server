@@ -495,6 +495,13 @@ func (me *MultiMetricsEngine) RecordUnwrapRespTime(accountId, wraperCnt string, 
 	}
 }
 
+// RecordMBMFRequests record MBMF requests
+func (me *MultiMetricsEngine) RecordMBMFRequests(pubId string, errorCode int) {
+	for _, thisME := range *me {
+		thisME.RecordMBMFRequests(pubId, errorCode)
+	}
+}
+
 // RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
 func (me *MultiMetricsEngine) RecordAnalyticsTrackingThrottled(pubid, profileid, analyticsType string) {
 	for _, thisME := range *me {
