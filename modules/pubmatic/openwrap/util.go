@@ -63,6 +63,16 @@ var (
 	protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST30, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper}
 )
 
+const (
+	MBMFSuccess          = 0
+	MBMFCountryDisabled  = 1
+	MBMFPubDisabled      = 2
+	MBMFAdformatDisabled = 3
+	MBMFAdunitDisabled   = 4
+	MBMFAdformatNotFound = 5
+	MBMFNoEntryFound     = 6
+)
+
 func init() {
 	widthRegEx = regexp.MustCompile(models.MACRO_WIDTH)
 	heightRegEx = regexp.MustCompile(models.MACRO_HEIGHT)
@@ -615,8 +625,8 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	if !m.pubFeatures.IsPubIdMBMFPhase1Enabled(rctx.PubID) {
 		if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
-			glog.Warning("MBMF is not enabled for pubid: %s, country: %s IID = %s", rctx.PubID, rctx.DeviceCtx.DerivedCountryCode, rctx.LoggerImpressionID)
-			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 1)
+			glog.Warning("MBMF Country Filtering Applied for pubid: %s, country: %s IID = %s", rctx.PubID, rctx.DeviceCtx.DerivedCountryCode, rctx.LoggerImpressionID)
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFCountryDisabled)
 			return nil
 		}
 	}
@@ -624,7 +634,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf
 	//if pub entry present as is_enabled=0 -> don't apply mbmf
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
-		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 2)
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFPubDisabled)
 		return nil
 	}
 
@@ -633,7 +643,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	adunitFormat := getAdunitFormat(reward, imp)
 	//don't apply mbmf if pub is not enabled for adunitFormat
 	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
-		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 3)
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFAdformatDisabled)
 		return nil
 	}
 
@@ -642,10 +652,10 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
 			//if profile adunitlevel floors present and is_active=0, don't apply mbmf
 			if !multifloors.IsActive {
-				m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 4)
+				m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFAdunitDisabled)
 				return nil
 			}
-			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 0)
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFSuccess)
 			return multifloors
 		}
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
@@ -656,13 +666,13 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		//return adunitformat multifloors for pubid, if not present then return default multifloors
 		multiFloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
 		if multiFloors == nil {
-			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 5)
+			m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFAdformatNotFound)
 			return nil
 		}
-		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 0)
+		m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFSuccess)
 		return multiFloors
 	}
 
-	m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, 6)
+	m.metricEngine.RecordMBMFRequests(rctx.PubIDStr, MBMFNoEntryFound)
 	return nil
 }

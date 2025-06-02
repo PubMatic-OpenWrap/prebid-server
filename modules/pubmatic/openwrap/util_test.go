@@ -2234,9 +2234,9 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
-				mockFeature.EXPECT().IsMBMFCountry("IN").Return(false)
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 1)
+				mockFeature.EXPECT().IsMBMFCountry("IN").Return(false)
 			},
 		},
 		{
@@ -2256,8 +2256,8 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			setup: func(mockEngine *mock_metrics.MockMetricsEngine) {
 				mockFeature.EXPECT().IsPubIdMBMFPhase1Enabled(5890).Return(false)
 				mockEngine.EXPECT().RecordMBMFRequests("5890", 2)
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(false)
+				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
 			},
 		},
 		{
