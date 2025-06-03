@@ -3,8 +3,13 @@ package adbutler_onsite
 const (
 	RESPONSE_SUCCESS   = "SUCCESS"
 	RESPONSE_NOADS     = "NO_ADS"
-	IMAGE_URL_TEMPLATE = "<div id='%s' style='margin:0;padding:0;'><img src='%s' width='%s' height='%s'></div>"
-
+	IMAGE_URL_TEMPLATE = "<div style='margin:0;padding:0;'><a href='ACTUAL_CLICK_URL'><img src='%s'></a></div>"
+	IMAGE_URL_TEMPLATE_TARGET = "<div style='margin:0;padding:0;'><a href='ACTUAL_CLICK_URL' target='REDIRECT_TARGET'><img src='%s'></a></div>"
+	
+	DYNAMIC_IMAGE_URL_CLICKTEMPLATE = "<script>document.getElementById('IMPRESSION_ID').addEventListener('click', function handleAdClick(event){if(!event.target.closest('a')){window.open('ACTUAL_CLICK_URL');}}</script>"
+	DYNAMIC_IMAGE_URL_AHREFSTART = "<a href='ACTUAL_CLICK_URL'>"
+	DYNAMIC_IMAGE_URL_AHREFSTART_TARGET = "<a href='ACTUAL_CLICK_URL' target='REDIRECT_TARGET'>"
+	DYNAMIC_IMAGE_URL_AHREFEND   = "</a>"
 	Seat_AdbutlerOnsite        = "adbutler_onsite"
 	InventoryIDOnsite_Prefix   = "InventoryID_"
 	AdButler_Req_Type          = "json"
@@ -28,4 +33,8 @@ const (
 
 	Pattern_Click_URL = `href="(https?://[^\s]+/redirect\.spark\?[^"]+)"`
 )
+
+
+
+
 

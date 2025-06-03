@@ -3,11 +3,13 @@ package adbutler_onsite
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -56,7 +58,6 @@ type AdSet struct {
 }
 
 type AdButlerOnsiteResponse map[string]AdSet
-
 
 func getCampaignId(response string) string {
 
@@ -139,6 +140,18 @@ func (a *AdButlerOnsiteAdapter) MakeBids(internalRequest *openrtb2.BidRequest, e
 
 }
 
+// randomPriceInRange generates a random float64 in the range (1, 3] with two decimal precision.
+func randomPriceInRange() float64 {
+	// Seed the random number generator to ensure different results each time
+	rand.Seed(time.Now().UnixNano())
+
+	// Generate a random float64 in the range (1, 3]
+	randomValue := 1 + rand.Float64()*2
+
+	// Format the float to two decimal places and convert it back to float64
+	return float64(int(randomValue*100)) / 100
+}
+
 func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, adButlerResp *AdButlerOnsiteResponse, noOfBids int) *adapters.BidderResponse {
 
 	impIDMap := getImpIDMap(request)
@@ -162,8 +175,17 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			width, _ := strconv.Atoi(adButlerBid.Width)
 			height, _ := strconv.Atoi(adButlerBid.Height)
 
-			adm, adType := getADM(adButlerBid)
-
+			adm, adType := getADM(adButlerBid, width, height)
+			/*if adType == openrtb2.MarkupNative {
+				if adButlerBid.RedirectURL != "" && !strings.Contains(adm, "<a href=") {
+					if(adButlerBid.Target != "") {
+						result := strings.Replace(DYNAMIC_IMAGE_URL_AHREFSTART, "REDIRECT_TARGET", adButlerBid.Target, 1)
+						adm = result + adm + DYNAMIC_IMAGE_URL_AHREFEND
+					} else {
+						adm = DYNAMIC_IMAGE_URL_AHREFSTART + adm + DYNAMIC_IMAGE_URL_AHREFEND
+					}
+				}
+			}*/
 			adm = encodeRedirectURL(adm, Pattern_Click_URL, CLICK_KEY)
 
 			if adType == Adtype_Invalid {
@@ -173,9 +195,9 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			var nURL, viewURL, clickURL, creativeURL string
 
 			campaignId := getCampaignId(adButlerBid.ViewableURL)
-			
+
 			creativeURL = CreativeId_KEY + adButlerBid.BannerID + Ampersand + CampaignId_KEY + campaignId
-		
+
 			if adButlerBid.EligibleURL != "" {
 				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
 			} else if adButlerBid.AccupixelURL != "" {
@@ -202,9 +224,9 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				H:     int64(height),
 				AdM:   adm,
 				MType: adType,
+				Price: randomPriceInRange(), //Temporary calculation
+				CrID:  adButlerBid.BannerID,
 			}
-
-			adapters.AddDefaultFieldsComm(bid)
 
 			bidExtJSON, err1 := json.Marshal(bidExt)
 			if nil == err1 {
@@ -222,14 +244,26 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 	return bidResponse
 }
 
-func getADM(adButlerBid *Placement) (string, openrtb2.MarkupType) {
+func getADM(adButlerBid *Placement, width int, height int) (string, openrtb2.MarkupType) {
 
 	if adButlerBid.Body != "" {
-		return adButlerBid.Body, openrtb2.MarkupNative
+		return adButlerBid.Body, openrtb2.MarkupBanner
 	}
 
 	if adButlerBid.ImageURL != "" {
-		return fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.BannerID, adButlerBid.ImageURL, adButlerBid.Width, adButlerBid.Height), openrtb2.MarkupBanner
+		if adButlerBid.Target != "" {
+			result := strings.Replace(IMAGE_URL_TEMPLATE_TARGET, "REDIRECT_TARGET", adButlerBid.Target, 1)
+			result = fmt.Sprintf(result, adButlerBid.ImageURL)
+			if width == 0 && height == 0 {
+				result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
+			}
+			return result, openrtb2.MarkupBanner
+		}
+		result := fmt.Sprintf(IMAGE_URL_TEMPLATE, adButlerBid.ImageURL)
+		if width == 0 && height == 0 {
+			result = strings.Replace(result, "<img", "<img style='width:100%'", 1)
+		}
+		return result, openrtb2.MarkupBanner
 	}
 
 	return "", MarkupInvalid
@@ -300,4 +334,3 @@ func encodeRedirectURL(phrase, urlToSearch, preString string) string {
 	}
 	return modifiedPhrase
 }
-
