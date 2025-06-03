@@ -189,9 +189,6 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 				bidType = getBidType(bidExt)
 			}
-
-			bUrl := extractBillingURL(bid.AdM)
-			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
 			if activateCampaignId != "" {
 				bid.CID = activateCampaignId
