@@ -185,24 +185,24 @@ func (ti *etreeTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []str
 func (ti *etreeTrackerInjector) updateDomainNode(node *etree.Element, domain string) {
 	//Update Domain
 	node.Child = nil
-	node.SetText(fmt.Sprintf("<![CDATA[%v]]>", domain))
+	node.SetText(fmt.Sprintf("%v", domain))
 }
 
 func (ti *etreeTrackerInjector) newDomainNode(domain string) *etree.Element {
 	domainElement := etree.NewElement(models.VideoAdDomainTag)
-	domainElement.SetText(fmt.Sprintf("<![CDATA[%v]]>", domain))
+	domainElement.SetText(fmt.Sprintf("%v", domain))
 	return domainElement
 }
 
 func (ti *etreeTrackerInjector) updateCatNode(node *etree.Element, cat []string) {
 	//Update Category
 	node.Child = nil
-	node.SetText(fmt.Sprintf("<![CDATA[%s]]>", strings.Join(cat, ",")))
+	node.SetText(fmt.Sprintf("%v", strings.Join(cat, ",")))
 }
 
 func (ti *etreeTrackerInjector) newCatNode(cat []string) *etree.Element {
 	catElement := etree.NewElement(models.VideoAdCatTag)
-	catElement.SetText(fmt.Sprintf("<![CDATA[%s]]>", strings.Join(cat, ",")))
+	catElement.SetText(fmt.Sprintf("%v", strings.Join(cat, ",")))
 	return catElement
 }
 

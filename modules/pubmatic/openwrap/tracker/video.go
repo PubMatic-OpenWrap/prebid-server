@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
@@ -55,13 +56,23 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
 		creative, err := ti.Inject(videoParams, skipTracker)
-		if strictVastMode {
-			creative, err = ti.UpdateADMWithAdvCat(bid.ADomain[0], bid.Cat)
-		}
 		if err != nil {
 			//injection failure
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
+
+		if strictVastMode && (len(bid.ADomain) > 0 || len(bid.Cat) > 0) {
+			var domain string
+			if len(bid.ADomain) > 0 {
+				domain = bid.ADomain[0]
+			}
+
+			creative, err = ti.UpdateADMWithAdvCat(domain, bid.Cat)
+			if err != nil {
+				glog.Errorf("[PubId:%d] [ProfileId:%d]  creative [%s] Error updating ADM with advertiser/category:  %s", rctx.PubID, rctx.ProfileID, creative, err.Error())
+			}
+		}
+
 		bid.AdM = creative
 	}
 
