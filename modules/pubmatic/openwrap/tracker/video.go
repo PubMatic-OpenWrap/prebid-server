@@ -32,21 +32,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 		}
 		creative = strings.Replace(creative, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		// Add advertiser domain and category tags if strictVastMode is enabled
-		if strictVastMode {
-			if len(bid.ADomain) > 0 {
-				// Create advertiser domain tag and add it to VAST XML
-				advertiserTag := fmt.Sprintf("<Advertiser><![CDATA[%s]]></Advertiser>", bid.ADomain[0])
-				// Insert advertiser tag before </Wrapper>
-				creative = strings.Replace(creative, "</Wrapper>", advertiserTag+"</Wrapper>", -1)
-			}
-			// Add category tag if categories are available
-			if len(bid.Cat) > 0 {
-				// Create category tag and add it to VAST XML
-				categoryTag := fmt.Sprintf("<Category><![CDATA[%v]]></Category>", bid.Cat)
-				// Insert category tag before </Wrapper>
-				creative = strings.Replace(creative, "</Wrapper>", categoryTag+"</Wrapper>", -1)
-			}
-		}
+		creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, nil)
 		bid.AdM = creative
 	} else {
 		creative = strings.TrimSpace(creative)
@@ -61,17 +47,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
 
-		if strictVastMode && (len(bid.ADomain) > 0 || len(bid.Cat) > 0) {
-			var domain string
-			if len(bid.ADomain) > 0 {
-				domain = bid.ADomain[0]
-			}
-
-			creative, err = ti.UpdateADMWithAdvCat(domain, bid.Cat)
-			if err != nil {
-				glog.Errorf("[PubId:%d] [ProfileId:%d]  creative [%s] Error updating ADM with advertiser/category:  %s", rctx.PubID, rctx.ProfileID, creative, err.Error())
-			}
-		}
+		creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, ti)
 
 		bid.AdM = creative
 	}
@@ -81,4 +57,35 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 	}
 
 	return bid.AdM, bid.BURL, nil
+}
+
+func UpdateAdvAndCatTags(creative string, strictVastMode bool, adDomain []string, adCat []string, ti trackerInjector) string {
+	if !strictVastMode || (len(adDomain) == 0 && len(adCat) == 0) {
+		return creative
+	}
+
+	if ti != nil {
+		var domain string
+		if len(adDomain) > 0 {
+			domain = adDomain[0]
+		}
+		updatedCreative, err := ti.UpdateADMWithAdvCat(domain, adCat)
+		if err != nil {
+			glog.Errorf("creative [%s]: Error updating ADM with advertiser/category:  %s", creative, err.Error())
+			return creative
+		}
+		return updatedCreative
+	}
+
+	// fallback for URL-based creative (string replace)
+	if len(adDomain) > 0 {
+		advertiserTag := fmt.Sprintf("<Advertiser><![CDATA[%s]]></Advertiser>", adDomain[0])
+		creative = strings.Replace(creative, "</Wrapper>", advertiserTag+"</Wrapper>", -1)
+	}
+	if len(adCat) > 0 {
+		categoryTag := fmt.Sprintf("<Category><![CDATA[%s]]></Category>", strings.Join(adCat, ","))
+		creative = strings.Replace(creative, "</Wrapper>", categoryTag+"</Wrapper>", -1)
+	}
+
+	return creative
 }

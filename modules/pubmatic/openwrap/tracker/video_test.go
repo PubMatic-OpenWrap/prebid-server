@@ -6,6 +6,7 @@ import (
 	"github.com/beevik/etree"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,7 +81,6 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 		{
 			name: "empty_bid.adm.partner_url",
 			args: args{
-
 				bid: openrtb2.Bid{
 					AdM: `https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml`,
 				},
@@ -92,6 +92,241 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 				},
 			},
 			wantAdm: `<VAST version="3.0"><Ad id="1"><Wrapper><AdSystem>PubMatic Wrapper</AdSystem><VASTAdTagURI><![CDATA[https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml]]></VASTAdTagURI><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "creative_is_url",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"test.com"},
+					Cat:     []string{"IAB1", "IAB2"},
+					AdM:     `https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracking URL`,
+						ErrorURL:   `Error URL`,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad id="1"><Wrapper><AdSystem>PubMatic Wrapper</AdSystem><VASTAdTagURI><![CDATA[https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml]]></VASTAdTagURI><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error><Advertiser><![CDATA[test.com]]></Advertiser><Category><![CDATA[IAB1,IAB2]]></Category></Wrapper></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_update_adv_cat",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"test.com"},
+					Cat:     []string{"IAB1", "IAB2"},
+					AdM:     `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing><Advertiser><![CDATA[test.com]]></Advertiser><Category><![CDATA[IAB1,IAB2]]></Category></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_xml_has_adv_cat",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"google.com"},
+					Cat:     []string{"IAB3", "IAB4"},
+					AdM:     `<VAST version="3.0"><Ad><InLine><Advertiser><![CDATA[test.com]]></Advertiser><Category><![CDATA[IAB1,IAB2]]></Category></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Advertiser><![CDATA[test.com]]></Advertiser><Category><![CDATA[IAB1,IAB2]]></Category><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_update_adv_cat_strict_vast_mode_false",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"test.com"},
+					Cat:     []string{"IAB1", "IAB2"},
+					AdM:     `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: false,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_update_adv_cat_strict_vast_mode_false",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{"IAB1", "IAB2"},
+					AdM: `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing><Category><![CDATA[IAB1,IAB2]]></Category></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_update_adv",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"test.com"},
+					AdM:     `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing><Advertiser><![CDATA[test.com]]></Advertiser></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0_update_cat",
+			args: args{
+				bid: openrtb2.Bid{
+					ADomain: []string{"test.com"},
+					Cat:     []string{"IAB1", "IAB2"},
+					AdM:     `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing><Advertiser><![CDATA[test.com]]></Advertiser><Category><![CDATA[IAB1,IAB2]]></Category></InLine></Ad></VAST>`,
+			wantErr: false,
+		},
+		{
+			name: "inline_vast_3.0",
+			args: args{
+				bid: openrtb2.Bid{
+					AdM: `<VAST version="3.0"><Ad><InLine></InLine></Ad></VAST>`,
+				},
+				videoParams: []models.OWTracker{
+					{
+						TrackerURL: `Tracker URL`,
+						ErrorURL:   `Error URL`,
+						Price:      1.2,
+					},
+				},
+				rctx: models.RequestCtx{
+					NewReqExt: &models.RequestExt{
+						ExtRequest: openrtb_ext.ExtRequest{
+							Prebid: openrtb_ext.ExtRequestPrebid{
+								ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
+									StrictVastMode: true,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAdm: `<VAST version="3.0"><Ad><InLine><Impression><![CDATA[Tracker URL]]></Impression><Error><![CDATA[Error URL]]></Error><Pricing model="CPM" currency="USD"><![CDATA[1.2]]></Pricing></InLine></Ad></VAST>`,
 			wantErr: false,
 		},
 		{
