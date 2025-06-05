@@ -670,6 +670,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								BidType: "video",
 							},
 						},
+						BidderName: "pubmatic",
 					},
 					Bidder: "pubmatic",
 				},
@@ -701,7 +702,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "")
+				}, "pubmatic")
 				return seatNonBid
 			}(),
 		},
@@ -736,6 +737,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								BidType: "video",
 							},
 						},
+						BidderName: "pubmatic",
 					},
 					Bidder: "pubmatic",
 				},
@@ -767,7 +769,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "")
+				}, "pubmatic")
 				return seatNonBid
 			}(),
 		},
