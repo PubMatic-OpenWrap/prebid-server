@@ -25,6 +25,18 @@ type Config struct {
 	GeoDB            GeoDB
 	BidCache         BidCache
 	ResponseOverride ResponseOverride
+	Template         Template
+}
+
+type Template struct {
+	GoogleSDK    TemplateData
+	AppLovingMax TemplateData
+	LevelPlay    TemplateData
+}
+
+type TemplateData struct {
+	Enable bool
+	Data   string
 }
 
 type ResponseOverride struct {

@@ -92,7 +92,7 @@ func (m OpenWrap) handleEntrypointHook(
 	if endpoint == models.EndpointGoogleSDK {
 		rCtx.MetricsEngine = m.metricEngine
 		// Update fields from signal
-		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx, m.features)
+		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx, m.cfg, m.features)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil

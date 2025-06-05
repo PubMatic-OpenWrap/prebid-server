@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -15,54 +16,35 @@ import (
 )
 
 func TestGetSignalData(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-
 	tests := []struct {
-		name     string
-		input    string
-		setup    func()
-		expected *openrtb2.BidRequest
+		name        string
+		input       string
+		expected    []byte
+		expectedErr error
 	}{
 		{
-			name:  "Empty body",
-			input: "",
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Empty body",
+			input:    "",
 			expected: nil,
 		},
 		{
-			name:  "Invalid JSON",
-			input: "{invalid-json",
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Invalid JSON",
+			input:    "{invalid-json",
 			expected: nil,
 		},
 		{
-			name:  "Missing imp array",
-			input: `{"someKey": "someValue"}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Missing imp array",
+			input:    `{"someKey": "someValue"}`,
 			expected: nil,
 		},
 		{
-			name:  "Empty imp array",
-			input: `{"imp": []}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Empty imp array",
+			input:    `{"imp": []}`,
 			expected: nil,
 		},
 		{
-			name:  "Missing ext in imp",
-			input: `{"imp": [{"id": "1"}]}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Missing ext in imp",
+			input:    `{"imp": [{"id": "1"}]}`,
 			expected: nil,
 		},
 		{
@@ -77,9 +59,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -94,12 +73,7 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			expected: &openrtb2.BidRequest{
-				ID: "test-id",
-				App: &openrtb2.App{
-					ID: "app-123",
-				},
-			},
+			expected: []byte(`{"id":"test-id","app":{"id":"app-123"}}`),
 		},
 		{
 			name: "Invalid signal data JSON",
@@ -113,9 +87,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -130,9 +101,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -153,12 +121,7 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			expected: &openrtb2.BidRequest{
-				ID: "test-id",
-				App: &openrtb2.App{
-					ID: "app-123",
-				},
-			},
+			expected: []byte(`{"id":"test-id","app":{"id":"app-123"}}`),
 		},
 		{
 			name: "Invalid buyer_generated_request_data structure",
@@ -171,26 +134,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
-			expected: nil,
-		},
-		{
-			name: "Invalid signal data unmarshalling failure",
-			input: `{
-				"imp": [{
-					"ext": {
-						"buyer_generated_request_data": [{
-							"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
-							"data": "eyJpZCI6"
-						}]
-					}
-				}]
-			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.InvalidSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -202,37 +145,25 @@ func TestGetSignalData(t *testing.T) {
 					},
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
+			result, err := getSignalData([]byte(tt.input))
+			if tt.expected == nil {
+				assert.Empty(t, result, "Expected nil result for test: %s", tt.name)
+				return
 			}
 
-			result := getSignalData([]byte(tt.input), models.RequestCtx{
-				MetricsEngine: mockEngine,
-			}, &wrapperData{
-				PublisherId: "5890",
-				ProfileId:   "123",
-			})
-
-			if tt.expected == nil {
-				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
+			if err != nil {
+				assert.EqualError(t, err, tt.expectedErr.Error(), "Unexpected error for test: %s", tt.name)
 				return
 			}
 
 			assert.NotNil(t, result, "Expected non-nil result for test: %s", tt.name)
-			expectedJSON, err := json.Marshal(tt.expected)
-			assert.NoError(t, err, "Failed to marshal expected value for test: %s", tt.name)
-			resultJSON, err := json.Marshal(result)
-			assert.NoError(t, err, "Failed to marshal result for test: %s", tt.name)
-			assert.JSONEq(t, string(expectedJSON), string(resultJSON), "Unexpected result for test: %s", tt.name)
+			assert.JSONEq(t, string(tt.expected), string(result), "Unexpected result for test: %s", tt.name)
 		})
 	}
 }
@@ -1356,11 +1287,11 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 							"h": 250,
 							"ext": {
 								"flexslot": {
-                        			"wmin": 10,
-                        			"wmax": 1000,
-                        			"hmin": 10,
-                        			"hmax": 1000
-                    			}
+		                			"wmin": 10,
+		                			"wmax": 1000,
+		                			"hmin": 10,
+		                			"hmax": 1000
+		            			}
 							}
 						},
 						"ext": {
@@ -1400,11 +1331,11 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 							"format": [{"w": 320, "h": 90}],
 							"ext": {
 								"flexslot": {
-                        			"wmin": 10,
-                        			"wmax": 1000,
-                        			"hmin": 10,
-                        			"hmax": 1000
-                    			}
+		                			"wmin": 10,
+		                			"wmax": 1000,
+		                			"hmin": 10,
+		                			"hmax": 1000
+		            			}
 							}
 						},
 						"secure": 1,
@@ -1452,7 +1383,7 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 
 			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), models.RequestCtx{
 				MetricsEngine: mockEngine,
-			}, tt.features)
+			}, config.Config{}, tt.features)
 
 			if tt.expectError {
 				assert.Equal(t, tt.expectedResult, string(result), "Actual and expected result does not match: %s", tt.name)

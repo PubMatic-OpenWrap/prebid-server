@@ -6,11 +6,13 @@ import (
 	"errors"
 	"strconv"
 
+	sdkparser "github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/sdk/parser"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
@@ -64,24 +66,17 @@ func (wd *wrapperData) setTagId(request *openrtb2.BidRequest) {
 	request.Imp[0].TagID = wd.TagId
 }
 
-func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData) *openrtb2.BidRequest {
-	var found bool
-	defer func() {
-		if !found {
-			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.MissingSignal)
-		}
-	}()
-
+func getSignalData(body []byte) ([]byte, error) {
 	if len(body) == 0 {
-		return nil
+		return nil, errors.New("empty request body")
 	}
 
 	data, dataType, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "buyer_generated_request_data")
 	if err != nil || dataType != jsonparser.Array {
-		return nil
+		return nil, errors.New("failed to get buyer generated request data: " + err.Error())
 	}
 
-	var signalData *openrtb2.BidRequest
+	var signalData []byte
 	_, err = jsonparser.ArrayEach(data, func(sdkData []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil || dataType != jsonparser.Object {
 			return
@@ -98,27 +93,16 @@ func getSignalData(body []byte, rctx models.RequestCtx, wrapperData *wrapperData
 		}
 
 		// decode base64 signal
-		decodedSignal, err := base64.StdEncoding.DecodeString(signal)
+		signalData, err = base64.StdEncoding.DecodeString(signal)
 		if err != nil {
 			return
 		}
-
-		// Signal data found
-		found = true
-
-		signalData = &openrtb2.BidRequest{}
-		if err := jsoniterator.Unmarshal(decodedSignal, signalData); err != nil {
-			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
-			signalData = nil
-			return
-		}
-
 	})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return signalData
+	return signalData, nil
 }
 
 func getWrapperData(body []byte) (*wrapperData, error) {
@@ -133,7 +117,7 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	}
 
 	var adunitMapping []map[string]interface{}
-	if err := json.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
+	if err := jsoniterator.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
 		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal ad unit mapping %v", err)
 		return nil, errors.New("failed to unmarshal ad unit mapping")
 	}
@@ -184,13 +168,8 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, features feature.Features) []byte {
+func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, cfg config.Config, features feature.Features) []byte {
 	if len(requestBody) == 0 {
-		return requestBody
-	}
-
-	sdkRequest := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
 		return requestBody
 	}
 
@@ -200,12 +179,23 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
-	// Modify request with static data
-	modifyRequestWithStaticData(sdkRequest)
+	//Get Signal data and if signal data is not found, process request without signal data
+	signalData, err := getSignalData(requestBody)
+	if err != nil || len(signalData) == 0 {
+		rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.MissingSignal)
+		glog.Errorf("[GoogleSDK] [Error]: failed to get signal data: %v", err)
+	}
 
-	//Fetch Signal data and modify request
-	signalData := getSignalData(requestBody, rctx, wrapperData)
-	modifyRequestWithSignalData(sdkRequest, signalData)
+	requestBody, err = PatchSignalDataToRequest(rctx, cfg, requestBody, signalData, wrapperData)
+	if err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to patch signal data to request: %v", err)
+	}
+
+	var sdkRequest *openrtb2.BidRequest
+	if err := jsoniterator.Unmarshal(requestBody, &sdkRequest); err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal request body: %v", err)
+		return requestBody
+	}
 
 	// Set Publisher Id
 	wrapperData.setPublisherId(sdkRequest)
@@ -225,6 +215,66 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	}
 
 	return modifiedRequest
+}
+
+func PatchSignalDataToRequest(rctx models.RequestCtx, cfg config.Config, requestBody []byte, signalData []byte, wrapperData *wrapperData) ([]byte, error) {
+	if cfg.Template.GoogleSDK.Enable {
+		var request, signal, template map[string]any
+		if err := jsoniterator.Unmarshal(requestBody, &request); err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal request body: %v", err)
+			return requestBody, err
+		}
+
+		if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal signal data: %v", err)
+			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
+			return requestBody, err
+		}
+
+		if err := jsoniterator.Unmarshal([]byte(cfg.Template.GoogleSDK.Data), &template); err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal template: %v", err)
+			return requestBody, err
+		}
+
+		sdkparser.ParseTemplateAndSetValues(template, request, signal)
+
+		// Marshal the modified request back to JSON
+		modifiedRequest, err := jsoniterator.Marshal(request)
+		if err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to marshal modified request: %v", err)
+			return requestBody, err
+		}
+		return modifiedRequest, nil
+	}
+
+	sdkRequest := &openrtb2.BidRequest{}
+	if err := jsoniterator.Unmarshal(requestBody, sdkRequest); err != nil {
+		return requestBody, err
+	}
+
+	// Modify request with static data
+	modifyRequestWithStaticData(sdkRequest)
+
+	if len(signalData) > 0 {
+		var signal *openrtb2.BidRequest
+		if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal signal data: %v", err)
+			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
+			return requestBody, err
+		}
+
+		// Modify request with signal data
+		modifyRequestWithSignalData(sdkRequest, signal)
+	}
+
+	// Marshal the modified request back to JSON
+	modifiedRequest, err := jsoniterator.Marshal(sdkRequest)
+	if err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to marshal modified request: %v", err)
+		return requestBody, err
+	}
+
+	return modifiedRequest, nil
 }
 
 func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features feature.Features) {
