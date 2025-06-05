@@ -32,7 +32,9 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 		}
 		creative = strings.Replace(creative, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
 		// Add advertiser domain and category tags if strictVastMode is enabled
-		creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, nil)
+		if rctx.Endpoint == models.EndpointVAST {
+			creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, nil)
+		}
 		bid.AdM = creative
 	} else {
 		creative = strings.TrimSpace(creative)
@@ -47,7 +49,10 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
 
-		creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, ti)
+		// Add advertiser domain and category tags if strictVastMode is enabled
+		if rctx.Endpoint == models.EndpointVAST {
+			creative = UpdateAdvAndCatTags(creative, strictVastMode, bid.ADomain, bid.Cat, ti)
+		}
 
 		bid.AdM = creative
 	}

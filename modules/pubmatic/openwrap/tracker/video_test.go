@@ -109,6 +109,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -139,6 +140,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -169,6 +171,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -199,6 +202,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -214,7 +218,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "inline_vast_3.0_update_adv_cat_strict_vast_mode_false",
+			name: "inline_vast_3.0_update_cat_strict_vast_mode_false",
 			args: args{
 				bid: openrtb2.Bid{
 					Cat: []string{"IAB1", "IAB2"},
@@ -228,6 +232,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -257,6 +262,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
@@ -272,7 +278,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "inline_vast_3.0_update_cat",
+			name: "inline_vast_3.0_update_cat_adv",
 			args: args{
 				bid: openrtb2.Bid{
 					ADomain: []string{"test.com"},
@@ -287,6 +293,7 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 					},
 				},
 				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVAST,
 					NewReqExt: &models.RequestExt{
 						ExtRequest: openrtb_ext.ExtRequest{
 							Prebid: openrtb_ext.ExtRequestPrebid{
