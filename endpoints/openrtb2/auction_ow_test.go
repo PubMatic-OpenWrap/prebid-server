@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 
 	"github.com/golang/glog"
@@ -1008,8 +1009,21 @@ func TestRemoveDefaultBidsFromSeatNonBid(t *testing.T) {
 			ao := &analytics.AuctionObject{}
 			removeDefaultBidsFromSeatNonBid(tc.inputSB, ao)
 
+			normalizeSeatNonBidBuilder(tc.inputSB)
+			normalizeSeatNonBidBuilder(&tc.wantSB)
 			assert.Equal(t, &tc.wantSB, tc.inputSB, "SeatNonBidBuilder mismatch")
-			assert.Equal(t, tc.wantAOSeatNonBid, ao.SeatNonBid, "AuctionObject.SeatNonBid mismatch")
+			assert.ElementsMatch(t, tc.wantAOSeatNonBid, ao.SeatNonBid, "AuctionObject.SeatNonBid mismatch")
+		})
+	}
+}
+
+func normalizeSeatNonBidBuilder(sb *openrtb_ext.SeatNonBidBuilder) {
+	if sb == nil {
+		return
+	}
+	for _, nonBids := range *sb {
+		sort.Slice(nonBids, func(i, j int) bool {
+			return nonBids[i].ImpId < nonBids[j].ImpId
 		})
 	}
 }
