@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/golang/glog"
@@ -84,11 +83,12 @@ func UpdateAdvAndCatTags(creative string, strictVastMode bool, adDomain []string
 
 	// fallback for URL-based creative (string replace)
 	if len(adDomain) > 0 {
-		advertiserTag := fmt.Sprintf("<Advertiser><![CDATA[%s]]></Advertiser>", adDomain[0])
+		advertiserTag := "<Advertiser><![CDATA[" + adDomain[0] + "]]></Advertiser>"
+
 		creative = strings.Replace(creative, "</Wrapper>", advertiserTag+"</Wrapper>", -1)
 	}
 	if len(adCat) > 0 {
-		categoryTag := fmt.Sprintf("<Category><![CDATA[%s]]></Category>", strings.Join(adCat, ","))
+		categoryTag := "<Category><![CDATA[" + strings.Join(adCat, ",") + "]]></Category>"
 		creative = strings.Replace(creative, "</Wrapper>", categoryTag+"</Wrapper>", -1)
 	}
 

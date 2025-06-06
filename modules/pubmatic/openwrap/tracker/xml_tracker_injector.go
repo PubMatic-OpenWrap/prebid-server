@@ -178,13 +178,13 @@ func (ti *etreeTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []str
 
 func (ti *etreeTrackerInjector) newDomainNode(domain string) *etree.Element {
 	domainElement := etree.NewElement(models.VideoAdDomainTag)
-	domainElement.SetText(fmt.Sprintf("%v", domain))
+	domainElement.SetText(domain)
 	return domainElement
 }
 
 func (ti *etreeTrackerInjector) newCatNode(cat []string) *etree.Element {
 	catElement := etree.NewElement(models.VideoAdCatTag)
-	catElement.SetText(fmt.Sprintf("%v", strings.Join(cat, ",")))
+	catElement.SetText(strings.Join(cat, ","))
 	return catElement
 }
 
@@ -379,12 +379,11 @@ func (ti *fastXMLTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []s
 
 func (ti *fastXMLTrackerInjector) newDomainNode(domain string) *fastxml.XMLElement {
 	domainElement := fastxml.NewElement(models.VideoAdDomainTag)
-	domainElement.SetText(fmt.Sprintf("%v", domain), true, fastxml.NoEscaping)
+	domainElement.SetText(domain, true, fastxml.NoEscaping)
 	return domainElement
 }
-
 func (ti *fastXMLTrackerInjector) newCatNode(cat []string) *fastxml.XMLElement {
 	catElement := fastxml.NewElement(models.VideoAdCatTag)
-	catElement.SetText(fmt.Sprintf("%v", strings.Join(cat, ",")), true, fastxml.NoEscaping)
+	catElement.SetText(strings.Join(cat, ","), true, fastxml.NoEscaping)
 	return catElement
 }
