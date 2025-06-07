@@ -1706,7 +1706,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 							Platform: "web",
 							NewReqExt: &models.RequestExt{
 								ExtRequest: openrtb_ext.ExtRequest{
-									Prebid: openrtb_ext.ExtRequestPrebid{ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{StrictVastMode: true}},
+									Prebid: openrtb_ext.ExtRequestPrebid{ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{GoogleSSUFeatureEnabled: true}},
 								},
 							},
 							ImpBidCtx: map[string]models.ImpCtx{

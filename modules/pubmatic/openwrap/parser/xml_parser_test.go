@@ -1,4 +1,4 @@
-package tracker
+package parser
 
 import (
 	"testing"
@@ -113,7 +113,7 @@ func Test_injectPricingNodeInExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, _ := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.injectPricingNodeInExtension(&doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -187,7 +187,7 @@ func Test_injectPricingNodeInVAST(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, _ := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.injectPricingNodeInVAST(&doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -281,7 +281,7 @@ func Test_updatePricingNode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, elements := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.updatePricingNode(elements[0], tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -330,7 +330,7 @@ func Test_newPricingNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			got := ej.newPricingNode(tt.args.price, tt.args.model, tt.args.currency)
 			doc := etree.NewDocument()
 			doc.InsertChild(nil, got)
@@ -340,234 +340,315 @@ func Test_newPricingNode(t *testing.T) {
 	}
 }
 
-func TestUpdateADMWithAdvCat(t *testing.T) {
+func TestAddCategoryTag(t *testing.T) {
 	tests := []struct {
 		name        string
 		inputVAST   string
-		adDomain    string
 		adCat       []string
 		expectError bool
-		wantDomain  string
+		wantAdM     string
 		wantCat     string
 	}{
 		{
-			name:       "VAST_Inline_both_adv_and_cat_not_present_in_VAST_But_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:   "example.com",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Add_category_to_VAST_Inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB1-1", "IAB1-2"},
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB1-1,IAB1-2]]></Category></InLine></Ad></VAST>`,
+			wantCat:   "IAB1-1,IAB1-2",
 		},
 		{
-			name:       "VAST_Wrapper_both_adv_and_cat_not_present_in_VAST_But_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "advertiser.net",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Add_category_to_VAST_Wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB1-3"},
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB1-3]]></Category></Wrapper></Ad></VAST>`,
+			wantCat:   "IAB1-3",
 		},
 		{
-			name:       "VAST_Wrapper_both_adv_and_cat_not_present_in_VAST_and_adv_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      nil,
-			wantDomain: "advertiser.net",
-			wantCat:    "",
-		},
-		{
-			name:       "VAST_Inline_only_category_present",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:   "",
-			adCat:      []string{"IAB3-1"},
-			wantDomain: "",
-			wantCat:    "IAB3-1",
-		},
-		{
-			name:        "VAST_Inline_both_domain_and_category_empty",
-			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:    "",
+			name:        "No_category_and_no_VAST_block",
+			inputVAST:   `<VAST version="2.0"></VAST>`,
 			adCat:       nil,
 			expectError: true,
 		},
 		{
-			name:       "VAST_Inline_both_domain_and_category_present_in_VAST_and_bidResp",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine><Category>IAB1-1,IAB1-2</Category><Advertiser>example.com</Advertiser></InLine></Ad></VAST>`,
-			adDomain:   "test.com",
-			adCat:      []string{"IAB1-3", "IAB1-4"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Category_already_present_should_not_overwrite_with_inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
+			wantCat:   "IAB-1",
 		},
 		{
-			name:       "VAST_Wrapper_both_domain_and_category_present_in_VAST_and_bidResp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper><Category>IAB1-1,IAB1-2</Category><Advertiser>example.com</Advertiser></Wrapper></Ad></VAST>`,
-			adDomain:   "test.com",
-			adCat:      []string{"IAB1-3", "IAB1-4"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Category_already_present_should_not_overwrite_with_wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
+			wantCat:   "IAB-1",
 		},
 		{
-			name:       "VAST_Wrapper_adm_is_url",
-			inputVAST:  `<VAST version="3.0"><Ad id="1"><Wrapper><AdSystem>PubMatic Wrapper</AdSystem><VASTAdTagURI><![CDATA[https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml]]></VASTAdTagURI><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "advertiser.net",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:        "No_adCat_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:       nil,
+			wantCat:     "",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			etreeTrackerInjector := &etreeHandler{}
+			doc, _ := getETreeNode(tt.inputVAST)
+			etreeTrackerInjector.doc = doc
+			adm, err := etreeTrackerInjector.AddCategoryTag(tt.adCat)
+			assert.Equal(t, tt.expectError, err != nil)
+			if tt.expectError {
+				return
+			}
+
+			var ad *etree.Element
+			ad = doc.FindElement("//Ad/InLine")
+			if ad == nil {
+				ad = doc.FindElement("//Ad/Wrapper")
+			}
+			if tt.wantAdM != "" {
+				assert.Equal(t, tt.wantAdM, adm)
+			}
+			if tt.wantCat != "" {
+				category := ad.FindElement(models.VideoAdCatTag)
+				assert.Equal(t, tt.wantCat, category.Text())
+			}
+		})
+	}
+}
+
+func TestAddAdvertiserTag(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputVAST   string
+		adDomain    string
+		expectError bool
+		wantDomain  string
+		wantAdM     string
+	}{
+		{
+			name:       "Add_domain_to_VAST_Inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Add_domain_to_VAST_Wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+		},
+		{
+			name:        "No_domain_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:    "",
+			expectError: true,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+		},
+		{
+			name:        "No_domain_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:    "",
+			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, _ := getETreeNode(tt.inputVAST)
-
-			ti := &etreeTrackerInjector{
-				doc: doc,
-			}
-
-			output, err := ti.UpdateADMWithAdvCat(tt.adDomain, tt.adCat)
+			etreeTrackerInjector := &etreeHandler{doc: doc}
+			_, err := etreeTrackerInjector.AddAdvertiserTag(tt.adDomain)
 			assert.Equal(t, tt.expectError, err != nil)
 			if tt.expectError {
 				return
 			}
 
-			newDoc, _ := getETreeNode(output)
-
-			ad := newDoc.FindElement("//Ad/InLine")
+			var ad *etree.Element
+			ad = etreeTrackerInjector.doc.FindElement("//Ad/InLine")
 			if ad == nil {
-				ad = newDoc.FindElement("//Ad/Wrapper")
+				ad = etreeTrackerInjector.doc.FindElement("//Ad/Wrapper")
 			}
-
+			if tt.wantAdM != "" {
+				actual, _ := etreeTrackerInjector.doc.WriteToString()
+				assert.Equal(t, tt.wantAdM, actual)
+			}
 			if tt.wantDomain != "" {
-				d := ad.FindElement(models.VideoAdDomainTag)
-				assert.Equal(t, tt.wantDomain, d.Text())
-			}
-
-			if tt.wantCat != "" {
-				c := ad.FindElement(models.VideoAdCatTag)
-				assert.Equal(t, tt.wantCat, c.Text())
+				advertiser := ad.FindElement(models.VideoAdDomainTag)
+				assert.Equal(t, tt.wantDomain, advertiser.Text())
 			}
 		})
 	}
 }
-func TestFastXMLTrackerInjector_UpdateADMWithAdvCat(t *testing.T) {
+
+func TestAddCategoryTagFastXML(t *testing.T) {
 	tests := []struct {
 		name        string
 		inputVAST   string
-		adDomain    string
 		adCat       []string
 		expectError bool
-		wantDomain  string
 		wantCat     string
+		wantAdM     string
 	}{
 		{
-			name:       "VAST_Inline_both_adv_and_cat_not_present_in_VAST_But_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:   "example.com",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Add_category_to_VAST_Inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB1-1", "IAB1-2"},
+			wantCat:   "IAB1-1,IAB1-2",
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB1-1,IAB1-2]]></Category></InLine></Ad></VAST>`,
 		},
 		{
-			name:       "VAST_Wrapper_both_adv_and_cat_not_present_in_VAST_But_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "advertiser.net",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Add_category_to_VAST_Wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB1-3"},
+			wantCat:   "IAB1-3",
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB1-3]]></Category></Wrapper></Ad></VAST>`,
 		},
 		{
-			name:       "VAST_Wrapper_both_adv_and_cat_not_present_in_VAST_and_adv_present_in_bidresp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      nil,
-			wantDomain: "advertiser.net",
-			wantCat:    "",
-		},
-		{
-			name:       "VAST_Inline_only_category_present",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:   "",
-			adCat:      []string{"IAB3-1"},
-			wantDomain: "",
-			wantCat:    "IAB3-1",
-		},
-		{
-			name:        "VAST_Inline_both_domain_and_category_empty",
-			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
-			adDomain:    "",
+			name:        "No_category_and_no_VAST_block",
+			inputVAST:   `<VAST version="2.0"></VAST>`,
 			adCat:       nil,
 			expectError: true,
 		},
 		{
-			name:       "VAST_Inline_both_domain_and_category_present_in_VAST_and_bidResp",
-			inputVAST:  `<VAST version="2.0"><Ad><InLine><Category>IAB1-1,IAB1-2</Category><Advertiser>example.com</Advertiser></InLine></Ad></VAST>`,
-			adDomain:   "test.com",
-			adCat:      []string{"IAB1-3", "IAB1-4"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Category_already_present_should_not_overwrite_with_inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantCat:   "IAB-1",
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
 		},
 		{
-			name:       "VAST_Wrapper_both_domain_and_category_present_in_VAST_and_bidResp",
-			inputVAST:  `<VAST version="2.0"><Ad><Wrapper><Category>IAB1-1,IAB1-2</Category><Advertiser>example.com</Advertiser></Wrapper></Ad></VAST>`,
-			adDomain:   "test.com",
-			adCat:      []string{"IAB1-3", "IAB1-4"},
-			wantDomain: "example.com",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:      "Category_already_present_should_not_overwrite_with_wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantCat:   "IAB-1",
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
 		},
 		{
-			name:       "VAST_Wrapper_adm_is_url",
-			inputVAST:  `<VAST version="3.0"><Ad id="1"><Wrapper><AdSystem>PubMatic Wrapper</AdSystem><VASTAdTagURI><![CDATA[https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml]]></VASTAdTagURI><Impression><![CDATA[Tracking URL]]></Impression><Error><![CDATA[Error URL]]></Error></Wrapper></Ad></VAST>`,
-			adDomain:   "advertiser.net",
-			adCat:      []string{"IAB1-1", "IAB1-2"},
-			wantDomain: "advertiser.net",
-			wantCat:    "IAB1-1,IAB1-2",
+			name:        "No_adCat_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:       nil,
+			wantCat:     "",
+			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc := getFastXMLTreeNode(tt.inputVAST)
-
-			ti := &fastXMLTrackerInjector{
-				doc: doc,
-				xu:  fastxml.NewXMLUpdater(doc, fastxml.WriteSettings{CDATAWrap: true, CompressWhitespace: true}),
+			fastxmlInjector := &FastXMLHandler{
+				doc:     doc,
+				xu:      fastxml.NewXMLUpdater(doc, fastxml.WriteSettings{CDATAWrap: true, CompressWhitespace: true}),
+				vastTag: doc.SelectElement(nil, "VAST"),
 			}
-			ti.vastTag = doc.SelectElement(nil, "VAST")
 
-			output, err := ti.UpdateADMWithAdvCat(tt.adDomain, tt.adCat)
+			adm, err := fastxmlInjector.AddCategoryTag(tt.adCat)
+
 			assert.Equal(t, tt.expectError, err != nil)
-			if tt.expectError {
-				return
+			if tt.wantAdM != "" {
+				assert.Equal(t, tt.wantAdM, adm)
 			}
-
-			newDoc := getFastXMLTreeNode(output)
-
-			vast := newDoc.SelectElement(nil, "VAST")
-			assert.NotNil(t, vast)
-
-			ad := newDoc.SelectElement(vast, "Ad")
-			assert.NotNil(t, ad)
-
-			adType := newDoc.SelectElement(ad, "InLine")
-			if adType == nil {
-				adType = newDoc.SelectElement(ad, "Wrapper")
-			}
-			assert.NotNil(t, adType)
-
-			if tt.wantDomain != "" {
-				dElem := newDoc.SelectElement(adType, models.VideoAdDomainTag)
-				if assert.NotNil(t, dElem) {
-					text := newDoc.Text(dElem)
-					assert.Equal(t, tt.wantDomain, text)
-				}
-			}
-
 			if tt.wantCat != "" {
-				cElem := newDoc.SelectElement(adType, models.VideoAdCatTag)
-				if assert.NotNil(t, cElem) {
-					text := newDoc.Text(cElem)
-					assert.Equal(t, tt.wantCat, text)
-				}
+				assertFastXMLXMLField(t, adm, models.VideoAdCatTag, tt.wantCat)
 			}
 		})
 	}
+}
+
+func TestAddAdvertiserTagFastXML(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputVAST   string
+		adDomain    string
+		expectError bool
+		wantDomain  string
+		wantAdM     string
+	}{
+		{
+			name:       "Add_domain_to_VAST_Inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Add_domain_to_VAST_Wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+		},
+		{
+			name:        "No_domain_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:    "",
+			expectError: true,
+			wantAdM:     `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine><Advertiser>example.com</Advertiser></InLine></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser>example.com</Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper><Advertiser>example.com</Advertiser></Wrapper></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser>example.com</Advertiser></Wrapper></Ad></VAST>`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc := getFastXMLTreeNode(tt.inputVAST)
+			fastxmlInjector := &FastXMLHandler{
+				doc:     doc,
+				xu:      fastxml.NewXMLUpdater(doc, fastxml.WriteSettings{CDATAWrap: true, CompressWhitespace: true}),
+				vastTag: doc.SelectElement(nil, "VAST"),
+			}
+
+			adm, err := fastxmlInjector.AddAdvertiserTag(tt.adDomain)
+			assert.Equal(t, tt.expectError, err != nil)
+			if tt.wantDomain != "" {
+				assertFastXMLXMLField(t, adm, models.VideoAdDomainTag, tt.wantDomain)
+			}
+		})
+	}
+}
+
+func assertFastXMLXMLField(t *testing.T, adm string, keyName string, expectedValue string) bool {
+	newDoc := getFastXMLTreeNode(adm)
+	vast := newDoc.SelectElement(nil, "VAST")
+	assert.NotNil(t, vast)
+
+	ad := newDoc.SelectElement(vast, "Ad")
+	assert.NotNil(t, ad)
+
+	adType := newDoc.SelectElement(ad, "InLine")
+	if adType == nil {
+		adType = newDoc.SelectElement(ad, "Wrapper")
+	}
+	assert.NotNil(t, adType)
+
+	actualValue := newDoc.SelectElement(adType, keyName)
+	return assert.Equal(t, expectedValue, newDoc.Text(actualValue))
 }

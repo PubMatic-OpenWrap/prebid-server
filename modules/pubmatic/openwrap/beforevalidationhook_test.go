@@ -2547,7 +2547,7 @@ func TestOpenWrap_applyImpChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},
@@ -2615,7 +2615,7 @@ func TestOpenWrap_applyImpVideoChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},

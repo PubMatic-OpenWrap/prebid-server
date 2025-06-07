@@ -12,8 +12,10 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -380,6 +382,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if err == nil {
 				resetBidIdtoOriginal(ap.BidResponse)
 			}
+			if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
+				feature.EnrichVASTWithSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
+			}
 			return ap, err
 		}, hookstage.MutationUpdate, "response-body-with-webs2s-format")
 		return result, nil
@@ -396,6 +401,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 		if err != nil {
 			return ap, err
+		}
+		if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
+			feature.EnrichVASTWithSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
 		}
 
 		var responseExtjson json.RawMessage

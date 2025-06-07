@@ -1,4 +1,4 @@
-package tracker
+package parser
 
 import (
 	"errors"
@@ -11,18 +11,19 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
-type trackerInjector interface {
+type VASTXMLHandler interface {
 	Parse(vast string) error
 	Inject(videoParams []models.OWTracker, skipTracker bool) (string, error)
-	UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error)
+	AddCategoryTag(adCat []string) (string, error)
+	AddAdvertiserTag(adDomain string) (string, error)
 }
 
-type etreeTrackerInjector struct {
+type etreeHandler struct {
 	doc     *etree.Document
 	version string
 }
 
-func (ti *etreeTrackerInjector) Parse(vast string) error {
+func (ti *etreeHandler) Parse(vast string) error {
 	ti.doc = etree.NewDocument()
 	if err := ti.doc.ReadFromString(vast); err != nil {
 		return err
@@ -39,7 +40,7 @@ func (ti *etreeTrackerInjector) Parse(vast string) error {
 	return nil
 }
 
-func (ti *etreeTrackerInjector) Inject(videoParams []models.OWTracker, skipTracker bool) (string, error) {
+func (ti *etreeHandler) Inject(videoParams []models.OWTracker, skipTracker bool) (string, error) {
 	adElements := ti.doc.FindElements(models.VASTAdElement)
 	for i, adElement := range adElements {
 		if i < len(videoParams) {
@@ -79,7 +80,7 @@ func (ti *etreeTrackerInjector) Inject(videoParams []models.OWTracker, skipTrack
 	return ti.doc.WriteToString()
 }
 
-func (ti *etreeTrackerInjector) injectPricingNodeInExtension(adTypeElement *etree.Element, price float64, model string, currency string) {
+func (ti *etreeHandler) injectPricingNodeInExtension(adTypeElement *etree.Element, price float64, model string, currency string) {
 	extensions := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoExtensionsTag)
 	if nil == extensions {
 		extensions = adTypeElement.CreateElement(models.VideoExtensionsTag)
@@ -95,7 +96,7 @@ func (ti *etreeTrackerInjector) injectPricingNodeInExtension(adTypeElement *etre
 	}
 }
 
-func (ti *etreeTrackerInjector) injectPricingNodeInVAST(adTypeElement *etree.Element, price float64, model string, currency string) {
+func (ti *etreeHandler) injectPricingNodeInVAST(adTypeElement *etree.Element, price float64, model string, currency string) {
 	//Insert into Wrapper Elements
 	pricing := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoPricingTag)
 	if nil != pricing {
@@ -106,7 +107,7 @@ func (ti *etreeTrackerInjector) injectPricingNodeInVAST(adTypeElement *etree.Ele
 	}
 }
 
-func (ti *etreeTrackerInjector) updatePricingNode(node *etree.Element, price float64, model string, currency string) {
+func (ti *etreeHandler) updatePricingNode(node *etree.Element, price float64, model string, currency string) {
 	//Update Price
 	node.Child = nil
 	node.SetText(fmt.Sprintf("%v", price))
@@ -135,7 +136,7 @@ func (ti *etreeTrackerInjector) updatePricingNode(node *etree.Element, price flo
 	}
 }
 
-func (ti *etreeTrackerInjector) newPricingNode(price float64, model string, currency string) *etree.Element {
+func (ti *etreeHandler) newPricingNode(price float64, model string, currency string) *etree.Element {
 	pricing := etree.NewElement(models.VideoPricingTag)
 	pricing.SetText(fmt.Sprintf("%v", price))
 	if len(model) == 0 {
@@ -150,52 +151,14 @@ func (ti *etreeTrackerInjector) newPricingNode(price float64, model string, curr
 	return pricing
 }
 
-func (ti *etreeTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error) {
-	if len(adDomain) == 0 && len(adCat) == 0 {
-		return "", errors.New("advertiser domain and category are empty")
-	}
-	adElements := ti.doc.FindElements(models.VASTAdElement)
-	for _, adElement := range adElements {
-		adTypeElement := adElement.FindElement(models.AdWrapperElement)
-		if adTypeElement == nil {
-			adTypeElement = adElement.FindElement(models.AdInlineElement)
-		}
-
-		if adTypeElement != nil {
-			domain := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoAdDomainTag)
-			if domain == nil && len(adDomain) > 0 {
-				adTypeElement.InsertChild(nil, ti.newDomainNode(adDomain))
-			}
-			Cat := adTypeElement.FindElement(models.VideoTagLookupStart + models.VideoAdCatTag)
-			if Cat == nil && len(adCat) > 0 {
-				adTypeElement.InsertChild(nil, ti.newCatNode(adCat))
-			}
-
-		}
-	}
-	return ti.doc.WriteToString()
-}
-
-func (ti *etreeTrackerInjector) newDomainNode(domain string) *etree.Element {
-	domainElement := etree.NewElement(models.VideoAdDomainTag)
-	domainElement.SetText(domain)
-	return domainElement
-}
-
-func (ti *etreeTrackerInjector) newCatNode(cat []string) *etree.Element {
-	catElement := etree.NewElement(models.VideoAdCatTag)
-	catElement.SetText(strings.Join(cat, ","))
-	return catElement
-}
-
-type fastXMLTrackerInjector struct {
+type FastXMLHandler struct {
 	doc     *fastxml.XMLReader
 	xu      *fastxml.XMLUpdater
 	vastTag *fastxml.Element
 	version string
 }
 
-func (ti *fastXMLTrackerInjector) Parse(vast string) error {
+func (ti *FastXMLHandler) Parse(vast string) error {
 	ti.doc = fastxml.NewXMLReader()
 	if err := ti.doc.Parse([]byte(vast)); err != nil {
 		return err
@@ -216,7 +179,7 @@ func (ti *fastXMLTrackerInjector) Parse(vast string) error {
 	return nil
 }
 
-func (ti *fastXMLTrackerInjector) Inject(videoParams []models.OWTracker, skipTracker bool) (string, error) {
+func (ti *FastXMLHandler) Inject(videoParams []models.OWTracker, skipTracker bool) (string, error) {
 	adElements := ti.doc.SelectElements(ti.vastTag, "Ad")
 	for i, adElement := range adElements {
 		if i < len(videoParams) {
@@ -260,7 +223,7 @@ func (ti *fastXMLTrackerInjector) Inject(videoParams []models.OWTracker, skipTra
 	return ti.xu.String(), nil
 }
 
-func (ti *fastXMLTrackerInjector) injectPricingNodeInExtension(adTypeElement *fastxml.Element, price float64, model string, currency string) {
+func (ti *FastXMLHandler) injectPricingNodeInExtension(adTypeElement *fastxml.Element, price float64, model string, currency string) {
 	extensions := ti.doc.SelectElement(adTypeElement, models.VideoExtensionsTag)
 	if extensions == nil {
 		extension := fastxml.NewElement(models.VideoExtensionTag)
@@ -283,7 +246,7 @@ func (ti *fastXMLTrackerInjector) injectPricingNodeInExtension(adTypeElement *fa
 	}
 }
 
-func (ti *fastXMLTrackerInjector) injectPricingNodeInVAST(adTypeElement *fastxml.Element, price float64, model string, currency string) {
+func (ti *FastXMLHandler) injectPricingNodeInVAST(adTypeElement *fastxml.Element, price float64, model string, currency string) {
 	//Insert into Wrapper Elements
 	pricing := ti.doc.SelectElement(adTypeElement, models.VideoPricingTag)
 	if nil != pricing {
@@ -294,7 +257,7 @@ func (ti *fastXMLTrackerInjector) injectPricingNodeInVAST(adTypeElement *fastxml
 	}
 }
 
-func (ti *fastXMLTrackerInjector) updatePricingNode(node *fastxml.Element, price float64, model string, currency string) {
+func (ti *FastXMLHandler) updatePricingNode(node *fastxml.Element, price float64, model string, currency string) {
 	ti.xu.UpdateText(node, fmt.Sprintf("%v", price), true, fastxml.NoEscaping)
 
 	//Update Pricing.Model
@@ -322,7 +285,7 @@ func (ti *fastXMLTrackerInjector) updatePricingNode(node *fastxml.Element, price
 	}
 }
 
-func (ti *fastXMLTrackerInjector) newPricingNode(price float64, model string, currency string) *fastxml.XMLElement {
+func (ti *FastXMLHandler) newPricingNode(price float64, model string, currency string) *fastxml.XMLElement {
 	pricing := fastxml.NewElement(models.VideoPricingTag)
 	pricing.SetText(fmt.Sprintf("%v", price), true, fastxml.NoEscaping)
 
@@ -338,51 +301,132 @@ func (ti *fastXMLTrackerInjector) newPricingNode(price float64, model string, cu
 	return pricing
 }
 
-func (ti *fastXMLTrackerInjector) addElement(root, base *fastxml.Element, element fastxml.XMLWriter) {
+func (ti *FastXMLHandler) addElement(root, base *fastxml.Element, element fastxml.XMLWriter) {
 	if nil == base {
 		ti.xu.AppendElement(root, element)
 	}
 	ti.xu.BeforeElement(base, element)
 }
 
-func GetTrackerInjector() trackerInjector {
+func GetTrackerInjector() VASTXMLHandler {
 	if openrtb_ext.IsFastXMLEnabled() {
-		return &fastXMLTrackerInjector{}
+		return &FastXMLHandler{}
 	}
-	return &etreeTrackerInjector{}
+	return &etreeHandler{}
 }
 
-func (ti *fastXMLTrackerInjector) UpdateADMWithAdvCat(adDomain string, adCat []string) (string, error) {
-	if len(adDomain) == 0 && len(adCat) == 0 {
+func (vastXMLHandler *etreeHandler) AddAdvertiserTag(adDomain string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adDomain) == 0 {
+		return "", errors.New("advertiser domain is empty")
+	}
+	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
+	for _, adElement := range adElements {
+		adTypeElement := adElement.FindElement(models.AdWrapperElement)
+		if adTypeElement == nil {
+			adTypeElement = adElement.FindElement(models.AdInlineElement)
+		}
+
+		if adTypeElement != nil {
+			domain := adTypeElement.FindElement(models.VideoAdDomainTag)
+			if domain == nil && len(adDomain) > 0 {
+				adTypeElement.InsertChild(nil, vastXMLHandler.newDomainNode(adDomain))
+			}
+		}
+	}
+	return vastXMLHandler.doc.WriteToString()
+}
+
+func (vastXMLHandler *etreeHandler) AddCategoryTag(adCat []string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adCat) == 0 {
 		return "", errors.New("advertiser domain and category are empty")
 	}
-	adElements := ti.doc.SelectElements(ti.vastTag, "Ad")
+	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
 	for _, adElement := range adElements {
-		adTypeElement := ti.doc.SelectElement(adElement, "Wrapper")
+		adTypeElement := adElement.FindElement(models.AdWrapperElement)
 		if adTypeElement == nil {
-			adTypeElement = ti.doc.SelectElement(adElement, "InLine")
+			adTypeElement = adElement.FindElement(models.AdInlineElement)
+		}
+
+		if adTypeElement != nil {
+			Cat := adTypeElement.FindElement(models.VideoAdCatTag)
+			if Cat == nil && len(adCat) > 0 {
+				adTypeElement.InsertChild(nil, vastXMLHandler.newCatNode(adCat))
+			}
+
+		}
+	}
+	return vastXMLHandler.doc.WriteToString()
+}
+func (vastXMLHandler *FastXMLHandler) AddAdvertiserTag(adDomain string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adDomain) == 0 {
+		return "", errors.New("advertiser domain is empty")
+	}
+	adElements := vastXMLHandler.doc.SelectElements(vastXMLHandler.vastTag, "Ad")
+	for _, adElement := range adElements {
+		adTypeElement := vastXMLHandler.doc.SelectElement(adElement, "Wrapper")
+		if adTypeElement == nil {
+			adTypeElement = vastXMLHandler.doc.SelectElement(adElement, "InLine")
 		}
 		if adTypeElement != nil {
-			domain := ti.doc.SelectElement(adTypeElement, models.VideoTagLookupStart+models.VideoAdDomainTag)
+			domain := vastXMLHandler.doc.SelectElement(adTypeElement, models.VideoAdDomainTag)
 			if domain == nil && len(adDomain) > 0 {
-				ti.xu.AppendElement(adTypeElement, ti.newDomainNode(adDomain))
-			}
-			Cat := ti.doc.SelectElement(adTypeElement, models.VideoTagLookupStart+models.VideoAdCatTag)
-			if Cat == nil && len(adCat) > 0 {
-				ti.xu.AppendElement(adTypeElement, ti.newCatNode(adCat))
+				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newDomainNode(adDomain))
 			}
 		}
 	}
-	return ti.xu.String(), nil
-
+	return vastXMLHandler.xu.String(), nil
 }
 
-func (ti *fastXMLTrackerInjector) newDomainNode(domain string) *fastxml.XMLElement {
+func (vastXMLHandler *FastXMLHandler) AddCategoryTag(adCat []string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adCat) == 0 {
+		return "", errors.New("advertiser domain and category are empty")
+	}
+	adElements := vastXMLHandler.doc.SelectElements(vastXMLHandler.vastTag, "Ad")
+	for _, adElement := range adElements {
+		adTypeElement := vastXMLHandler.doc.SelectElement(adElement, "Wrapper")
+		if adTypeElement == nil {
+			adTypeElement = vastXMLHandler.doc.SelectElement(adElement, "InLine")
+		}
+		if adTypeElement != nil {
+			Cat := vastXMLHandler.doc.SelectElement(adTypeElement, models.VideoAdCatTag)
+			if Cat == nil && len(adCat) > 0 {
+				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newCatNode(adCat))
+			}
+		}
+	}
+	return vastXMLHandler.xu.String(), nil
+}
+
+func (ti *etreeHandler) newDomainNode(domain string) *etree.Element {
+	domainElement := etree.NewElement(models.VideoAdDomainTag)
+	domainElement.SetText(domain)
+	return domainElement
+}
+
+func (ti *etreeHandler) newCatNode(cat []string) *etree.Element {
+	catElement := etree.NewElement(models.VideoAdCatTag)
+	catElement.SetText(strings.Join(cat, ","))
+	return catElement
+}
+
+func (ti *FastXMLHandler) newDomainNode(domain string) *fastxml.XMLElement {
 	domainElement := fastxml.NewElement(models.VideoAdDomainTag)
 	domainElement.SetText(domain, true, fastxml.NoEscaping)
 	return domainElement
 }
-func (ti *fastXMLTrackerInjector) newCatNode(cat []string) *fastxml.XMLElement {
+func (ti *FastXMLHandler) newCatNode(cat []string) *fastxml.XMLElement {
 	catElement := fastxml.NewElement(models.VideoAdCatTag)
 	catElement.SetText(strings.Join(cat, ","), true, fastxml.NoEscaping)
 	return catElement
