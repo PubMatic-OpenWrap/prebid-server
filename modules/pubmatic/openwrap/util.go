@@ -630,7 +630,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	//for phase 1 mbmf, we directly check for adunitlevel floors without having check on adunitformat enabled
+	//for phase 1 mbmf, adunitformat is by default enabled
 	adunitFormat := getAdunitFormat(reward, imp)
 
 	//don't apply mbmf if pub is not enabled for adunitFormat

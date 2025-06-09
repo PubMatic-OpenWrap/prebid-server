@@ -128,10 +128,8 @@ func (fe *feature) IsMBMFCountryForPublisher(countryCode string, pubID int) bool
 		return true
 	}
 	// check for pubID=0 countries
-	if _, isPresent := publisherCountries[0][countryCode]; isPresent {
-		return true
-	}
-	return false
+	_, isPresent := publisherCountries[0][countryCode]
+	return isPresent
 }
 
 // IsMBMFPublisherEnabled returns true if publisher not present in DB or it is present in is_enabled=1

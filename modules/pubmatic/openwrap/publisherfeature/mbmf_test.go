@@ -687,7 +687,7 @@ func TestFeatureIsMBMFCountryForPublisher(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "mbmf country enabled pub",
+			name: "mbmf country enabled pub with Country India",
 			args: args{
 				countryCode: "IN",
 				pubID:       123,
@@ -699,6 +699,45 @@ func TestFeatureIsMBMFCountryForPublisher(t *testing.T) {
 							enabledCountries: map[int]models.HashSet{
 								123: {
 									"IN": {},
+									"US": {},
+									"JP": {},
+								},
+								0: {
+									"US": {},
+								},
+							},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         make(map[int]models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "mbmf country enabled pub with Country Japan",
+			args: args{
+				countryCode: "JP",
+				pubID:       123,
+			},
+			fields: fields{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries: map[int]models.HashSet{
+								123: {
+									"IN": {},
+									"US": {},
+									"JP": {},
 								},
 								0: {
 									"US": {},

@@ -2460,7 +2460,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 		},
 		{
-			name: "phase 1 profile adunit level floors not present",
+			name: "phase 1 profile adunit level floors not present for banner adunitformat",
 			args: args{
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
