@@ -5,7 +5,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 )
 
-func EnrichVASTWithSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler parser.VASTXMLHandler) {
+func EnrishVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler parser.VASTXMLHandler) {
 	for _, seatBid := range bidResponse.SeatBid {
 		for i := range seatBid.Bid {
 			bid := &seatBid.Bid[i]
