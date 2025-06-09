@@ -35,8 +35,9 @@ type Template struct {
 }
 
 type TemplateData struct {
-	Enable bool
-	Data   string
+	Enable           bool
+	Data             string
+	DeserializedData map[string]any
 }
 
 type ResponseOverride struct {

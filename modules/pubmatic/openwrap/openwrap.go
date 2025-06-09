@@ -113,6 +113,12 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	featureLoader := feature.NewFeatureLoader(mysqlDriver, cfg.Database)
 	features := featureLoader.LoadFeatures()
 
+	// Deserisalize Template Data
+	err = deserializeTemplates(&cfg)
+	if err != nil {
+		return OpenWrap{}, fmt.Errorf("error deserializing templates: %v", err)
+	}
+
 	// Init VAST Unwrap
 	vastunwrap.InitUnWrapperConfig(cfg.VastUnwrapCfg)
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
@@ -185,5 +191,27 @@ func patchConfig(cfg *config.Config) error {
 		}
 		cfg.VastUnwrapCfg.HTTPConfig.SSLKey = string(decodedKey)
 	}
+	return nil
+}
+
+func deserializeTemplates(cfg *config.Config) error {
+	if cfg.Template.GoogleSDK.Enable && len(cfg.Template.GoogleSDK.Data) > 0 {
+		if err := json.Unmarshal([]byte(cfg.Template.GoogleSDK.Data), &cfg.Template.GoogleSDK.DeserializedData); err != nil {
+			return fmt.Errorf("error deserializing Google SDK template: %v", err)
+		}
+	}
+
+	if cfg.Template.AppLovingMax.Enable && len(cfg.Template.AppLovingMax.Data) > 0 {
+		if err := json.Unmarshal([]byte(cfg.Template.AppLovingMax.Data), &cfg.Template.AppLovingMax.DeserializedData); err != nil {
+			return fmt.Errorf("error deserializing App Loving Max template: %v", err)
+		}
+	}
+
+	if cfg.Template.LevelPlay.Enable && len(cfg.Template.LevelPlay.Data) > 0 {
+		if err := json.Unmarshal([]byte(cfg.Template.LevelPlay.Data), &cfg.Template.LevelPlay.DeserializedData); err != nil {
+			return fmt.Errorf("error deserializing Level Play template: %v", err)
+		}
+	}
+
 	return nil
 }

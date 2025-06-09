@@ -2,11 +2,9 @@ package googlesdk
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"strconv"
 
-	sdkparser "github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/sdk/parser"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
@@ -14,7 +12,9 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	sdkparser "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/parser"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
@@ -23,6 +23,13 @@ const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter
 const iOSAppId = "GADMediationAdapterPubMatic"
 
 var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
+
+type GoogleSDK struct {
+	metricsEngine metrics.MetricsEngine
+	config        config.Config
+	features      feature.Features
+	wrapper       wrapperData
+}
 
 type wrapperData struct {
 	PublisherId string
@@ -66,6 +73,120 @@ func (wd *wrapperData) setTagId(request *openrtb2.BidRequest) {
 	request.Imp[0].TagID = wd.TagId
 }
 
+// NewGoogleSDK creates a new instance of GoogleSDK
+func NewGoogleSDK(metricsEngine metrics.MetricsEngine, cfg config.Config, features feature.Features) *GoogleSDK {
+	gsdk := GoogleSDK{
+		metricsEngine: metricsEngine,
+		features:      features,
+		config:        cfg,
+	}
+
+	return &gsdk
+}
+
+func (gs *GoogleSDK) preProcessRequest(body []byte) ([]byte, error) {
+	if len(body) == 0 {
+		return nil, errors.New("empty request body")
+	}
+
+	var request *openrtb2.BidRequest
+	if err := jsoniterator.Unmarshal(body, &request); err != nil {
+		return body, err
+	}
+
+	// Fetch wrapper data from the request body
+	gs.getWrapperData(request)
+
+	// If wrapper data is not found, return error
+	// This is a critical check, as wrapper data is essential for request processing
+	if len(gs.wrapper.PublisherId) == 0 || len(gs.wrapper.ProfileId) == 0 || len(gs.wrapper.TagId) == 0 {
+		return body, errors.New("missing wrapper data: publisherId, profileId or tagId")
+	}
+
+	// Modify request with static data
+	modifyRequestWithStaticData(request)
+
+	// Set wrapper data in the request
+	gs.setWrapperData(request)
+
+	// Google SDK specific modifications
+	gs.modifyRequestWithGoogleFeature(request)
+
+	// Marshal the modified request
+	modifiedBody, err := jsoniterator.Marshal(request)
+	if err != nil {
+		return body, err
+	}
+
+	return modifiedBody, nil
+}
+
+func (gs *GoogleSDK) getWrapperData(request *openrtb2.BidRequest) {
+	if request == nil || len(request.Imp) == 0 {
+		return
+	}
+
+	adunitMappingByte, datatype, _, err := jsonparser.Get(request.Imp[0].Ext, "ad_unit_mapping")
+	if adunitMappingByte == nil || err != nil || datatype != jsonparser.Array {
+		glog.Errorf("[GoogleSDK] [Error]: failed to get ad unit mapping %v", err)
+		return
+	}
+
+	var adunitMapping []map[string]interface{}
+	if err := jsoniterator.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal ad unit mapping %v", err)
+		return
+	}
+
+	for _, mapping := range adunitMapping {
+		keyvals, ok := mapping["keyvals"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, kv := range keyvals {
+			kvMap, ok := kv.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			key, ok := kvMap["key"].(string)
+			if !ok {
+				continue
+			}
+			value, ok := kvMap["value"].(string)
+			if !ok {
+				continue
+			}
+
+			switch key {
+			case "publisher_id":
+				gs.wrapper.PublisherId = value
+			case "profile_id":
+				gs.wrapper.ProfileId = value
+			case "ad_unit_id":
+				gs.wrapper.TagId = value
+			}
+		}
+
+		// Check if all values are found
+		if len(gs.wrapper.PublisherId) > 0 && len(gs.wrapper.ProfileId) > 0 && len(gs.wrapper.TagId) > 0 {
+			break
+		}
+	}
+}
+
+func (gs *GoogleSDK) setWrapperData(request *openrtb2.BidRequest) {
+	// Set Publisher Id
+	gs.wrapper.setPublisherId(request)
+
+	// Set profile Id at ext.prebid.bidderparams.pubmatic.wrapper.profileid
+	gs.wrapper.setProfileID(request)
+
+	// Set Tag Id
+	gs.wrapper.setTagId(request)
+}
+
 func getSignalData(body []byte) ([]byte, error) {
 	if len(body) == 0 {
 		return nil, errors.New("empty request body")
@@ -105,138 +226,48 @@ func getSignalData(body []byte) ([]byte, error) {
 	return signalData, nil
 }
 
-func getWrapperData(body []byte) (*wrapperData, error) {
-	if len(body) == 0 {
-		return nil, errors.New("empty request body")
-	}
-
-	adunitMappingByte, datatype, _, err := jsonparser.Get(body, "imp", "[0]", "ext", "ad_unit_mapping")
-	if adunitMappingByte == nil || err != nil || datatype != jsonparser.Array {
-		glog.Errorf("[GoogleSDK] [Error]: failed to get ad unit mapping %v", err)
-		return nil, errors.New("failed to get ad unit mapping")
-	}
-
-	var adunitMapping []map[string]interface{}
-	if err := jsoniterator.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
-		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal ad unit mapping %v", err)
-		return nil, errors.New("failed to unmarshal ad unit mapping")
-	}
-
-	wprData := &wrapperData{}
-	for _, mapping := range adunitMapping {
-		keyvals, ok := mapping["keyvals"].([]interface{})
-		if !ok {
-			continue
-		}
-
-		for _, kv := range keyvals {
-			kvMap, ok := kv.(map[string]any)
-			if !ok {
-				continue
-			}
-
-			key, ok := kvMap["key"].(string)
-			if !ok {
-				continue
-			}
-			value, ok := kvMap["value"].(string)
-			if !ok {
-				continue
-			}
-
-			switch key {
-			case "publisher_id":
-				wprData.PublisherId = value
-			case "profile_id":
-				wprData.ProfileId = value
-			case "ad_unit_id":
-				wprData.TagId = value
-			}
-		}
-
-		// Check if all values are found
-		if len(wprData.PublisherId) > 0 && len(wprData.ProfileId) > 0 && len(wprData.TagId) > 0 {
-			break
-		}
-	}
-
-	if len(wprData.PublisherId) == 0 && len(wprData.ProfileId) == 0 && len(wprData.TagId) == 0 {
-		glog.Errorf("[GoogleSDK] [Error]: wrapper data not found in ad unit mapping")
-		return nil, errors.New("wrapper data not found in ad unit mapping")
-	}
-
-	return wprData, nil
-}
-
-func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, cfg config.Config, features feature.Features) []byte {
+func (gs *GoogleSDK) ModifyRequestWithGoogleSDKParams(requestBody []byte) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
 	}
 
-	// Get wrapper data
-	wrapperData, err := getWrapperData(requestBody)
+	// Pre-process request
+	requestBody, err := gs.preProcessRequest(requestBody)
 	if err != nil {
+		glog.Errorf("[GoogleSDK] [Error]: failed to pre-process request for publisher %v and profile %v: %v", gs.wrapper.PublisherId, gs.wrapper.ProfileId, err)
 		return requestBody
 	}
 
 	//Get Signal data and if signal data is not found, process request without signal data
 	signalData, err := getSignalData(requestBody)
 	if err != nil || len(signalData) == 0 {
-		rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.MissingSignal)
+		gs.metricsEngine.RecordSignalDataStatus(gs.wrapper.PublisherId, gs.wrapper.ProfileId, models.MissingSignal)
 		glog.Errorf("[GoogleSDK] [Error]: failed to get signal data: %v", err)
 	}
 
-	requestBody, err = PatchSignalDataToRequest(rctx, cfg, requestBody, signalData, wrapperData)
+	requestBody, err = gs.patchSignalDataToRequest(requestBody, signalData)
 	if err != nil {
 		glog.Errorf("[GoogleSDK] [Error]: failed to patch signal data to request: %v", err)
 	}
 
-	var sdkRequest *openrtb2.BidRequest
-	if err := jsoniterator.Unmarshal(requestBody, &sdkRequest); err != nil {
-		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal request body: %v", err)
-		return requestBody
-	}
-
-	// Set Publisher Id
-	wrapperData.setPublisherId(sdkRequest)
-
-	// Set profile Id at ext.prebid.bidderparams.pubmatic.wrapper.profileid
-	wrapperData.setProfileID(sdkRequest)
-
-	// Set Tag Id
-	wrapperData.setTagId(sdkRequest)
-
-	// Google SDK specific modifications
-	modifyRequestWithGoogleFeature(sdkRequest, features)
-
-	modifiedRequest, err := json.Marshal(sdkRequest)
-	if err != nil {
-		return requestBody
-	}
-
-	return modifiedRequest
+	return requestBody
 }
 
-func PatchSignalDataToRequest(rctx models.RequestCtx, cfg config.Config, requestBody []byte, signalData []byte, wrapperData *wrapperData) ([]byte, error) {
-	if cfg.Template.GoogleSDK.Enable {
-		var request, signal, template map[string]any
+func (gs *GoogleSDK) patchSignalDataToRequest(requestBody []byte, signalData []byte) ([]byte, error) {
+	if gs.config.Template.GoogleSDK.Enable && len(gs.config.Template.GoogleSDK.DeserializedData) > 0 {
+		var request, signal map[string]any
 		if err := jsoniterator.Unmarshal(requestBody, &request); err != nil {
-			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal request body: %v", err)
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal request body for publisher %v and profile %v: %v", gs.wrapper.PublisherId, gs.wrapper.ProfileId, err)
 			return requestBody, err
 		}
 
 		if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
-			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal signal data: %v", err)
-			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
+			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal signal data for publisher %v and profile %v: %v", gs.wrapper.PublisherId, gs.wrapper.ProfileId, err)
+			gs.metricsEngine.RecordSignalDataStatus(gs.wrapper.PublisherId, gs.wrapper.ProfileId, models.InvalidSignal)
 			return requestBody, err
 		}
 
-		if err := jsoniterator.Unmarshal([]byte(cfg.Template.GoogleSDK.Data), &template); err != nil {
-			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal template: %v", err)
-			return requestBody, err
-		}
-
-		sdkparser.ParseTemplateAndSetValues(template, request, signal)
+		sdkparser.ParseTemplateAndSetValues(gs.config.Template.GoogleSDK.DeserializedData, signal, request)
 
 		// Marshal the modified request back to JSON
 		modifiedRequest, err := jsoniterator.Marshal(request)
@@ -252,14 +283,11 @@ func PatchSignalDataToRequest(rctx models.RequestCtx, cfg config.Config, request
 		return requestBody, err
 	}
 
-	// Modify request with static data
-	modifyRequestWithStaticData(sdkRequest)
-
 	if len(signalData) > 0 {
 		var signal *openrtb2.BidRequest
 		if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
 			glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal signal data: %v", err)
-			rctx.MetricsEngine.RecordSignalDataStatus(wrapperData.PublisherId, wrapperData.ProfileId, models.InvalidSignal)
+			gs.metricsEngine.RecordSignalDataStatus(gs.wrapper.PublisherId, gs.wrapper.ProfileId, models.InvalidSignal)
 			return requestBody, err
 		}
 
@@ -277,13 +305,13 @@ func PatchSignalDataToRequest(rctx models.RequestCtx, cfg config.Config, request
 	return modifiedRequest, nil
 }
 
-func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features feature.Features) {
-	if request == nil || len(request.Imp) == 0 || features == nil {
+func (gs *GoogleSDK) modifyRequestWithGoogleFeature(request *openrtb2.BidRequest) {
+	if request == nil || len(request.Imp) == 0 || gs.features == nil {
 		return
 	}
 
 	for i := range request.Imp {
-		bannerSizes := GetFlexSlotSizes(request.Imp[i].Banner, features)
+		bannerSizes := GetFlexSlotSizes(request.Imp[i].Banner, gs.features)
 		SetFlexSlotSizes(request.Imp[i].Banner, bannerSizes)
 	}
 }
@@ -302,9 +330,7 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 
 	// Remove metric
-	if len(request.Imp) > 0 {
-		request.Imp[0].Metric = nil
-	}
+	request.Imp[0].Metric = nil
 
 	// Remove banner if impression is rewarded and banner and video both are present
 	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
