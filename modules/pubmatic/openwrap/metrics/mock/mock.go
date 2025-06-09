@@ -262,6 +262,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordCTVRequests(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCTVRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCTVRequests), arg0, arg1)
 }
 
+// RecordMBMFRequests mocks base method
+func (m *MockMetricsEngine) RecordMBMFRequests(arg0 string, arg1 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordMBMFRequests", arg0, arg1)
+}
+
+// RecordMBMFRequests indicates an expected call of RecordMBMFRequests
+func (mr *MockMetricsEngineMockRecorder) RecordMBMFRequests(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordMBMFRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordMBMFRequests), arg0, arg1)
+}
+
 // RecordCacheErrorRequests mocks base method
 func (m *MockMetricsEngine) RecordCacheErrorRequests(arg0, arg1, arg2 string) {
 	m.ctrl.T.Helper()
