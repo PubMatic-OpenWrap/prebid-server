@@ -15,7 +15,6 @@ func EnrichVASTWithSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler 
 			bid.AdM = UpdateADMWithAdvCat(vastXMLHandler, bid.AdM, bid.Cat, bid.ADomain)
 		}
 	}
-
 }
 
 func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, AdM string, cat []string, adomain []string) string {
