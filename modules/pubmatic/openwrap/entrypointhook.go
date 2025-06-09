@@ -63,9 +63,6 @@ func (m OpenWrap) handleEntrypointHook(
 		result.ModuleContext["rctx"] = rCtx
 	}()
 
-	// Set MetricsEngine
-	rCtx.MetricsEngine = m.metricEngine
-
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == models.Enabled {
@@ -83,6 +80,7 @@ func (m OpenWrap) handleEntrypointHook(
 	originalRequestBody := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
+		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
 		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
@@ -92,6 +90,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	if endpoint == models.EndpointGoogleSDK {
+		rCtx.MetricsEngine = m.metricEngine
 		gsdk := googlesdk.NewGoogleSDK(m.metricEngine, m.cfg, m.features)
 		payload.Body = gsdk.ModifyRequestWithGoogleSDKParams(payload.Body)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
