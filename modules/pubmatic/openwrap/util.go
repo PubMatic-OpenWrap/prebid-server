@@ -613,21 +613,29 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	if !m.pubFeatures.IsMBMFCountry(rctx.DeviceCtx.DerivedCountryCode) {
-		return nil
-	}
+	mbmfStatus := models.MBMFNoEntryFound
+	//call stat at the end of func with updated mbmfStatus
+	defer func() { m.metricEngine.RecordMBMFRequests(rctx.Endpoint, rctx.PubIDStr, mbmfStatus) }()
 
 	//if pub entry present with is_enabled=1 AND no pub in mbmf_enabled wrapper_feature-> apply mbmf
 	//if pub entry present as is_enabled=0 -> don't apply mbmf
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
+		mbmfStatus = models.MBMFPubDisabled
+		return nil
+	}
+
+	// check publisher specific country, if not present then check pub_id=0/platform countries
+	if !m.pubFeatures.IsMBMFCountryForPublisher(rctx.DeviceCtx.DerivedCountryCode, rctx.PubID) {
+		mbmfStatus = models.MBMFCountryDisabled
 		return nil
 	}
 
 	//for phase 1 mbmf, we directly check for adunitlevel floors without having check on adunitformat enabled
-
 	adunitFormat := getAdunitFormat(reward, imp)
+
 	//don't apply mbmf if pub is not enabled for adunitFormat
 	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+		mbmfStatus = models.MBMFAdUnitFormatDisabled
 		return nil
 	}
 
@@ -636,8 +644,10 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		if multifloors, ok := adunitLevelMultiFloors[imp.TagID]; ok && multifloors != nil {
 			//if profile adunitlevel floors present and is_active=0, don't apply mbmf
 			if !multifloors.IsActive {
+				mbmfStatus = models.MBMFAdUnitDisabled
 				return nil
 			}
+			mbmfStatus = models.MBMFSuccess
 			return multifloors
 		}
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
@@ -645,7 +655,12 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 
 	if adunitFormat != "" {
 		//return adunitformat multifloors for pubid, if not present then return default multifloors
-		return m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+		multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+		if multifloors != nil {
+			mbmfStatus = models.MBMFSuccess
+			return multifloors
+		}
+		mbmfStatus = models.MBMFAdUnitFormatNotFound
 	}
 	return nil
 }

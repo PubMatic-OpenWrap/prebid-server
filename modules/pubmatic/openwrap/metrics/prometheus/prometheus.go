@@ -98,6 +98,8 @@ type Metrics struct {
 	//ApplovinMax
 	failedParsingItuneId *prometheus.CounterVec
 	endpointResponseSize *prometheus.HistogramVec
+	//MBMF
+	mbmfRequests *prometheus.CounterVec
 
 	//IBV request
 	ibvRequests *prometheus.CounterVec
@@ -127,6 +129,7 @@ const (
 	adpodImpCountLabel = "adpod_imp_count"
 	bidderCodeLabel    = "bidder_code"
 	adapterCodeLabel   = "adapter_code"
+	errorCodeLabel     = "error_code"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
@@ -313,6 +316,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"signal_status",
 		"Count signal status for applovinmax requests",
 		[]string{pubIDLabel, profileIDLabel, signalTypeLabel})
+
+	metrics.mbmfRequests = newCounter(cfg, promRegistry,
+		"mbmf_requests",
+		"Count of mbmf requests with error code",
+		[]string{endpointLabel, pubIDLabel, errorCodeLabel})
 
 	metrics.requests = newCounter(cfg, promRegistry,
 		"vastunwrap_status",
@@ -637,6 +645,15 @@ func (m *Metrics) RecordSignalDataStatus(pubid, profileid, signalType string) {
 		pubIDLabel:      pubid,
 		profileIDLabel:  profileid,
 		signalTypeLabel: signalType,
+	}).Inc()
+}
+
+// RecordMBMFRequests records count of request in which MBMF is present based on endpoint, pubid and errorcode
+func (m *Metrics) RecordMBMFRequests(endpoint, pubId string, errorCode int) {
+	m.mbmfRequests.With(prometheus.Labels{
+		endpointLabel:  endpoint,
+		pubIDLabel:     pubId,
+		errorCodeLabel: strconv.Itoa(errorCode),
 	}).Inc()
 }
 

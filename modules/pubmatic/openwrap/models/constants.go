@@ -648,3 +648,14 @@ const (
 	EmptyPartnerConfig     = `[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]`
 	ErrMBMFFloorsUnmarshal = `[ErrMBMFFloorsUnmarshal] pubid:[%v] profileid:[%v] error:[%s]`
 )
+
+// constants for MBMF error codes for metrics
+const (
+	MBMFSuccess              = 0
+	MBMFCountryDisabled      = 1
+	MBMFPubDisabled          = 2
+	MBMFAdUnitFormatDisabled = 3
+	MBMFAdUnitDisabled       = 4
+	MBMFAdUnitFormatNotFound = 5
+	MBMFNoEntryFound         = 6
+)
