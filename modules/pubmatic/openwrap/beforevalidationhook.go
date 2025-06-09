@@ -768,7 +768,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 
-	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
+	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled
 	if googleSSUFeatureEnabled {
 		if rctx.NewReqExt == nil {
 			rctx.NewReqExt = &models.RequestExt{}
