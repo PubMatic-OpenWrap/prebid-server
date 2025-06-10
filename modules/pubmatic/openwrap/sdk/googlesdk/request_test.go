@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -15,54 +16,35 @@ import (
 )
 
 func TestGetSignalData(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-
 	tests := []struct {
-		name     string
-		input    string
-		setup    func()
-		expected *openrtb2.BidRequest
+		name        string
+		input       string
+		expected    []byte
+		expectedErr error
 	}{
 		{
-			name:  "Empty body",
-			input: "",
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Empty body",
+			input:    "",
 			expected: nil,
 		},
 		{
-			name:  "Invalid JSON",
-			input: "{invalid-json",
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Invalid JSON",
+			input:    "{invalid-json",
 			expected: nil,
 		},
 		{
-			name:  "Missing imp array",
-			input: `{"someKey": "someValue"}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Missing imp array",
+			input:    `{"someKey": "someValue"}`,
 			expected: nil,
 		},
 		{
-			name:  "Empty imp array",
-			input: `{"imp": []}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Empty imp array",
+			input:    `{"imp": []}`,
 			expected: nil,
 		},
 		{
-			name:  "Missing ext in imp",
-			input: `{"imp": [{"id": "1"}]}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
+			name:     "Missing ext in imp",
+			input:    `{"imp": [{"id": "1"}]}`,
 			expected: nil,
 		},
 		{
@@ -77,9 +59,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -94,12 +73,7 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			expected: &openrtb2.BidRequest{
-				ID: "test-id",
-				App: &openrtb2.App{
-					ID: "app-123",
-				},
-			},
+			expected: []byte(`{"id":"test-id","app":{"id":"app-123"}}`),
 		},
 		{
 			name: "Invalid signal data JSON",
@@ -113,9 +87,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -130,9 +101,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -153,12 +121,7 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			expected: &openrtb2.BidRequest{
-				ID: "test-id",
-				App: &openrtb2.App{
-					ID: "app-123",
-				},
-			},
+			expected: []byte(`{"id":"test-id","app":{"id":"app-123"}}`),
 		},
 		{
 			name: "Invalid buyer_generated_request_data structure",
@@ -171,26 +134,6 @@ func TestGetSignalData(t *testing.T) {
 					}
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
-			expected: nil,
-		},
-		{
-			name: "Invalid signal data unmarshalling failure",
-			input: `{
-				"imp": [{
-					"ext": {
-						"buyer_generated_request_data": [{
-							"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
-							"data": "eyJpZCI6"
-						}]
-					}
-				}]
-			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.InvalidSignal)
-			},
 			expected: nil,
 		},
 		{
@@ -202,202 +145,151 @@ func TestGetSignalData(t *testing.T) {
 					},
 				}]
 			}`,
-			setup: func() {
-				mockEngine.EXPECT().RecordSignalDataStatus("5890", "123", models.MissingSignal)
-			},
 			expected: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
+			result, err := getSignalData([]byte(tt.input))
+			if tt.expected == nil {
+				assert.Empty(t, result, "Expected nil result for test: %s", tt.name)
+				return
 			}
 
-			result := getSignalData([]byte(tt.input), models.RequestCtx{
-				MetricsEngine: mockEngine,
-			}, &wrapperData{
-				PublisherId: "5890",
-				ProfileId:   "123",
-			})
-
-			if tt.expected == nil {
-				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
+			if err != nil {
+				assert.EqualError(t, err, tt.expectedErr.Error(), "Unexpected error for test: %s", tt.name)
 				return
 			}
 
 			assert.NotNil(t, result, "Expected non-nil result for test: %s", tt.name)
-			expectedJSON, err := json.Marshal(tt.expected)
-			assert.NoError(t, err, "Failed to marshal expected value for test: %s", tt.name)
-			resultJSON, err := json.Marshal(result)
-			assert.NoError(t, err, "Failed to marshal result for test: %s", tt.name)
-			assert.JSONEq(t, string(expectedJSON), string(resultJSON), "Unexpected result for test: %s", tt.name)
+			assert.JSONEq(t, string(tt.expected), string(result), "Unexpected result for test: %s", tt.name)
 		})
 	}
 }
-func TestGetWrapperData(t *testing.T) {
+
+func TestGoogleSDK_getWrapperData(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       string
-		expected    *wrapperData
-		expectedErr string
+		name     string
+		request  *openrtb2.BidRequest
+		expected wrapperData
 	}{
 		{
-			name:        "Empty body",
-			input:       "",
-			expected:    nil,
-			expectedErr: "empty request body",
+			name:     "Nil request",
+			request:  nil,
+			expected: wrapperData{},
 		},
 		{
-			name:        "Invalid JSON",
-			input:       "{invalid-json",
-			expected:    nil,
-			expectedErr: "failed to get ad unit mapping",
+			name:     "No impressions",
+			request:  &openrtb2.BidRequest{},
+			expected: wrapperData{},
 		},
 		{
-			name:        "Missing imp array",
-			input:       `{"someKey": "someValue"}`,
-			expected:    nil,
-			expectedErr: "failed to get ad unit mapping",
-		},
-		{
-			name:        "Empty imp array",
-			input:       `{"imp": []}`,
-			expected:    nil,
-			expectedErr: "failed to get ad unit mapping",
-		},
-		{
-			name:        "Missing ext in imp",
-			input:       `{"imp": [{"id": "1"}]}`,
-			expected:    nil,
-			expectedErr: "failed to get ad unit mapping",
-		},
-		{
-			name:        "Missing Keyval in ad_unit_mapping",
-			input:       `{"imp":[{"ext":{"ad_unit_mapping":[{"format":1}]}}]}`,
-			expected:    nil,
-			expectedErr: "wrapper data not found in ad unit mapping",
-		},
-		{
-			name: "Valid wrapper data",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [
-							{
-								"keyvals": [
-									{"key": "publisher_id", "value": "12345"},
-									{"key": "profile_id", "value": "67890"},
-									{"key": "ad_unit_id", "value": "tag-123"}
-								]
-						}
-						]
-					}
-				}]
-			}`,
-			expected: &wrapperData{
-				PublisherId: "12345",
-				ProfileId:   "67890",
-				TagId:       "tag-123",
+			name: "No ad_unit_mapping in ext",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{}`)},
+				},
 			},
-			expectedErr: "",
+			expected: wrapperData{},
 		},
 		{
-			name: "Partial wrapper data",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [
-							{
-								"keyvals": [
-									{"key": "publisher_id", "value": "12345"}
-								]
-							}
-						]
-					}
-				}]
-			}`,
-			expected: &wrapperData{
-				PublisherId: "12345",
+			name: "ad_unit_mapping not an array",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": {}}`)},
+				},
 			},
-			expectedErr: "",
+			expected: wrapperData{},
 		},
 		{
-			name: "Invalid Keyval structure",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [{
-							"Keyval": [
-								{"key": "publisher_id"}
-							]
-						}]
-					}
-				}]
-			}`,
-			expected:    nil,
-			expectedErr: "wrapper data not found in ad unit mapping",
+			name: "ad_unit_mapping array but no keyvals",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"format":1}]}`)},
+				},
+			},
+			expected: wrapperData{},
 		},
 		{
-			name: "No matching keys in Keyval",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [{
-							"keyvals": [
-								{"key": "unknown_key", "value": "value"}
-							]
-						}]
-					}
-				}]
-			}`,
-			expected:    nil,
-			expectedErr: "wrapper data not found in ad unit mapping",
+			name: "ad_unit_mapping with partial keyvals",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"keyvals":[{"key":"publisher_id","value":"pub-1"}]}]}`)},
+				},
+			},
+			expected: wrapperData{PublisherId: "pub-1"},
 		},
 		{
-			name: "Invalid adunit mapping structure",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [{]
-					}
-				}]
-			}`,
-			expected:    nil,
-			expectedErr: "failed to unmarshal ad unit mapping",
+			name: "ad_unit_mapping with all keyvals",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"keyvals":[{"key":"publisher_id","value":"pub-2"},{"key":"profile_id","value":"prof-2"},{"key":"ad_unit_id","value":"tag-2"}]}]}`)},
+				},
+			},
+			expected: wrapperData{PublisherId: "pub-2", ProfileId: "prof-2", TagId: "tag-2"},
 		},
 		{
-			name: "Not valid key value structure",
-			input: `{
-				"imp": [{
-					"ext": {
-						"ad_unit_mapping": [{
-							"keyvals": [
-								{"key": 123, "value": "12345"},
-								{"key": "profile_id", "value": 67890},
-								"abc"
-							]
-						}]
-					}
-				}]
-			}`,
-			expected:    nil,
-			expectedErr: "wrapper data not found in ad unit mapping",
+			name: "ad_unit_mapping with multiple mappings, first incomplete, second complete",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [
+						{"keyvals":[{"key":"publisher_id","value":"pub-3"}]},
+						{"keyvals":[{"key":"publisher_id","value":"pub-4"},{"key":"profile_id","value":"prof-4"},{"key":"ad_unit_id","value":"tag-4"}]}
+					]}`)},
+				},
+			},
+			expected: wrapperData{PublisherId: "pub-4", ProfileId: "prof-4", TagId: "tag-4"},
+		},
+		{
+			name: "ad_unit_mapping with invalid keyvals structure",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"keyvals":"not-an-array"}]}`)},
+				},
+			},
+			expected: wrapperData{},
+		},
+		{
+			name: "ad_unit_mapping with keyvals containing non-map values",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"keyvals":[123,"abc",{"key":"publisher_id","value":"pub-5"}]}]}`)},
+				},
+			},
+			expected: wrapperData{PublisherId: "pub-5"},
+		},
+		{
+			name: "ad_unit_mapping with keyvals missing key or value",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [{"keyvals":[{"key":"publisher_id"},{"value":"pub-6"},{"key":123,"value":"pub-6"}]}]}`)},
+				},
+			},
+			expected: wrapperData{},
+		},
+		{
+			name: "ad_unit_mapping with multiple keyvals, only last mapping complete",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{Ext: []byte(`{"ad_unit_mapping": [
+						{"keyvals":[{"key":"publisher_id","value":"pub-7"}]},
+						{"keyvals":[{"key":"profile_id","value":"prof-7"}]},
+						{"keyvals":[{"key":"publisher_id","value":"pub-8"},{"key":"profile_id","value":"prof-8"},{"key":"ad_unit_id","value":"tag-8"}]}
+					]}`)},
+				},
+			},
+			expected: wrapperData{PublisherId: "pub-8", ProfileId: "prof-8", TagId: "tag-8"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := getWrapperData([]byte(tt.input))
-			if tt.expectedErr != "" {
-				assert.Nil(t, result, "Expected nil result for test: %s", tt.name)
-				assert.EqualError(t, err, tt.expectedErr, "Unexpected error for test: %s", tt.name)
-				return
-			}
-
-			assert.NoError(t, err, "Unexpected error for test: %s", tt.name)
-			assert.Equal(t, tt.expected, result, "Unexpected result for test: %s", tt.name)
+			gs := &GoogleSDK{}
+			gs.getWrapperData(tt.request)
+			assert.Equal(t, tt.expected.PublisherId, gs.wrapper.PublisherId, "PublisherId mismatch")
+			assert.Equal(t, tt.expected.ProfileId, gs.wrapper.ProfileId, "ProfileId mismatch")
+			assert.Equal(t, tt.expected.TagId, gs.wrapper.TagId, "TagId mismatch")
 		})
 	}
 }
@@ -1105,6 +997,7 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 		requestBody    string
 		setup          func()
 		features       feature.Features
+		config         config.Config
 		expectedResult string
 		expectError    bool
 	}{
@@ -1186,7 +1079,9 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 		{
 			name: "Missing wrapper data",
 			requestBody: `{
+					"id": "123",
 					"imp": [{
+						"id": "imp1",
 						"ext": {
 							"buyer_generated_request_data": [{
 								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
@@ -1196,7 +1091,9 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 					}]
 				}`,
 			expectedResult: `{
+					"id": "123",
 					"imp": [{
+						"id": "imp1",
 						"ext": {
 							"buyer_generated_request_data": [{
 								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
@@ -1356,11 +1253,11 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 							"h": 250,
 							"ext": {
 								"flexslot": {
-                        			"wmin": 10,
-                        			"wmax": 1000,
-                        			"hmin": 10,
-                        			"hmax": 1000
-                    			}
+		                			"wmin": 10,
+		                			"wmax": 1000,
+		                			"hmin": 10,
+		                			"hmax": 1000
+		            			}
 							}
 						},
 						"ext": {
@@ -1400,11 +1297,11 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 							"format": [{"w": 320, "h": 90}],
 							"ext": {
 								"flexslot": {
-                        			"wmin": 10,
-                        			"wmax": 1000,
-                        			"hmin": 10,
-                        			"hmax": 1000
-                    			}
+		                			"wmin": 10,
+		                			"wmax": 1000,
+		                			"hmin": 10,
+		                			"hmax": 1000
+		            			}
 							}
 						},
 						"secure": 1,
@@ -1442,6 +1339,114 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 					}
 				}`,
 		},
+		{
+			name: "Valid request with template framework",
+			requestBody: `{
+					"id": "123",
+					"imp": [{
+					    "id": "imp1",
+						"ext": {
+							"ad_unit_mapping": [
+								{
+									"keyvals": [
+										{"key": "publisher_id", "value": "12345"},
+										{"key": "profile_id", "value": "67890"},
+										{"key": "ad_unit_id", "value": "tag-123"}
+									]
+								}
+							],
+							"buyer_generated_request_data": [{
+								"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+								"data": "eyJpZCI6InRlc3QtaWQiLCJpbXAiOlt7ImJhbm5lciI6eyJtaW1lcyI6WyJpbWFnZS9qcGVnIiwiaW1hZ2UvcG5nIl0sImFwaSI6WzEsMl19fV0sImFwcCI6eyJpZCI6ImFwcC0xMjMifSwiZXh0Ijp7IndyYXBwZXIiOnsiY2xpZW50Y29uZmlnIjoyfX19"
+							}]
+						}
+					}]
+				}`,
+			setup: nil,
+			expectedResult: `{
+								"id": "123",
+								"imp": [
+									{
+									"id": "imp1",
+									"tagid": "tag-123",
+									"secure": 1,
+									"banner": {
+										"mimes": [
+										"image/jpeg",
+										"image/png"
+										],
+										"api": [
+										1,
+										2
+										]
+									},
+									"ext": {
+										"ad_unit_mapping": [
+										{
+											"keyvals": [
+											{
+												"key": "publisher_id",
+												"value": "12345"
+											},
+											{
+												"key": "profile_id",
+												"value": "67890"
+											},
+											{
+												"key": "ad_unit_id",
+												"value": "tag-123"
+											}
+											]
+										}
+										],
+										"buyer_generated_request_data": [
+										{
+											"source_app": {
+											"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
+											},
+											"data": "eyJpZCI6InRlc3QtaWQiLCJpbXAiOlt7ImJhbm5lciI6eyJtaW1lcyI6WyJpbWFnZS9qcGVnIiwiaW1hZ2UvcG5nIl0sImFwaSI6WzEsMl19fV0sImFwcCI6eyJpZCI6ImFwcC0xMjMifSwiZXh0Ijp7IndyYXBwZXIiOnsiY2xpZW50Y29uZmlnIjoyfX19"
+										}
+										]
+									}
+									}
+								],
+								"app": {
+									"publisher": {
+									"id": "12345"
+									}
+								},
+								"ext": {
+									"wrapper": {
+									"clientconfig": 2
+									},
+									"prebid": {
+									"bidderparams": {
+										"pubmatic": {
+										"wrapper": {
+											"profileid": 67890
+										}
+										}
+									}
+									}
+								}
+						}`,
+			config: config.Config{
+				Template: config.Template{
+					GoogleSDK: config.TemplateData{
+						Enable: true,
+						DeserializedData: func() map[string]interface{} {
+							var template map[string]interface{}
+							templateString := `{"imp":[{"displaymanager":"string","displaymanagerver":"string","clickbrowser":"int","banner":{"mimes":["string"],"api":["int"]},"video":{"mimes":["string"],"minduration":"int","maxduration":"int","startdelay":"int","protocols":["int"],"protocol":"int","w":"int","h":"int","maxseq":"int","poddur":"int","podid":"string","podseq":"int","rqddurs":["int"],"plcmt":"int","linearity":"int","skip":"int","skipmin":"int","skipafter":"int","sequence":"int","slotinpod":"int","mincpmpersec":"float","maxextended":"int","minbitrate":"int","maxbitrate":"int","boxingallowed":"int","playbackmethod":["int"],"playbackend":"int","delivery":["int"],"pos":"int","api":["int"],"companionad":["object"],"companiontype":["int"],"poddedupe":["int"],"durfloors":[{"mindur":"int","maxdur":"int","bidfloor":"float","ext":"object"}],"ext":"object"},"native":"object","ext":{"skadn":{"versions":"array","version":"string","skoverlay":"bool","productpage":"int"}}}],"app":{"domain":"string","paid":"int","keywords":"string"},"device":{"ua":"string","make":"string","model":"string","js":"int","ip":"string","geo":"object","hwv":"string"},"regs":{"ext":{"dsa":{"dsarequired":"int","pubrender":"int","datatopub":"int"},"gpp":"string","gpp_sid":"array"}},"source":{"ext":{"omidpn":"string","omidpv":"string"}},"user":{"sessionduration":"int","impdepth":"int"},"ext":{"wrapper":{"clientconfig":"int"}}}`
+							err := json.Unmarshal([]byte(templateString), &template)
+							if err != nil {
+								t.Fatal("Failed to unmarshal template string:", err)
+							}
+							return template
+						}(),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1450,9 +1455,8 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 				tt.setup()
 			}
 
-			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), models.RequestCtx{
-				MetricsEngine: mockEngine,
-			}, tt.features)
+			gskd := NewGoogleSDK(mockEngine, tt.config, tt.features)
+			result := gskd.ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody))
 
 			if tt.expectError {
 				assert.Equal(t, tt.expectedResult, string(result), "Actual and expected result does not match: %s", tt.name)
