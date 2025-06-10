@@ -124,9 +124,9 @@ func (fe *feature) updateMBMFRwddFloors(nextIdx int32) {
 func (fe *feature) IsMBMFCountryForPublisher(countryCode string, pubID int) bool {
 	idx := fe.mbmf.index.Load()
 	publisherCountries := fe.mbmf.data[idx].enabledCountries
-	if pubCountyCodes, isPresent := publisherCountries[pubID]; isPresent {
+	if pubCountryCodes, isPresent := publisherCountries[pubID]; isPresent {
 		// check for countryCode in pubID specific countries
-		_, isPresent := pubCountyCodes[countryCode]
+		_, isPresent := pubCountryCodes[countryCode]
 		return isPresent
 	}
 
