@@ -724,7 +724,43 @@ func TestFeatureIsMBMFCountryForPublisher(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "mbmf country enabled pub with Country Japan",
+			name: "country not present in pub specific country list",
+			args: args{
+				countryCode: "IN",
+				pubID:       123,
+			},
+			fields: fields{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
+						{
+							enabledCountries: map[int]models.HashSet{
+								123: {
+									"US": {},
+									"JP": {},
+								},
+								0: {
+									"IN": {},
+								},
+							},
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+						{
+							enabledCountries:         make(map[int]models.HashSet),
+							enabledPublishers:        make(map[int]bool),
+							profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
+							instlFloors:              make(map[int]*models.MultiFloors),
+							rwddFloors:               make(map[int]*models.MultiFloors),
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "country present in pub specific country list",
 			args: args{
 				countryCode: "JP",
 				pubID:       123,
@@ -761,7 +797,7 @@ func TestFeatureIsMBMFCountryForPublisher(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "mbmf common country pub request",
+			name: "country present in common country list for new pub",
 			args: args{
 				countryCode: "US",
 				pubID:       125,
