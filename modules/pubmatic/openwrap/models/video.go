@@ -19,10 +19,16 @@ const (
 	VideoExtensionTag = "Extension"
 	//VideoPricingTag video pricing element constant
 	VideoPricingTag = "Pricing"
-	//VideoAdDomainTag video ad domain element constant
-	VideoAdDomainTag = "Advertiser"
+	//VideoAdvertiserTag video ad domain element constant
+	VideoAdvertiserTag = "Advertiser"
 	//VideoAdCatTag video ad category element constant
 	VideoAdCatTag = "Category"
+	//VideoVASTWrapperTag video wrapper element constant
+	VideoVASTWrapperTag = "Wrapper"
+	//VideoVASTInLineTag video inline element constant
+	VideoVASTInLineTag = "InLine"
+	//VideoAdTag video ad element constant
+	VideoAdTag = "Ad"
 	//VideoPricingModel video model attribute constant
 	VideoPricingModel = "model"
 	//VideoPricingModelCPM video cpm attribute value constant

@@ -5,7 +5,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 )
 
-func EnrishVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler parser.VASTXMLHandler) {
+func EnrichVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler parser.VASTXMLHandler) {
 	for _, seatBid := range bidResponse.SeatBid {
 		for i := range seatBid.Bid {
 			bid := &seatBid.Bid[i]
@@ -17,22 +17,22 @@ func EnrishVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler p
 	}
 }
 
-func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, AdM string, cat []string, adomain []string) string {
-	if err := vastXMLHandler.Parse(AdM); err != nil {
-		return AdM
+func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, adm string, categories []string, adDomains []string) string {
+	if err := vastXMLHandler.Parse(adm); err != nil {
+		return adm
 	}
-	if len(cat) > 0 {
-		adm, err := vastXMLHandler.AddCategoryTag(cat)
+	if len(categories) > 0 {
+		updatedAdm, err := vastXMLHandler.AddCategoryTag(categories)
 		if err == nil {
-			AdM = adm
+			adm = updatedAdm
 		}
 	}
 
-	if len(adomain) > 0 {
-		adm, err := vastXMLHandler.AddAdvertiserTag(adomain[0])
+	if len(adDomains) > 0 {
+		updatedAdm, err := vastXMLHandler.AddAdvertiserTag(adDomains[0])
 		if err == nil {
-			AdM = adm
+			adm = updatedAdm
 		}
 	}
-	return AdM
+	return adm
 }

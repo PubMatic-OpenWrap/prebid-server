@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/beevik/etree"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -146,4 +147,63 @@ func (ti *etreeHandler) newPricingNode(price float64, model string, currency str
 	}
 	pricing.CreateAttr(models.VideoPricingCurrency, currencyStr)
 	return pricing
+}
+func (vastXMLHandler *etreeHandler) AddAdvertiserTag(adDomain string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adDomain) == 0 {
+		return "", errors.New("advertiser domain is empty")
+	}
+	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
+	for _, adElement := range adElements {
+		adTypeElement := adElement.FindElement(models.AdWrapperElement)
+		if adTypeElement == nil {
+			adTypeElement = adElement.FindElement(models.AdInlineElement)
+		}
+
+		if adTypeElement != nil {
+			domain := adTypeElement.FindElement(models.VideoAdvertiserTag)
+			if domain == nil {
+				adTypeElement.InsertChild(nil, vastXMLHandler.newDomainNode(adDomain))
+			}
+		}
+	}
+	return vastXMLHandler.doc.WriteToString()
+}
+
+func (vastXMLHandler *etreeHandler) AddCategoryTag(adCat []string) (string, error) {
+	if vastXMLHandler.doc == nil {
+		return "", errors.New("VAST not parsed")
+	}
+	if len(adCat) == 0 {
+		return "", errors.New("category is empty")
+	}
+	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
+	for _, adElement := range adElements {
+		adTypeElement := adElement.FindElement(models.AdWrapperElement)
+		if adTypeElement == nil {
+			adTypeElement = adElement.FindElement(models.AdInlineElement)
+		}
+
+		if adTypeElement != nil {
+			category := adTypeElement.FindElement(models.VideoAdCatTag)
+			if category == nil {
+				adTypeElement.InsertChild(nil, vastXMLHandler.newCatNode(adCat))
+			}
+
+		}
+	}
+	return vastXMLHandler.doc.WriteToString()
+}
+func (ti *etreeHandler) newDomainNode(domain string) *etree.Element {
+	domainElement := etree.NewElement(models.VideoAdvertiserTag)
+	domainElement.SetText(domain)
+	return domainElement
+}
+
+func (ti *etreeHandler) newCatNode(category []string) *etree.Element {
+	catElement := etree.NewElement(models.VideoAdCatTag)
+	catElement.SetText(strings.Join(category, ","))
+	return catElement
 }

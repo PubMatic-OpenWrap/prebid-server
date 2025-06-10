@@ -480,7 +480,7 @@ func TestAddAdvertiserTag(t *testing.T) {
 				assert.Equal(t, tt.wantAdM, actual)
 			}
 			if tt.wantDomain != "" {
-				advertiser := ad.FindElement(models.VideoAdDomainTag)
+				advertiser := ad.FindElement(models.VideoAdvertiserTag)
 				assert.Equal(t, tt.wantDomain, advertiser.Text())
 			}
 		})

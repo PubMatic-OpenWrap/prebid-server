@@ -383,7 +383,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 				resetBidIdtoOriginal(ap.BidResponse)
 			}
 			if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
-				feature.EnrishVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
+				feature.EnrichVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
 			}
 			return ap, err
 		}, hookstage.MutationUpdate, "response-body-with-webs2s-format")
@@ -403,7 +403,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			return ap, err
 		}
 		if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
-			feature.EnrishVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
+			feature.EnrichVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
 		}
 
 		var responseExtjson json.RawMessage

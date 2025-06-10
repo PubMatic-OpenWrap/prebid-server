@@ -34,7 +34,7 @@ func (m *MockVASTXMLHandler) AddAdvertiserTag(adDomain string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func TestEnrishVASTForSSUFeature(t *testing.T) {
+func TestEnrichVASTForSSUFeature(t *testing.T) {
 	mockHandler := new(MockVASTXMLHandler)
 	tests := []struct {
 		name        string
@@ -168,7 +168,7 @@ func TestEnrishVASTForSSUFeature(t *testing.T) {
 			mockHandler.Calls = nil
 			tt.mockSetup()
 
-			EnrishVASTForSSUFeature(tt.bidResponse, mockHandler)
+			EnrichVASTForSSUFeature(tt.bidResponse, mockHandler)
 
 			actualAdM := tt.bidResponse.SeatBid[0].Bid[0].AdM
 			assert.Equal(t, tt.expectedAdM, actualAdM)

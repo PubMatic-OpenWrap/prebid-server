@@ -149,7 +149,7 @@ func TestAddAdvertiserTagFastXML(t *testing.T) {
 			adm, err := fastxmlInjector.AddAdvertiserTag(tt.adDomain)
 			assert.Equal(t, tt.expectError, err != nil)
 			if tt.wantDomain != "" {
-				assertFastXMLXMLField(t, adm, models.VideoAdDomainTag, tt.wantDomain)
+				assertFastXMLXMLField(t, adm, models.VideoAdvertiserTag, tt.wantDomain)
 			}
 		})
 	}
