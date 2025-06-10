@@ -768,12 +768,12 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 
-	strictVastMode := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.StrictVastModeKey) == models.Enabled
-	if strictVastMode {
+	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled
+	if googleSSUFeatureEnabled {
 		if rctx.NewReqExt == nil {
 			rctx.NewReqExt = &models.RequestExt{}
 		}
-		rctx.NewReqExt.Prebid.StrictVastMode = strictVastMode
+		rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled = googleSSUFeatureEnabled
 	}
 	if cur, ok := rctx.PartnerConfigMap[models.VersionLevelConfigID][models.AdServerCurrency]; ok {
 		bidRequest.Cur = append(bidRequest.Cur, cur)
@@ -905,7 +905,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
 	//update protocols
-	if rCtx.NewReqExt != nil && rCtx.NewReqExt.Prebid.StrictVastMode {
+	if rCtx.NewReqExt != nil && rCtx.NewReqExt.Prebid.GoogleSSUFeatureEnabled {
 		video.Protocols = UpdateImpProtocols(video.Protocols)
 	}
 

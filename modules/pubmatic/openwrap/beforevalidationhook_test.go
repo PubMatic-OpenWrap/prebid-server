@@ -1969,9 +1969,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2069,9 +2069,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2187,9 +2187,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2287,9 +2287,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2386,9 +2386,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: "0",
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: "0",
 						},
 					},
 					TMax:      500,
@@ -2547,7 +2547,7 @@ func TestOpenWrap_applyImpChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},
@@ -2615,7 +2615,7 @@ func TestOpenWrap_applyImpVideoChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},

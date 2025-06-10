@@ -80,7 +80,6 @@ func TestInjectVideoCreativeTrackers(t *testing.T) {
 		{
 			name: "empty_bid.adm.partner_url",
 			args: args{
-
 				bid: openrtb2.Bid{
 					AdM: `https://stagingnyc.pubmatic.com:8443/test/pub_vast.xml`,
 				},
