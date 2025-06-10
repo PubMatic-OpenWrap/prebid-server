@@ -70,7 +70,12 @@ func prepareMetaObject(bid openrtb2.Bid, bidExt *pubmaticBidExt, seat string) *o
 	meta := &openrtb_ext.ExtBidPrebidMeta{
 		NetworkID:    bidExt.DspId,
 		AdvertiserID: bidExt.AdvertiserID,
-		MediaType:    string(getBidType(bidExt)),
+	}
+
+	if bidExt.InBannerVideo {
+		meta.MediaType = string(openrtb_ext.BidTypeVideo)
+	} else {
+		meta.MediaType = getMType(&bid)
 	}
 
 	if meta.NetworkID != 0 {
