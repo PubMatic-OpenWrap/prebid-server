@@ -174,11 +174,11 @@ func GetTrackerInjector() VASTXMLHandler {
 	return &etreeHandler{}
 }
 
-func (vastXMLHandler *FastXMLHandler) AddAdvertiserTag(adDomain string) (string, error) {
+func (vastXMLHandler *FastXMLHandler) AddAdvertiserTag(advertiser string) (string, error) {
 	if vastXMLHandler.doc == nil {
 		return "", errors.New("VAST not parsed")
 	}
-	if len(adDomain) == 0 {
+	if len(advertiser) == 0 {
 		return "", errors.New("advertiser domain is empty")
 	}
 	adElements := vastXMLHandler.doc.SelectElements(vastXMLHandler.vastTag, models.VideoAdTag)
@@ -190,18 +190,18 @@ func (vastXMLHandler *FastXMLHandler) AddAdvertiserTag(adDomain string) (string,
 		if adTypeElement != nil {
 			domain := vastXMLHandler.doc.SelectElement(adTypeElement, models.VideoAdvertiserTag)
 			if domain == nil {
-				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newDomainNode(adDomain))
+				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newAdvertiserNode(advertiser))
 			}
 		}
 	}
 	return vastXMLHandler.xu.String(), nil
 }
 
-func (vastXMLHandler *FastXMLHandler) AddCategoryTag(adCat []string) (string, error) {
+func (vastXMLHandler *FastXMLHandler) AddCategoryTag(categories []string) (string, error) {
 	if vastXMLHandler.doc == nil {
 		return "", errors.New("VAST not parsed")
 	}
-	if len(adCat) == 0 {
+	if len(categories) == 0 {
 		return "", errors.New("category is empty")
 	}
 	adElements := vastXMLHandler.doc.SelectElements(vastXMLHandler.vastTag, models.VideoAdTag)
@@ -213,20 +213,20 @@ func (vastXMLHandler *FastXMLHandler) AddCategoryTag(adCat []string) (string, er
 		if adTypeElement != nil {
 			category := vastXMLHandler.doc.SelectElement(adTypeElement, models.VideoAdCatTag)
 			if category == nil {
-				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newCatNode(adCat))
+				vastXMLHandler.xu.AppendElement(adTypeElement, vastXMLHandler.newCategoryNode(categories))
 			}
 		}
 	}
 	return vastXMLHandler.xu.String(), nil
 }
 
-func (ti *FastXMLHandler) newDomainNode(domain string) *fastxml.XMLElement {
+func (ti *FastXMLHandler) newAdvertiserNode(advertiser string) *fastxml.XMLElement {
 	domainElement := fastxml.NewElement(models.VideoAdvertiserTag)
-	domainElement.SetText(domain, true, fastxml.NoEscaping)
+	domainElement.SetText(advertiser, true, fastxml.NoEscaping)
 	return domainElement
 }
-func (ti *FastXMLHandler) newCatNode(cat []string) *fastxml.XMLElement {
+func (ti *FastXMLHandler) newCategoryNode(categories []string) *fastxml.XMLElement {
 	catElement := fastxml.NewElement(models.VideoAdCatTag)
-	catElement.SetText(strings.Join(cat, ","), true, fastxml.NoEscaping)
+	catElement.SetText(strings.Join(categories, ","), true, fastxml.NoEscaping)
 	return catElement
 }

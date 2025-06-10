@@ -12,8 +12,8 @@ import (
 type VASTXMLHandler interface {
 	Parse(vast string) error
 	Inject(videoParams []models.OWTracker, skipTracker bool) (string, error)
-	AddCategoryTag(adCat []string) (string, error)
-	AddAdvertiserTag(adDomain string) (string, error)
+	AddCategoryTag(categories []string) (string, error)
+	AddAdvertiserTag(advertiser string) (string, error)
 }
 
 type etreeHandler struct {
@@ -148,11 +148,11 @@ func (ti *etreeHandler) newPricingNode(price float64, model string, currency str
 	pricing.CreateAttr(models.VideoPricingCurrency, currencyStr)
 	return pricing
 }
-func (vastXMLHandler *etreeHandler) AddAdvertiserTag(adDomain string) (string, error) {
+func (vastXMLHandler *etreeHandler) AddAdvertiserTag(advertiser string) (string, error) {
 	if vastXMLHandler.doc == nil {
 		return "", errors.New("VAST not parsed")
 	}
-	if len(adDomain) == 0 {
+	if len(advertiser) == 0 {
 		return "", errors.New("advertiser domain is empty")
 	}
 	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
@@ -165,18 +165,18 @@ func (vastXMLHandler *etreeHandler) AddAdvertiserTag(adDomain string) (string, e
 		if adTypeElement != nil {
 			domain := adTypeElement.FindElement(models.VideoAdvertiserTag)
 			if domain == nil {
-				adTypeElement.InsertChild(nil, vastXMLHandler.newDomainNode(adDomain))
+				adTypeElement.InsertChild(nil, vastXMLHandler.newAdvertiserNode(advertiser))
 			}
 		}
 	}
 	return vastXMLHandler.doc.WriteToString()
 }
 
-func (vastXMLHandler *etreeHandler) AddCategoryTag(adCat []string) (string, error) {
+func (vastXMLHandler *etreeHandler) AddCategoryTag(categories []string) (string, error) {
 	if vastXMLHandler.doc == nil {
 		return "", errors.New("VAST not parsed")
 	}
-	if len(adCat) == 0 {
+	if len(categories) == 0 {
 		return "", errors.New("category is empty")
 	}
 	adElements := vastXMLHandler.doc.FindElements(models.VASTAdElement)
@@ -189,21 +189,21 @@ func (vastXMLHandler *etreeHandler) AddCategoryTag(adCat []string) (string, erro
 		if adTypeElement != nil {
 			category := adTypeElement.FindElement(models.VideoAdCatTag)
 			if category == nil {
-				adTypeElement.InsertChild(nil, vastXMLHandler.newCatNode(adCat))
+				adTypeElement.InsertChild(nil, vastXMLHandler.newCategoryNode(categories))
 			}
 
 		}
 	}
 	return vastXMLHandler.doc.WriteToString()
 }
-func (ti *etreeHandler) newDomainNode(domain string) *etree.Element {
+func (ti *etreeHandler) newAdvertiserNode(advertiser string) *etree.Element {
 	domainElement := etree.NewElement(models.VideoAdvertiserTag)
-	domainElement.SetText(domain)
+	domainElement.SetText(advertiser)
 	return domainElement
 }
 
-func (ti *etreeHandler) newCatNode(category []string) *etree.Element {
+func (ti *etreeHandler) newCategoryNode(categories []string) *etree.Element {
 	catElement := etree.NewElement(models.VideoAdCatTag)
-	catElement.SetText(strings.Join(category, ","))
+	catElement.SetText(strings.Join(categories, ","))
 	return catElement
 }

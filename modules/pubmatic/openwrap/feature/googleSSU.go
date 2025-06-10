@@ -17,7 +17,7 @@ func EnrichVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler p
 	}
 }
 
-func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, adm string, categories []string, adDomains []string) string {
+func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, adm string, categories []string, advertiser []string) string {
 	if err := vastXMLHandler.Parse(adm); err != nil {
 		return adm
 	}
@@ -28,8 +28,8 @@ func UpdateADMWithAdvCat(vastXMLHandler parser.VASTXMLHandler, adm string, categ
 		}
 	}
 
-	if len(adDomains) > 0 {
-		updatedAdm, err := vastXMLHandler.AddAdvertiserTag(adDomains[0])
+	if len(advertiser) > 0 {
+		updatedAdm, err := vastXMLHandler.AddAdvertiserTag(advertiser[0])
 		if err == nil {
 			adm = updatedAdm
 		}
