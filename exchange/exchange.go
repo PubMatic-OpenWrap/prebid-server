@@ -437,7 +437,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		recordBids(ctx, e.me, r.PubID, adapterBids)
 		recordVastVersion(e.me, adapterBids)
 
-		if requestExtPrebid.StrictVastMode {
+		if requestExtPrebid.GoogleSSUFeatureEnabled {
 			validationErrs := filterBidsByVastVersion(adapterBids, &seatNonBidBuilder)
 			errs = append(errs, validationErrs...)
 		}

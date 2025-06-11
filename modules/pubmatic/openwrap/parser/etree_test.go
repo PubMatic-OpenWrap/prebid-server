@@ -1,4 +1,4 @@
-package tracker
+package parser
 
 import (
 	"testing"
@@ -103,7 +103,7 @@ func Test_injectPricingNodeInExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, _ := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.injectPricingNodeInExtension(&doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -177,7 +177,7 @@ func Test_injectPricingNodeInVAST(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, _ := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.injectPricingNodeInVAST(&doc.Element, tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -271,7 +271,7 @@ func Test_updatePricingNode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, elements := getETreeNode(tt.args.tag)
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			ej.updatePricingNode(elements[0], tt.args.price, tt.args.model, tt.args.currency)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
@@ -320,12 +320,169 @@ func Test_newPricingNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ej := etreeTrackerInjector{}
+			ej := etreeHandler{}
 			got := ej.newPricingNode(tt.args.price, tt.args.model, tt.args.currency)
 			doc := etree.NewDocument()
 			doc.InsertChild(nil, got)
 			actual, _ := doc.WriteToString()
 			assert.Equal(t, tt.want, actual)
+		})
+	}
+}
+
+func TestAddCategoryTag(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputVAST   string
+		adCat       []string
+		expectError bool
+		wantAdM     string
+		wantCat     string
+	}{
+		{
+			name:      "Add_category_to_VAST_Inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB1-1", "IAB1-2"},
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB1-1,IAB1-2]]></Category></InLine></Ad></VAST>`,
+			wantCat:   "IAB1-1,IAB1-2",
+		},
+		{
+			name:      "Add_category_to_VAST_Wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB1-3"},
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB1-3]]></Category></Wrapper></Ad></VAST>`,
+			wantCat:   "IAB1-3",
+		},
+		{
+			name:        "No_category_and_no_VAST_block",
+			inputVAST:   `<VAST version="2.0"></VAST>`,
+			adCat:       nil,
+			expectError: true,
+		},
+		{
+			name:      "Category_already_present_should_not_overwrite_with_inline",
+			inputVAST: `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantAdM:   `<VAST version="2.0"><Ad><InLine><Category><![CDATA[IAB-1]]></Category></InLine></Ad></VAST>`,
+			wantCat:   "IAB-1",
+		},
+		{
+			name:      "Category_already_present_should_not_overwrite_with_wrapper",
+			inputVAST: `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
+			adCat:     []string{"IAB2"},
+			wantAdM:   `<VAST version="2.0"><Ad><Wrapper><Category><![CDATA[IAB-1]]></Category></Wrapper></Ad></VAST>`,
+			wantCat:   "IAB-1",
+		},
+		{
+			name:        "No_adCat_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adCat:       nil,
+			wantCat:     "",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			etreeTrackerInjector := &etreeHandler{}
+			doc, _ := getETreeNode(tt.inputVAST)
+			etreeTrackerInjector.doc = doc
+			adm, err := etreeTrackerInjector.AddCategoryTag(tt.adCat)
+			assert.Equal(t, tt.expectError, err != nil)
+			if tt.expectError {
+				return
+			}
+
+			var ad *etree.Element
+			ad = doc.FindElement("//Ad/InLine")
+			if ad == nil {
+				ad = doc.FindElement("//Ad/Wrapper")
+			}
+			if tt.wantAdM != "" {
+				assert.Equal(t, tt.wantAdM, adm)
+			}
+			if tt.wantCat != "" {
+				category := ad.FindElement(models.VideoAdCatTag)
+				assert.Equal(t, tt.wantCat, category.Text())
+			}
+		})
+	}
+}
+
+func TestAddAdvertiserTag(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputVAST   string
+		adDomain    string
+		expectError bool
+		wantDomain  string
+		wantAdM     string
+	}{
+		{
+			name:       "Add_domain_to_VAST_Inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Add_domain_to_VAST_Wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
+			adDomain:   "example.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+		},
+		{
+			name:        "No_domain_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:    "",
+			expectError: true,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_inline",
+			inputVAST:  `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><InLine><Advertiser><![CDATA[example.com]]></Advertiser></InLine></Ad></VAST>`,
+		},
+		{
+			name:       "Domain_already_present_should_not_overwrite_with_wrapper",
+			inputVAST:  `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+			adDomain:   "test.com",
+			wantDomain: "example.com",
+			wantAdM:    `<VAST version="2.0"><Ad><Wrapper><Advertiser><![CDATA[example.com]]></Advertiser></Wrapper></Ad></VAST>`,
+		},
+		{
+			name:        "No_domain_passed_no_change",
+			inputVAST:   `<VAST version="2.0"><Ad><InLine></InLine></Ad></VAST>`,
+			adDomain:    "",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			doc, _ := getETreeNode(tt.inputVAST)
+			etreeTrackerInjector := &etreeHandler{doc: doc}
+			_, err := etreeTrackerInjector.AddAdvertiserTag(tt.adDomain)
+			assert.Equal(t, tt.expectError, err != nil)
+			if tt.expectError {
+				return
+			}
+
+			var ad *etree.Element
+			ad = etreeTrackerInjector.doc.FindElement("//Ad/InLine")
+			if ad == nil {
+				ad = etreeTrackerInjector.doc.FindElement("//Ad/Wrapper")
+			}
+			if tt.wantAdM != "" {
+				actual, _ := etreeTrackerInjector.doc.WriteToString()
+				assert.Equal(t, tt.wantAdM, actual)
+			}
+			if tt.wantDomain != "" {
+				advertiser := ad.FindElement(models.VideoAdvertiserTag)
+				assert.Equal(t, tt.wantDomain, advertiser.Text())
+			}
 		})
 	}
 }

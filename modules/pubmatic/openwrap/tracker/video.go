@@ -6,6 +6,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 )
 
 // Inject Trackers in Video Creative
@@ -27,10 +28,11 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 		} else {
 			creative = strings.Replace(creative, models.TrackerPlaceholder, videoParams[0].TrackerURL, -1)
 		}
-		bid.AdM = strings.Replace(creative, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
+		creative = strings.Replace(creative, models.ErrorPlaceholder, videoParams[0].ErrorURL, -1)
+		bid.AdM = creative
 	} else {
 		creative = strings.TrimSpace(creative)
-		ti := GetTrackerInjector()
+		ti := parser.GetTrackerInjector()
 		if err := ti.Parse(creative); err != nil {
 			//parsing failed
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
@@ -40,6 +42,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 			//injection failure
 			return bid.AdM, bid.BURL, errors.New("invalid creative format")
 		}
+
 		bid.AdM = creative
 	}
 
