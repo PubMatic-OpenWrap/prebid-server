@@ -578,6 +578,32 @@ func TestModifyImpression(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "update skadnetids from signal",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:    "imp1",
+						TagID: "tag-123",
+						Ext:   []byte(`{"skadn":{"skadnetids":["old1", "old2"]}}`),
+					},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					Ext: []byte(`{"skadn":{"skadnetids": ["net1", "net2"]}}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:    "imp1",
+						TagID: "tag-123",
+						Ext:   []byte(`{"skadn":{"skadnetids":["net1", "net2"]}}`),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
