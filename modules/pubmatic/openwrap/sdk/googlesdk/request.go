@@ -2,7 +2,6 @@ package googlesdk
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -133,7 +132,7 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	}
 
 	var adunitMapping []map[string]interface{}
-	if err := json.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
+	if err := jsoniterator.Unmarshal(adunitMappingByte, &adunitMapping); err != nil {
 		glog.Errorf("[GoogleSDK] [Error]: failed to unmarshal ad unit mapping %v", err)
 		return nil, errors.New("failed to unmarshal ad unit mapping")
 	}
@@ -190,7 +189,7 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	}
 
 	sdkRequest := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(requestBody, sdkRequest); err != nil {
+	if err := jsoniterator.Unmarshal(requestBody, sdkRequest); err != nil {
 		return requestBody
 	}
 
@@ -219,7 +218,7 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	// Google SDK specific modifications
 	modifyRequestWithGoogleFeature(sdkRequest, features)
 
-	modifiedRequest, err := json.Marshal(sdkRequest)
+	modifiedRequest, err := jsoniterator.Marshal(sdkRequest)
 	if err != nil {
 		return requestBody
 	}
@@ -415,6 +414,7 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "version")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skadnetids")
 	return requestImpExt
 }
 
