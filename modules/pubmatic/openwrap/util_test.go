@@ -2195,6 +2195,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 
 	type args struct {
 		rctx   models.RequestCtx
@@ -2217,14 +2218,14 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			want:  nil,
 			setup: func() {},
 		},
-
 		{
-			name: "country is not enabled for multi floors",
+			name: "publisher is not enabled for multi floors",
 			args: args{
 				rctx: models.RequestCtx{
-					Endpoint:     models.EndpointAppLovinMax,
-					PubID:        5890,
-					ProfileIDStr: "1234",
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "IN",
 					},
@@ -2232,15 +2233,17 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("IN").Return(false)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(false)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFPubDisabled)
 			},
 		},
 		{
-			name: "country is enabled for but publisher disabled",
+			name: "publisher is enabled but country disabled",
 			args: args{
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2249,8 +2252,9 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
-				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(false)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(false)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFCountryDisabled)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 			},
 		},
 		{
@@ -2259,6 +2263,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2270,9 +2275,10 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(false)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatDisabled)
 			},
 		},
 		{
@@ -2281,6 +2287,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2293,7 +2300,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2301,6 +2308,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						IsActive: false,
 					},
 				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitDisabled)
 			},
 		},
 		{
@@ -2309,6 +2317,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2326,7 +2335,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3.1,
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
@@ -2337,6 +2346,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						Tier3:    3.1,
 					},
 				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
 			},
 		},
 		{
@@ -2345,6 +2355,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2362,17 +2373,11 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3.1,
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
-				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
-					"adunit": {
-						IsActive: true,
-						Tier1:    1.1,
-						Tier2:    2.1,
-						Tier3:    3.1,
-					},
-				})
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(nil)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
 				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(&models.MultiFloors{
 					IsActive: true,
 					Tier1:    1.1,
@@ -2387,6 +2392,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2404,23 +2410,17 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3,
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
-				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
-					"adunit": {
-						IsActive: true,
-						Tier1:    1.1,
-						Tier2:    2.1,
-						Tier3:    3.1,
-					},
-				})
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
 				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(&models.MultiFloors{
 					IsActive: true,
 					Tier1:    1,
 					Tier2:    2,
 					Tier3:    3,
 				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
 			},
 		},
 		{
@@ -2429,6 +2429,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2445,7 +2446,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				Tier3:    3,
 			},
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
 					"adunit1234": {
@@ -2455,14 +2456,16 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 						Tier3:    3,
 					},
 				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
 			},
 		},
 		{
-			name: "phase 1 profile adunit level floors not present",
+			name: "phase 1 profile adunit level floors not present for banner adunitformat",
 			args: args{
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
 					PubID:     5890,
+					PubIDStr:  "5890",
 					ProfileID: 1234,
 					DeviceCtx: models.DeviceCtx{
 						DerivedCountryCode: "US",
@@ -2474,9 +2477,10 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want: nil,
 			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountry("US").Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFNoEntryFound)
 			},
 		},
 	}
@@ -2484,7 +2488,8 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			m := OpenWrap{
-				pubFeatures: mockFeature,
+				pubFeatures:  mockFeature,
+				metricEngine: mockEngine,
 			}
 			got := m.getMultiFloors(tt.args.rctx, tt.args.reward, tt.args.imp)
 			assert.Equal(t, tt.want, got)

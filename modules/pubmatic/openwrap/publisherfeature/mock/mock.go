@@ -175,18 +175,18 @@ func (mr *MockFeatureMockRecorder) IsFscApplicable(arg0, arg1, arg2 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFscApplicable", reflect.TypeOf((*MockFeature)(nil).IsFscApplicable), arg0, arg1, arg2)
 }
 
-// IsMBMFCountry mocks base method.
-func (m *MockFeature) IsMBMFCountry(arg0 string) bool {
+// IsMBMFCountryForPublisher mocks base method.
+func (m *MockFeature) IsMBMFCountryForPublisher(arg0 string, arg1 int) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsMBMFCountry", arg0)
+	ret := m.ctrl.Call(m, "IsMBMFCountryForPublisher", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsMBMFCountry indicates an expected call of IsMBMFCountry.
-func (mr *MockFeatureMockRecorder) IsMBMFCountry(arg0 interface{}) *gomock.Call {
+// IsMBMFCountryForPublisher indicates an expected call of IsMBMFCountryForPublisher.
+func (mr *MockFeatureMockRecorder) IsMBMFCountryForPublisher(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFCountry", reflect.TypeOf((*MockFeature)(nil).IsMBMFCountry), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMBMFCountryForPublisher", reflect.TypeOf((*MockFeature)(nil).IsMBMFCountryForPublisher), arg0, arg1)
 }
 
 // IsMBMFEnabledForAdUnitFormat mocks base method.

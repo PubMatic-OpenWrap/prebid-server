@@ -411,6 +411,20 @@ func TestRecordGeoLookUpFailure(t *testing.T) {
 		})
 }
 
+func TestRecordMBMFRequests(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordMBMFRequests("endpoint", "5890", models.MBMFCountryDisabled)
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "mbmf_requests", m.mbmfRequests,
+		expectedCount, prometheus.Labels{
+			endpointLabel:  "endpoint",
+			pubIDLabel:     "5890",
+			errorCodeLabel: strconv.Itoa(models.MBMFCountryDisabled),
+		})
+}
+
 func getHistogramFromHistogramVec(histogram *prometheus.HistogramVec, labelKey, labelValue string) dto.Histogram {
 	var result dto.Histogram
 	processMetrics(histogram, func(m dto.Metric) {

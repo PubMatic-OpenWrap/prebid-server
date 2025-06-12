@@ -523,6 +523,13 @@ func (me *MultiMetricsEngine) RecordSignalDataStatus(pubid, profileid, signalTyp
 	}
 }
 
+// RecordMBMFRequests record MBMF requests
+func (me *MultiMetricsEngine) RecordMBMFRequests(endpoint, pubId string, errorCode int) {
+	for _, thisME := range *me {
+		thisME.RecordMBMFRequests(endpoint, pubId, errorCode)
+	}
+}
+
 // RecordFailedParsingItuneID record failed parsing itune id
 func (me *MultiMetricsEngine) RecordFailedParsingItuneID(pubId, profId string) {
 	for _, thisME := range *me {
