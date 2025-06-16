@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	uuid "github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
@@ -18,7 +19,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	uuid "github.com/satori/go.uuid"
 )
 
 type bidWrapper struct {
@@ -28,7 +28,8 @@ type bidWrapper struct {
 
 // GetUUID is a function variable which will return uuid
 var GetUUID = func() string {
-	return uuid.NewV4().String()
+	id, _ := uuid.NewV4()
+	return id.String()
 }
 
 var blockListedNBR = map[openrtb3.NoBidReason]struct{}{
