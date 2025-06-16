@@ -100,6 +100,10 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.UA = signalDevice.UA
 	}
 
+	if signalDevice.IP != "" {
+		maxRequest.Device.IP = signalDevice.IP
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {
