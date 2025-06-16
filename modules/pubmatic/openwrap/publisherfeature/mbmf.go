@@ -11,7 +11,7 @@ import (
 
 // mbmfData holds all the fields that need double-buffering
 type mbmfData struct {
-	enabledCountries         models.HashSet
+	enabledCountries         map[int]models.HashSet
 	enabledPublishers        map[int]bool
 	profileAdUnitLevelFloors models.ProfileAdUnitMultiFloors
 	instlFloors              map[int]*models.MultiFloors
@@ -28,14 +28,14 @@ func newMBMF() *mbmf {
 	m := mbmf{
 		data: [2]mbmfData{
 			{
-				enabledCountries:         make(models.HashSet),
+				enabledCountries:         make(map[int]models.HashSet),
 				enabledPublishers:        make(map[int]bool),
 				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
 				instlFloors:              make(map[int]*models.MultiFloors),
 				rwddFloors:               make(map[int]*models.MultiFloors),
 			},
 			{
-				enabledCountries:         make(models.HashSet),
+				enabledCountries:         make(map[int]models.HashSet),
 				enabledPublishers:        make(map[int]bool),
 				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
 				instlFloors:              make(map[int]*models.MultiFloors),
@@ -61,14 +61,17 @@ func (fe *feature) updateMBMF() {
 }
 
 func (fe *feature) updateMBMFCountries(nextIdx int32) {
-	enabledCountries := make(models.HashSet)
+	enabledCountries := make(map[int]models.HashSet)
 	for pubID, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureMBMFCountry]; ok && pubID == 0 && val.Enabled == 1 {
+		if val, ok := feature[models.FeatureMBMFCountry]; ok && val.Enabled == 1 {
 			countries := strings.Split(val.Value, ",")
+			if _, exists := enabledCountries[pubID]; !exists {
+				enabledCountries[pubID] = models.HashSet{}
+			}
 			for _, country := range countries {
 				country = strings.TrimSpace(country)
 				if country != "" {
-					enabledCountries[country] = struct{}{}
+					enabledCountries[pubID][country] = struct{}{}
 				}
 			}
 		}
@@ -117,11 +120,18 @@ func (fe *feature) updateMBMFRwddFloors(nextIdx int32) {
 	fe.mbmf.data[nextIdx].rwddFloors = rwddFloors
 }
 
-// IsMBMFCountry returns true if country specified for MBMF in DB
-func (fe *feature) IsMBMFCountry(countryCode string) bool {
+// IsMBMFCountryForPublisher returns true if country specified for MBMF in DB
+func (fe *feature) IsMBMFCountryForPublisher(countryCode string, pubID int) bool {
 	idx := fe.mbmf.index.Load()
-	countries := fe.mbmf.data[idx].enabledCountries
-	_, isPresent := countries[countryCode]
+	publisherCountries := fe.mbmf.data[idx].enabledCountries
+	if pubCountryCodes, isPresent := publisherCountries[pubID]; isPresent {
+		// check for countryCode in pubID specific countries
+		_, isPresent := pubCountryCodes[countryCode]
+		return isPresent
+	}
+
+	// check for pubID=0 countries
+	_, isPresent := publisherCountries[0][countryCode]
 	return isPresent
 }
 

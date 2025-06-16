@@ -42,11 +42,11 @@ const (
 )
 
 type ExtOWRequestPrebid struct {
-	Transparency    *TransparencyExt       `json:"transparency,omitempty"`
-	KeyVal          map[string]interface{} `json:"keyval,omitempty"`
-	TrackerDisabled bool                   `json:"tracker_disabled,omitempty"`
-	StrictVastMode  bool                   `json:"strictvastmode,omitempty"`
-	DebugOverride   bool                   `json:"debug_override,omitempty"`
+	Transparency            *TransparencyExt       `json:"transparency,omitempty"`
+	KeyVal                  map[string]interface{} `json:"keyval,omitempty"`
+	TrackerDisabled         bool                   `json:"tracker_disabled,omitempty"`
+	GoogleSSUFeatureEnabled bool                   `json:"strictvastmode,omitempty"`
+	DebugOverride           bool                   `json:"debug_override,omitempty"`
 }
 
 // ExtCTVBid defines the contract for bidresponse.seatbid.bid[i].ext

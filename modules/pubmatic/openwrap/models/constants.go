@@ -36,7 +36,7 @@ const (
 	PLATFORM_KEY                = "platform"
 	SendAllBidsKey              = "sendAllBids"
 	VastUnwrapperEnableKey      = "enableVastUnwrapper"
-	StrictVastModeKey           = "strictVastMode"
+	GoogleSSUFeatureEnabledKey  = "strictVastMode"
 	VastUnwrapTrafficPercentKey = "vastUnwrapTrafficPercent"
 	SSTimeoutKey                = "ssTimeout"
 	PWC                         = "awc"
@@ -647,4 +647,15 @@ const (
 	ErrDBRowScanFailed     = `[DBRowsError] query:[%s] pubid:[%v] profileid:[%v] err:[%s]`
 	EmptyPartnerConfig     = `[EmptyPartnerConfig] pubid:[%v] profileid:[%v] version:[%v]`
 	ErrMBMFFloorsUnmarshal = `[ErrMBMFFloorsUnmarshal] pubid:[%v] profileid:[%v] error:[%s]`
+)
+
+// constants for MBMF error codes for metrics
+const (
+	MBMFSuccess              = 0
+	MBMFCountryDisabled      = 1
+	MBMFPubDisabled          = 2
+	MBMFAdUnitFormatDisabled = 3
+	MBMFAdUnitDisabled       = 4
+	MBMFAdUnitFormatNotFound = 5
+	MBMFNoEntryFound         = 6
 )

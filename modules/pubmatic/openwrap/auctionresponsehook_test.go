@@ -1704,6 +1704,11 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 							PubID:    5890,
 							PubIDStr: "5890",
 							Platform: "web",
+							NewReqExt: &models.RequestExt{
+								ExtRequest: openrtb_ext.ExtRequest{
+									Prebid: openrtb_ext.ExtRequestPrebid{ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{GoogleSSUFeatureEnabled: true}},
+								},
+							},
 							ImpBidCtx: map[string]models.ImpCtx{
 								"Div1": {
 									Bidders: map[string]models.PartnerData{

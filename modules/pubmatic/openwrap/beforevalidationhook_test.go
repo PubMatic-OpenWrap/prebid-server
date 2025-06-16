@@ -1969,9 +1969,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2069,9 +2069,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2187,9 +2187,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2287,9 +2287,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: models.Enabled,
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: models.Enabled,
 						},
 					},
 					TMax:      500,
@@ -2386,9 +2386,9 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 					IsTestRequest: 1,
 					PartnerConfigMap: map[int]map[string]string{
 						-1: {
-							models.AdServerCurrency:  "USD",
-							models.SChainDBKey:       "1",
-							models.StrictVastModeKey: "0",
+							models.AdServerCurrency:           "USD",
+							models.SChainDBKey:                "1",
+							models.GoogleSSUFeatureEnabledKey: "0",
 						},
 					},
 					TMax:      500,
@@ -2547,7 +2547,7 @@ func TestOpenWrap_applyImpChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},
@@ -2615,7 +2615,7 @@ func TestOpenWrap_applyImpVideoChanges(t *testing.T) {
 					ExtRequest: openrtb_ext.ExtRequest{
 						Prebid: openrtb_ext.ExtRequestPrebid{
 							ExtOWRequestPrebid: openrtb_ext.ExtOWRequestPrebid{
-								StrictVastMode: true,
+								GoogleSSUFeatureEnabled: true,
 							},
 						},
 					},
@@ -5582,10 +5582,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAppLovinMax, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, rctx.PubIDStr, models.MBMFSuccess)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
-				mockFeature.EXPECT().IsMBMFCountry(gomock.Any()).Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{"adunit": {IsActive: true, Tier1: 1.1, Tier2: 2.1, Tier3: 3.1}})
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
