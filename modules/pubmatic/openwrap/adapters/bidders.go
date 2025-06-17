@@ -807,3 +807,14 @@ func builderOpenweb(params BidderParameters) (json.RawMessage, error) {
 	jsonStr.WriteByte('}')
 	return jsonStr.Bytes(), nil
 }
+
+func builderNativo(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+
+	if pid, ok := getInt(params.FieldMap["placementId"]); !ok || pid == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "placementId")
+	} else {
+		fmt.Fprintf(&jsonStr, `{"placementid":"%d"}`, pid)
+	}
+	return jsonStr.Bytes(), nil
+}

@@ -24,6 +24,11 @@
         "banner": {
           "w":320,
           "h":50
+        },
+        "ext": {
+          "bidder": {
+            "placementid": "828782"
+          }
         }
       }
     ]
@@ -47,6 +52,11 @@
               "banner": {
                 "w":320,
                 "h":50
+              },
+              "ext": {
+                "nativo": {
+                  "placementid": "828782"
+                }
               }
             }
           ],
