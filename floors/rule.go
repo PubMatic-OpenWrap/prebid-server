@@ -451,7 +451,7 @@ func getAdUnitCode(imp *openrtb_ext.ImpWrapper) string {
 		}
 
 		prebidExt := impExt.GetPrebid()
-		if prebidExt != nil && prebidExt.StoredRequest.ID != "" {
+		if prebidExt != nil && prebidExt.StoredRequest != nil && prebidExt.StoredRequest.ID != "" {
 			return prebidExt.StoredRequest.ID
 		}
 	}
