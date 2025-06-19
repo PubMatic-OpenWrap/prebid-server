@@ -15,6 +15,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -1951,6 +1952,45 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				assert.Nil(t, err, tt.name)
 				assert.Equal(t, tt.want.bidResponse, result.BidResponse, tt.name)
 			}
+		})
+	}
+}
+
+func TestUpdateWakandaHTTPCalls(t *testing.T) {
+	tests := []struct {
+		name              string
+		rCtx              *models.RequestCtx
+		debugResp         openrtb_ext.ExtResponseDebug
+		expectedHTTPCalls *models.RequestCtx
+	}{
+		{
+			name: "Debug enabled with valid payload",
+			rCtx: &models.RequestCtx{
+				WakandaDebug: &wakanda.Debug{Enabled: true},
+			},
+			debugResp: openrtb_ext.ExtResponseDebug{
+				HttpCalls: map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall{
+					"bidder1": {{Uri: "http://test1.com"}},
+					"bidder2": {{Uri: "http://test2.com"}},
+				},
+			},
+			expectedHTTPCalls: &models.RequestCtx{WakandaDebug: &wakanda.Debug{Enabled: true, DebugData: wakanda.DebugData{HTTPCalls: json.RawMessage(`{"bidder1":[{"uri":"http://test1.com","requestbody":"","requestheaders":null,"responsebody":"","status":0}],"bidder2":[{"uri":"http://test2.com","requestbody":"","requestheaders":null,"responsebody":"","status":0}]}`)}}},
+		},
+		{
+			name: "Debug disabled - should not populate HTTPCalls",
+			rCtx: &models.RequestCtx{
+				WakandaDebug: &wakanda.Debug{Enabled: false},
+			},
+			debugResp:         openrtb_ext.ExtResponseDebug{},
+			expectedHTTPCalls: &models.RequestCtx{WakandaDebug: &wakanda.Debug{}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateWakandaHTTPCalls(tt.rCtx, tt.debugResp)
+
+			assert.Equal(t, tt.rCtx, tt.expectedHTTPCalls)
 		})
 	}
 }
