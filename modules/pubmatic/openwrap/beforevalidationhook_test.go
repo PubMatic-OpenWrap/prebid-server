@@ -2058,7 +2058,7 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 						Language: "en",
 					},
 				},
-				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+				Ext: json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
 			},
 			wantErr: false,
 		},
@@ -2176,7 +2176,7 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 						Language: "en",
 					},
 				},
-				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+				Ext: json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
 			},
 			wantErr: false,
 		},
@@ -2276,7 +2276,7 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 						Language: "en",
 					},
 				},
-				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+				Ext: json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
 			},
 			wantErr: false,
 		},
@@ -2375,7 +2375,7 @@ func TestOpenWrapApplyProfileChanges(t *testing.T) {
 						Language: "en",
 					},
 				},
-				Ext: json.RawMessage(`{"prebid":{"strictvastmode":true}}`),
+				Ext: json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
 			},
 			wantErr: false,
 		},
@@ -2604,7 +2604,7 @@ func TestOpenWrap_applyImpVideoChanges(t *testing.T) {
 		expectedVideo *openrtb2.Video
 	}{
 		{
-			name: "strictvastmode_enabled",
+			name: "google_ssu_feature_enabled",
 			inputVideo: &openrtb2.Video{
 				Protocols: []adcom1.MediaCreativeSubtype{
 					adcom1.CreativeVAST10,
