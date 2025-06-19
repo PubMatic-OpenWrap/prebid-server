@@ -85,6 +85,29 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPResponseWriter(w)
+		rCtx.WakandaDebug.SetHttpCalls(ao.HttpCalls)
+	}
+}
+
+func RemoveDebugFromBidResponse(bidResponse *openrtb2.BidResponse, ao analytics.AuctionObject) {
+	if bidResponse == nil {
+		return
+	}
+
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx == nil || !rCtx.Debug {
+		return
+	}
+
+	if len(bidResponse.Ext) == 0 {
+		return
+	}
+
+	// Remove debug data from Ext
+	if updatedExt := jsonparser.Delete(bidResponse.Ext, "debug"); updatedExt != nil {
+		bidResponse.Ext = updatedExt
+	} else {
+		glog.Errorf("Failed to remove debug data from bid response Ext")
 	}
 }
 

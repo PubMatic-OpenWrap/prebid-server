@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -32,6 +33,7 @@ type AuctionObject struct {
 	HookExecutionOutcome []hookexecution.StageOutcome
 	SeatNonBid           []openrtb_ext.SeatNonBid
 	RequestWrapper       *openrtb_ext.RequestWrapper
+	HttpCalls            json.RawMessage
 }
 
 // Loggable object of a transaction at /openrtb2/amp endpoint

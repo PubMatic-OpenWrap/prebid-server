@@ -291,7 +291,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	}
 
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequestWrapper.Test, requestExtPrebid, r.Account.DebugAllow, debugLog)
-	upadteOWDebugLog(requestExtPrebid, debugLog)
 
 	// save incoming request with stored requests (if applicable) to return in debug logs
 	if responseDebugAllow || len(requestExtPrebid.AdServerTargeting) > 0 {

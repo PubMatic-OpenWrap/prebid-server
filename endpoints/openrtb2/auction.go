@@ -276,6 +276,16 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 	}()
 	ao.RequestWrapper = req
 	ao.Account = account
+	if auctionResponse != nil && auctionResponse.ExtBidResponse != nil && auctionResponse.ExtBidResponse.Debug != nil {
+		if debugJson, err := json.Marshal(auctionResponse.ExtBidResponse.Debug); err == nil {
+			ao.HttpCalls = debugJson
+		} else {
+			ao.HttpCalls = nil
+			glog.Errorf("Failed to marshal ExtBidResponse.Debug: %v", err)
+		}
+	} else {
+		ao.HttpCalls = nil
+	}
 	var response *openrtb2.BidResponse
 	if auctionResponse != nil {
 		response = auctionResponse.BidResponse
@@ -392,6 +402,7 @@ func sendAuctionResponse(
 		ao.HookExecutionOutcome = stageOutcomes
 		removeDefaultBidsFromSeatNonBid(seatNonBid, &ao)
 		UpdateResponseExtOW(w, response, ao)
+		RemoveDebugFromBidResponse(response, ao)
 		err := setSeatNonBidRaw(ao.RequestWrapper, response, ao.SeatNonBid)
 		if err != nil {
 			glog.Errorf("Error setting seatNonBid in responseExt: %v", err)
