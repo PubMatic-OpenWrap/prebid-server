@@ -44,19 +44,22 @@ func (a *adapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.ExtraRe
 			return nil, []error{err}
 		}
 
-		if ext.Bidder.PlacementId != "" {
-			impExt := impExtNativo{
-				Nativo: openrtb_ext.ImpExtNativo{
-					PlacementId: ext.Bidder.PlacementId,
-				},
-			}
-
-			impExtJSON, err := json.Marshal(impExt)
-			if err != nil {
-				return nil, []error{err}
-			}
-			imp.Ext = impExtJSON
+		if ext.Bidder.PlacementId == "" {
+			continue
 		}
+
+		impExtJSON, err := json.Marshal(impExtNativo{
+			Nativo: openrtb_ext.ImpExtNativo{
+				PlacementId: ext.Bidder.PlacementId,
+			},
+		})
+
+		if err != nil {
+			return nil, []error{err}
+		}
+
+		imp.Ext = impExtJSON
+
 	}
 
 	requestJSON, err := json.Marshal(request)
