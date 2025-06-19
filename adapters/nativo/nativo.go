@@ -9,10 +9,18 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
 )
 
 type adapter struct {
 	endpoint string
+}
+
+type BidderExt struct {
+	Bidder openrtb_ext.ImpExtNativo `json:"bidder"`
+}
+type impExtNativo struct {
+	Nativo openrtb_ext.ImpExtNativo `json:"nativo"`
 }
 
 // Builder builds a new instance of the Nativo adapter for the given bidder with the given config.
@@ -24,6 +32,33 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 }
 
 func (a *adapter) MakeRequests(request *openrtb2.BidRequest, _ *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+
+	// Code to read imp.ext.bidder.placementid and set it in the imp.ext.nativo.placementid in the request
+
+	for i := range request.Imp {
+
+		imp := &request.Imp[i]
+
+		ext := BidderExt{}
+		if err := jsonutil.Unmarshal(imp.Ext, &ext); err != nil {
+			return nil, []error{err}
+		}
+
+		if ext.Bidder.PlacementId != "" {
+			impExt := impExtNativo{
+				Nativo: openrtb_ext.ImpExtNativo{
+					PlacementId: ext.Bidder.PlacementId,
+				},
+			}
+
+			impExtJSON, err := json.Marshal(impExt)
+			if err != nil {
+				return nil, []error{err}
+			}
+			imp.Ext = impExtJSON
+		}
+	}
+
 	requestJSON, err := json.Marshal(request)
 	if err != nil {
 		return nil, []error{err}

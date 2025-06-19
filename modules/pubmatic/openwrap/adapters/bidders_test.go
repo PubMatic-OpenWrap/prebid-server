@@ -3326,3 +3326,71 @@ func TestBuilderCompass(t *testing.T) {
 		})
 	}
 }
+func TestBuilderNativo(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name: "Valid Scenario - placementId is present",
+			args: args{
+				params: BidderParameters{
+					FieldMap: map[string]interface{}{
+						"placementId": 1234,
+					},
+				},
+			},
+			want:    json.RawMessage(`{"placementid":"1234"}`),
+			wantErr: false,
+		},
+		{
+			name: "Invalid Scenario - placementId is missing",
+			args: args{
+				params: BidderParameters{
+					FieldMap: map[string]interface{}{},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Invalid Scenario - placementId is zero",
+			args: args{
+				params: BidderParameters{
+					FieldMap: map[string]interface{}{
+						"placementId": 0,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Invalid Scenario - placementId is not an integer",
+			args: args{
+				params: BidderParameters{
+					FieldMap: map[string]interface{}{
+						"placementId": "invalid",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderNativo(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderNativo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}

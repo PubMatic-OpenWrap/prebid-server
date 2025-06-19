@@ -26,6 +26,11 @@
     "imp": [
       {
         "id": "some-impression-id",
+        "ext": {
+          "bidder": {
+            "placementid": "828782"
+          }
+        },
         "tagid": "ogTAGID",
         "banner": {
           "w": 320,
@@ -49,6 +54,11 @@
           "imp": [
             {
               "id": "some-impression-id",
+              "ext": {
+                "nativo": {
+                  "placementid": "828782"
+                }
+              },
               "banner": {
                 "w": 320,
                 "h": 50
