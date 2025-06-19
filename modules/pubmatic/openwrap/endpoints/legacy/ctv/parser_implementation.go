@@ -15,9 +15,9 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 
+	uuid "github.com/gofrs/uuid"
 	v26 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	uuid "github.com/satori/go.uuid"
 )
 
 type OpenRTB struct {
@@ -85,11 +85,17 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 // formORTBRequest this will generate bidrequestID or impressionID if not present
 func (o *OpenRTB) formORTBRequest() {
 	if len(o.ortb.ID) == 0 {
-		o.ortb.ID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err == nil {
+			o.ortb.ID = id.String()
+		}
 	}
 
 	if len(o.ortb.Imp[0].ID) == 0 {
-		o.ortb.Imp[0].ID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err == nil {
+			o.ortb.Imp[0].ID = id.String()
+		}
 	}
 }
 
@@ -99,7 +105,10 @@ func (o *OpenRTB) formORTBRequest() {
 func (o *OpenRTB) ORTBBidRequestID() (err error) {
 	val, ok := o.values.GetString(ORTBBidRequestID)
 	if !ok {
-		o.ortb.ID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err == nil {
+			o.ortb.ID = id.String()
+		}
 	} else {
 		o.ortb.ID = val
 	}
@@ -2082,7 +2091,10 @@ func (o *OpenRTB) ORTBRegsCoppa() (err error) {
 func (o *OpenRTB) ORTBImpID() (err error) {
 	val, ok := o.values.GetString(ORTBImpID)
 	if !ok {
-		o.ortb.Imp[0].ID = uuid.NewV4().String()
+		id, err := uuid.NewV4()
+		if err == nil {
+			o.ortb.Imp[0].ID = id.String()
+		}
 	} else {
 		o.ortb.Imp[0].ID = val
 	}
