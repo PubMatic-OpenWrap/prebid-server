@@ -251,13 +251,19 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 
 	// Remove metric
-	if len(request.Imp) > 0 {
-		request.Imp[0].Metric = nil
-	}
+	request.Imp[0].Metric = nil
 
 	// Remove banner if impression is rewarded and banner and video both are present
 	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
 		request.Imp[0].Banner = nil
+	}
+
+	// Remove unsupported fields from banner
+	if request.Imp[0].Banner != nil {
+		request.Imp[0].Banner.WMin = 0
+		request.Imp[0].Banner.HMin = 0
+		request.Imp[0].Banner.WMax = 0
+		request.Imp[0].Banner.HMax = 0
 	}
 
 	// Remove native from request

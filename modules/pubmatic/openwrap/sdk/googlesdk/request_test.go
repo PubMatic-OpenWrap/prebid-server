@@ -1592,6 +1592,35 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "remove_unsupported_fields_from_banner",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+
+						Banner: &openrtb2.Banner{
+							WMin: 100,
+							WMax: 200,
+							HMax: 300,
+							HMin: 400,
+						},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Banner: &openrtb2.Banner{
+							WMin: 0,
+							WMax: 0,
+							HMax: 0,
+							HMin: 0,
+						},
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
