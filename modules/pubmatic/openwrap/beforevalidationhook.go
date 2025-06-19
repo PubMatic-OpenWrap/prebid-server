@@ -268,8 +268,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.PriceGranularity = &priceGranularity
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
+	if rCtx.WakandaDebug.IsEnable() {
+		rCtx.Debug = rCtx.WakandaDebug.IsEnable()
+	}
 	requestExt.Prebid.Debug = rCtx.Debug
-	requestExt.Prebid.DebugOverride = rCtx.WakandaDebug.IsEnable()
 	requestExt.Prebid.SupportDeals = rCtx.SupportDeals && rCtx.IsCTVRequest // TODO: verify usecase of Prefered deals vs Support details
 	requestExt.Prebid.ExtOWRequestPrebid.TrackerDisabled = rCtx.TrackerDisabled
 	requestExt.Prebid.AlternateBidderCodes, rCtx.MarketPlaceBidders = getMarketplaceBidders(requestExt.Prebid.AlternateBidderCodes, partnerConfigMap)
