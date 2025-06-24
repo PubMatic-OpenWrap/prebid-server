@@ -1064,7 +1064,7 @@ func TestHoldAuction_FilterBidsByVastVersions(t *testing.T) {
 				},
 				Test: 1,
 				Cur:  []string{"USD"},
-				Ext:  json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
+				Ext:  json.RawMessage(`{"prebid":{"googlessufeature":true}}`),
 			}},
 			bidderImpl: &goodSingleBidder{
 				httpRequest: &adapters.RequestData{
@@ -1083,7 +1083,7 @@ func TestHoldAuction_FilterBidsByVastVersions(t *testing.T) {
 				}},
 			expected: testResults{
 				bidFloorCur: "USD",
-				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"google_ssu_feature":true}}}`,
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"googlessufeature":true}}}`,
 			},
 		},
 		{
@@ -1103,7 +1103,7 @@ func TestHoldAuction_FilterBidsByVastVersions(t *testing.T) {
 				},
 				Test: 1,
 				Cur:  []string{"USD"},
-				Ext:  json.RawMessage(`{"prebid":{"google_ssu_feature":true}}`),
+				Ext:  json.RawMessage(`{"prebid":{"googlessufeature":true}}`),
 			}},
 			bidderImpl: &goodSingleBidder{
 				httpRequest: &adapters.RequestData{
@@ -1122,7 +1122,7 @@ func TestHoldAuction_FilterBidsByVastVersions(t *testing.T) {
 				}},
 			expected: testResults{
 				bidFloorCur: "USD",
-				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"google_ssu_feature":true}}}`,
+				resolvedReq: `{"id":"some-request-id","imp":[{"id":"some-impression-id","bidfloor":15,"bidfloorcur":"USD","ext":{"prebid":{"bidder":{"appnexus":{"placementId":1}}}}}],"site":{"domain":"www.website.com","page":"prebid.org","ext":{"amp":0}},"test":1,"cur":["USD"],"ext":{"prebid":{"googlessufeature":true}}}`,
 				errMessage:  "appnexus Bid some-bid-id was filtered for Imp  with Vast Version 2.0: Incompatible with GAM unwinding requirements",
 				errCode:     10014,
 			},
