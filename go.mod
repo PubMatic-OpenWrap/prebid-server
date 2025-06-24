@@ -53,7 +53,7 @@ require (
 
 require (
 	git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358
-	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20250623062146-244dc72f8a1f
+	git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20250624062228-8abe69b422f0
 	git.pubmatic.com/vastunwrap v0.0.0-00010101000000-000000000000
 	github.com/PubMatic-OpenWrap/fastxml v0.0.0-20250413102522-1b08a22c067a
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
