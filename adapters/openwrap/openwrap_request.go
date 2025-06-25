@@ -134,7 +134,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		// Create the Native object and fill with the desired JSON string.
 		// This JSON string represents the native.request payload.
 		// Retrieve width and height from Banner object if available.
-		var width, height int64
+		/*var width, height int64
 		if request.Imp[i].Banner != nil {
 			// Check if Banner has direct W and H values.
 			if request.Imp[i].Banner.W != nil && request.Imp[i].Banner.H != nil {
@@ -153,7 +153,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		request.Imp[i].Native = &openrtb2.Native{
 			Request: nativeReq,
 			Ver:     "1.1",
-		}
+		}*/
 	}
 
 	reqJSON, err := json.Marshal(request)
