@@ -596,7 +596,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 				var isValidAppStoreUrl bool
 				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {

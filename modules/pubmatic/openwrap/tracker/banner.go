@@ -10,7 +10,7 @@ import (
 )
 
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
-	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK {
+	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointGoogleSDK || rctx.Endpoint == models.EndpointUnityLevelPlay {
 		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
 	}
 
