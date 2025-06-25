@@ -2,7 +2,6 @@ package openwrap
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
