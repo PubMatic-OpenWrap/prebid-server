@@ -80,8 +80,8 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 		},
 		{
 			name:             "request with valid token and signal data",
-			requestBody:      []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"secure\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","video":{"ext":{"reward":1}}}]}`),
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"secure\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
+			requestBody:      []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","video":{"ext":{"reward":1}}}]}`),
+			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
 			metricsSetup:     func(m *mock_metrics.MockMetricsEngine) {},
 		},
 	}
@@ -226,13 +226,10 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						ID:                "1",
 						DisplayManager:    "unity",
 						DisplayManagerVer: "1.0",
-						Secure:            ptrutil.ToPtr(int8(1)),
 						Video: &openrtb2.Video{
 							MIMEs: []string{"video/mp4"},
 							Ext:   []byte(`{"reward":1}`),
 						},
-						Instl: 1,
-						Rwdd:  1,
 					},
 				},
 				App: &openrtb2.App{
@@ -280,13 +277,10 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						ID:                "1",
 						DisplayManager:    "unity",
 						DisplayManagerVer: "1.0",
-						Secure:            ptrutil.ToPtr(int8(1)),
 						Video: &openrtb2.Video{
 							MIMEs: []string{"video/mp4"},
 							Ext:   []byte(`{"reward":1}`),
 						},
-						Instl: 1,
-						Rwdd:  1,
 					},
 				},
 				App: &openrtb2.App{
@@ -446,42 +440,7 @@ func TestModifyImpression(t *testing.T) {
 			},
 		},
 		{
-			name: "video reward sets instl and rwdd",
-			request: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						ID: "1",
-						Video: &openrtb2.Video{
-							Ext: []byte(`{"reward":1}`),
-						},
-					},
-				},
-			},
-			signalImps: []openrtb2.Imp{
-				{
-					ID: "1",
-					Video: &openrtb2.Video{
-						MIMEs: []string{"video/mp4"},
-						Ext:   []byte(`{"reward":1}`),
-					},
-				},
-			},
-			expected: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						ID: "1",
-						Video: &openrtb2.Video{
-							MIMEs: []string{"video/mp4"},
-							Ext:   []byte(`{"reward":1}`),
-						},
-						Instl: 1,
-						Rwdd:  1,
-					},
-				},
-			},
-		},
-		{
-			name: "video without reward",
+			name: "video object",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
 					{
@@ -497,7 +456,6 @@ func TestModifyImpression(t *testing.T) {
 					ID: "1",
 					Video: &openrtb2.Video{
 						MIMEs: []string{"video/mp4"},
-						Ext:   []byte(`{"reward":0}`),
 					},
 				},
 			},
@@ -507,7 +465,6 @@ func TestModifyImpression(t *testing.T) {
 						ID: "1",
 						Video: &openrtb2.Video{
 							MIMEs: []string{"video/mp4"},
-							Ext:   []byte(`{"reward":0}`),
 						},
 					},
 				},
@@ -930,6 +887,116 @@ func TestModifyUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			modifyUser(tt.request, tt.signal)
+
+			// Compare requests by marshaling to JSON
+			expectedJSON, err := jsoniterator.Marshal(tt.expected)
+			assert.NoError(t, err)
+
+			actualJSON, err := jsoniterator.Marshal(tt.request)
+			assert.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
+}
+
+func TestModifyRequestWithStaticData(t *testing.T) {
+	tests := []struct {
+		name     string
+		request  *openrtb2.BidRequest
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name:     "nil request",
+			request:  nil,
+			expected: nil,
+		},
+		{
+			name: "request with video reward=1",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{
+						Ext: []byte(`{"reward":1}`),
+					},
+					Banner: &openrtb2.Banner{},
+				}},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{
+						Ext: []byte(`{"reward":1}`),
+					},
+					Instl:  1,
+					Rwdd:   1,
+					Secure: ptrutil.ToPtr(int8(1)),
+				}},
+			},
+		},
+		{
+			name: "request with video but no reward",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{
+						Ext: []byte(`{}`),
+					},
+				}},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{
+						Ext: []byte(`{}`),
+					},
+					Secure: ptrutil.ToPtr(int8(1)),
+				}},
+			},
+		},
+		{
+			name: "request with app having sessionDepth",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"sessionDepth":5}`),
+				},
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{},
+				}},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{}`),
+				},
+				Imp: []openrtb2.Imp{{
+					Video:  &openrtb2.Video{},
+					Secure: ptrutil.ToPtr(int8(1)),
+				}},
+			},
+		},
+		{
+			name: "request with app but no sessionDepth",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Imp: []openrtb2.Imp{{
+					Video: &openrtb2.Video{},
+				}},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+				Imp: []openrtb2.Imp{{
+					Video:  &openrtb2.Video{},
+					Secure: ptrutil.ToPtr(int8(1)),
+				}},
+			},
+		},
+	}
+
+	l := &LevelPlay{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l.modifyRequestWithStaticData(tt.request)
+
+			if tt.expected == nil {
+				assert.Nil(t, tt.request)
+				return
+			}
 
 			// Compare requests by marshaling to JSON
 			expectedJSON, err := jsoniterator.Marshal(tt.expected)

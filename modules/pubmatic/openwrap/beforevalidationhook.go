@@ -30,6 +30,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -596,7 +597,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK || rCtx.Endpoint == models.EndpointUnityLevelPlay {
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
 			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 				var isValidAppStoreUrl bool
 				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {

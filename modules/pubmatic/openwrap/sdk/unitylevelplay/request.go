@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -61,6 +62,9 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 		return requestBody
 	}
 
+	// modify request with static data
+	l.modifyRequestWithStaticData(request)
+
 	// modify request with signal data
 	l.modifyRequestWithSignalData(request, signal)
 
@@ -70,6 +74,34 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 	}
 
 	return modifiedRequest
+}
+
+func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
+	if request == nil {
+		return
+	}
+
+	if len(request.Imp) > 0 {
+		// Set imp.instl and imp.rwdd as 1 when video.ext.reward is 1
+		if request.Imp[0].Video != nil && request.Imp[0].Video.Ext != nil {
+			reward, err := jsonparser.GetInt(request.Imp[0].Video.Ext, "reward")
+			if reward == 1 && err == nil {
+				request.Imp[0].Instl = 1
+				request.Imp[0].Rwdd = 1
+				// remove banner
+				request.Imp[0].Banner = nil
+			}
+		}
+
+		// Set imp.secure as 1
+		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
+	}
+
+	if request.App != nil {
+		// delete app.ext.sessionDepth
+		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
+	}
+
 }
 
 func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, signal *openrtb2.BidRequest) {
@@ -119,22 +151,10 @@ func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	// modify banner
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
-	// Set imp.instl and imp.rwdd as 1 when video.ext.reward is 1
-	if request.Imp[0].Video != nil && request.Imp[0].Video.Ext != nil {
-		reward, err := jsonparser.GetInt(request.Imp[0].Video.Ext, "reward")
-		if reward == 1 && err == nil {
-			request.Imp[0].Instl = 1
-			request.Imp[0].Rwdd = 1
-		}
-	}
-
 	// modify video
 	if signalImps[0].Video != nil {
 		request.Imp[0].Video = signalImps[0].Video
 	}
-
-	// modify secure
-	request.Imp[0].Secure = signalImps[0].Secure
 
 	// modify ext
 	request.Imp[0].Ext = modifyImpExtension(request.Imp[0].Ext, signalImps[0].Ext)

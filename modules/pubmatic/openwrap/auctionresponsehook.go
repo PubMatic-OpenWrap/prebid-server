@@ -417,10 +417,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse.Ext = responseExtjson
 
 		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
-		ap.BidResponse = unitylevelplay.ApplyUnityLevelPlayResponse(rctx, ap.BidResponse)
 
 		resetBidIdtoOriginal(ap.BidResponse)
 
+		ap.BidResponse = unitylevelplay.ApplyUnityLevelPlayResponse(rctx, ap.BidResponse)
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}

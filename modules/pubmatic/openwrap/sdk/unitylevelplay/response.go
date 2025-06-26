@@ -1,19 +1,28 @@
 package unitylevelplay
 
 import (
-	"encoding/json"
-
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
+
+func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
+	serializedResponse, err := jsoniterator.Marshal(bidResponse)
+	if err != nil {
+		return nil
+	}
+
+	bid := bidResponse.SeatBid[0].Bid[0]
+	bid.AdM = string(serializedResponse)
+	return []openrtb2.Bid{bid}
+}
 
 func ApplyUnityLevelPlayResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 	if rctx.Endpoint != models.EndpointUnityLevelPlay || bidResponse.NBR != nil || rctx.UnityLevelPlay.Reject {
 		return bidResponse
 	}
 
-	serializedResponse, err := json.Marshal(bidResponse)
-	if err != nil {
+	bids := getBids(bidResponse)
+	if len(bids) == 0 {
 		return bidResponse
 	}
 
@@ -23,16 +32,7 @@ func ApplyUnityLevelPlayResponse(rctx models.RequestCtx, bidResponse *openrtb2.B
 		Cur:   bidResponse.Cur,
 		SeatBid: []openrtb2.SeatBid{
 			{
-				Bid: []openrtb2.Bid{
-					{
-						ID:    bidResponse.SeatBid[0].Bid[0].ID,
-						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
-						Price: bidResponse.SeatBid[0].Bid[0].Price,
-						AdM:   string(serializedResponse),
-						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
-						Ext:   bidResponse.SeatBid[0].Bid[0].Ext,
-					},
-				},
+				Bid: bids,
 			},
 		},
 	}

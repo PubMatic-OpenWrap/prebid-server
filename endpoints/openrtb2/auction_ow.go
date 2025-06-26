@@ -79,7 +79,7 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		}
 	} else if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 		bidResponse.Ext = nil
-		if rCtx.AppLovinMax.Reject {
+		if rCtx.AppLovinMax.Reject || rCtx.UnityLevelPlay.Reject {
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
