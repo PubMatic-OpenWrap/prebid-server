@@ -383,7 +383,6 @@ func TestBidderResponseFields(t *testing.T) {
 		"Bids":                 reflect.TypeOf([]*adapters.TypedBid{nil}),
 		"FledgeAuctionConfigs": reflect.TypeOf([]*openrtb_ext.FledgeAuctionConfig{}),
 		"XMLMetrics":           reflect.TypeOf(&openrtb_ext.XMLMetrics{}),
-		"BidderAlias":          reflect.TypeOf(openrtb_ext.BidderName("")),
 	}
 	structType := reflect.TypeOf(adapters.BidderResponse{})
 	err := resolver.ValidateStructFields(expectedFields, structType)
