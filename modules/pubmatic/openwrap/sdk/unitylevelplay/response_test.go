@@ -169,7 +169,7 @@ func TestSetUnityLevelPlayResponseReject(t *testing.T) {
 			name: "nbr present with debug false",
 			rctx: models.RequestCtx{
 				Endpoint: models.EndpointUnityLevelPlay,
-				Debug:   false,
+				Debug:    false,
 			},
 			bidResponse: &openrtb2.BidResponse{
 				NBR: openrtb3.NoBidUnknownError.Ptr(),
@@ -180,7 +180,7 @@ func TestSetUnityLevelPlayResponseReject(t *testing.T) {
 			name: "nbr present with debug true",
 			rctx: models.RequestCtx{
 				Endpoint: models.EndpointUnityLevelPlay,
-				Debug:   true,
+				Debug:    true,
 			},
 			bidResponse: &openrtb2.BidResponse{
 				NBR: openrtb3.NoBidUnknownError.Ptr(),
