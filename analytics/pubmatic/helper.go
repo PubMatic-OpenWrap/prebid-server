@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 )
 
@@ -82,7 +83,7 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 
 // RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
 func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
-	if rctx.Endpoint != models.EndpointAppLovinMax && rctx.Endpoint != models.EndpointGoogleSDK && rctx.Endpoint != models.EndpointUnityLevelPlay {
+	if !sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		return nil
 	}
 

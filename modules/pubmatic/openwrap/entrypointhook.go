@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -283,7 +284,7 @@ func GetEndpoint(path, source string, agent string) string {
 }
 
 func getSendBurl(request []byte, endpoint string) bool {
-	if endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointUnityLevelPlay {
+	if sdkutils.IsSdkIntegration(endpoint) {
 		return true
 	}
 
