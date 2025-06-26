@@ -44,7 +44,7 @@ func applyMutation(bidInfo []*rawBidderResponseHookResult, result *hookstage.Hoo
 				BidType:        bidResult.bid.BidType,
 				BidVideo:       bidResult.bid.BidVideo,
 				OriginalBidCur: payload.BidderResponse.Currency,
-			}), payload.BidderResponse.BidderAlias.String())
+			}), payload.Bidder)
 			continue
 		}
 
