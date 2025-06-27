@@ -6,7 +6,9 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -235,6 +237,84 @@ func TestSetUnityLevelPlayResponseReject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := SetUnityLevelPlayResponseReject(tt.rctx, tt.bidResponse)
 			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestUpdateBidWithTestPrice(t *testing.T) {
+	type args struct {
+		rctx            models.RequestCtx
+		bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+	}
+	tests := []struct {
+		name                 string
+		args                 args
+		expectedBidResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid
+	}{
+		{
+			name: "empty bidder responses",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointUnityLevelPlay,
+				},
+				bidderResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+			},
+			expectedBidResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{},
+		},
+		{
+			name: "empty seatbid",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointUnityLevelPlay,
+				},
+				bidderResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{},
+					},
+				},
+			},
+			expectedBidResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"pubmatic": {
+					Bids: []*entities.PbsOrtbBid{},
+				},
+			},
+		},
+		{
+			name: "update bids with test price",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:      models.EndpointUnityLevelPlay,
+					IsTestRequest: 1,
+				},
+				bidderResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+					"pubmatic": {
+						Bids: []*entities.PbsOrtbBid{
+							{
+								Bid: &openrtb2.Bid{
+									Price: 1.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedBidResponses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{
+				"pubmatic": {
+					Bids: []*entities.PbsOrtbBid{
+						{
+							Bid: &openrtb2.Bid{
+								Price: 99,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			UpdateBidWithTestPrice(tt.args.rctx, tt.args.bidderResponses)
+			assert.Equal(t, tt.expectedBidResponses, tt.args.bidderResponses)
 		})
 	}
 }

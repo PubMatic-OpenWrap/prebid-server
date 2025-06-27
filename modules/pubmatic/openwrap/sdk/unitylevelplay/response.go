@@ -2,7 +2,9 @@ package unitylevelplay
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
@@ -54,4 +56,16 @@ func SetUnityLevelPlayResponseReject(rctx models.RequestCtx, bidResponse *openrt
 		reject = true
 	}
 	return reject
+}
+
+func UpdateBidWithTestPrice(rctx models.RequestCtx, bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	if rctx.Endpoint != models.EndpointUnityLevelPlay || rctx.IsTestRequest != 1 {
+		return
+	}
+
+	for _, seatBid := range bidderResponses {
+		for i := range seatBid.Bids {
+			seatBid.Bids[i].Bid.Price = 99
+		}
+	}
 }

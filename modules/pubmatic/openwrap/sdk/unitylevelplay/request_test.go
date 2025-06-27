@@ -72,16 +72,16 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 		},
 		{
 			name:        "request with invalid token",
-			requestBody: []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"invalid token"}}}`),
+			requestBody: []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"aW52YWxpZCB0b2tlbg=="}}}`),
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
 				m.EXPECT().RecordSignalDataStatus("", "", models.InvalidSignal)
 			},
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"invalid token"}}}`),
+			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"aW52YWxpZCB0b2tlbg=="}}}`),
 		},
 		{
 			name:             "request with valid token and signal data",
-			requestBody:      []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","video":{"ext":{"reward":1}}}]}`),
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{"token":"{\"id\":\"signal\",\"app\":{\"name\":\"testapp\"},\"imp\":[{\"displaymanager\":\"unity\",\"displaymanagerver\":\"1.0\",\"clickbrowser\":1,\"video\":{\"mimes\":[\"video/mp4\"],\"ext\":{\"reward\":1}}}]}"}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
+			requestBody:      []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"eyJpZCI6InNpZ25hbCIsImFwcCI6eyJuYW1lIjoidGVzdGFwcCJ9LCJpbXAiOlt7ImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsImNsaWNrYnJvd3NlciI6MSwidmlkZW8iOnsibWltZXMiOlsidmlkZW8vbXA0Il0sImV4dCI6eyJyZXdhcmQiOjF9fX1dfQ=="}},"imp":[{"id":"1","video":{"ext":{"reward":1}}}]}`),
+			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{"token":"eyJpZCI6InNpZ25hbCIsImFwcCI6eyJuYW1lIjoidGVzdGFwcCJ9LCJpbXAiOlt7ImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsImNsaWNrYnJvd3NlciI6MSwidmlkZW8iOnsibWltZXMiOlsidmlkZW8vbXA0Il0sImV4dCI6eyJyZXdhcmQiOjF9fX1dfQ=="}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
 			metricsSetup:     func(m *mock_metrics.MockMetricsEngine) {},
 		},
 	}
@@ -939,6 +939,7 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					Video: &openrtb2.Video{
 						Ext: []byte(`{}`),
 					},
+					Banner: &openrtb2.Banner{},
 				}},
 			},
 			expected: &openrtb2.BidRequest{
@@ -946,6 +947,7 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					Video: &openrtb2.Video{
 						Ext: []byte(`{}`),
 					},
+					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},
 			},
@@ -957,7 +959,8 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					Ext: []byte(`{"sessionDepth":5}`),
 				},
 				Imp: []openrtb2.Imp{{
-					Video: &openrtb2.Video{},
+					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
 				}},
 			},
 			expected: &openrtb2.BidRequest{
@@ -966,6 +969,7 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 				},
 				Imp: []openrtb2.Imp{{
 					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},
 			},
@@ -975,13 +979,15 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			request: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Imp: []openrtb2.Imp{{
-					Video: &openrtb2.Video{},
+					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
 				}},
 			},
 			expected: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Imp: []openrtb2.Imp{{
 					Video:  &openrtb2.Video{},
+					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},
 			},

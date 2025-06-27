@@ -1,6 +1,8 @@
 package unitylevelplay
 
 import (
+	"encoding/base64"
+
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
@@ -56,8 +58,15 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 		return requestBody
 	}
 
+	// decode token
+	signalData, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
+		return requestBody
+	}
+
 	var signal *openrtb2.BidRequest
-	if err := jsoniterator.Unmarshal([]byte(token), &signal); err != nil {
+	if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
 		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
 		return requestBody
 	}
@@ -134,6 +143,11 @@ func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner)
 func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	if len(request.Imp) == 0 || len(signalImps) == 0 {
 		return
+	}
+
+	// read secure from signal
+	if signalImps[0].Secure != nil {
+		request.Imp[0].Secure = signalImps[0].Secure
 	}
 
 	if signalImps[0].DisplayManager != "" {
