@@ -28,7 +28,7 @@ func ApplyUnityLevelPlayResponse(rctx models.RequestCtx, bidResponse *openrtb2.B
 		return bidResponse
 	}
 
-	updatedResponse := openrtb2.BidResponse{
+	*bidResponse = openrtb2.BidResponse{
 		ID:    bidResponse.ID,
 		BidID: bidResponse.SeatBid[0].Bid[0].ID,
 		Cur:   bidResponse.Cur,
@@ -39,7 +39,7 @@ func ApplyUnityLevelPlayResponse(rctx models.RequestCtx, bidResponse *openrtb2.B
 		},
 	}
 
-	return &updatedResponse
+	return bidResponse
 }
 
 func SetUnityLevelPlayResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) bool {
