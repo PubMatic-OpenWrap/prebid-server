@@ -362,9 +362,9 @@ func TestModifyBanner(t *testing.T) {
 		},
 		{
 			name:           "nil request banner API",
-			requestBanner:  &openrtb2.Banner{},
+			requestBanner:  nil,
 			signalBanner:   &openrtb2.Banner{API: []adcom1.APIFramework{1}},
-			expectedBanner: &openrtb2.Banner{},
+			expectedBanner: nil,
 		},
 		{
 			name:           "request banner with API",

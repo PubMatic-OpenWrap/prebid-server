@@ -130,11 +130,11 @@ func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, si
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
-	if signalBanner == nil {
+	if requestBanner == nil || signalBanner == nil {
 		return
 	}
 
-	if requestBanner.API != nil {
+	if signalBanner.API != nil {
 		requestBanner.API = signalBanner.API
 	}
 
