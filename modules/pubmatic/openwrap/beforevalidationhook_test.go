@@ -5588,6 +5588,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{"adunit": {IsActive: true, Tier1: 1.1, Tier2: 2.1, Tier3: 3.1}})
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},

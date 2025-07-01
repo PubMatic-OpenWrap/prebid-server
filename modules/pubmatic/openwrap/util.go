@@ -604,6 +604,10 @@ func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
 	if imp.Instl == 1 {
 		return models.AdUnitFormatInstl
 	}
+
+	if imp.Banner != nil {
+		return models.AdUnitFormatBanner
+	}
 	return ""
 }
 

@@ -16,6 +16,7 @@ type mbmfData struct {
 	profileAdUnitLevelFloors models.ProfileAdUnitMultiFloors
 	instlFloors              map[int]*models.MultiFloors
 	rwddFloors               map[int]*models.MultiFloors
+	bannerFloors             map[int]*models.MultiFloors
 }
 
 // mbmf represents Multi-Bid Multi-Floor settings using double-buffering
@@ -33,6 +34,7 @@ func newMBMF() *mbmf {
 				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
 				instlFloors:              make(map[int]*models.MultiFloors),
 				rwddFloors:               make(map[int]*models.MultiFloors),
+				bannerFloors:             make(map[int]*models.MultiFloors),
 			},
 			{
 				enabledCountries:         make(map[int]models.HashSet),
@@ -40,6 +42,7 @@ func newMBMF() *mbmf {
 				profileAdUnitLevelFloors: make(models.ProfileAdUnitMultiFloors),
 				instlFloors:              make(map[int]*models.MultiFloors),
 				rwddFloors:               make(map[int]*models.MultiFloors),
+				bannerFloors:             make(map[int]*models.MultiFloors),
 			},
 		},
 	}
@@ -57,6 +60,7 @@ func (fe *feature) updateMBMF() {
 	fe.updateProfileAdUnitLevelFloors(nextIdx)
 	fe.updateMBMFInstlFloors(nextIdx)
 	fe.updateMBMFRwddFloors(nextIdx)
+	fe.updateMBMFBannerFloors(nextIdx)
 	fe.mbmf.index.Store(nextIdx)
 }
 
@@ -120,6 +124,17 @@ func (fe *feature) updateMBMFRwddFloors(nextIdx int32) {
 	fe.mbmf.data[nextIdx].rwddFloors = rwddFloors
 }
 
+// updateMBMFBannerFloors updates mbmfBannerFloors fetched from DB to pubFeatureMap
+func (fe *feature) updateMBMFBannerFloors(nextIdx int32) {
+	bannerFloors := make(map[int]*models.MultiFloors)
+	for pubID, feature := range fe.publisherFeature {
+		if floors := extractMultiFloors(feature, models.FeatureMBMFBannerFloors, pubID); floors != nil {
+			bannerFloors[pubID] = floors
+		}
+	}
+	fe.mbmf.data[nextIdx].bannerFloors = bannerFloors
+}
+
 // IsMBMFCountryForPublisher returns true if country specified for MBMF in DB
 func (fe *feature) IsMBMFCountryForPublisher(countryCode string, pubID int) bool {
 	idx := fe.mbmf.index.Load()
@@ -157,6 +172,8 @@ func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adunitFormat string) 
 		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
 		floors = fe.mbmf.data[idx].rwddFloors
+	case models.AdUnitFormatBanner:
+		floors = fe.mbmf.data[idx].bannerFloors
 	default:
 		return false
 	}
@@ -176,6 +193,8 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
 		floors = fe.mbmf.data[idx].rwddFloors
+	case models.AdUnitFormatBanner:
+		floors = fe.mbmf.data[idx].bannerFloors
 	default:
 		return nil
 	}
@@ -184,12 +203,14 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 	if ok && adFormatFloors != nil {
 		return adFormatFloors
 	}
-
-	defaultFloors := floors[models.DefaultAdUnitFormatFloors]
-	if defaultFloors != nil {
-		return defaultFloors
+	// Return default floors if adunitFormat is not banner
+	if adunitFormat != models.AdUnitFormatBanner {
+		defaultFloors := floors[models.DefaultAdUnitFormatFloors]
+		if defaultFloors != nil {
+			return defaultFloors
+		}
+		glog.Errorf("MBMF default floors not found for pubID %d and adunitFormat %s", pubID, adunitFormat)
 	}
-	glog.Errorf("MBMF default floors not found for pubID %d and adunitFormat %s", pubID, adunitFormat)
 	return nil
 }
 

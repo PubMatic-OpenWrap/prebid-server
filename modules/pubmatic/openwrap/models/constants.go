@@ -615,6 +615,7 @@ const (
 	FeatureMBMFPublisher       = 10
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
+	FeatureMBMFBannerFloors    = 13
 )
 
 // constants for sdk integrations
@@ -632,6 +633,7 @@ const (
 	MultiBidMultiFloorValue   = "mbmfv"
 	ProcessingTime            = "processing_time_ms"
 	AdUnitFormatInstl         = "instl"
+	AdUnitFormatBanner        = "banner"
 	AdUnitFormatRwddVideo     = "rwddvideo"
 	DefaultAdUnitFormatFloors = 0
 )
