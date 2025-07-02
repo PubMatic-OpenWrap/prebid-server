@@ -193,8 +193,8 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
 		floors = fe.mbmf.data[idx].rwddFloors
-	case models.AdUnitFormatBanner:
-		floors = fe.mbmf.data[idx].bannerFloors
+	// case models.AdUnitFormatBanner:
+	// 	floors = fe.mbmf.data[idx].bannerFloors
 	default:
 		return nil
 	}
@@ -203,14 +203,12 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 	if ok && adFormatFloors != nil {
 		return adFormatFloors
 	}
-	// Return default floors if adunitFormat is not banner
-	if adunitFormat != models.AdUnitFormatBanner {
-		defaultFloors := floors[models.DefaultAdUnitFormatFloors]
-		if defaultFloors != nil {
-			return defaultFloors
-		}
-		glog.Errorf("MBMF default floors not found for pubID %d and adunitFormat %s", pubID, adunitFormat)
+
+	defaultFloors := floors[models.DefaultAdUnitFormatFloors]
+	if defaultFloors != nil {
+		return defaultFloors
 	}
+	glog.Errorf("MBMF default floors not found for pubID %d and adunitFormat %s", pubID, adunitFormat)
 	return nil
 }
 

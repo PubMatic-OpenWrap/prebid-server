@@ -1553,7 +1553,7 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "mbmf publisher enabled for banner return as is",
+			name: "mbmf publisher enabled for banner- don't apply floors",
 			args: args{
 				pubID:        1234,
 				adunitFormat: models.AdUnitFormatBanner,
@@ -1593,12 +1593,7 @@ func TestFeatureGetMBMFFloorsForAdUnitFormat(t *testing.T) {
 					},
 				},
 			},
-			want: &models.MultiFloors{
-				IsActive: true,
-				Tier1:    1,
-				Tier2:    3,
-				Tier3:    2,
-			},
+			want: nil,
 		},
 		{
 			name: "mbmf publisher not present for banner, don't apply any floors",
