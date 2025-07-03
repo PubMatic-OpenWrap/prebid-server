@@ -911,48 +911,76 @@ func TestGetEndpoint(t *testing.T) {
 	}
 }
 
-func Test_getSendBurl(t *testing.T) {
+func TestGetSendBurl(t *testing.T) {
 	type args struct {
-		request []byte
+		request  []byte
+		endpoint string
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
-
 		{
-			name: "request with sendburl true",
+			name: "AppLovinMax endpoint should always return true",
 			args: args{
-				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request:  []byte(`{}`),
+				endpoint: models.EndpointAppLovinMax,
 			},
 			want: true,
 		},
 		{
-			name: "appLovinMax request with sendburl false",
+			name: "GoogleSDK endpoint should always return true",
 			args: args{
-				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":false,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request:  []byte(`{}`),
+				endpoint: models.EndpointGoogleSDK,
+			},
+			want: true,
+		},
+		{
+			name: "UnityLevelPlay endpoint should always return true",
+			args: args{
+				request:  []byte(`{}`),
+				endpoint: models.EndpointUnityLevelPlay,
+			},
+			want: true,
+		},
+		{
+			name: "request with sendburl true for other endpoint",
+			args: args{
+				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":true,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				endpoint: models.EndpointWebS2S,
+			},
+			want: true,
+		},
+		{
+			name: "request with sendburl false for other endpoint",
+			args: args{
+				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"sendburl":false,"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				endpoint: models.EndpointWebS2S,
 			},
 			want: false,
 		},
 		{
-			name: "appLovinMax request with no sendburl key",
+			name: "request with no sendburl key for other endpoint",
 			args: args{
-				request: []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				request:  []byte(`{"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":14052,"sumry_disable":1,"clientconfig":1}}}}}}`),
+				endpoint: models.EndpointWebS2S,
 			},
 			want: false,
 		},
 		{
-			name: "no ext object in request",
+			name: "no ext object in request for other endpoint",
 			args: args{
-				request: []byte(``),
+				request:  []byte(``),
+				endpoint: models.EndpointWebS2S,
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getSendBurl(tt.args.request)
+			got := getSendBurl(tt.args.request, tt.args.endpoint)
 			assert.Equal(t, tt.want, got)
 		})
 	}
