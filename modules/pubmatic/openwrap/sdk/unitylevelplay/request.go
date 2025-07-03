@@ -109,8 +109,9 @@ func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	if request.App != nil {
 		// delete app.ext.sessionDepth
 		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
+		// Remove token
+		request.App.Ext = jsonparser.Delete(request.App.Ext, "token")
 	}
-
 }
 
 func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, signal *openrtb2.BidRequest) {
