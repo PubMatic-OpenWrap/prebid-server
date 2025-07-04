@@ -2536,6 +2536,31 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatNotFound)
 			},
 		},
+		{
+			name: "pub enabled but invalid adformat",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					Instl:  0,
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{},
+				},
+			},
+			want: nil,
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFInvalidAdFormat)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
