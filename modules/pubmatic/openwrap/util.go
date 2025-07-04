@@ -605,13 +605,8 @@ func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
 		return models.AdUnitFormatInstl
 	}
 
-	// Banner and Video both are present, MBMF not supported for MREC banner for now
-	if imp.Banner != nil && imp.Video != nil {
-		return ""
-	}
-
-	//invalid adformat as MBMF is only supported for rewarded video
-	if imp.Banner != nil && reward != nil && *reward == 1 {
+	if (imp.Banner != nil && imp.Video != nil) ||
+		(imp.Banner != nil && reward != nil && *reward == 1) {
 		return ""
 	}
 
