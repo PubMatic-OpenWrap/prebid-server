@@ -660,4 +660,5 @@ const (
 	MBMFAdUnitDisabled       = 4
 	MBMFAdUnitFormatNotFound = 5
 	MBMFNoEntryFound         = 6
+	MBMFInvalidAdFormat      = 7
 )

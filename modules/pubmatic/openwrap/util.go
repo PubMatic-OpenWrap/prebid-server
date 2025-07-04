@@ -597,12 +597,22 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 }
 
 func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
-	if reward != nil && imp.Video != nil {
+	if reward != nil && *reward == 1 && imp.Video != nil {
 		return models.AdUnitFormatRwddVideo
 	}
 
 	if imp.Instl == 1 {
 		return models.AdUnitFormatInstl
+	}
+
+	// Banner and Video both are present, MBMF not supported for MREC banner for now
+	if imp.Banner != nil && imp.Video != nil {
+		return ""
+	}
+
+	//invalid adformat as MBMF is only supported for rewarded video
+	if imp.Banner != nil && reward != nil && *reward == 1 {
+		return ""
 	}
 
 	if imp.Banner != nil {
@@ -634,11 +644,14 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	//for phase 1 mbmf, adunitformat is by default enabled
 	adunitFormat := getAdunitFormat(reward, imp)
+	if adunitFormat == "" {
+		mbmfStatus = models.MBMFInvalidAdFormat
+		return nil
+	}
 
 	//don't apply mbmf if pub is not enabled for adunitFormat
-	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+	if !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
 		mbmfStatus = models.MBMFAdUnitFormatDisabled
 		return nil
 	}
@@ -657,14 +670,12 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
 	}
 
-	if adunitFormat != "" {
-		//return adunitformat multifloors for pubid, if not present then return default multifloors
-		multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
-		if multifloors != nil {
-			mbmfStatus = models.MBMFSuccess
-			return multifloors
-		}
-		mbmfStatus = models.MBMFAdUnitFormatNotFound
+	//return adunitformat multifloors for pubid, if not present then return default multifloors
+	multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	if multifloors != nil {
+		mbmfStatus = models.MBMFSuccess
+		return multifloors
 	}
+	mbmfStatus = models.MBMFAdUnitFormatNotFound
 	return nil
 }

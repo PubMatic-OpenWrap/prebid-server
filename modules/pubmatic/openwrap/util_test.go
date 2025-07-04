@@ -2191,6 +2191,14 @@ func TestGetAdunitFormat(t *testing.T) {
 			reward: nil,
 			want:   "",
 		},
+		{
+			name: "invalid adunitformat with banner and video",
+			imp: openrtb2.Imp{
+				Banner: &openrtb2.Banner{},
+				Video:  &openrtb2.Video{},
+			},
+			want: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
