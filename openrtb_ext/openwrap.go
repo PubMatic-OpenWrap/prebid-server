@@ -45,7 +45,7 @@ type ExtOWRequestPrebid struct {
 	Transparency            *TransparencyExt       `json:"transparency,omitempty"`
 	KeyVal                  map[string]interface{} `json:"keyval,omitempty"`
 	TrackerDisabled         bool                   `json:"tracker_disabled,omitempty"`
-	GoogleSSUFeatureEnabled bool                   `json:"strictvastmode,omitempty"`
+	GoogleSSUFeatureEnabled bool                   `json:"googlessufeature,omitempty"`
 	DebugOverride           bool                   `json:"debug_override,omitempty"`
 }
 
