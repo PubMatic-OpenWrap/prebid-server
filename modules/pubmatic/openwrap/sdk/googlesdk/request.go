@@ -269,6 +269,8 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	// Remove native from request
 	request.Imp[0].Native = nil
 
+	// Remove video from request
+	request.Imp[0].Video = nil
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {

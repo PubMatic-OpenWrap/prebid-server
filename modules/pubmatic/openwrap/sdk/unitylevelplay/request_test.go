@@ -923,9 +923,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			},
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{{
-					Video: &openrtb2.Video{
-						Ext: []byte(`{"reward":1}`),
-					},
 					Instl:  1,
 					Rwdd:   1,
 					Secure: ptrutil.ToPtr(int8(1)),
@@ -944,9 +941,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			},
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{{
-					Video: &openrtb2.Video{
-						Ext: []byte(`{}`),
-					},
 					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},
@@ -968,7 +962,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					Ext: []byte(`{}`),
 				},
 				Imp: []openrtb2.Imp{{
-					Video:  &openrtb2.Video{},
 					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},
@@ -986,7 +979,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			expected: &openrtb2.BidRequest{
 				App: &openrtb2.App{},
 				Imp: []openrtb2.Imp{{
-					Video:  &openrtb2.Video{},
 					Banner: &openrtb2.Banner{},
 					Secure: ptrutil.ToPtr(int8(1)),
 				}},

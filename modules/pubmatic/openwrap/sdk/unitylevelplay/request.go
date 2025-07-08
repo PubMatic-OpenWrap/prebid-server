@@ -53,6 +53,7 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 	}
 
 	token, err := jsonparser.GetString(request.App.Ext, "token")
+	request.App.Ext = jsonparser.Delete(request.App.Ext, "token") // Remove token
 	if token == "" || err != nil {
 		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.MissingSignal)
 		return requestBody
@@ -104,13 +105,17 @@ func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 
 		// Set imp.secure as 1
 		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
+
+		// Remove native from request
+		request.Imp[0].Native = nil
+
+		// Remove video from request
+		request.Imp[0].Video = nil
 	}
 
 	if request.App != nil {
 		// delete app.ext.sessionDepth
 		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
-		// Remove token
-		request.App.Ext = jsonparser.Delete(request.App.Ext, "token")
 	}
 }
 
