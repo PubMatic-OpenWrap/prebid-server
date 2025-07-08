@@ -17,12 +17,14 @@ import (
 )
 
 const (
-	buyId               = "buyid"
-	clickScript         = "<script>function handleAdClick_VALID_IMP_INDEX(redirectUrl, clickUrls) {clickUrls.forEach(url => { if (navigator.sendBeacon) { navigator.sendBeacon(url);} else {const img = new Image(); img.src = url; }});window.top.location.href = redirectUrl;}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
-	admActivate         = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
-	admActivateNative   = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
-	landingUrl 			= "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
+	buyId                    = "buyid"
+	clickScript              = "<script>async function handleAdClick_VALID_IMP_INDEX(redirectUrl,clickUrls){const clickPromises=clickUrls.map(url=>new Promise(resolve=>{if(navigator.sendBeacon){const success=navigator.sendBeacon(url);resolve(success)}else{const img=new Image();img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src=url;setTimeout(()=>resolve(false),1000)}}));try{await Promise.all(clickPromises)}catch(error){}finally{window.top.location.href=redirectUrl}}document.addEventListener(\"DOMContentLoaded\",function(){var adLink=document.getElementById(\"ad-click-link-VALID_IMP_INDEX\");if(adLink){adLink.addEventListener(\"click\",function(e){e.preventDefault();var redirecturl=\"CONVERT_LANDING_PAGE_DV\";var clickurls=[ALL_CLICK_URLS];handleAdClick_VALID_IMP_INDEX(redirecturl,clickurls)})}});</script>"
+	admActivate              = "<div style='margin:0;padding:0;'><a href='CONVERT_LANDING_PAGE' target='_top'><img src='CONVERT_CREATIVE'></a></div>"
+	admActivateNative        = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a><iframe width='0' scrolling='no' height='0' frameborder='0' src='DSP_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='dspbeacon'></iframe> <iframe width='0' scrolling='no' height='0' frameborder='0' src='PUB_IMP_URL' style='position:absolute;top:-15000px;left:-15000px' vspace='0' hspace='0' marginwidth='0' marginheight='0' allowtransparency='true' name='pubmbeacon'></iframe></div>"
+	landingUrl               = "https://ci-va2qa-mgmt.pubmatic.com/adservercommerce/convert/onsite/dv/redirect?redirectURL=CONVERT_LANDING_PAGE_DV&dvURL=DV_CLICK_URL&pubURL=PUB_CLICK_URL"
 	redirectDVTestLandingUrl = "https://ci-va2qa-mgmt.pubmatic.com/v2/ui-demo-app/retailer1/coke"
+	admActivateBanner        = "<div style='margin:0;padding:0;'> <a id=\"ad-click-link-VALID_IMP_INDEX\" href=\"#\"><img src='CONVERT_CREATIVE'></a></div>"
+	thirdPartyTagCreative    = "https://go.trader.ca/wp-content/uploads/2022/02/250X250.png"
 )
 
 type pubmaticBidExt struct {
@@ -36,21 +38,87 @@ type Adm struct {
 	Ver    string  `json:"ver"`
 	Assets []Asset `json:"assets"`
 }
+
 // Asset represents an asset within the adm.
 type Asset struct {
 	Id   int         `json:"id"`
 	Data *AssetData  `json:"data,omitempty"`
 	Img  *AssetImage `json:"img,omitempty"`
 }
+
 // AssetData represents the data asset (e.g. text).
 type AssetData struct {
 	Value string `json:"value"`
 }
+
 // AssetImage represents the image asset (e.g. url, w, h).
 type AssetImage struct {
 	Url string `json:"url"`
-	W   int64    `json:"w"`
-	H   int64    `json:"h"`
+	W   int64  `json:"w"`
+	H   int64  `json:"h"`
+}
+
+func replaceAdm(adm string, replace string) string {
+	// Pattern 1: Match <script> block surrounded by optional whitespace and {}
+	reWithBraces := regexp.MustCompile(`(?s)\{\s*<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
+
+	// Pattern 2: Match <script> block directly
+	reWithoutBraces := regexp.MustCompile(`(?s)<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>`)
+
+	// First try replacing the script block wrapped in braces
+	if reWithBraces.MatchString(adm) {
+		return reWithBraces.ReplaceAllString(adm, replace)
+	}
+
+	// If not found, try replacing the standalone script block
+	return reWithoutBraces.ReplaceAllString(adm, replace)
+}
+
+func getScriptContent(adm string) string {
+	// Regex to match {<script>...</script>} with optional whitespace/newlines
+	reWithBraces := regexp.MustCompile(`(?s)\{\s*<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
+	reWithoutBraces := regexp.MustCompile(`(?s)<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>`)
+
+	// Try match with curly braces first
+	if match := reWithBraces.FindString(adm); match != "" {
+		return match
+	}
+
+	// Fallback to no curly braces
+	if match := reWithoutBraces.FindString(adm); match != "" {
+		return match
+	}
+
+	return ""
+}
+
+// Function to extract creativeId and clickurl from script content
+func parseScriptContent(script string) (string, string) {
+	// Regex to match creativeId value (numeric or macro)
+	creativeIdRegex := regexp.MustCompile(`(?i)creativeId\s*=\s*([^;]+)`)
+
+	// Regex to match clickurl value
+	clickurlRegex := regexp.MustCompile(`(?i)clickurl\s*=\s*([^\s;]+)`)
+
+	creativeId := ""
+	clickurl := ""
+
+	// Extract creativeId and handle macro case
+	if match := creativeIdRegex.FindStringSubmatch(script); len(match) > 1 {
+		raw := strings.TrimSpace(match[1])
+		if strings.Contains(strings.ToLower(raw), "creative_id") {
+			creativeId = "" // macro found, skip
+		} else {
+			creativeId = raw
+		}
+	}
+
+	// Extract clickurl
+	if match := clickurlRegex.FindStringSubmatch(script); len(match) > 1 {
+		clickurl = strings.TrimSpace(match[1])
+	}
+
+	return creativeId, clickurl
 }
 
 func extractBillingURL(adm string) string {
@@ -66,7 +134,6 @@ func extractBillingURL(adm string) string {
 
 	return match
 }
-
 
 // Function to extract the value of wDspCampId from the input string
 func extractWDSCampID(input string) string {
@@ -96,6 +163,7 @@ func extractWDSCampID(input string) string {
 type pubmaticBidExtVideo struct {
 	Duration *int `json:"duration,omitempty"`
 }
+
 func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode == http.StatusNoContent {
 		return nil, nil
@@ -122,7 +190,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 	for _, sb := range bidResp.SeatBid {
 		for i := 0; i < len(sb.Bid); i++ {
 			bid := sb.Bid[i]
-		
+
 			impVideo := &openrtb_ext.ExtBidPrebidVideo{}
 
 			if len(bid.Cat) > 1 {
@@ -140,22 +208,40 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 				bidType = getBidType(bidExt)
 			}
-
-			bUrl := extractBillingURL(bid.AdM)
-			bid.BURL = bUrl
 			activateCampaignId := extractWDSCampID(bid.AdM)
 			if activateCampaignId != "" {
 				bid.CID = activateCampaignId
 			}
+			if strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
+				updatedAdmActivate := strings.Replace(admActivateBanner, "CONVERT_CREATIVE", thirdPartyTagCreative, 1)
+				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 
-			updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
-			if bid.MType ==  openrtb2.MarkupBanner{
+				scriptContent := getScriptContent(bid.AdM)
+
+				if scriptContent == "" {
+					continue
+				}
+				creativeId, clickUrl := parseScriptContent(scriptContent)
+				clickUrl = "\"" + clickUrl + "\""
+				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", clickUrl, 1)
+				updatedAdmActivate = finalClickScript + updatedAdmActivate
+				updatedAdmActivate = strings.Replace(updatedAdmActivate, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
+				bid.AdM = replaceAdm(bid.AdM, updatedAdmActivate)
+
+				if bid.CrID == "" {
+					bid.CrID = creativeId
+				}
+
+			} else if bid.MType == openrtb2.MarkupBanner {
+				bUrl := extractBillingURL(bid.AdM)
+				bid.BURL = bUrl
+				updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
 				bid.AdM = updatedAdmActivate
-			} else if bid.MType ==  openrtb2.MarkupNative{
+			} else if bid.MType == openrtb2.MarkupNative {
 				// Define a structure to unmarshal the adm string.
 				var admData struct {
 					Link struct {
-						URL string `json:"url"`
+						URL           string   `json:"url"`
 						Clicktrackers []string `json:"clicktrackers"`
 					} `json:"link"`
 					Imptrackers []string `json:"imptrackers"`
@@ -188,21 +274,21 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				if len(admData.Link.Clicktrackers) == 0 {
 					continue // or handle the situation as needed
 				}
-				
+
 				// Extract the link URL.
 				linkURL := admData.Link.URL
 				impTrackersStr := admData.Imptrackers[0]
 				clickTrackersStr := admData.Link.Clicktrackers[0]
-	
+
 				updatedAdmActivate := strings.Replace(admActivateNative, "CONVERT_CREATIVE", bid.IURL, 1)
 				updatedAdmActivate = strings.Replace(updatedAdmActivate, "DSP_IMP_URL", impTrackersStr, 1)
-				if( len(admData.Imptrackers) > 1) {
+				if len(admData.Imptrackers) > 1 {
 					updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
 				}
-				combinedClicks := "\"" + linkURL + "\",\""  + clickTrackersStr + "\""
+				combinedClicks := "\"" + linkURL + "\",\"" + clickTrackersStr + "\""
 				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", combinedClicks, 1)
-				updatedAdmActivateNative := finalClickScript +  updatedAdmActivate
+				updatedAdmActivateNative := finalClickScript + updatedAdmActivate
 				updatedAdmActivateNative = strings.Replace(updatedAdmActivateNative, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
 
 				bid.AdM = updatedAdmActivateNative
@@ -213,14 +299,14 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				if width != 0 && height != 0 {
 					bid.W = width
 					bid.H = height
-				} 
+				}
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
-				Bid:        &bid,
-				BidType:    bidType,
-				BidVideo:   impVideo,
-				Seat:       openrtb_ext.BidderName(sb.Seat),
+				Bid:      &bid,
+				BidType:  bidType,
+				BidVideo: impVideo,
+				Seat:     openrtb_ext.BidderName("pubmatic"),
 			})
 
 		}
@@ -271,7 +357,7 @@ func getNativeAdm(adm string) (string, error) {
 	return adm, nil
 }
 
-//getMapFromJSON converts JSON to map
+// getMapFromJSON converts JSON to map
 func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	if source != nil {
 		dataMap := make(map[string]interface{})
@@ -282,5 +368,3 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
-
