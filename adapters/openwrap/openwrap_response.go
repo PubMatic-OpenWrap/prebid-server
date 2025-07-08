@@ -59,25 +59,25 @@ type AssetImage struct {
 }
 
 func replaceAdm(adm string, replace string) string {
-	// Pattern 1: Match script block with surrounding braces
-	reWithBraces := regexp.MustCompile(`\{\s*<script>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
+	// Pattern 1: Match <script> block surrounded by optional whitespace and {}
+	reWithBraces := regexp.MustCompile(`(?s)\{\s*<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
 
-	// Pattern 2: Match script block without braces
-	reWithoutBraces := regexp.MustCompile(`<script>.*?CONVERT_SSP_TAG.*?</script>`)
+	// Pattern 2: Match <script> block directly
+	reWithoutBraces := regexp.MustCompile(`(?s)<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>`)
 
-	// Try replacing script with braces first
+	// First try replacing the script block wrapped in braces
 	if reWithBraces.MatchString(adm) {
 		return reWithBraces.ReplaceAllString(adm, replace)
 	}
 
-	// Fallback: replace script without braces
+	// If not found, try replacing the standalone script block
 	return reWithoutBraces.ReplaceAllString(adm, replace)
 }
 
 func getScriptContent(adm string) string {
 	// Regex to match {<script>...</script>} with optional whitespace/newlines
-	reWithBraces := regexp.MustCompile(`\{\s*<script>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
-	reWithoutBraces := regexp.MustCompile(`<script>.*?CONVERT_SSP_TAG.*?</script>`)
+	reWithBraces := regexp.MustCompile(`(?s)\{\s*<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>\s*\}`)
+	reWithoutBraces := regexp.MustCompile(`(?s)<script[^>]*>.*?CONVERT_SSP_TAG.*?</script>`)
 
 	// Try match with curly braces first
 	if match := reWithBraces.FindString(adm); match != "" {
@@ -306,7 +306,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				Bid:      &bid,
 				BidType:  bidType,
 				BidVideo: impVideo,
-				Seat:     openrtb_ext.BidderName(sb.Seat),
+				Seat:     openrtb_ext.BidderName("openwrap"),
 			})
 
 		}
@@ -368,10 +368,3 @@ func getMapFromJSON(source json.RawMessage) map[string]interface{} {
 	}
 	return nil
 }
-
-
-
-
-
-
-
