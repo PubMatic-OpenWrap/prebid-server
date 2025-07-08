@@ -306,7 +306,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				Bid:      &bid,
 				BidType:  bidType,
 				BidVideo: impVideo,
-				Seat:     openrtb_ext.BidderName("openwrap"),
+				Seat:     openrtb_ext.BidderName("pubmatic"),
 			})
 
 		}
