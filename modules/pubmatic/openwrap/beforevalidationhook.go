@@ -30,6 +30,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -590,13 +591,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 			if len(impExt.GpId) == 0 {
 				impExt.GpId = imp.TagID
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
 			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
 				var isValidAppStoreUrl bool
 				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
@@ -758,7 +759,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
-	if rctx.Endpoint == models.EndpointAppLovinMax {
+	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointUnityLevelPlay {
 		if rctx.AppStoreUrl != "" {
 			bidRequest.App.StoreURL = rctx.AppStoreUrl
 		}
@@ -766,6 +767,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	if rctx.Endpoint == models.EndpointGoogleSDK && bidRequest.App != nil && bidRequest.App.StoreURL == "" && rctx.AppStoreUrl != "" {
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
+	}
+
+	// Remove app.ext.token
+	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled

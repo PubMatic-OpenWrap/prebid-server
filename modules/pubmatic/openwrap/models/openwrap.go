@@ -124,6 +124,7 @@ type RequestCtx struct {
 	MultiFloors                     map[string]*MultiFloors // impression level floors
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
+	UnityLevelPlay                  UnityLevelPlay
 
 	// Adpod
 	AdruleFlag         bool
@@ -134,6 +135,10 @@ type RequestCtx struct {
 type GoogleSDK struct {
 	Reject          bool
 	SDKRenderedAdID string
+}
+
+type UnityLevelPlay struct {
+	Reject bool
 }
 
 type AdpodProfileConfig struct {

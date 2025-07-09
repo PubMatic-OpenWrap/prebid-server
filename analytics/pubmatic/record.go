@@ -187,7 +187,7 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 	switch endpoint {
 	case models.EndpointAMP:
 		wlog.IntegrationType = models.TypeAmp
-	case models.EndpointV25, models.EndpointAppLovinMax, models.EndpointGoogleSDK:
+	case models.EndpointV25, models.EndpointAppLovinMax, models.EndpointGoogleSDK, models.EndpointUnityLevelPlay:
 		wlog.IntegrationType = models.TypeSDK
 	case models.EndpointVAST:
 		wlog.IntegrationType = models.TypeTag
