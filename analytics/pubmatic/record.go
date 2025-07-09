@@ -38,6 +38,7 @@ type record struct {
 	AdPodPercentage       *AdPodPercentage `json:"aps,omitempty"`
 	Content               *Content         `json:"ct,omitempty"`
 	TestConfigApplied     int              `json:"tgid,omitempty"`
+	VastUnwrapEnabled     int              `json:"vu,omitempty"`
 	FloorModelVersion     string           `json:"fmv,omitempty"`
 	FloorSource           *int             `json:"fsrc,omitempty"`
 	FloorType             int              `json:"ft"`

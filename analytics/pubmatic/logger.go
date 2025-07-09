@@ -65,6 +65,10 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.Geo.CountryCode = rCtx.DeviceCtx.DerivedCountryCode
 	}
 
+	if rCtx.VastUnwrapEnabled {
+		wlog.VastUnwrapEnabled = 1
+	}
+
 	wlog.logProfileMetaData(rCtx)
 
 	wlog.logIntegrationType(rCtx.Endpoint)
