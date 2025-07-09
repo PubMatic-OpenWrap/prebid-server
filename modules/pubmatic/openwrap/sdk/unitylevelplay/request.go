@@ -53,7 +53,6 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 	}
 
 	token, err := jsonparser.GetString(request.App.Ext, "token")
-	request.App.Ext = jsonparser.Delete(request.App.Ext, "token") // Remove token
 	if token == "" || err != nil {
 		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.MissingSignal)
 		return requestBody

@@ -591,7 +591,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 			if len(impExt.GpId) == 0 {
 				impExt.GpId = imp.TagID
 			}
@@ -759,7 +759,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
-	if rctx.Endpoint == models.EndpointAppLovinMax {
+	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointUnityLevelPlay {
 		if rctx.AppStoreUrl != "" {
 			bidRequest.App.StoreURL = rctx.AppStoreUrl
 		}
@@ -767,6 +767,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	if rctx.Endpoint == models.EndpointGoogleSDK && bidRequest.App != nil && bidRequest.App.StoreURL == "" && rctx.AppStoreUrl != "" {
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
+	}
+
+	// Remove app.ext.token
+	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled

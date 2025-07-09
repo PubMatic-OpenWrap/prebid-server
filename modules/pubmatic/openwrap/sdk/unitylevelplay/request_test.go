@@ -81,7 +81,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 		{
 			name:             "request with valid token and signal data",
 			requestBody:      []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"eyJpZCI6InNpZ25hbCIsImFwcCI6eyJuYW1lIjoidGVzdGFwcCJ9LCJpbXAiOlt7ImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsImNsaWNrYnJvd3NlciI6MSwidmlkZW8iOnsibWltZXMiOlsidmlkZW8vbXA0Il0sImV4dCI6eyJyZXdhcmQiOjF9fX1dfQ=="}},"imp":[{"id":"1","video":{"ext":{"reward":1}}}]}`),
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
+			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","name":"testapp","ext":{"token":"eyJpZCI6InNpZ25hbCIsImFwcCI6eyJuYW1lIjoidGVzdGFwcCJ9LCJpbXAiOlt7ImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsImNsaWNrYnJvd3NlciI6MSwidmlkZW8iOnsibWltZXMiOlsidmlkZW8vbXA0Il0sImV4dCI6eyJyZXdhcmQiOjF9fX1dfQ=="}},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1}]}`),
 			metricsSetup:     func(m *mock_metrics.MockMetricsEngine) {},
 		},
 	}
