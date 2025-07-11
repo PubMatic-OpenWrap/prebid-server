@@ -128,6 +128,30 @@ func TestUpdateImpression(t *testing.T) {
 			},
 			want: []openrtb2.Imp{{Ext: json.RawMessage(`{"reward":1,"skadn":{"versions":["2.0","2.1"],"sourceapp":"11111","skadnetids":["424m5254lk.skadnetwork","4fzdc2evr5.skadnetwork"]},"gpid":"/adunitname/234"}`)}},
 		},
+		{
+			name: "signalImp has Native, maxImp doesn't have Native",
+			args: args{
+				signalImps: []openrtb2.Imp{{Native: &openrtb2.Native{Request: "native_request_data", Ver: "1.2"}}},
+				maxImps:    []openrtb2.Imp{{}},
+			},
+			want: []openrtb2.Imp{{Native: &openrtb2.Native{Request: "native_request_data", Ver: "1.2"}}},
+		},
+		{
+			name: "signalImp has Native, maxImp also has Native",
+			args: args{
+				signalImps: []openrtb2.Imp{{Native: &openrtb2.Native{Request: "signal_native_request", Ver: "1.2"}}},
+				maxImps:    []openrtb2.Imp{{Native: &openrtb2.Native{Request: "max_native_request", Ver: "1.0"}}},
+			},
+			want: []openrtb2.Imp{{Native: &openrtb2.Native{Request: "signal_native_request", Ver: "1.2"}}},
+		},
+		{
+			name: "maxImp has Native but signalImp doesn't have Native",
+			args: args{
+				signalImps: []openrtb2.Imp{{}},
+				maxImps:    []openrtb2.Imp{{Native: &openrtb2.Native{Request: "max_native_request", Ver: "1.0"}}},
+			},
+			want: []openrtb2.Imp{{Native: nil}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

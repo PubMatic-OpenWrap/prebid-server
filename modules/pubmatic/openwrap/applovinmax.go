@@ -72,6 +72,9 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 		}
 	}
 
+	// Update native
+	maxImps[0].Native = signalImps[0].Native
+
 	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid")
 }
 
