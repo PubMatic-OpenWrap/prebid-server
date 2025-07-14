@@ -264,6 +264,9 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 		return requestBody
 	}
 
+	//set maxRequest native to nil always
+	maxRequest.Imp[0].Native = nil
+
 	addSignalDataInRequest(signalData, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
@@ -363,6 +366,10 @@ func modifyRequestBody(requestBody []byte) []byte {
 	if bannertype, err := jsonparser.GetString(requestBody, "imp", "[0]", "banner", "ext", "bannertype"); err == nil && bannertype == models.TypeRewarded {
 		requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "banner")
 	}
+
+	//set maxRequest native to nil always
+	requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "native")
+
 	return requestBody
 }
 
