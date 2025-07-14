@@ -598,12 +598,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
-			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
-				var isValidAppStoreUrl bool
-				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
-					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
-				}
-				rCtx.PageURL = rCtx.AppStoreUrl
+			appStoreUrl, isValidAppStoreUrl := getProfileAppStoreUrl(rCtx)
+			if !isValidAppStoreUrl && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL != "" {
+				appStoreUrl = payload.BidRequest.App.StoreURL
+			}
+			rCtx.AppStoreUrl = appStoreUrl
+			rCtx.PageURL = appStoreUrl
+			if appStoreUrl != "" {
+				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
 			}
 		}
 
@@ -759,13 +761,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
-	if rctx.Endpoint == models.EndpointAppLovinMax || rctx.Endpoint == models.EndpointUnityLevelPlay {
-		if rctx.AppStoreUrl != "" {
-			bidRequest.App.StoreURL = rctx.AppStoreUrl
-		}
-	}
-
-	if rctx.Endpoint == models.EndpointGoogleSDK && bidRequest.App != nil && bidRequest.App.StoreURL == "" && rctx.AppStoreUrl != "" {
+	if sdkutils.IsSdkIntegration(rctx.Endpoint) && rctx.AppStoreUrl != "" {
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 

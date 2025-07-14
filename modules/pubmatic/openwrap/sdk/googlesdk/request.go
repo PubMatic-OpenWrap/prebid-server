@@ -393,6 +393,10 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if len(signalApp.Keywords) > 0 {
 		request.App.Keywords = signalApp.Keywords
 	}
+
+	if len(request.App.StoreURL) == 0 {
+		request.App.StoreURL = signalApp.StoreURL
+	}
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {

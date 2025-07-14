@@ -38,6 +38,9 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 		return requestBody
 	}
 
+	// modify request with static data
+	l.modifyRequestWithStaticData(request)
+
 	if request.App == nil || request.App.Ext == nil {
 		return requestBody
 	}
@@ -70,9 +73,6 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
 		return requestBody
 	}
-
-	// modify request with static data
-	l.modifyRequestWithStaticData(request)
 
 	// modify request with signal data
 	l.modifyRequestWithSignalData(request, signal)
@@ -251,6 +251,10 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 
 	if signalApp.Ver != "" {
 		request.App.Ver = signalApp.Ver
+	}
+
+	if len(request.App.StoreURL) == 0 {
+		request.App.StoreURL = signalApp.StoreURL
 	}
 }
 
