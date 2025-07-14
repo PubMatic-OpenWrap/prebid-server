@@ -8,6 +8,7 @@ package netacuity
 
 import (
 	"strings"
+	"sync"
 
 	"git.pubmatic.com/PubMatic/go-netacuity-client"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
@@ -15,8 +16,12 @@ import (
 
 type NetAcuity struct{}
 
+var netacuityMu sync.Mutex
+
 // LookUp function performs the ip-to-geo lookup
 func (geo NetAcuity) LookUp(ip string) (*geodb.GeoInfo, error) {
+	netacuityMu.Lock()
+	defer netacuityMu.Unlock()
 	geoInfo, err := netacuity.LookUp(ip)
 	if err != nil {
 		return nil, err
