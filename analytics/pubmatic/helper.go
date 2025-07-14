@@ -14,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 )
 
@@ -82,11 +83,11 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 
 // RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
 func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
-	if rctx.Endpoint != models.EndpointAppLovinMax && rctx.Endpoint != models.EndpointGoogleSDK {
+	if !sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		return nil
 	}
 
-	if rctx.AppLovinMax.Reject || rctx.GoogleSDK.Reject {
+	if rctx.AppLovinMax.Reject || rctx.GoogleSDK.Reject || rctx.UnityLevelPlay.Reject {
 		return nil
 	}
 
@@ -117,6 +118,12 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 	if rctx.Endpoint == models.EndpointGoogleSDK {
 		renderingData, err := jsonparser.GetString(ao.Response.SeatBid[0].Bid[0].Ext, "sdk_rendered_ad", "rendering_data")
 		if err = json.Unmarshal([]byte(renderingData), orignalResponse); err != nil {
+			return err
+		}
+	}
+
+	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+		if err := json.Unmarshal([]byte(ao.Response.SeatBid[0].Bid[0].AdM), orignalResponse); err != nil {
 			return err
 		}
 	}
