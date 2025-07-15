@@ -1293,6 +1293,44 @@ func TestFeatureIsMBMFEnabledForAdUnitFormat(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "mbmf publisher not present for banner",
+			args: args{
+				pubID:        123,
+				adunitFormat: models.AdUnitFormatBanner,
+			},
+			fields: fields{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
+						{
+							bannerFloors: map[int]*models.MultiFloors{},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "mbmf publisher disabled for banner",
+			args: args{
+				pubID:        123,
+				adunitFormat: models.AdUnitFormatBanner,
+			},
+			fields: fields{
+				mbmf: &mbmf{
+					data: [2]mbmfData{
+						{
+							bannerFloors: map[int]*models.MultiFloors{
+								123: {
+									IsActive: false,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -174,6 +174,8 @@ func (fe *feature) IsMBMFEnabledForAdUnitFormat(pubID int, adunitFormat string) 
 		floors = fe.mbmf.data[idx].rwddFloors
 	case models.AdUnitFormatBanner:
 		floors = fe.mbmf.data[idx].bannerFloors
+		multiFloors, isPresent := floors[pubID]
+		return isPresent && multiFloors.IsActive
 	default:
 		return false
 	}
@@ -193,8 +195,6 @@ func (fe *feature) GetMBMFFloorsForAdUnitFormat(pubID int, adunitFormat string) 
 		floors = fe.mbmf.data[idx].instlFloors
 	case models.AdUnitFormatRwddVideo:
 		floors = fe.mbmf.data[idx].rwddFloors
-	// case models.AdUnitFormatBanner:
-	// 	floors = fe.mbmf.data[idx].bannerFloors
 	default:
 		return nil
 	}
