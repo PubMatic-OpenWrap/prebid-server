@@ -4246,6 +4246,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(rctx.Endpoint, "5890", rctx.ProfileIDStr)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "pubmatic")
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{

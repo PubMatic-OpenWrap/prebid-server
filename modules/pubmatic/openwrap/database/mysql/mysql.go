@@ -3,22 +3,30 @@ package mysql
 import (
 	"database/sql"
 	"sync"
+	"time"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 )
 
 type mySqlDB struct {
-	conn *sql.DB
-	cfg  config.Database
+	conn                   *sql.DB
+	cfg                    config.Database
+	countryPartnerFilterDB *CountryPartnerFilterDB
 }
 
 var db *mySqlDB
 var dbOnce sync.Once
 
-func New(conn *sql.DB, cfg config.Database) *mySqlDB {
+func New(conn *sql.DB, cfg config.Database, cache config.Cache) *mySqlDB {
 	dbOnce.Do(
 		func() {
-			db = &mySqlDB{conn: conn, cfg: cfg}
+			cpf, err := NewCountryPartnerFilterDB(conn, time.Duration(cache.CountryPartnerFilterRefreshInterval))
+			if err != nil {
+				// Handle the error appropriately
+				db = &mySqlDB{conn: conn, cfg: cfg}
+				return
+			}
+			db = &mySqlDB{conn: conn, cfg: cfg, countryPartnerFilterDB: cpf}
 		})
 	return db
 }

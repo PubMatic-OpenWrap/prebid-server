@@ -554,12 +554,14 @@ const (
 	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
 	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
-	TestQuery                     = "TestQuery"
-	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
-	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
-	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
-	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
-	ProfileAdUnitMultiFloorsQuery = "GetProfileAdUnitMultiFloors"
+	TestQuery                        = "TestQuery"
+	ProfileTypePlatformMapQuery      = "GetProfileTypePlatformMapQuery"
+	AppIntegrationPathMapQuery       = "GetAppIntegrationPathMapQuery"
+	AppSubIntegrationPathMapQuery    = "GetAppSubIntegrationPathMapQuery"
+	GDPRCountryCodesQuery            = "GetGDPRCountryCodes"
+	ProfileAdUnitMultiFloorsQuery    = "GetProfileAdUnitMultiFloors"
+	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
+	//select country, value, criteria, criteria_threshold, feature_id from wrapper_metrics;
 )
 
 // constants for owlogger Integration Type

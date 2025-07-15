@@ -212,9 +212,13 @@ const (
 	// statsPartnerTimeoutInPBS stats key for countiing number of timeouts occured for given publisher and profile
 	statsPartnerTimeoutInPBS
 
+	// statsKeyPartnerThrottledRequests stats key for counting number of throttled requests occured for given publisher and profile
+	statsKeyPartnerThrottledRequests
+
 	// This is to declare the array of stats, add new stats above this
 	maxNumOfStats
 	// NOTE - DON'T ADD NEW STATS KEY BELOW THIS. NEW STATS SHOULD BE ADDED ABOVE maxNumOfStats
+
 )
 
 // constant to defines status-code used while sending stats to server

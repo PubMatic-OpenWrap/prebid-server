@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.conn = tt.setup()
-			db := New(tt.args.conn, tt.args.cfg)
+			db := New(tt.args.conn, tt.args.cfg, config.Cache{})
 			assert.NotNil(t, db, "db should not be nil")
 		})
 	}
