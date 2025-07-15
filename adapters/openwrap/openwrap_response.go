@@ -213,9 +213,10 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.CID = activateCampaignId
 			}
 			if strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
-				updatedAdmActivate := strings.Replace(admActivateBanner, "CONVERT_CREATIVE", thirdPartyTagCreative, 1)
-				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
-
+				//updatedAdmActivate := strings.Replace(admActivateBanner, "CONVERT_CREATIVE", thirdPartyTagCreative, 1)
+				//finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
+				updatedAdmActivate := admActivateBanner
+				finalClickScript := clickScript
 				scriptContent := getScriptContent(bid.AdM)
 
 				if scriptContent == "" {
@@ -306,7 +307,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				Bid:      &bid,
 				BidType:  bidType,
 				BidVideo: impVideo,
-				Seat:     openrtb_ext.BidderName("pubmatic"),
+				Seat:     openrtb_ext.BidderName("openwrap"),
 			})
 
 		}
