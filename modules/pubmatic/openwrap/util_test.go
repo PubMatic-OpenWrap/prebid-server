@@ -2200,7 +2200,7 @@ func TestGetAdunitFormat(t *testing.T) {
 			want: "",
 		},
 		{
-			name: "invalid adunitformat with banner and video and rewarded",
+			name: "invalid adunitformat with banner and rewarded flag on",
 			imp: openrtb2.Imp{
 				Banner: &openrtb2.Banner{},
 			},
