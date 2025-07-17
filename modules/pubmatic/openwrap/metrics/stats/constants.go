@@ -215,7 +215,6 @@ const (
 	// This is to declare the array of stats, add new stats above this
 	maxNumOfStats
 	// NOTE - DON'T ADD NEW STATS KEY BELOW THIS. NEW STATS SHOULD BE ADDED ABOVE maxNumOfStats
-
 )
 
 // constant to defines status-code used while sending stats to server
