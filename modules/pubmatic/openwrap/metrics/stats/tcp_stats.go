@@ -285,10 +285,6 @@ func (st *StatsTCP) RecordGetProfileDataTime(getTime time.Duration) {}
 
 func (st *StatsTCP) RecordDBQueryFailure(queryType, publisher, profile string) {}
 
-func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder string) {
-	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyPartnerThrottledRequests], publisher, bidder), 1)
-}
-
 // getStatsKeyIndexForResponseTime returns respective stats key for a given responsetime
 func getStatsKeyIndexForResponseTime(responseTime int) int {
 	statKey := 0
@@ -359,3 +355,4 @@ func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)            
 func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64) {}
 func (st *StatsTCP) RecordIBVRequest(pubId, profId string)                        {}
 func (st *StatsTCP) RecordGeoLookupFailure(endpoint string)                       {}
+func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder string)      {}

@@ -36,11 +36,16 @@ func shouldApplyCountryFilter(endpoint string) bool {
 	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
 }
 
-func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) bool {
-	throttlePartners, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode, "gecpm", 0)
+func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
+	adapterThrottleMap := make(map[string]struct{})
+
+	throttlePartners, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode, models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue)
 	if err != nil {
 		glog.Errorf("Error getting throttled partners for country %s: %v", rCtx.DeviceCtx.DerivedCountryCode, err)
-		return false
+		return adapterThrottleMap, false
+	}
+	if len(throttlePartners) == 0 {
+		return adapterThrottleMap, false
 	}
 
 	throttleMap := make(map[string]struct{}, len(throttlePartners))
@@ -58,17 +63,17 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 			continue
 		}
 
-		if _, exists := throttleMap[bidderCode]; exists {
+		if _, isThrottled := throttleMap[bidderCode]; isThrottled {
 			// 5% fallback traffic logic
-			if r.Float64() < 0.05 {
-				glog.Infof("Allowing 5%% fallback traffic for throttled bidder: %s", bidderCode)
+			if r.Float64() < models.AllowThrottlePartnerPercentage {
+				glog.Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
 				continue
 			}
-			rCtx.AdapterThrottleMap[bidderCode] = struct{}{}
+			adapterThrottleMap[bidderCode] = struct{}{}
 			m.metricEngine.RecordPartnerThrottledRequests(rCtx.PubIDStr, bidderCode)
 		} else if allPartnersThrottledFlag {
 			allPartnersThrottledFlag = false
 		}
 	}
-	return allPartnersThrottledFlag
+	return adapterThrottleMap, allPartnersThrottledFlag
 }

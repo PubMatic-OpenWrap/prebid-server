@@ -308,25 +308,6 @@ func TestRecordFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "RecordPartnerThrottledRequests",
-			args: args{
-				statTCP: &StatsTCP{
-					&Client{
-						pubChan: make(chan stat, 1),
-					},
-				},
-			},
-			want: want{
-				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPartnerThrottledRequests], "5890", "pubmatic"): 1,
-				},
-				channelSize: 1,
-			},
-			callRecord: func(st *StatsTCP) {
-				st.RecordPartnerThrottledRequests("5890", "pubmatic")
-			},
-		},
-		{
 			name: "RecordNobidErrPrebidServerRequests",
 			args: args{
 				statTCP: &StatsTCP{

@@ -155,7 +155,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
-	allPartnersThrottledFlag := m.applyPartnerThrottling(rCtx, partnerConfigMap)
+	var (
+		allPartnersThrottledFlag bool
+	)
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, partnerConfigMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
@@ -243,10 +246,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	var (
 		allPartnersFilteredFlag bool
+		adapterThrottleMap      map[string]struct{}
 	)
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	adapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 
+	if rCtx.AdapterThrottleMap == nil {
+		rCtx.AdapterThrottleMap = make(map[string]struct{})
+	}
+
+	for adapter := range adapterThrottleMap {
+		rCtx.AdapterThrottleMap[adapter] = struct{}{}
+	}
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")

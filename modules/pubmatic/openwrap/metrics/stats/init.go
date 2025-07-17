@@ -260,9 +260,6 @@ func initStatKeys(defaultServerName, actualServerName string) {
 	statKeys[statsBidResponsesByDealUsingHB] = "hb:dbc:%s:%s:%s:%s:" + defaultServerName
 	//hb:dbc:<pub>:<profile>:<aliasbidder>:<dealid>:<dc:node:pod> - header-bidding to count number of responses received from aliasbidder per publisher profile
 
-	statKeys[statsKeyPartnerThrottledRequests] = "hb:throttledreq:%s:%s:%s:" + defaultServerName
-	//hb:throttledreq:<endpoint>:<publisher>:<profile>:<dc:node:pod>
-
 	statKeys[statsPartnerTimeoutInPBS] = "hb:pbs:pto:%s:%s:%s:" + defaultServerName
 	//hb:pbs:pto:<pub>:<profile>:<aliasbidder>:<dc:node:pod> - count timeout by aliasbidder per publisher profile
 

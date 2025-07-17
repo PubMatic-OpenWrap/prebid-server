@@ -20,9 +20,8 @@ var dbOnce sync.Once
 func New(conn *sql.DB, cfg config.Database, cache config.Cache) *mySqlDB {
 	dbOnce.Do(
 		func() {
-			cpf, err := NewCountryPartnerFilterDB(conn, time.Duration(cache.CountryPartnerFilterRefreshInterval))
+			cpf, err := NewCountryPartnerFilterDB(conn, time.Duration(cache.CountryPartnerFilterRefreshInterval), cfg.Queries.GetCountryPartnerFilteringData)
 			if err != nil {
-				// Handle the error appropriately
 				db = &mySqlDB{conn: conn, cfg: cfg}
 				return
 			}

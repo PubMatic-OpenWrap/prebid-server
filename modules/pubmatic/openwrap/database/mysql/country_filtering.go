@@ -17,16 +17,18 @@ type CountryPartnerFilterDB struct {
 	db              *sql.DB
 	refreshInterval time.Duration
 	cache           atomic.Value
+	query           string
 }
 
-func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration) (*CountryPartnerFilterDB, error) {
+func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration, query string) (*CountryPartnerFilterDB, error) {
 	if db == nil {
 		return nil, errors.New("database connection is required")
 	}
 
 	filter := &CountryPartnerFilterDB{
 		db:              db,
-		refreshInterval: refreshInterval,
+		refreshInterval: refreshInterval * time.Hour,
+		query:           query,
 	}
 
 	if err := filter.RefreshCache(); err != nil {
@@ -64,7 +66,7 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := cpf.db.QueryContext(ctx, models.CountryPartnerFilteringDataQuery)
+	rows, err := cpf.db.QueryContext(ctx, cpf.query)
 	if err != nil {
 		return nil, fmt.Errorf("query execution error: %w", err)
 	}
