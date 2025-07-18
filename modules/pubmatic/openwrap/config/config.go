@@ -82,14 +82,16 @@ type Queries struct {
 	GetGDPRCountryCodes               string
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
+	GetCountryPartnerFilteringData    string
 }
 
 type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
-	CacheDefaultExpiry         int // in seconds
-	VASTTagCacheExpiry         int // in seconds
-	ProfileMetaDataCacheExpiry int // in seconds
+	CacheDefaultExpiry                  int // in seconds
+	VASTTagCacheExpiry                  int // in seconds
+	ProfileMetaDataCacheExpiry          int // in seconds
+	CountryPartnerFilterRefreshInterval time.Duration
 }
 
 type Timeout struct {

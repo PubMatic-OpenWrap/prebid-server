@@ -166,6 +166,20 @@ func TestRecordPublisherInvalidProfileRequests(t *testing.T) {
 		})
 }
 
+func TestRecordPartnerThrottledRequests(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordPartnerThrottledRequests("5890", "pubmatic")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "partner_throttled_requests", m.partnerThrottledRequests,
+		expectedCount,
+		prometheus.Labels{
+			pubIDLabel:  "5890",
+			bidderLabel: "pubmatic",
+		})
+}
+
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 

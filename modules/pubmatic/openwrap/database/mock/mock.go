@@ -245,3 +245,47 @@ func (mr *MockDatabaseMockRecorder) GetWrapperSlotMappings(arg0, arg1, arg2 inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWrapperSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetWrapperSlotMappings), arg0, arg1, arg2)
 }
+
+// GetPartnerCountryFilter mocks base method.
+func (m *MockDatabase) GetPartnerCountryFilter(arg0 int) (models.PartnerFeatureRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartnerCountryFilter", arg0)
+	ret0, _ := ret[0].(models.PartnerFeatureRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPartnerCountryFilter indicates an expected call of GetPartnerCountryFilter.
+func (mr *MockDatabaseMockRecorder) GetPartnerCountryFilter(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerCountryFilter", reflect.TypeOf((*MockDatabase)(nil).GetPartnerCountryFilter), arg0)
+}
+
+// GetCountryPartnerFilteringData mocks base method.
+func (m *MockDatabase) GetCountryPartnerFilteringData() (map[string][]models.PartnerFeatureRecord, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCountryPartnerFilteringData")
+	ret0, _ := ret[0].(map[string][]models.PartnerFeatureRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCountryPartnerFilteringData indicates an expected call of GetCountryPartnerFilteringData.
+func (mr *MockDatabaseMockRecorder) GetCountryPartnerFilteringData() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCountryPartnerFilteringData", reflect.TypeOf((*MockDatabase)(nil).GetCountryPartnerFilteringData))
+}
+
+// GetLatestCountryPartnerFilter mocks base method.
+func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string][]models.PartnerFeatureRecord {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestCountryPartnerFilter")
+	ret0, _ := ret[0].(map[string][]models.PartnerFeatureRecord)
+	return ret0
+}
+
+// GetLatestCountryPartnerFilter indicates an expected call of GetLatestCountryPartnerFilter.
+func (mr *MockDatabaseMockRecorder) GetLatestCountryPartnerFilter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestCountryPartnerFilter", reflect.TypeOf((*MockDatabase)(nil).GetLatestCountryPartnerFilter))
+}

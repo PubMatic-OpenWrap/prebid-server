@@ -70,7 +70,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("failed to open db connection: %v", err)
 	}
-	db := mysql.New(mysqlDriver, cfg.Database)
+	db := mysql.New(mysqlDriver, cfg.Database, cfg.Cache)
 
 	// NYC_TODO: replace this with freecache and use concrete structure
 	cache := gocache.New(time.Duration(cfg.Cache.CacheDefaultExpiry)*time.Second, CACHE_EXPIRY_ROUTINE_RUN_INTERVAL)

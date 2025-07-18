@@ -1,8 +1,11 @@
 package openwrap
 
 import (
+	"math/rand"
 	"strings"
+	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
@@ -31,4 +34,46 @@ func isCountryAllowed(country string, mode string, countryCodes string) bool {
 
 func shouldApplyCountryFilter(endpoint string) bool {
 	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
+}
+
+func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
+	adapterThrottleMap := make(map[string]struct{})
+
+	throttlePartners, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode, models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue)
+	if err != nil {
+		glog.Errorf("Error getting throttled partners for country %s: %v", rCtx.DeviceCtx.DerivedCountryCode, err)
+		return adapterThrottleMap, false
+	}
+	if len(throttlePartners) == 0 {
+		return adapterThrottleMap, false
+	}
+
+	throttleMap := make(map[string]struct{}, len(throttlePartners))
+	for _, bidder := range throttlePartners {
+		throttleMap[bidder] = struct{}{}
+	}
+
+	// Create a single random generator instance seeded once per request
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	allPartnersThrottledFlag := true
+	for _, cfg := range partnerConfigMap {
+		bidderCode, ok := cfg[models.BidderCode]
+		if !ok || bidderCode == "" {
+			continue
+		}
+
+		if _, isThrottled := throttleMap[bidderCode]; isThrottled {
+			// 5% fallback traffic logic
+			if r.Float64() < models.AllowThrottlePartnerPercentage {
+				glog.Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
+				continue
+			}
+			adapterThrottleMap[bidderCode] = struct{}{}
+			m.metricEngine.RecordPartnerThrottledRequests(rCtx.PubIDStr, bidderCode)
+		} else if allPartnersThrottledFlag {
+			allPartnersThrottledFlag = false
+		}
+	}
+	return adapterThrottleMap, allPartnersThrottledFlag
 }

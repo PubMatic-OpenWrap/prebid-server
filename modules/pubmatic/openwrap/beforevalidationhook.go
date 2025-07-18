@@ -155,6 +155,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
+	var (
+		allPartnersThrottledFlag bool
+	)
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, partnerConfigMap)
+
+	if allPartnersThrottledFlag {
+		result.NbrCode = int(nbr.AllPartnerThrottled)
+		result.Errors = append(result.Errors, "All adapters throttled")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		return result, nil
+	}
+
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
@@ -233,12 +245,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
 	var (
-		allPartnersThrottledFlag bool
-		allPartnersFilteredFlag  bool
+		allPartnersFilteredFlag bool
+		adapterThrottleMap      map[string]struct{}
 	)
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	adapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 
+	if rCtx.AdapterThrottleMap == nil {
+		rCtx.AdapterThrottleMap = make(map[string]struct{})
+	}
+
+	for adapter := range adapterThrottleMap {
+		rCtx.AdapterThrottleMap[adapter] = struct{}{}
+	}
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")

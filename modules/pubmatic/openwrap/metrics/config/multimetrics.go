@@ -180,6 +180,13 @@ func (me *MultiMetricsEngine) RecordPublisherInvalidProfileRequests(endpoint, pu
 	}
 }
 
+// RecordPartnerThrottledRequests across all engines
+func (me *MultiMetricsEngine) RecordPartnerThrottledRequests(publisher, bidder string) {
+	for _, thisME := range *me {
+		thisME.RecordPartnerThrottledRequests(publisher, bidder)
+	}
+}
+
 // RecordBadRequests across all engines
 func (me *MultiMetricsEngine) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	for _, thisME := range *me {
