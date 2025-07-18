@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
@@ -77,11 +77,7 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 		var record models.PartnerFeatureRecord
 		var threshold int64
 		if err := rows.Scan(&record.Country, &record.FeatureValue, &record.Criteria, &threshold); err != nil {
-			log.Printf("Scan error: %v", err)
-			continue
-		}
-		if threshold > math.MaxInt32 || threshold < math.MinInt32 {
-			log.Printf("Threshold out of bounds: %d for country %s", threshold, record.Country)
+			glog.Errorf("Scan error getCountryPartnerFilteringData: %v", err)
 			continue
 		}
 		record.CriteriaThreshold = int(threshold)
@@ -96,7 +92,7 @@ func (cpf *CountryPartnerFilterDB) ScheduleRefresh() {
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := cpf.RefreshCache(); err != nil {
-				log.Printf("Scheduled cache refresh failed: %v", err)
+				glog.Errorf("Scheduled cache refresh failed: %v", err)
 			}
 		}
 	}()
