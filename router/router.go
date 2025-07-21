@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -29,6 +30,7 @@ import (
 	metricsConf "github.com/prebid/prebid-server/v3/metrics/config"
 	"github.com/prebid/prebid-server/v3/modules"
 	"github.com/prebid/prebid-server/v3/modules/moduledeps"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/ortb"
 	"github.com/prebid/prebid-server/v3/pbs"
@@ -144,6 +146,14 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 			MaxIdleConnsPerHost: cfg.Client.MaxIdleConnsPerHost,
 			IdleConnTimeout:     time.Duration(cfg.Client.IdleConnTimeout) * time.Second,
 			TLSClientConfig:     &tls.Config{RootCAs: certPool},
+
+			TLSHandshakeTimeout:   time.Duration(cfg.Client.TLSHandshakeTimeout) * time.Second,
+			ResponseHeaderTimeout: time.Duration(cfg.Client.ResponseHeaderTimeout) * time.Second,
+
+			Dial: (&net.Dialer{
+				Timeout:   time.Duration(cfg.Client.DialTimeout) * time.Millisecond,
+				KeepAlive: time.Duration(cfg.Client.DialKeepAlive) * time.Second,
+			}).Dial,
 		},
 	}
 
@@ -175,6 +185,8 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	if len(errs) > 0 {
 		return nil, errortypes.NewAggregateError("user sync", errs)
 	}
+	// set the syncerMap for pubmatic ow module
+	models.SetSyncerMap(syncersByBidder)
 
 	syncerKeys := make([]string, 0, len(syncersByBidder))
 	syncerKeysHashSet := map[string]struct{}{}
@@ -185,14 +197,15 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 		syncerKeys = append(syncerKeys, k)
 	}
 
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, RateConvertor: rateConvertor}
+	metricsRegistry := metricsConf.NewMetricsRegistry()
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor}
 	repo, moduleStageNames, shutdownModules, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)
 	}
 
 	// Metrics engine
-	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
+	r.MetricsEngine = metricsConf.NewMetricsEngine(cfg, metricsRegistry, openrtb_ext.CoreBidderNames(), syncerKeys, moduleStageNames)
 	shutdown, fetcher, ampFetcher, accounts, categoriesFetcher, videoFetcher, storedRespFetcher := storedRequestsConf.NewStoredRequests(cfg, r.MetricsEngine, generalHttpClient, r.Router)
 
 	analyticsRunner := analyticsBuild.New(&cfg.Analytics)
@@ -214,6 +227,14 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), cfg.GDPR, generalHttpClient, gdpr.VendorListURLMaker)
 	gdprPermsBuilder := gdpr.NewPermissionsBuilder(cfg.GDPR, gvlVendorIDs, vendorListFetcher)
 	tcf2CfgBuilder := gdpr.NewTCF2Config
+
+	if cfg.VendorListScheduler.Enabled {
+		vendorListScheduler, err := gdpr.GetVendorListScheduler(cfg.VendorListScheduler.Interval, cfg.VendorListScheduler.Timeout, generalHttpClient)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		vendorListScheduler.Start()
+	}
 
 	cacheClient := pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, r.MetricsEngine)
 
@@ -288,6 +309,28 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	r.GET("/getuids", endpoints.NewGetUIDsEndpoint(cfg.HostCookie))
 	r.POST("/optout", userSyncDeps.OptOut)
 	r.GET("/optout", userSyncDeps.OptOut)
+
+	g_syncers = syncersByBidder
+	g_metrics = r.MetricsEngine
+	g_cfg = cfg
+	g_storedReqFetcher = &fetcher
+	g_accounts = &accounts
+	g_videoFetcher = &videoFetcher
+	g_storedRespFetcher = &storedRespFetcher
+	g_analytics = &analyticsRunner
+	g_requestValidator = &requestValidator
+	g_activeBidders = activeBidders
+	g_disabledBidders = disabledBidders
+	g_defReqJSON = defReqJSON
+	g_cacheClient = &cacheClient
+	g_ex = &theExchange
+	g_gdprPermsBuilder = gdprPermsBuilder
+	g_tcf2CfgBuilder = tcf2CfgBuilder
+	g_planBuilder = &planBuilder
+	g_currencyConversions = rateConvertor.Rates()
+	g_tmaxAdjustments = tmaxAdjustments
+
+	r.registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint)
 
 	return r, nil
 }

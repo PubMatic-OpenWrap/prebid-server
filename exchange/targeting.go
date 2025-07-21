@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -100,8 +101,9 @@ func (targData *targetData) setTargeting(auc *auction, isApp bool, categoryMappi
 					targData.addKeys(targets, openrtb_ext.EnvKey, openrtb_ext.EnvAppValue, targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
 				}
 				if len(categoryMapping) > 0 {
-					targData.addKeys(targets, openrtb_ext.CategoryDurationKey, categoryMapping[topBid.Bid.ID], targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
+					targData.addKeys(targets, openrtb_ext.CategoryDurationKey, categoryMapping[utils.GetOriginalBidId(topBid.Bid.ID)], targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
 				}
+				targData.addBidderKeys(targets, topBid.BidTargets)
 				topBid.BidTargets = targets
 			}
 		}
@@ -136,4 +138,12 @@ func getMultiBidMeta(multiBidMap map[string]openrtb_ext.ExtMultiBid, bidder stri
 	}
 
 	return "", openrtb_ext.DefaultBidLimit
+}
+
+func (targData *targetData) addBidderKeys(keys map[string]string, bidderKeys map[string]string) {
+	if targData.includeBidderKeys {
+		for index, element := range bidderKeys {
+			keys[index] = element
+		}
+	}
 }

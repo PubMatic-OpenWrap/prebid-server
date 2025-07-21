@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // HookResult represents the result of execution the concrete hook instance.
@@ -16,7 +17,8 @@ type HookResult[T any] struct {
 	Warnings      []string
 	DebugMessages []string
 	AnalyticsTags hookanalytics.Analytics
-	ModuleContext ModuleContext // holds values that the module wants to pass to itself at later stages
+	ModuleContext ModuleContext                 // holds values that the module wants to pass to itself at later stages
+	SeatNonBid    openrtb_ext.SeatNonBidBuilder // holds list of seatnonbid rejected by hook
 }
 
 // ModuleInvocationContext holds data passed to the module hook during invocation.
@@ -25,6 +27,7 @@ type ModuleInvocationContext struct {
 	AccountID string
 	// AccountConfig represents module config rewritten at the account-level.
 	AccountConfig json.RawMessage
+	AccountID     string
 	// Endpoint represents the path of the current endpoint.
 	Endpoint string
 	// ModuleContext holds values that the module passes to itself from the previous stages.

@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -406,20 +407,42 @@ func TestRecordDNSTime(t *testing.T) {
 }
 
 func TestRecordTLSHandshakeTime(t *testing.T) {
+	type testIn struct {
+		adapterName           openrtb_ext.BidderName
+		tLSHandshakeDuration  time.Duration
+		adapterMetricsEnabled bool
+	}
+
+	type testOut struct {
+		expectedDuration time.Duration
+	}
+
 	testCases := []struct {
-		description          string
-		tLSHandshakeDuration time.Duration
-		expectedDuration     time.Duration
+		description string
+		in          testIn
+		out         testOut
 	}{
 		{
-			description:          "Five second TLS handshake time",
-			tLSHandshakeDuration: time.Second * 5,
-			expectedDuration:     time.Second * 5,
+			description: "Five second TLS handshake time",
+			in: testIn{
+				adapterName:           openrtb_ext.BidderAppnexus,
+				tLSHandshakeDuration:  time.Second * 5,
+				adapterMetricsEnabled: true,
+			},
+			out: testOut{
+				expectedDuration: time.Second * 5,
+			},
 		},
 		{
-			description:          "Zero TLS handshake time",
-			tLSHandshakeDuration: time.Duration(0),
-			expectedDuration:     time.Duration(0),
+			description: "Zero TLS handshake time",
+			in: testIn{
+				adapterName:           openrtb_ext.BidderAppnexus,
+				tLSHandshakeDuration:  time.Duration(0),
+				adapterMetricsEnabled: true,
+			},
+			out: testOut{
+				expectedDuration: time.Duration(0),
+			},
 		},
 	}
 	adapter := "AnyName"
@@ -427,9 +450,10 @@ func TestRecordTLSHandshakeTime(t *testing.T) {
 		registry := metrics.NewRegistry()
 		m := NewMetrics(registry, []openrtb_ext.BidderName{openrtb_ext.BidderName(adapter)}, config.DisabledMetrics{AccountAdapterDetails: true}, nil, nil)
 
-		m.RecordTLSHandshakeTime(test.tLSHandshakeDuration)
+		m.RecordTLSHandshakeTime(openrtb_ext.BidderName(strings.ToLower(adapter)), test.in.tLSHandshakeDuration)
 
-		assert.Equal(t, test.expectedDuration.Nanoseconds(), m.TLSHandshakeTimer.Sum(), test.description)
+		assert.Equal(t, test.out.expectedDuration.Nanoseconds(), m.AdapterMetrics[strings.ToLower(adapter)].TLSHandshakeTimer.Sum(), test.description)
+
 	}
 }
 
@@ -945,6 +969,25 @@ func TestRecordSyncerSet(t *testing.T) {
 
 	assert.Equal(t, m.SyncerSetsMeter["foo"][SyncerSetUidOK].Count(), int64(0))
 	assert.Equal(t, m.SyncerSetsMeter["foo"][SyncerSetUidCleared].Count(), int64(1))
+}
+
+func TestRecordRejectedBidsForBidders(t *testing.T) {
+	registry := metrics.NewRegistry()
+	m := NewMetrics(registry, []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus, openrtb_ext.BidderRubicon, openrtb_ext.BidderPubmatic}, config.DisabledMetrics{}, nil, nil)
+
+	m.RecordFloorsRequestForAccount("1234")
+
+	m.RecordRejectedBidsForAccount("1234")
+	m.RecordRejectedBidsForBidder(openrtb_ext.BidderAppnexus)
+	m.RecordRejectedBidsForBidder(openrtb_ext.BidderAppnexus)
+
+	m.RecordRejectedBidsForBidder(openrtb_ext.BidderRubicon)
+
+	assert.Equal(t, m.accountMetrics["1234"].floorsRequestMeter.Count(), int64(1))
+	assert.Equal(t, m.accountMetrics["1234"].rejecteBidMeter.Count(), int64(1))
+	assert.Equal(t, m.FloorRejectedBidsMeter[openrtb_ext.BidderAppnexus].Count(), int64(2))
+	assert.Equal(t, m.FloorRejectedBidsMeter[openrtb_ext.BidderRubicon].Count(), int64(1))
+	assert.Equal(t, m.FloorRejectedBidsMeter[openrtb_ext.BidderPubmatic].Count(), int64(0))
 }
 
 func TestStoredResponses(t *testing.T) {

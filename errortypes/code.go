@@ -18,6 +18,12 @@ const (
 	FailedToMarshalErrorCode
 	FailedToUnmarshalErrorCode
 	InvalidImpFirstPartyDataErrorCode
+
+	// NYC: shall we have different range for OW error codes to avoid change in codes with introduction of new PBS error codes.
+	NoBidPriceErrorCode
+	BidderFailedSchemaValidationErrorCode
+	AdpodPrefilteringErrorCode
+	BidRejectionFloorsErrorCode
 )
 
 // Defines numeric codes for well-known warnings.
@@ -39,6 +45,9 @@ const (
 	InvalidUserUIDsWarningCode
 	TooLongTargetingPrefixWarningCode
 	TooShortTargetingPrefixWarningCode
+
+	AdpodPostFilteringWarningCode
+	InvalidVastVersionWarningCode
 )
 
 // Coder provides an error or warning code with severity.

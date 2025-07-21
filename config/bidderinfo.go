@@ -442,6 +442,10 @@ func validateAdapterEndpoint(endpoint string, bidderName string, errs []error) [
 	if err != nil {
 		return append(errs, fmt.Errorf("Invalid endpoint template: %s for adapter: %s. %v", endpoint, bidderName, err))
 	}
+	// OW specific : do not perform endpoint validation if bidder is an oRTB bidder
+	if strings.HasPrefix(bidderName, "owortb_") {
+		return nil
+	}
 	// Resolve macros (if any) in the endpoint URL
 	resolvedEndpoint, err := macros.ResolveMacros(endpointTemplate, testEndpointTemplateParams)
 	if err != nil {

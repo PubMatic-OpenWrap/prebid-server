@@ -174,6 +174,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters/optidigital"
 	"github.com/prebid/prebid-server/v3/adapters/oraki"
 	"github.com/prebid/prebid-server/v3/adapters/orbidder"
+	"github.com/prebid/prebid-server/v3/adapters/ortbbidder"
 	"github.com/prebid/prebid-server/v3/adapters/outbrain"
 	"github.com/prebid/prebid-server/v3/adapters/ownadx"
 	"github.com/prebid/prebid-server/v3/adapters/pangle"
@@ -215,6 +216,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters/sovrn"
 	"github.com/prebid/prebid-server/v3/adapters/sovrnXsp"
 	"github.com/prebid/prebid-server/v3/adapters/sparteo"
+	"github.com/prebid/prebid-server/v3/adapters/spotx"
 	"github.com/prebid/prebid-server/v3/adapters/sspBC"
 	"github.com/prebid/prebid-server/v3/adapters/startio"
 	"github.com/prebid/prebid-server/v3/adapters/stroeerCore"
@@ -234,6 +236,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters/undertone"
 	"github.com/prebid/prebid-server/v3/adapters/unicorn"
 	"github.com/prebid/prebid-server/v3/adapters/unruly"
+	"github.com/prebid/prebid-server/v3/adapters/vastbidder"
 	"github.com/prebid/prebid-server/v3/adapters/vidazoo"
 	"github.com/prebid/prebid-server/v3/adapters/videobyte"
 	"github.com/prebid/prebid-server/v3/adapters/videoheroes"
@@ -516,5 +519,10 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderZeroClickFraud:    zeroclickfraud.Builder,
 		openrtb_ext.BidderZetaGlobalSsp:     zeta_global_ssp.Builder,
 		openrtb_ext.BidderZmaticoo:          zmaticoo.Builder,
+
+		openrtb_ext.BidderSpotX:               spotx.Builder,
+		openrtb_ext.BidderORTBTestBidderMulti: ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestType=multi
+		openrtb_ext.BidderORTBTestBidder:      ortbbidder.Builder, // OW specific : testbidder (oRTB integration) having requestType=single
+		openrtb_ext.BidderVASTBidder:          vastbidder.Builder,
 	}
 }
