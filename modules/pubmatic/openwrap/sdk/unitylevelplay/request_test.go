@@ -37,14 +37,9 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			expectedError:    true,
 		},
 		{
-			name:             "request without app",
-			requestBody:      []byte(`{"id":"test"}`),
-			expectedResponse: []byte(`{"id":"test"}`),
-		},
-		{
 			name:             "request with app but no ext",
 			requestBody:      []byte(`{"id":"test","app":{"id":"app1"}}`),
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1"}}`),
+			expectedResponse: []byte(`{"id":"test","app":{"id":"app1"}, "imp":null}`),
 		},
 		{
 			name:        "request with publisher ID and missing token",
@@ -52,7 +47,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
 				m.EXPECT().RecordSignalDataStatus("pub1", "", models.MissingSignal)
 			},
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","publisher":{"id":"pub1"},"ext":{}}}`),
+			expectedResponse: []byte(`{"id":"test","imp":null,"app":{"id":"app1","publisher":{"id":"pub1"},"ext":{}}}`),
 		},
 		{
 			name:        "request with profile ID and missing token",
@@ -60,7 +55,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
 				m.EXPECT().RecordSignalDataStatus("", "12345", models.MissingSignal)
 			},
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","ext":{}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":"12345"}}}}}}`),
+			expectedResponse: []byte(`{"id":"test","imp":null,"app":{"id":"app1","ext":{}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":"12345"}}}}}}`),
 		},
 		{
 			name:        "request with both publisher ID and profile ID and missing token",
@@ -68,7 +63,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
 				m.EXPECT().RecordSignalDataStatus("pub1", "12345", models.MissingSignal)
 			},
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","publisher":{"id":"pub1"},"ext":{}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":"12345"}}}}}}`),
+			expectedResponse: []byte(`{"id":"test","imp":null,"app":{"id":"app1","publisher":{"id":"pub1"},"ext":{}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":"12345"}}}}}}`),
 		},
 		{
 			name:        "request with invalid token",
@@ -76,7 +71,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
 				m.EXPECT().RecordSignalDataStatus("", "", models.InvalidSignal)
 			},
-			expectedResponse: []byte(`{"id":"test","app":{"id":"app1","ext":{"token":"aW52YWxpZCB0b2tlbg=="}}}`),
+			expectedResponse: []byte(`{"id":"test","imp":null,"app":{"id":"app1","ext":{"token":"aW52YWxpZCB0b2tlbg=="}}}`),
 		},
 		{
 			name:             "request with valid token and signal data",
@@ -110,59 +105,110 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 }
 
 func TestModifyRequestWithSignalData(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+
 	tests := []struct {
-		name     string
-		request  *openrtb2.BidRequest
-		signal   *openrtb2.BidRequest
-		expected *openrtb2.BidRequest
+		name         string
+		request      *openrtb2.BidRequest
+		expected     *openrtb2.BidRequest
+		metricsSetup func(*mock_metrics.MockMetricsEngine)
 	}{
 		{
 			name:     "nil request",
 			request:  nil,
-			signal:   &openrtb2.BidRequest{},
 			expected: nil,
 		},
 		{
-			name:     "nil signal",
+			name:     "request with no app",
 			request:  &openrtb2.BidRequest{},
-			signal:   nil,
 			expected: &openrtb2.BidRequest{},
 		},
 		{
-			name:     "empty request and signal",
-			request:  &openrtb2.BidRequest{},
-			signal:   &openrtb2.BidRequest{},
-			expected: &openrtb2.BidRequest{},
+			name: "request with app but no ext",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{},
+			},
 		},
 		{
-			name: "request with empty imp array",
+			name: "request with app and ext but no token",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"otherfield":1}`),
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"otherfield":1}`),
+				},
+			},
+			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
+				m.EXPECT().RecordSignalDataStatus("", "", models.MissingSignal)
+			},
+		},
+		{
+			name: "request with invalid base64 token",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"invalid-base64"}`),
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"invalid-base64"}`),
+				},
+			},
+			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
+				m.EXPECT().RecordSignalDataStatus("", "", models.InvalidSignal)
+			},
+		},
+		{
+			name: "request with valid base64 but invalid JSON",
+			request: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"aW52YWxpZCBqc29u"}`), // base64 for "invalid json"
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"aW52YWxpZCBqc29u"}`),
+				},
+			},
+			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
+				m.EXPECT().RecordSignalDataStatus("", "", models.InvalidSignal)
+			},
+		},
+		{
+			name: "request with empty imp array and valid signal",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{},
-			},
-			signal: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						ID:                "1",
-						DisplayManager:    "unity",
-						DisplayManagerVer: "1.0",
-					},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCJ9XX0="}`), // base64 encoded signal with imp array
 				},
 			},
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCJ9XX0="}`),
+				},
 			},
 		},
 		{
-			name: "signal with empty imp array",
+			name: "request with imp but signal has empty imp array",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
 					{
 						ID: "1",
 					},
 				},
-			},
-			signal: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOltdfQ=="}`), // base64 encoded signal with empty imp array
+				},
 			},
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
@@ -170,18 +216,24 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						ID: "1",
 					},
 				},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOltdfQ=="}`),
+				},
 			},
 		},
 		{
-			name: "request with nil video",
+			name: "request with nil video and valid signal data",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
 					{
 						ID: "1",
 					},
 				},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsInZpZGVvIjp7Im1pbWVzIjpbInZpZGVvL21wNCJdLCJleHQiOnsicmV3YXJkIjoxfX19XX0="}`), // base64 encoded signal with video
+				},
 			},
-			signal: &openrtb2.BidRequest{
+			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
 					{
 						ID:                "1",
@@ -193,18 +245,8 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						},
 					},
 				},
-			},
-			expected: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						ID:                "1",
-						DisplayManager:    "unity",
-						DisplayManagerVer: "1.0",
-						Video: &openrtb2.Video{
-							MIMEs: []string{"video/mp4"},
-							Ext:   []byte(`{"reward":1}`),
-						},
-					},
+				App: &openrtb2.App{
+					Ext: []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsInZpZGVvIjp7Im1pbWVzIjpbInZpZGVvL21wNCJdLCJleHQiOnsicmV3YXJkIjoxfX19XX0="}`),
 				},
 			},
 		},
@@ -219,57 +261,9 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						},
 					},
 				},
-			},
-			signal: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{
-					{
-						ID:                "1",
-						DisplayManager:    "unity",
-						DisplayManagerVer: "1.0",
-						Video: &openrtb2.Video{
-							MIMEs: []string{"video/mp4"},
-							Ext:   []byte(`{"reward":1}`),
-						},
-					},
-				},
 				App: &openrtb2.App{
-					Name:     "testapp",
-					Domain:   "example.com",
-					Cat:      []string{"IAB1"},
-					Keywords: "test,app",
-					Ver:      "1.0",
+					Ext: []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsInZpZGVvIjp7Im1pbWVzIjpbInZpZGVvL21wNCJdLCJleHQiOnsicmV3YXJkIjoxfX19XSwiYXBwIjp7Im5hbWUiOiJ0ZXN0YXBwIiwiZG9tYWluIjoiZXhhbXBsZS5jb20iLCJjYXQiOlsiSUFCMSJdLCJrZXl3b3JkcyI6InRlc3QsYXBwIiwidmVyIjoiMS4wIn0sImRldmljZSI6eyJ1YSI6InRlc3QtdWEiLCJnZW8iOnsiY291bnRyeSI6IlVTIn0sImNhcnJpZXIiOiJ0ZXN0LWNhcnJpZXIiLCJsYW5ndWFnZSI6ImVuIiwiaHd2IjoiMS4wIiwibWNjbW5jIjoiMTIzIiwibWFrZSI6InRlc3QtbWFrZSIsIm1vZGVsIjoidGVzdC1tb2RlbCIsIm9zIjoidGVzdC1vcyIsIm9zdiI6IjEuMCIsInciOjMyMCwiaCI6NDgwLCJweHJhdGlvIjoyLjAsImlmYSI6InRlc3QtaWZhIiwiZXh0Ijp7ImF0dHMiOjF9fSwidXNlciI6eyJ5b2IiOjIwMDAsImdlbmRlciI6Ik0iLCJrZXl3b3JkcyI6InRlc3QsdXNlciIsImRhdGEiOlt7ImlkIjoiMSJ9XSwiZXh0Ijp7ImNvbnNlbnQiOiJ0ZXN0IiwiZWlkcyI6W3sic291cmNlIjoidGVzdCJ9XSwiaW1wZGVwdGgiOjEsInNlc3Npb25kdXJhdGlvbiI6MzAwfX0sInJlZ3MiOnsiZXh0Ijp7ImdkcHIiOjEsInVzX3ByaXZhY3kiOiJ0ZXN0In19LCJzb3VyY2UiOnsiZXh0Ijp7Im9taWRwbiI6InRlc3QiLCJvbWlkcHYiOiIxLjAifX0sImV4dCI6eyJ3cmFwcGVyIjp7ImNsaWVudGNvbmZpZyI6MX19fQ=="}`), // base64 encoded complete signal
 				},
-				Device: &openrtb2.Device{
-					UA:       "test-ua",
-					Geo:      &openrtb2.Geo{Country: "US"},
-					Carrier:  "test-carrier",
-					Language: "en",
-					HWV:      "1.0",
-					MCCMNC:   "123",
-					Make:     "test-make",
-					Model:    "test-model",
-					OS:       "test-os",
-					OSV:      "1.0",
-					W:        320,
-					H:        480,
-					PxRatio:  2.0,
-					IFA:      "test-ifa",
-					Ext:      []byte(`{"atts":1}`),
-				},
-				User: &openrtb2.User{
-					Yob:      2000,
-					Gender:   "M",
-					Keywords: "test,user",
-					Data:     []openrtb2.Data{{ID: "1"}},
-					Ext:      []byte(`{"consent":"test","eids":[{"source":"test"}],"impdepth":1,"sessionduration":300}`),
-				},
-				Regs: &openrtb2.Regs{
-					Ext: []byte(`{"gdpr":1,"us_privacy":"test"}`),
-				},
-				Source: &openrtb2.Source{
-					Ext: []byte(`{"omidpn":"test","omidpv":"1.0"}`),
-				},
-				Ext: []byte(`{"wrapper":{"clientconfig":1}}`),
 			},
 			expected: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{
@@ -289,6 +283,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 					Cat:      []string{"IAB1"},
 					Keywords: "test,app",
 					Ver:      "1.0",
+					Ext:      []byte(`{"token":"eyJpbXAiOlt7ImlkIjoiMSIsImRpc3BsYXltYW5hZ2VyIjoidW5pdHkiLCJkaXNwbGF5bWFuYWdlcnZlciI6IjEuMCIsInZpZGVvIjp7Im1pbWVzIjpbInZpZGVvL21wNCJdLCJleHQiOnsicmV3YXJkIjoxfX19XSwiYXBwIjp7Im5hbWUiOiJ0ZXN0YXBwIiwiZG9tYWluIjoiZXhhbXBsZS5jb20iLCJjYXQiOlsiSUFCMSJdLCJrZXl3b3JkcyI6InRlc3QsYXBwIiwidmVyIjoiMS4wIn0sImRldmljZSI6eyJ1YSI6InRlc3QtdWEiLCJnZW8iOnsiY291bnRyeSI6IlVTIn0sImNhcnJpZXIiOiJ0ZXN0LWNhcnJpZXIiLCJsYW5ndWFnZSI6ImVuIiwiaHd2IjoiMS4wIiwibWNjbW5jIjoiMTIzIiwibWFrZSI6InRlc3QtbWFrZSIsIm1vZGVsIjoidGVzdC1tb2RlbCIsIm9zIjoidGVzdC1vcyIsIm9zdiI6IjEuMCIsInciOjMyMCwiaCI6NDgwLCJweHJhdGlvIjoyLjAsImlmYSI6InRlc3QtaWZhIiwiZXh0Ijp7ImF0dHMiOjF9fSwidXNlciI6eyJ5b2IiOjIwMDAsImdlbmRlciI6Ik0iLCJrZXl3b3JkcyI6InRlc3QsdXNlciIsImRhdGEiOlt7ImlkIjoiMSJ9XSwiZXh0Ijp7ImNvbnNlbnQiOiJ0ZXN0IiwiZWlkcyI6W3sic291cmNlIjoidGVzdCJ9XSwiaW1wZGVwdGgiOjEsInNlc3Npb25kdXJhdGlvbiI6MzAwfX0sInJlZ3MiOnsiZXh0Ijp7ImdkcHIiOjEsInVzX3ByaXZhY3kiOiJ0ZXN0In19LCJzb3VyY2UiOnsiZXh0Ijp7Im9taWRwbiI6InRlc3QiLCJvbWlkcHYiOiIxLjAifX0sImV4dCI6eyJ3cmFwcGVyIjp7ImNsaWVudGNvbmZpZyI6MX19fQ=="}`),
 				},
 				Device: &openrtb2.Device{
 					UA:       "test-ua",
@@ -327,8 +322,15 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			levelPlay := &LevelPlay{}
-			levelPlay.modifyRequestWithSignalData(tt.request, tt.signal)
+			// Setup metrics mock expectations if provided
+			if tt.metricsSetup != nil {
+				tt.metricsSetup(mockMetrics)
+			}
+
+			levelPlay := &LevelPlay{
+				metricsEngine: mockMetrics,
+			}
+			levelPlay.modifyRequestWithSignalData(tt.request)
 
 			if tt.expected == nil {
 				assert.Nil(t, tt.request)

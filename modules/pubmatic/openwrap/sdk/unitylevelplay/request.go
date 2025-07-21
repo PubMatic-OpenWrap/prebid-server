@@ -41,12 +41,8 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 	// modify request with static data
 	l.modifyRequestWithStaticData(request)
 
-	if request.App == nil || request.App.Ext == nil {
-		return requestBody
-	}
-
 	// Set publisher id
-	if request.App.Publisher != nil {
+	if request.App != nil && request.App.Publisher != nil {
 		l.publisherId = request.App.Publisher.ID
 	}
 
@@ -55,27 +51,8 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 		l.profileId = string(profileID)
 	}
 
-	token, err := jsonparser.GetString(request.App.Ext, "token")
-	if token == "" || err != nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.MissingSignal)
-		return requestBody
-	}
-
-	// decode token
-	signalData, err := base64.StdEncoding.DecodeString(token)
-	if err != nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
-		return requestBody
-	}
-
-	var signal *openrtb2.BidRequest
-	if err := jsoniterator.Unmarshal(signalData, &signal); err != nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
-		return requestBody
-	}
-
 	// modify request with signal data
-	l.modifyRequestWithSignalData(request, signal)
+	l.modifyRequestWithSignalData(request)
 
 	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
@@ -118,8 +95,27 @@ func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 }
 
-func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, signal *openrtb2.BidRequest) {
-	if request == nil || signal == nil {
+func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
+	if request == nil || request.App == nil || request.App.Ext == nil {
+		return
+	}
+
+	token, err := jsonparser.GetString(request.App.Ext, "token")
+	if token == "" || err != nil {
+		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.MissingSignal)
+		return
+	}
+
+	// decode token
+	signalData, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
+		return
+	}
+
+	var signal *openrtb2.BidRequest
+	if err := jsoniterator.Unmarshal(signalData, &signal); err != nil || signal == nil {
+		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
 		return
 	}
 
