@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"sync/atomic"
 	"time"
 
@@ -50,7 +49,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 		if err == nil {
 			break
 		}
-		log.Printf("Retry %d: Failed to load cache: %v", i+1, err)
+		glog.V(models.LogLevelDebug).Infof("Retry %d: Failed to load cache: %v", i+1, err)
 		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 

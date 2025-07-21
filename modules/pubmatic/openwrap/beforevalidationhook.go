@@ -155,15 +155,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
-	var (
-		allPartnersThrottledFlag bool
-	)
+	allPartnersThrottledFlag := false
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, partnerConfigMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.V(models.LogLevelDebug).Info("All adapters throttled")
 		return result, nil
 	}
 
@@ -251,13 +250,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	adapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
 
-	if rCtx.AdapterThrottleMap == nil {
-		rCtx.AdapterThrottleMap = make(map[string]struct{})
-	}
-
-	for adapter := range adapterThrottleMap {
-		rCtx.AdapterThrottleMap[adapter] = struct{}{}
-	}
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
@@ -265,6 +257,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
+	if rCtx.AdapterThrottleMap == nil {
+		rCtx.AdapterThrottleMap = make(map[string]struct{})
+	}
+
+	for adapter := range adapterThrottleMap {
+		rCtx.AdapterThrottleMap[adapter] = struct{}{}
+	}
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
 
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, payload)

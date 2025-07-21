@@ -204,7 +204,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			partnerConfigMap: map[int]map[string]string{
 				1: {models.BidderCode: "bidderA"},
 			},
-			expectedMap:     map[string]struct{}{},
+			expectedMap:     map[string]struct{}(nil),
 			expectedAllFlag: false,
 			randomNumber:    100,
 		},
@@ -220,7 +220,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			partnerConfigMap: map[int]map[string]string{
 				1: {models.BidderCode: "bidderA"},
 			},
-			expectedMap:     map[string]struct{}{},
+			expectedMap:     map[string]struct{}(nil),
 			expectedAllFlag: false,
 			randomNumber:    100,
 		},
@@ -295,7 +295,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				1: {models.BidderCode: "bidderA"},
 			},
 			expectedMap:     map[string]struct{}{},
-			expectedAllFlag: true,
+			expectedAllFlag: false,
 			randomNumber:    3,
 		},
 	}

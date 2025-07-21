@@ -35,16 +35,17 @@ func shouldApplyCountryFilter(endpoint string) bool {
 }
 
 func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
-	adapterThrottleMap := make(map[string]struct{})
 
 	throttlePartners, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode, models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue)
 	if err != nil {
 		glog.Errorf("Error getting throttled partners for country %s: %v", rCtx.DeviceCtx.DerivedCountryCode, err)
-		return adapterThrottleMap, false
+		return nil, false
 	}
 	if len(throttlePartners) == 0 {
-		return adapterThrottleMap, false
+		return nil, false
 	}
+
+	adapterThrottleMap := make(map[string]struct{})
 
 	throttleMap := make(map[string]struct{}, len(throttlePartners))
 	for _, bidder := range throttlePartners {
@@ -63,7 +64,8 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 		if _, isThrottled := throttleMap[bidderCode]; isThrottled {
 			// 5% fallback traffic logic
 			if GetRandomNumberIn1To100() <= models.AllowThrottlePartnerPercentage {
-				glog.Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
+				glog.V(models.LogLevelDebug).Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
+				allPartnersThrottledFlag = false
 				continue
 			}
 			adapterThrottleMap[bidderCode] = struct{}{}
