@@ -5582,12 +5582,14 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAppLovinMax, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, rctx.PubIDStr, models.MBMFInvalidAdFormat)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, rctx.PubIDStr, models.MBMFSuccess)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(gomock.Any(), gomock.Any()).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(gomock.Any()).Return(map[string]*models.MultiFloors{"adunit": {IsActive: true, Tier1: 1.0, Tier2: 2.0, Tier3: 3.0}})
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{

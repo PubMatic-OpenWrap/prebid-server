@@ -2192,12 +2192,12 @@ func TestGetAdunitFormat(t *testing.T) {
 			want:   "",
 		},
 		{
-			name: "invalid adunitformat with banner and video",
+			name: "mrec banner adunitformat",
 			imp: openrtb2.Imp{
 				Banner: &openrtb2.Banner{},
 				Video:  &openrtb2.Video{},
 			},
-			want: "",
+			want: models.AdUnitFormatBanner,
 		},
 		{
 			name: "invalid adunitformat with banner and rewarded flag on",
@@ -2551,8 +2551,9 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				imp: openrtb2.Imp{
 					Instl:  0,
 					Banner: &openrtb2.Banner{},
-					Video:  &openrtb2.Video{},
+					Rwdd:   1,
 				},
+				reward: openrtb2.Int8Ptr(1),
 			},
 			want: nil,
 			setup: func() {
