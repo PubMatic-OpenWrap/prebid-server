@@ -1,9 +1,7 @@
 package openwrap
 
 import (
-	"math/rand"
 	"strings"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -54,7 +52,6 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 	}
 
 	// Create a single random generator instance seeded once per request
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	allPartnersThrottledFlag := true
 	for _, cfg := range partnerConfigMap {
@@ -65,7 +62,7 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 
 		if _, isThrottled := throttleMap[bidderCode]; isThrottled {
 			// 5% fallback traffic logic
-			if r.Float64() < models.AllowThrottlePartnerPercentage {
+			if GetRandomNumberIn1To100() <= models.AllowThrottlePartnerPercentage {
 				glog.Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
 				continue
 			}

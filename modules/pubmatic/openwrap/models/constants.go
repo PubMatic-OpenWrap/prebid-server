@@ -30,7 +30,7 @@ const (
 	CountryFilterModeKey                = "countryFilterMode"
 	PartnerLevelThrottlingCriteria      = "monetized_cpm"
 	PartnerLevelThrottlingCriteriaValue = 0
-	AllowThrottlePartnerPercentage      = 0.05
+	AllowThrottlePartnerPercentage      = 5
 
 	CountryCodesKey             = "countryCodes"
 	REVSHARE                    = "rev_share"

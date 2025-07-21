@@ -190,6 +190,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		partnerConfigMap map[int]map[string]string
 		expectedMap      map[string]struct{}
 		expectedAllFlag  bool
+		randomNumber     int
 	}{
 		{
 			name: "cache_returns_error",
@@ -205,6 +206,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			},
 			expectedMap:     map[string]struct{}{},
 			expectedAllFlag: false,
+			randomNumber:    100,
 		},
 		{
 			name: "no_throttled_partners",
@@ -220,6 +222,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			},
 			expectedMap:     map[string]struct{}{},
 			expectedAllFlag: false,
+			randomNumber:    100,
 		},
 		{
 			name: "partner_throttled_and_not_in_fallback_simulate_fallback_fail",
@@ -237,6 +240,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			},
 			expectedMap:     map[string]struct{}{"bidderA": {}},
 			expectedAllFlag: false,
+			randomNumber:    100,
 		},
 		{
 			name: "all_partners_throttled",
@@ -258,6 +262,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				"bidderB": {},
 			},
 			expectedAllFlag: true,
+			randomNumber:    100,
 		},
 		{
 			name: "skip_config_with_missing_bidderCode",
@@ -275,6 +280,23 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			},
 			expectedMap:     map[string]struct{}{"bidderC": {}},
 			expectedAllFlag: true,
+			randomNumber:    100,
+		},
+		{
+			name: "partner_throttled_and_allowed_in_fallback",
+			cacheSetup: func() {
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria("US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{"bidderA"}, nil)
+			},
+			rCtx: models.RequestCtx{
+				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
+				PubIDStr:  "111",
+			},
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.BidderCode: "bidderA"},
+			},
+			expectedMap:     map[string]struct{}{},
+			expectedAllFlag: true,
+			randomNumber:    3,
 		},
 	}
 
@@ -286,7 +308,9 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				cache:        mockCache,
 				metricEngine: mockMetric,
 			}
-
+			GetRandomNumberIn1To100 = func() int {
+				return tt.randomNumber
+			}
 			got, gotAll := m.applyPartnerThrottling(tt.rCtx, tt.partnerConfigMap)
 			assert.Equal(t, tt.expectedMap, got)
 			assert.Equal(t, tt.expectedAllFlag, gotAll)
