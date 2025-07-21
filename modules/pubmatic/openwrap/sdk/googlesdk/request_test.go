@@ -1564,7 +1564,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					{
 						Rwdd:   1,
 						Banner: nil,
-						Video:  &openrtb2.Video{},
 						Secure: ptrutil.ToPtr(int8(1)),
 					},
 				},
@@ -1586,7 +1585,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					{
 						Rwdd:   0,
 						Banner: &openrtb2.Banner{},
-						Video:  &openrtb2.Video{},
 						Secure: ptrutil.ToPtr(int8(1)),
 					},
 				},
