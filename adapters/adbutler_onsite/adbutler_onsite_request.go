@@ -177,9 +177,13 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	//Add Dynamic Targeting from AdRequest
+	siteExtPage := ""
 	for _, targetObj := range requestExt.Targeting {
-		key := targetObj.Name
-		adButlerReq.Target[key] = targetObj.Value
+		if targetObj.Name == "PageSource" {
+			siteExtPage = targetObj.Value.(string)
+			continue
+		}
+		adButlerReq.Target[targetObj.Name] = targetObj.Value
 	}
 
 	if len(requestExt.ReportingKeys) != 0 {
@@ -218,7 +222,11 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence
-	adButlerReq.PageID = getSimpleHash(siteExt.Page)
+	if siteExtPage == "" {
+		adButlerReq.PageID = getSimpleHash(siteExt.Page)
+	} else {
+		adButlerReq.PageID = getSimpleHash(siteExtPage)
+	}
 
 	limitMap := make(map[int]int)
 	appendedZoneIDs := make(map[int]bool)
