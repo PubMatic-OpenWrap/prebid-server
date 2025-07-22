@@ -2164,7 +2164,7 @@ func TestGetAdunitFormat(t *testing.T) {
 				Video: &openrtb2.Video{},
 			},
 			reward: nil,
-			want:   "",
+			want:   models.AdUnitFormatBanner,
 		},
 		{
 			name: "imp.instl is 1",
