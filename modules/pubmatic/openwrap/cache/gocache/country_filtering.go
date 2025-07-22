@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-func (c *cache) GetThrottlePartnersWithCriteria(country string, criteria string, criteriaValue int) ([]string, error) {
+func (c *cache) GetThrottlePartnersWithCriteria(country string) ([]string, error) {
 
 	if c.db == nil || reflect.ValueOf(c.db).IsNil() {
 		return nil, errors.New("DB not initialized")
@@ -18,9 +18,7 @@ func (c *cache) GetThrottlePartnersWithCriteria(country string, criteria string,
 	var throttledPartners []string
 	if countryRecords, exists := partnerthrottleMap[country]; exists {
 		for _, record := range countryRecords {
-			if record.Criteria == criteria && record.CriteriaThreshold == criteriaValue {
-				throttledPartners = append(throttledPartners, record.FeatureValue)
-			}
+			throttledPartners = append(throttledPartners, record.FeatureValue)
 		}
 	}
 

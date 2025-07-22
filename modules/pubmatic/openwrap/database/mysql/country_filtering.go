@@ -13,21 +13,23 @@ import (
 )
 
 type CountryPartnerFilterDB struct {
-	db              *sql.DB
-	refreshInterval time.Duration
-	cache           atomic.Value
-	query           string
+	db                  *sql.DB
+	refreshInterval     time.Duration
+	cache               atomic.Value
+	query               string
+	MaxDbContextTimeout time.Duration
 }
 
-func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration, query string) (*CountryPartnerFilterDB, error) {
+func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration, query string, maxDbContextTimeout time.Duration) (*CountryPartnerFilterDB, error) {
 	if db == nil {
 		return nil, errors.New("database connection is required")
 	}
 
 	filter := &CountryPartnerFilterDB{
-		db:              db,
-		refreshInterval: refreshInterval * time.Hour,
-		query:           query,
+		db:                  db,
+		refreshInterval:     refreshInterval * time.Hour,
+		query:               query,
+		MaxDbContextTimeout: maxDbContextTimeout * time.Millisecond,
 	}
 
 	if err := filter.RefreshCache(); err != nil {
@@ -44,7 +46,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 		err  error
 	)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < models.MaxRetryAttempts; i++ {
 		data, err = cpf.getCountryPartnerFilteringData()
 		if err == nil {
 			break
@@ -54,6 +56,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	}
 
 	if err != nil {
+		glog.Errorf("Failed to load cache: %v", err)
 		return fmt.Errorf("cache load failed after retries: %w", err)
 	}
 
@@ -62,7 +65,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 }
 
 func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string][]models.PartnerFeatureRecord, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cpf.MaxDbContextTimeout)
 	defer cancel()
 
 	rows, err := cpf.db.QueryContext(ctx, cpf.query)
@@ -79,8 +82,13 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 			glog.Errorf("Scan error getCountryPartnerFilteringData: %v", err)
 			continue
 		}
+
+		if record.Criteria != models.PartnerLevelThrottlingCriteria || threshold != models.PartnerLevelThrottlingCriteriaValue {
+			continue
+		}
 		record.CriteriaThreshold = int(threshold)
 		result[record.Country] = append(result[record.Country], record)
+
 	}
 	return result, rows.Err()
 }

@@ -51,7 +51,7 @@ type Database struct {
 	User     string
 	Pass     string
 
-	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout int
+	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout, CountryPartnerFilterMaxDbContextTimeout int
 
 	Queries Queries
 }

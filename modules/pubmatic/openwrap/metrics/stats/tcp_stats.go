@@ -351,8 +351,8 @@ func (st *StatsTCP) RecordBidRecoveryResponseTime(pubID string, profile string, 
 }
 func (st *StatsTCP) RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string) {
 }
-func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)              {}
-func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64) {}
-func (st *StatsTCP) RecordIBVRequest(pubId, profId string)                        {}
-func (st *StatsTCP) RecordGeoLookupFailure(endpoint string)                       {}
-func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder string)      {}
+func (st *StatsTCP) RecordFailedParsingItuneID(pubId, profId string)                    {}
+func (st *StatsTCP) RecordEndpointResponseSize(endpoint string, bodySize float64)       {}
+func (st *StatsTCP) RecordIBVRequest(pubId, profId string)                              {}
+func (st *StatsTCP) RecordGeoLookupFailure(endpoint string)                             {}
+func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder, featureID string) {}

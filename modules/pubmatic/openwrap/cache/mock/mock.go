@@ -273,18 +273,18 @@ func (mr *MockCacheMockRecorder) GetCountryPartnerFilteringData() *gomock.Call {
 }
 
 // GetThrottlePartnersWithCriteria mocks base method.
-func (m *MockCache) GetThrottlePartnersWithCriteria(arg0 string, arg1 string, arg2 int) ([]string, error) {
+func (m *MockCache) GetThrottlePartnersWithCriteria(arg0 string) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetThrottlePartnersWithCriteria", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetThrottlePartnersWithCriteria", arg0)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetThrottlePartnersWithCriteria indicates an expected call of GetThrottlePartnersWithCriteria.
-func (mr *MockCacheMockRecorder) GetThrottlePartnersWithCriteria(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockCacheMockRecorder) GetThrottlePartnersWithCriteria(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThrottlePartnersWithCriteria", reflect.TypeOf((*MockCache)(nil).GetThrottlePartnersWithCriteria), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThrottlePartnersWithCriteria", reflect.TypeOf((*MockCache)(nil).GetThrottlePartnersWithCriteria), arg0)
 }
 
 // NewCountryPartnerFilter mocks base method.

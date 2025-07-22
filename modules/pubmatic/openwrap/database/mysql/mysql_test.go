@@ -37,6 +37,7 @@ func TestNew(t *testing.T) {
 				CountryPartnerFilterRefreshInterval: 1,
 			},
 			dbCfg: config.Database{
+				CountryPartnerFilterMaxDbContextTimeout: 1,
 				Queries: config.Queries{
 					GetCountryPartnerFilteringData: "SELECT country, value , criteria, criteria_threshold FROM wrapper_metrics WHERE feature_id=1",
 				},
@@ -53,6 +54,7 @@ func TestNew(t *testing.T) {
 				CountryPartnerFilterRefreshInterval: 1,
 			},
 			dbCfg: config.Database{
+				CountryPartnerFilterMaxDbContextTimeout: 1,
 				Queries: config.Queries{
 					GetCountryPartnerFilteringData: "SELECT invalid",
 				},

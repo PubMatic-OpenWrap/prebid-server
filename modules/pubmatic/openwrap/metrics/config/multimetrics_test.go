@@ -142,6 +142,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	publisher := "5890"
 	profile := "123"
 	partner := "pubmatic"
+	featureID := models.PartnerLevelThrottlingFeatureID
 	impCount := 1
 	platform := "video"
 	responseTime := 1
@@ -176,7 +177,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	mockEngine.EXPECT().RecordPublisherWrapperLoggerFailure(publisher)
 	mockEngine.EXPECT().RecordCacheErrorRequests(endpoint, publisher, profile)
 	mockEngine.EXPECT().RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
-	mockEngine.EXPECT().RecordPartnerThrottledRequests(publisher, partner)
+	mockEngine.EXPECT().RecordPartnerThrottledRequests(publisher, partner, featureID)
 	mockEngine.EXPECT().RecordBadRequests(endpoint, publisher, errorCode)
 	mockEngine.EXPECT().RecordPrebidTimeoutRequests(publisher, profile)
 	mockEngine.EXPECT().RecordSSTimeoutRequests(publisher, profile)
@@ -248,7 +249,7 @@ func TestRecordFunctionForMultiMetricsEngine(t *testing.T) {
 	multiMetricEngine.RecordPublisherWrapperLoggerFailure(publisher)
 	multiMetricEngine.RecordCacheErrorRequests(endpoint, publisher, profile)
 	multiMetricEngine.RecordPublisherInvalidProfileRequests(endpoint, publisher, profile)
-	multiMetricEngine.RecordPartnerThrottledRequests(publisher, partner)
+	multiMetricEngine.RecordPartnerThrottledRequests(publisher, partner, featureID)
 	multiMetricEngine.RecordBadRequests(endpoint, publisher, errorCode)
 	multiMetricEngine.RecordPrebidTimeoutRequests(publisher, profile)
 	multiMetricEngine.RecordSSTimeoutRequests(publisher, profile)

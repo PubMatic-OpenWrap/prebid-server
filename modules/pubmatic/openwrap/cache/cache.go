@@ -23,7 +23,7 @@ type Cache interface {
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 
-	GetThrottlePartnersWithCriteria(country string, criteria string, criteriaValue int) ([]string, error)
+	GetThrottlePartnersWithCriteria(country string) ([]string, error)
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 }

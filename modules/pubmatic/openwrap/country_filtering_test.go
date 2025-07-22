@@ -195,7 +195,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "cache_returns_error",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("IN", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return(nil, errors.New("cache error"))
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(nil, errors.New("cache error"))
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
@@ -211,7 +211,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "no_throttled_partners",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("IN", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{}, nil)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
@@ -227,8 +227,8 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "partner_throttled_and_not_in_fallback_simulate_fallback_fail",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{"bidderA"}, nil)
-				mockMetric.EXPECT().RecordPartnerThrottledRequests("456", "bidderA")
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA"}, nil)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("456", "bidderA", models.PartnerLevelThrottlingFeatureID)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
@@ -245,9 +245,9 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "all_partners_throttled",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{"bidderA", "bidderB"}, nil)
-				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderA")
-				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderB")
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA", "bidderB"}, nil)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderA", models.PartnerLevelThrottlingFeatureID)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderB", models.PartnerLevelThrottlingFeatureID)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
@@ -267,8 +267,8 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "skip_config_with_missing_bidderCode",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("UK", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{"bidderC"}, nil)
-				mockMetric.EXPECT().RecordPartnerThrottledRequests("101", "bidderC")
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderC"}, nil)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("101", "bidderC", models.PartnerLevelThrottlingFeatureID)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "UK"},
@@ -285,7 +285,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "partner_throttled_and_allowed_in_fallback",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria("US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue).Return([]string{"bidderA"}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA"}, nil)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},

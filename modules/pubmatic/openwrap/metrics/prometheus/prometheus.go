@@ -277,7 +277,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	metrics.partnerThrottledRequests = newCounter(cfg, promRegistry,
 		"partner_throttled_requests",
 		"Count throttled requests at partner level.",
-		[]string{pubIDLabel, bidderLabel},
+		[]string{pubIDLabel, bidderLabel, featureIdLabel},
 	)
 	// endpoint level metrics
 	metrics.endpointBadRequest = newCounter(cfg, promRegistry,
@@ -562,10 +562,11 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 		endpointLabel:  endpoint,
 	}).Inc()
 }
-func (m *Metrics) RecordPartnerThrottledRequests(publisherID, bidder string) {
+func (m *Metrics) RecordPartnerThrottledRequests(publisherID, bidder, featureID string) {
 	m.partnerThrottledRequests.With(prometheus.Labels{
-		pubIDLabel:  publisherID,
-		bidderLabel: bidder,
+		pubIDLabel:     publisherID,
+		bidderLabel:    bidder,
+		featureIdLabel: featureID,
 	}).Inc()
 }
 

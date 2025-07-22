@@ -17,9 +17,7 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 		db *mock_database.MockDatabase
 	}
 	type args struct {
-		country       string
-		criteria      string
-		criteriaValue int
+		country string
 	}
 	tests := []struct {
 		name    string
@@ -33,7 +31,7 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 			fields: fields{
 				db: nil,
 			},
-			args:    args{"US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue},
+			args:    args{"US"},
 			want:    nil,
 			wantErr: true,
 		},
@@ -44,7 +42,7 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(nil).AnyTimes()
 				return fields{db: mockDB}
 			}(),
-			args:    args{"US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue},
+			args:    args{"US"},
 			want:    nil,
 			wantErr: true,
 		},
@@ -60,8 +58,24 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 				}).AnyTimes()
 				return fields{db: mockDB}
 			}(),
-			args:    args{"US", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue},
+			args:    args{"US"},
 			want:    []string{"partner1", "partner2"},
+			wantErr: false,
+		},
+		{
+			name: "	Mismatching_country",
+			fields: func() fields {
+				mockDB := mock_database.NewMockDatabase(ctrl)
+				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]models.PartnerFeatureRecord{
+					"US": {
+						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner1"},
+						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner2"},
+					},
+				}).AnyTimes()
+				return fields{db: mockDB}
+			}(),
+			args:    args{"IN"},
+			want:    nil,
 			wantErr: false,
 		},
 	}
@@ -71,7 +85,7 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 			c := &cache{
 				db: tt.fields.db,
 			}
-			got, err := c.GetThrottlePartnersWithCriteria(tt.args.country, tt.args.criteria, tt.args.criteriaValue)
+			got, err := c.GetThrottlePartnersWithCriteria(tt.args.country)
 			assert.Equal(t, tt.wantErr, err != nil)
 			assert.Equal(t, tt.want, got)
 		})
