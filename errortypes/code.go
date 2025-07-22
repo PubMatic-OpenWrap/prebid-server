@@ -41,13 +41,12 @@ const (
 	InvalidBidResponseDSAWarningCode
 	SecCookieDeprecationLenWarningCode
 	SecBrowsingTopicsWarningCode
+	AdpodPostFilteringWarningCode
+	InvalidVastVersionWarningCode
 	InvalidUserEIDsWarningCode
 	InvalidUserUIDsWarningCode
 	TooLongTargetingPrefixWarningCode
 	TooShortTargetingPrefixWarningCode
-
-	AdpodPostFilteringWarningCode
-	InvalidVastVersionWarningCode
 )
 
 // Coder provides an error or warning code with severity.

@@ -106,7 +106,8 @@ func TimeTrack(start time.Time, name string) {
 // if value not present or any error occured empty value will be returned
 // along with error.
 func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
-	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
+	hbtargetingPrefix := "hb"
+	bidderSpecificKey := key.BidderKey(hbtargetingPrefix, openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
 

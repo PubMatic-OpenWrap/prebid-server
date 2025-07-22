@@ -612,7 +612,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "mtype": 1,"h": 250, "w": 300, "dealid": "testdeal", "ext":null}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
@@ -631,6 +631,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
+							MType:   1,
 						},
 						BidType:    openrtb_ext.BidTypeBanner,
 						BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
@@ -647,6 +648,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "mtype": 1, "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1, "ibv": true}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: nil,
 			wantResp: &adapters.BidderResponse{
@@ -669,8 +671,13 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 						BidType:  openrtb_ext.BidTypeBanner,
 						BidVideo: &openrtb_ext.ExtBidPrebidVideo{},
 						BidMeta: &openrtb_ext.ExtBidPrebidMeta{
-							MediaType: "video",
+							MediaType:    "video",
+							AdvertiserID: 958,
+							AgencyID:     958,
+							NetworkID:    6,
+							DemandSource: "6",
 						},
+						BidTargets: map[string]string{},
 					},
 				},
 				Currency: "USD",
@@ -683,6 +690,7 @@ func TestPubmaticAdapter_MakeBids(t *testing.T) {
 					StatusCode: http.StatusOK,
 					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "mtype": 0, "ext":{"dspid": 6, "deal_channel": 1, "prebiddealpriority": -1, "ibv": true}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
+				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
 			wantErr: []error{&errortypes.BadServerResponse{Message: "failed to parse bid mtype (0) for impression id test-imp-id"}},
 			wantResp: &adapters.BidderResponse{

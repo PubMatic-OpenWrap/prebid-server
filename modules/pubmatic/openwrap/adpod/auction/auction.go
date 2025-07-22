@@ -61,7 +61,8 @@ func FormAdpodBidsAndPerformExclusion(response *openrtb2.BidResponse, rctx model
 // if value not present or any error occured empty value will be returned
 // along with error.
 func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
-	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
+	hbtargetingPrefix := "hb"
+	bidderSpecificKey := key.BidderKey(hbtargetingPrefix, openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
 
@@ -70,6 +71,7 @@ func addTargetingKey(bid *openrtb2.Bid, key openrtb_ext.TargetingKey, value stri
 		return errors.New("Invalid bid")
 	}
 
+	key = "hb" + key
 	raw, err := jsonparser.Set(bid.Ext, []byte(strconv.Quote(value)), "prebid", "targeting", string(key))
 	if err == nil {
 		bid.Ext = raw
@@ -106,16 +108,16 @@ func generateAdpodBids(seatBids []openrtb2.SeatBid, impCtx map[string]models.Imp
 				continue
 			}
 
-			value, err := GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			value, err := GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if err == nil {
 				// ignore error
-				addTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+				addTargetingKey(bid, openrtb_ext.CategoryDurationKey, value)
 			}
 
-			value, err = GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			value, err = GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if err == nil {
 				// ignore error
-				addTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
+				addTargetingKey(bid, openrtb_ext.PbKey, value)
 			}
 			if eachImpCtx.AdpodConfig == nil {
 				videoBids = append(videoBids, *bid)
