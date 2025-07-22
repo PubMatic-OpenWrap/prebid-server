@@ -12,15 +12,7 @@ func (c *cache) GetThrottlePartnersWithCriteria(country string) ([]string, error
 	}
 	partnerthrottleMap := c.db.GetLatestCountryPartnerFilter()
 	if partnerthrottleMap == nil {
-		return nil, errors.New("partner filter cache empty")
+		return nil, errors.New("partner filter cache is empty")
 	}
-
-	var throttledPartners []string
-	if countryRecords, exists := partnerthrottleMap[country]; exists {
-		for _, record := range countryRecords {
-			throttledPartners = append(throttledPartners, record.FeatureValue)
-		}
-	}
-
-	return throttledPartners, nil
+	return partnerthrottleMap[country], nil
 }

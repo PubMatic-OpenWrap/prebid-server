@@ -42,7 +42,7 @@ func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration, query 
 
 func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	var (
-		data map[string][]models.PartnerFeatureRecord
+		data map[string][]string
 		err  error
 	)
 
@@ -64,7 +64,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	return nil
 }
 
-func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string][]models.PartnerFeatureRecord, error) {
+func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string][]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cpf.MaxDbContextTimeout)
 	defer cancel()
 
@@ -74,22 +74,23 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 	}
 	defer rows.Close()
 
-	result := make(map[string][]models.PartnerFeatureRecord)
+	result := make(map[string][]string)
 	for rows.Next() {
-		var record models.PartnerFeatureRecord
+		var country, featureValue, criteria string
 		var threshold int64
-		if err := rows.Scan(&record.Country, &record.FeatureValue, &record.Criteria, &threshold); err != nil {
-			glog.Errorf("Scan error getCountryPartnerFilteringData: %v", err)
+
+		if err := rows.Scan(&country, &featureValue, &criteria, &threshold); err != nil {
+			glog.Errorf("Scan error getThrottledPartnersByCountry: %v", err)
 			continue
 		}
 
-		if record.Criteria != models.PartnerLevelThrottlingCriteria || threshold != models.PartnerLevelThrottlingCriteriaValue {
+		if criteria != models.PartnerLevelThrottlingCriteria || threshold != models.PartnerLevelThrottlingCriteriaValue {
 			continue
 		}
-		record.CriteriaThreshold = int(threshold)
-		result[record.Country] = append(result[record.Country], record)
 
+		result[country] = append(result[country], featureValue)
 	}
+
 	return result, rows.Err()
 }
 
@@ -105,15 +106,15 @@ func (cpf *CountryPartnerFilterDB) ScheduleRefresh() {
 	}()
 }
 
-func (cpf *CountryPartnerFilterDB) GetLatestCountryPartnerFilter() map[string][]models.PartnerFeatureRecord {
+func (cpf *CountryPartnerFilterDB) GetLatestCountryPartnerFilter() map[string][]string {
 	val := cpf.cache.Load()
 	if val == nil {
 		return nil
 	}
-	return val.(map[string][]models.PartnerFeatureRecord)
+	return val.(map[string][]string)
 }
 
-func (db *mySqlDB) GetLatestCountryPartnerFilter() map[string][]models.PartnerFeatureRecord {
+func (db *mySqlDB) GetLatestCountryPartnerFilter() map[string][]string {
 	if db.countryPartnerFilterDB == nil {
 		return nil
 	}

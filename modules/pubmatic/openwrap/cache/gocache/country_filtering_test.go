@@ -5,7 +5,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock_database "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,10 +49,10 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 			name: "Multiple_Matching_Records",
 			fields: func() fields {
 				mockDB := mock_database.NewMockDatabase(ctrl)
-				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]models.PartnerFeatureRecord{
+				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]string{
 					"US": {
-						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner1"},
-						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner2"},
+						"partner1",
+						"partner2",
 					},
 				}).AnyTimes()
 				return fields{db: mockDB}
@@ -66,10 +65,10 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 			name: "	Mismatching_country",
 			fields: func() fields {
 				mockDB := mock_database.NewMockDatabase(ctrl)
-				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]models.PartnerFeatureRecord{
+				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]string{
 					"US": {
-						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner1"},
-						{Criteria: models.PartnerLevelThrottlingCriteria, CriteriaThreshold: models.PartnerLevelThrottlingCriteriaValue, FeatureValue: "partner2"},
+						"partner1",
+						"partner2",
 					},
 				}).AnyTimes()
 				return fields{db: mockDB}
