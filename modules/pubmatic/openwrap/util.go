@@ -609,8 +609,8 @@ func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
 		return ""
 	}
 
-	//this will work for banner as well as MREC Banner adformat(only for phase 1 adunits for now)
-	if imp.Banner != nil {
+	//temporary check to handle banner and MREC Banner all phase 1 adunits
+	if imp.Banner != nil || imp.Video != nil {
 		return models.AdUnitFormatBanner
 	}
 	return ""
