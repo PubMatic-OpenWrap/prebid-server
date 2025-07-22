@@ -63,8 +63,8 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 
 		if _, isThrottled := throttleMap[bidderCode]; isThrottled {
 			// 5% of throttled traffic is still allowed through for testing or monitoring purposes
-			if GetRandomNumberIn1To100() <= models.AllowThrottlePartnerPercentage {
-				glog.V(models.LogLevelDebug).Infof("Allowing %f %% fallback traffic for throttled bidder: %s", models.AllowThrottlePartnerPercentage, bidderCode)
+			if GetRandomNumberIn1To100() <= m.cfg.Features.AllowPartnerLevelThrottlingPercentage {
+				glog.V(models.LogLevelDebug).Infof("Allowing %f %% fallback traffic for throttled bidder: %s", m.cfg.Features.AllowPartnerLevelThrottlingPercentage, bidderCode)
 				allPartnersThrottledFlag = false
 				continue
 			}

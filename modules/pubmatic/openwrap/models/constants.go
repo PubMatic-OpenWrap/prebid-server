@@ -30,7 +30,6 @@ const (
 	CountryFilterModeKey                = "countryFilterMode"
 	PartnerLevelThrottlingCriteria      = "monetized_cpm"
 	PartnerLevelThrottlingCriteriaValue = 0
-	AllowThrottlePartnerPercentage      = 5
 	PartnerLevelThrottlingFeatureID     = "1"
 	MaxRetryAttempts                    = 3
 
