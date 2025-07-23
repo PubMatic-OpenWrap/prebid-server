@@ -4239,7 +4239,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.DisplayVersionID: "1",
 					},
 				}, nil)
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"pubmatic": struct{}{}}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"pubmatic": {}}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidPlatform))
@@ -4289,7 +4289,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"appnexus": struct{}{}}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"appnexus": {}}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "appnexus", models.PartnerLevelThrottlingFeatureID)
