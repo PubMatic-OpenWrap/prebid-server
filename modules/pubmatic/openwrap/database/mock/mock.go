@@ -277,10 +277,10 @@ func (mr *MockDatabaseMockRecorder) GetCountryPartnerFilteringData() *gomock.Cal
 }
 
 // GetLatestCountryPartnerFilter mocks base method.
-func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string][]string {
+func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestCountryPartnerFilter")
-	ret0, _ := ret[0].(map[string][]string)
+	ret0, _ := ret[0].(map[string]map[string]struct{})
 	return ret0
 }
 

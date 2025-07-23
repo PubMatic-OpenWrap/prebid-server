@@ -22,7 +22,7 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    []string
+		want    map[string]struct{}
 		wantErr bool
 	}{
 		{
@@ -49,26 +49,26 @@ func TestGetThrottlePartnersWithCriteria(t *testing.T) {
 			name: "Multiple_Matching_Records",
 			fields: func() fields {
 				mockDB := mock_database.NewMockDatabase(ctrl)
-				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]string{
+				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string]map[string]struct{}{
 					"US": {
-						"partner1",
-						"partner2",
+						"partner1": {},
+						"partner2": {},
 					},
 				}).AnyTimes()
 				return fields{db: mockDB}
 			}(),
 			args:    args{"US"},
-			want:    []string{"partner1", "partner2"},
+			want:    map[string]struct{}{"partner1": {}, "partner2": {}},
 			wantErr: false,
 		},
 		{
 			name: "	Mismatching_country",
 			fields: func() fields {
 				mockDB := mock_database.NewMockDatabase(ctrl)
-				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string][]string{
+				mockDB.EXPECT().GetLatestCountryPartnerFilter().Return(map[string]map[string]struct{}{
 					"US": {
-						"partner1",
-						"partner2",
+						"partner1": {},
+						"partner2": {},
 					},
 				}).AnyTimes()
 				return fields{db: mockDB}

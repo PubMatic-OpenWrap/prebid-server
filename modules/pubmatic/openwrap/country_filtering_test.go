@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
@@ -211,7 +212,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "no_throttled_partners",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
@@ -227,7 +228,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "partner_throttled_and_not_in_fallback_simulate_fallback_fail",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA"}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"bidderA": {}}, nil)
 				mockMetric.EXPECT().RecordPartnerThrottledRequests("456", "bidderA", models.PartnerLevelThrottlingFeatureID)
 			},
 			rCtx: models.RequestCtx{
@@ -245,7 +246,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "all_partners_throttled",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA", "bidderB"}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"bidderA": {}, "bidderB": {}}, nil)
 				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderA", models.PartnerLevelThrottlingFeatureID)
 				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "bidderB", models.PartnerLevelThrottlingFeatureID)
 			},
@@ -267,7 +268,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "skip_config_with_missing_bidderCode",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderC"}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"bidderC": {}}, nil)
 				mockMetric.EXPECT().RecordPartnerThrottledRequests("101", "bidderC", models.PartnerLevelThrottlingFeatureID)
 			},
 			rCtx: models.RequestCtx{
@@ -285,7 +286,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 		{
 			name: "partner_throttled_and_allowed_in_fallback",
 			cacheSetup: func() {
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return([]string{"bidderA"}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"bidderA": {}}, nil)
 			},
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
@@ -307,6 +308,11 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			m := &OpenWrap{
 				cache:        mockCache,
 				metricEngine: mockMetric,
+				cfg: config.Config{
+					Features: config.FeatureToggle{
+						AllowPartnerLevelThrottlingPercentage: 5,
+					},
+				},
 			}
 			GetRandomNumberIn1To100 = func() int {
 				return tt.randomNumber

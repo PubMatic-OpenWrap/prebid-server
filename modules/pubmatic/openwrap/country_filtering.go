@@ -36,24 +36,16 @@ func shouldApplyCountryFilter(endpoint string) bool {
 
 func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
 
-	throttlePartners, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode)
+	throttleMap, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode)
 	if err != nil {
 		glog.Errorf("Error getting throttled partners for country %s: %v", rCtx.DeviceCtx.DerivedCountryCode, err)
 		return nil, false
 	}
-	if len(throttlePartners) == 0 {
+	if len(throttleMap) == 0 {
 		return nil, false
 	}
 
 	adapterThrottleMap := make(map[string]struct{})
-
-	throttleMap := make(map[string]struct{}, len(throttlePartners))
-	for _, bidder := range throttlePartners {
-		throttleMap[bidder] = struct{}{}
-	}
-
-	// Create a single random generator instance seeded once per request
-
 	allPartnersThrottledFlag := true
 	for _, cfg := range partnerConfigMap {
 		bidderCode, ok := cfg[models.BidderCode]

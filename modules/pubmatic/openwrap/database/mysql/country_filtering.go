@@ -42,7 +42,7 @@ func NewCountryPartnerFilterDB(db *sql.DB, refreshInterval time.Duration, query 
 
 func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	var (
-		data map[string][]string
+		data map[string]map[string]struct{}
 		err  error
 	)
 
@@ -56,7 +56,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	}
 
 	if err != nil {
-		glog.Errorf("Failed to load cache: %v", err)
+		glog.Errorf("Failed to load cache for country filtering: %v", err)
 		return fmt.Errorf("cache load failed after retries: %w", err)
 	}
 
@@ -64,7 +64,7 @@ func (cpf *CountryPartnerFilterDB) RefreshCache() error {
 	return nil
 }
 
-func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string][]string, error) {
+func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]map[string]struct{}, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cpf.MaxDbContextTimeout)
 	defer cancel()
 
@@ -74,7 +74,7 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 	}
 	defer rows.Close()
 
-	result := make(map[string][]string)
+	result := make(map[string]map[string]struct{})
 	for rows.Next() {
 		var country, featureValue, criteria string
 		var threshold int64
@@ -88,7 +88,10 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 			continue
 		}
 
-		result[country] = append(result[country], featureValue)
+		if _, ok := result[country]; !ok {
+			result[country] = make(map[string]struct{})
+		}
+		result[country][featureValue] = struct{}{}
 	}
 
 	return result, rows.Err()
@@ -106,15 +109,15 @@ func (cpf *CountryPartnerFilterDB) ScheduleRefresh() {
 	}()
 }
 
-func (cpf *CountryPartnerFilterDB) GetLatestCountryPartnerFilter() map[string][]string {
+func (cpf *CountryPartnerFilterDB) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
 	val := cpf.cache.Load()
 	if val == nil {
 		return nil
 	}
-	return val.(map[string][]string)
+	return val.(map[string]map[string]struct{})
 }
 
-func (db *mySqlDB) GetLatestCountryPartnerFilter() map[string][]string {
+func (db *mySqlDB) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
 	if db.countryPartnerFilterDB == nil {
 		return nil
 	}
