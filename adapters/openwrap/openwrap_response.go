@@ -233,11 +233,6 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					bid.CrID = creativeId
 				}
 
-			} else if bid.MType == openrtb2.MarkupBanner {
-				bUrl := extractBillingURL(bid.AdM)
-				bid.BURL = bUrl
-				updatedAdmActivate := strings.Replace(admActivate, "CONVERT_CREATIVE", bid.IURL, 1)
-				bid.AdM = updatedAdmActivate
 			} else if bid.MType == openrtb2.MarkupNative {
 				// Define a structure to unmarshal the adm string.
 				var admData struct {
