@@ -51,7 +51,7 @@ type Database struct {
 	User     string
 	Pass     string
 
-	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout int
+	IdleConnection, MaxConnection, ConnMaxLifeTime, MaxDbContextTimeout, CountryPartnerFilterMaxDbContextTimeout int
 
 	Queries Queries
 }
@@ -82,14 +82,16 @@ type Queries struct {
 	GetGDPRCountryCodes               string
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
+	GetCountryPartnerFilteringData    string
 }
 
 type Cache struct {
 	CacheConTimeout int // Connection timeout for cache
 
-	CacheDefaultExpiry         int // in seconds
-	VASTTagCacheExpiry         int // in seconds
-	ProfileMetaDataCacheExpiry int // in seconds
+	CacheDefaultExpiry                  int // in seconds
+	VASTTagCacheExpiry                  int // in seconds
+	ProfileMetaDataCacheExpiry          int // in seconds
+	CountryPartnerFilterRefreshInterval time.Duration
 }
 
 type Timeout struct {
@@ -108,8 +110,9 @@ type PixelView struct {
 }
 
 type FeatureToggle struct {
-	VASTUnwrapPercent             int
-	AnalyticsThrottlingPercentage string
+	VASTUnwrapPercent                     int
+	AnalyticsThrottlingPercentage         string
+	AllowPartnerLevelThrottlingPercentage int
 }
 
 type Log struct { //Log Details

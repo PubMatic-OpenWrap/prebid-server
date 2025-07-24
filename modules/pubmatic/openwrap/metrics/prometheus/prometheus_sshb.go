@@ -16,6 +16,8 @@ const (
 	nodeal       = "nodeal"
 
 	wrapperCountLabel = "wrapper_count"
+
+	featureIdLabel = "feature_id"
 )
 
 const (
