@@ -4293,8 +4293,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "appnexus", models.PartnerLevelThrottlingFeatureID)
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllPartnerThrottled))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnerThrottled))
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.RequestBlockedGeoFiltered))
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.RequestBlockedGeoFiltered))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
@@ -4303,7 +4303,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 					Reject:  true,
-					NbrCode: int(nbr.AllPartnerThrottled),
+					NbrCode: int(nbr.RequestBlockedGeoFiltered),
 					Errors:  []string{"All adapters throttled"},
 				},
 				error:                 false,
