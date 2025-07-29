@@ -141,7 +141,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 				},
 			},
 			want: want{
-				adapterThrottleMap:       map[string]struct{}{"appnexus": struct{}{}, "pubmatic": struct{}{}},
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}},
 				allPartnersThrottledFlag: true,
 			},
 		},
