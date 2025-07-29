@@ -155,17 +155,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 	}
 
-	allPartnersThrottledFlag := false
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, partnerConfigMap)
-
-	if allPartnersThrottledFlag {
-		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
-		result.Errors = append(result.Errors, "All adapters throttled")
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		glog.V(models.LogLevelDebug).Info("All adapters throttled")
-		return result, nil
-	}
-
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
 			if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
@@ -227,6 +216,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
+	allPartnersThrottledFlag := false
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
+
+	if allPartnersThrottledFlag {
+		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+		result.Errors = append(result.Errors, "All adapters throttled")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.V(models.LogLevelDebug).Info("All adapters throttled")
+		return result, nil
+	}
+
 	//set the profile MetaData for logging and tracking
 	rCtx.ProfileType = getProfileType(partnerConfigMap)
 	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap, m.profileMetaData)
@@ -248,7 +248,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		adapterThrottleMap      map[string]struct{}
 	)
 
-	adapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	adapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
@@ -256,22 +256,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
-
-	if rCtx.AdapterThrottleMap == nil {
-		rCtx.AdapterThrottleMap = make(map[string]struct{})
-	}
-
-	for adapter := range adapterThrottleMap {
-		rCtx.AdapterThrottleMap[adapter] = struct{}{}
-	}
-
-	throttle := isAllPartnerThrottle(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
-	if throttle {
-		result.NbrCode = int(nbr.AllPartnerThrottled)
-		result.Errors = append(result.Errors, "All adapters throttled")
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return result, nil
-	}
+	rCtx.AdapterThrottleMap = adapterThrottleMap
 
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
 

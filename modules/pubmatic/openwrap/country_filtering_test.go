@@ -201,9 +201,9 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
 				PubIDStr:  "123",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: "bidderA"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: "bidderA"},
+				},
 			},
 			expectedMap:     map[string]struct{}(nil),
 			expectedAllFlag: false,
@@ -217,9 +217,9 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
 				PubIDStr:  "123",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: "bidderA"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: "bidderA"},
+				},
 			},
 			expectedMap:     map[string]struct{}(nil),
 			expectedAllFlag: false,
@@ -234,10 +234,10 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "456",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: "bidderA"},
-				2: {models.BidderCode: "bidderB"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: "bidderA"},
+					2: {models.BidderCode: "bidderB"},
+				},
 			},
 			expectedMap:     map[string]struct{}{"bidderA": {}},
 			expectedAllFlag: false,
@@ -253,10 +253,10 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "789",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: "bidderA"},
-				2: {models.BidderCode: "bidderB"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: "bidderA"},
+					2: {models.BidderCode: "bidderB"},
+				},
 			},
 			expectedMap: map[string]struct{}{
 				"bidderA": {},
@@ -274,10 +274,10 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "UK"},
 				PubIDStr:  "101",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: ""},
-				2: {models.BidderCode: "bidderC"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: ""},
+					2: {models.BidderCode: "bidderC"},
+				},
 			},
 			expectedMap:     map[string]struct{}{"bidderC": {}},
 			expectedAllFlag: true,
@@ -291,9 +291,9 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			rCtx: models.RequestCtx{
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "111",
-			},
-			partnerConfigMap: map[int]map[string]string{
-				1: {models.BidderCode: "bidderA"},
+				PartnerConfigMap: map[int]map[string]string{
+					1: {models.BidderCode: "bidderA"},
+				},
 			},
 			expectedMap:     map[string]struct{}{},
 			expectedAllFlag: false,
@@ -317,7 +317,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			GetRandomNumberIn1To100 = func() int {
 				return tt.randomNumber
 			}
-			got, gotAll := m.applyPartnerThrottling(tt.rCtx, tt.partnerConfigMap)
+			got, gotAll := m.applyPartnerThrottling(tt.rCtx)
 			assert.Equal(t, tt.expectedMap, got)
 			assert.Equal(t, tt.expectedAllFlag, gotAll)
 		})

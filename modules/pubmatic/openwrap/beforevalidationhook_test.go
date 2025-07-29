@@ -4239,7 +4239,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.DisplayVersionID: "1",
 					},
 				}, nil)
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"pubmatic": {}}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidPlatform))
@@ -4267,6 +4267,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"rctx": rctx,
 					},
 				},
+				// bidrequest: json.RawMessage(`{"test": 2,"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
 			fields: fields{
@@ -4289,16 +4290,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						models.PLATFORM_KEY:     models.PLATFORM_APP,
 					},
 				}, nil)
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"appnexus": {}}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"appnexus": {}}, nil).AnyTimes()
 				//prometheus metrics
-				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "appnexus", models.PartnerLevelThrottlingFeatureID)
-				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.RequestBlockedGeoFiltered))
-				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.RequestBlockedGeoFiltered))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234").AnyTimes()
+				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "appnexus", models.PartnerLevelThrottlingFeatureID).AnyTimes()
+				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.RequestBlockedGeoFiltered)).AnyTimes()
+				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.RequestBlockedGeoFiltered)).AnyTimes()
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4357,10 +4358,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4409,10 +4410,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllPartnersFiltered))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllPartnersFiltered))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4461,10 +4462,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4517,10 +4518,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, "5890", getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointWebS2S, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4568,10 +4569,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4663,12 +4664,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.AllSlotsDisabled))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.AllSlotsDisabled))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4773,13 +4774,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4861,10 +4862,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.ServerSidePartnerNotConfigured))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.ServerSidePartnerNotConfigured))
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4977,13 +4978,13 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform).AnyTimes()
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "pub2-alias")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "dm-alias")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5082,7 +5083,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5254,7 +5255,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5391,7 +5392,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordReqImpsWithContentCount("5890", models.ContentTypeSite)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5527,7 +5528,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordReqImpsWithContentCount("5890", models.ContentTypeSite)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5594,11 +5595,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil).AnyTimes()
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAppLovinMax, "5890", rctx.Platform)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAppLovinMax, "5890", rctx.Platform).AnyTimes()
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus").AnyTimes()
 				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, rctx.PubIDStr, models.MBMFInvalidAdFormat)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
@@ -6611,7 +6612,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 					},
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil).AnyTimes()
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))

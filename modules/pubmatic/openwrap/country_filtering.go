@@ -34,7 +34,7 @@ func shouldApplyCountryFilter(endpoint string) bool {
 	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
 }
 
-func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
+func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx) (map[string]struct{}, bool) {
 
 	throttleMap, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode)
 	if err != nil {
@@ -47,7 +47,7 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partnerConfigM
 
 	adapterThrottleMap := make(map[string]struct{})
 	allPartnersThrottledFlag := true
-	for _, cfg := range partnerConfigMap {
+	for _, cfg := range rCtx.PartnerConfigMap {
 		bidderCode, ok := cfg[models.BidderCode]
 		if !ok || bidderCode == "" {
 			continue

@@ -674,17 +674,3 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	mbmfStatus = models.MBMFAdUnitFormatNotFound
 	return nil
 }
-
-func isAllPartnerThrottle(partnerConfigMap map[int]map[string]string, adapterThrottleMap map[string]struct{}) bool {
-	throttledCount := len(adapterThrottleMap)
-	validBidderCount := 0
-	for _, cfg := range partnerConfigMap {
-		if bidder, ok := cfg[models.BidderCode]; ok && bidder != "" {
-			validBidderCount++
-		}
-	}
-	if validBidderCount > 0 && throttledCount == validBidderCount {
-		return true
-	}
-	return false
-}
