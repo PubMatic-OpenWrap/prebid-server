@@ -123,13 +123,11 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 			args: args{
 				partnerConfigMap: map[int]map[string]string{
 					0: {
-						models.THROTTLE:            "0",
 						models.PREBID_PARTNER_NAME: "pubmatic",
 						models.BidderCode:          "pubmatic",
 						models.SERVER_SIDE_FLAG:    "1",
 					},
 					1: {
-						models.THROTTLE:            "0",
 						models.PREBID_PARTNER_NAME: "appnexus",
 						models.BidderCode:          "appnexus",
 						models.SERVER_SIDE_FLAG:    "1",
@@ -142,6 +140,67 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 			},
 			want: want{
 				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}},
+				allPartnersThrottledFlag: true,
+			},
+		},
+		{
+			name: "Some_throttled_by_geo_some_by_config",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					2: {
+						models.PREBID_PARTNER_NAME: "rubicon",
+						models.BidderCode:          "rubicon",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+				},
+			},
+			want: want{
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}},
+				allPartnersThrottledFlag: false,
+			},
+		},
+		{
+			name: "Some_throttled_by_geo_other_by_config",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					2: {
+						models.PREBID_PARTNER_NAME: "rubicon",
+						models.BidderCode:          "rubicon",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+					"rubicon":  {},
+				},
+			},
+			want: want{
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}, "rubicon": {}},
 				allPartnersThrottledFlag: true,
 			},
 		},
