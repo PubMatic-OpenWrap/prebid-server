@@ -3057,7 +3057,7 @@ func TestAmpAuctionDebugWarningsOnly(t *testing.T) {
 	)
 
 	for _, test := range testCases {
-		httpReq := httptest.NewRequest("GET", fmt.Sprintf("/openrtb2/auction/amp"+test.requestURLArguments), nil)
+		httpReq := httptest.NewRequest("GET", fmt.Sprintf("%s", "/openrtb2/auction/amp"+test.requestURLArguments), nil)
 		test.addRequestHeaders(httpReq)
 		recorder := httptest.NewRecorder()
 

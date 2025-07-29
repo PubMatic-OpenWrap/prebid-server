@@ -112,7 +112,7 @@ func TestSingleRequestBuilderMakeRequest(t *testing.T) {
 			},
 			want: want{
 				requestData: nil,
-				errs:        []error{util.NewBadInputError(util.ErrImpMissing.Error())},
+				errs:        []error{util.NewBadInputError("%s", util.ErrImpMissing.Error())},
 			},
 		},
 		{

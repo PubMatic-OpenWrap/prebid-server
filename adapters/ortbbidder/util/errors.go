@@ -14,19 +14,37 @@ var (
 )
 
 func NewBadInputError(message string, args ...any) error {
+	var msg string
+	if len(args) > 0 {
+		msg = fmt.Sprintf(message, args...)
+	} else {
+		msg = message
+	}
 	return &errortypes.BadInput{
-		Message: fmt.Sprintf(message, args...),
+		Message: msg,
 	}
 }
 
 func NewBadServerResponseError(message string, args ...any) error {
+	var msg string
+	if len(args) > 0 {
+		msg = fmt.Sprintf(message, args...)
+	} else {
+		msg = message
+	}
 	return &errortypes.BadServerResponse{
-		Message: fmt.Sprintf(message, args...),
+		Message: msg,
 	}
 }
 
 func NewWarning(message string, args ...any) error {
+	var msg string
+	if len(args) > 0 {
+		msg = fmt.Sprintf(message, args...)
+	} else {
+		msg = message
+	}
 	return &errortypes.Warning{
-		Message: fmt.Sprintf(message, args...),
+		Message: msg,
 	}
 }

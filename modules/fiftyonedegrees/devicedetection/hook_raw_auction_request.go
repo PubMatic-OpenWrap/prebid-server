@@ -35,7 +35,7 @@ func handleAuctionRequestHook(ctx hookstage.ModuleInvocationContext, deviceDetec
 
 			result, err := hydrateFields(deviceInfo, rawPayload)
 			if err != nil {
-				return rawPayload, hookexecution.NewFailure(fmt.Sprintf("error hydrating fields %s", err))
+				return rawPayload, hookexecution.NewFailure("%s", fmt.Sprintf("error hydrating fields %s", err))
 			}
 
 			return result, nil
