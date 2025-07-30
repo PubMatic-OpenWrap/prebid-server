@@ -19,6 +19,11 @@ import (
 const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
 const iOSAppId = "GADMediationAdapterPubMatic"
 
+const (
+	consentedProvidersSettingsListKey = "consented_providers_settings"
+	consentedProvidersKey             = "consented_providers"
+)
+
 var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type wrapperData struct {
@@ -276,7 +281,7 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 
 	// change data type of user.ext.consented_providers_settings.consented_providers from []string to []int
 	if request.User != nil && request.User.Ext != nil {
-		consentedProvidedBytes, dataType, _, err := jsonparser.Get(request.User.Ext, "consented_providers_settings", "consented_providers")
+		consentedProvidedBytes, dataType, _, err := jsonparser.Get(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
 		if err != nil || dataType != jsonparser.Array {
 			return
 		}
@@ -293,15 +298,19 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 			}
 		})
 		if err != nil {
+			// Delete consented_providers_settings.consented_providers in case of errors to avoid bad request
+			request.User.Ext = jsonparser.Delete(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
 			return
 		}
 
-		providesBytes, err := jsoniterator.Marshal(consentedProviders)
+		providersBytes, err := jsoniterator.Marshal(consentedProviders)
 		if err != nil {
-			glog.Errorf("[GoogleSDK] [Error]: failed to marshal consented providers %v", err)
+			// Delete consented_providers_settings.consented_providers in case of errors to avoid bad request
+			request.User.Ext = jsonparser.Delete(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
+			return
 		}
 
-		request.User.Ext, _ = jsonparser.Set(request.User.Ext, providesBytes, "consented_providers_settings", "consented_providers")
+		request.User.Ext, _ = jsonparser.Set(request.User.Ext, providersBytes, consentedProvidersSettingsListKey, consentedProvidersKey)
 	}
 }
 

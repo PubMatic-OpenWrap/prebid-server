@@ -1651,7 +1651,7 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					},
 				},
 				User: &openrtb2.User{
-					Ext: []byte(`{"consented_providers_settings":{"consented_providers":["1","invalid","3"]}}`),
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":["1","invalid","3"]},"other_field":"value"}`),
 				},
 			},
 			expectedResult: &openrtb2.BidRequest{
@@ -1661,7 +1661,7 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					},
 				},
 				User: &openrtb2.User{
-					Ext: []byte(`{"consented_providers_settings":{"consented_providers":[1,3]}}`),
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":[1,3]},"other_field":"value"}`),
 				},
 			},
 		},
