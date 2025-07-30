@@ -1643,6 +1643,16 @@ func TestGetMultiFloors(t *testing.T) {
 			impID: "123",
 			want:  []float64{1.0, 0.8, 0.6},
 		},
+		{
+			name: "impID present with multifloors with tier4 and tier5",
+			rctx: &RequestCtx{
+				MultiFloors: map[string]*MultiFloors{
+					"123": {Tier1: 1.0, Tier2: 0.8, Tier3: 0.6, Tier4: 0.4, Tier5: 0.2},
+				},
+			},
+			impID: "123",
+			want:  []float64{1.0, 0.8, 0.6, 0.4, 0.2},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
