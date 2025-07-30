@@ -276,46 +276,32 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 
 	// change data type of user.ext.consented_providers_settings.consented_providers from []string to []int
 	if request.User != nil && request.User.Ext != nil {
-		var userExt map[string]interface{}
-		var err error
+		consentedProvidedBytes, dataType, _, err := jsonparser.Get(request.User.Ext, "consented_providers_settings", "consented_providers")
+		if err != nil || dataType != jsonparser.Array {
+			return
+		}
 
-		err = jsoniterator.Unmarshal(request.User.Ext, &userExt)
+		var consentedProviders []int
+		_, err = jsonparser.ArrayEach(consentedProvidedBytes, func(provider []byte, dataType jsonparser.ValueType, offset int, err error) {
+			if err != nil || dataType != jsonparser.String {
+				return
+			}
+
+			providerInt, err := strconv.Atoi(string(provider))
+			if err == nil {
+				consentedProviders = append(consentedProviders, providerInt)
+			}
+		})
 		if err != nil {
 			return
 		}
 
-		providerSettings, ok := userExt["consented_providers_settings"].(map[string]interface{})
-		if !ok {
-			return
-		}
-
-		consentedProviders, ok := providerSettings["consented_providers"].([]interface{})
-		if !ok {
-			return
-		}
-
-		var consentedProvidersInt []int
-		for i := range consentedProviders {
-			provider, ok := consentedProviders[i].(string)
-			if !ok {
-				continue
-			}
-
-			providerInt, err := strconv.Atoi(provider)
-			if err != nil {
-				continue
-			}
-
-			consentedProvidersInt = append(consentedProvidersInt, providerInt)
-		}
-
-		providerSettings["consented_providers"] = consentedProvidersInt
-		userExt["consented_providers_settings"] = providerSettings
-
-		request.User.Ext, err = jsoniterator.Marshal(userExt)
+		providesBytes, err := jsoniterator.Marshal(consentedProviders)
 		if err != nil {
-			glog.Errorf("[GoogleSDK] [Error]: failed to marshal user ext %v", err)
+			glog.Errorf("[GoogleSDK] [Error]: failed to marshal consented providers %v", err)
 		}
+
+		request.User.Ext, _ = jsonparser.Set(request.User.Ext, providesBytes, "consented_providers_settings", "consented_providers")
 	}
 }
 
