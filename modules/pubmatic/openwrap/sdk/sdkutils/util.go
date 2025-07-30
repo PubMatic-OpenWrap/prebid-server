@@ -1,6 +1,9 @@
 package sdkutils
 
-import "github.com/buger/jsonparser"
+import (
+	"github.com/buger/jsonparser"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+)
 
 func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
 	if source == nil {
@@ -53,4 +56,8 @@ func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
 		// For unknown types, copy as is
 		return jsonparser.Set(target, value, path...)
 	}
+}
+
+func IsSdkIntegration(endpoint string) bool {
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK
 }
