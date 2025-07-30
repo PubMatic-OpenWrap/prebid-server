@@ -62,7 +62,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
-	github.com/prebid/prebid-server/v3 v3.10.0
+	github.com/prebid/prebid-server/v3 v3.22.0
 	github.com/rs/vast v0.0.0-20180618195556-06597a11a4c3
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
