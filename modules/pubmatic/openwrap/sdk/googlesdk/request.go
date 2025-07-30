@@ -238,39 +238,85 @@ func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features featu
 }
 
 func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
-	if len(request.Imp) == 0 {
+	if request == nil {
 		return
 	}
 
-	// Always set secure to 1
-	request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
+	if len(request.Imp) > 0 {
+		// Always set secure to 1
+		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
-	//Set gpid
-	if len(request.Imp[0].TagID) > 0 {
-		request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+		//Set gpid
+		if len(request.Imp[0].TagID) > 0 {
+			request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+		}
+
+		// Remove metric
+		request.Imp[0].Metric = nil
+
+		// Remove banner if impression is rewarded and banner and video both are present
+		if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
+			request.Imp[0].Banner = nil
+		}
+
+		// Remove unsupported fields from banner
+		if request.Imp[0].Banner != nil {
+			request.Imp[0].Banner.WMin = 0
+			request.Imp[0].Banner.HMin = 0
+			request.Imp[0].Banner.WMax = 0
+			request.Imp[0].Banner.HMax = 0
+		}
+
+		// Remove native from request
+		request.Imp[0].Native = nil
+
+		// Remove video from request
+		request.Imp[0].Video = nil
 	}
 
-	// Remove metric
-	request.Imp[0].Metric = nil
+	// change data type of user.ext.consented_providers_settings.consented_providers from []string to []int
+	if request.User != nil && request.User.Ext != nil {
+		var userExt map[string]interface{}
+		var err error
 
-	// Remove banner if impression is rewarded and banner and video both are present
-	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
-		request.Imp[0].Banner = nil
+		err = jsoniterator.Unmarshal(request.User.Ext, &userExt)
+		if err != nil {
+			return
+		}
+
+		providerSettings, ok := userExt["consented_providers_settings"].(map[string]interface{})
+		if !ok {
+			return
+		}
+
+		consentedProviders, ok := providerSettings["consented_providers"].([]interface{})
+		if !ok {
+			return
+		}
+
+		var consentedProvidersInt []int
+		for i := range consentedProviders {
+			provider, ok := consentedProviders[i].(string)
+			if !ok {
+				continue
+			}
+
+			providerInt, err := strconv.Atoi(provider)
+			if err != nil {
+				continue
+			}
+
+			consentedProvidersInt = append(consentedProvidersInt, providerInt)
+		}
+
+		providerSettings["consented_providers"] = consentedProvidersInt
+		userExt["consented_providers_settings"] = providerSettings
+
+		request.User.Ext, err = jsoniterator.Marshal(userExt)
+		if err != nil {
+			glog.Errorf("[GoogleSDK] [Error]: failed to marshal user ext %v", err)
+		}
 	}
-
-	// Remove unsupported fields from banner
-	if request.Imp[0].Banner != nil {
-		request.Imp[0].Banner.WMin = 0
-		request.Imp[0].Banner.HMin = 0
-		request.Imp[0].Banner.WMax = 0
-		request.Imp[0].Banner.HMax = 0
-	}
-
-	// Remove native from request
-	request.Imp[0].Native = nil
-
-	// Remove video from request
-	request.Imp[0].Video = nil
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
