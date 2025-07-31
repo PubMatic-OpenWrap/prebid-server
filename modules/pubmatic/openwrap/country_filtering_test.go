@@ -19,6 +19,16 @@ func TestShouldApplyCountryFilter(t *testing.T) {
 			want:     true,
 		},
 		{
+			name:     "EndpointGoogleSDK",
+			endpoint: models.EndpointGoogleSDK,
+			want:     true,
+		},
+		{
+			name:     "EndpointUnityLevelPlay",
+			endpoint: models.EndpointUnityLevelPlay,
+			want:     true,
+		},
+		{
 			name:     "EndpointV25",
 			endpoint: models.EndpointV25,
 			want:     false,

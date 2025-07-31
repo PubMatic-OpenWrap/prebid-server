@@ -30,5 +30,5 @@ func isCountryAllowed(country string, mode string, countryCodes string) bool {
 }
 
 func shouldApplyCountryFilter(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointUnityLevelPlay
 }
