@@ -16,10 +16,9 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
-const iOSAppId = "GADMediationAdapterPubMatic"
-
 const (
+	androidAppId                      = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
+	iOSAppId                          = "GADMediationAdapterPubMatic"
 	consentedProvidersSettingsListKey = "consented_providers_settings"
 	consentedProvidersKey             = "consented_providers"
 )
@@ -256,9 +255,6 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 			request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
 		}
 
-		// Remove metric
-		request.Imp[0].Metric = nil
-
 		// Remove banner if impression is rewarded and banner and video both are present
 		if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
 			request.Imp[0].Banner = nil
@@ -271,6 +267,9 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 			request.Imp[0].Banner.WMax = 0
 			request.Imp[0].Banner.HMax = 0
 		}
+
+		// Remove metric
+		request.Imp[0].Metric = nil
 
 		// Remove native from request
 		request.Imp[0].Native = nil
