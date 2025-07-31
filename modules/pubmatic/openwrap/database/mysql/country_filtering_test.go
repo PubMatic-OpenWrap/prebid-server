@@ -8,7 +8,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,9 +31,9 @@ func TestGetCountryPartnerFilteringData(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockDB := newMockDB(t)
-	mockRows := sqlmock.NewRows([]string{"country", "feature_value", "criteria", "threshold"})
+	mockRows := sqlmock.NewRows([]string{"country", "feature_value"})
 
-	query := "SELECT country, feature_value, criteria, threshold FROM table"
+	query := "SELECT country, feature_value FROM table"
 	maxTimeout := 2 * time.Second
 
 	cpf := &CountryPartnerFilterDB{
@@ -53,7 +52,7 @@ func TestGetCountryPartnerFilteringData(t *testing.T) {
 			name: "valid_one_record",
 			mockSetup: func() {
 				mockDB.mock.ExpectQuery(query).WillReturnRows(mockRows)
-				mockRows.AddRow("IN", "bidderA", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue)
+				mockRows.AddRow("IN", "bidderA")
 			},
 			expectedResult: map[string]map[string]struct{}{
 				"IN": {"bidderA": {}},
@@ -64,7 +63,7 @@ func TestGetCountryPartnerFilteringData(t *testing.T) {
 			name: "scan_error_skips_row",
 			mockSetup: func() {
 				mockDB.mock.ExpectQuery(query).WillReturnRows(mockRows)
-				mockRows.AddRow("IN", "bidderA", models.PartnerLevelThrottlingCriteria, models.PartnerLevelThrottlingCriteriaValue)
+				mockRows.AddRow("IN", "bidderA")
 			},
 			expectedResult: map[string]map[string]struct{}{},
 			expectErr:      false,
@@ -73,7 +72,7 @@ func TestGetCountryPartnerFilteringData(t *testing.T) {
 			name: "criteria_mismatch_skipped",
 			mockSetup: func() {
 				mockDB.mock.ExpectQuery(query).WillReturnRows(mockRows)
-				mockRows.AddRow("US", "bidderB", "wrong_criteria", models.PartnerLevelThrottlingCriteriaValue)
+				mockRows.AddRow("US", "bidderB")
 			},
 			expectedResult: map[string]map[string]struct{}{},
 			expectErr:      false,

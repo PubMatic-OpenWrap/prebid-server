@@ -27,11 +27,9 @@ const (
 	VideoAdDurationKey         = "videoAdDuration"
 	VideoAdDurationMatchingKey = "videoAdDurationMatching"
 	// Country Filtering specific keys
-	CountryFilterModeKey                = "countryFilterMode"
-	PartnerLevelThrottlingCriteria      = "monetized_cpm"
-	PartnerLevelThrottlingCriteriaValue = 0
-	PartnerLevelThrottlingFeatureID     = "1"
-	MaxRetryAttempts                    = 3
+	CountryFilterModeKey            = "countryFilterMode"
+	PartnerLevelThrottlingFeatureID = "1" // Bidder_Exclusion
+	MaxRetryAttempts                = 3
 
 	CountryCodesKey             = "countryCodes"
 	REVSHARE                    = "rev_share"

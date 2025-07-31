@@ -257,21 +257,6 @@ func (mr *MockCacheMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), arg0, arg1)
 }
 
-// GetCountryPartnerFilteringData mocks base method.
-func (m *MockCache) GetCountryPartnerFilteringData() (map[string][]models.PartnerFeatureRecord, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCountryPartnerFilteringData")
-	ret0, _ := ret[0].(map[string][]models.PartnerFeatureRecord)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCountryPartnerFilteringData indicates an expected call of GetCountryPartnerFilteringData.
-func (mr *MockCacheMockRecorder) GetCountryPartnerFilteringData() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCountryPartnerFilteringData", reflect.TypeOf((*MockCache)(nil).GetCountryPartnerFilteringData))
-}
-
 // GetThrottlePartnersWithCriteria mocks base method.
 func (m *MockCache) GetThrottlePartnersWithCriteria(arg0 string) (map[string]struct{}, error) {
 	m.ctrl.T.Helper()

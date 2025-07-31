@@ -76,19 +76,14 @@ func (cpf *CountryPartnerFilterDB) getCountryPartnerFilteringData() (map[string]
 
 	result := make(map[string]map[string]struct{})
 	for rows.Next() {
-		var country, featureValue, criteria string
-		var threshold int64
+		var country, featureValue string
 
-		if err := rows.Scan(&country, &featureValue, &criteria, &threshold); err != nil {
+		if err := rows.Scan(&country, &featureValue); err != nil {
 			glog.Errorf("Scan error getThrottledPartnersByCountry: %v", err)
 			continue
 		}
 
-		if criteria != models.PartnerLevelThrottlingCriteria || threshold != models.PartnerLevelThrottlingCriteriaValue {
-			continue
-		}
-
-		if _, ok := result[country]; !ok {
+		if result[country] == nil {
 			result[country] = make(map[string]struct{})
 		}
 		result[country][featureValue] = struct{}{}
