@@ -711,6 +711,24 @@ func TestModifyDevice(t *testing.T) {
 			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
 		},
 		{
+			name:     "signal_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   &openrtb2.Device{IP: "127.0.0.1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+		},
+		{
+			name:     "request_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+		},
+		{
+			name:     "both_request_and_signal_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+			signal:   &openrtb2.Device{IP: "127.0.0.2"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.2"}},
+		},
+		{
 			name:    "copy all device fields",
 			request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
 			signal: &openrtb2.Device{
