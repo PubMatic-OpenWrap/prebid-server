@@ -16,8 +16,12 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-const androidAppId = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
-const iOSAppId = "GADMediationAdapterPubMatic"
+const (
+	androidAppId                      = "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"
+	iOSAppId                          = "GADMediationAdapterPubMatic"
+	consentedProvidersSettingsListKey = "consented_providers_settings"
+	consentedProvidersKey             = "consented_providers"
+)
 
 var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -238,39 +242,75 @@ func modifyRequestWithGoogleFeature(request *openrtb2.BidRequest, features featu
 }
 
 func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
-	if len(request.Imp) == 0 {
+	if request == nil {
 		return
 	}
 
-	// Always set secure to 1
-	request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
+	if len(request.Imp) > 0 {
+		// Always set secure to 1
+		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
-	//Set gpid
-	if len(request.Imp[0].TagID) > 0 {
-		request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+		//Set gpid
+		if len(request.Imp[0].TagID) > 0 {
+			request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+		}
+
+		// Remove banner if impression is rewarded and banner and video both are present
+		if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
+			request.Imp[0].Banner = nil
+		}
+
+		// Remove unsupported fields from banner
+		if request.Imp[0].Banner != nil {
+			request.Imp[0].Banner.WMin = 0
+			request.Imp[0].Banner.HMin = 0
+			request.Imp[0].Banner.WMax = 0
+			request.Imp[0].Banner.HMax = 0
+		}
+
+		// Remove metric
+		request.Imp[0].Metric = nil
+
+		// Remove native from request
+		request.Imp[0].Native = nil
+
+		// Remove video from request
+		request.Imp[0].Video = nil
 	}
 
-	// Remove metric
-	request.Imp[0].Metric = nil
+	// change data type of user.ext.consented_providers_settings.consented_providers from []string to []int
+	if request.User != nil && request.User.Ext != nil {
+		consentedProvidedBytes, dataType, _, err := jsonparser.Get(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
+		if err != nil || dataType != jsonparser.Array {
+			return
+		}
 
-	// Remove banner if impression is rewarded and banner and video both are present
-	if request.Imp[0].Rwdd == 1 && request.Imp[0].Banner != nil && request.Imp[0].Video != nil {
-		request.Imp[0].Banner = nil
+		var consentedProviders []int
+		_, err = jsonparser.ArrayEach(consentedProvidedBytes, func(provider []byte, dataType jsonparser.ValueType, offset int, err error) {
+			if err != nil || dataType != jsonparser.String {
+				return
+			}
+
+			providerInt, err := strconv.Atoi(string(provider))
+			if err == nil {
+				consentedProviders = append(consentedProviders, providerInt)
+			}
+		})
+		if err != nil {
+			// Delete consented_providers_settings.consented_providers in case of errors to avoid bad request
+			request.User.Ext = jsonparser.Delete(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
+			return
+		}
+
+		providersBytes, err := jsoniterator.Marshal(consentedProviders)
+		if err != nil {
+			// Delete consented_providers_settings.consented_providers in case of errors to avoid bad request
+			request.User.Ext = jsonparser.Delete(request.User.Ext, consentedProvidersSettingsListKey, consentedProvidersKey)
+			return
+		}
+
+		request.User.Ext, _ = jsonparser.Set(request.User.Ext, providersBytes, consentedProvidersSettingsListKey, consentedProvidersKey)
 	}
-
-	// Remove unsupported fields from banner
-	if request.Imp[0].Banner != nil {
-		request.Imp[0].Banner.WMin = 0
-		request.Imp[0].Banner.HMin = 0
-		request.Imp[0].Banner.WMax = 0
-		request.Imp[0].Banner.HMax = 0
-	}
-
-	// Remove native from request
-	request.Imp[0].Native = nil
-
-	// Remove video from request
-	request.Imp[0].Video = nil
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
