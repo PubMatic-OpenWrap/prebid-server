@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 func getCountryFilterConfig(partnerConfigMap map[int]map[string]string) (mode string, countryCodes string) {
@@ -30,5 +31,5 @@ func isCountryAllowed(country string, mode string, countryCodes string) bool {
 }
 
 func shouldApplyCountryFilter(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointUnityLevelPlay
+	return sdkutils.IsSdkIntegration(endpoint)
 }
