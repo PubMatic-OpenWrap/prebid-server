@@ -269,6 +269,8 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	// Remove native from request
 	request.Imp[0].Native = nil
 
+	// Remove video from request
+	request.Imp[0].Video = nil
 }
 
 func modifyRequestWithSignalData(request *openrtb2.BidRequest, signalData *openrtb2.BidRequest) {
@@ -390,6 +392,10 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 
 	if len(signalApp.Keywords) > 0 {
 		request.App.Keywords = signalApp.Keywords
+	}
+
+	if len(request.App.StoreURL) == 0 {
+		request.App.StoreURL = signalApp.StoreURL
 	}
 }
 

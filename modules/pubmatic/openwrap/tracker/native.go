@@ -14,7 +14,7 @@ import (
 func injectNativeCreativeTrackers(native *openrtb2.Native, bid openrtb2.Bid, tracker models.OWTracker, endpoint string) (string, string, error) {
 	adm := bid.AdM
 	var err error
-	if endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK {
+	if endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointUnityLevelPlay {
 		return adm, getBURL(bid.BURL, tracker.TrackerURL), nil
 	}
 	if native == nil {
