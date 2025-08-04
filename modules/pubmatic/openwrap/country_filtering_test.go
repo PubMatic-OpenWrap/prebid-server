@@ -202,7 +202,10 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
 				PubIDStr:  "123",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: "bidderA"},
+					1: {
+						models.BidderCode:       "bidderA",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap:     map[string]struct{}(nil),
@@ -218,7 +221,10 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "IN"},
 				PubIDStr:  "123",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: "bidderA"},
+					1: {
+						models.BidderCode:       "bidderA",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap:     map[string]struct{}(nil),
@@ -235,8 +241,14 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "456",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: "bidderA"},
-					2: {models.BidderCode: "bidderB"},
+					1: {
+						models.BidderCode:       "bidderA",
+						models.SERVER_SIDE_FLAG: "1",
+					},
+					2: {
+						models.BidderCode:       "bidderB",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap:     map[string]struct{}{"bidderA": {}},
@@ -254,8 +266,14 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "789",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: "bidderA"},
-					2: {models.BidderCode: "bidderB"},
+					1: {
+						models.BidderCode:       "bidderA",
+						models.SERVER_SIDE_FLAG: "1",
+					},
+					2: {
+						models.BidderCode:       "bidderB",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap: map[string]struct{}{
@@ -275,8 +293,14 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "UK"},
 				PubIDStr:  "101",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: ""},
-					2: {models.BidderCode: "bidderC"},
+					1: {
+						models.BidderCode:       "",
+						models.SERVER_SIDE_FLAG: "1",
+					},
+					2: {
+						models.BidderCode:       "bidderC",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap:     map[string]struct{}{"bidderC": {}},
@@ -292,12 +316,46 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 				DeviceCtx: models.DeviceCtx{DerivedCountryCode: "US"},
 				PubIDStr:  "111",
 				PartnerConfigMap: map[int]map[string]string{
-					1: {models.BidderCode: "bidderA"},
+					1: {
+						models.BidderCode:       "bidderA",
+						models.SERVER_SIDE_FLAG: "1",
+					},
 				},
 			},
 			expectedMap:     map[string]struct{}{},
 			expectedAllFlag: false,
 			randomNumber:    3,
+		},
+		{
+			name: "mix_of_client_and_server_side_partners",
+			cacheSetup: func() {
+				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{"pubmatic": {}, "appnexus": {}}, nil)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "pubmatic", models.PartnerLevelThrottlingFeatureID)
+				mockMetric.EXPECT().RecordPartnerThrottledRequests("789", "appnexus", models.PartnerLevelThrottlingFeatureID)
+			},
+			rCtx: models.RequestCtx{
+				PubIDStr:  "789",
+				DeviceCtx: models.DeviceCtx{},
+				PartnerConfigMap: map[int]map[string]string{
+					-1: {
+						models.PREBID_PARTNER_NAME: "ALL",
+						models.BidderCode:          "ALL",
+					},
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+			},
+			expectedMap:     map[string]struct{}{"pubmatic": {}, "appnexus": {}},
+			expectedAllFlag: true,
+			randomNumber:    100,
 		},
 	}
 
