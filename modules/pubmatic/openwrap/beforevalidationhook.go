@@ -233,12 +233,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
-	var (
-		allPartnersThrottledFlag bool
-		allPartnersFilteredFlag  bool
-	)
+	allPartnersThrottledFlag := false
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	if allPartnersThrottledFlag {
+		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+		result.Errors = append(result.Errors, "All adapters Blocked due to Geo Filtering")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.V(models.LogLevelDebug).Info("All adapters Blocked due to Geo Filtering")
+		return result, nil
+	}
+
+	var allPartnersFilteredFlag bool
+
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)

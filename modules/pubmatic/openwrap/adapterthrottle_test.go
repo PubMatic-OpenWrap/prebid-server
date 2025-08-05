@@ -9,7 +9,8 @@ import (
 
 func TestGetAdapterThrottleMap(t *testing.T) {
 	type args struct {
-		partnerConfigMap map[int]map[string]string
+		partnerConfigMap   map[int]map[string]string
+		adapterThrottleMap map[string]struct{}
 	}
 	type want struct {
 		adapterThrottleMap       map[string]struct{}
@@ -40,7 +41,7 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 			},
 			want: want{
 				adapterThrottleMap:       map[string]struct{}{},
-				allPartnersThrottledFlag: true,
+				allPartnersThrottledFlag: false,
 			},
 		},
 		{
@@ -117,10 +118,96 @@ func TestGetAdapterThrottleMap(t *testing.T) {
 				allPartnersThrottledFlag: true,
 			},
 		},
+		{
+			name: "Adapter_throttle_map_has_thorttled_partners",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+					"appnexus": {},
+				},
+			},
+			want: want{
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}},
+				allPartnersThrottledFlag: true,
+			},
+		},
+		{
+			name: "Some_throttled_by_geo_some_by_config",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					2: {
+						models.PREBID_PARTNER_NAME: "rubicon",
+						models.BidderCode:          "rubicon",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+				},
+			},
+			want: want{
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}},
+				allPartnersThrottledFlag: false,
+			},
+		},
+		{
+			name: "Some_throttled_by_geo_other_by_config",
+			args: args{
+				partnerConfigMap: map[int]map[string]string{
+					0: {
+						models.PREBID_PARTNER_NAME: "pubmatic",
+						models.BidderCode:          "pubmatic",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					1: {
+						models.THROTTLE:            "0",
+						models.PREBID_PARTNER_NAME: "appnexus",
+						models.BidderCode:          "appnexus",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+					2: {
+						models.PREBID_PARTNER_NAME: "rubicon",
+						models.BidderCode:          "rubicon",
+						models.SERVER_SIDE_FLAG:    "1",
+					},
+				},
+				adapterThrottleMap: map[string]struct{}{
+					"pubmatic": {},
+					"rubicon":  {},
+				},
+			},
+			want: want{
+				adapterThrottleMap:       map[string]struct{}{"appnexus": {}, "pubmatic": {}, "rubicon": {}},
+				allPartnersThrottledFlag: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			adapterThrottleMap, allPartnersThrottledFlag := GetAdapterThrottleMap(tt.args.partnerConfigMap)
+			adapterThrottleMap, allPartnersThrottledFlag := GetAdapterThrottleMap(tt.args.partnerConfigMap, tt.args.adapterThrottleMap)
 			assert.Equal(t, tt.want.adapterThrottleMap, adapterThrottleMap)
 			assert.Equal(t, tt.want.allPartnersThrottledFlag, allPartnersThrottledFlag)
 		})
