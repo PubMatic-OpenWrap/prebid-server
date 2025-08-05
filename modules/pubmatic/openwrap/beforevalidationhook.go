@@ -238,9 +238,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
-		result.Errors = append(result.Errors, "All adapters throttled")
+		result.Errors = append(result.Errors, "All adapters Blocked due to Geo Filtering")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		glog.V(models.LogLevelDebug).Info("All adapters throttled")
+		glog.V(models.LogLevelDebug).Info("All adapters Blocked due to Geo Filtering")
 		return result, nil
 	}
 
