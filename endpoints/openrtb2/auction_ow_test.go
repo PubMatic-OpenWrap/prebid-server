@@ -30,10 +30,12 @@ func TestRecordRejectedBids(t *testing.T) {
 	type args struct {
 		pubid       string
 		seatNonBids []openrtb_ext.SeatNonBid
+		label       metrics.Labels
 	}
 
 	type want struct {
-		expectedCalls int
+		expectedRejectedBidsCalls int
+		expectedBadRequestCalls   int
 	}
 
 	tests := []struct {
@@ -45,9 +47,29 @@ func TestRecordRejectedBids(t *testing.T) {
 			description: "empty rejected bids",
 			args: args{
 				seatNonBids: []openrtb_ext.SeatNonBid{},
+				label: metrics.Labels{
+					RequestStatus: "ok",
+				},
 			},
 			want: want{
-				expectedCalls: 0,
+				expectedRejectedBidsCalls: 0,
+				expectedBadRequestCalls:   0,
+			},
+		},
+		{
+			description: "empty rejected bids with badinput status",
+			args: args{
+				pubid:       "1010",
+				seatNonBids: []openrtb_ext.SeatNonBid{},
+				label: metrics.Labels{
+					RequestStatus: "badinput",
+					RType:         metrics.ReqTypeORTB2Web,
+					PubID:         "1010",
+				},
+			},
+			want: want{
+				expectedRejectedBidsCalls: 0,
+				expectedBadRequestCalls:   1,
 			},
 		},
 		{
@@ -78,19 +100,27 @@ func TestRecordRejectedBids(t *testing.T) {
 						Seat: "appnexus",
 					},
 				},
+				label: metrics.Labels{
+					RequestStatus: "ok",
+				},
 			},
 			want: want{
-				expectedCalls: 4,
+				expectedRejectedBidsCalls: 4,
+				expectedBadRequestCalls:   0,
 			},
 		},
 	}
 
 	for _, test := range tests {
-		me := &metrics.MetricsEngineMock{}
-		me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+		t.Run(test.description, func(t *testing.T) {
+			me := &metrics.MetricsEngineMock{}
+			me.On("RecordRejectedBids", mock.Anything, mock.Anything, mock.Anything).Return()
+			me.On("RecordBadRequest", mock.Anything, mock.Anything, mock.Anything).Return()
 
-		recordRejectedBids(test.args.pubid, test.args.seatNonBids, me)
-		me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedCalls)
+			recordRejectedBids(test.args.pubid, test.args.seatNonBids, me, test.args.label)
+			me.AssertNumberOfCalls(t, "RecordRejectedBids", test.want.expectedRejectedBidsCalls)
+			me.AssertNumberOfCalls(t, "RecordBadRequest", test.want.expectedBadRequestCalls)
+		})
 	}
 }
 
