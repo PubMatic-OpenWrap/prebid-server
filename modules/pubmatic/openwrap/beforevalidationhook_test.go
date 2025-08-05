@@ -4297,6 +4297,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5626,6 +5627,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
+
 			m := OpenWrap{
 				cfg:             tt.fields.cfg,
 				cache:           tt.fields.cache,

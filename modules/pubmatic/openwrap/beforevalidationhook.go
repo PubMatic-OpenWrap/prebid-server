@@ -217,17 +217,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.Warnings = append(result.Warnings, "update the rCtx.PartnerConfigMap with ABTest data")
 	}
 
-	allPartnersThrottledFlag := false
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
-
-	if allPartnersThrottledFlag {
-		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
-		result.Errors = append(result.Errors, "All adapters throttled")
-		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		glog.V(models.LogLevelDebug).Info("All adapters throttled")
-		return result, nil
-	}
-
 	//set the profile MetaData for logging and tracking
 	rCtx.ProfileType = getProfileType(partnerConfigMap)
 	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap, m.profileMetaData)
@@ -243,6 +232,17 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
+
+	allPartnersThrottledFlag := false
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
+
+	if allPartnersThrottledFlag {
+		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+		result.Errors = append(result.Errors, "All adapters throttled")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.V(models.LogLevelDebug).Info("All adapters throttled")
+		return result, nil
+	}
 
 	var allPartnersFilteredFlag bool
 
