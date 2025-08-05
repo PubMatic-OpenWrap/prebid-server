@@ -470,11 +470,12 @@ func GetMultiFloors(impMultiFloorsMap map[string]*MultiFloors, impID string) []f
 	if impMultiFloorsMap == nil {
 		return nil
 	}
-	if _, ok := impMultiFloorsMap[impID]; !ok || impMultiFloorsMap[impID] == nil {
+
+	mf, ok := impMultiFloorsMap[impID]
+	if !ok || mf == nil {
 		return nil
 	}
 
-	mf := impMultiFloorsMap[impID]
 	multifloors := []float64{mf.Tier1, mf.Tier2, mf.Tier3}
 	if mf.Tier4 > 0 {
 		multifloors = append(multifloors, mf.Tier4)

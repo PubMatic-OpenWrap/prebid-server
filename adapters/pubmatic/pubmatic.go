@@ -21,7 +21,6 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
-const MAX_IMPRESSIONS_PUBMATIC = 30
 const MAX_MULTIFLOORS_PUBMATIC = 5
 
 const (
