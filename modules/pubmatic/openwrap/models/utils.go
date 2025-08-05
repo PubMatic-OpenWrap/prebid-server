@@ -466,20 +466,21 @@ func ToFixed(num float64, precision int) float64 {
 	return float64(round(num*output)) / output
 }
 
-func GetMultiFloors(multiFloors map[string]*MultiFloors, impID string) []float64 {
-	if multiFloors == nil {
+func GetMultiFloors(impMultiFloorsMap map[string]*MultiFloors, impID string) []float64 {
+	if impMultiFloorsMap == nil {
 		return nil
 	}
-	if _, ok := multiFloors[impID]; !ok || multiFloors[impID] == nil {
+	if _, ok := impMultiFloorsMap[impID]; !ok || impMultiFloorsMap[impID] == nil {
 		return nil
 	}
 
-	multifloors := []float64{multiFloors[impID].Tier1, multiFloors[impID].Tier2, multiFloors[impID].Tier3}
-	if multiFloors[impID].Tier4 > 0 {
-		multifloors = append(multifloors, multiFloors[impID].Tier4)
+	mf := impMultiFloorsMap[impID]
+	multifloors := []float64{mf.Tier1, mf.Tier2, mf.Tier3}
+	if mf.Tier4 > 0 {
+		multifloors = append(multifloors, mf.Tier4)
 	}
-	if multiFloors[impID].Tier5 > 0 {
-		multifloors = append(multifloors, multiFloors[impID].Tier5)
+	if mf.Tier5 > 0 {
+		multifloors = append(multifloors, mf.Tier5)
 	}
 	return multifloors
 }
