@@ -1,7 +1,6 @@
 package devicedetection
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -35,7 +34,7 @@ func handleAuctionRequestHook(ctx hookstage.ModuleInvocationContext, deviceDetec
 
 			result, err := hydrateFields(deviceInfo, rawPayload)
 			if err != nil {
-				return rawPayload, hookexecution.NewFailure("%s", fmt.Sprintf("error hydrating fields %s", err))
+				return rawPayload, hookexecution.NewFailure("error hydrating fields %s", err)
 			}
 
 			return result, nil
