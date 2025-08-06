@@ -365,7 +365,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// Add size 300x600 for interstitial banner
-		if sdkutils.IsSdkIntegration(rCtx.Endpoint) && imp.Instl == 1 {
+		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && imp.Instl == 1 {
 			sdkutils.AddSize300x600ForInterstitialBanner(&imp)
 		}
 
