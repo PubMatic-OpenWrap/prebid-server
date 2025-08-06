@@ -63,7 +63,7 @@ func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server co
 // MakeRequests prepares oRTB bidder-specific request information using which prebid server make call(s) to bidder.
 func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	if o.bidderParamsConfig == nil {
-		return nil, []error{util.NewBadInputError(util.ErrNilBidderParamCfg.Error())}
+		return nil, []error{util.NewBadInputError("%s", util.ErrNilBidderParamCfg.Error())}
 	}
 
 	requestBuilder := newRequestBuilder(
@@ -73,7 +73,7 @@ func (o *adapter) MakeRequests(request *openrtb2.BidRequest, requestInfo *adapte
 		o.bidderParamsConfig.GetRequestParams(o.bidderName.String()))
 
 	if err := requestBuilder.parseRequest(request); err != nil {
-		return nil, []error{util.NewBadInputError(err.Error())}
+		return nil, []error{util.NewBadInputError("%s", err.Error())}
 	}
 
 	return requestBuilder.makeRequest()

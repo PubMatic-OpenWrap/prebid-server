@@ -57,7 +57,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		//step 1: clone request
 		if requestCloneRequired {
 			if newRequest, err = cloneRequest(rb.rawRequest); err != nil {
-				errs = append(errs, util.NewBadInputError(err.Error()))
+				errs = append(errs, util.NewBadInputError("%s", err.Error()))
 				continue
 			}
 		}
@@ -68,7 +68,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 
 		//step 3: get endpoint
 		if endpoint, err = rb.getEndpoint(bidderParams); err != nil {
-			errs = append(errs, util.NewBadInputError(err.Error()))
+			errs = append(errs, util.NewBadInputError("%s", err.Error()))
 			continue
 		}
 
@@ -82,7 +82,7 @@ func (rb *multiRequestBuilder) makeRequest() (requestData []*adapters.RequestDat
 		}
 		//step 5: append new request data
 		if requestData, err = appendRequestData(requestData, newRequest, endpoint, []string{imp[idKey].(string)}); err != nil {
-			errs = append(errs, util.NewBadInputError(err.Error()))
+			errs = append(errs, util.NewBadInputError("%s", err.Error()))
 		}
 	}
 	return requestData, errs

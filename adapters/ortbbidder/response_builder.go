@@ -38,7 +38,7 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 
 	err := jsonutil.UnmarshalValid(bidderResponseBytes, &rb.bidderResponse)
 	if err != nil {
-		return []error{util.NewBadServerResponseError(err.Error())}
+		return []error{util.NewBadServerResponseError("%s", err.Error())}
 	}
 	// Create a new ParamResolver with the bidder response.
 	paramResolver := resolver.New(rb.request, rb.bidderResponse)
@@ -101,12 +101,12 @@ func (rb *responseBuilder) buildAdapterResponse() (resp *adapters.BidderResponse
 	var adapterResponeBytes json.RawMessage
 	adapterResponeBytes, err = jsonutil.Marshal(rb.adapterRespone)
 	if err != nil {
-		return nil, util.NewBadServerResponseError(err.Error())
+		return nil, util.NewBadServerResponseError("%s", err.Error())
 	}
 
 	err = jsonutil.UnmarshalValid(adapterResponeBytes, &resp)
 	if err != nil {
-		return nil, util.NewBadServerResponseError(err.Error())
+		return nil, util.NewBadServerResponseError("%s", err.Error())
 	}
 	return
 }
@@ -120,7 +120,7 @@ func collectWarningMessages(errs, resolverErrors []error, parameter string, isDe
 				errs = append(errs, util.NewWarning("Potential issue encountered while setting the response parameter [%s]", parameter))
 				return errs
 			}
-			errs = append(errs, util.NewWarning(err.Error()))
+			errs = append(errs, util.NewWarning("%s", err.Error()))
 		}
 	}
 	return errs

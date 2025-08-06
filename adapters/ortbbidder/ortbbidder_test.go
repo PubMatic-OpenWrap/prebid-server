@@ -149,7 +149,7 @@ func TestMakeRequests(t *testing.T) {
 				bidderCfg: bidderparams.NewBidderConfig(),
 			},
 			want: want{
-				errors: []error{util.NewBadInputError(util.ErrImpMissing.Error())},
+				errors: []error{util.NewBadInputError("%s", util.ErrImpMissing.Error())},
 			},
 		},
 		{

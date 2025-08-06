@@ -52,7 +52,7 @@ func (rb *singleRequestBuilder) parseRequest(request *openrtb2.BidRequest) (err 
 // it create single RequestData object for all impressions.
 func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestData, errs []error) {
 	if len(rb.imps) == 0 {
-		errs = append(errs, util.NewBadInputError(util.ErrImpMissing.Error()))
+		errs = append(errs, util.NewBadInputError("%s", util.ErrImpMissing.Error()))
 		return
 	}
 
@@ -63,7 +63,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 
 	//step 1: get endpoint
 	if endpoint, err = rb.getEndpoint(getImpExtBidderParams(rb.imps[0])); err != nil {
-		errs = append(errs, util.NewBadInputError(err.Error()))
+		errs = append(errs, util.NewBadInputError("%s", err.Error()))
 		return
 	}
 
@@ -76,7 +76,7 @@ func (rb *singleRequestBuilder) makeRequest() (requestData []*adapters.RequestDa
 
 	//step 3: append new request data
 	if requestData, err = appendRequestData(requestData, rb.newRequest, endpoint, rb.impIDs); err != nil {
-		errs = append(errs, util.NewBadInputError(err.Error()))
+		errs = append(errs, util.NewBadInputError("%s", err.Error()))
 	}
 	return
 }
