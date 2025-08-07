@@ -5,7 +5,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/exchange/entities"
-	jsonpatch "gopkg.in/evanphx/json-patch.v4"
+	jsonpatch "gopkg.in/evanphx/json-patch.v5"
 
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/config"

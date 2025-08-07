@@ -17,8 +17,8 @@ func TestAddTargetingKeys(t *testing.T) {
 		bidExt   string
 		expect   map[string]string
 	}{
-		{scenario: "key_not_exists", key: "hb_pb_cat_dur", value: "some_value", bidExt: `{"prebid":{"targeting":{}}}`, expect: map[string]string{"hb_pb_cat_dur": "some_value"}},
-		{scenario: "key_already_exists", key: "hb_pb_cat_dur", value: "new_value", bidExt: `{"prebid":{"targeting":{"hb_pb_cat_dur":"old_value"}}}`, expect: map[string]string{"hb_pb_cat_dur": "new_value"}},
+		{scenario: "key_not_exists", key: string(openrtb_ext.CategoryDurationKey), value: "some_value", bidExt: `{"prebid":{"targeting":{}}}`, expect: map[string]string{"hb_pb_cat_dur": "some_value"}},
+		{scenario: "key_already_exists", key: string(openrtb_ext.CategoryDurationKey), value: "new_value", bidExt: `{"prebid":{"targeting":{"hb_pb_cat_dur":"old_value"}}}`, expect: map[string]string{"hb_pb_cat_dur": "new_value"}},
 	}
 	for _, test := range tests {
 		t.Run(test.scenario, func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAddTargetingKeys(t *testing.T) {
 			assert.Equal(t, test.expect, extBid.Prebid.Targeting)
 		})
 	}
-	assert.Equal(t, "Invalid bid", AddTargetingKey(nil, openrtb_ext.HbCategoryDurationKey, "some value").Error())
+	assert.Equal(t, "Invalid bid", AddTargetingKey(nil, "hb"+openrtb_ext.CategoryDurationKey, "some value").Error())
 }
 
 func TestConvertToV25VideoRequest(t *testing.T) {

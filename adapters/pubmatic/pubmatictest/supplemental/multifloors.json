@@ -114,6 +114,7 @@
                       "pubmatic.com"
                     ],
                     "crid": "29681110",
+                    "mtype": 1,
                     "h": 250,
                     "w": 300,
                     "dealid": "test deal",
@@ -192,6 +193,7 @@
                       "pubmatic.com"
                     ],
                     "crid": "29681110",
+                    "mtype": 1,
                     "h": 250,
                     "w": 300,
                     "dealid": "test deal",
@@ -270,6 +272,7 @@
                       "pubmatic.com"
                     ],
                     "crid": "29681110",
+                    "mtype": 1,
                     "h": 250,
                     "w": 300,
                     "dealid": "test deal",
@@ -348,6 +351,7 @@
                       "pubmatic.com"
                     ],
                     "crid": "29681110",
+                    "mtype": 1,
                     "h": 250,
                     "w": 300,
                     "dealid": "test deal",
@@ -426,6 +430,7 @@
                       "pubmatic.com"
                     ],
                     "crid": "29681110",
+                    "mtype": 1,
                     "h": 250,
                     "w": 300,
                     "dealid": "test deal",
@@ -458,6 +463,7 @@
                 "pubmatic.com"
               ],
               "crid": "29681110",
+              "mtype": 1,
               "w": 300,
               "h": 250,
               "dealid": "test deal",
@@ -485,6 +491,7 @@
                 "pubmatic.com"
               ],
               "crid": "29681110",
+              "mtype": 1,
               "w": 300,
               "h": 250,
               "dealid": "test deal",
@@ -512,6 +519,7 @@
                 "pubmatic.com"
               ],
               "crid": "29681110",
+              "mtype": 1,
               "w": 300,
               "h": 250,
               "dealid": "test deal",
@@ -539,6 +547,7 @@
                 "pubmatic.com"
               ],
               "crid": "29681110",
+              "mtype": 1,
               "w": 300,
               "h": 250,
               "dealid": "test deal",
@@ -566,6 +575,7 @@
                 "pubmatic.com"
               ],
               "crid": "29681110",
+              "mtype": 1,
               "w": 300,
               "h": 250,
               "dealid": "test deal",

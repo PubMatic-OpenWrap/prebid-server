@@ -15,11 +15,11 @@ import (
 
 // whitelist of prebid targeting keys
 var prebidTargetingKeysWhitelist = map[string]struct{}{
-	string(openrtb_ext.HbpbConstantKey): {},
-	models.HbBuyIdPubmaticConstantKey:   {},
+	models.DefaultTargetingKeyPrefix + string(openrtb_ext.PbKey): {},
+	models.HbBuyIdPubmaticConstantKey:                            {},
 	// OTT - 18 Deal priortization support
 	// this key required to send deal prefix and priority
-	string(openrtb_ext.HbCategoryDurationKey): {},
+	models.DefaultTargetingKeyPrefix + string(openrtb_ext.CategoryDurationKey): {},
 }
 
 // check if prebid targeting keys are whitelisted

@@ -3394,3 +3394,44 @@ func TestBuilderNativo(t *testing.T) {
 		})
 	}
 }
+
+func TestBuilderOMS(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (anyOf pid or publisherId) is present-pid",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"pid": "dbdsfh"}}},
+			want:    json.RawMessage(`{"pid": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (anyOf pid or publisherId) is present-publisherId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"publisherId": 1234}}},
+			want:    json.RawMessage(`{"publisherId": 1234}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of pid or publisherId) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderOMS(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderOMS() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}

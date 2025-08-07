@@ -199,7 +199,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	metricsRegistry := metricsConf.NewMetricsRegistry()
 	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor}
-	repo, moduleStageNames, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
+	repo, moduleStageNames, shutdownModules, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)
 	}
@@ -211,7 +211,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	analyticsRunner := analyticsBuild.New(&cfg.Analytics)
 
 	// register the analytics runner for shutdown
-	r.shutdowns = append(r.shutdowns, shutdown, analyticsRunner.Shutdown)
+	r.shutdowns = append(r.shutdowns, shutdown, analyticsRunner.Shutdown, shutdownModules.Shutdown)
 
 	paramsValidator, err := openrtb_ext.NewBidderParamsValidator(schemaDirectory)
 	if err != nil {
@@ -238,7 +238,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	cacheClient := pbc.NewClient(cacheHttpClient, &cfg.CacheURL, &cfg.ExtCacheURL, r.MetricsEngine)
 
-	adapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine)
+	adapters, singleFormatAdapters, adaptersErrs := exchange.BuildAdapters(generalHttpClient, cfg, cfg.BidderInfos, r.MetricsEngine)
 	if len(adaptersErrs) > 0 {
 		errs := errortypes.NewAggregateError("Failed to initialize adapters", adaptersErrs)
 		return nil, errs
@@ -254,7 +254,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	tmaxAdjustments := exchange.ProcessTMaxAdjustments(cfg.TmaxAdjustments)
 	planBuilder := hooks.NewExecutionPlanBuilder(cfg.Hooks, repo)
 	macroReplacer := macros.NewStringIndexBasedReplacer()
-	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, requestValidator, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher)
+	theExchange := exchange.NewExchange(adapters, cacheClient, cfg, requestValidator, syncersByBidder, r.MetricsEngine, cfg.BidderInfos, gdprPermsBuilder, rateConvertor, categoriesFetcher, adsCertSigner, macroReplacer, priceFloorFetcher, singleFormatAdapters)
 	var uuidGenerator uuidutil.UUIDRandomGenerator
 	openrtbEndpoint, err := openrtb2.NewEndpoint(uuidGenerator, theExchange, requestValidator, fetcher, accounts, cfg, r.MetricsEngine, analyticsRunner, disabledBidders, defReqJSON, activeBidders, storedRespFetcher, planBuilder, tmaxAdjustments)
 	if err != nil {

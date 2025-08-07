@@ -297,6 +297,7 @@ const (
 	HbBuyIdPrefix               = "hb_buyid_"
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"
 	PwtBuyIdPubmaticConstantKey = "pwtbuyid_pubmatic"
+	DefaultTargetingKeyPrefix   = "hb"
 
 	SChainDBKey           = "sChain"
 	SChainObjectDBKey     = "sChainObj"

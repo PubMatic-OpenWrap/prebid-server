@@ -240,6 +240,7 @@ func testCTVExchange(testCfg *ctvtestConfigValues, adapterMap map[openrtb_ext.Bi
 		&adscert.NilSigner{},
 		macros.NewStringIndexBasedReplacer(),
 		&floors.PriceFloorFetcher{},
+		nil,
 	)
 
 	testExchange = &exchangeTestWrapper{

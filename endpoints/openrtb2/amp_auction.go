@@ -19,7 +19,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/ortb"
 	"github.com/prebid/prebid-server/v3/util/uuidutil"
-	jsonpatch "gopkg.in/evanphx/json-patch.v4"
+	jsonpatch "gopkg.in/evanphx/json-patch.v5"
 
 	accountService "github.com/prebid/prebid-server/v3/account"
 	"github.com/prebid/prebid-server/v3/amp"
@@ -545,7 +545,7 @@ func (deps *endpointDeps) parseAmpRequest(httpRequest *http.Request) (req *openr
 		return
 	}
 
-	if err := ortb.SetDefaults(req); err != nil {
+	if err := ortb.SetDefaults(req, deps.cfg.TmaxDefault); err != nil {
 		errs = append(errs, err)
 		return
 	}
