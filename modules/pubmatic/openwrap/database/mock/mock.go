@@ -245,3 +245,17 @@ func (mr *MockDatabaseMockRecorder) GetWrapperSlotMappings(arg0, arg1, arg2 inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWrapperSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetWrapperSlotMappings), arg0, arg1, arg2)
 }
+
+// GetLatestCountryPartnerFilter mocks base method.
+func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestCountryPartnerFilter")
+	ret0, _ := ret[0].(map[string]map[string]struct{})
+	return ret0
+}
+
+// GetLatestCountryPartnerFilter indicates an expected call of GetLatestCountryPartnerFilter.
+func (mr *MockDatabaseMockRecorder) GetLatestCountryPartnerFilter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestCountryPartnerFilter", reflect.TypeOf((*MockDatabase)(nil).GetLatestCountryPartnerFilter))
+}

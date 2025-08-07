@@ -267,6 +267,10 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.UA = signalDevice.UA
 	}
 
+	if signalDevice.IP != "" {
+		request.Device.IP = signalDevice.IP
+	}
+
 	if signalDevice.Geo != nil {
 		if request.Device.Geo == nil {
 			request.Device.Geo = &openrtb2.Geo{}

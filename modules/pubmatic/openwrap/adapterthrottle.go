@@ -7,22 +7,37 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-// GetAdapterThrottleMap creates map of adapter and bool value which tells whether the adapter should be throtled or not
-func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string) (map[string]struct{}, bool) {
-	adapterThrottleMap := make(map[string]struct{})
-	allPartnersThrottledFlag := true
+// GetAdapterThrottleMap creates a map of adapters that should be throttled and returns whether all partners are throttled.
+func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string, adapterThrottleMap map[string]struct{}) (map[string]struct{}, bool) {
+	totalValidPartners := 0
+	if adapterThrottleMap == nil {
+		adapterThrottleMap = make(map[string]struct{})
+	}
+
 	for _, partnerConfig := range partnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 			continue
 		}
+
+		bidderCode := partnerConfig[models.BidderCode]
+		if bidderCode == "" {
+			continue
+		}
+
+		totalValidPartners++
+
+		// If already marked as throttled, skip further check
+		if _, alreadyThrottled := adapterThrottleMap[bidderCode]; alreadyThrottled {
+			continue
+		}
+
 		if ThrottleAdapter(partnerConfig) {
-			adapterThrottleMap[partnerConfig[models.BidderCode]] = struct{}{}
-		} else if allPartnersThrottledFlag {
-			allPartnersThrottledFlag = false
+			adapterThrottleMap[bidderCode] = struct{}{}
 		}
 	}
 
-	return adapterThrottleMap, allPartnersThrottledFlag
+	allPartnersThrottled := totalValidPartners > 0 && len(adapterThrottleMap) == totalValidPartners
+	return adapterThrottleMap, allPartnersThrottled
 }
 
 // ThrottleAdapter this function returns bool value for whether a adapter should be throttled or not

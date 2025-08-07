@@ -6,9 +6,11 @@ package mock_cache
 
 import (
 	reflect "reflect"
+	"time"
 
 	gomock "github.com/golang/mock/gomock"
 	openrtb2 "github.com/prebid/openrtb/v20/openrtb2"
+	mysql "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mysql"
 	models "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	adpodconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adpodconfig"
 	adunitconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -253,4 +255,32 @@ func (m *MockCache) Set(arg0 string, arg1 interface{}) {
 func (mr *MockCacheMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), arg0, arg1)
+}
+
+// GetThrottlePartnersWithCriteria mocks base method.
+func (m *MockCache) GetThrottlePartnersWithCriteria(arg0 string) (map[string]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThrottlePartnersWithCriteria", arg0)
+	ret0, _ := ret[0].(map[string]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetThrottlePartnersWithCriteria indicates an expected call of GetThrottlePartnersWithCriteria.
+func (mr *MockCacheMockRecorder) GetThrottlePartnersWithCriteria(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThrottlePartnersWithCriteria", reflect.TypeOf((*MockCache)(nil).GetThrottlePartnersWithCriteria), arg0)
+}
+
+// NewCountryPartnerFilter mocks base method.
+func (_m *MockCache) NewCountryPartnerFilter(refreshInterval time.Duration) (*mysql.CountryPartnerFilterDB, error) {
+	ret := _m.ctrl.Call(_m, "NewCountryPartnerFilter", refreshInterval)
+	ret0, _ := ret[0].(*mysql.CountryPartnerFilterDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NewCountryPartnerFilter indicates an expected call of NewCountryPartnerFilter.
+func (_mr *MockCacheMockRecorder) NewCountryPartnerFilter(refreshInterval interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "NewCountryPartnerFilter", reflect.TypeOf((*MockCache)(nil).NewCountryPartnerFilter), refreshInterval)
 }
