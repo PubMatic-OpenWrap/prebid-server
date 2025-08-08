@@ -48,7 +48,7 @@ func TestMySqlDBGetProfileAdUnitMultiFloors(t *testing.T) {
 			wantErr: errors.New("row error"),
 		},
 		{
-			name: "Success case",
+			name: "Success case with different no. of tiers floors",
 			fields: fields{
 				cfg: config.Database{
 					MaxDbContextTimeout: 5,
@@ -64,7 +64,7 @@ func TestMySqlDBGetProfileAdUnitMultiFloors(t *testing.T) {
 				}
 				rows := sqlmock.NewRows([]string{"adunit_name", "profile_id", "value"}).
 					AddRow("adunit1", 12344, `{"isActive":true,"tier1":1.0,"tier2":0.8,"tier3":0.6}`).
-					AddRow("adunit2", 54532, `{"isActive":true,"tier1":2.0,"tier2":1.6,"tier3":1.2}`)
+					AddRow("adunit2", 54532, `{"isActive":true,"tier1":2.0,"tier2":1.6,"tier3":1.2,"tier4":2.4}`)
 				mock.ExpectQuery("SELECT").WillReturnRows(rows)
 				return db
 			},
@@ -73,7 +73,7 @@ func TestMySqlDBGetProfileAdUnitMultiFloors(t *testing.T) {
 					"adunit1": {IsActive: true, Tier1: 1.0, Tier2: 0.8, Tier3: 0.6},
 				},
 				54532: map[string]*models.MultiFloors{
-					"adunit2": {IsActive: true, Tier1: 2.0, Tier2: 1.6, Tier3: 1.2},
+					"adunit2": {IsActive: true, Tier1: 2.0, Tier2: 1.6, Tier3: 1.2, Tier4: 2.4},
 				},
 			},
 			wantErr: nil,

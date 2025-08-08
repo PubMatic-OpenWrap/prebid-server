@@ -275,6 +275,8 @@ type MultiFloors struct {
 	Tier1    float64 `json:"tier1,omitempty"`
 	Tier2    float64 `json:"tier2,omitempty"`
 	Tier3    float64 `json:"tier3,omitempty"`
+	Tier4    float64 `json:"tier4,omitempty"`
+	Tier5    float64 `json:"tier5,omitempty"`
 }
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {
