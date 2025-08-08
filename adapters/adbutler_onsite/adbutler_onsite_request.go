@@ -13,26 +13,28 @@ import (
 )
 
 type AdButlerOnsiteRequest struct {
-	ID           int                    `json:"ID,omitempty"`
-	Size         string                 `json:"size,omitempty"`
-	Type         string                 `json:"type,omitempty"`
-	Ads          string                 `json:"ads,omitempty"`
-	KeyWords     []string               `json:"kw,omitempty"`
-	ZoneIDs      []int                  `json:"zoneIDs,omitempty"`
-	Limit        map[int]int            `json:"limit,omitempty"`
-	Target       map[string]interface{} `json:"_abdk_json,omitempty"`
-	Reporting    map[string]interface{} `json:"_eld,omitempty"`
-	UserID       string                 `json:"adb_uid,omitempty"`
-	IP           string                 `json:"ip,omitempty"`
-	UserAgent    string                 `json:"ua,omitempty"`
-	Referrer     string                 `json:"referrer,omitempty"`
-	PageID       int                    `json:"pid,omitempty"`
-	Sequence     int                    `json:"place,omitempty"`
-	CustomParam1 string                 `json:"customParam1,omitempty"`
-	CustomParam2 string                 `json:"customParam2,omitempty"`
-	CustomParam3 string                 `json:"customParam3,omitempty"`
-	CustomParam4 string                 `json:"customParam4,omitempty"`
-	CustomParam5 string                 `json:"customParam5,omitempty"`
+	ID               int                    `json:"ID,omitempty"`
+	Size             string                 `json:"size,omitempty"`
+	Type             string                 `json:"type,omitempty"`
+	Ads              string                 `json:"ads,omitempty"`
+	KeyWords         []string               `json:"kw,omitempty"`
+	ZoneIDs          []int                  `json:"zoneIDs,omitempty"`
+	Limit            map[int]int            `json:"limit,omitempty"`
+	Target           map[string]interface{} `json:"_abdk_json,omitempty"`
+	Reporting        map[string]interface{} `json:"_eld,omitempty"`
+	UserID           string                 `json:"adb_uid,omitempty"`
+	IP               string                 `json:"ip,omitempty"`
+	UserAgent        string                 `json:"ua,omitempty"`
+	Referrer         string                 `json:"referrer,omitempty"`
+	PageID           int                    `json:"pid,omitempty"`
+	Sequence         int                    `json:"place,omitempty"`
+	DsConsentApplies string                 `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   string                 `json:"ds_consent_given,omitempty"`
+	CustomParam1     string                 `json:"customParam1,omitempty"`
+	CustomParam2     string                 `json:"customParam2,omitempty"`
+	CustomParam3     string                 `json:"customParam3,omitempty"`
+	CustomParam4     string                 `json:"customParam4,omitempty"`
+	CustomParam5     string                 `json:"customParam5,omitempty"`
 }
 
 // getSimpleHash generates a simple hash for a given page name
@@ -179,11 +181,12 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	//Add Dynamic Targeting from AdRequest
 
 	for _, targetObj := range requestExt.Targeting {
-		if targetObj.Name == "PageSource" {
-			pageSourceValue := targetObj.Value.(string)
-			if pageSourceValue != "" {
-				adButlerReq.Target["page_source"] = pageSourceValue
-			}
+		if targetObj.Name == "ds_consent_applies" {
+			adButlerReq.DsConsentApplies = targetObj.Value.(string)
+			continue
+		}
+		if targetObj.Name == "ds_consent_given" {
+			adButlerReq.DsConsentGiven = targetObj.Value.(string)
 			continue
 		}
 		adButlerReq.Target[targetObj.Name] = targetObj.Value
