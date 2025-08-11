@@ -152,7 +152,7 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 		expected openrtb2.Imp
 	}{
 		{
-			name: "nil Banner",
+			name: "Nil Banner",
 			imp: openrtb2.Imp{
 				ID: "test_imp",
 			},
@@ -161,7 +161,7 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 			},
 		},
 		{
-			name: "Banner with W/H fields set to 320x480 (phone portrait), no 300x600",
+			name: "Banner with W/H set to 320x480, no 300x600",
 			imp: openrtb2.Imp{
 				ID: "test_imp",
 				Banner: &openrtb2.Banner{
@@ -181,47 +181,7 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 			},
 		},
 		{
-			name: "Banner with W/H fields set to 768x1024 (tablet portrait), no 300x600",
-			imp: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](768),
-					H: ptrutil.ToPtr[int64](1024),
-				},
-			},
-			expected: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](768),
-					H: ptrutil.ToPtr[int64](1024),
-					Format: []openrtb2.Format{
-						{W: 300, H: 600},
-					},
-				},
-			},
-		},
-		{
-			name: "Banner with W/H fields set to 1024x768 (tablet landscape), no 300x600",
-			imp: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](1024),
-					H: ptrutil.ToPtr[int64](768),
-				},
-			},
-			expected: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					W: ptrutil.ToPtr[int64](1024),
-					H: ptrutil.ToPtr[int64](768),
-					Format: []openrtb2.Format{
-						{W: 300, H: 600},
-					},
-				},
-			},
-		},
-		{
-			name: "Banner with W/H fields set to 300x600 already",
+			name: "Banner with W/H set to 300x600 already",
 			imp: openrtb2.Imp{
 				ID: "test_imp",
 				Banner: &openrtb2.Banner{
@@ -238,7 +198,7 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 			},
 		},
 		{
-			name: "Banner with Format containing 320x480 (phone portrait), no 300x600",
+			name: "Banner with Format containing 320x480, no 300x600",
 			imp: openrtb2.Imp{
 				ID: "test_imp",
 				Banner: &openrtb2.Banner{
@@ -253,50 +213,6 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 				Banner: &openrtb2.Banner{
 					Format: []openrtb2.Format{
 						{W: 320, H: 480},
-						{W: 320, H: 50},
-						{W: 300, H: 600},
-					},
-				},
-			},
-		},
-		{
-			name: "Banner with Format containing 768x1024 (tablet portrait), no 300x600",
-			imp: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					Format: []openrtb2.Format{
-						{W: 768, H: 1024},
-						{W: 320, H: 50},
-					},
-				},
-			},
-			expected: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					Format: []openrtb2.Format{
-						{W: 768, H: 1024},
-						{W: 320, H: 50},
-						{W: 300, H: 600},
-					},
-				},
-			},
-		},
-		{
-			name: "Banner with Format containing 1024x768 (tablet landscape), no 300x600",
-			imp: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					Format: []openrtb2.Format{
-						{W: 1024, H: 768},
-						{W: 320, H: 50},
-					},
-				},
-			},
-			expected: openrtb2.Imp{
-				ID: "test_imp",
-				Banner: &openrtb2.Banner{
-					Format: []openrtb2.Format{
-						{W: 1024, H: 768},
 						{W: 320, H: 50},
 						{W: 300, H: 600},
 					},
@@ -327,7 +243,7 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 			},
 		},
 		{
-			name: "Banner with neither supported sizes nor 300x600",
+			name: "Banner with neither 320x480 nor 300x600 sizes",
 			imp: openrtb2.Imp{
 				ID: "test_imp",
 				Banner: &openrtb2.Banner{
