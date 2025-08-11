@@ -4,10 +4,10 @@
     "description": "A schema which validates params accepted by the Nativo adapter",
     "type": "object",
     "properties": {
-        "placementid": {
+        "placementID": {
             "type": "string",
             "description": "An id used to identify Nativo placement"
         }
     },
-    "required": ["placementid"]
+    "required": ["placementID"]
 }
