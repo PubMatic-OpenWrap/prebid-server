@@ -67,7 +67,7 @@ func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {
 	if imp.Banner == nil {
 		return
 	}
-	var phonePortrait, tabletPortrait, tabletLandscape, is300x600SizeFound bool
+	var phonePortrait, tabletPortrait, tabletLandscape bool
 	if imp.Banner.W != nil && imp.Banner.H != nil {
 		if *imp.Banner.W == 320 && *imp.Banner.H == 480 {
 			phonePortrait = true
@@ -79,9 +79,10 @@ func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {
 			tabletLandscape = true
 		}
 		if *imp.Banner.W == 300 && *imp.Banner.H == 600 {
-			is300x600SizeFound = true
+			return
 		}
 	}
+
 	for _, size := range imp.Banner.Format {
 		if size.W == 320 && size.H == 480 {
 			phonePortrait = true
@@ -93,10 +94,11 @@ func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {
 			tabletLandscape = true
 		}
 		if size.W == 300 && size.H == 600 {
-			is300x600SizeFound = true
+			return
 		}
 	}
-	if (phonePortrait || tabletPortrait || tabletLandscape) && !is300x600SizeFound {
+
+	if phonePortrait || tabletPortrait || tabletLandscape {
 		imp.Banner.Format = append(imp.Banner.Format, openrtb2.Format{W: 300, H: 600})
 	}
 }
