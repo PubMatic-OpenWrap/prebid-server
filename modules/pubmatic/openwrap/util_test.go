@@ -2574,3 +2574,68 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 		})
 	}
 }
+
+func TestIsConsentPresent(t *testing.T) {
+	tests := []struct {
+		name string
+		user *openrtb2.User
+		want bool
+	}{
+		{
+			name: "nil user",
+			user: nil,
+			want: false,
+		},
+		{
+			name: "empty user",
+			user: &openrtb2.User{},
+			want: false,
+		},
+		{
+			name: "user with consent",
+			user: &openrtb2.User{Consent: "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA"},
+			want: true,
+		},
+		{
+			name: "user with empty consent",
+			user: &openrtb2.User{Consent: ""},
+			want: false,
+		},
+		{
+			name: "user with ext consent",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"consent":"BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA"}`),
+			},
+			want: true,
+		},
+		{
+			name: "user with empty ext consent",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"consent":""}`),
+			},
+			want: false,
+		},
+		{
+			name: "user with invalid ext json",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{invalid json`),
+			},
+			want: false,
+		},
+		{
+			name: "user with both consent fields",
+			user: &openrtb2.User{
+				Consent: "BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA",
+				Ext:     json.RawMessage(`{"consent":"BOEFEAAAAAAAAAAAA"}`),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isConsentPresent(tt.user)
+			assert.Equal(t, tt.want, got, "isConsentPresent() = %v, want %v", got, tt.want)
+		})
+	}
+}

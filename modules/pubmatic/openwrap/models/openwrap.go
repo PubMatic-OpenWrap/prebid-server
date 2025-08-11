@@ -102,8 +102,6 @@ type RequestCtx struct {
 	CustomDimensions                map[string]CustomDimension
 	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
-	VastUnwrapEnabled               bool
-	VastUnwrapStatsEnabled          bool
 	AppLovinMax                     AppLovinMax
 	LoggerDisabled                  bool
 	TrackerDisabled                 bool
@@ -125,11 +123,18 @@ type RequestCtx struct {
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
+	VastUnWrap                      VastUnWrap
 
 	// Adpod
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+}
+
+type VastUnWrap struct {
+	IsConsentPresent bool
+	Enabled          bool
+	StatsEnabled     bool
 }
 
 type GoogleSDK struct {

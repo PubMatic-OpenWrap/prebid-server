@@ -2,6 +2,7 @@ package openwrap
 
 import (
 	"encoding/json"
+	"net"
 	"slices"
 	"sync"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/iputil"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
@@ -61,7 +63,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 	var (
 		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnwrapEnabled
+		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnWrap.Enabled
 		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
 	)
 
@@ -105,13 +107,14 @@ func (m OpenWrap) processVastUnwrap(
 	bidder string,
 	rCtx models.RequestCtx,
 ) {
+	ip := getMaskedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
 	var wg sync.WaitGroup
 	for _, bidResult := range resultSet {
 		if isEligibleForUnwrap(*bidResult) {
 			wg.Add(1)
 			go func(iBid *rawBidderResponseHookResult) {
 				defer wg.Done()
-				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, rCtx.DeviceCtx.IP)
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, ip)
 			}(bidResult)
 		}
 	}
@@ -151,4 +154,31 @@ func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 	// Assign the updated JSON only if `jsonparser.Set` succeeds
 	adapterBid.bidExt = updatedExt
 	return
+}
+
+func getMaskedIP(vastUnWrap models.VastUnWrap, ip string) string {
+	if vastUnWrap.IsConsentPresent {
+		return ip
+	}
+
+	_, ver := iputil.ParseIP(ip)
+	if ver == iputil.IPvUnknown {
+		return ip
+	}
+	if ver == iputil.IPv4 {
+		return scrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
+	}
+	if ver == iputil.IPv6 {
+		return scrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
+	}
+	return ip
+}
+
+func scrubIP(ip string, ones, bits int) string {
+	if ip == "" {
+		return ""
+	}
+	ipMask := net.CIDRMask(ones, bits)
+	ipMasked := net.ParseIP(ip).Mask(ipMask)
+	return ipMasked.String()
 }

@@ -674,3 +674,22 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	mbmfStatus = models.MBMFAdUnitFormatNotFound
 	return nil
 }
+
+// isConsentPresent checks if consent is present in user object if vastunwrap is enabled
+func isConsentPresent(user *openrtb2.User) bool {
+	if user == nil {
+		return false
+	}
+	if len(user.Consent) > 0 {
+		return true
+	}
+
+	var userExt openrtb_ext.ExtUser
+	if err := json.Unmarshal(user.Ext, &userExt); err != nil {
+		return false
+	}
+	if len(userExt.Consent) > 0 {
+		return true
+	}
+	return false
+}
