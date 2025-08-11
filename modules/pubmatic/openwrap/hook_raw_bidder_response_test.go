@@ -1444,8 +1444,8 @@ func TestGetMaskedIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := getMaskedIP(tt.vastWrap, tt.ip)
-			assert.Equal(t, tt.expected, actual, "getMaskedIP() = %v, want %v", actual, tt.expected)
+			actual := getConsentBasedIP(tt.vastWrap, tt.ip)
+			assert.Equal(t, tt.expected, actual, "getConsentBasedIP() = %v, want %v", actual, tt.expected)
 		})
 	}
 }

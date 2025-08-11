@@ -107,7 +107,7 @@ func (m OpenWrap) processVastUnwrap(
 	bidder string,
 	rCtx models.RequestCtx,
 ) {
-	ip := getMaskedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
+	ip := getConsentBasedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
 	var wg sync.WaitGroup
 	for _, bidResult := range resultSet {
 		if isEligibleForUnwrap(*bidResult) {
@@ -156,7 +156,8 @@ func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 	return
 }
 
-func getMaskedIP(vastUnWrap models.VastUnWrap, ip string) string {
+// getConsentBasedIP returns the masked IP address based on the consent flag.
+func getConsentBasedIP(vastUnWrap models.VastUnWrap, ip string) string {
 	if vastUnWrap.IsConsentPresent {
 		return ip
 	}
@@ -174,6 +175,7 @@ func getMaskedIP(vastUnWrap models.VastUnWrap, ip string) string {
 	return ip
 }
 
+// scrubIP returns the masked IP address.
 func scrubIP(ip string, ones, bits int) string {
 	if ip == "" {
 		return ""
