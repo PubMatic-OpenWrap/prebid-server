@@ -13,26 +13,28 @@ import (
 )
 
 type AdButlerOnsiteRequest struct {
-	ID           int                    `json:"ID,omitempty"`
-	Size         string                 `json:"size,omitempty"`
-	Type         string                 `json:"type,omitempty"`
-	Ads          string                 `json:"ads,omitempty"`
-	KeyWords     []string               `json:"kw,omitempty"`
-	ZoneIDs      []int                  `json:"zoneIDs,omitempty"`
-	Limit        map[int]int            `json:"limit,omitempty"`
-	Target       map[string]interface{} `json:"_abdk_json,omitempty"`
-	Reporting    map[string]interface{} `json:"_eld,omitempty"`
-	UserID       string                 `json:"adb_uid,omitempty"`
-	IP           string                 `json:"ip,omitempty"`
-	UserAgent    string                 `json:"ua,omitempty"`
-	Referrer     string                 `json:"referrer,omitempty"`
-	PageID       int                    `json:"pid,omitempty"`
-	Sequence     int                    `json:"place,omitempty"`
-	CustomParam1 string                 `json:"customParam1,omitempty"`
-	CustomParam2 string                 `json:"customParam2,omitempty"`
-	CustomParam3 string                 `json:"customParam3,omitempty"`
-	CustomParam4 string                 `json:"customParam4,omitempty"`
-	CustomParam5 string                 `json:"customParam5,omitempty"`
+	ID               int                    `json:"ID,omitempty"`
+	Size             string                 `json:"size,omitempty"`
+	Type             string                 `json:"type,omitempty"`
+	Ads              string                 `json:"ads,omitempty"`
+	KeyWords         []string               `json:"kw,omitempty"`
+	ZoneIDs          []int                  `json:"zoneIDs,omitempty"`
+	Limit            map[int]int            `json:"limit,omitempty"`
+	Target           map[string]interface{} `json:"_abdk_json,omitempty"`
+	Reporting        map[string]interface{} `json:"_eld,omitempty"`
+	UserID           string                 `json:"adb_uid,omitempty"`
+	IP               string                 `json:"ip,omitempty"`
+	UserAgent        string                 `json:"ua,omitempty"`
+	Referrer         string                 `json:"referrer,omitempty"`
+	PageID           int                    `json:"pid,omitempty"`
+	Sequence         int                    `json:"place,omitempty"`
+	DsConsentApplies string                 `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   string                 `json:"ds_consent_given,omitempty"`
+	CustomParam1     string                 `json:"customParam1,omitempty"`
+	CustomParam2     string                 `json:"customParam2,omitempty"`
+	CustomParam3     string                 `json:"customParam3,omitempty"`
+	CustomParam4     string                 `json:"customParam4,omitempty"`
+	CustomParam5     string                 `json:"customParam5,omitempty"`
 }
 
 // getSimpleHash generates a simple hash for a given page name
@@ -162,30 +164,41 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 			adButlerReq.Target[adapters.COUNTRY] = request.Device.Geo.Country
 		}
 	}
-	//Add Geo Targeting
+
+	if requestExt.GeoCountry != "" {
+		adButlerReq.Target[adapters.COUNTRY] = requestExt.GeoCountry
+	}
+
+	//Add Device Targeting
 	if request.Device != nil {
 		switch request.Device.DeviceType {
-		case 1:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 2:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 3:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
-		case 4:
 			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_CONNECTEDDEVICE
+		case 4:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+		case 5:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
+		}
+	}
+
+	if requestExt.DeviceType != 0 {
+		switch requestExt.DeviceType {
+		case 2:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
+		case 3:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_CONNECTEDDEVICE
+		case 4:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+		case 5:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
 		}
 	}
 
 	//Add Dynamic Targeting from AdRequest
 
 	for _, targetObj := range requestExt.Targeting {
-		if targetObj.Name == "PageSource" {
-			pageSourceValue := targetObj.Value.(string)
-			if pageSourceValue != "" {
-				adButlerReq.Target["page_source"] = pageSourceValue
-			}
-			continue
-		}
 		adButlerReq.Target[targetObj.Name] = targetObj.Value
 	}
 
@@ -222,6 +235,21 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 				adButlerReq.CustomParam5 = strVal
 			}
 		}
+	}
+
+	if requestExt.DsConsentApplies != nil {
+		if dsConsentApplies, ok := requestExt.DsConsentApplies.(string); ok {
+			adButlerReq.DsConsentApplies = dsConsentApplies
+		}
+	}
+	if requestExt.DsConsentGiven != nil {
+		if dsConsentGiven, ok := requestExt.DsConsentGiven.(string); ok {
+			adButlerReq.DsConsentGiven = dsConsentGiven
+		}
+	}
+
+	if requestExt.UserID != "" {
+		adButlerReq.UserID = requestExt.UserID
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence

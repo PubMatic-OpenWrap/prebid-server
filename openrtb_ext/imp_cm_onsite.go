@@ -33,9 +33,14 @@ type ExtRequestOnsiteParams struct {
 
 type ExtRequestPrebidOnsite struct {
 	ExtRequestOnsiteParams
-	ZoneMapping   map[string]interface{} `json:"mapping,omitempty"`
-	ReportingKeys map[string]interface{} `json:"reporting,omitempty"`
-	CustomParams  map[string]interface{} `json:"customParams,omitempty"`
+	ZoneMapping      map[string]interface{} `json:"mapping,omitempty"`
+	ReportingKeys    map[string]interface{} `json:"reporting,omitempty"`
+	CustomParams     map[string]interface{} `json:"customParams,omitempty"`
+	DsConsentApplies interface{}            `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   interface{}            `json:"ds_consent_given,omitempty"`
+	UserID           string                 `json:"userId,omitempty"`
+	GeoCountry       string                 `json:"geoCountry,omitempty"`
+	DeviceType       int                    `json:"deviceType,omitempty"`
 }
 
 type ExtBidderCMOnsite struct {
