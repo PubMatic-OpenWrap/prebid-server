@@ -28,8 +28,8 @@ type AdButlerOnsiteRequest struct {
 	Referrer         string                 `json:"referrer,omitempty"`
 	PageID           int                    `json:"pid,omitempty"`
 	Sequence         int                    `json:"place,omitempty"`
-	DsConsentApplies interface{}            `json:"ds_consent_applies,omitempty"`
-	DsConsentGiven   interface{}            `json:"ds_consent_given,omitempty"`
+	DsConsentApplies string                 `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   string                 `json:"ds_consent_given,omitempty"`
 	CustomParam1     string                 `json:"customParam1,omitempty"`
 	CustomParam2     string                 `json:"customParam2,omitempty"`
 	CustomParam3     string                 `json:"customParam3,omitempty"`
@@ -164,9 +164,27 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 			adButlerReq.Target[adapters.COUNTRY] = request.Device.Geo.Country
 		}
 	}
-	//Add Geo Targeting
+
+	if requestExt.GeoCountry != "" {
+		adButlerReq.Target[adapters.COUNTRY] = requestExt.GeoCountry
+	}
+
+	//Add Device Targeting
 	if request.Device != nil {
 		switch request.Device.DeviceType {
+		case 2:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
+		case 3:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_CONNECTEDDEVICE
+		case 4:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+		case 5:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
+		}
+	}
+
+	if requestExt.DeviceType != 0 {
+		switch requestExt.DeviceType {
 		case 2:
 			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 3:
@@ -220,29 +238,13 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	if requestExt.DsConsentApplies != nil {
-		if dsConsentApplies, ok := requestExt.DsConsentApplies.(int); ok {
+		if dsConsentApplies, ok := requestExt.DsConsentApplies.(string); ok {
 			adButlerReq.DsConsentApplies = dsConsentApplies
-		} else if dsConsentApplies, ok := requestExt.DsConsentApplies.(string); ok {
-			adButlerReq.DsConsentApplies = dsConsentApplies
-		} else if dsConsentApplies, ok := requestExt.DsConsentApplies.(bool); ok {
-			if dsConsentApplies {
-				adButlerReq.DsConsentApplies = 1
-			} else {
-				adButlerReq.DsConsentApplies = 0
-			}
 		}
 	}
 	if requestExt.DsConsentGiven != nil {
-		if dsConsentGiven, ok := requestExt.DsConsentGiven.(int); ok {
+		if dsConsentGiven, ok := requestExt.DsConsentGiven.(string); ok {
 			adButlerReq.DsConsentGiven = dsConsentGiven
-		} else if dsConsentGiven, ok := requestExt.DsConsentGiven.(string); ok {
-			adButlerReq.DsConsentGiven = dsConsentGiven
-		} else if dsConsentGiven, ok := requestExt.DsConsentGiven.(bool); ok {
-			if dsConsentGiven {
-				adButlerReq.DsConsentGiven = 1
-			} else {
-				adButlerReq.DsConsentGiven = 0
-			}
 		}
 	}
 

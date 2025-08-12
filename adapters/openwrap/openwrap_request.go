@@ -154,10 +154,6 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		}*/
 	}
 
-	if request.Device != nil {
-		request.Device.DeviceType = 0
-	}
-
 	reqJSON, err := json.Marshal(request)
 	if err != nil {
 		return nil, []error{err}
