@@ -38,7 +38,7 @@ type ExtRequestPrebidOnsite struct {
 	CustomParams     map[string]interface{} `json:"customParams,omitempty"`
 	DsConsentApplies interface{}            `json:"ds_consent_applies,omitempty"`
 	DsConsentGiven   interface{}            `json:"ds_consent_given,omitempty"`
-	UserID           string                 `json:"user_id,omitempty"`
+	UserID           string                 `json:"userId,omitempty"`
 }
 
 type ExtBidderCMOnsite struct {
