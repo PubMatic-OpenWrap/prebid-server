@@ -1,5 +1,5 @@
 package openrtb_ext
 
 type ImpExtNativo struct {
-	PlacementId string `json:"placementid"`
+	PlacementId string `json:"placementID"`
 }
