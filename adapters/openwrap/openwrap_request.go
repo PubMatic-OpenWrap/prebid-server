@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
-type ExtRequestORTB  map[string]interface{}     
+type ExtRequestORTB map[string]interface{}
 
 func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, bool, error) {
 	var requestExt *ExtRequestORTB
@@ -61,9 +61,8 @@ func GetOWRequestExt(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, e
 	return &requestExt, nil
 }
 
-
 func GetRequestExt(request *openrtb2.BidRequest) (
-	 *ExtRequestORTB,bool, []error) {
+	*ExtRequestORTB, bool, []error) {
 	var requestOWExt *openrtb_ext.ExtOWRequest
 	var requestExtORTB *ExtRequestORTB
 	var debug bool
@@ -83,7 +82,7 @@ func GetRequestExt(request *openrtb2.BidRequest) (
 	}
 
 	if len(errors) > 0 {
-		return nil,debug,  errors
+		return nil, debug, errors
 	}
 
 	return requestExtORTB, debug, nil
@@ -118,15 +117,15 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			if err1 = json.Unmarshal(request.Imp[i].Ext, &impExt); err1 == nil {
 				bidderExt := impExt["bidder"].(map[string]interface{})
 				impExtJSON, err3 := json.Marshal(bidderExt["impExt"])
-					if err3 != nil {
-						return nil, []error{err}
-					}
-					request.Imp[i].Ext = impExtJSON
-				
-				} else{
-					request.Imp[i].Ext = nil
+				if err3 != nil {
+					return nil, []error{err}
 				}
-		} else{
+				request.Imp[i].Ext = impExtJSON
+
+			} else {
+				request.Imp[i].Ext = nil
+			}
+		} else {
 			request.Imp[i].Ext = nil
 		}
 
@@ -153,6 +152,10 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			Request: nativeReq,
 			Ver:     "1.1",
 		}*/
+	}
+
+	if request.Device != nil {
+		request.Device.DeviceType = 0
 	}
 
 	reqJSON, err := json.Marshal(request)
@@ -187,8 +190,4 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		Body:    reqJSON,
 		Headers: headers,
 	}}, nil
-	}
-
-
-
-
+}

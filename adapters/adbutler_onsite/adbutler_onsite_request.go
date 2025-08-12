@@ -28,8 +28,8 @@ type AdButlerOnsiteRequest struct {
 	Referrer         string                 `json:"referrer,omitempty"`
 	PageID           int                    `json:"pid,omitempty"`
 	Sequence         int                    `json:"place,omitempty"`
-	DsConsentApplies string                 `json:"ds_consent_applies,omitempty"`
-	DsConsentGiven   string                 `json:"ds_consent_given,omitempty"`
+	DsConsentApplies interface{}            `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   interface{}            `json:"ds_consent_given,omitempty"`
 	CustomParam1     string                 `json:"customParam1,omitempty"`
 	CustomParam2     string                 `json:"customParam2,omitempty"`
 	CustomParam3     string                 `json:"customParam3,omitempty"`
@@ -167,28 +167,20 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	//Add Geo Targeting
 	if request.Device != nil {
 		switch request.Device.DeviceType {
-		case 1:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 2:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_COMPUTER
 		case 3:
-			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
-		case 4:
 			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_CONNECTEDDEVICE
+		case 4:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_PHONE
+		case 5:
+			adButlerReq.Target[adapters.DEVICE] = adapters.DEVICE_TABLET
 		}
 	}
 
 	//Add Dynamic Targeting from AdRequest
 
 	for _, targetObj := range requestExt.Targeting {
-		if targetObj.Name == "ds_consent_applies" {
-			adButlerReq.DsConsentApplies = targetObj.Value.(string)
-			continue
-		}
-		if targetObj.Name == "ds_consent_given" {
-			adButlerReq.DsConsentGiven = targetObj.Value.(string)
-			continue
-		}
 		adButlerReq.Target[targetObj.Name] = targetObj.Value
 	}
 
@@ -225,6 +217,37 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 				adButlerReq.CustomParam5 = strVal
 			}
 		}
+	}
+
+	if requestExt.DsConsentApplies != nil {
+		if dsConsentApplies, ok := requestExt.DsConsentApplies.(int); ok {
+			adButlerReq.DsConsentApplies = dsConsentApplies
+		} else if dsConsentApplies, ok := requestExt.DsConsentApplies.(string); ok {
+			adButlerReq.DsConsentApplies = dsConsentApplies
+		} else if dsConsentApplies, ok := requestExt.DsConsentApplies.(bool); ok {
+			if dsConsentApplies {
+				adButlerReq.DsConsentApplies = 1
+			} else {
+				adButlerReq.DsConsentApplies = 0
+			}
+		}
+	}
+	if requestExt.DsConsentGiven != nil {
+		if dsConsentGiven, ok := requestExt.DsConsentGiven.(int); ok {
+			adButlerReq.DsConsentGiven = dsConsentGiven
+		} else if dsConsentGiven, ok := requestExt.DsConsentGiven.(string); ok {
+			adButlerReq.DsConsentGiven = dsConsentGiven
+		} else if dsConsentGiven, ok := requestExt.DsConsentGiven.(bool); ok {
+			if dsConsentGiven {
+				adButlerReq.DsConsentGiven = 1
+			} else {
+				adButlerReq.DsConsentGiven = 0
+			}
+		}
+	}
+
+	if requestExt.UserID != "" {
+		adButlerReq.UserID = requestExt.UserID
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence
