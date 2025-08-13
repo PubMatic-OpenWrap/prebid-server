@@ -675,20 +675,20 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	return nil
 }
 
-// isConsentPresent checks if consent is present in user object if vastunwrap is enabled
-func isConsentPresent(user *openrtb2.User) bool {
-	if user == nil {
+// isGDPREnabled checks if GDPR is enabled in regs object if vastunwrap is enabled
+func isGDPREnabled(regs *openrtb2.Regs) bool {
+	if regs == nil {
 		return false
 	}
-	if len(user.Consent) > 0 {
+	if regs.GDPR != nil && *regs.GDPR == 1 {
 		return true
 	}
 
-	var userExt openrtb_ext.ExtUser
-	if err := json.Unmarshal(user.Ext, &userExt); err != nil {
+	var extRegs openrtb_ext.ExtRegs
+	if err := json.Unmarshal(regs.Ext, &extRegs); err != nil {
 		return false
 	}
-	if len(userExt.Consent) > 0 {
+	if extRegs.GDPR != nil && *extRegs.GDPR == 1 {
 		return true
 	}
 	return false
