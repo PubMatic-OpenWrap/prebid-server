@@ -674,3 +674,22 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	mbmfStatus = models.MBMFAdUnitFormatNotFound
 	return nil
 }
+
+// isGDPREnabled checks if GDPR is enabled in regs object if vastunwrap is enabled
+func isGDPREnabled(regs *openrtb2.Regs) bool {
+	if regs == nil {
+		return false
+	}
+	if regs.GDPR != nil && *regs.GDPR == 1 {
+		return true
+	}
+
+	var extRegs openrtb_ext.ExtRegs
+	if err := json.Unmarshal(regs.Ext, &extRegs); err != nil {
+		return false
+	}
+	if extRegs.GDPR != nil && *extRegs.GDPR == 1 {
+		return true
+	}
+	return false
+}

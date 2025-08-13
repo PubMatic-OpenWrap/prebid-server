@@ -2574,3 +2574,68 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 		})
 	}
 }
+
+func TestIsGDPREnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		regs *openrtb2.Regs
+		want bool
+	}{
+		{
+			name: "nil user",
+			regs: nil,
+			want: false,
+		},
+		{
+			name: "empty user",
+			regs: &openrtb2.Regs{},
+			want: false,
+		},
+		{
+			name: "user with consent",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](1)},
+			want: true,
+		},
+		{
+			name: "user with empty consent",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](0)},
+			want: false,
+		},
+		{
+			name: "user with ext consent",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "user with empty ext consent",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"gdpr":""}`),
+			},
+			want: false,
+		},
+		{
+			name: "user with invalid ext json",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{invalid json`),
+			},
+			want: false,
+		},
+		{
+			name: "user with both consent fields",
+			regs: &openrtb2.Regs{
+				GDPR: ptrutil.ToPtr[int8](1),
+				Ext:  json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isGDPREnabled(tt.regs)
+			assert.Equal(t, tt.want, got, "isGDPREnabled() = %v, want %v", got, tt.want)
+		})
+	}
+}
