@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	uuid "github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/config"
@@ -24,7 +25,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/usersync"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -184,7 +184,8 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	if rCtx.LoggerImpressionID == "" {
-		rCtx.LoggerImpressionID = uuid.NewV4().String()
+		id, _ := uuid.NewV4()
+		rCtx.LoggerImpressionID = id.String()
 	}
 
 	// temp, for AMP, etc

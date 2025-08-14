@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	uuid "github.com/gofrs/uuid"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/errortypes"
@@ -12,7 +13,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	uuid "github.com/satori/go.uuid"
 )
 
 func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
@@ -101,18 +101,19 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			}
 
 			for i := range noBidVastTags {
-				uuid := uuid.NewV4().String()
+				uid, _ := uuid.NewV4()
+
 				bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 				bidExtJson, _ := json.Marshal(bidExt)
 
 				defaultBids[impID][bidder] = append(defaultBids[impID][bidder], openrtb2.Bid{
-					ID:    uuid,
+					ID:    uid.String(),
 					ImpID: impID,
 					Ext:   bidExtJson,
 				})
 
 				// create bidCtx because we need it for owlogger
-				rctx.ImpBidCtx[impID].BidCtx[uuid] = models.BidCtx{
+				rctx.ImpBidCtx[impID].BidCtx[uid.String()] = models.BidCtx{
 					BidExt: models.BidExt{
 						Nbr: bidExt.Nbr,
 						ExtBid: openrtb_ext.ExtBid{
@@ -144,10 +145,10 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 			// no need to create impBidCtx since we dont log partner-throttled bid in owlogger
-
+			id, _ := uuid.NewV4()
 			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
-					ID:    uuid.NewV4().String(),
+					ID:    id.String(),
 					ImpID: impID,
 					Ext:   bidExtJson,
 				},
@@ -165,10 +166,10 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 			bidExt := newDefaultBidExt(*rctx, impID, bidder, bidResponseExt)
 			bidExtJson, _ := json.Marshal(bidExt)
 			// no need to create impBidCtx since we dont log slot-not-mapped bid in owlogger
-
+			id, _ := uuid.NewV4()
 			defaultBids[impID][bidder] = []openrtb2.Bid{
 				{
-					ID:    uuid.NewV4().String(),
+					ID:    id.String(),
 					ImpID: impID,
 					Ext:   bidExtJson,
 				},
