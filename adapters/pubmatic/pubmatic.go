@@ -49,6 +49,7 @@ type pubmaticBidExt struct {
 	PrebidDealPriority int                  `json:"prebiddealpriority,omitempty"`
 	DspId              int                  `json:"dspid,omitempty"`
 	AdvertiserID       int                  `json:"advid,omitempty"`
+	InBannerVideo      bool                 `json:"ibv,omitempty"`
 }
 
 type pubmaticWrapperExt struct {
@@ -813,6 +814,27 @@ func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
 		}
 	}
 	return bidType
+}
+
+// getMType returns the m type specified in the response bid.ext
+func getMType(bid *openrtb2.Bid) string {
+	var MType string
+	if bid != nil {
+		switch bid.MType {
+		case 1:
+			MType = string(openrtb_ext.BidTypeBanner)
+		case 2:
+			MType = string(openrtb_ext.BidTypeVideo)
+		case 3:
+			MType = string(openrtb_ext.BidTypeAudio)
+		case 4:
+			MType = string(openrtb_ext.BidTypeNative)
+		default:
+			// default value is banner
+			MType = string(openrtb_ext.BidTypeBanner)
+		}
+	}
+	return MType
 }
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.

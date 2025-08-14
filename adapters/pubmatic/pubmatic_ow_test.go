@@ -80,10 +80,6 @@ func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
 }
 
 func TestPrepareMetaObject(t *testing.T) {
-	typebanner := 0
-	typevideo := 1
-	typenative := 2
-	typeinvalid := 233
 	type args struct {
 		bid    openrtb2.Bid
 		bidExt *pubmaticBidExt
@@ -95,7 +91,7 @@ func TestPrepareMetaObject(t *testing.T) {
 		want *openrtb_ext.ExtBidPrebidMeta
 	}{
 		{
-			name: "Empty Meta Object and default BidType banner",
+			name: "Empty Meta Object and default MType banner",
 			args: args{
 				bid: openrtb2.Bid{
 					Cat: []string{},
@@ -111,12 +107,12 @@ func TestPrepareMetaObject(t *testing.T) {
 			name: "Valid Meta Object with Empty Seatbid.seat",
 			args: args{
 				bid: openrtb2.Bid{
-					Cat: []string{"IAB-1", "IAB-2"},
+					Cat:   []string{"IAB-1", "IAB-2"},
+					MType: openrtb2.MarkupBanner,
 				},
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typeinvalid,
 				},
 				seat: "",
 			},
@@ -175,15 +171,15 @@ func TestPrepareMetaObject(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Meta Object with Empty CategoryIds and BidType video",
+			name: "Valid Meta Object with Empty CategoryIds and MType video",
 			args: args{
 				bid: openrtb2.Bid{
-					Cat: []string{},
+					Cat:   []string{},
+					MType: openrtb2.MarkupVideo,
 				},
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typevideo,
 				},
 				seat: "124",
 			},
@@ -197,15 +193,15 @@ func TestPrepareMetaObject(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Meta Object with Single CategoryId and BidType native",
+			name: "Valid Meta Object with Single CategoryId and MType native",
 			args: args{
 				bid: openrtb2.Bid{
-					Cat: []string{"IAB-1"},
+					Cat:   []string{"IAB-1"},
+					MType: openrtb2.MarkupNative,
 				},
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typenative,
 				},
 				seat: "124",
 			},
@@ -220,15 +216,15 @@ func TestPrepareMetaObject(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Meta Object and BidType banner",
+			name: "Valid Meta Object and MType audio",
 			args: args{
 				bid: openrtb2.Bid{
-					Cat: []string{"IAB-1", "IAB-2"},
+					Cat:   []string{"IAB-1", "IAB-2"},
+					MType: openrtb2.MarkupBanner,
 				},
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typebanner,
 				},
 				seat: "124",
 			},
@@ -240,6 +236,59 @@ func TestPrepareMetaObject(t *testing.T) {
 				AdvertiserID:         124,
 				AgencyID:             124,
 				MediaType:            "banner",
+			},
+		},
+		{
+			name: "Valid Meta Object and MType audio",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat:   []string{"IAB-1", "IAB-2"},
+					MType: openrtb2.MarkupAudio,
+				},
+				bidExt: &pubmaticBidExt{
+					DspId:        80,
+					AdvertiserID: 139,
+				},
+				seat: "124",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				NetworkID:            80,
+				DemandSource:         "80",
+				PrimaryCategoryID:    "IAB-1",
+				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
+				AdvertiserID:         124,
+				AgencyID:             124,
+				MediaType:            "audio",
+			},
+		},
+		{
+			name: "IBV_true",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{},
+				},
+				bidExt: &pubmaticBidExt{
+					InBannerVideo: true,
+				},
+				seat: "",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				MediaType: "video",
+			},
+		},
+		{
+			name: "IBV_false",
+			args: args{
+				bid: openrtb2.Bid{
+					Cat: []string{},
+				},
+				bidExt: &pubmaticBidExt{
+					InBannerVideo: false,
+				},
+				seat: "",
+			},
+			want: &openrtb_ext.ExtBidPrebidMeta{
+				MediaType: "banner",
 			},
 		},
 	}
