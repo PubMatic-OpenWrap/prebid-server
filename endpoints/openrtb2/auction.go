@@ -191,7 +191,7 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 			ao.SeatNonBid = seatNonBid.Get()
 		}
 		deps.metricsEngine.RecordRequest(labels)
-		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine)
+		recordRejectedBids(labels.PubID, ao.SeatNonBid, deps.metricsEngine, labels)
 		deps.metricsEngine.RecordRequestTime(labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao, activityControl)
 	}()
