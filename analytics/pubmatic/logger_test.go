@@ -112,24 +112,26 @@ func TestConvertNonBidToBid(t *testing.T) {
 		bid    bidWrapper
 	}{
 		{
-			name: "nonbid to bidwrapper",
+			name: "nonbid_to_bidwrapper",
 			nonBid: openrtb_ext.NonBid{
 				StatusCode: int(exchange.ResponseRejectedBelowFloor),
 				ImpId:      "imp1",
 				Ext: openrtb_ext.ExtNonBid{
 					Prebid: openrtb_ext.ExtNonBidPrebid{
 						Bid: openrtb_ext.ExtNonBidPrebidBid{
-							Price:             10,
-							ADomain:           []string{"abc.com"},
-							DealID:            "d1",
-							OriginalBidCPM:    10,
-							OriginalBidCur:    models.USD,
-							OriginalBidCPMUSD: 0,
-							W:                 10,
-							H:                 50,
-							DealPriority:      1,
-							Video: &openrtb_ext.ExtBidPrebidVideo{
-								Duration: 10,
+							Price:          10,
+							ADomain:        []string{"abc.com"},
+							DealID:         "d1",
+							OriginalBidCPM: 10,
+							OriginalBidCur: models.USD,
+							W:              10,
+							H:              50,
+							ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+								OriginalBidCPMUSD: 0,
+								DealPriority:      1,
+								Video: &openrtb_ext.ExtBidPrebidVideo{
+									Duration: 10,
+								},
 							},
 						},
 					},
@@ -143,45 +145,6 @@ func TestConvertNonBidToBid(t *testing.T) {
 					DealID:  "d1",
 					W:       10,
 					H:       50,
-					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
-				},
-				exchange.ResponseRejectedBelowFloor.Ptr(),
-			},
-		},
-		{
-			name: "nonbid to bidwrapper with bundle",
-			nonBid: openrtb_ext.NonBid{
-				StatusCode: int(exchange.ResponseRejectedBelowFloor),
-				ImpId:      "imp1",
-				Ext: openrtb_ext.ExtNonBid{
-					Prebid: openrtb_ext.ExtNonBidPrebid{
-						Bid: openrtb_ext.ExtNonBidPrebidBid{
-							Price:             10,
-							ADomain:           []string{"abc.com"},
-							DealID:            "d1",
-							OriginalBidCPM:    10,
-							OriginalBidCur:    models.USD,
-							OriginalBidCPMUSD: 0,
-							W:                 10,
-							H:                 50,
-							DealPriority:      1,
-							Video: &openrtb_ext.ExtBidPrebidVideo{
-								Duration: 10,
-							},
-							Bundle: "dummy_bundle",
-						},
-					},
-				},
-			},
-			bid: bidWrapper{
-				&openrtb2.Bid{
-					ImpID:   "imp1",
-					Price:   10,
-					ADomain: []string{"abc.com"},
-					DealID:  "d1",
-					W:       10,
-					H:       50,
-					Bundle:  "dummy_bundle",
 					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
 				},
 				exchange.ResponseRejectedBelowFloor.Ptr(),
@@ -256,7 +219,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 		partners map[string][]PartnerRecord
 	}{
 		{
-			name: "adformat for default bid",
+			name: "adformat_for_default_bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -310,7 +273,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "adformat for valid bid",
+			name: "adformat_for_valid_bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -364,7 +327,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "latency for partner",
+			name: "latency_for_partner",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -422,7 +385,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "matchedimpression for partner",
+			name: "matchedimpression_for_partner",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -477,7 +440,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "partnersize for non-video bid",
+			name: "partnersize_for_non-video_bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -531,7 +494,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "partnersize for video bid",
+			name: "partnersize_for_video_bid",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -585,7 +548,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "dealid present, verify dealid and dealchannel",
+			name: "dealid_present,_verify_dealid_and_dealchannel",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -638,7 +601,7 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 			},
 		},
 		{
-			name: "log adomain field",
+			name: "log_adomain_field",
 			args: args{
 				ao: analytics.AuctionObject{
 					Response: &openrtb2.BidResponse{
@@ -689,64 +652,6 @@ func TestGetPartnerRecordsByImp(t *testing.T) {
 						OriginalCur:      models.USD,
 						ADomain:          "google.com",
 						DefaultBidStatus: 1,
-					},
-				},
-			},
-		},
-		{
-			name: "log bundle field if not empty",
-			args: args{
-				ao: analytics.AuctionObject{
-					Response: &openrtb2.BidResponse{
-						SeatBid: []openrtb2.SeatBid{
-							{
-								Seat: "appnexus",
-								Bid: []openrtb2.Bid{
-									{
-										ID:    "bid-id-1",
-										ImpID: "imp1",
-										ADomain: []string{
-											"http://google.com", "http://yahoo.com",
-										},
-										Bundle: "dummy_bundle",
-									},
-								},
-							},
-						},
-					},
-				},
-				rCtx: &models.RequestCtx{
-					ImpBidCtx: map[string]models.ImpCtx{
-						"imp1": {
-							BidCtx: map[string]models.BidCtx{
-								"bid-id-1": {
-									BidExt: models.BidExt{
-										ExtBid: openrtb_ext.ExtBid{
-											Prebid: &openrtb_ext.ExtBidPrebid{
-												BidId: "prebid-bid-id-1",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			partners: map[string][]PartnerRecord{
-				"imp1": {
-					{
-						PartnerID:        "appnexus",
-						BidderCode:       "appnexus",
-						PartnerSize:      "0x0",
-						BidID:            "prebid-bid-id-1",
-						OrigBidID:        "bid-id-1",
-						DealID:           "-1",
-						ServerSide:       1,
-						OriginalCur:      models.USD,
-						ADomain:          "google.com",
-						DefaultBidStatus: 1,
-						Bundle:           "dummy_bundle",
 					},
 				},
 			},
@@ -1184,7 +1089,9 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												ID: "bid-id-2",
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-2",
+												},
 											},
 										},
 									},
@@ -1268,7 +1175,9 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												ID: "bid-id-1",
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -1677,10 +1586,12 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												W:              10,
 												H:              50,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -1765,10 +1676,12 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												W:              10,
 												H:              50,
 												OriginalBidCur: "EUR",
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -1864,10 +1777,12 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												W:              10,
 												H:              50,
 												OriginalBidCur: "EUR",
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -1963,10 +1878,12 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												W:              10,
 												H:              50,
 												OriginalBidCur: models.USD,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -2071,10 +1988,12 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												W:              10,
 												H:              50,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -2209,15 +2128,17 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price: 10,
-												ID:    "bid-id-1",
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 1,
-													FloorValue:     1,
-													FloorCurrency:  models.USD,
-												},
+												Price:          10,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+													Floors: &openrtb_ext.ExtBidPrebidFloors{
+														FloorRule:      "*|*|ebay.com",
+														FloorRuleValue: 1,
+														FloorValue:     1,
+														FloorCurrency:  models.USD,
+													},
+												},
 											},
 										},
 									},
@@ -2276,15 +2197,17 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price: 10,
-												ID:    "bid-id-1",
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 0,
-													FloorValue:     0,
-													FloorCurrency:  models.USD,
-												},
+												Price:          10,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+													Floors: &openrtb_ext.ExtBidPrebidFloors{
+														FloorRule:      "*|*|ebay.com",
+														FloorRuleValue: 0,
+														FloorValue:     0,
+														FloorCurrency:  models.USD,
+													},
+												},
 											},
 										},
 									},
@@ -2343,15 +2266,17 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price: 10,
-												ID:    "bid-id-1",
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 0,
-													FloorValue:     10,
-													FloorCurrency:  models.USD,
-												},
+												Price:          10,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+													Floors: &openrtb_ext.ExtBidPrebidFloors{
+														FloorRule:      "*|*|ebay.com",
+														FloorRuleValue: 0,
+														FloorValue:     10,
+														FloorCurrency:  models.USD,
+													},
+												},
 											},
 										},
 									},
@@ -2411,8 +2336,10 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -2472,8 +2399,10 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+												},
 											},
 										},
 									},
@@ -2535,15 +2464,17 @@ func TestGetPartnerRecordsByImpForSeatNonBidForFloors(t *testing.T) {
 									Ext: openrtb_ext.ExtNonBid{
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
-												Price: 10,
-												ID:    "bid-id-1",
-												Floors: &openrtb_ext.ExtBidPrebidFloors{
-													FloorRule:      "*|*|ebay.com",
-													FloorRuleValue: 1,
-													FloorValue:     1,
-													FloorCurrency:  "JPY",
-												},
+												Price:          10,
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID: "bid-id-1",
+													Floors: &openrtb_ext.ExtBidPrebidFloors{
+														FloorRule:      "*|*|ebay.com",
+														FloorRuleValue: 1,
+														FloorValue:     1,
+														FloorCurrency:  "JPY",
+													},
+												},
 											},
 										},
 									},
@@ -2970,9 +2901,11 @@ func TestGetPartnerRecordsByImpForBidIDCollisions(t *testing.T) {
 										Prebid: openrtb_ext.ExtNonBidPrebid{
 											Bid: openrtb_ext.ExtNonBidPrebidBid{
 												Price:          10,
-												ID:             "bid-id-1",
-												BidId:          "uuid",
 												OriginalBidCPM: 10,
+												ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+													ID:    "bid-id-1",
+													BidId: "uuid",
+												},
 											},
 										},
 									},

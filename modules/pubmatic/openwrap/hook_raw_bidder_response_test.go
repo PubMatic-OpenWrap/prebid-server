@@ -695,10 +695,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
 								Price: 2.1,
-								ID:    "Bid-123",
 								W:     100,
 								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
+								ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+									ID:   "Bid-123",
+									Type: openrtb_ext.BidTypeVideo,
+								},
 							},
 						},
 					},
@@ -762,10 +764,12 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 						Prebid: openrtb_ext.ExtNonBidPrebid{
 							Bid: openrtb_ext.ExtNonBidPrebidBid{
 								Price: 2.1,
-								ID:    "Bid-123",
 								W:     100,
 								H:     50,
-								Type:  openrtb_ext.BidTypeVideo,
+								ExtOWNonBidPrebidBid: openrtb_ext.ExtOWNonBidPrebidBid{
+									ID:   "Bid-123",
+									Type: openrtb_ext.BidTypeVideo,
+								},
 							},
 						},
 					},
