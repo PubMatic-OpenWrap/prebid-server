@@ -15,6 +15,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	gppConstants "github.com/prebid/go-gpp/constants"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -25,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	gppPolicy "github.com/prebid/prebid-server/v3/privacy/gpp"
 )
 
 var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
@@ -675,11 +677,16 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	return nil
 }
 
-// isGDPREnabled checks if GDPR is enabled in regs object if vastunwrap is enabled
+// isGDPREnabled checks if GDPR is enabled for the request
 func isGDPREnabled(regs *openrtb2.Regs) bool {
 	if regs == nil {
 		return false
 	}
+
+	if len(regs.GPPSID) > 0 {
+		return gppPolicy.IsSIDInList(regs.GPPSID, gppConstants.SectionTCFEU2)
+	}
+
 	if regs.GDPR != nil && *regs.GDPR == 1 {
 		return true
 	}

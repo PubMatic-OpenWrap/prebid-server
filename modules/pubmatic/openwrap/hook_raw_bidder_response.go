@@ -163,16 +163,14 @@ func getGDPRBasedIP(vastUnWrap models.VastUnWrap, ip string) string {
 	}
 
 	_, ver := iputil.ParseIP(ip)
-	if ver == iputil.IPvUnknown {
+	switch ver {
+	case iputil.IPv4:
+		return scrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
+	case iputil.IPv6:
+		return scrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
+	default:
 		return ip
 	}
-	if ver == iputil.IPv4 {
-		return scrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
-	}
-	if ver == iputil.IPv6 {
-		return scrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
-	}
-	return ip
 }
 
 // scrubIP returns the masked IP address.
