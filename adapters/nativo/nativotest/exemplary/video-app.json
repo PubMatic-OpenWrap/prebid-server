@@ -28,7 +28,7 @@
         "id": "some-impression-id",
         "ext": {
           "bidder": {
-            "placementid": "828782"
+            "placementID": "828782"
           }
         },
         "tagid": "ogTAGID",
@@ -61,7 +61,7 @@
               "id": "some-impression-id",
               "ext": {
                 "nativo": {
-                  "placementid": "828782"
+                  "placementID": "828782"
                 }
               },
               "video": {

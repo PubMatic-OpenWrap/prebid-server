@@ -364,6 +364,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 			impExt.Data.PbAdslot = imp.TagID
 		}
 
+		// Add size 300x600 for interstitial banner
+		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && imp.Instl == 1 {
+			sdkutils.AddSize300x600ForInterstitialBanner(&imp)
+		}
+
 		var videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx
 		if rCtx.AdUnitConfig != nil {
 			if (rCtx.Platform == models.PLATFORM_APP || rCtx.Platform == models.PLATFORM_VIDEO || rCtx.Platform == models.PLATFORM_DISPLAY) && imp.Video != nil {

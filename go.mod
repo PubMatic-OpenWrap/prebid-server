@@ -1,6 +1,6 @@
 module github.com/PubMatic-OpenWrap/prebid-server/v3
 
-go 1.23.0
+go 1.24
 
 retract v3.0.0 // Forgot to update major version in import path and module name
 

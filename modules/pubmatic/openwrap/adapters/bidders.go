@@ -817,7 +817,7 @@ func builderNativo(params BidderParameters) (json.RawMessage, error) {
 	}
 
 	jsonStr := bytes.NewBuffer(nil)
-	fmt.Fprintf(jsonStr, `{"placementid":"%d"}`, pid)
+	fmt.Fprintf(jsonStr, `{"placementID":"%d"}`, pid)
 	return jsonStr.Bytes(), nil
 }
 
