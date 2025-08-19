@@ -6,6 +6,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
@@ -107,7 +108,10 @@ func (m OpenWrap) processVastUnwrap(
 	bidder string,
 	rCtx models.RequestCtx,
 ) {
-	ip := getGDPRBasedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
+	ip := getConsentBasedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
+	//TODO: remove this debug log after prod release once testing is done (Remove after 28th Aug 2025).
+	glog.V(models.LogLevelDebug).Infof("processVastUnwrap: IP address is: %s", ip)
+
 	var wg sync.WaitGroup
 	for _, bidResult := range resultSet {
 		if isEligibleForUnwrap(*bidResult) {
@@ -156,9 +160,9 @@ func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 	return
 }
 
-// getGDPRBasedIP returns the masked IP address if GDPR is disabled.
-func getGDPRBasedIP(vastUnWrap models.VastUnWrap, ip string) string {
-	if vastUnWrap.IsGDPREnabled {
+// getConsentBasedIP returns the masked IP address if request is consented.
+func getConsentBasedIP(vastUnWrap models.VastUnWrap, ip string) string {
+	if !vastUnWrap.IsRequestConsented {
 		return ip
 	}
 

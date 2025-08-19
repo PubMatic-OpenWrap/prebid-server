@@ -1403,7 +1403,7 @@ func TestApplyMutation(t *testing.T) {
 	}
 }
 
-func TestGetGDPRBasedIP(t *testing.T) {
+func TestGetConsentBasedIP(t *testing.T) {
 	tests := []struct {
 		name     string
 		vastWrap models.VastUnWrap
@@ -1412,31 +1412,37 @@ func TestGetGDPRBasedIP(t *testing.T) {
 	}{
 		{
 			name:     "IPv4 with consent",
-			vastWrap: models.VastUnWrap{IsGDPREnabled: true},
-			ip:       "192.168.1.1",
-			expected: "192.168.1.1",
-		},
-		{
-			name:     "IPv4 without consent",
-			vastWrap: models.VastUnWrap{IsGDPREnabled: false},
+			vastWrap: models.VastUnWrap{IsRequestConsented: true},
 			ip:       "192.168.1.1",
 			expected: "192.168.1.0",
 		},
 		{
+			name:     "IPv4 without consent",
+			vastWrap: models.VastUnWrap{IsRequestConsented: false},
+			ip:       "192.168.1.1",
+			expected: "192.168.1.1",
+		},
+		{
 			name:     "IPv6 without consent",
-			vastWrap: models.VastUnWrap{IsGDPREnabled: false},
+			vastWrap: models.VastUnWrap{IsRequestConsented: false},
+			ip:       "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expected: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+		},
+		{
+			name:     "IPv6 with consent",
+			vastWrap: models.VastUnWrap{IsRequestConsented: true},
 			ip:       "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
 			expected: "2001:db8:85a3::",
 		},
 		{
 			name:     "Invalid IP with consent",
-			vastWrap: models.VastUnWrap{IsGDPREnabled: true},
+			vastWrap: models.VastUnWrap{IsRequestConsented: true},
 			ip:       "invalid-ip",
 			expected: "invalid-ip",
 		},
 		{
 			name:     "Empty IP",
-			vastWrap: models.VastUnWrap{IsGDPREnabled: false},
+			vastWrap: models.VastUnWrap{IsRequestConsented: false},
 			ip:       "",
 			expected: "",
 		},
@@ -1444,8 +1450,8 @@ func TestGetGDPRBasedIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := getGDPRBasedIP(tt.vastWrap, tt.ip)
-			assert.Equal(t, tt.expected, actual, "getGDPRBasedIP() = %v, want %v", actual, tt.expected)
+			actual := getConsentBasedIP(tt.vastWrap, tt.ip)
+			assert.Equal(t, tt.expected, actual, "getConsentBasedIP() = %v, want %v", actual, tt.expected)
 		})
 	}
 }

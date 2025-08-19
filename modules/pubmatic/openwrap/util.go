@@ -677,17 +677,26 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	return nil
 }
 
-// isGDPREnabled checks if GDPR is enabled for the request
-func isGDPREnabled(regs *openrtb2.Regs) bool {
+// isRequestConsented checks if request is consented
+func isRequestConsented(regs *openrtb2.Regs, device *openrtb2.Device) bool {
+	if device != nil && device.Lmt != nil && *device.Lmt == 1 {
+		return true
+	}
+
 	if regs == nil {
 		return false
 	}
 
-	if len(regs.GPPSID) > 0 {
-		return gppPolicy.IsSIDInList(regs.GPPSID, gppConstants.SectionTCFEU2)
+	if regs.COPPA == 1 || len(regs.USPrivacy) > 0 {
+		return true
 	}
 
-	if regs.GDPR != nil && *regs.GDPR == 1 {
+	// GDPR logic: prefer GPP SID if present
+	if len(regs.GPPSID) > 0 {
+		if gppPolicy.IsSIDInList(regs.GPPSID, gppConstants.SectionTCFEU2) {
+			return true
+		}
+	} else if regs.GDPR != nil && *regs.GDPR == 1 {
 		return true
 	}
 
@@ -695,7 +704,8 @@ func isGDPREnabled(regs *openrtb2.Regs) bool {
 	if err := json.Unmarshal(regs.Ext, &extRegs); err != nil {
 		return false
 	}
-	if extRegs.GDPR != nil && *extRegs.GDPR == 1 {
+
+	if (extRegs.GDPR != nil && *extRegs.GDPR == 1) || len(extRegs.USPrivacy) > 0 {
 		return true
 	}
 	return false
