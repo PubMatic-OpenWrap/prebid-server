@@ -18,6 +18,9 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
+// default targeting key prefix
+const DefaultKeyPrefix = "hb"
+
 var (
 	//prebid_ctv_errors
 	UnableToGenerateImpressionsError = &errortypes.AdpodPrefiltering{Message: `prebid_ctv unable to generate impressions for adpod`}
@@ -106,7 +109,7 @@ func TimeTrack(start time.Time, name string) {
 // if value not present or any error occured empty value will be returned
 // along with error.
 func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bid openrtb2.Bid) (string, error) {
-	bidderSpecificKey := key.BidderKey(openrtb_ext.BidderName(bidder), 20)
+	bidderSpecificKey := key.BidderKey(DefaultKeyPrefix, openrtb_ext.BidderName(bidder), 20)
 	return jsonparser.GetString(bid.Ext, "prebid", "targeting", bidderSpecificKey)
 }
 

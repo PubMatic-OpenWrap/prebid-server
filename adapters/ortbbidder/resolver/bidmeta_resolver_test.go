@@ -1904,6 +1904,7 @@ func TestExtBidPrebidMetaFields(t *testing.T) {
 		"RendererData":         reflect.TypeOf(json.RawMessage{}),
 		"RendererUrl":          reflect.TypeOf(""),
 		"SecondaryCategoryIDs": reflect.TypeOf([]string{}),
+		"Seat":                 reflect.TypeOf(""),
 	}
 	structType := reflect.TypeOf(openrtb_ext.ExtBidPrebidMeta{})
 	err := ValidateStructFields(expectedFields, structType)
