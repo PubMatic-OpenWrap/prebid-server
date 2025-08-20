@@ -6127,7 +6127,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			want: want{
 				rctx: &models.RequestCtx{
-					VastUnwrapEnabled: false,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: false,
+					},
 				},
 				error: false,
 			},
@@ -6190,7 +6192,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			want: want{
 				rctx: &models.RequestCtx{
-					VastUnwrapEnabled: false,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: false,
+					},
 				},
 				error: false,
 			},
@@ -6258,7 +6262,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			want: want{
 				rctx: &models.RequestCtx{
-					VastUnwrapEnabled: true,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: true,
+					},
 				},
 				error: false,
 			},
@@ -6327,7 +6333,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			want: want{
 				rctx: &models.RequestCtx{
-					VastUnwrapEnabled: true,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: true,
+					},
 				},
 				error: false,
 			},
@@ -6391,7 +6399,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			},
 			want: want{
 				rctx: &models.RequestCtx{
-					VastUnwrapEnabled: true,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: true,
+					},
 				},
 				error: false,
 			},
@@ -6422,7 +6432,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
 			assert.Equal(t, tt.want.rctx == nil, iRctx == nil, "mismatched rctx received from handleBeforeValidationHook")
 			gotRctx := iRctx.(models.RequestCtx)
-			assert.Equal(t, tt.want.rctx.VastUnwrapEnabled, gotRctx.VastUnwrapEnabled, "mismatched rctx.VastUnwrapEnabled received from handleBeforeValidationHook")
+			assert.Equal(t, tt.want.rctx.VastUnWrap.Enabled, gotRctx.VastUnWrap.Enabled, "mismatched rctx.VastUnWrap.Enabled received from handleBeforeValidationHook")
 		})
 	}
 }
