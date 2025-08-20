@@ -228,7 +228,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
 		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
 		rCtx.VastUnWrap.Enabled = true
-		rCtx.VastUnWrap.IsRequestConsented = isRequestConsented(payload.BidRequest.Regs, payload.BidRequest.Device)
+		rCtx.VastUnWrap.IsPrivacyEnforced = isPrivacyEnforced(payload.BidRequest.Regs, payload.BidRequest.Device)
 	}
 
 	//TMax should be updated after ABTest processing

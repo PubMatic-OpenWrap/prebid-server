@@ -108,7 +108,7 @@ func (m OpenWrap) processVastUnwrap(
 	bidder string,
 	rCtx models.RequestCtx,
 ) {
-	ip := getConsentBasedIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
+	ip := applyPrivacyMaskingToIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
 	//TODO: remove this debug log after prod release once testing is done (Remove after 28th Aug 2025).
 	glog.V(models.LogLevelDebug).Infof("processVastUnwrap: IP address is: %s", ip)
 
@@ -160,9 +160,9 @@ func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 	return
 }
 
-// getConsentBasedIP returns the masked IP address if request is consented.
-func getConsentBasedIP(vastUnWrap models.VastUnWrap, ip string) string {
-	if !vastUnWrap.IsRequestConsented {
+// applyPrivacyMaskingToIP returns the masked IP address if request is consented.
+func applyPrivacyMaskingToIP(vastUnWrap models.VastUnWrap, ip string) string {
+	if !vastUnWrap.IsPrivacyEnforced {
 		return ip
 	}
 

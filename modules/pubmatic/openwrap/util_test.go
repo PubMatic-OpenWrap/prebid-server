@@ -2575,7 +2575,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 	}
 }
 
-func TestIsRequestConsented(t *testing.T) {
+func TestIsPrivacyEnforced(t *testing.T) {
 	tests := []struct {
 		name   string
 		regs   *openrtb2.Regs
@@ -2678,8 +2678,8 @@ func TestIsRequestConsented(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isRequestConsented(tt.regs, tt.device)
-			assert.Equal(t, tt.want, got, "isRequestConsented() = %v, want %v", got, tt.want)
+			got := isPrivacyEnforced(tt.regs, tt.device)
+			assert.Equal(t, tt.want, got, "isPrivacyEnforced() = %v, want %v", got, tt.want)
 		})
 	}
 }

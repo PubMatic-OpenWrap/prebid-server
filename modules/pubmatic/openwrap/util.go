@@ -677,8 +677,9 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 	return nil
 }
 
-// isRequestConsented checks if request is consented
-func isRequestConsented(regs *openrtb2.Regs, device *openrtb2.Device) bool {
+// isPrivacyEnforced use should only be limited to VastUnwrap
+// isPrivacyEnforced checks if request is privacy enforced if yes then it assumes consent is not given and permits to mask IP.
+func isPrivacyEnforced(regs *openrtb2.Regs, device *openrtb2.Device) bool {
 	if device != nil && device.Lmt != nil && *device.Lmt == 1 {
 		return true
 	}

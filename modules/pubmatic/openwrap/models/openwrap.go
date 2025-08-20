@@ -132,9 +132,9 @@ type RequestCtx struct {
 }
 
 type VastUnWrap struct {
-	IsRequestConsented bool
-	Enabled            bool
-	StatsEnabled       bool
+	IsPrivacyEnforced bool
+	Enabled           bool
+	StatsEnabled      bool
 }
 
 type GoogleSDK struct {
