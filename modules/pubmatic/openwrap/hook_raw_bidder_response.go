@@ -2,7 +2,6 @@ package openwrap
 
 import (
 	"encoding/json"
-	"net"
 	"slices"
 	"sync"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/privacy"
 	"github.com/prebid/prebid-server/v3/util/iputil"
 
 	"github.com/buger/jsonparser"
@@ -169,20 +169,10 @@ func applyPrivacyMaskingToIP(vastUnWrap models.VastUnWrap, ip string) string {
 	_, ver := iputil.ParseIP(ip)
 	switch ver {
 	case iputil.IPv4:
-		return scrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
+		return privacy.SrcubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
 	case iputil.IPv6:
-		return scrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
+		return privacy.SrcubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
 	default:
 		return ip
 	}
-}
-
-// scrubIP returns the masked IP address.
-func scrubIP(ip string, ones, bits int) string {
-	if ip == "" {
-		return ""
-	}
-	ipMask := net.CIDRMask(ones, bits)
-	ipMasked := net.ParseIP(ip).Mask(ipMask)
-	return ipMasked.String()
 }
