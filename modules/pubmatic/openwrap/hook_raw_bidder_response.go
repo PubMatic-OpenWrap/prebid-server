@@ -169,9 +169,9 @@ func applyPrivacyMaskingToIP(vastUnWrap models.VastUnWrap, ip string) string {
 	_, ver := iputil.ParseIP(ip)
 	switch ver {
 	case iputil.IPv4:
-		return privacy.SrcubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
+		return privacy.ScrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
 	case iputil.IPv6:
-		return privacy.SrcubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
+		return privacy.ScrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
 	default:
 		return ip
 	}
