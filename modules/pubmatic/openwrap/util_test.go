@@ -2574,3 +2574,112 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPrivacyEnforced(t *testing.T) {
+	tests := []struct {
+		name   string
+		regs   *openrtb2.Regs
+		device *openrtb2.Device
+		want   bool
+	}{
+		{
+			name: "nil regs and device lmt 1",
+			regs: nil,
+			device: &openrtb2.Device{
+				Lmt: ptrutil.ToPtr[int8](1),
+			},
+			want: true,
+		},
+		{
+			name: "empty regs and device lmt 0",
+			regs: &openrtb2.Regs{},
+			device: &openrtb2.Device{
+				Lmt: ptrutil.ToPtr[int8](0),
+			},
+			want: false,
+		},
+		{
+			name: "regs with coppa 1",
+			regs: &openrtb2.Regs{COPPA: 1},
+			want: true,
+		},
+		{
+			name: "regs with gdpr 1",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](1)},
+			want: true,
+		},
+		{
+			name: "regs with empty gdpr",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](0)},
+			want: false,
+		},
+		{
+			name: "regs with ext gdpr 1",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "regs with invalid ext json",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{invalid json`),
+			},
+			want: false,
+		},
+		{
+			name: "regs with both gdpr and ext gdpr 1",
+			regs: &openrtb2.Regs{
+				GDPR: ptrutil.ToPtr[int8](1),
+				Ext:  json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "regs with gdpr nil, GPPSID has tcf2",
+			regs: &openrtb2.Regs{GDPR: nil, GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with gdpr 1, GPPSID has uspv1",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](1), GPPSID: []int8{6}},
+			want: false,
+		},
+		{
+			name: "regs with gdpr 0, GPPSID has tcf2",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](0), GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with GPPSID has tcf2",
+			regs: &openrtb2.Regs{GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with GPPSID has uspv1",
+			regs: &openrtb2.Regs{GPPSID: []int8{6}},
+			want: false,
+		},
+		{
+			name: "regs with usprivacy",
+			regs: &openrtb2.Regs{
+				USPrivacy: "1YNN",
+			},
+			want: true,
+		},
+		{
+			name: "regs ext with usprivacy",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"us_privacy":"1YNN"}`),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isPrivacyEnforced(tt.regs, tt.device)
+			assert.Equal(t, tt.want, got, "isPrivacyEnforced() = %v, want %v", got, tt.want)
+		})
+	}
+}

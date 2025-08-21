@@ -5,10 +5,13 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/privacy"
+	"github.com/prebid/prebid-server/v3/util/iputil"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
@@ -61,7 +64,7 @@ func (m OpenWrap) handleRawBidderResponseHook(
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
 	var (
 		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnwrapEnabled
+		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnWrap.Enabled
 		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
 	)
 
@@ -105,13 +108,17 @@ func (m OpenWrap) processVastUnwrap(
 	bidder string,
 	rCtx models.RequestCtx,
 ) {
+	ip := applyPrivacyMaskingToIP(rCtx.VastUnWrap, rCtx.DeviceCtx.IP)
+	//TODO: remove this debug log after prod release once testing is done (Remove after 28th Aug 2025).
+	glog.V(models.LogLevelDebug).Infof("processVastUnwrap: IP address is: %s", ip)
+
 	var wg sync.WaitGroup
 	for _, bidResult := range resultSet {
 		if isEligibleForUnwrap(*bidResult) {
 			wg.Add(1)
 			go func(iBid *rawBidderResponseHookResult) {
 				defer wg.Done()
-				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, rCtx.DeviceCtx.IP)
+				iBid.unwrapStatus = m.unwrap.Unwrap(iBid.bid, miCtx.AccountID, bidder, rCtx.DeviceCtx.UA, ip)
 			}(bidResult)
 		}
 	}
@@ -151,4 +158,21 @@ func updateCreativeType(adapterBid *rawBidderResponseHookResult) {
 	// Assign the updated JSON only if `jsonparser.Set` succeeds
 	adapterBid.bidExt = updatedExt
 	return
+}
+
+// applyPrivacyMaskingToIP returns the masked IP address if request is consented.
+func applyPrivacyMaskingToIP(vastUnWrap models.VastUnWrap, ip string) string {
+	if !vastUnWrap.IsPrivacyEnforced {
+		return ip
+	}
+
+	_, ver := iputil.ParseIP(ip)
+	switch ver {
+	case iputil.IPv4:
+		return privacy.ScrubIP(ip, iputil.IPv4DefaultMaskingBitSize, iputil.IPv4BitSize)
+	case iputil.IPv6:
+		return privacy.ScrubIP(ip, iputil.IPv6DefaultMaskingBitSize, iputil.IPv6BitSize)
+	default:
+		return ip
+	}
 }

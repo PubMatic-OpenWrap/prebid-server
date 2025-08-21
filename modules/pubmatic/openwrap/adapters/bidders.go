@@ -820,3 +820,23 @@ func builderNativo(params BidderParameters) (json.RawMessage, error) {
 	fmt.Fprintf(jsonStr, `{"placementID":"%d"}`, pid)
 	return jsonStr.Bytes(), nil
 }
+
+func builderOMS(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+
+	// Try pid first (as string)
+	if val, ok := getString(params.FieldMap["pid"]); ok {
+		fmt.Fprintf(&jsonStr, `{"pid":"%s"}`, val)
+	} else {
+		// Try publisherId (as integer)
+		if val, ok := getInt(params.FieldMap["publisherId"]); ok {
+			fmt.Fprintf(&jsonStr, `{"publisherId":%d}`, val)
+		}
+	}
+
+	if jsonStr.Len() == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"pid", "publisherId"})
+	}
+
+	return jsonStr.Bytes(), nil
+}
