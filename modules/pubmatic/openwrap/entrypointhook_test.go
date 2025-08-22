@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -704,6 +705,8 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 
 				assert.NotEmpty(t, gotRctx.StartTime)
 				gotRctx.StartTime = 0
+				assert.NotEmpty(t, gotRctx.GoogleSDK.StartTime)
+				gotRctx.GoogleSDK.StartTime = time.Time{}
 
 				wantRctx := tt.want.ModuleContext["rctx"].(models.RequestCtx)
 				if wantRctx.LoggerImpressionID == "" {
