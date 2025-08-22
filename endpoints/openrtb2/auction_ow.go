@@ -138,7 +138,7 @@ func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.A
 		}
 	}
 	//append processing time
-	processingTimeValue := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+	processingTimeValue := time.Since(rCtx.GoogleSDK.StartTime).Milliseconds()
 	if updatedExt, err := jsonparser.Set(ext, []byte(strconv.FormatInt(processingTimeValue, 10)), models.ProcessingTime); err == nil {
 		ext = updatedExt
 	}
