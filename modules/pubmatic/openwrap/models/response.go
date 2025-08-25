@@ -31,6 +31,7 @@ type BidExt struct {
 	MultiBidMultiFloorValue float64               `json:"-"`
 	InBannerVideo           bool                  `json:"ibv,omitempty"`
 	ClickTrackers           []string              `json:"clicktrackers,omitempty"`
+	OWSDK                   map[string]any        `json:"owsdk,omitempty"`
 }
 
 type AdpodBidExt struct {

@@ -100,6 +100,7 @@ const (
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
 	sendBurlKey              = "sendburl"
+	owSDKKey                 = "owsdk"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -444,6 +445,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	if bidderExt.GpId != "" {
 		extMap[gpIdKey] = bidderExt.GpId
+	}
+
+	if pubmaticExt.OWSDK != nil {
+		extMap[owSDKKey] = pubmaticExt.OWSDK
 	}
 
 	//Google Sdk

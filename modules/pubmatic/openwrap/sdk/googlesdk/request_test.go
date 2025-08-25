@@ -565,7 +565,7 @@ func TestModifyImpression(t *testing.T) {
 			},
 			signalImps: []openrtb2.Imp{
 				{
-					Ext: []byte(`{"skadn": {"version": "2.0", "skoverlay": 1, "productpage": "page1", "versions": ["1.0"]}}`),
+					Ext: []byte(`{"owsdk":{"ctaoverlay":1},"skadn": {"version": "2.0", "skoverlay": 1, "productpage": "page1", "versions": ["1.0"]}}`),
 				},
 			},
 			expectedResult: &openrtb2.BidRequest{
@@ -573,7 +573,7 @@ func TestModifyImpression(t *testing.T) {
 					{
 						ID:    "imp1",
 						TagID: "tag-123",
-						Ext:   []byte(`{"skadn":{"versions":["1.0"],"version":"2.0","skoverlay":1,"productpage":"page1"}}`),
+						Ext:   []byte(`{"skadn":{"versions":["1.0"],"version":"2.0","skoverlay":1,"productpage":"page1"},"owsdk":{"ctaoverlay":1}}`),
 					},
 				},
 			},
