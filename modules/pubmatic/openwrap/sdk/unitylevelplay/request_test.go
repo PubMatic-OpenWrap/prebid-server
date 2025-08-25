@@ -527,6 +527,12 @@ func TestModifyImpExtension(t *testing.T) {
 			signalImpExt:   []byte(`{"skadn":{"version":"2.0","skoverlay":true}}`),
 			expectedImpExt: []byte(`{"existingfield":1,"skadn":{"version":"2.0","skoverlay":true}}`),
 		},
+		{
+			name:           "copy owsdk fields",
+			requestImpExt:  []byte(`{"existingfield":1}`),
+			signalImpExt:   []byte(`{"owsdk":{"ctaoverlay":1}}`),
+			expectedImpExt: []byte(`{"existingfield":1,"owsdk":{"ctaoverlay":1}}`),
+		},
 	}
 
 	for _, tt := range tests {

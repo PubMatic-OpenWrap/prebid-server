@@ -190,6 +190,7 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skadnetids")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "gpid")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "owsdk")
 
 	return requestImpExt
 }
