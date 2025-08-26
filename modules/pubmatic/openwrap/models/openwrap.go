@@ -138,8 +138,9 @@ type VastUnWrap struct {
 }
 
 type GoogleSDK struct {
-	Reject          bool
-	SDKRenderedAdID string
+	Reject              bool
+	SDKRenderedAdID     string
+	RejectedBidResponse *openrtb2.BidResponse
 }
 
 type UnityLevelPlay struct {

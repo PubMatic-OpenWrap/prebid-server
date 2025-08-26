@@ -143,9 +143,10 @@ func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.A
 		ext = updatedExt
 	}
 
-	return &openrtb2.BidResponse{
+	rCtx.GoogleSDK.RejectedBidResponse = &openrtb2.BidResponse{
 		ID:  response.ID,
 		NBR: response.NBR,
 		Ext: ext,
 	}
+	return rCtx.GoogleSDK.RejectedBidResponse
 }
