@@ -5876,8 +5876,10 @@ func TestGetLogAuctionObjectAsURLForVastUnwrap(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					PubID:             5890,
-					VastUnwrapEnabled: true,
+					PubID: 5890,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: true,
+					},
 				},
 				logInfo:    true,
 				forRespExt: true,
@@ -5900,8 +5902,10 @@ func TestGetLogAuctionObjectAsURLForVastUnwrap(t *testing.T) {
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					PubID:             5890,
-					VastUnwrapEnabled: false,
+					PubID: 5890,
+					VastUnWrap: models.VastUnWrap{
+						Enabled: false,
+					},
 				},
 				logInfo:    true,
 				forRespExt: true,

@@ -65,7 +65,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.Geo.CountryCode = rCtx.DeviceCtx.DerivedCountryCode
 	}
 
-	if rCtx.VastUnwrapEnabled {
+	if rCtx.VastUnWrap.Enabled {
 		wlog.VastUnwrapEnabled = 1
 	}
 
