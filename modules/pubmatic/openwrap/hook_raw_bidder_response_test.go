@@ -99,7 +99,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								},
 								BidType: "video",
 							}}}},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: false}}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 		},
@@ -137,7 +137,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "1")
@@ -204,7 +204,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 				isAdmUpdated:        true,
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
@@ -275,7 +275,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 				isAdmUpdated:        true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -364,7 +364,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 				isAdmUpdated:        true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -453,7 +453,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 				isAdmUpdated:        true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -531,7 +531,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 				isAdmUpdated:        true,
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -608,7 +608,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			wantResult:     hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
@@ -670,10 +670,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								BidType: "video",
 							},
 						},
+						BidderAlias: "pubmatic2",
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", models.UnwrapInvalidVASTStatus)
@@ -701,7 +702,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "pubmatic")
+				}, "pubmatic2")
 				return seatNonBid
 			}(),
 		},
@@ -736,10 +737,11 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 								BidType: "video",
 							},
 						},
+						BidderAlias: "pubmatic2",
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", models.UnwrapEmptyVASTStatus)
@@ -767,7 +769,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							},
 						},
 					},
-				}, "pubmatic")
+				}, "pubmatic2")
 				return seatNonBid
 			}(),
 		},
@@ -801,7 +803,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 							}}},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: false}}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantBids: []*adapters.TypedBid{
@@ -862,7 +864,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: false}}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantBids: []*adapters.TypedBid{
@@ -923,7 +925,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: false}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: false}}}},
 			},
 			wantResult: hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantBids: []*adapters.TypedBid{
@@ -972,7 +974,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			wantResult:     hookstage.HookResult[hookstage.RawBidderResponsePayload]{Reject: false},
 			wantSeatNonBid: openrtb_ext.SeatNonBidBuilder{},
@@ -1037,7 +1039,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "1")
@@ -1123,7 +1125,7 @@ func TestHandleRawBidderResponseHook(t *testing.T) {
 					},
 					Bidder: "pubmatic",
 				},
-				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnwrapEnabled: true}}},
+				moduleInvocationCtx: hookstage.ModuleInvocationContext{AccountID: "5890", ModuleContext: hookstage.ModuleContext{models.RequestContext: models.RequestCtx{VastUnWrap: models.VastUnWrap{Enabled: true}}}},
 			},
 			mockHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Add("unwrap-status", "0")
@@ -1397,6 +1399,59 @@ func TestApplyMutation(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expected, payload.BidderResponse.Bids)
+		})
+	}
+}
+
+func TestApplyPrivacyMaskingToIP(t *testing.T) {
+	tests := []struct {
+		name     string
+		vastWrap models.VastUnWrap
+		ip       string
+		expected string
+	}{
+		{
+			name:     "IPv4 with consent",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: true},
+			ip:       "192.168.1.1",
+			expected: "192.168.1.0",
+		},
+		{
+			name:     "IPv4 without consent",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: false},
+			ip:       "192.168.1.1",
+			expected: "192.168.1.1",
+		},
+		{
+			name:     "IPv6 without consent",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: false},
+			ip:       "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expected: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+		},
+		{
+			name:     "IPv6 with consent",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: true},
+			ip:       "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expected: "2001:db8:85a3::",
+		},
+		{
+			name:     "Invalid IP with consent",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: true},
+			ip:       "invalid-ip",
+			expected: "invalid-ip",
+		},
+		{
+			name:     "Empty IP",
+			vastWrap: models.VastUnWrap{IsPrivacyEnforced: false},
+			ip:       "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := applyPrivacyMaskingToIP(tt.vastWrap, tt.ip)
+			assert.Equal(t, tt.expected, actual, "applyPrivacyMaskingToIP() = %v, want %v", actual, tt.expected)
 		})
 	}
 }

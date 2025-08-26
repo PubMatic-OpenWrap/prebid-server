@@ -722,9 +722,9 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyAMPBadRequests]):                  1,
-					fmt.Sprintf(statKeys[statsKeyVideoBadRequests]):                1,
-					fmt.Sprintf(statKeys[statsKey25BadRequests]):                   1,
+					fmt.Sprintf("%s", statKeys[statsKeyAMPBadRequests]):            1,
+					fmt.Sprintf("%s", statKeys[statsKeyVideoBadRequests]):          1,
+					fmt.Sprintf("%s", statKeys[statsKey25BadRequests]):             1,
 					fmt.Sprintf(statKeys[statsKeyCTVBadRequests], "json", 100):     1,
 					fmt.Sprintf(statKeys[statsKeyCTVBadRequests], "openwrap", 200): 1,
 					fmt.Sprintf(statKeys[statsKeyCTVBadRequests], "ortb", 300):     1,
@@ -949,7 +949,7 @@ func TestRecordFunctions(t *testing.T) {
 			},
 			want: want{
 				expectedkeyVal: map[string]int{
-					fmt.Sprintf(statKeys[statsKeyPBSAuctionRequests]): 1,
+					fmt.Sprintf("%s", statKeys[statsKeyPBSAuctionRequests]): 1,
 				},
 				channelSize: 1,
 			},

@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -139,6 +141,262 @@ func TestCopyPath(t *testing.T) {
 			if !reflect.DeepEqual(tt.expected, result) {
 				t.Errorf("Expected %v, but got %v", tt.expected, result)
 			}
+		})
+	}
+}
+
+func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
+	tests := []struct {
+		name     string
+		imp      openrtb2.Imp
+		expected openrtb2.Imp
+	}{
+		{
+			name: "nil Banner",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+			},
+		},
+		{
+			name: "Banner with W/H fields set to 320x480 (phone portrait), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](320),
+					H: ptrutil.ToPtr[int64](480),
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](320),
+					H: ptrutil.ToPtr[int64](480),
+					Format: []openrtb2.Format{
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with W/H fields set to 768x1024 (tablet portrait), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](768),
+					H: ptrutil.ToPtr[int64](1024),
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](768),
+					H: ptrutil.ToPtr[int64](1024),
+					Format: []openrtb2.Format{
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with W/H fields set to 1024x768 (tablet landscape), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](1024),
+					H: ptrutil.ToPtr[int64](768),
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](1024),
+					H: ptrutil.ToPtr[int64](768),
+					Format: []openrtb2.Format{
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with W/H fields set to 300x600 already",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](300),
+					H: ptrutil.ToPtr[int64](600),
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](300),
+					H: ptrutil.ToPtr[int64](600),
+				},
+			},
+		},
+		{
+			name: "Banner with Format containing 320x480 (phone portrait), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 320, H: 50},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 320, H: 50},
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with Format containing 768x1024 (tablet portrait), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 768, H: 1024},
+						{W: 320, H: 50},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 768, H: 1024},
+						{W: 320, H: 50},
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with Format containing 1024x768 (tablet landscape), no 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 1024, H: 768},
+						{W: 320, H: 50},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 1024, H: 768},
+						{W: 320, H: 50},
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with Format containing both 320x480 and 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 300, H: 600},
+						{W: 320, H: 50},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 300, H: 600},
+						{W: 320, H: 50},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with neither supported sizes nor 300x600",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 50},
+						{W: 728, H: 90},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 50},
+						{W: 728, H: 90},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with W/H set to different size and Format containing 320x480",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](728),
+					H: ptrutil.ToPtr[int64](90),
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					W: ptrutil.ToPtr[int64](728),
+					H: ptrutil.ToPtr[int64](90),
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+		{
+			name: "Banner with nil W/H but Format containing 320x480",
+			imp: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+					},
+				},
+			},
+			expected: openrtb2.Imp{
+				ID: "test_imp",
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{
+						{W: 320, H: 480},
+						{W: 300, H: 600},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			AddSize300x600ForInterstitialBanner(&tt.imp)
+			assert.Equal(t, tt.expected, tt.imp, "Banner formats should match expected")
 		})
 	}
 }

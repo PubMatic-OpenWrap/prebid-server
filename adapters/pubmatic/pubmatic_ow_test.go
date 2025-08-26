@@ -80,10 +80,6 @@ func TestCopySBExtToBidExtWithNoSeatExt(t *testing.T) {
 }
 
 func TestPrepareMetaObject(t *testing.T) {
-	typebanner := 0
-	typevideo := 1
-	typenative := 2
-	typeinvalid := 233
 	type args struct {
 		bid    openrtb2.Bid
 		bidExt *pubmaticBidExt
@@ -103,9 +99,7 @@ func TestPrepareMetaObject(t *testing.T) {
 				bidExt: &pubmaticBidExt{},
 				seat:   "",
 			},
-			want: &openrtb_ext.ExtBidPrebidMeta{
-				MediaType: "banner",
-			},
+			want: &openrtb_ext.ExtBidPrebidMeta{},
 		},
 		{
 			name: "Valid Meta Object with Empty Seatbid.seat",
@@ -116,7 +110,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typeinvalid,
 				},
 				seat: "",
 			},
@@ -127,7 +120,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
 				AdvertiserID:         139,
 				AgencyID:             139,
-				MediaType:            "banner",
 			},
 		},
 		{
@@ -149,7 +141,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
 				AdvertiserID:         124,
 				AgencyID:             124,
-				MediaType:            "banner",
 			},
 		},
 		{
@@ -171,7 +162,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
 				AdvertiserID:         0,
 				AgencyID:             0,
-				MediaType:            "banner",
 			},
 		},
 		{
@@ -183,7 +173,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typevideo,
 				},
 				seat: "124",
 			},
@@ -193,7 +182,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				PrimaryCategoryID: "",
 				AdvertiserID:      124,
 				AgencyID:          124,
-				MediaType:         "video",
 			},
 		},
 		{
@@ -205,7 +193,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typenative,
 				},
 				seat: "124",
 			},
@@ -216,7 +203,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				SecondaryCategoryIDs: []string{"IAB-1"},
 				AdvertiserID:         124,
 				AgencyID:             124,
-				MediaType:            "native",
 			},
 		},
 		{
@@ -228,7 +214,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				bidExt: &pubmaticBidExt{
 					DspId:        80,
 					AdvertiserID: 139,
-					BidType:      &typebanner,
 				},
 				seat: "124",
 			},
@@ -239,7 +224,6 @@ func TestPrepareMetaObject(t *testing.T) {
 				SecondaryCategoryIDs: []string{"IAB-1", "IAB-2"},
 				AdvertiserID:         124,
 				AgencyID:             124,
-				MediaType:            "banner",
 			},
 		},
 	}
@@ -354,7 +338,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dsa":{"transparency":[{"params":[1,2]}]},"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
+					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"mtype":1,"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dsa":{"transparency":[{"params":[1,2]}]},"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
@@ -373,6 +357,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
+							MType:   1,
 							Ext:     json.RawMessage(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
 						},
 						DealPriority: 1,
@@ -396,7 +381,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
+					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"mtype":1,"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
@@ -415,6 +400,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
+							MType:   1,
 							Ext:     json.RawMessage(`{"buyid":"testBuyId","deal_channel":1,"dsa":{"transparency":[{"dsaparams":[1,2]}]},"dspid":6,"prebiddealpriority":1}`),
 						},
 						DealPriority: 1,
@@ -438,7 +424,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
+					Body:       []byte(`{"id":"test-request-id","seatbid":[{"seat":"958","bid":[{"id":"7706636740145184841","impid":"test-imp-id","price":0.5,"adid":"29681110","adm":"some-test-ad","adomain":["pubmatic.com"],"mtype":1,"crid":"29681110","h":250,"w":300,"dealid":"testdeal","ext":{"dspid":6,"deal_channel":1,"prebiddealpriority":1}}],"ext":{"buyid":"testBuyId"}}],"bidid":"5778926625248726496","cur":"USD"}`),
 				},
 				externalRequest: &adapters.RequestData{BidderName: openrtb_ext.BidderPubmatic},
 			},
@@ -457,6 +443,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
+							MType:   1,
 							Ext:     json.RawMessage(`{"buyid":"testBuyId","deal_channel":1,"dspid":6,"prebiddealpriority":1}`),
 						},
 						DealPriority: 1,
@@ -480,7 +467,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 			args: args{
 				response: &adapters.ResponseData{
 					StatusCode: http.StatusOK,
-					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id_mf1", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
+					Body:       []byte(`{"id": "test-request-id", "seatbid":[{"seat": "958", "bid":[{"id": "7706636740145184841", "impid": "test-imp-id_mf1", "price": 0.500000, "adid": "29681110", "adm": "some-test-ad", "adomain":["pubmatic.com"], "mtype": 1, "crid": "29681110", "h": 250, "w": 300, "dealid": "testdeal", "ext":{}}]}], "bidid": "5778926625248726496", "cur": "USD"}`),
 				},
 				externalRequest: &adapters.RequestData{
 					BidderName: openrtb_ext.BidderPubmatic,
@@ -502,6 +489,7 @@ func TestPubmaticMakeBids(t *testing.T) {
 							H:       250,
 							W:       300,
 							DealID:  "testdeal",
+							MType:   1,
 							Ext:     json.RawMessage(`{"mbmfv":0.120000}`),
 						},
 						BidType:    openrtb_ext.BidTypeBanner,

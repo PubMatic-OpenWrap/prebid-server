@@ -15,6 +15,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
+	gppConstants "github.com/prebid/go-gpp/constants"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -25,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	gppPolicy "github.com/prebid/prebid-server/v3/privacy/gpp"
 )
 
 var uidRegexp = regexp.MustCompile(`^(UID2|ID5|BGID|euid|PAIRID|IDL|connectid|firstid|utiq):`)
@@ -597,12 +599,21 @@ func getDisplayManagerAndVer(app *openrtb2.App) (string, string) {
 }
 
 func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
-	if reward != nil && imp.Video != nil {
+	if reward != nil && *reward == 1 && imp.Video != nil {
 		return models.AdUnitFormatRwddVideo
 	}
 
 	if imp.Instl == 1 {
 		return models.AdUnitFormatInstl
+	}
+
+	if (imp.Banner != nil && imp.Video != nil) ||
+		(imp.Banner != nil && reward != nil && *reward == 1) {
+		return ""
+	}
+
+	if imp.Banner != nil {
+		return models.AdUnitFormatBanner
 	}
 	return ""
 }
@@ -630,11 +641,14 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	//for phase 1 mbmf, adunitformat is by default enabled
 	adunitFormat := getAdunitFormat(reward, imp)
+	if adunitFormat == "" {
+		mbmfStatus = models.MBMFInvalidAdFormat
+		return nil
+	}
 
 	//don't apply mbmf if pub is not enabled for adunitFormat
-	if adunitFormat != "" && !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
+	if !m.pubFeatures.IsMBMFEnabledForAdUnitFormat(rctx.PubID, adunitFormat) {
 		mbmfStatus = models.MBMFAdUnitFormatDisabled
 		return nil
 	}
@@ -653,14 +667,47 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		//fallback to adunitformat multifloors if adunitlevel floors not present in DB
 	}
 
-	if adunitFormat != "" {
-		//return adunitformat multifloors for pubid, if not present then return default multifloors
-		multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
-		if multifloors != nil {
-			mbmfStatus = models.MBMFSuccess
-			return multifloors
-		}
-		mbmfStatus = models.MBMFAdUnitFormatNotFound
+	//return adunitformat multifloors for pubid, if not present then return default multifloors
+	multifloors := m.pubFeatures.GetMBMFFloorsForAdUnitFormat(rctx.PubID, adunitFormat)
+	if multifloors != nil {
+		mbmfStatus = models.MBMFSuccess
+		return multifloors
 	}
+	mbmfStatus = models.MBMFAdUnitFormatNotFound
 	return nil
+}
+
+// isPrivacyEnforced use should only be limited to VastUnwrap
+// isPrivacyEnforced checks if request is privacy enforced if yes then it assumes consent is not given and permits to mask IP.
+func isPrivacyEnforced(regs *openrtb2.Regs, device *openrtb2.Device) bool {
+	if device != nil && device.Lmt != nil && *device.Lmt == 1 {
+		return true
+	}
+
+	if regs == nil {
+		return false
+	}
+
+	if regs.COPPA == 1 || len(regs.USPrivacy) > 0 {
+		return true
+	}
+
+	// GDPR logic: prefer GPP SID if present
+	if len(regs.GPPSID) > 0 {
+		if gppPolicy.IsSIDInList(regs.GPPSID, gppConstants.SectionTCFEU2) {
+			return true
+		}
+	} else if regs.GDPR != nil && *regs.GDPR == 1 {
+		return true
+	}
+
+	var extRegs openrtb_ext.ExtRegs
+	if err := json.Unmarshal(regs.Ext, &extRegs); err != nil {
+		return false
+	}
+
+	if (extRegs.GDPR != nil && *extRegs.GDPR == 1) || len(extRegs.USPrivacy) > 0 {
+		return true
+	}
+	return false
 }

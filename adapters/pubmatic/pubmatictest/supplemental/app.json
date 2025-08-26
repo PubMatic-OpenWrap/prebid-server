@@ -112,6 +112,7 @@
                   "crid": "29681110",
                   "h": 250,
                   "w": 300,
+                  "mtype": 1,
                   "dealid":"test deal",
                   "ext": {
                     "dspid": 6,
@@ -152,6 +153,7 @@
               "crid": "29681110",
               "w": 300,
               "h": 250,
+              "mtype": 1,
               "dealid":"test deal",
               "ext": {
                 "dspid": 6,
@@ -168,7 +170,7 @@
               }
               }
             },
-            "type": "banner"
+             "type": "banner"
           }
         ]
       }

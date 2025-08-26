@@ -2175,11 +2175,36 @@ func TestGetAdunitFormat(t *testing.T) {
 			want:   models.AdUnitFormatInstl,
 		},
 		{
+			name: "imp.banner is not nil",
+			imp: openrtb2.Imp{
+				Banner: &openrtb2.Banner{},
+				Instl:  0,
+			},
+			reward: nil,
+			want:   models.AdUnitFormatBanner,
+		},
+		{
 			name: "imp.instl is not 1",
 			imp: openrtb2.Imp{
 				Instl: 0,
 			},
 			reward: nil,
+			want:   "",
+		},
+		{
+			name: "invalid adunitformat with banner and video",
+			imp: openrtb2.Imp{
+				Banner: &openrtb2.Banner{},
+				Video:  &openrtb2.Video{},
+			},
+			want: "",
+		},
+		{
+			name: "invalid adunitformat with banner and rewarded flag on",
+			imp: openrtb2.Imp{
+				Banner: &openrtb2.Banner{},
+			},
+			reward: openrtb2.Int8Ptr(1),
 			want:   "",
 		},
 	}
@@ -2424,7 +2449,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 		},
 		{
-			name: "phase 1 profile adunit level floors(return if isactive=1 only else nil)",
+			name: "pub enabled for adunitformat BANNER and adunitlevel floors not found, DON'T apply default adunitformat floors",
 			args: args{
 				rctx: models.RequestCtx{
 					Endpoint:  models.EndpointAppLovinMax,
@@ -2436,51 +2461,104 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 					},
 				},
 				imp: openrtb2.Imp{
-					TagID: "adunit1234",
-				},
-			},
-			want: &models.MultiFloors{
-				IsActive: true,
-				Tier1:    1,
-				Tier2:    2,
-				Tier3:    3,
-			},
-			setup: func() {
-				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
-				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
-				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
-					"adunit1234": {
-						IsActive: true,
-						Tier1:    1,
-						Tier2:    2,
-						Tier3:    3,
-					},
-				})
-				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
-			},
-		},
-		{
-			name: "phase 1 profile adunit level floors not present for banner adunitformat",
-			args: args{
-				rctx: models.RequestCtx{
-					Endpoint:  models.EndpointAppLovinMax,
-					PubID:     5890,
-					PubIDStr:  "5890",
-					ProfileID: 1234,
-					DeviceCtx: models.DeviceCtx{
-						DerivedCountryCode: "US",
-					},
-				},
-				imp: openrtb2.Imp{
-					TagID: "adunit1234",
+					TagID:  "adunit1234",
+					Instl:  0,
+					Banner: &openrtb2.Banner{},
 				},
 			},
 			want: nil,
 			setup: func() {
 				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
-				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFNoEntryFound)
+				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(nil)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatNotFound)
+			},
+		},
+		{
+			name: "banner profile adunit level floors disabled for adunit",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID:  "adunit1234",
+					Banner: &openrtb2.Banner{},
+				},
+			},
+			want: nil,
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{
+					"adunit1234": {
+						IsActive: false,
+						Tier1:    1,
+						Tier2:    2,
+						Tier3:    3,
+					},
+				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitDisabled)
+			},
+		},
+		{
+			name: "banner profile adunit level floors and adunitformat floors not present",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID:  "adunit1234",
+					Banner: &openrtb2.Banner{},
+				},
+			},
+			want: nil,
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
+				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(nil)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatNotFound)
+			},
+		},
+		{
+			name: "pub enabled but invalid adformat",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointAppLovinMax,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					Instl:  0,
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{},
+				},
+			},
+			want: nil,
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFInvalidAdFormat)
 			},
 		},
 	}
@@ -2493,6 +2571,115 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			}
 			got := m.getMultiFloors(tt.args.rctx, tt.args.reward, tt.args.imp)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestIsPrivacyEnforced(t *testing.T) {
+	tests := []struct {
+		name   string
+		regs   *openrtb2.Regs
+		device *openrtb2.Device
+		want   bool
+	}{
+		{
+			name: "nil regs and device lmt 1",
+			regs: nil,
+			device: &openrtb2.Device{
+				Lmt: ptrutil.ToPtr[int8](1),
+			},
+			want: true,
+		},
+		{
+			name: "empty regs and device lmt 0",
+			regs: &openrtb2.Regs{},
+			device: &openrtb2.Device{
+				Lmt: ptrutil.ToPtr[int8](0),
+			},
+			want: false,
+		},
+		{
+			name: "regs with coppa 1",
+			regs: &openrtb2.Regs{COPPA: 1},
+			want: true,
+		},
+		{
+			name: "regs with gdpr 1",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](1)},
+			want: true,
+		},
+		{
+			name: "regs with empty gdpr",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](0)},
+			want: false,
+		},
+		{
+			name: "regs with ext gdpr 1",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "regs with invalid ext json",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{invalid json`),
+			},
+			want: false,
+		},
+		{
+			name: "regs with both gdpr and ext gdpr 1",
+			regs: &openrtb2.Regs{
+				GDPR: ptrutil.ToPtr[int8](1),
+				Ext:  json.RawMessage(`{"gdpr":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "regs with gdpr nil, GPPSID has tcf2",
+			regs: &openrtb2.Regs{GDPR: nil, GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with gdpr 1, GPPSID has uspv1",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](1), GPPSID: []int8{6}},
+			want: false,
+		},
+		{
+			name: "regs with gdpr 0, GPPSID has tcf2",
+			regs: &openrtb2.Regs{GDPR: ptrutil.ToPtr[int8](0), GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with GPPSID has tcf2",
+			regs: &openrtb2.Regs{GPPSID: []int8{2}},
+			want: true,
+		},
+		{
+			name: "regs with GPPSID has uspv1",
+			regs: &openrtb2.Regs{GPPSID: []int8{6}},
+			want: false,
+		},
+		{
+			name: "regs with usprivacy",
+			regs: &openrtb2.Regs{
+				USPrivacy: "1YNN",
+			},
+			want: true,
+		},
+		{
+			name: "regs ext with usprivacy",
+			regs: &openrtb2.Regs{
+				Ext: json.RawMessage(`{"us_privacy":"1YNN"}`),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isPrivacyEnforced(tt.regs, tt.device)
+			assert.Equal(t, tt.want, got, "isPrivacyEnforced() = %v, want %v", got, tt.want)
 		})
 	}
 }

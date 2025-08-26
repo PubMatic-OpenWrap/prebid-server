@@ -1564,7 +1564,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					{
 						Rwdd:   1,
 						Banner: nil,
-						Video:  &openrtb2.Video{},
 						Secure: ptrutil.ToPtr(int8(1)),
 					},
 				},
@@ -1586,7 +1585,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 					{
 						Rwdd:   0,
 						Banner: &openrtb2.Banner{},
-						Video:  &openrtb2.Video{},
 						Secure: ptrutil.ToPtr(int8(1)),
 					},
 				},
@@ -1616,6 +1614,122 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 							HMax: 0,
 							HMin: 0,
 						},
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Convert consented_providers from string array to int array",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":["1","2","3"]}}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":[1,2,3]}}`),
+				},
+			},
+		},
+		{
+			name: "Handle mixed valid and invalid string values in consented_providers",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":["1","invalid","3"]},"other_field":"value"}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":[1,3]},"other_field":"value"}`),
+				},
+			},
+		},
+		{
+			name: "No change when consented_providers_settings is missing",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"other_field":"value"}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"other_field":"value"}`),
+				},
+			},
+		},
+		{
+			name: "No change when consented_providers is not an array",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":"not_an_array"}}`),
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+				User: &openrtb2.User{
+					Ext: []byte(`{"consented_providers_settings":{"consented_providers":"not_an_array"}}`),
+				},
+			},
+		},
+		{
+			name: "Remove native and video from request",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Native: &openrtb2.Native{
+							Request: `{"native":{"layout":1}}`,
+						},
+						Video: &openrtb2.Video{
+							MIMEs: []string{"video/mp4"},
+						},
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Native: nil,
+						Video:  nil,
 						Secure: ptrutil.ToPtr(int8(1)),
 					},
 				},

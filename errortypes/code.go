@@ -43,6 +43,10 @@ const (
 	SecBrowsingTopicsWarningCode
 	AdpodPostFilteringWarningCode
 	InvalidVastVersionWarningCode
+	InvalidUserEIDsWarningCode
+	InvalidUserUIDsWarningCode
+	TooLongTargetingPrefixWarningCode
+	TooShortTargetingPrefixWarningCode
 )
 
 // Coder provides an error or warning code with severity.

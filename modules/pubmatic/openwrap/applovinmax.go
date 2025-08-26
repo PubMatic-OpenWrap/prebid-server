@@ -72,6 +72,9 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 		}
 	}
 
+	// Update native
+	maxImps[0].Native = signalImps[0].Native
+
 	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid")
 }
 
@@ -143,7 +146,10 @@ func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if signalApp.Domain != "" {
 		maxRequest.App.Domain = signalApp.Domain
 	}
-	maxRequest.App.StoreURL = signalApp.StoreURL
+
+	if len(maxRequest.App.StoreURL) == 0 {
+		maxRequest.App.StoreURL = signalApp.StoreURL
+	}
 }
 
 func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
@@ -261,6 +267,9 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 		return requestBody
 	}
 
+	//set maxRequest native to nil always
+	maxRequest.Imp[0].Native = nil
+
 	addSignalDataInRequest(signalData, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
@@ -360,6 +369,10 @@ func modifyRequestBody(requestBody []byte) []byte {
 	if bannertype, err := jsonparser.GetString(requestBody, "imp", "[0]", "banner", "ext", "bannertype"); err == nil && bannertype == models.TypeRewarded {
 		requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "banner")
 	}
+
+	//set maxRequest native to nil always
+	requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "native")
+
 	return requestBody
 }
 

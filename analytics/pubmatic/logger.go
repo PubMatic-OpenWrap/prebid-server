@@ -144,9 +144,8 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 		wlog.FloorSource = tracker.Tracker.FloorSource
 		wlog.FloorFetchStatus = tracker.Tracker.LoggerData.FloorFetchStatus
 		wlog.FloorProvider = tracker.Tracker.LoggerData.FloorProvider
-		for i := range wlog.Slots {
-			wlog.Slots[i].FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
-		}
+		wlog.FloorSkippedFlag = tracker.Tracker.FloorSkippedFlag
+
 		cdsAndfloorDetailsSet = true
 		break // For all trackers, floor-details and cds are common so break the loop
 	}
@@ -163,9 +162,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			wlog.FloorFetchStatus = floorDetails.FloorFetchStatus
 			wlog.FloorProvider = floorDetails.FloorProvider
 			wlog.FloorType = floorDetails.FloorType
-			for i := range wlog.Slots {
-				wlog.Slots[i].FloorSkippedFlag = floorDetails.Skipfloors
-			}
+			wlog.FloorSkippedFlag = floorDetails.Skipfloors
 		}
 	}
 
