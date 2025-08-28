@@ -90,6 +90,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				isRewardInventory, adduration                  = 0, 0
 				dspId, mbmfFlag                                int
 				eg, en                                         float64
+				networkId                                      string
 			)
 
 			if rctx.DeviceCtx.Ext != nil {
@@ -129,7 +130,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 							}
 							// Extract NWID from bid.meta.networkId if present
 							if bidExt.Prebid.Meta.NetworkID != 0 {
-								tracker.PartnerInfo.NWID = fmt.Sprintf("%d", bidExt.Prebid.Meta.NetworkID)
+								networkId = fmt.Sprintf("%d", bidExt.Prebid.Meta.NetworkID)
 							}
 						}
 					}
@@ -194,6 +195,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue:         floorRuleValue,
 				DealID:                 "-1",
 				MultiBidMultiFloorFlag: mbmfFlag,
+				NWID:                   networkId,
 			}
 			if rctx.PriceGranularity != nil {
 				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
