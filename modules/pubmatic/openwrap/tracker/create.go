@@ -118,12 +118,18 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 						if len(bidExt.Prebid.BidId) > 0 {
 							bidId = bidExt.Prebid.BidId
 						}
-						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
+						if bidExt.Prebid.Meta != nil {
+							if len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
 
-							if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
-								if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
-									matchedSlot = bidderMeta.MatchedSlot
+								if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
+									if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
+										matchedSlot = bidderMeta.MatchedSlot
+									}
 								}
+							}
+							// Extract NWID from bid.meta.networkId if present
+							if bidExt.Prebid.Meta.NetworkID != 0 {
+								tracker.PartnerInfo.NWID = fmt.Sprintf("%d", bidExt.Prebid.Meta.NetworkID)
 							}
 						}
 					}
@@ -268,6 +274,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKAdformat, partner.Adformat)
 	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
 	v.Set(models.TRKAdvertiser, partner.Advertiser)
+	if len(partner.NWID) > 0 {
+		v.Set(models.TRKNETWORKID, partner.NWID)
+	}
 
 	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
 	if tracker.FloorSkippedFlag != nil {
