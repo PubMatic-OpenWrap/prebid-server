@@ -5,6 +5,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -138,8 +139,10 @@ type VastUnWrap struct {
 }
 
 type GoogleSDK struct {
-	Reject          bool
-	SDKRenderedAdID string
+	StartTime           time.Time
+	Reject              bool
+	SDKRenderedAdID     string
+	RejectedBidResponse *openrtb2.BidResponse
 }
 
 type UnityLevelPlay struct {

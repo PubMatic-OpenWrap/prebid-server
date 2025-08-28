@@ -80,8 +80,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
 		ao.Response = orignalMaxBidResponse
+	}
+	if rCtx.Endpoint == models.EndpointGoogleSDK {
+		ao.Response = rCtx.GoogleSDK.RejectedBidResponse
 	}
 	setWakandaObject(rCtx, ao, loggerURL)
 }

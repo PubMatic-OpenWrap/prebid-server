@@ -167,6 +167,7 @@ func (m OpenWrap) handleEntrypointHook(
 		},
 		SendBurl:                        getSendBurl(payload.Body, endpoint),
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
+		GoogleSDK:                       models.GoogleSDK{StartTime: time.Now()},
 	}
 
 	if rCtx.IsCTVRequest {
