@@ -195,7 +195,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue:         floorRuleValue,
 				DealID:                 "-1",
 				MultiBidMultiFloorFlag: mbmfFlag,
-				NWID:                   networkId,
+				NetworkID:              networkId,
 			}
 			if rctx.PriceGranularity != nil {
 				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
@@ -276,8 +276,8 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKAdformat, partner.Adformat)
 	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
 	v.Set(models.TRKAdvertiser, partner.Advertiser)
-	if partner.NWID != 0 {
-		v.Set(models.TRKNETWORKID, strconv.Itoa(partner.NWID))
+	if partner.NetworkID != 0 {
+		v.Set(models.TRKNETWORKID, strconv.Itoa(partner.NetworkID))
 	}
 
 	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
