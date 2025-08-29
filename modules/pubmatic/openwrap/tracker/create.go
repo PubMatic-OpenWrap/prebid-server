@@ -90,7 +90,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				isRewardInventory, adduration                  = 0, 0
 				dspId, mbmfFlag                                int
 				eg, en                                         float64
-				networkId                                      string
+				networkId                                      int
 			)
 
 			if rctx.DeviceCtx.Ext != nil {
@@ -130,7 +130,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 							}
 							// Extract NWID from bid.meta.networkId if present
 							if bidExt.Prebid.Meta.NetworkID != 0 {
-								networkId = fmt.Sprintf("%d", bidExt.Prebid.Meta.NetworkID)
+								networkId = bidExt.Prebid.Meta.NetworkID
 							}
 						}
 					}
@@ -276,8 +276,8 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKAdformat, partner.Adformat)
 	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
 	v.Set(models.TRKAdvertiser, partner.Advertiser)
-	if len(partner.NWID) > 0 {
-		v.Set(models.TRKNETWORKID, partner.NWID)
+	if partner.NWID != 0 {
+		v.Set(models.TRKNETWORKID, strconv.Itoa(partner.NWID))
 	}
 
 	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
