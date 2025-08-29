@@ -626,6 +626,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
+		impExt.OWSDK = nil
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
