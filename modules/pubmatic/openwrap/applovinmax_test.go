@@ -123,10 +123,10 @@ func TestUpdateImpression(t *testing.T) {
 		{
 			name: "maxImp has no ext, signalImp has reward,skadn and gpid,owsdk in ext",
 			args: args{
-				signalImps: []openrtb2.Imp{{Ext: json.RawMessage(`{"owsdk":{"ctaoverlay"},"reward":1,"skadn":{"versions":["2.0","2.1"],"sourceapp":"11111","skadnetids":["424m5254lk.skadnetwork","4fzdc2evr5.skadnetwork"]},"gpid":"/adunitname/234"}`)}},
+				signalImps: []openrtb2.Imp{{Ext: json.RawMessage(`{"owsdk":{"ctaoverlay":1},"reward":1,"skadn":{"versions":["2.0","2.1"],"sourceapp":"11111","skadnetids":["424m5254lk.skadnetwork","4fzdc2evr5.skadnetwork"]},"gpid":"/adunitname/234"}`)}},
 				maxImps:    []openrtb2.Imp{{}},
 			},
-			want: []openrtb2.Imp{{Ext: json.RawMessage(`{"reward":1,"skadn":{"versions":["2.0","2.1"],"sourceapp":"11111","skadnetids":["424m5254lk.skadnetwork","4fzdc2evr5.skadnetwork"]},"gpid":"/adunitname/234","owsdk":{"ctaoverlay"}}`)}},
+			want: []openrtb2.Imp{{Ext: json.RawMessage(`{"reward":1,"skadn":{"versions":["2.0","2.1"],"sourceapp":"11111","skadnetids":["424m5254lk.skadnetwork","4fzdc2evr5.skadnetwork"]},"gpid":"/adunitname/234","owsdk":{"ctaoverlay":1}}`)}},
 		},
 		{
 			name: "signalImp has Native, maxImp doesn't have Native",
