@@ -12,6 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 type RequestType string
@@ -61,7 +62,7 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 	}
 
 	var orignalMaxBidResponse *openrtb2.BidResponse
-	if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
+	if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
 		orignalMaxBidResponse = new(openrtb2.BidResponse)
 		*orignalMaxBidResponse = *ao.Response
 	}
@@ -80,10 +81,11 @@ func (ow HTTPLogger) LogAuctionObject(ao *analytics.AuctionObject) {
 
 	go send(rCtx, loggerURL, headers, mhttp.NewMultiHttpContext())
 
-	if rCtx.Endpoint == models.EndpointAppLovinMax {
+	if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
 		ao.Response = orignalMaxBidResponse
 	}
-	if rCtx.Endpoint == models.EndpointGoogleSDK {
+
+	if sdkutils.IsGoogleSDKResponseRejected(rCtx, *ao) {
 		ao.Response = rCtx.GoogleSDK.RejectedBidResponse
 	}
 	setWakandaObject(rCtx, ao, loggerURL)
