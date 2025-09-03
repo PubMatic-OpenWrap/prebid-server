@@ -277,7 +277,7 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
 	v.Set(models.TRKAdvertiser, partner.Advertiser)
 	if partner.NetworkID != 0 {
-		v.Set(models.TRKNETWORKID, strconv.Itoa(partner.NetworkID))
+		v.Set(models.TRKNetworkID, strconv.Itoa(partner.NetworkID))
 	}
 
 	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
