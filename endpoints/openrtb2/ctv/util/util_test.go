@@ -185,9 +185,9 @@ func TestGetTargeting(t *testing.T) {
 		expectValue string
 		expectError bool
 	}{
-		{"no hb_bidder, expect error", "", "", openrtb_ext.HbCategoryDurationKey, "", true},
-		{"hb_bidder present, no key present", `{"x" : "y"}`, "appnexus", openrtb_ext.HbCategoryDurationKey, "", true},
-		{"hb_bidder present, required key present (of length 20)", `{"x" : "y", "hb_pb_cat_dur_appnex" : "5.00_sports_10s"}`, "appnexus", openrtb_ext.HbCategoryDurationKey, "5.00_sports_10s", false},
+		{"no hb_bidder, expect error", "", "", openrtb_ext.CategoryDurationKey, "", true},
+		{"hb_bidder present, no key present", `{"x" : "y"}`, "appnexus", openrtb_ext.CategoryDurationKey, "", true},
+		{"hb_bidder present, required key present (of length 20)", `{"x" : "y", "hb_pb_cat_dur_appnex" : "5.00_sports_10s"}`, "appnexus", openrtb_ext.CategoryDurationKey, "5.00_sports_10s", false},
 	}
 
 	for _, test := range tests {

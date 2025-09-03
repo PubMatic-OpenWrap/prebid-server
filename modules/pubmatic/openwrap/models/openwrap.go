@@ -102,8 +102,6 @@ type RequestCtx struct {
 	CustomDimensions                map[string]CustomDimension
 	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
-	VastUnwrapEnabled               bool
-	VastUnwrapStatsEnabled          bool
 	AppLovinMax                     AppLovinMax
 	LoggerDisabled                  bool
 	TrackerDisabled                 bool
@@ -124,6 +122,8 @@ type RequestCtx struct {
 	MultiFloors                     map[string]*MultiFloors // impression level floors
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
+	UnityLevelPlay                  UnityLevelPlay
+	VastUnWrap                      VastUnWrap
 
 	// Adpod
 	AdruleFlag         bool
@@ -131,9 +131,19 @@ type RequestCtx struct {
 	ImpAdPodConfig     map[string][]PodConfig
 }
 
+type VastUnWrap struct {
+	IsPrivacyEnforced bool
+	Enabled           bool
+	StatsEnabled      bool
+}
+
 type GoogleSDK struct {
 	Reject          bool
 	SDKRenderedAdID string
+}
+
+type UnityLevelPlay struct {
+	Reject bool
 }
 
 type AdpodProfileConfig struct {
@@ -270,6 +280,8 @@ type MultiFloors struct {
 	Tier1    float64 `json:"tier1,omitempty"`
 	Tier2    float64 `json:"tier2,omitempty"`
 	Tier3    float64 `json:"tier3,omitempty"`
+	Tier4    float64 `json:"tier4,omitempty"`
+	Tier5    float64 `json:"tier5,omitempty"`
 }
 
 func (w WinningBids) IsWinningBid(impId, bidId string) bool {

@@ -52,6 +52,7 @@ type record struct {
 	AppPlatform           int              `json:"ap,omitempty"`
 	AppIntegrationPath    *int             `json:"aip,omitempty"`
 	AppSubIntegrationPath *int             `json:"asip,omitempty"`
+	FloorSkippedFlag      *int             `json:"fskp,omitempty"`
 }
 
 // Device struct for storing device information
@@ -105,7 +106,6 @@ type SlotRecord struct {
 	AdPodSlot         *AdPodSlot      `json:"aps,omitempty"`
 	PartnerData       []PartnerRecord `json:"ps"`
 	RewardedInventory int             `json:"rwrd,omitempty"` // Indicates if the ad slot was enabled (rwrd=1) for rewarded or disabled (rwrd=0)
-	FloorSkippedFlag  *int            `json:"fskp,omitempty"`
 	DisplayManager    string          `json:"dm,omitempty"`
 	DisplayManagerVer string          `json:"dmv,omitempty"`
 }
@@ -187,7 +187,7 @@ func (wlog *WloggerRecord) logIntegrationType(endpoint string) {
 	switch endpoint {
 	case models.EndpointAMP:
 		wlog.IntegrationType = models.TypeAmp
-	case models.EndpointV25, models.EndpointAppLovinMax, models.EndpointGoogleSDK:
+	case models.EndpointV25, models.EndpointAppLovinMax, models.EndpointGoogleSDK, models.EndpointUnityLevelPlay:
 		wlog.IntegrationType = models.TypeSDK
 	case models.EndpointVAST:
 		wlog.IntegrationType = models.TypeTag

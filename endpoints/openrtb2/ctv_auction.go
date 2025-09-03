@@ -136,7 +136,7 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 	}
 	defer func() {
 		deps.metricsEngine.RecordRequest(deps.labels)
-		recordRejectedBids(deps.labels.PubID, ao.SeatNonBid, deps.metricsEngine)
+		recordRejectedBids(deps.labels.PubID, ao.SeatNonBid, deps.metricsEngine, deps.labels)
 		deps.metricsEngine.RecordRequestTime(deps.labels, time.Since(start))
 		deps.analytics.LogAuctionObject(&ao, activityControl)
 	}()
@@ -607,16 +607,16 @@ func (deps *ctvEndpointDeps) collectBids(response *openrtb2.BidResponse) {
 
 			originalImpID, _ := util.DecodeImpressionID(bid.ImpID) //TODO: check if we can reomove and maintain map
 
-			value, err := util.GetTargeting(openrtb_ext.HbCategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			value, err := util.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if nil == err {
 				// ignore error
-				adpod.AddTargetingKey(bid, openrtb_ext.HbCategoryDurationKey, value)
+				adpod.AddTargetingKey(bid, openrtb_ext.CategoryDurationKey, value)
 			}
 
-			value, err = util.GetTargeting(openrtb_ext.HbpbConstantKey, openrtb_ext.BidderName(seat.Seat), *bid)
+			value, err = util.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seat.Seat), *bid)
 			if nil == err {
 				// ignore error
-				adpod.AddTargetingKey(bid, openrtb_ext.HbpbConstantKey, value)
+				adpod.AddTargetingKey(bid, openrtb_ext.PbKey, value)
 			}
 
 			podId, ok := deps.impToPodId[originalImpID]

@@ -30,6 +30,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -226,18 +227,27 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
 		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
-		rCtx.VastUnwrapEnabled = true
+		rCtx.VastUnWrap.Enabled = true
+		rCtx.VastUnWrap.IsPrivacyEnforced = isPrivacyEnforced(payload.BidRequest.Regs, payload.BidRequest.Device)
 	}
 
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
-	var (
-		allPartnersThrottledFlag bool
-		allPartnersFilteredFlag  bool
-	)
+	allPartnersThrottledFlag := false
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap)
+	if allPartnersThrottledFlag {
+		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
+		result.Errors = append(result.Errors, "All adapters Blocked due to Geo Filtering")
+		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
+		glog.V(models.LogLevelDebug).Info("All adapters Blocked due to Geo Filtering")
+		return result, nil
+	}
+
+	var allPartnersFilteredFlag bool
+
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
@@ -353,6 +363,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		// if imp.ext.data.pbadslot is absent then set it to tagId
 		if len(impExt.Data.PbAdslot) == 0 {
 			impExt.Data.PbAdslot = imp.TagID
+		}
+
+		// Add size 300x600 for interstitial banner
+		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && imp.Instl == 1 {
+			sdkutils.AddSize300x600ForInterstitialBanner(&imp)
 		}
 
 		var videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx
@@ -590,25 +605,28 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 			if len(impExt.GpId) == 0 {
 				impExt.GpId = imp.TagID
 			}
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
-			if payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL == "" {
-				var isValidAppStoreUrl bool
-				if rCtx.AppStoreUrl, isValidAppStoreUrl = getProfileAppStoreUrl(rCtx); isValidAppStoreUrl {
-					m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
-				}
-				rCtx.PageURL = rCtx.AppStoreUrl
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+			appStoreUrl, isValidAppStoreUrl := getProfileAppStoreUrl(rCtx)
+			if !isValidAppStoreUrl && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL != "" {
+				appStoreUrl = payload.BidRequest.App.StoreURL
+			}
+			rCtx.AppStoreUrl = appStoreUrl
+			rCtx.PageURL = appStoreUrl
+			if appStoreUrl != "" {
+				m.updateSkadnSourceapp(rCtx, payload.BidRequest, impExt)
 			}
 		}
 
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
+		impExt.OWSDK = nil
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
@@ -758,14 +776,13 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
-	if rctx.Endpoint == models.EndpointAppLovinMax {
-		if rctx.AppStoreUrl != "" {
-			bidRequest.App.StoreURL = rctx.AppStoreUrl
-		}
+	if sdkutils.IsSdkIntegration(rctx.Endpoint) && rctx.AppStoreUrl != "" {
+		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 
-	if rctx.Endpoint == models.EndpointGoogleSDK && bidRequest.App != nil && bidRequest.App.StoreURL == "" && rctx.AppStoreUrl != "" {
-		bidRequest.App.StoreURL = rctx.AppStoreUrl
+	// Remove app.ext.token
+	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled

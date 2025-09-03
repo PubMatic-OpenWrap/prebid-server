@@ -3,30 +3,34 @@ package models
 import "github.com/golang/glog"
 
 const (
-	PARTNER_ID                  = "partnerId"
-	ADAPTER_ID                  = "adapterId"
-	PARTNER_ACCOUNT_NAME        = "partnerName"
-	ADAPTER_NAME                = "adapterName"
-	PREBID_PARTNER_NAME         = "prebidPartnerName"
-	BidderCode                  = "bidderCode"
-	BidderFilters               = "bidderFilters"
-	IsAlias                     = "isAlias"
-	PROTOCOL                    = "protocol"
-	SERVER_SIDE_FLAG            = "serverSideEnabled"
-	DisplayVersionID            = "displayVersionId"
-	KEY_PUBLISHER_ID            = "publisherId"
-	KEY_PROFILE_ID              = "profileId"
-	KEY_SLOT_NAME               = "slotName"
-	LEVEL                       = "level"
-	KEY_GEN_PATTERN             = "kgp"
-	TIMEOUT                     = "timeout"
-	AdserverKey                 = "adserver"
-	MopubAdserver               = "MoPub"
-	CustomAdserver              = "CUSTOM"
-	PriceGranularityKey         = "priceGranularity"
-	VideoAdDurationKey          = "videoAdDuration"
-	VideoAdDurationMatchingKey  = "videoAdDurationMatching"
-	CountryFilterModeKey        = "countryFilterMode"
+	PARTNER_ID                 = "partnerId"
+	ADAPTER_ID                 = "adapterId"
+	PARTNER_ACCOUNT_NAME       = "partnerName"
+	ADAPTER_NAME               = "adapterName"
+	PREBID_PARTNER_NAME        = "prebidPartnerName"
+	BidderCode                 = "bidderCode"
+	BidderFilters              = "bidderFilters"
+	IsAlias                    = "isAlias"
+	PROTOCOL                   = "protocol"
+	SERVER_SIDE_FLAG           = "serverSideEnabled"
+	DisplayVersionID           = "displayVersionId"
+	KEY_PUBLISHER_ID           = "publisherId"
+	KEY_PROFILE_ID             = "profileId"
+	KEY_SLOT_NAME              = "slotName"
+	LEVEL                      = "level"
+	KEY_GEN_PATTERN            = "kgp"
+	TIMEOUT                    = "timeout"
+	AdserverKey                = "adserver"
+	MopubAdserver              = "MoPub"
+	CustomAdserver             = "CUSTOM"
+	PriceGranularityKey        = "priceGranularity"
+	VideoAdDurationKey         = "videoAdDuration"
+	VideoAdDurationMatchingKey = "videoAdDurationMatching"
+	// Country Filtering specific keys
+	CountryFilterModeKey            = "countryFilterMode"
+	PartnerLevelThrottlingFeatureID = "1" // Bidder_Exclusion
+	MaxRetryAttempts                = 3
+
 	CountryCodesKey             = "countryCodes"
 	REVSHARE                    = "rev_share"
 	THROTTLE                    = "throttle"
@@ -293,6 +297,7 @@ const (
 	HbBuyIdPrefix               = "hb_buyid_"
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"
 	PwtBuyIdPubmaticConstantKey = "pwtbuyid_pubmatic"
+	DefaultTargetingKeyPrefix   = "hb"
 
 	SChainDBKey           = "sChain"
 	SChainObjectDBKey     = "sChainObj"
@@ -403,6 +408,9 @@ const (
 	AppPlatformKey        = "appPlatform"
 	IntegrationPathKey    = "integrationPath"
 	SubIntegrationPathKey = "subIntegrationPath"
+
+	//constants for SDK features
+	CTAOVERLAY = "ctaoverlay"
 )
 
 const (
@@ -473,20 +481,21 @@ const (
 )
 
 const (
-	EndpointV25         = "v25"
-	EndpointAMP         = "amp"
-	EndpintInappVideo   = "inappvideo"
-	EndpointVideo       = "video"
-	EndpointJson        = "json"
-	EndpointORTB        = "ortb"
-	EndpointVAST        = "vast"
-	EndpointWebS2S      = "webs2s"
-	EndPointCTV         = "ctv"
-	EndpointHybrid      = "hybrid"
-	EndpointAppLovinMax = "applovinmax"
-	EndpointGoogleSDK   = "googlesdk"
-	EndpointGeo         = "geo"
-	EndpointInvalid     = "invalid"
+	EndpointV25            = "v25"
+	EndpointAMP            = "amp"
+	EndpintInappVideo      = "inappvideo"
+	EndpointVideo          = "video"
+	EndpointJson           = "json"
+	EndpointORTB           = "ortb"
+	EndpointVAST           = "vast"
+	EndpointWebS2S         = "webs2s"
+	EndPointCTV            = "ctv"
+	EndpointHybrid         = "hybrid"
+	EndpointAppLovinMax    = "applovinmax"
+	EndpointGoogleSDK      = "googlesdk"
+	EndpointUnityLevelPlay = "ulevelplay"
+	EndpointGeo            = "geo"
+	EndpointInvalid        = "invalid"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -554,12 +563,13 @@ const (
 	// DisplayVersionInnerQuery           = "DisplayVersionInnerQuery"
 	LiveVersionInnerQuery = "LiveVersionInnerQuery"
 	//PMSlotToMappings               = "GetPMSlotToMappings"
-	TestQuery                     = "TestQuery"
-	ProfileTypePlatformMapQuery   = "GetProfileTypePlatformMapQuery"
-	AppIntegrationPathMapQuery    = "GetAppIntegrationPathMapQuery"
-	AppSubIntegrationPathMapQuery = "GetAppSubIntegrationPathMapQuery"
-	GDPRCountryCodesQuery         = "GetGDPRCountryCodes"
-	ProfileAdUnitMultiFloorsQuery = "GetProfileAdUnitMultiFloors"
+	TestQuery                        = "TestQuery"
+	ProfileTypePlatformMapQuery      = "GetProfileTypePlatformMapQuery"
+	AppIntegrationPathMapQuery       = "GetAppIntegrationPathMapQuery"
+	AppSubIntegrationPathMapQuery    = "GetAppSubIntegrationPathMapQuery"
+	GDPRCountryCodesQuery            = "GetGDPRCountryCodes"
+	ProfileAdUnitMultiFloorsQuery    = "GetProfileAdUnitMultiFloors"
+	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
 )
 
 // constants for owlogger Integration Type
@@ -615,6 +625,7 @@ const (
 	FeatureMBMFPublisher       = 10
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
+	FeatureMBMFBannerFloors    = 13
 )
 
 // constants for sdk integrations
@@ -622,6 +633,7 @@ const (
 	Agent                     = "agent"
 	AppLovinMaxAgent          = "max"
 	GoogleSDKAgent            = "googlesdk"
+	UnityLevelPlayAgent       = "ulevelplay"
 	TypeRewarded              = "rewarded"
 	SignalData                = "signaldata"
 	OwSspBurl                 = "owsspburl"
@@ -632,6 +644,7 @@ const (
 	MultiBidMultiFloorValue   = "mbmfv"
 	ProcessingTime            = "processing_time_ms"
 	AdUnitFormatInstl         = "instl"
+	AdUnitFormatBanner        = "banner"
 	AdUnitFormatRwddVideo     = "rwddvideo"
 	DefaultAdUnitFormatFloors = 0
 )
@@ -658,4 +671,5 @@ const (
 	MBMFAdUnitDisabled       = 4
 	MBMFAdUnitFormatNotFound = 5
 	MBMFNoEntryFound         = 6
+	MBMFInvalidAdFormat      = 7
 )

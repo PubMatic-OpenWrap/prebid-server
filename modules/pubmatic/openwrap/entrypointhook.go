@@ -19,6 +19,8 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/usersync"
@@ -66,7 +68,7 @@ func (m OpenWrap) handleEntrypointHook(
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == models.Enabled {
-		rCtx.VastUnwrapEnabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
+		rCtx.VastUnWrap.Enabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
 		rCtx.DeviceCtx.IP = models.GetIP(payload.Request)
 		rCtx.DeviceCtx.UA = payload.Request.Header.Get("User-Agent")
 		return result, nil
@@ -97,6 +99,17 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-google-sdk-request")
+	}
+
+	if endpoint == models.EndpointUnityLevelPlay {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		ulp := unitylevelplay.NewLevelPlay(m.metricEngine)
+		payload.Body = ulp.ModifyRequestWithUnityLevelPlayParams(payload.Body)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-unity-level-play-request")
 	}
 
 	// init default for all modules
@@ -152,7 +165,7 @@ func (m OpenWrap) handleEntrypointHook(
 		WakandaDebug: &wakanda.Debug{
 			Config: m.cfg.Wakanda,
 		},
-		SendBurl:                        endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || getSendBurl(payload.Body),
+		SendBurl:                        getSendBurl(payload.Body, endpoint),
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 	}
 
@@ -245,6 +258,8 @@ func GetEndpoint(path, source string, agent string) string {
 				return models.EndpointAppLovinMax
 			case models.GoogleSDKAgent:
 				return models.EndpointGoogleSDK
+			case models.UnityLevelPlayAgent:
+				return models.EndpointUnityLevelPlay
 			}
 			return models.EndpointV25
 		default:
@@ -268,7 +283,11 @@ func GetEndpoint(path, source string, agent string) string {
 	return ""
 }
 
-func getSendBurl(request []byte) bool {
+func getSendBurl(request []byte, endpoint string) bool {
+	if sdkutils.IsSdkIntegration(endpoint) {
+		return true
+	}
+
 	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl

@@ -21,8 +21,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
-const MAX_IMPRESSIONS_PUBMATIC = 30
-const MAX_MULTIFLOORS_PUBMATIC = 3
+const MAX_MULTIFLOORS_PUBMATIC = 5
 
 const (
 	ae                  = "ae"
@@ -44,10 +43,10 @@ type PubmaticAdapter struct {
 }
 
 type pubmaticBidExt struct {
-	BidType            *int                 `json:"BidType,omitempty"`
 	VideoCreativeInfo  *pubmaticBidExtVideo `json:"video,omitempty"`
 	Marketplace        string               `json:"marketplace,omitempty"`
 	PrebidDealPriority int                  `json:"prebiddealpriority,omitempty"`
+	InBannerVideo      bool                 `json:"ibv,omitempty"`
 	DspId              int                  `json:"dspid,omitempty"`
 	AdvertiserID       int                  `json:"advid,omitempty"`
 }
@@ -101,6 +100,7 @@ const (
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
 	sendBurlKey              = "sendburl"
+	owSDKKey                 = "owsdk"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -447,6 +447,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[gpIdKey] = bidderExt.GpId
 	}
 
+	if pubmaticExt.OWSDK != nil {
+		extMap[owSDKKey] = pubmaticExt.OWSDK
+	}
+
 	//Google Sdk
 	addGoogleSDKParamsToBidExt(extMap, bidderExt)
 
@@ -610,24 +614,30 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				bid.ImpID = trimSuffixWithPattern(bid.ImpID)
 			}
 
+			mType, err := getMediaTypeForBid(&bid)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
 			bid.Ext = renameTransparencyParamsKey(bid.Ext)
 			// Copy SeatBid Ext to Bid.Ext
 			bid.Ext = copySBExtToBidExt(sb.Ext, bid.Ext)
 
 			typedBid := &adapters.TypedBid{
 				Bid:        &bid,
-				BidType:    openrtb_ext.BidTypeBanner,
 				BidVideo:   &openrtb_ext.ExtBidPrebidVideo{},
+				BidType:    mType,
 				BidTargets: targets,
 			}
 
 			var bidExt *pubmaticBidExt
-			err := jsonutil.Unmarshal(bid.Ext, &bidExt)
+			err = jsonutil.Unmarshal(bid.Ext, &bidExt)
 			if err != nil {
 				errs = append(errs, err)
 			} else if bidExt != nil {
 				typedBid.Seat = openrtb_ext.BidderName(bidExt.Marketplace)
-				typedBid.BidType = getBidType(bidExt)
+
 				if bidExt.PrebidDealPriority > 0 {
 					typedBid.DealPriority = bidExt.PrebidDealPriority
 				}
@@ -637,12 +647,17 @@ func (a *PubmaticAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				}
 				//prepares ExtBidPrebidMeta with Values got from bidresponse
 				typedBid.BidMeta = prepareMetaObject(bid, bidExt, sb.Seat)
+
+				typedBid.BidMeta.MediaType = string(mType)
+				if bidExt.InBannerVideo {
+					typedBid.BidMeta.MediaType = string(openrtb_ext.BidTypeVideo)
+				}
 			}
 			if len(bid.Cat) > 1 {
 				bid.Cat = bid.Cat[0:1]
 			}
 
-			if typedBid.BidType == openrtb_ext.BidTypeNative {
+			if mType == openrtb_ext.BidTypeNative {
 				bid.AdM, err = getNativeAdm(bid.AdM)
 				if err != nil {
 					errs = append(errs, err)
@@ -796,24 +811,27 @@ func getStringArray(array []interface{}) []string {
 	return aString
 }
 
-// getBidType returns the bid type specified in the response bid.ext
-func getBidType(bidExt *pubmaticBidExt) openrtb_ext.BidType {
+// getMediaTypeForBid returns the Mtype
+func getMediaTypeForBid(bid *openrtb2.Bid) (openrtb_ext.BidType, error) {
 	// setting "banner" as the default bid type
-	bidType := openrtb_ext.BidTypeBanner
-	if bidExt != nil && bidExt.BidType != nil {
-		switch *bidExt.BidType {
-		case 0:
-			bidType = openrtb_ext.BidTypeBanner
-		case 1:
-			bidType = openrtb_ext.BidTypeVideo
-		case 2:
-			bidType = openrtb_ext.BidTypeNative
+	mType := openrtb_ext.BidTypeBanner
+	if bid != nil {
+		switch bid.MType {
+		case openrtb2.MarkupBanner:
+			mType = openrtb_ext.BidTypeBanner
+		case openrtb2.MarkupVideo:
+			mType = openrtb_ext.BidTypeVideo
+		case openrtb2.MarkupAudio:
+			mType = openrtb_ext.BidTypeAudio
+		case openrtb2.MarkupNative:
+			mType = openrtb_ext.BidTypeNative
 		default:
-			// default value is banner
-			bidType = openrtb_ext.BidTypeBanner
+			return "", &errortypes.BadServerResponse{
+				Message: fmt.Sprintf("failed to parse bid mtype (%d) for impression id %s", bid.MType, bid.ImpID),
+			}
 		}
 	}
-	return bidType
+	return mType, nil
 }
 
 // Builder builds a new instance of the Pubmatic adapter for the given bidder with the given config.

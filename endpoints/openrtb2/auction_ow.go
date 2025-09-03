@@ -15,15 +15,19 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // recordRejectedBids records the rejected bids and respective rejection reason code
-func recordRejectedBids(pubID string, seatNonBids []openrtb_ext.SeatNonBid, metricEngine metrics.MetricsEngine) {
+func recordRejectedBids(pubID string, seatNonBids []openrtb_ext.SeatNonBid, metricEngine metrics.MetricsEngine, label metrics.Labels) {
 
 	var found bool
 	var codeLabel string
 	reasonCodeMap := make(map[openrtb3.NoBidReason]string)
+	if len(seatNonBids) == 0 && label.RequestStatus == "badinput" {
+		metricEngine.RecordBadRequest(string(label.RType), label.PubID, openrtb3.NoBidReason(18).Ptr())
+	}
 
 	for _, seatNonbid := range seatNonBids {
 		for _, nonBid := range seatNonbid.NonBid {
@@ -59,16 +63,16 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 
 	//Send owlogger in response only in case of debug mode
 	if rCtx.Debug && !rCtx.LoggerDisabled {
-		var orignalMaxBidResponse *openrtb2.BidResponse
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
-			orignalMaxBidResponse = new(openrtb2.BidResponse)
-			*orignalMaxBidResponse = *bidResponse
+		var originalBidResponse *openrtb2.BidResponse
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+			originalBidResponse = new(openrtb2.BidResponse)
+			*originalBidResponse = *bidResponse
 			pubmatic.RestoreBidResponse(rCtx, ao)
 		}
 
 		owlogger, _ := pubmatic.GetLogAuctionObjectAsURL(ao, rCtx, false, true)
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointGoogleSDK {
-			*bidResponse = *orignalMaxBidResponse
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+			*bidResponse = *originalBidResponse
 		}
 		if len(bidResponse.Ext) == 0 {
 			bidResponse.Ext = []byte("{}")
@@ -76,9 +80,9 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		if updatedExt, err := jsonparser.Set([]byte(bidResponse.Ext), []byte(strconv.Quote(owlogger)), "owlogger"); err == nil {
 			bidResponse.Ext = updatedExt
 		}
-	} else if rCtx.Endpoint == models.EndpointAppLovinMax {
+	} else if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 		bidResponse.Ext = nil
-		if rCtx.AppLovinMax.Reject {
+		if rCtx.AppLovinMax.Reject || rCtx.UnityLevelPlay.Reject {
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}

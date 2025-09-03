@@ -151,5 +151,20 @@
                 "placementId": "123456"
             }
         }
+    },
+    {
+        "name": "oms_json_anyOf - pid/publisherId",
+        "args" : {
+            "adapterName": "oms",
+            "requestJSON": {
+                "pid": "123456",
+                "publisherId": 1234   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "pid": "123456"
+            }
+        }
     }
 ]
