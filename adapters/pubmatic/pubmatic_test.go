@@ -263,6 +263,18 @@ func TestParseImpressionObject(t *testing.T) {
 				displayManagerVer: "1.0.0",
 			},
 		},
+		{
+			name: "imp.ext with owsdk",
+			args: args{
+				imp: &openrtb2.Imp{
+					Video: &openrtb2.Video{},
+					Ext:   json.RawMessage(`{"bidder":{"owsdk":{"ctaoverlay":1}}}`),
+				},
+			},
+			want: want{
+				impExt: json.RawMessage(`{"owsdk":{"ctaoverlay":1}}`),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
