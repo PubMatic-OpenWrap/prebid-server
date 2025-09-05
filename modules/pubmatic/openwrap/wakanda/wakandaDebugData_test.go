@@ -82,6 +82,28 @@ func TestRequestSet(t *testing.T) {
 				PostJSON: json.RawMessage(`{"test_post_data":1}`),
 			},
 		},
+		{
+			name: "valid_httprequest_with_json_postdata_with_charset",
+			args: args{
+				request: func() *http.Request {
+					req := httptest.NewRequest("GET", "http://test.com/path?query=test_query", nil)
+					req.Header.Set(contentType, "application/json;charset=utf-8")
+					return req
+				}(),
+				postData: json.RawMessage(`{"test_post_data":1}`),
+			},
+			want: request{
+				Method:      "GET",
+				Protocol:    "HTTP/1.1",
+				Host:        "test.com",
+				Path:        "/path",
+				QueryString: "query=test_query",
+				Headers: http.Header{
+					contentType: []string{"application/json;charset=utf-8"},
+				},
+				PostJSON: json.RawMessage(`{"test_post_data":1}`),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

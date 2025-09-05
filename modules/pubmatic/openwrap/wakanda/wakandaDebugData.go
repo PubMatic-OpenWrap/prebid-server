@@ -2,6 +2,7 @@ package wakanda
 
 import (
 	"encoding/json"
+	"strings"
 
 	"net/http"
 	"net/http/httptest"
@@ -45,7 +46,7 @@ func (r *request) set(request *http.Request, postData json.RawMessage) {
 		r.Path = request.URL.Path
 	}
 	if len(postData) > 0 {
-		if r.Headers.Get(contentType) == contentTypeApplicationJSON {
+		if strings.HasPrefix(r.Headers.Get(contentType), contentTypeApplicationJSON) {
 			r.PostJSON = postData
 		} else {
 			r.PostBody = string(postData)

@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -397,6 +400,87 @@ func TestAddSize300x600ForInterstitialBanner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			AddSize300x600ForInterstitialBanner(&tt.imp)
 			assert.Equal(t, tt.expected, tt.imp, "Banner formats should match expected")
+		})
+	}
+}
+
+func TestIsGoogleSDKResponseRejected(t *testing.T) {
+	tests := []struct {
+		name   string
+		rCtx   *models.RequestCtx
+		ao     analytics.AuctionObject
+		expect bool
+	}{
+		{
+			name: "Both responses and request context are nil",
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: nil,
+			},
+			expect: false,
+		},
+		{
+			name: "Response is nil but request context is not",
+			rCtx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: nil,
+			},
+			expect: false,
+		},
+		{
+			name: "response with nbr",
+			ao: analytics.AuctionObject{
+				Response: &openrtb2.BidResponse{
+					NBR: openrtb3.NoBidReason(6).Ptr(),
+				},
+			},
+			rCtx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			expect: true,
+		},
+		{
+			name: "Request context is not Google SDK endpoint",
+			rCtx: &models.RequestCtx{
+				Endpoint: models.EndpointAppLovinMax,
+			},
+			ao: analytics.AuctionObject{
+				Response: &openrtb2.BidResponse{},
+			},
+			expect: false,
+		},
+		{
+			name: "Reject is false and NBR is nil",
+			rCtx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			ao: analytics.AuctionObject{
+				Response: &openrtb2.BidResponse{
+					NBR: nil,
+				},
+			},
+			expect: false,
+		},
+		{
+			name: "Reject is true",
+			rCtx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+				GoogleSDK: models.GoogleSDK{
+					Reject: true,
+				},
+			},
+			ao: analytics.AuctionObject{
+				Response: &openrtb2.BidResponse{},
+			},
+			expect: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := IsGoogleSDKResponseRejected(tt.rCtx, tt.ao)
+			assert.Equal(t, tt.expect, actual, "Expected reject status should match actual reject status")
 		})
 	}
 }

@@ -3,6 +3,7 @@ package sdkutils
 import (
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
@@ -101,4 +102,15 @@ func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {
 	if phonePortrait || tabletPortrait || tabletLandscape {
 		imp.Banner.Format = append(imp.Banner.Format, openrtb2.Format{W: 300, H: 600})
 	}
+}
+
+func IsGoogleSDKResponseRejected(rCtx *models.RequestCtx, ao analytics.AuctionObject) bool {
+	if ao.Response == nil || rCtx == nil || rCtx.Endpoint != models.EndpointGoogleSDK {
+		return false
+	}
+
+	if !rCtx.GoogleSDK.Reject && ao.Response.NBR == nil {
+		return false
+	}
+	return true
 }
