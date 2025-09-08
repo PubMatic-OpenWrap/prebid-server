@@ -82,6 +82,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,
 				},
+				VastUnWrap: utils.ConvertBoolToInt(rctx.VastUnWrap.Enabled),
 			}
 			var (
 				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""

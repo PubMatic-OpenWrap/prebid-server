@@ -57,6 +57,7 @@ const (
 	TRKDisplayManagerVer      = "dmv"
 	TRKCountryCode            = "cc"
 	TRKNetworkID              = "nwid"
+	TRKVastUnwrapEnabled      = "vu"
 )
 
 // video error tracker url parameters
