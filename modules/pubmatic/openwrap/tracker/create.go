@@ -342,6 +342,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(rctx.DeviceCtx.DerivedCountryCode) > 0 {
 		v.Set(models.TRKCountryCode, rctx.DeviceCtx.DerivedCountryCode)
 	}
+	if rctx.VastUnWrap.Enabled {
+		v.Set(models.TRKVastUnwrapEnabled, strconv.Itoa(tracker.VastUnWrap))
+	}
 
 	queryString := v.Encode()
 
