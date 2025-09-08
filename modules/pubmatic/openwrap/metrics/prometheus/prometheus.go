@@ -44,7 +44,8 @@ type Metrics struct {
 	// publisher-profile-endpoint level metrics
 	pubProfEndpointInvalidRequests *prometheus.CounterVec
 
-	partnerThrottledRequests *prometheus.CounterVec
+	partnerThrottledRequests             *prometheus.CounterVec
+	countryLevelPartnerThrottledRequests *prometheus.CounterVec
 
 	// endpoint level metrics
 	endpointBadRequest *prometheus.CounterVec //TODO: should we add pub+prof labels ; also NBR is INT should it be string
@@ -278,6 +279,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"partner_throttled_requests",
 		"Count throttled requests at partner level.",
 		[]string{pubIDLabel, bidderLabel, featureIdLabel},
+	)
+	metrics.countryLevelPartnerThrottledRequests = newCounter(cfg, promRegistry,
+		"country_level_partner_throttled_requests",
+		"Count throttled requests at country level.",
+		[]string{endpointLabel, bidderLabel, countryLabel},
 	)
 	// endpoint level metrics
 	metrics.endpointBadRequest = newCounter(cfg, promRegistry,
@@ -562,11 +568,20 @@ func (m *Metrics) RecordPublisherInvalidProfileRequests(endpoint, publisherID, p
 		endpointLabel:  endpoint,
 	}).Inc()
 }
+
 func (m *Metrics) RecordPartnerThrottledRequests(publisherID, bidder, featureID string) {
 	m.partnerThrottledRequests.With(prometheus.Labels{
 		pubIDLabel:     publisherID,
 		bidderLabel:    bidder,
 		featureIdLabel: featureID,
+	}).Inc()
+}
+
+func (m *Metrics) RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string) {
+	m.countryLevelPartnerThrottledRequests.With(prometheus.Labels{
+		endpointLabel: endpoint,
+		bidderLabel:   bidder,
+		countryLabel:  country,
 	}).Inc()
 }
 
