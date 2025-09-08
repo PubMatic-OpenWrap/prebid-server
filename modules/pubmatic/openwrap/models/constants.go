@@ -408,6 +408,9 @@ const (
 	AppPlatformKey        = "appPlatform"
 	IntegrationPathKey    = "integrationPath"
 	SubIntegrationPathKey = "subIntegrationPath"
+
+	//constants for SDK features
+	CTAOVERLAY = "ctaoverlay"
 )
 
 const (
