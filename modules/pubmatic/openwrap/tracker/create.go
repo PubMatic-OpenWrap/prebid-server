@@ -82,7 +82,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,
 				},
-				VastUnWrap: utils.ConvertBoolToInt(rctx.VastUnWrap.Enabled),
+				VastUnwrapEnabled: utils.ConvertBoolToInt(rctx.VastUnWrap.Enabled),
 			}
 			var (
 				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
@@ -343,7 +343,7 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKCountryCode, rctx.DeviceCtx.DerivedCountryCode)
 	}
 	if rctx.VastUnWrap.Enabled {
-		v.Set(models.TRKVastUnwrapEnabled, strconv.Itoa(tracker.VastUnWrap))
+		v.Set(models.TRKVastUnwrapEnabled, strconv.Itoa(tracker.VastUnwrapEnabled))
 	}
 
 	queryString := v.Encode()

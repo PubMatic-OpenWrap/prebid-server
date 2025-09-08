@@ -43,9 +43,9 @@ type Tracker struct {
 	CountryCode       string
 	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
-	ImpID      string `json:"-"`
-	Secure     int    `json:"-"`
-	VastUnWrap int
+	ImpID             string `json:"-"`
+	Secure            int    `json:"-"`
+	VastUnwrapEnabled int
 }
 
 // Partner partner information to be logged in tracker object
