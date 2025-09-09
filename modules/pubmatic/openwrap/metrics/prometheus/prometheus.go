@@ -133,6 +133,7 @@ const (
 	bidderCodeLabel    = "bidder_code"
 	adapterCodeLabel   = "adapter_code"
 	errorCodeLabel     = "error_code"
+	countryLabel       = "country"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
@@ -282,7 +283,7 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 	)
 	metrics.countryLevelPartnerThrottledRequests = newCounter(cfg, promRegistry,
 		"country_level_partner_throttled_requests",
-		"Count throttled requests at country level.",
+		"Count throttled requests at endpoint, bidder, country level.",
 		[]string{endpointLabel, bidderLabel, countryLabel},
 	)
 	// endpoint level metrics

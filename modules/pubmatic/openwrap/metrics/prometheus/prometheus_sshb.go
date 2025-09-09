@@ -18,7 +18,6 @@ const (
 	wrapperCountLabel = "wrapper_count"
 
 	featureIdLabel = "feature_id"
-	countryLabel   = "country"
 )
 
 const (
