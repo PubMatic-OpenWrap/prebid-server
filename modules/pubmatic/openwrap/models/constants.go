@@ -307,11 +307,13 @@ const (
 	AllBidderSChainObj    = "allBidderSChainObject"
 	AllBidderSChainKey    = "allBidderSChain"
 
-	PriceFloorURL      = "jsonUrl"
-	FloorModuleEnabled = "floorPriceModuleEnabled"
-	FloorType          = "floorType"
-	SoftFloorType      = "soft"
-	HardFloorType      = "hard"
+	PriceFloorURL        = "jsonUrl"
+	FloorModuleEnabled   = "floorPriceModuleEnabled"
+	FloorType            = "floorType"
+	SoftFloorType        = "soft"
+	HardFloorType        = "hard"
+	FloorMin             = "FloorMin"
+	FloorDealEnforcement = "dealsEnforcement"
 
 	OwRedirectURL = "owRedirectURL"
 
@@ -626,6 +628,7 @@ const (
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
 	FeatureMBMFBannerFloors    = 13
+	FeatureDynamicFloor        = 14
 )
 
 // constants for sdk integrations

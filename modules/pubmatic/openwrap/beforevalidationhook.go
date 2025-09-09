@@ -701,7 +701,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled)
+	setFloorsExt(requestExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
