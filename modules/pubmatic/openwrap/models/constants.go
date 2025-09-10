@@ -312,7 +312,7 @@ const (
 	FloorType            = "floorType"
 	SoftFloorType        = "soft"
 	HardFloorType        = "hard"
-	FloorMin             = "FloorMin"
+	FloorMin             = "floorMin"
 	FloorDealEnforcement = "dealsEnforcement"
 
 	OwRedirectURL = "owRedirectURL"
@@ -628,7 +628,7 @@ const (
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
 	FeatureMBMFBannerFloors    = 13
-	FeatureDynamicFloor        = 14
+	FeatureDynamicFloor        = 17
 )
 
 // constants for sdk integrations
