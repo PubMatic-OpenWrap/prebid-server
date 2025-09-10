@@ -4779,6 +4779,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4864,6 +4865,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4983,6 +4985,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5083,6 +5086,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5392,6 +5396,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5528,6 +5533,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5606,6 +5612,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5689,6 +5696,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(gomock.Any())
 				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(gomock.Any(), gomock.Any())
 				mockEngine.EXPECT().RecordVideoInstlImpsStats(gomock.Any(), gomock.Any())
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -6124,6 +6132,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6189,6 +6198,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6259,6 +6269,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6330,6 +6341,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6396,6 +6408,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
+				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
