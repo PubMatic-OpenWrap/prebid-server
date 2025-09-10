@@ -42,7 +42,7 @@ var rctx = models.RequestCtx{
 	SSAuction:                 -1,
 	Platform:                  "in-app",
 	Debug:                     true,
-	DeviceCtx:                 models.DeviceCtx{UA: "go-test", IP: "127.0.0.1", Country: "IND"},
+	DeviceCtx:                 models.DeviceCtx{UA: "go-test", IP: "127.0.0.1", Country: "IND", DerivedCountryCode: "IN"},
 	IsCTVRequest:              false,
 	TrackerEndpoint:           "t.pubmatic.com",
 	VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
@@ -4292,6 +4292,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPartnerThrottledRequests("5890", "appnexus", models.PartnerLevelThrottlingFeatureID)
+				mockEngine.EXPECT().RecordCountryLevelPartnerThrottledRequests(rctx.Endpoint, "appnexus", "")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(nbr.RequestBlockedGeoFiltered))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.RequestBlockedGeoFiltered))
 				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)

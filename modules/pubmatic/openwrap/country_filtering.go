@@ -66,6 +66,7 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx) (map[string]st
 			}
 			adapterThrottleMap[bidderCode] = struct{}{}
 			m.metricEngine.RecordPartnerThrottledRequests(rCtx.PubIDStr, bidderCode, models.PartnerLevelThrottlingFeatureID)
+			m.metricEngine.RecordCountryLevelPartnerThrottledRequests(rCtx.Endpoint, bidderCode, rCtx.DeviceCtx.DerivedCountryCode)
 		} else if allPartnersThrottledFlag {
 			allPartnersThrottledFlag = false
 		}
