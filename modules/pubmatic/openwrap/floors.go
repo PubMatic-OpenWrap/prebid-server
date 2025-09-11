@@ -32,16 +32,16 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 	}
 
 	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
-		if !isDynamicFloorEnabledPub || versionConfigMap[models.FloorModuleEnabled] != "1" {
+		if isDynamicFloorEnabledPub && versionConfigMap[models.FloorModuleEnabled] == "1" {
+			setFloorsData(requestExt, versionConfigMap)
+			requestExt.Prebid.Floors.SetMaxFloor = true
+		} else {
 			setFloorsDefaultsForApp(requestExt, setMaxFloor)
-			return
 		}
+	} else {
 		setFloorsData(requestExt, versionConfigMap)
-		requestExt.Prebid.Floors.SetMaxFloor = true
-		return
+		requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
 	}
-	setFloorsData(requestExt, versionConfigMap)
-	requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
 }
 
 func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]string) {
