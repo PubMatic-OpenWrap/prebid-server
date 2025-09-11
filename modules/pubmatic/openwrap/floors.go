@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string, setMaxFloor bool, isDynamicFloorEnabledPub bool) {
+func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string, setMaxFloor bool, isDynamicFloorEnabledPub bool, pubID int, profileID int) {
 	versionConfigMap := configMap[models.VersionLevelConfigID]
 	if versionConfigMap == nil {
 		return
@@ -32,19 +33,19 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 	}
 
 	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
-		if isDynamicFloorEnabledPub && versionConfigMap[models.FloorModuleEnabled] == "1" {
-			setFloorsData(requestExt, versionConfigMap)
+		if isDynamicFloorEnabledPub && versionConfigMap[models.FloorModuleEnabled] != "0" {
+			setFloorsData(requestExt, versionConfigMap, pubID, profileID)
 			requestExt.Prebid.Floors.SetMaxFloor = true
 		} else {
 			setFloorsDefaultsForApp(requestExt, setMaxFloor)
 		}
 	} else {
-		setFloorsData(requestExt, versionConfigMap)
+		setFloorsData(requestExt, versionConfigMap, pubID, profileID)
 		requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
 	}
 }
 
-func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]string) {
+func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]string, pubID int, profileID int) {
 	if requestExt.Prebid.Floors.FloorMin == 0 {
 		floorMin, ok := versionConfigMap[models.FloorMin]
 		if ok && floorMin != "" {
@@ -76,11 +77,13 @@ func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]st
 	if versionConfigMap[models.FloorModuleEnabled] == "1" {
 		url, urlExists := versionConfigMap[models.PriceFloorURL]
 		if urlExists {
-			if requestExt.Prebid.Floors.Location == nil {
-				requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
-			}
-			requestExt.Prebid.Floors.Location.URL = url
+			setFloorsJSON(requestExt, url)
 		}
+		return
+	}
+
+	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
+		setFloorsJSON(requestExt, getFloorsJSON(pubID, profileID))
 	}
 }
 
@@ -92,4 +95,15 @@ func setFloorsDefaultsForApp(requestExt *models.RequestExt, setMaxFloor bool) {
 		requestExt.Prebid.Floors.Enforcement.EnforcePBS = ptrutil.ToPtr(true)
 	}
 	requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
+}
+
+func getFloorsJSON(pubID, profileID int) string {
+	return fmt.Sprintf(models.FloorsURLTemplate, pubID, profileID)
+}
+
+func setFloorsJSON(requestExt *models.RequestExt, url string) {
+	if requestExt.Prebid.Floors.Location == nil {
+		requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
+	}
+	requestExt.Prebid.Floors.Location.URL = url
 }

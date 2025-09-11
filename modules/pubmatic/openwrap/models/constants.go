@@ -314,6 +314,7 @@ const (
 	HardFloorType        = "hard"
 	FloorMin             = "floorMin"
 	FloorDealEnforcement = "dealsEnforcement"
+	FloorsURLTemplate    = "https://ads.pubmatic.com/AdServer/js/pwt/floors/%d/%d/floors.json"
 
 	OwRedirectURL = "owRedirectURL"
 
