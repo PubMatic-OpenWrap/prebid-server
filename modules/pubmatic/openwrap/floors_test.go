@@ -1105,8 +1105,8 @@ func TestGetFloorsJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getFloorsJSON(tt.args.pubID, tt.args.profileID); got != tt.want {
-				t.Errorf("getFloorsJSON() = %v, want %v", got, tt.want)
+			if got := prepareFloorJsonURL(tt.args.pubID, tt.args.profileID); got != tt.want {
+				t.Errorf("prepareFloorJsonURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1154,7 +1154,7 @@ func TestSetFloorsJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setFloorsJSON(tt.args.requestExt, tt.args.url)
+			setFloorJsonURL(tt.args.requestExt, tt.args.url)
 			assert.Equal(t, tt.args.url, tt.args.requestExt.Prebid.Floors.Location.URL)
 		})
 	}

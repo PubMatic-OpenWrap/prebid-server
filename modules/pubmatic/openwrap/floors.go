@@ -77,13 +77,13 @@ func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]st
 	if versionConfigMap[models.FloorModuleEnabled] == "1" {
 		url, urlExists := versionConfigMap[models.PriceFloorURL]
 		if urlExists {
-			setFloorsJSON(requestExt, url)
+			setFloorJsonURL(requestExt, url)
+			return
 		}
-		return
 	}
 
 	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
-		setFloorsJSON(requestExt, getFloorsJSON(pubID, profileID))
+		setFloorJsonURL(requestExt, prepareFloorJsonURL(pubID, profileID))
 	}
 }
 
@@ -97,11 +97,11 @@ func setFloorsDefaultsForApp(requestExt *models.RequestExt, setMaxFloor bool) {
 	requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
 }
 
-func getFloorsJSON(pubID, profileID int) string {
+func prepareFloorJsonURL(pubID, profileID int) string {
 	return fmt.Sprintf(models.FloorsURLTemplate, pubID, profileID)
 }
 
-func setFloorsJSON(requestExt *models.RequestExt, url string) {
+func setFloorJsonURL(requestExt *models.RequestExt, url string) {
 	if requestExt.Prebid.Floors.Location == nil {
 		requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
 	}
