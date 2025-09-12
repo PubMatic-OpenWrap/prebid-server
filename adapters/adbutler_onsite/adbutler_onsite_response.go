@@ -226,6 +226,7 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 				MType: adType,
 				Price: randomPriceInRange(), //Temporary calculation
 				CrID:  adButlerBid.BannerID,
+				CID:   campaignId,
 			}
 
 			bidExtJSON, err1 := json.Marshal(bidExt)
