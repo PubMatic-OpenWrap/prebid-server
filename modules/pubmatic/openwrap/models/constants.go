@@ -629,7 +629,7 @@ const (
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
 	FeatureMBMFBannerFloors    = 13
-	FeatureDynamicFloor        = 17
+	FeatureDynamicFloor        = 15
 )
 
 // constants for sdk integrations
