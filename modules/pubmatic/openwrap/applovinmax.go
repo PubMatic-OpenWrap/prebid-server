@@ -400,6 +400,7 @@ func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx models.RequestCtx, maxRequ
 			if maxRequest.Source != nil {
 				glog.V(models.LogLevelDebug).Infof("Removing schain object from request, pubID=%d percentage=%d", rctx.PubID, percentage)
 				maxRequest.Source.SChain = nil
+				rctx.ABTestConfigApplied = 1
 				m.metricEngine.RecordRequestWithSchainRemoved(rctx.PubIDStr)
 			}
 		}
