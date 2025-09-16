@@ -256,7 +256,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKRewardedInventory, strconv.Itoa(tracker.RewardedInventory))
 	}
 	v.Set(models.TRKPlatform, strconv.Itoa(tracker.Platform))
-	v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	if tracker.TestGroup != 0 {
+		v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	}
 	v.Set(models.TRKPubDomain, tracker.Origin)
 	v.Set(models.TRKAdPodExist, strconv.Itoa(tracker.AdPodSlot))
 	partner := tracker.PartnerInfo

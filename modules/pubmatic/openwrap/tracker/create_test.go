@@ -453,7 +453,7 @@ func TestConstructTrackerURL(t *testing.T) {
 				},
 				tracker: models.Tracker{},
 			},
-			want: "http://t.pubmatic.com/wt?adv=&af=&aps=0&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pubid=0&purl=&sl=1&slot=&ss=0&tgid=0&tst=0",
+			want: "http://t.pubmatic.com/wt?adv=&af=&aps=0&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pubid=0&purl=&sl=1&slot=&ss=0&tst=0",
 		},
 		{
 			name: "platform_amp_with_tracker_details",
@@ -710,7 +710,7 @@ func TestConstructTrackerURL(t *testing.T) {
 					AppSubIntegrationPath: ptrutil.ToPtr(8),
 				},
 			},
-			want: "//t.pubmatic.com/wt?adv=&af=&aip=3&ap=5&aps=0&asip=8&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pt=1&ptp=4&pubid=0&purl=&sl=1&slot=&ss=0&tgid=0&tst=0",
+			want: "//t.pubmatic.com/wt?adv=&af=&aip=3&ap=5&aps=0&asip=8&au=&bc=&bidid=&di=&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=&pdvid=&pid=&plt=0&pn=&psz=&pt=1&ptp=4&pubid=0&purl=&sl=1&slot=&ss=0&tst=0",
 		},
 		{
 			name: "all_floors_details_in_tracker_multiBidMultiFloor_enabled",
