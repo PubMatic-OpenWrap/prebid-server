@@ -26,6 +26,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	reset := wakanda.TestInstance("111", "222")
 
+	originalOw := ow
+	defer func() { ow = originalOw }()
+	ow = &OpenWrap{pubFeatures: mockFeature}
+
 	defer func() {
 		ctrl.Finish()
 		reset()

@@ -911,6 +911,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordVideoInstlImpsStats(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVideoInstlImpsStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordVideoInstlImpsStats), arg0, arg1)
 }
 
+// RecordRequestWithSchainRemoved mocks base method.
+func (m *MockMetricsEngine) RecordRequestWithSchainRemoved(arg0 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordRequestWithSchainRemoved", arg0)
+}
+
+// RecordRequestWithSchainRemoved indicates an expected call of RecordRequestWithSchainRemoved.
+func (mr *MockMetricsEngineMockRecorder) RecordRequestWithSchainRemoved(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestWithSchainRemoved", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestWithSchainRemoved), arg0)
+}
+
 // Shutdown mocks base method.
 func (m *MockMetricsEngine) Shutdown() {
 	m.ctrl.T.Helper()

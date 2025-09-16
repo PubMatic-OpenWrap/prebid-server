@@ -28,6 +28,7 @@ type feature struct {
 	maxFloors           maxFloors
 	bidRecovery         bidRecovery
 	appLovinMultiFloors appLovinMultiFloors
+	appLovinMaxSchain   appLovinMaxSchain
 	impCountingMethod   impCountingMethod
 	gdprCountryCodes    gdprCountryCodes
 	mbmf                *mbmf
@@ -125,6 +126,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
+	fe.updateApplovinMaxSchainFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 

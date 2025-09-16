@@ -357,3 +357,4 @@ func (st *StatsTCP) RecordIBVRequest(pubId, profId string)                      
 func (st *StatsTCP) RecordGeoLookupFailure(endpoint string)                                      {}
 func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder, featureID string)          {}
 func (st *StatsTCP) RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string) {}
+func (st *StatsTCP) RecordRequestWithSchainRemoved(publisher string)                             {}

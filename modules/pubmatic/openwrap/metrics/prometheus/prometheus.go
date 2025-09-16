@@ -30,12 +30,13 @@ type Metrics struct {
 	pubProfImpDisabledViaConfig *prometheus.CounterVec
 
 	// publisher level metrics
-	pubRequestValidationErrors *prometheus.CounterVec // TODO : should we add profiles as label ?
-	pubNoBidResponseErrors     *prometheus.CounterVec
-	pubResponseTime            *prometheus.HistogramVec
-	pubImpsWithContent         *prometheus.CounterVec
-	pubBidRecoveryStatus       *prometheus.CounterVec
-	pubBidRecoveryTime         *prometheus.HistogramVec
+	pubRequestValidationErrors  *prometheus.CounterVec // TODO : should we add profiles as label ?
+	pubNoBidResponseErrors      *prometheus.CounterVec
+	pubResponseTime             *prometheus.HistogramVec
+	pubImpsWithContent          *prometheus.CounterVec
+	pubBidRecoveryStatus        *prometheus.CounterVec
+	pubBidRecoveryTime          *prometheus.HistogramVec
+	pubRequestWithSchainRemoved *prometheus.CounterVec
 
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
@@ -383,6 +384,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIdLabel},
 	)
 
+	metrics.pubRequestWithSchainRemoved = newCounter(cfg, promRegistry,
+		"pub_request_with_schain_removed",
+		"Count of requests with schain removed",
+		[]string{pubIdLabel},
+	)
+
 	metrics.adPodGeneratedImpressionsCount = newCounter(cfg, promRegistry,
 		"adpod_imps",
 		"Count of impressions generated from adpod configs",
@@ -657,6 +664,13 @@ func (m *Metrics) RecordDBQueryFailure(queryType, publisher, profile string) {
 func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher string) {
 	m.loggerFailure.With(prometheus.Labels{
 		pubIDLabel: publisher,
+	}).Inc()
+}
+
+// RecordRequestWithSchainRemoved record request with schain removed
+func (m *Metrics) RecordRequestWithSchainRemoved(publisherID string) {
+	m.pubRequestWithSchainRemoved.With(prometheus.Labels{
+		pubIDLabel: publisherID,
 	}).Inc()
 }
 

@@ -843,6 +843,12 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	originalOw := ow
+	defer func() { ow = originalOw }()
+	ow = &OpenWrap{pubFeatures: mockFeature}
+
 	type args struct {
 		requestBody []byte
 		rctx        models.RequestCtx
@@ -1358,6 +1364,10 @@ func TestOpenWrap_getApplovinMultiFloors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	originalOw := ow
+	defer func() { ow = originalOw }()
+	ow = &OpenWrap{pubFeatures: mockFeature}
 
 	type args struct {
 		rctx models.RequestCtx

@@ -271,6 +271,8 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 	maxRequest.Imp[0].Native = nil
 
 	addSignalDataInRequest(signalData, maxRequest)
+
+	ow.updateAppLovinMaxRequestSchain(rctx, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
 	}
@@ -385,4 +387,21 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 		}
 	}
 	return models.MultiFloorsConfig{Enabled: false}
+}
+
+func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx models.RequestCtx, maxRequest *openrtb2.BidRequest) {
+	if rctx.Endpoint != models.EndpointAppLovinMax {
+		return
+	}
+
+	percentage := m.pubFeatures.GetApplovinMaxSchainPercentage(rctx.PubID)
+	if m.pubFeatures.IsApplovinMaxSchainEnabled(rctx.PubID) && percentage > 0 {
+		if GetRandomNumberIn1To100() <= percentage {
+			if maxRequest.Source != nil {
+				glog.V(models.LogLevelDebug).Infof("Removing schain object from request, pubID=%d percentage=%d", rctx.PubID, percentage)
+				maxRequest.Source.SChain = nil
+				m.metricEngine.RecordRequestWithSchainRemoved(rctx.PubIDStr)
+			}
+		}
+	}
 }

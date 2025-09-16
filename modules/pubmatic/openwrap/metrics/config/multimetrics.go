@@ -585,3 +585,10 @@ func (me *MultiMetricsEngine) RecordGeoLookupFailure(endpoint string) {
 		thisME.RecordGeoLookupFailure(endpoint)
 	}
 }
+
+// RecordRequestWithSchainRemoved record request with schain removed
+func (me *MultiMetricsEngine) RecordRequestWithSchainRemoved(publisher string) {
+	for _, thisME := range *me {
+		thisME.RecordRequestWithSchainRemoved(publisher)
+	}
+}

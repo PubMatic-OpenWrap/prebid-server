@@ -48,6 +48,29 @@ func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
+func (m *MockFeature) IsApplovinMaxSchainEnabled(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsApplovinMaxSchainEnabled", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+func (mr *MockFeatureMockRecorder) IsApplovinMaxSchainEnabled(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsApplovinMaxSchainEnabled", reflect.TypeOf((*MockFeature)(nil).IsApplovinMaxSchainEnabled), arg0)
+}
+
+func (m *MockFeature) GetApplovinMaxSchainPercentage(arg0 int) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApplovinMaxSchainPercentage", arg0)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+func (mr *MockFeatureMockRecorder) GetApplovinMaxSchainPercentage(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMaxSchainPercentage", reflect.TypeOf((*MockFeature)(nil).GetApplovinMaxSchainPercentage), arg0)
+}
+
 // GetImpCountingMethodEnabledBidders mocks base method.
 func (m *MockFeature) GetImpCountingMethodEnabledBidders() map[string]struct{} {
 	m.ctrl.T.Helper()

@@ -626,6 +626,7 @@ const (
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
 	FeatureMBMFBannerFloors    = 13
+	FeatureAppLovinMaxSchain   = 14
 )
 
 // constants for sdk integrations
