@@ -911,16 +911,16 @@ func (mr *MockMetricsEngineMockRecorder) RecordVideoInstlImpsStats(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordVideoInstlImpsStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordVideoInstlImpsStats), arg0, arg1)
 }
 
-// RecordRequestWithSchainRemoved mocks base method.
-func (m *MockMetricsEngine) RecordRequestWithSchainRemoved(arg0 string) {
+// RecordRequestWithSchainABTestEnabled mocks base method.
+func (m *MockMetricsEngine) RecordRequestWithSchainABTestEnabled() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordRequestWithSchainRemoved", arg0)
+	m.ctrl.Call(m, "RecordRequestWithSchainABTestEnabled")
 }
 
-// RecordRequestWithSchainRemoved indicates an expected call of RecordRequestWithSchainRemoved.
-func (mr *MockMetricsEngineMockRecorder) RecordRequestWithSchainRemoved(arg0 interface{}) *gomock.Call {
+// RecordRequestWithSchainABTestEnabled indicates an expected call of RecordRequestWithSchainABTestEnabled.
+func (mr *MockMetricsEngineMockRecorder) RecordRequestWithSchainABTestEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestWithSchainRemoved", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestWithSchainRemoved), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestWithSchainABTestEnabled", reflect.TypeOf((*MockMetricsEngine)(nil).RecordRequestWithSchainABTestEnabled))
 }
 
 // Shutdown mocks base method.

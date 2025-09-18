@@ -11,8 +11,7 @@ type Feature interface {
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
 	IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool
 	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
-	IsApplovinMaxSchainEnabled(pubID int) bool
-	GetApplovinMaxSchainPercentage(pubID int) int
+	GetApplovinMaxSchainABTestPercentage() int
 	GetImpCountingMethodEnabledBidders() map[string]struct{}
 	IsCountryGDPREnabled(countryCode string) bool
 	IsMBMFCountryForPublisher(countryCode string, pubID int) bool

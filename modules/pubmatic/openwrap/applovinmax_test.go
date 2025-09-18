@@ -890,9 +890,8 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockFeature.EXPECT().GetApplovinMaxSchainPercentage(5890).Return(10)
-				mockFeature.EXPECT().IsApplovinMaxSchainEnabled(5890).Return(true)
-				mockEngine.EXPECT().RecordRequestWithSchainRemoved("5890")
+				mockFeature.EXPECT().GetApplovinMaxSchainABTestPercentage().Return(10)
+				mockEngine.EXPECT().RecordRequestWithSchainABTestEnabled()
 				GetRandomNumberIn1To100 = func() int {
 					return 5
 				}
