@@ -271,7 +271,11 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 	maxRequest.Imp[0].Native = nil
 
 	addSignalDataInRequest(signalData, maxRequest)
-
+	if rctx.PubID == 0 {
+		pubId := getAppPublisherID(requestBody)
+		rctx.PubID, _ = strconv.Atoi(pubId)
+		rctx.PubIDStr = pubId
+	}
 	ow.updateAppLovinMaxRequestSchain(rctx, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
@@ -390,10 +394,6 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 }
 
 func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	if rctx.Endpoint != models.EndpointAppLovinMax {
-		return
-	}
-
 	percentage := m.pubFeatures.GetApplovinMaxSchainPercentage(rctx.PubID)
 	if m.pubFeatures.IsApplovinMaxSchainEnabled(rctx.PubID) && percentage > 0 {
 		if GetRandomNumberIn1To100() <= percentage {
