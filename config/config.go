@@ -125,10 +125,10 @@ type HTTPClient struct {
 	MaxIdleConnsPerHost int `mapstructure:"max_idle_connections_per_host"`
 	IdleConnTimeout     int `mapstructure:"idle_connection_timeout_seconds"`
 
-	TLSHandshakeTimeout   int `mapstructure:"tls_handshake_timeout"`
-	ResponseHeaderTimeout int `mapstructure:"response_header_timeout"`
-	DialTimeout           int `mapstructure:"dial_timeout"`
-	DialKeepAlive         int `mapstructure:"dial_keepalive"`
+	TLSHandshakeTimeout   int  `mapstructure:"tls_handshake_timeout"`
+	ResponseHeaderTimeout int  `mapstructure:"response_header_timeout"`
+	DialTimeout           int  `mapstructure:"dial_timeout"`
+	DialKeepAlive         int  `mapstructure:"dial_keepalive"`
 	InsecureSkipVerify    bool `mapstructure:"insecure_skipverify"`
 }
 
@@ -784,7 +784,7 @@ func (cfg *Configuration) AccountDefaultsJSON() json.RawMessage {
 	return cfg.accountDefaultsJSON
 }
 
-//Allows for protocol relative URL if scheme is empty
+// Allows for protocol relative URL if scheme is empty
 func (cfg *Cache) GetBaseURL() string {
 	cfg.Scheme = strings.ToLower(cfg.Scheme)
 	if strings.Contains(cfg.Scheme, "https") {
@@ -1150,15 +1150,16 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.yieldone.endpoint", "https://y.one.impact-ad.jp/hbs_imp")
 	v.SetDefault("adapters.yssp.disabled", true)
 	v.SetDefault("adapters.zeroclickfraud.endpoint", "http://{{.Host}}/openrtb2?sid={{.SourceId}}")
-	v.SetDefault("adapters.koddi.endpoint","http://{{.Host}}:8001/TestCommerce")
+	v.SetDefault("adapters.koddi.endpoint", "http://{{.Host}}:8001/TestCommerce")
 	v.SetDefault("adapters.koddi.commerceparams.impurl", "https://{{.Host}}.koddi.io/event-collection/beacon/?action=impression")
 	v.SetDefault("adapters.koddi.commerceparams.clickurl", "https://{{.Host}}.koddi.io/event-collection/beacon/?action=click")
 	v.SetDefault("adapters.koddi.commerceparams.conversionurl", "https://{{.Host}}.koddi.io/event-collection/beacon/conversion")
-	v.SetDefault("adapters.adbutler_sponsored.endpoint",  "https://servedbyadbutler.com/adserve/;ID={{.AccountID}};setID={{.ZoneID}};type=pdb_query")
-	v.SetDefault("adapters.adbutler_onsite.endpoint",  "https://servedbyadbutler.com/adserve/multi")
-	v.SetDefault("adapters.openwrap.endpoint",  "http://10.100.158.120/openrtb/2.5")
-	v.SetDefault("adapters.criteoretail.endpoint",  "https://d.us.criteo.com/delivery/adserving")
-	v.SetDefault("adapters.citrus.endpoint",  "https://baseurl.citrus.com/v1/ads/generate")
+	v.SetDefault("adapters.adbutler_sponsored.endpoint", "https://servedbyadbutler.com/adserve/;ID={{.AccountID}};setID={{.ZoneID}};type=pdb_query")
+	v.SetDefault("adapters.adbutler_onsite.endpoint", "https://servedbyadbutler.com/adserve/multi")
+	v.SetDefault("adapters.openwrap.endpoint", "http://10.100.158.120/openrtb/2.5")
+	v.SetDefault("adapters.openwrap.ssp_endpoint", "http://openbid.pubmatic.com/translator")
+	v.SetDefault("adapters.criteoretail.endpoint", "https://d.us.criteo.com/delivery/adserving")
+	v.SetDefault("adapters.citrus.endpoint", "https://baseurl.citrus.com/v1/ads/generate")
 	v.SetDefault("max_request_size", 1024*256)
 	v.SetDefault("analytics.file.filename", "")
 	v.SetDefault("analytics.pubstack.endpoint", "https://s2s.pbstck.com/v1")
@@ -1414,10 +1415,3 @@ func isValidCookieSize(maxCookieSize int) error {
 	}
 	return nil
 }
-
-
-
-
-
-
-

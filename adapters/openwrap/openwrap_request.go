@@ -110,12 +110,59 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	request.Ext = extJSON
 
+	// Check if site.ext.sspreq is true and perform swapping
+	var isSSPReq bool
+	if request.Site != nil && request.Site.Ext != nil {
+		var siteExt map[string]interface{}
+		if err := json.Unmarshal(request.Site.Ext, &siteExt); err == nil {
+			if sspreq, exists := siteExt["sspreq"]; exists {
+				if sspreqBool, ok := sspreq.(bool); ok && sspreqBool {
+					isSSPReq = true
+					// Swap site.publisher.id with site.ext.cpid
+					if cpid, exists := siteExt["cpid"]; exists {
+						if cpidStr, ok := cpid.(string); ok && cpidStr != "" && request.Site.Publisher != nil && request.Site.Publisher.ID != "" {
+							// Swap the values
+							tempCpid := cpidStr
+							siteExt["cpid"] = request.Site.Publisher.ID
+							request.Site.Publisher.ID = tempCpid
+						}
+					}
+					// Delete site.ext before sending to SSP
+					request.Site.Ext = nil
+				}
+			}
+		}
+	}
+
 	for i := 0; i < len(request.Imp); i++ {
 		var impExt map[string]interface{}
 		if request.Imp[i].Ext != nil {
 			var err1 error
 			if err1 = json.Unmarshal(request.Imp[i].Ext, &impExt); err1 == nil {
 				bidderExt := impExt["bidder"].(map[string]interface{})
+
+				// Get the actual impression extension from bidderExt["impExt"]
+				var actualImpExt map[string]interface{}
+				if impExtData, exists := bidderExt["impExt"]; exists {
+					if impExtMap, ok := impExtData.(map[string]interface{}); ok {
+						actualImpExt = impExtMap
+
+						// Check if cpinvid exists and swap with imp.tagid only if sspReq is true
+						if isSSPReq {
+							if cpinvid, exists := actualImpExt["cpinvid"]; exists {
+								if cpinvidStr, ok := cpinvid.(string); ok && cpinvidStr != "" && request.Imp[i].TagID != "" {
+									// Swap imp.tagid with imp.ext.cpinvid
+									tempTagID := request.Imp[i].TagID
+									request.Imp[i].TagID = cpinvidStr
+									actualImpExt["cpinvid"] = tempTagID
+								}
+							}
+							// Delete cpinvid from imp.ext before sending to SSP
+							delete(actualImpExt, "cpinvid")
+						}
+					}
+				}
+
 				impExtJSON, err3 := json.Marshal(bidderExt["impExt"])
 				if err3 != nil {
 					return nil, []error{err}
@@ -176,10 +223,17 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	// Add "Content-Type: application/json"
 	headers.Add("Content-Type", "application/json")
-	endpoint := a.endpoint
-	if debug {
-		endpoint = endpoint + "&debug=1"
+
+	// Determine which endpoint to use based on sspreq
+	var endpoint string
+	if isSSPReq {
+		// Use SSP endpoint when sspreq is true
+		endpoint = a.sspEndpoint
+	} else {
+		// Use regular endpoint when sspreq is false or not present
+		endpoint = a.endpoint
 	}
+
 	return []*adapters.RequestData{{
 		Method:  "POST",
 		Uri:     endpoint,

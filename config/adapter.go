@@ -11,6 +11,7 @@ import (
 type Adapter struct {
 	Disabled         bool    `mapstructure:"disabled"`
 	Endpoint         string  `mapstructure:"endpoint"`
+	SSPEndpoint      string  `mapstructure:"ssp_endpoint"`
 	ExtraAdapterInfo string  `mapstructure:"extra_info"`
 	Syncer           *Syncer `mapstructure:"usersync"`
 
