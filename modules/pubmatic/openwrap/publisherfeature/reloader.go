@@ -19,19 +19,19 @@ type feature struct {
 	cache       cache.Cache
 	serviceStop chan struct{}
 	sync.RWMutex
-	defaultExpiry       int
-	publisherFeature    map[int]map[int]models.FeatureData
-	fsc                 fsc
-	tbf                 tbf
-	ant                 analyticsThrottle
-	ampMultiformat      ampMultiformat
-	maxFloors           maxFloors
-	bidRecovery         bidRecovery
-	appLovinMultiFloors appLovinMultiFloors
-	appLovinMaxSchain   appLovinMaxSchain
-	impCountingMethod   impCountingMethod
-	gdprCountryCodes    gdprCountryCodes
-	mbmf                *mbmf
+	defaultExpiry        int
+	publisherFeature     map[int]map[int]models.FeatureData
+	fsc                  fsc
+	tbf                  tbf
+	ant                  analyticsThrottle
+	ampMultiformat       ampMultiformat
+	maxFloors            maxFloors
+	bidRecovery          bidRecovery
+	appLovinMultiFloors  appLovinMultiFloors
+	appLovinSchainABTest appLovinSchainABTest
+	impCountingMethod    impCountingMethod
+	gdprCountryCodes     gdprCountryCodes
+	mbmf                 *mbmf
 }
 
 var fe *feature
@@ -63,6 +63,9 @@ func New(config Config) *feature {
 			},
 			appLovinMultiFloors: appLovinMultiFloors{
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
+			},
+			appLovinSchainABTest: appLovinSchainABTest{
+				schainABTestPercent: 0,
 			},
 			impCountingMethod: newImpCountingMethod(),
 			gdprCountryCodes:  newGDPRCountryCodes(),

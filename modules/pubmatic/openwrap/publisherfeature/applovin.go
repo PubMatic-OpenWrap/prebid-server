@@ -12,7 +12,7 @@ type appLovinMultiFloors struct {
 	enabledPublisherProfile map[int]map[string]models.ApplovinAdUnitFloors
 }
 
-type appLovinMaxSchain struct {
+type appLovinSchainABTest struct {
 	schainABTestPercent int
 }
 
@@ -78,12 +78,12 @@ func (fe *feature) updateApplovinMaxSchainFeature() {
 	}
 
 	fe.Lock()
-	fe.appLovinMaxSchain.schainABTestPercent = schainABTestPercent
+	fe.appLovinSchainABTest.schainABTestPercent = schainABTestPercent
 	fe.Unlock()
 }
 
 func (fe *feature) GetApplovinMaxSchainABTestPercentage() int {
 	fe.RLock()
 	defer fe.RUnlock()
-	return fe.appLovinMaxSchain.schainABTestPercent
+	return fe.appLovinSchainABTest.schainABTestPercent
 }
