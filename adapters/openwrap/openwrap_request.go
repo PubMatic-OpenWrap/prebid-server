@@ -89,7 +89,7 @@ func GetRequestExt(request *openrtb2.BidRequest) (
 }
 
 func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
-	requestExt, debug, errors := GetRequestExt(request)
+	requestExt, _, errors := GetRequestExt(request)
 	if len(errors) > 0 {
 		return nil, errors
 	}
