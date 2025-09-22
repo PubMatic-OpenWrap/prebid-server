@@ -754,12 +754,14 @@ func TestModifyDevice(t *testing.T) {
 				Device: nil,
 			},
 			signalDevice: &openrtb2.Device{
+				IFA:   "07c387f2-e030-428f-8336-42f682150759",
 				UA:    "Mozilla/5.0",
 				Make:  "Samsung",
 				Model: "Galaxy",
 			},
 			expectedResult: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
+					IFA:   "07c387f2-e030-428f-8336-42f682150759",
 					UA:    "Mozilla/5.0",
 					Make:  "Samsung",
 					Model: "Galaxy",
@@ -771,6 +773,7 @@ func TestModifyDevice(t *testing.T) {
 			request: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
 					Make: "Google",
+					IFA:  "07c387f2-e030-428f-8336-42f682150759",
 				},
 			},
 			signalDevice: &openrtb2.Device{
@@ -779,6 +782,7 @@ func TestModifyDevice(t *testing.T) {
 			},
 			expectedResult: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
+					IFA:   "07c387f2-e030-428f-8336-42f682150759",
 					UA:    "Mozilla/5.0",
 					Make:  "Google",
 					Model: "Pixel",
@@ -812,6 +816,7 @@ func TestModifyDevice(t *testing.T) {
 				Device: &openrtb2.Device{},
 			},
 			signalDevice: &openrtb2.Device{
+				IFA:   "07c387f2-e030-428f-8336-42f682150759",
 				UA:    "Mozilla/5.0",
 				Make:  "Samsung",
 				Model: "Galaxy",
@@ -824,6 +829,7 @@ func TestModifyDevice(t *testing.T) {
 			},
 			expectedResult: &openrtb2.BidRequest{
 				Device: &openrtb2.Device{
+					IFA:   "07c387f2-e030-428f-8336-42f682150759",
 					UA:    "Mozilla/5.0",
 					Make:  "Samsung",
 					Model: "Galaxy",
@@ -1812,6 +1818,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 						Keywords: "sports,news",
 					},
 					Device: &openrtb2.Device{
+						IFA:   "07c387f2-e030-428f-8336-42f682150759",
 						IP:    "127.0.0.1",
 						UA:    "Mozilla/5.0",
 						Make:  "Samsung",
@@ -1863,6 +1870,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 					Keywords: "sports,news",
 				},
 				Device: &openrtb2.Device{
+					IFA:   "07c387f2-e030-428f-8336-42f682150759",
 					IP:    "127.0.0.1",
 					UA:    "Mozilla/5.0",
 					Make:  "Samsung",
