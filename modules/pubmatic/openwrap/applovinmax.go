@@ -272,7 +272,7 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 
 	addSignalDataInRequest(signalData, maxRequest)
 
-	ow.updateAppLovinMaxRequestSchain(rctx, maxRequest)
+	ow.updateAppLovinMaxRequestSchain(&rctx, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
 	}
@@ -389,16 +389,13 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 	return models.MultiFloorsConfig{Enabled: false}
 }
 
-func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx models.RequestCtx, maxRequest *openrtb2.BidRequest) {
+func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
 	percentage := m.pubFeatures.GetApplovinMaxSchainABTestPercentage()
-	if percentage > 0 {
-		if GetRandomNumberIn1To100() <= percentage {
-			if maxRequest.Source != nil {
-				glog.V(models.LogLevelDebug).Infof("Removing schain object from request, percentage=%d", percentage)
-				maxRequest.Source.SChain = nil
-				rctx.ABTestConfigApplied = 1
-				m.metricEngine.RecordRequestWithSchainABTestEnabled()
-			}
-		}
+
+	if maxRequest.Source != nil && percentage > 0 && GetRandomNumberIn1To100() <= percentage {
+		glog.V(models.LogLevelDebug).Infof("Removed schain object from request: percentage=%d", percentage)
+		maxRequest.Source.SChain = nil
+		rctx.ABTestConfigApplied = 1
+		m.metricEngine.RecordRequestWithSchainABTestEnabled()
 	}
 }
