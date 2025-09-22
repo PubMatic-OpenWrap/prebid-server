@@ -390,7 +390,7 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 }
 
 func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	percentage := m.pubFeatures.GetApplovinMaxSchainABTestPercentage()
+	percentage := m.pubFeatures.GetApplovinSchainABTestPercentage()
 
 	if maxRequest.Source != nil && percentage > 0 && GetRandomNumberIn1To100() <= percentage {
 		glog.V(models.LogLevelDebug).Infof("Removed schain object from request: percentage=%d", percentage)

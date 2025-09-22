@@ -59,14 +59,14 @@ func (fe *feature) GetApplovinMultiFloors(pubID int, profileID string) models.Ap
 	return models.ApplovinAdUnitFloors{}
 }
 
-func (fe *feature) updateApplovinMaxSchainFeature() {
+func (fe *feature) updateApplovinSchainABTestFeature() {
 	if fe.publisherFeature == nil {
 		return
 	}
 
 	var schainABTestPercent int
 	for _, feature := range fe.publisherFeature {
-		if val, ok := feature[models.FeatureAppLovinMaxSchain]; ok && val.Enabled == 1 && len(val.Value) > 0 {
+		if val, ok := feature[models.FeatureAppLovinSchainABTest]; ok && val.Enabled == 1 && len(val.Value) > 0 {
 			percentage, err := strconv.Atoi(val.Value)
 			if err != nil {
 				glog.Errorf("ErrInvalidPercentage ApplovinMaxSchain Feature: value: %s err: %s",
@@ -82,7 +82,7 @@ func (fe *feature) updateApplovinMaxSchainFeature() {
 	fe.Unlock()
 }
 
-func (fe *feature) GetApplovinMaxSchainABTestPercentage() int {
+func (fe *feature) GetApplovinSchainABTestPercentage() int {
 	fe.RLock()
 	defer fe.RUnlock()
 	return fe.appLovinSchainABTest.schainABTestPercent

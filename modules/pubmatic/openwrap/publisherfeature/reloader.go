@@ -129,7 +129,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
-	fe.updateApplovinMaxSchainFeature()
+	fe.updateApplovinSchainABTestFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 

@@ -48,15 +48,15 @@ func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
-func (m *MockFeature) GetApplovinMaxSchainABTestPercentage() int {
+func (m *MockFeature) GetApplovinSchainABTestPercentage() int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetApplovinMaxSchainABTestPercentage")
+	ret := m.ctrl.Call(m, "GetApplovinSchainABTestPercentage")
 	ret0, _ := ret[0].(int)
 	return ret0
 }
-func (mr *MockFeatureMockRecorder) GetApplovinMaxSchainABTestPercentage() *gomock.Call {
+func (mr *MockFeatureMockRecorder) GetApplovinSchainABTestPercentage() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMaxSchainABTestPercentage", reflect.TypeOf((*MockFeature)(nil).GetApplovinMaxSchainABTestPercentage))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinSchainABTestPercentage", reflect.TypeOf((*MockFeature)(nil).GetApplovinSchainABTestPercentage))
 }
 
 // GetImpCountingMethodEnabledBidders mocks base method.
