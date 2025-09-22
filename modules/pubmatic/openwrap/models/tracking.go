@@ -81,6 +81,7 @@ const (
 	ERRAdvertiser     = "adv"
 	ERRTestGroup      = "tgid"
 	ERRSSAI           = "ssai"
+	ERRVastUnwrap     = "vu"
 )
 
 // EventTrackingMacros Video Event Tracker's custom macros
