@@ -562,6 +562,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
 					"rctx": models.RequestCtx{
+						ABTestConfigApplied:       1,
 						PubIDStr:                  "5890",
 						PubID:                     5890,
 						ProfileID:                 12929,
@@ -640,6 +641,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
 				ModuleContext: hookstage.ModuleContext{
 					"rctx": models.RequestCtx{
+						ABTestConfigApplied:       1,
 						PubIDStr:                  "111",
 						PubID:                     111,
 						ProfileID:                 222,

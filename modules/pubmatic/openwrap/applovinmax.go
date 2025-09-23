@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
+func getSignalData(requestBody []byte, rctx *models.RequestCtx) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
 		signalType := models.InvalidSignal
@@ -260,7 +260,7 @@ func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidReq
 	}
 }
 
-func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
+func updateAppLovinMaxRequest(requestBody []byte, rctx *models.RequestCtx) []byte {
 	requestBody, rctx.ProfileIDStr = setProfileID(requestBody)
 	signalData := getSignalData(requestBody, rctx)
 	if signalData == nil {
@@ -277,7 +277,7 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 
 	addSignalDataInRequest(signalData, maxRequest)
 
-	ow.updateAppLovinMaxRequestSchain(&rctx, maxRequest)
+	ow.updateAppLovinMaxRequestSchain(rctx, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
 	}

@@ -833,7 +833,7 @@ func TestGetSignalData(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			got := getSignalData(tt.args.requestBody, tt.args.rctx)
+			got := getSignalData(tt.args.requestBody, &tt.args.rctx)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
@@ -912,7 +912,7 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			got := updateAppLovinMaxRequest(tt.args.requestBody, tt.args.rctx)
+			got := updateAppLovinMaxRequest(tt.args.requestBody, &tt.args.rctx)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

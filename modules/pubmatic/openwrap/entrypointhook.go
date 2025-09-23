@@ -84,7 +84,7 @@ func (m OpenWrap) handleEntrypointHook(
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
-		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
+		payload.Body = updateAppLovinMaxRequest(payload.Body, &rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -130,20 +130,21 @@ func (m OpenWrap) handleEntrypointHook(
 
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
-		StartTime:          time.Now().Unix(),
-		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
-		ProfileID:          requestExtWrapper.ProfileId,
-		DisplayID:          requestExtWrapper.VersionId,
-		DisplayVersionID:   requestExtWrapper.VersionId,
-		SupportDeals:       requestExtWrapper.SupportDeals,
-		ABTestConfig:       requestExtWrapper.ABTestConfig,
-		SSAuction:          requestExtWrapper.SSAuctionFlag,
-		SummaryDisable:     requestExtWrapper.SumryDisableFlag,
-		LoggerImpressionID: requestExtWrapper.LoggerImpressionID,
-		ClientConfigFlag:   requestExtWrapper.ClientConfigFlag,
-		SSAI:               requestExtWrapper.SSAI,
-		AdruleFlag:         requestExtWrapper.Video.AdruleFlag,
-		IsCTVRequest:       models.IsCTVAPIRequest(payload.Request.URL.Path),
+		ABTestConfigApplied: rCtx.ABTestConfigApplied,
+		StartTime:           time.Now().Unix(),
+		Debug:               queryParams.Get(models.Debug) == "1" || requestDebug,
+		ProfileID:           requestExtWrapper.ProfileId,
+		DisplayID:           requestExtWrapper.VersionId,
+		DisplayVersionID:    requestExtWrapper.VersionId,
+		SupportDeals:        requestExtWrapper.SupportDeals,
+		ABTestConfig:        requestExtWrapper.ABTestConfig,
+		SSAuction:           requestExtWrapper.SSAuctionFlag,
+		SummaryDisable:      requestExtWrapper.SumryDisableFlag,
+		LoggerImpressionID:  requestExtWrapper.LoggerImpressionID,
+		ClientConfigFlag:    requestExtWrapper.ClientConfigFlag,
+		SSAI:                requestExtWrapper.SSAI,
+		AdruleFlag:          requestExtWrapper.Video.AdruleFlag,
+		IsCTVRequest:        models.IsCTVAPIRequest(payload.Request.URL.Path),
 		DeviceCtx: models.DeviceCtx{UA: payload.Request.Header.Get("User-Agent"),
 			IP: models.GetIP(payload.Request)},
 		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
