@@ -3,6 +3,7 @@ package openwrap
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
@@ -112,9 +113,17 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	// Check if site.ext.sspreq is true and perform swapping
 	var isSSPReq bool
+	var queryParams string
 	if request.Site != nil && request.Site.Ext != nil {
 		var siteExt map[string]interface{}
 		if err := json.Unmarshal(request.Site.Ext, &siteExt); err == nil {
+			// Read queryparams and store in string
+			if qp, exists := siteExt["queryParams"]; exists {
+				if qpStr, ok := qp.(string); ok {
+					queryParams = qpStr
+				}
+			}
+
 			if sspreq, exists := siteExt["sspreq"]; exists {
 				if sspreqBool, ok := sspreq.(bool); ok && sspreqBool {
 					isSSPReq = true
@@ -224,11 +233,28 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	// Add "Content-Type: application/json"
 	headers.Add("Content-Type", "application/json")
 
+	// Remove debug key from queryParams if present
+	if queryParams != "" {
+		// Split by & and filter out debug parameters
+		params := strings.Split(queryParams, "&")
+		var filteredParams []string
+		for _, param := range params {
+			if !strings.HasPrefix(param, "debug=") && !strings.HasPrefix(param, "debug&") {
+				filteredParams = append(filteredParams, param)
+			}
+		}
+		queryParams = strings.Join(filteredParams, "&")
+	}
+
 	// Determine which endpoint to use based on sspreq
 	var endpoint string
 	if isSSPReq {
 		// Use SSP endpoint when sspreq is true
-		endpoint = a.sspEndpoint
+		if queryParams != "" {
+			endpoint = a.sspEndpoint + "?" + queryParams
+		} else {
+			endpoint = a.sspEndpoint
+		}
 	} else {
 		// Use regular endpoint when sspreq is false or not present
 		endpoint = a.endpoint

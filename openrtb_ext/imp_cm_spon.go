@@ -49,16 +49,18 @@ type ExtUserCMSponsored struct {
 
 // SiteExtensionCommerce - Site Commerce Extension
 type ExtSiteCommerce struct {
-	Page   string `json:"page_name,omitempty"`
-	CpId   string `json:"cpid,omitempty"`
-	SspReq bool   `json:"sspreq,omitempty"`
+	Page        string `json:"page_name,omitempty"`
+	CpId        string `json:"cpid,omitempty"`
+	SspReq      bool   `json:"sspreq,omitempty"`
+	QueryParams string `json:"queryParams,omitempty"`
 }
 
 // AppExtensionCommerce - App Commerce Extension
 type ExtAppCommerce struct {
-	Page   string `json:"page_name,omitempty"`
-	CpId   string `json:"cpid,omitempty"`
-	SspReq bool   `json:"sspreq,omitempty"`
+	Page        string `json:"page_name,omitempty"`
+	CpId        string `json:"cpid,omitempty"`
+	SspReq      bool   `json:"sspreq,omitempty"`
+	QueryParams string `json:"queryParams,omitempty"`
 }
 
 type ExtBidderCommerce struct {
