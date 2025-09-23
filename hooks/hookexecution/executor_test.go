@@ -39,7 +39,7 @@ func TestEmptyHookExecutor(t *testing.T) {
 	entrypointBody, entrypointRejectErr := executor.ExecuteEntrypointStage(req, body)
 	rawAuctionBody, rawAuctionRejectErr := executor.ExecuteRawAuctionStage(body)
 	processedAuctionRejectErr := executor.ExecuteProcessedAuctionStage(&openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{}})
-	bidderRequestRejectErr := executor.ExecuteBidderRequestStage(&openrtb_ext.RequestWrapper{BidRequest: bidderRequest}, "bidder-name")
+	bidderRequestRejectErr := executor.ExecuteBidderRequestStage(&openrtb_ext.RequestWrapper{BidRequest: bidderRequest}, "bidder-name", config.BidderInfo{})
 	executor.ExecuteAuctionResponseStage(&openrtb2.BidResponse{})
 
 	outcomes := executor.GetOutcomes()
@@ -1161,7 +1161,7 @@ func TestExecuteBidderRequestStage(t *testing.T) {
 			ac := privacy.NewActivityControl(privacyConfig)
 			exec.SetActivityControl(ac)
 
-			reject := exec.ExecuteBidderRequestStage(&openrtb_ext.RequestWrapper{BidRequest: test.givenBidderRequest}, bidderName)
+			reject := exec.ExecuteBidderRequestStage(&openrtb_ext.RequestWrapper{BidRequest: test.givenBidderRequest}, bidderName, config.BidderInfo{})
 
 			assert.Equal(t, test.expectedReject, reject, "Unexpected stage reject.")
 			assert.Equal(t, test.expectedBidderRequest, test.givenBidderRequest, "Incorrect bidder request.")

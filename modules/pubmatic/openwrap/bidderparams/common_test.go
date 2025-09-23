@@ -198,7 +198,7 @@ func TestGetSlotMeta(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			got, got1, got2, got3 := getSlotMeta(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
+			got, got1, got2, got3 := getSlotMeta(tt.args.rctx, tt.args.cache, tt.args.imp, tt.args.impExt, tt.args.partnerID)
 			assert.Equal(t, tt.want.slots, got)
 			assert.Equal(t, tt.want.slotMap, got1)
 			assert.Equal(t, tt.want.slotMappingInfo, got2)

@@ -37,7 +37,7 @@ type StageExecutor interface {
 	ExecuteEntrypointStage(req *http.Request, body []byte) ([]byte, *RejectError)
 	ExecuteRawAuctionStage(body []byte) ([]byte, *RejectError)
 	ExecuteProcessedAuctionStage(req *openrtb_ext.RequestWrapper) error
-	ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string) *RejectError
+	ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string, bidderInfo config.BidderInfo) *RejectError
 	ExecuteRawBidderResponseStage(response *adapters.BidderResponse, bidder string) *RejectError
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
@@ -217,7 +217,7 @@ func (e *hookExecutor) ExecuteProcessedAuctionStage(request *openrtb_ext.Request
 	return reject
 }
 
-func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string) *RejectError {
+func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string, bidderInfo config.BidderInfo) *RejectError {
 	plan := e.planBuilder.PlanForBidderRequestStage(e.endpoint, e.account)
 	if len(plan) == 0 {
 		return nil
@@ -234,7 +234,7 @@ func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper
 
 	stageName := hooks.StageBidderRequest.String()
 	executionCtx := e.newContext(stageName)
-	payload := hookstage.BidderRequestPayload{Request: req, Bidder: bidder}
+	payload := hookstage.BidderRequestPayload{Request: req, Bidder: bidder, BidderInfo: bidderInfo}
 	outcome, _, contexts, reject := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
 	outcome.Entity = entity(bidder)
 	outcome.Stage = stageName
@@ -404,7 +404,7 @@ func (executor EmptyHookExecutor) ExecuteProcessedAuctionStage(_ *openrtb_ext.Re
 	return nil
 }
 
-func (executor EmptyHookExecutor) ExecuteBidderRequestStage(_ *openrtb_ext.RequestWrapper, bidder string) *RejectError {
+func (executor EmptyHookExecutor) ExecuteBidderRequestStage(_ *openrtb_ext.RequestWrapper, bidder string, _ config.BidderInfo) *RejectError {
 	return nil
 }
 

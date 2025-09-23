@@ -3,6 +3,7 @@ package hookstage
 import (
 	"context"
 
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -25,8 +26,9 @@ type BidderRequest interface {
 // distilled for the particular bidder.
 // Hooks are allowed to modify openrtb2.BidRequest using mutations.
 type BidderRequestPayload struct {
-	Request *openrtb_ext.RequestWrapper
-	Bidder  string
+	Request    *openrtb_ext.RequestWrapper
+	Bidder     string
+	BidderInfo config.BidderInfo
 }
 
 func (brp *BidderRequestPayload) GetBidderRequestPayload() *openrtb_ext.RequestWrapper {

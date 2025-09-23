@@ -1,14 +1,13 @@
 package openwrap
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
 
+	endpointmanager "github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -38,7 +37,7 @@ const (
 )
 
 func (m OpenWrap) handleEntrypointHook(
-	_ context.Context,
+	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
@@ -46,6 +45,7 @@ func (m OpenWrap) handleEntrypointHook(
 	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
 
 	rCtx := models.RequestCtx{}
+	var endpointHookManager endpointmanager.EndpointHookManager
 	var endpoint string
 	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
@@ -63,7 +63,17 @@ func (m OpenWrap) handleEntrypointHook(
 		}
 		result.ModuleContext = make(hookstage.ModuleContext)
 		result.ModuleContext["rctx"] = rCtx
+		result.ModuleContext["endpointhookmanager"] = endpointHookManager
 	}()
+
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+	if endpoint == models.EndpointHybrid {
+		rCtx.Endpoint = models.EndpointHybrid
+		return result, nil
+	}
+
+	//Intialise endpoint Hook Manager based on endpoint
+	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache)
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -73,12 +83,8 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.DeviceCtx.UA = payload.Request.Header.Get("User-Agent")
 		return result, nil
 	}
-	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
-	if endpoint == models.EndpointHybrid {
-		rCtx.Endpoint = models.EndpointHybrid
-		return result, nil
-	}
 
+	// Preserve original request body for wakanda
 	originalRequestBody := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
@@ -178,6 +184,10 @@ func (m OpenWrap) handleEntrypointHook(
 
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
+	if rCtx.UidCookie == nil {
+		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+	}
+
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
 	if originCookie, _ := payload.Request.Cookie("origin"); originCookie != nil {
 		rCtx.OriginCookie = originCookie.Value
@@ -213,11 +223,9 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 
-	if rCtx.IsCTVRequest {
-		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
-			ep.Request.Body = io.NopCloser(bytes.NewBuffer(ep.Body))
-			return ep, nil
-		}, hookstage.MutationUpdate, "update-request-body")
+	rCtx, result, err = endpointHookManager.HandleEntrypointHook(payload, rCtx, result)
+	if err != nil {
+		return result, err
 	}
 
 	return result, nil
