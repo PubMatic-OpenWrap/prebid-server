@@ -307,11 +307,14 @@ const (
 	AllBidderSChainObj    = "allBidderSChainObject"
 	AllBidderSChainKey    = "allBidderSChain"
 
-	PriceFloorURL      = "jsonUrl"
-	FloorModuleEnabled = "floorPriceModuleEnabled"
-	FloorType          = "floorType"
-	SoftFloorType      = "soft"
-	HardFloorType      = "hard"
+	PriceFloorURL        = "jsonUrl"
+	FloorModuleEnabled   = "floorPriceModuleEnabled"
+	FloorType            = "floorType"
+	SoftFloorType        = "soft"
+	HardFloorType        = "hard"
+	FloorMin             = "floorMin"
+	FloorDealEnforcement = "dealsEnforcement"
+	FloorsURLTemplate    = "https://ads.pubmatic.com/AdServer/js/pwt/floors/%d/%d/floors.json"
 
 	OwRedirectURL = "owRedirectURL"
 
@@ -626,6 +629,7 @@ const (
 	FeatureMBMFInstlFloors     = 11
 	FeatureMBMFRwddFloors      = 12
 	FeatureMBMFBannerFloors    = 13
+	FeatureDynamicFloor        = 15
 )
 
 // constants for sdk integrations
