@@ -82,6 +82,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,
 				},
+				VastUnwrapEnabled: utils.ConvertBoolToInt(rctx.VastUnWrap.Enabled),
 			}
 			var (
 				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
@@ -255,7 +256,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKRewardedInventory, strconv.Itoa(tracker.RewardedInventory))
 	}
 	v.Set(models.TRKPlatform, strconv.Itoa(tracker.Platform))
-	v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	if tracker.TestGroup != 0 {
+		v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	}
 	v.Set(models.TRKPubDomain, tracker.Origin)
 	v.Set(models.TRKAdPodExist, strconv.Itoa(tracker.AdPodSlot))
 	partner := tracker.PartnerInfo
@@ -341,6 +344,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(rctx.DeviceCtx.DerivedCountryCode) > 0 {
 		v.Set(models.TRKCountryCode, rctx.DeviceCtx.DerivedCountryCode)
 	}
+	if rctx.VastUnWrap.Enabled {
+		v.Set(models.TRKVastUnwrapEnabled, strconv.Itoa(tracker.VastUnwrapEnabled))
+	}
 
 	queryString := v.Encode()
 
@@ -392,6 +398,9 @@ func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
 	if tracker.TestGroup != 0 {
 		v.Set(models.ERRTestGroup, fmt.Sprintf("%d", tracker.TestGroup)) // tgid
+	}
+	if tracker.VastUnwrapEnabled == 1 {
+		v.Set(models.ERRVastUnwrap, fmt.Sprintf("%d", tracker.VastUnwrapEnabled)) // vu
 	}
 
 	if tracker.SSAI != "" {
