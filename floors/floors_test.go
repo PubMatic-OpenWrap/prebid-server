@@ -1881,6 +1881,7 @@ func TestMergeFloors(t *testing.T) {
 					Location: &openrtb_ext.PriceFloorEndpoint{
 						URL: "https://test.com/floors",
 					},
+					SetMaxFloor: true,
 				},
 				fetchFloors: &openrtb_ext.PriceFloorRules{
 					Data: &openrtb_ext.PriceFloorData{
@@ -1932,6 +1933,7 @@ func TestMergeFloors(t *testing.T) {
 				Location: &openrtb_ext.PriceFloorEndpoint{
 					URL: "https://test.com/floors",
 				},
+				SetMaxFloor: true,
 			},
 		},
 	}

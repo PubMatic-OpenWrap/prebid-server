@@ -11,8 +11,8 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string, setMaxFloor bool, isDynamicFloorEnabledPub bool, pubID int, profileID int) {
-	versionConfigMap := configMap[models.VersionLevelConfigID]
+func setFloorsExt(requestExt *models.RequestExt, rctx models.RequestCtx, isDynamicFloorEnabledPub bool) {
+	versionConfigMap := rctx.PartnerConfigMap[models.VersionLevelConfigID]
 	if versionConfigMap == nil {
 		return
 	}
@@ -34,14 +34,15 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 
 	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
 		if isDynamicFloorEnabledPub && versionConfigMap[models.FloorModuleEnabled] != "0" {
-			setFloorsData(requestExt, versionConfigMap, pubID, profileID)
+			setFloorsData(requestExt, versionConfigMap, rctx.PubID, rctx.ProfileID)
 			requestExt.Prebid.Floors.SetMaxFloor = true
+			rctx.IsMaxFloorsEnabled = true
 		} else {
-			setFloorsDefaultsForApp(requestExt, setMaxFloor)
+			setFloorsDefaultsForApp(requestExt, rctx.IsMaxFloorsEnabled)
 		}
 	} else {
-		setFloorsData(requestExt, versionConfigMap, pubID, profileID)
-		requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
+		setFloorsData(requestExt, versionConfigMap, rctx.PubID, rctx.ProfileID)
+		requestExt.Prebid.Floors.SetMaxFloor = rctx.IsMaxFloorsEnabled
 	}
 }
 
