@@ -826,7 +826,7 @@ func TestSetFloorsExt(t *testing.T) {
 				ProfileID:          tt.args.profileID,
 				IsMaxFloorsEnabled: tt.args.setMaxFloor,
 			}
-			setFloorsExt(tt.args.requestExt, rctx, tt.args.isDynamicFloorEnabledPub)
+			setFloorsExt(tt.args.requestExt, &rctx, tt.args.isDynamicFloorEnabledPub)
 			assert.Equal(t, tt.want, tt.args.requestExt)
 		})
 	}

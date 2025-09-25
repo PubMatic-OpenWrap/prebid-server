@@ -11,7 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func setFloorsExt(requestExt *models.RequestExt, rctx models.RequestCtx, isDynamicFloorEnabledPub bool) {
+func setFloorsExt(requestExt *models.RequestExt, rctx *models.RequestCtx, isDynamicFloorEnabledPub bool) {
 	versionConfigMap := rctx.PartnerConfigMap[models.VersionLevelConfigID]
 	if versionConfigMap == nil {
 		return
