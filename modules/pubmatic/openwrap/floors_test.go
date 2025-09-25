@@ -820,7 +820,13 @@ func TestSetFloorsExt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setFloorsExt(tt.args.requestExt, tt.args.configMap, tt.args.setMaxFloor, tt.args.isDynamicFloorEnabledPub, tt.args.pubID, tt.args.profileID)
+			rctx := models.RequestCtx{
+				PartnerConfigMap:   tt.args.configMap,
+				PubID:              tt.args.pubID,
+				ProfileID:          tt.args.profileID,
+				IsMaxFloorsEnabled: tt.args.setMaxFloor,
+			}
+			setFloorsExt(tt.args.requestExt, rctx, tt.args.isDynamicFloorEnabledPub)
 			assert.Equal(t, tt.want, tt.args.requestExt)
 		})
 	}
