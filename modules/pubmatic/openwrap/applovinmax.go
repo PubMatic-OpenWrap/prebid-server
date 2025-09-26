@@ -394,13 +394,41 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 	return models.MultiFloorsConfig{Enabled: false}
 }
 
-func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	if src := maxRequest.Source; src != nil && src.SChain != nil {
-		if percentage := m.pubFeatures.GetApplovinSchainABTestPercentage(); percentage > 0 && GetRandomNumberIn1To100() <= percentage {
-			glog.V(models.LogLevelDebug).Infof("Removed schain object from request: percentage=%d", percentage)
-			src.SChain = nil
-			rctx.ABTestConfigApplied = 1
-			m.metricEngine.RecordRequestWithSchainABTestEnabled()
+func removeSchainFromSource(src *openrtb2.Source) (removed bool) {
+	if src == nil {
+		return false
+	}
+
+	// Remove SChain object if present
+	if src.SChain != nil {
+		src.SChain = nil
+		removed = true
+	}
+
+	// Remove schain from Ext if exists
+	if len(src.Ext) > 0 {
+		if _, _, _, err := jsonparser.Get(src.Ext, "schain"); err == nil {
+			src.Ext = jsonparser.Delete(src.Ext, "schain")
+			removed = true
 		}
+	}
+
+	return removed
+}
+
+func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
+	if maxRequest.Source == nil {
+		return
+	}
+
+	percentage := m.pubFeatures.GetApplovinSchainABTestPercentage()
+	if percentage <= 0 || GetRandomNumberIn1To100() > percentage {
+		return
+	}
+
+	if removeSchainFromSource(maxRequest.Source) {
+		glog.V(models.LogLevelDebug).Infof("Removed schain object from request: percentage=%d", percentage)
+		rctx.ABTestConfigApplied = 1
+		m.metricEngine.RecordRequestWithSchainABTestEnabled()
 	}
 }
