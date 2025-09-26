@@ -32,7 +32,6 @@ type feature struct {
 	impCountingMethod    impCountingMethod
 	gdprCountryCodes     gdprCountryCodes
 	mbmf                 *mbmf
-	dynamicFloor         dynamicFloor
 }
 
 var fe *feature

@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/moduledeps"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
@@ -1454,8 +1453,6 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		rawCfg     json.RawMessage
-		moduleDeps moduledeps.ModuleDeps
 		rctx       *models.RequestCtx
 		maxRequest *openrtb2.BidRequest
 		want       *openrtb2.BidRequest
