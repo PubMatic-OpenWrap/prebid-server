@@ -32,6 +32,7 @@ type feature struct {
 	impCountingMethod    impCountingMethod
 	gdprCountryCodes     gdprCountryCodes
 	mbmf                 *mbmf
+	dynamicFloor         dynamicFloor
 }
 
 var fe *feature
@@ -70,6 +71,7 @@ func New(config Config) *feature {
 			impCountingMethod: newImpCountingMethod(),
 			gdprCountryCodes:  newGDPRCountryCodes(),
 			mbmf:              newMBMF(),
+			dynamicFloor:      newDynamicFloor(),
 		}
 	})
 	return fe
@@ -132,6 +134,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateApplovinSchainABTestFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
+	fe.updateDynamicFloorEnabledPublishers()
 
 	if err != nil {
 		glog.Error(err.Error())
