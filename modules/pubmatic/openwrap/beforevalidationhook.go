@@ -226,7 +226,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
-		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		//rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
 		rCtx.VastUnWrap.Enabled = true
 		rCtx.VastUnWrap.IsPrivacyEnforced = isPrivacyEnforced(payload.BidRequest.Regs, payload.BidRequest.Device)
 	}
@@ -701,7 +701,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled)
+	setFloorsExt(requestExt, &rCtx, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)

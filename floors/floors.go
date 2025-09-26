@@ -362,6 +362,7 @@ func mergeFloors(reqFloors *openrtb_ext.PriceFloorRules, fetchFloors *openrtb_ex
 	if reqFloors.Enforcement != nil {
 		mergedFloors.Enforcement = reqFloors.Enforcement.DeepCopy()
 	}
+	mergedFloors.SetMaxFloor = reqFloors.SetMaxFloor
 
 	floorMinPrice := resolveFloorMin(reqFloors, fetchFloors, conversions)
 	if floorMinPrice.FloorMin > 0 {

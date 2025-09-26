@@ -57,6 +57,7 @@ const (
 	TRKDisplayManagerVer      = "dmv"
 	TRKCountryCode            = "cc"
 	TRKNetworkID              = "nwid"
+	TRKVastUnwrapEnabled      = "vu"
 )
 
 // video error tracker url parameters
@@ -80,6 +81,7 @@ const (
 	ERRAdvertiser     = "adv"
 	ERRTestGroup      = "tgid"
 	ERRSSAI           = "ssai"
+	ERRVastUnwrap     = "vu"
 )
 
 // EventTrackingMacros Video Event Tracker's custom macros
