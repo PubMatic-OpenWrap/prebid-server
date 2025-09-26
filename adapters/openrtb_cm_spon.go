@@ -31,14 +31,13 @@ func GetImpressionExtComm(imp *openrtb2.Imp) (*openrtb_ext.ExtImpCMSponsored, er
 	return &commerceExt, nil
 
 }
-
 func GetSiteExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtSiteCommerce, error) {
 	var siteExt openrtb_ext.ExtSiteCommerce
 
-	if request.Site.Ext != nil {
+	if request.Site != nil && request.Site.Ext != nil {
 		if err := json.Unmarshal(request.Site.Ext, &siteExt); err != nil {
 			return nil, &errortypes.BadInput{
-				Message: "Impression extension not provided or can't be unmarshalled",
+				Message: "Site extension not provided or can't be unmarshalled",
 			}
 		}
 	}

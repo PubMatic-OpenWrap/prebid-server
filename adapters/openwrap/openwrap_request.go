@@ -143,6 +143,36 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		}
 	}
 
+	// Handle app extension similar to site
+	if request.App != nil && request.App.Ext != nil {
+		var appExt map[string]interface{}
+		if err := json.Unmarshal(request.App.Ext, &appExt); err == nil {
+			// Read queryparams and store in string
+			if qp, exists := appExt["queryParams"]; exists {
+				if qpStr, ok := qp.(string); ok {
+					queryParams = qpStr
+				}
+			}
+
+			if sspreq, exists := appExt["sspreq"]; exists {
+				if sspreqBool, ok := sspreq.(bool); ok && sspreqBool {
+					isSSPReq = true
+					// Swap app.publisher.id with app.ext.cpid
+					if cpid, exists := appExt["cpid"]; exists {
+						if cpidStr, ok := cpid.(string); ok && cpidStr != "" && request.App.Publisher != nil && request.App.Publisher.ID != "" {
+							// Swap the values
+							tempCpid := cpidStr
+							appExt["cpid"] = request.App.Publisher.ID
+							request.App.Publisher.ID = tempCpid
+						}
+					}
+					// Delete app.ext before sending to SSP
+					request.App.Ext = nil
+				}
+			}
+		}
+	}
+
 	for i := 0; i < len(request.Imp); i++ {
 		var impExt map[string]interface{}
 		if request.Imp[i].Ext != nil {

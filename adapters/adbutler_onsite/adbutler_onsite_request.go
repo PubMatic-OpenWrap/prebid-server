@@ -253,7 +253,7 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence
-	if request.Site.Page != "" {
+	if request.Site != nil && request.Site.Page != "" {
 		adButlerReq.PageID = getSimpleHash(request.Site.Page)
 	}
 
