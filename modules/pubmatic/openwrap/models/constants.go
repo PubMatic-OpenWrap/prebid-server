@@ -629,6 +629,7 @@ const (
 	FeatureMBMFInstlFloors      = 11
 	FeatureMBMFRwddFloors       = 12
 	FeatureMBMFBannerFloors     = 13
+	FeatureDynamicFloor         = 15
 	FeatureAppLovinSchainABTest = 16
 )
 
