@@ -71,7 +71,7 @@ func (fe *feature) updateApplovinSchainABTestFeature() {
 			if err != nil {
 				glog.Errorf("ErrInvalidPercentage ApplovinMaxSchain Feature: value: %s err: %s",
 					val.Value, err.Error())
-				continue
+				return
 			}
 			schainABTestPercent = percentage
 		}
