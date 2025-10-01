@@ -843,7 +843,6 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-
 	type args struct {
 		requestBody []byte
 		rctx        models.RequestCtx

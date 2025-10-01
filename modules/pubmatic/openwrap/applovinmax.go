@@ -276,7 +276,6 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte
 	maxRequest.Imp[0].Native = nil
 
 	addSignalDataInRequest(signalData, maxRequest)
-
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
 	}
