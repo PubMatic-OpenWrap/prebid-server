@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func getSignalData(requestBody []byte, rctx *models.RequestCtx) *openrtb2.BidRequest {
+func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
 	signal, err := jsonparser.GetString(requestBody, "user", "data", "[0]", "segment", "[0]", "signal")
 	if err != nil {
 		signalType := models.InvalidSignal
@@ -260,7 +260,7 @@ func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidReq
 	}
 }
 
-func updateAppLovinMaxRequest(requestBody []byte, rctx *models.RequestCtx) []byte {
+func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
 	requestBody, rctx.ProfileIDStr = setProfileID(requestBody)
 	signalData := getSignalData(requestBody, rctx)
 	if signalData == nil {
@@ -277,7 +277,6 @@ func updateAppLovinMaxRequest(requestBody []byte, rctx *models.RequestCtx) []byt
 
 	addSignalDataInRequest(signalData, maxRequest)
 
-	ow.updateAppLovinMaxRequestSchain(rctx, maxRequest)
 	if maxRequestbytes, err := json.Marshal(maxRequest); err == nil {
 		return maxRequestbytes
 	}
@@ -392,43 +391,4 @@ func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFlo
 		}
 	}
 	return models.MultiFloorsConfig{Enabled: false}
-}
-
-func removeSchainFromSource(src *openrtb2.Source) (removed bool) {
-	if src == nil {
-		return false
-	}
-
-	// Remove SChain object if present
-	if src.SChain != nil {
-		src.SChain = nil
-		removed = true
-	}
-
-	// Remove schain from Ext if exists
-	if len(src.Ext) > 0 {
-		if _, _, _, err := jsonparser.Get(src.Ext, "schain"); err == nil {
-			src.Ext = jsonparser.Delete(src.Ext, "schain")
-			removed = true
-		}
-	}
-
-	return removed
-}
-
-func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	if maxRequest.Source == nil {
-		return
-	}
-
-	percentage := m.pubFeatures.GetApplovinSchainABTestPercentage()
-	if percentage <= 0 || GetRandomNumberIn1To100() > percentage {
-		return
-	}
-
-	if removeSchainFromSource(maxRequest.Source) {
-		glog.V(models.LogLevelDebug).Infof("Removed schain object from request: percentage=%d", percentage)
-		rctx.ABTestConfigApplied = 1
-		m.metricEngine.RecordRequestWithSchainABTestEnabled()
-	}
 }
