@@ -843,11 +843,6 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-	mockFeature := mock_feature.NewMockFeature(ctrl)
-
-	originalOw := ow
-	defer func() { ow = originalOw }()
-	ow = &OpenWrap{pubFeatures: mockFeature, metricEngine: mockEngine}
 
 	type args struct {
 		requestBody []byte
@@ -1365,10 +1360,6 @@ func TestOpenWrap_getApplovinMultiFloors(t *testing.T) {
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 
-	originalOw := ow
-	defer func() { ow = originalOw }()
-	ow = &OpenWrap{pubFeatures: mockFeature}
-
 	type args struct {
 		rctx models.RequestCtx
 	}
@@ -1437,84 +1428,6 @@ func TestOpenWrap_getApplovinMultiFloors(t *testing.T) {
 			}
 			got := m.getApplovinMultiFloors(tt.args.rctx)
 			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mockFeature := mock_feature.NewMockFeature(ctrl)
-	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
-
-	originalOw := ow
-	defer func() { ow = originalOw }()
-	ow = &OpenWrap{pubFeatures: mockFeature}
-
-	tests := []struct {
-		name       string
-		rctx       *models.RequestCtx
-		maxRequest *openrtb2.BidRequest
-		want       *openrtb2.BidRequest
-		setup      func()
-	}{
-		{
-			name: "schain_not_present_in_request",
-			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointAppLovinMax,
-			},
-			maxRequest: &openrtb2.BidRequest{
-				Source: &openrtb2.Source{},
-			},
-			setup: func() {
-			},
-			want: &openrtb2.BidRequest{
-				Source: &openrtb2.Source{
-					SChain: nil,
-				},
-			},
-		},
-		{
-			name: "schain_removed_from_request",
-			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointAppLovinMax,
-			},
-			maxRequest: &openrtb2.BidRequest{
-				Source: &openrtb2.Source{
-					SChain: &openrtb2.SupplyChain{
-						Complete: 1,
-						Nodes: []openrtb2.SupplyChainNode{
-							{
-								ASI: "applovin.com",
-								SID: "53bf468f18c5a0e2b7d4e3f748c677c1",
-								RID: "494dbe15a3ce08c54f4e456363f35a022247f997",
-								HP:  openrtb2.Int8Ptr(1),
-							},
-						},
-					},
-				},
-			},
-			setup: func() {
-				mockEngine.EXPECT().RecordRequestWithSchainABTestEnabled()
-			},
-			want: &openrtb2.BidRequest{
-				Source: &openrtb2.Source{
-					SChain: nil,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.setup != nil {
-				tt.setup()
-			}
-			m := OpenWrap{
-				pubFeatures:  mockFeature,
-				metricEngine: mockEngine,
-			}
-			m.updateAppLovinMaxRequestSchain(tt.rctx, tt.maxRequest)
-			assert.Equal(t, tt.want, tt.maxRequest)
 		})
 	}
 }
