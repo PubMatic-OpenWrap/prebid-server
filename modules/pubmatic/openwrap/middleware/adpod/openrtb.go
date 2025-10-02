@@ -92,7 +92,7 @@ func mergeSeatBids(bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
 				continue
 			}
 
-			impId, _ := models.GetImpressionID(bid.ImpID)
+			impId := bid.ImpID
 			bidArrayMap[impId] = append(bidArrayMap[impId], bid)
 		}
 

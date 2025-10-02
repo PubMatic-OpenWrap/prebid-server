@@ -1,23 +1,25 @@
 package endpointmanager
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/cache"
-	ctvendpointmanager "github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/creativecache"
+	ctvjson "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/json"
+	ctvopenrtb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/openrtb"
 	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 type EndpointHookManager interface {
-	HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error)
-	HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawAuctionRequestPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.RawAuctionRequestPayload], error)
-	HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error)
-	HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error)
-	HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error)
-	HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawBidderResponsePayload]) (models.RequestCtx, hookstage.HookResult[hookstage.RawBidderResponsePayload], error)
-	HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error)
-	HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload]) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error)
-	HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.Exitpoint]) (models.RequestCtx, hookstage.HookResult[hookstage.Exitpoint], error)
+	HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error)
+	HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawAuctionRequestPayload], error)
+	HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error)
+	HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error)
+	HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error)
+	HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawBidderResponsePayload], error)
+	HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error)
+	HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error)
+	HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error)
 }
 
 // type MutationManager interface {
@@ -32,10 +34,12 @@ type EndpointHookManager interface {
 // 	ExitpointMutation(ep hookstage.Exitpoint, rCtx models.RequestCtx) (hookstage.Exitpoint, error)
 // }
 
-func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, cache cache.Cache) EndpointHookManager {
+func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, cache cache.Cache, creativeCache creativecache.Client) EndpointHookManager {
 	switch endpoint {
 	case models.EndpointORTB:
-		return ctvendpointmanager.NewCTVOpenRTB(metricsEngine, cache)
+		return ctvopenrtb.NewCTVOpenRTB(metricsEngine, cache)
+	case models.EndpointJson:
+		return ctvjson.NewCTVJSON(metricsEngine, cache, creativeCache)
 	default:
 		return nil
 	}

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	endpointmanager "github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -15,6 +14,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	v25 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
@@ -73,7 +73,7 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	//Intialise endpoint Hook Manager based on endpoint
-	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache)
+	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache, m.creativeCache)
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -223,7 +223,7 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 
-	rCtx, result, err = endpointHookManager.HandleEntrypointHook(payload, rCtx, result)
+	rCtx, result, err = endpointHookManager.HandleEntrypointHook(payload, rCtx, result, miCtx)
 	if err != nil {
 		return result, err
 	}

@@ -87,44 +87,6 @@ func addSeatNonBidsInResponseExt(rctx models.RequestCtx, responseExt *openrtb_ex
 	}
 }
 
-// addLostToDealBidNonBRCode function sets the NonBR code of all lost-bids not satisfying dealTier to LossBidLostToDealBid
-func addLostToDealBidNonBRCode(rctx *models.RequestCtx) {
-	if !rctx.SupportDeals {
-		return
-	}
-
-	for impID, impCtx := range rctx.ImpBidCtx {
-		// Do not update the nbr in case of adpod bids
-		if impCtx.AdpodConfig != nil {
-			continue
-		}
-
-		_, ok := rctx.WinningBids[impID]
-		if !ok {
-			continue
-		}
-
-		for bidID, bidCtx := range impCtx.BidCtx {
-			// do not update NonBR for winning bid
-			if rctx.WinningBids.IsWinningBid(impID, bidID) {
-				continue
-			}
-
-			bidDealTierSatisfied := false
-			if bidCtx.BidExt.Prebid != nil {
-				bidDealTierSatisfied = bidCtx.BidExt.Prebid.DealTierSatisfied
-			}
-			// do not update NonBr if lost-bid satisfies dealTier
-			// because it can have NonBr reason as LossBidLostToHigherBid
-			if bidDealTierSatisfied {
-				continue
-			}
-			bidCtx.BidExt.Nbr = nbr.LossBidLostToDealBid.Ptr()
-			rctx.ImpBidCtx[impID].BidCtx[bidID] = bidCtx
-		}
-	}
-}
-
 func getSeatNonBid(Bidders map[string]struct{}, bidRequest *openrtb2.BidRequest) openrtb_ext.SeatNonBidBuilder {
 	var seatNonBids openrtb_ext.SeatNonBidBuilder
 	for bidderName := range Bidders {

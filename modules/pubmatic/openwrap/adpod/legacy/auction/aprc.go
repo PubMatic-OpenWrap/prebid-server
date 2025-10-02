@@ -1,4 +1,4 @@
-package auction
+package ctvlegacy
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb3"
@@ -24,8 +24,16 @@ func collectAPRC(impAdpodBidsMap map[string]*AdPodBid, impCtxMap map[string]mode
 	}
 }
 
+func getAprc(adpodBids *AdPodBid) map[string]int64 {
+	bidIdToAprcMap := make(map[string]int64)
+	for _, bid := range adpodBids.Bids {
+		bidIdToAprcMap[bid.ID] = bid.Status
+	}
+	return bidIdToAprcMap
+}
+
 // ConvertAPRCToNBRC converts the aprc to NonBidStatusCode
-func ConvertAPRCToNBRC(bidStatus int64) *openrtb3.NoBidReason {
+func ConvertAPRCToNBR(bidStatus int64) *openrtb3.NoBidReason {
 	var nbrCode openrtb3.NoBidReason
 
 	switch bidStatus {

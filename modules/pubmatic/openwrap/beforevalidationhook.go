@@ -37,7 +37,7 @@ import (
 )
 
 func (m OpenWrap) handleBeforeValidationHook(
-	ctx context.Context,
+	_ context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BeforeValidationRequestPayload,
 ) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
@@ -196,9 +196,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// Execute Endpoint specific before validation hook
-	rCtx, result, err = endpointHookManager.HandleBeforeValidationHook(payload, rCtx, result)
+	rCtx, result, err = endpointHookManager.HandleBeforeValidationHook(payload, rCtx, result, moduleCtx)
 	if err != nil {
-		result.Errors = append(result.Errors, "failed to handle before validation hook: "+err.Error())
+		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
 
@@ -949,25 +949,6 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	}
 }
 
-// createErrorResponse creates a hook result with error details
-func (m OpenWrap) createErrorResponse(rCtx models.RequestCtx, nbrCode int, errorMsg string, bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-		Reject:  true,
-		NbrCode: nbrCode,
-	}
-
-	if errorMsg != "" {
-		result.Errors = append(result.Errors, errorMsg)
-	}
-
-	// Set default ImpBidCtx for wrapper logger
-	if bidRequest != nil {
-		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*bidRequest)
-	}
-
-	return result, nil
-}
-
 // validateModuleContext validates that required context is available
 func validateModuleContextBeforeValidationHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -1619,18 +1600,21 @@ func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookRes
 			}
 
 			rCtx.AdpodCtx[imp.ID] = models.AdpodConfig{
-				PodID: imp.ID,
+				PodID:   imp.ID,
+				PodType: models.PodTypeDynamic,
 				Exclusion: models.ExclusionConfig{
 					AdvertiserDomainExclusion: domainExclusion,
 					IABCategoryExclusion:      categoryExclusion,
 				},
 				Slots: []models.SlotConfig{
 					{
-						MinDuration: int64(adpodV25.MinDuration),
-						MaxDuration: int64(adpodV25.MaxDuration),
-						PodDur:      imp.Video.MaxDuration,
-						MaxSeq:      int64(adpodV25.MaxAds),
-						Flexible:    true,
+						MinDuration:                 int64(adpodV25.MinDuration),
+						MaxDuration:                 int64(adpodV25.MaxDuration),
+						PodDur:                      imp.Video.MaxDuration,
+						MaxSeq:                      int64(adpodV25.MaxAds),
+						IABCategoryExclusionPercent: adpodV25.IABCategoryExclusionPercent,
+						AdvertiserExclusionPercent:  adpodV25.AdvertiserExclusionPercent,
+						Flexible:                    true,
 					},
 				},
 			}

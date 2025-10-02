@@ -198,7 +198,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	}
 
 	metricsRegistry := metricsConf.NewMetricsRegistry()
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor}
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, CacheHttpClient: cacheHttpClient, Config: cfg, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor}
 	repo, moduleStageNames, shutdownModules, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		glog.Fatalf("Failed to init hook modules: %v", err)

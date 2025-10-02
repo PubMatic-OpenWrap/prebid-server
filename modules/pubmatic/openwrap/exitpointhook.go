@@ -10,10 +10,10 @@ import (
 )
 
 func (m OpenWrap) handleExitpointHook(
-	ctx context.Context,
+	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.ExitpointPaylaod,
-) (result hookstage.HookResult[hookstage.Exitpoint], err error) {
+) (result hookstage.HookResult[hookstage.ExitpointPaylaod], err error) {
 	// validate module context
 	rCtx, endpointManager, result, ok := validateModuleContextExitpointHook(miCtx)
 	if !ok {
@@ -29,7 +29,7 @@ func (m OpenWrap) handleExitpointHook(
 	// 	return result, nil
 	// }
 
-	rCtx, result, err = endpointManager.HandleExitpointHook(payload, rCtx, result)
+	rCtx, result, err = endpointManager.HandleExitpointHook(payload, rCtx, result, miCtx)
 	if err != nil {
 		return result, err
 	}
@@ -37,8 +37,8 @@ func (m OpenWrap) handleExitpointHook(
 }
 
 // validateModuleContext validates that required context is available
-func validateModuleContextExitpointHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.Exitpoint], bool) {
-	result := hookstage.HookResult[hookstage.Exitpoint]{}
+func validateModuleContextExitpointHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
+	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleExitpointHook()")
@@ -60,7 +60,7 @@ func validateModuleContextExitpointHook(moduleCtx hookstage.ModuleInvocationCont
 	return rCtx, endpointHookManager, result, true
 }
 
-func validateExitpointPayload(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.Exitpoint], payload hookstage.ExitpointPaylaod) (hookstage.HookResult[hookstage.Exitpoint], bool) {
+func validateExitpointPayload(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], payload hookstage.ExitpointPaylaod) (hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
 	response, ok := payload.Response.(*openrtb2.BidResponse)
 	if !ok {
 		result.Errors = append(result.Errors, "invalid response format while processing exitpoint hook")

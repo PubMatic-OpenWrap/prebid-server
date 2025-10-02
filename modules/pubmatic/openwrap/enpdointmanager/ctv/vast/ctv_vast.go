@@ -1,4 +1,4 @@
-package ctvendpointmanager
+package ctvvast
 
 import (
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"

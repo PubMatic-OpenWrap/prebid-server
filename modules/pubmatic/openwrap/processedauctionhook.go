@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/impressions"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(
@@ -15,53 +13,57 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.ProcessedAuctionRequestPayload,
 ) (hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
-	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
-	result.ChangeSet = hookstage.ChangeSet[hookstage.ProcessedAuctionRequestPayload]{}
-
-	if len(moduleCtx.ModuleContext) == 0 {
-		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleProcessedAuctionHook()")
-		return result, nil
-	}
-	rctx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtx, endpointHookManager, result, ok := validateModuleContextProcessedAuctionHook(moduleCtx)
 	if !ok {
-		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleProcessedAuctionHook()")
-		return result, nil
-	}
-
-	//Do not execute the module for requests processed in SSHB(8001)
-	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rctx
+		moduleCtx.ModuleContext["rctx"] = rCtx
 	}()
 
-	var imps []*openrtb_ext.ImpWrapper
-	var errs []error
-	if rctx.IsCTVRequest {
-		imps, errs = impressions.GenerateImpressions(payload.Request, rctx.ImpBidCtx, rctx.AdpodProfileConfig, rctx.PubIDStr, m.metricEngine)
-		if len(errs) > 0 {
-			for i := range errs {
-				result.Warnings = append(result.Warnings, errs[i].Error())
-			}
-		}
-		adapters.FilterImpsVastTagsByDuration(imps, rctx.ImpBidCtx)
+	//Do not execute the module for requests processed in SSHB(8001)
+	if rCtx.Sshb == "1" || rCtx.Endpoint == models.EndpointHybrid {
+		return result, nil
 	}
 
-	ip := rctx.DeviceCtx.IP
+	rCtx, result, err := endpointHookManager.HandleProcessedAuctionHook(payload, rCtx, result, moduleCtx)
+	if err != nil {
+		return result, err
+	}
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
+		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		defer func() {
+			moduleCtx.ModuleContext["rctx"] = rCtx
+		}()
 		if parp.Request != nil && parp.Request.BidRequest.Device != nil && (parp.Request.BidRequest.Device.IP == "" && parp.Request.BidRequest.Device.IPv6 == "") {
-			parp.Request.BidRequest.Device.IP = ip
-		}
-
-		if rctx.IsCTVRequest {
-			if len(imps) > 0 {
-				parp.Request.SetImp(imps)
-			}
+			parp.Request.BidRequest.Device.IP = rCtx.DeviceCtx.IP
 		}
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-device-ip")
 
 	return result, nil
+}
+
+func validateModuleContextProcessedAuctionHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], bool) {
+	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
+
+	if len(moduleCtx.ModuleContext) == 0 {
+		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleProcessedAuctionHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleProcessedAuctionHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleProcessedAuctionHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	return rCtx, endpointHookManager, result, true
 }

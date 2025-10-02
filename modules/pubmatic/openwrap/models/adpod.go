@@ -1,6 +1,10 @@
 package models
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 )
@@ -41,6 +45,35 @@ const (
 	StatusDurationMismatch int64 = 4
 )
 
+const (
+	V25_IMP_ID_FORMAT     = "%s::%s::%d"
+	ImpressionIDSeparator = `::`
+)
+
+func PopulateV25ImpID(podId string, impId string, seq int) string {
+	return fmt.Sprintf(V25_IMP_ID_FORMAT, podId, impId, seq)
+}
+
+func DecodeV25ImpID(id string) (podId string, impId string, seq int) {
+	str := strings.Split(id, ImpressionIDSeparator)
+	if len(str) != 3 {
+		return "", str[0], 0
+	}
+
+	podId = str[0]
+	impId = str[1]
+	seq, _ = strconv.Atoi(str[2])
+	return
+}
+
+type PodType int8
+
+const (
+	PodTypeStructured PodType = iota + 1
+	PodTypeDynamic
+	PodTypeHybrid
+)
+
 // ImpAdPodConfig configuration for creating ads in adpod
 type ImpAdPodConfig struct {
 	ImpID          string `json:"id,omitempty"`
@@ -62,6 +95,9 @@ type PodConfig struct {
 type AdpodCtx map[string]AdpodConfig
 
 type SlotConfig struct {
+	// Imp ID of the slot
+	Id string `json:"id,omitempty"`
+
 	// slot position indicator (spec: video.slotinpod)
 	SlotInPod adcom1.SlotPositionInPod `json:"slotinpod,omitempty"`
 
@@ -77,6 +113,14 @@ type SlotConfig struct {
 	PodDur int64 `json:"poddur,omitempty"` // total dynamic portion seconds (if present)
 	MaxSeq int64 `json:"maxseq,omitempty"` // spec: maximum # ads in dynamic portion
 
+	// CTV 2.5 dynamic adpod config
+	MinAds                      int64 `json:"minads,omitempty"`
+	MaxAds                      int64 `json:"maxads,omitempty"`
+	MinPodDuration              int64 `json:"minpodduration,omitempty"`
+	MaxPodDuration              int64 `json:"maxpodduration,omitempty"`
+	AdvertiserExclusionPercent  *int  `json:"excladv,omitempty"`    // Percent value 0 means none of the ads can be from same advertiser 100 means can have all same advertisers
+	IABCategoryExclusionPercent *int  `json:"excliabcat,omitempty"` // Percent value 0 means all ads should be of different IAB categories.
+
 	// helper flag: true when this slot is flexible/dynamic (poddur/maxseq/mincpmpersec present)
 	Flexible bool `json:"flexible,omitempty"`
 }
@@ -90,34 +134,44 @@ type ExclusionConfig struct {
 type AdpodConfig struct {
 	PodID     string             `json:"podid,omitempty"`  // spec: podid (string recommended)
 	PodSeq    adcom1.PodSequence `json:"podseq,omitempty"` // spec: podseq (0 any, -1 last, 1 first)
+	PodType   PodType            `json:"podtype,omitempty"`
 	Exclusion ExclusionConfig    `json:"exclusion,omitempty"`
 	Slots     []SlotConfig       `json:"slots,omitempty"`
 }
 
 func (a AdpodCtx) AddAdpodConfig(imp *openrtb2.Imp) {
-	config, ok := a[imp.Video.PodID]
-	if ok {
-		config.AddSlot(imp.Video)
-		a[imp.Video.PodID] = config
+	if imp == nil || imp.Video == nil || imp.Video.PodID == "" {
 		return
 	}
 
-	config = AdpodConfig{
-		PodID:  imp.Video.PodID,
-		PodSeq: imp.Video.PodSeq,
+	// Get existing config or create a new one
+	config, exists := a[imp.Video.PodID]
+	if !exists {
+		config = AdpodConfig{
+			PodID:  imp.Video.PodID,
+			PodSeq: imp.Video.PodSeq,
+		}
 	}
-	config.AddSlot(imp.Video)
+
+	// Add the slot to the config
+	config.AddSlot(imp)
+
+	// Determine pod type based on slots
+	config.DeterminePodType()
+
+	// Update the context with the modified config
 	a[imp.Video.PodID] = config
 }
 
-func (a *AdpodConfig) AddSlot(video *openrtb2.Video) {
+func (a *AdpodConfig) AddSlot(imp *openrtb2.Imp) {
 	slot := SlotConfig{
-		SlotInPod:   video.SlotInPod,
-		MinDuration: video.MinDuration,
-		MaxDuration: video.MaxDuration,
-		RqdDurs:     video.RqdDurs,
-		PodDur:      video.PodDur,
-		MaxSeq:      video.MaxSeq,
+		Id:          imp.ID,
+		SlotInPod:   imp.Video.SlotInPod,
+		MinDuration: imp.Video.MinDuration,
+		MaxDuration: imp.Video.MaxDuration,
+		RqdDurs:     imp.Video.RqdDurs,
+		PodDur:      imp.Video.PodDur,
+		MaxSeq:      imp.Video.MaxSeq,
 	}
 
 	if slot.PodDur > 0 {
@@ -125,4 +179,30 @@ func (a *AdpodConfig) AddSlot(video *openrtb2.Video) {
 	}
 
 	a.Slots = append(a.Slots, slot)
+}
+
+func (a *AdpodConfig) DeterminePodType() {
+	if len(a.Slots) == 0 {
+		return
+	}
+
+	flexibleCount := 0
+	nonFlexibleCount := 0
+	for _, slot := range a.Slots {
+		if slot.Flexible {
+			flexibleCount++
+		} else {
+			nonFlexibleCount++
+		}
+	}
+
+	// Determine pod type based on the counts
+	switch {
+	case flexibleCount == 1 && nonFlexibleCount == 0:
+		a.PodType = PodTypeDynamic
+	case flexibleCount == 0 && nonFlexibleCount > 0:
+		a.PodType = PodTypeStructured
+	case flexibleCount > 0 && nonFlexibleCount > 0:
+		a.PodType = PodTypeHybrid
+	}
 }
