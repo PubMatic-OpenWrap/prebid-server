@@ -181,6 +181,20 @@ func TestRecordPartnerThrottledRequests(t *testing.T) {
 		})
 }
 
+func TestRecordCountryLevelPartnerThrottledRequests(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordCountryLevelPartnerThrottledRequests("v25", "pubmatic", "US")
+
+	expectedCount := float64(1)
+	assertCounterVecValue(t, "", "country_level_partner_throttled_requests", m.countryLevelPartnerThrottledRequests,
+		expectedCount,
+		prometheus.Labels{
+			endpointLabel: "v25",
+			bidderLabel:   "pubmatic",
+			countryLabel:  "US",
+		})
+}
 func TestRecordBadRequests(t *testing.T) {
 	m := createMetricsForTesting()
 

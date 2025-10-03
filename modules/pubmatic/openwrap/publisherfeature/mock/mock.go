@@ -161,6 +161,20 @@ func (mr *MockFeatureMockRecorder) IsCountryGDPREnabled(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCountryGDPREnabled", reflect.TypeOf((*MockFeature)(nil).IsCountryGDPREnabled), arg0)
 }
 
+// IsDynamicFloorEnabledPublisher mocks base method.
+func (m *MockFeature) IsDynamicFloorEnabledPublisher(arg0 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsDynamicFloorEnabledPublisher", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsDynamicFloorEnabledPublisher indicates an expected call of IsDynamicFloorEnabledPublisher.
+func (mr *MockFeatureMockRecorder) IsDynamicFloorEnabledPublisher(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDynamicFloorEnabledPublisher", reflect.TypeOf((*MockFeature)(nil).IsDynamicFloorEnabledPublisher), arg0)
+}
+
 // IsFscApplicable mocks base method.
 func (m *MockFeature) IsFscApplicable(arg0 int, arg1 string, arg2 int) bool {
 	m.ctrl.T.Helper()

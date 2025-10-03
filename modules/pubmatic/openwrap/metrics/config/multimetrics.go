@@ -187,6 +187,13 @@ func (me *MultiMetricsEngine) RecordPartnerThrottledRequests(publisher, bidder, 
 	}
 }
 
+// RecordCountryLevelPartnerThrottledRequests across all engines
+func (me *MultiMetricsEngine) RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string) {
+	for _, thisME := range *me {
+		thisME.RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country)
+	}
+}
+
 // RecordBadRequests across all engines
 func (me *MultiMetricsEngine) RecordBadRequests(endpoint, publisher string, errorCode int) {
 	for _, thisME := range *me {

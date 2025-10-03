@@ -132,7 +132,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
-		rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
+		//rCtx.ABTestConfigApplied = 1 // Re-use AB Test flag for VAST unwrap feature
 		rCtx.VastUnWrap.Enabled = true
 		rCtx.VastUnWrap.IsPrivacyEnforced = isPrivacyEnforced(payload.BidRequest.Regs, payload.BidRequest.Device)
 	}
@@ -188,9 +188,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.NewReqExt.Prebid.Transparency = cto
 	}
 
-	// Floors
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, rCtx.NewReqExt)
-	setFloorsExt(rCtx.NewReqExt, rCtx.PartnerConfigMap, rCtx.IsMaxFloorsEnabled)
+	setFloorsExt(rCtx.NewReqExt, &rCtx, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
 
 	// Google SDK
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)

@@ -77,6 +77,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					FloorFetchStatus: floorsDetails.FloorFetchStatus,
 					FloorProvider:    floorsDetails.FloorProvider,
 				},
+				VastUnwrapEnabled: utils.ConvertBoolToInt(rctx.VastUnWrap.Enabled),
 			}
 			var (
 				kgp, kgpv, kgpsv, matchedSlot, adformat, bidId = "", "", "", "", "banner", ""
@@ -85,6 +86,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				isRewardInventory, adduration                  = 0, 0
 				dspId, mbmfFlag                                int
 				eg, en                                         float64
+				networkId                                      int
 			)
 
 			if rctx.DeviceCtx.Ext != nil {
@@ -113,12 +115,18 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 						if len(bidExt.Prebid.BidId) > 0 {
 							bidId = bidExt.Prebid.BidId
 						}
-						if bidExt.Prebid.Meta != nil && len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
+						if bidExt.Prebid.Meta != nil {
+							if len(bidExt.Prebid.Meta.AdapterCode) != 0 && seatBid.Seat != bidExt.Prebid.Meta.AdapterCode {
 
-							if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
-								if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
-									matchedSlot = bidderMeta.MatchedSlot
+								if aliasSeat, ok := rctx.PrebidBidderCode[partnerID]; ok {
+									if bidderMeta, ok := impCtx.Bidders[aliasSeat]; ok {
+										matchedSlot = bidderMeta.MatchedSlot
+									}
 								}
+							}
+							// Extract NWID from bid.meta.networkId if present
+							if bidExt.Prebid.Meta.NetworkID != 0 {
+								networkId = bidExt.Prebid.Meta.NetworkID
 							}
 						}
 					}
@@ -183,6 +191,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				FloorRuleValue:         floorRuleValue,
 				DealID:                 "-1",
 				MultiBidMultiFloorFlag: mbmfFlag,
+				NetworkID:              networkId,
 			}
 			if rctx.PriceGranularity != nil {
 				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
@@ -242,7 +251,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 		v.Set(models.TRKRewardedInventory, strconv.Itoa(tracker.RewardedInventory))
 	}
 	v.Set(models.TRKPlatform, strconv.Itoa(tracker.Platform))
-	v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	if tracker.TestGroup != 0 {
+		v.Set(models.TRKTestGroup, strconv.Itoa(tracker.TestGroup))
+	}
 	v.Set(models.TRKPubDomain, tracker.Origin)
 	v.Set(models.TRKAdPodExist, strconv.Itoa(tracker.AdPodSlot))
 	partner := tracker.PartnerInfo
@@ -263,6 +274,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	v.Set(models.TRKAdformat, partner.Adformat)
 	v.Set(models.TRKServerSide, strconv.Itoa(partner.ServerSide))
 	v.Set(models.TRKAdvertiser, partner.Advertiser)
+	if partner.NetworkID != 0 {
+		v.Set(models.TRKNetworkID, strconv.Itoa(partner.NetworkID))
+	}
 
 	v.Set(models.TRKFloorType, strconv.Itoa(tracker.FloorType))
 	if tracker.FloorSkippedFlag != nil {
@@ -325,6 +339,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if len(rctx.DeviceCtx.DerivedCountryCode) > 0 {
 		v.Set(models.TRKCountryCode, rctx.DeviceCtx.DerivedCountryCode)
 	}
+	if rctx.VastUnWrap.Enabled {
+		v.Set(models.TRKVastUnwrapEnabled, strconv.Itoa(tracker.VastUnwrapEnabled))
+	}
 
 	queryString := v.Encode()
 
@@ -376,6 +393,9 @@ func constructVideoErrorURL(rctx models.RequestCtx, errorURLString string, bid o
 	v.Set(models.ERRAdvertiser, tracker.PartnerInfo.Advertiser)          // adv
 	if tracker.TestGroup != 0 {
 		v.Set(models.ERRTestGroup, fmt.Sprintf("%d", tracker.TestGroup)) // tgid
+	}
+	if tracker.VastUnwrapEnabled == 1 {
+		v.Set(models.ERRVastUnwrap, fmt.Sprintf("%d", tracker.VastUnwrapEnabled)) // vu
 	}
 
 	if tracker.SSAI != "" {

@@ -647,6 +647,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordPartnerThrottledRequests(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPartnerThrottledRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPartnerThrottledRequests), arg0, arg1, arg2)
 }
 
+// RecordCountryLevelPartnerThrottledRequests mocks base method.
+func (m *MockMetricsEngine) RecordCountryLevelPartnerThrottledRequests(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordCountryLevelPartnerThrottledRequests", arg0, arg1, arg2)
+}
+
+// RecordCountryLevelPartnerThrottledRequests indicates an expected call of RecordCountryLevelPartnerThrottledRequests.
+func (mr *MockMetricsEngineMockRecorder) RecordCountryLevelPartnerThrottledRequests(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordCountryLevelPartnerThrottledRequests", reflect.TypeOf((*MockMetricsEngine)(nil).RecordCountryLevelPartnerThrottledRequests), arg0, arg1, arg2)
+}
+
 // RecordPublisherPartnerNoCookieStats mocks base method.
 func (m *MockMetricsEngine) RecordPublisherPartnerNoCookieStats(arg0, arg1 string) {
 	m.ctrl.T.Helper()

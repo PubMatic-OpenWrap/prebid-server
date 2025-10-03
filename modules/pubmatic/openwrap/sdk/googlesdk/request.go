@@ -404,6 +404,10 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.IP = signalDevice.IP
 	}
 
+	if signalDevice.IFA != "" {
+		request.Device.IFA = signalDevice.IFA
+	}
+
 	if signalDevice.Geo != nil {
 		request.Device.Geo = signalDevice.Geo
 	}
@@ -467,6 +471,7 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skadnetids")
+	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "owsdk")
 	return requestImpExt
 }
 

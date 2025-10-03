@@ -43,8 +43,9 @@ type Tracker struct {
 	CountryCode       string
 	LoggerData        LoggerData // need this in logger to avoid duplicate computation
 
-	ImpID  string `json:"-"`
-	Secure int    `json:"-"`
+	ImpID             string `json:"-"`
+	Secure            int    `json:"-"`
+	VastUnwrapEnabled int
 }
 
 // Partner partner information to be logged in tracker object
@@ -66,6 +67,7 @@ type Partner struct {
 	DealID                 string
 	PriceBucket            string
 	MultiBidMultiFloorFlag int
+	NetworkID              int
 }
 
 // LoggerData: this data to be needed in logger

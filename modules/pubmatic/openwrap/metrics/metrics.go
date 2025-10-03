@@ -105,4 +105,5 @@ type MetricsEngine interface {
 	//IBV metric
 	RecordIBVRequest(pubId, profId string)
 	RecordPartnerThrottledRequests(publisher, bidder, featureID string)
+	RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string)
 }

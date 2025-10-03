@@ -78,6 +78,7 @@ func TestInitiateReloader(t *testing.T) {
 			defaultExpiry: tt.args.defaultExpiry,
 			serviceStop:   make(chan struct{}),
 			mbmf:          newMBMF(),
+			dynamicFloor:  newDynamicFloor(),
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)

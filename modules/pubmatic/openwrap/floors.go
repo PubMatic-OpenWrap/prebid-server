@@ -1,15 +1,19 @@
 package openwrap
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]string, setMaxFloor bool) {
-	if configMap == nil || configMap[models.VersionLevelConfigID] == nil {
+func setFloorsExt(requestExt *models.RequestExt, rctx *models.RequestCtx, isDynamicFloorEnabledPub bool) {
+	versionConfigMap := rctx.PartnerConfigMap[models.VersionLevelConfigID]
+	if versionConfigMap == nil {
 		return
 	}
 
@@ -22,37 +26,85 @@ func setFloorsExt(requestExt *models.RequestExt, configMap map[int]map[string]st
 	}
 	if requestExt.Prebid.Floors.Enabled == nil {
 		requestExt.Prebid.Floors.Enabled = ptrutil.ToPtr(true)
-
 	}
 
 	if requestExt.Prebid.Floors.Enforcement == nil {
 		requestExt.Prebid.Floors.Enforcement = new(openrtb_ext.PriceFloorEnforcement)
 	}
 
-	if configMap[models.VersionLevelConfigID][models.PLATFORM_KEY] == models.PLATFORM_APP && requestExt.Prebid.Floors.Enforcement.FloorDeals == nil {
-		requestExt.Prebid.Floors.Enforcement.FloorDeals = ptrutil.ToPtr(true)
+	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
+		if isDynamicFloorEnabledPub && versionConfigMap[models.FloorModuleEnabled] != "0" {
+			setFloorsData(requestExt, versionConfigMap, rctx.PubID, rctx.ProfileID)
+			requestExt.Prebid.Floors.SetMaxFloor = true
+			rctx.IsMaxFloorsEnabled = true
+		} else {
+			setFloorsDefaultsForApp(requestExt, rctx.IsMaxFloorsEnabled)
+		}
+	} else {
+		setFloorsData(requestExt, versionConfigMap, rctx.PubID, rctx.ProfileID)
+		requestExt.Prebid.Floors.SetMaxFloor = rctx.IsMaxFloorsEnabled
+	}
+}
+
+func setFloorsData(requestExt *models.RequestExt, versionConfigMap map[string]string, pubID int, profileID int) {
+	if requestExt.Prebid.Floors.FloorMin == 0 {
+		floorMin, ok := versionConfigMap[models.FloorMin]
+		if ok && floorMin != "" {
+			floorMinValue, err := strconv.ParseFloat(floorMin, 64)
+			if err != nil {
+				glog.V(models.LogLevelDebug).Info("Failed to parse floorMin: %s", floorMin)
+			}
+			requestExt.Prebid.Floors.FloorMin = floorMinValue
+		}
 	}
 
 	if requestExt.Prebid.Floors.Enforcement.EnforcePBS == nil {
-		// By default enforcemnt will be true i.e hard floor
 		requestExt.Prebid.Floors.Enforcement.EnforcePBS = ptrutil.ToPtr(true)
-
-		floorType, typeExists := configMap[models.VersionLevelConfigID][models.FloorType]
+		floorType, typeExists := versionConfigMap[models.FloorType]
 		if typeExists && strings.ToLower(floorType) == models.SoftFloorType {
 			*requestExt.Prebid.Floors.Enforcement.EnforcePBS = false
 		}
 	}
 
-	// Based on floorPriceModuleEnabled flag, dynamic fetch would be enabled/disabled
-	enableFlag, isFlagPresent := configMap[models.VersionLevelConfigID][models.FloorModuleEnabled]
-	if isFlagPresent && enableFlag == "1" {
-		url, urlExists := configMap[models.VersionLevelConfigID][models.PriceFloorURL]
-		if urlExists {
-			if requestExt.Prebid.Floors.Location == nil {
-				requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
-			}
-			requestExt.Prebid.Floors.Location.URL = url
+	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP && requestExt.Prebid.Floors.Enforcement.FloorDeals == nil {
+		requestExt.Prebid.Floors.Enforcement.FloorDeals = ptrutil.ToPtr(true)
+		dealsEnforcement, ok := versionConfigMap[models.FloorDealEnforcement]
+		if ok && dealsEnforcement == "0" {
+			*requestExt.Prebid.Floors.Enforcement.FloorDeals = false
 		}
 	}
+
+	//Based on floorPriceModuleEnabled(appLevelDynamicFloorFlag) flag, dynamic fetch would be enabled/disabled
+	if versionConfigMap[models.FloorModuleEnabled] == "1" {
+		url, urlExists := versionConfigMap[models.PriceFloorURL]
+		if urlExists {
+			setFloorJsonURL(requestExt, url)
+			return
+		}
+	}
+
+	if versionConfigMap[models.PLATFORM_KEY] == models.PLATFORM_APP {
+		setFloorJsonURL(requestExt, prepareFloorJsonURL(pubID, profileID))
+	}
+}
+
+func setFloorsDefaultsForApp(requestExt *models.RequestExt, setMaxFloor bool) {
+	if requestExt.Prebid.Floors.Enforcement.FloorDeals == nil {
+		requestExt.Prebid.Floors.Enforcement.FloorDeals = ptrutil.ToPtr(true)
+	}
+	if requestExt.Prebid.Floors.Enforcement.EnforcePBS == nil {
+		requestExt.Prebid.Floors.Enforcement.EnforcePBS = ptrutil.ToPtr(true)
+	}
 	requestExt.Prebid.Floors.SetMaxFloor = setMaxFloor
+}
+
+func prepareFloorJsonURL(pubID, profileID int) string {
+	return fmt.Sprintf(models.FloorsURLTemplate, pubID, profileID)
+}
+
+func setFloorJsonURL(requestExt *models.RequestExt, url string) {
+	if requestExt.Prebid.Floors.Location == nil {
+		requestExt.Prebid.Floors.Location = new(openrtb_ext.PriceFloorEndpoint)
+	}
+	requestExt.Prebid.Floors.Location.URL = url
 }

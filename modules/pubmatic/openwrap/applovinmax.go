@@ -75,7 +75,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	// Update native
 	maxImps[0].Native = signalImps[0].Native
 
-	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid")
+	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid", "owsdk")
 }
 
 func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
@@ -107,6 +107,10 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.IP = signalDevice.IP
 	}
 
+	if signalDevice.IFA != "" {
+		maxRequest.Device.IFA = signalDevice.IFA
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {
@@ -124,6 +128,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 	if signalDevice.Geo.UTCOffset != 0 {
 		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
 	}
+
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
