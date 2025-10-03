@@ -8254,11 +8254,12 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 	ow = &OpenWrap{pubFeatures: mockFeature}
 
 	tests := []struct {
-		name       string
-		rctx       *models.RequestCtx
-		maxRequest *openrtb2.BidRequest
-		want       *openrtb2.BidRequest
-		setup      func()
+		name              string
+		rctx              *models.RequestCtx
+		maxRequest        *openrtb2.BidRequest
+		want              *openrtb2.BidRequest
+		wantABTestEnabled bool
+		setup             func()
 	}{
 		{
 			name: "schain_not_present_in_request",
@@ -8275,6 +8276,7 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 					SChain: nil,
 				},
 			},
+			wantABTestEnabled: false,
 		},
 		{
 			name: "schain_removed_from_request",
@@ -8304,6 +8306,7 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 					SChain: nil,
 				},
 			},
+			wantABTestEnabled: true,
 		},
 	}
 	for _, tt := range tests {
@@ -8317,6 +8320,56 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 			}
 			m.updateAppLovinMaxRequestSchain(tt.rctx, tt.maxRequest)
 			assert.Equal(t, tt.want, tt.maxRequest)
+			assert.Equal(t, tt.wantABTestEnabled, (tt.rctx.ABTestConfigApplied == 1))
+		})
+	}
+}
+
+func Test_getApplovinSchainABTestEnabled(t *testing.T) {
+	tests := []struct {
+		name         string
+		percentage   int
+		randomNumber int
+		want         bool
+	}{
+		{
+			name:         "percentage_is_negative_number, randomNumber_is_less_than_percentage",
+			percentage:   -10,
+			want:         false,
+			randomNumber: 1,
+		},
+		{
+			name:         "percentage_is_0, randomNumber_is_less_than_percentage",
+			percentage:   0,
+			want:         false,
+			randomNumber: 50,
+		},
+		{
+			name:         "percentage_is_100, randomNumber_is_less_than_percentage",
+			percentage:   100,
+			want:         true,
+			randomNumber: 10,
+		},
+		{
+			name:         "percentage_is_50, randomNumber_is_equal_to_percentage",
+			percentage:   50,
+			want:         true,
+			randomNumber: 50,
+		},
+		{
+			name:         "percentage_is_57, randomNumber_is_greater_than_percentage",
+			percentage:   57,
+			want:         false,
+			randomNumber: 75,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			GetRandomNumberIn1To100 = func() int {
+				return tt.randomNumber
+			}
+			got := getApplovinSchainABTestEnabled(tt.percentage)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

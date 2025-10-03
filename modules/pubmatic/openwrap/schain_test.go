@@ -359,7 +359,7 @@ func Test_removeSchainFromSource(t *testing.T) {
 			},
 		},
 		{
-			name: "schain_present_in_request",
+			name: "schain_present_in_source",
 			src: &openrtb2.Source{
 				SChain: &openrtb2.SupplyChain{
 					Complete: 1,
@@ -379,7 +379,7 @@ func Test_removeSchainFromSource(t *testing.T) {
 			},
 		},
 		{
-			name: "schain_present_in_request_ext",
+			name: "schain_present_in_source_ext",
 			src: &openrtb2.Source{
 				Ext: json.RawMessage(`{"schain":{"complete":0,"nodes":null,"ver":"1"}}`),
 			},
