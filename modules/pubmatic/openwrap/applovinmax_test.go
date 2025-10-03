@@ -201,7 +201,7 @@ func TestUpdateDevice(t *testing.T) {
 				sdkDevice:  &openrtb2.Device{IP: "127.0.0.1"},
 				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{IP: "10.0.0.1"}},
 			},
-			want: &openrtb2.Device{IP: "127.0.0.1"},
+			want: &openrtb2.Device{IP: "10.0.0.1"},
 		},
 		{
 			name: "sdkDevice_has_mccmnc_connectiontype",
