@@ -246,6 +246,7 @@ func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx 
 		ep.Response = adpodBids
 		ep.W.Header().Set("Content-Type", "application/json")
 		ep.W.Header().Set("Content-Options", "nosniff")
+		ctvutils.SetCORSHeaders(ep.W, rCtx.Header)
 		if checkRedirectResponse(rCtx) && len(adpodBids) > 0 {
 			ep.W.Header().Set("Location", adpodBids[0].ModifiedURL)
 			ep.W.WriteHeader(http.StatusFound)

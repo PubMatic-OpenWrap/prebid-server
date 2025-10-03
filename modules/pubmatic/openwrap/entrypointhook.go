@@ -137,6 +137,7 @@ func (m OpenWrap) handleEntrypointHook(
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
 		StartTime:          time.Now().Unix(),
+		Header:             payload.Request.Header,
 		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
 		ProfileID:          requestExtWrapper.ProfileId,
 		DisplayID:          requestExtWrapper.VersionId,

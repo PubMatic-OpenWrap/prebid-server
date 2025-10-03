@@ -54,8 +54,9 @@ type RequestCtx struct {
 	ParsedUidCookie *usersync.Cookie
 	OriginCookie    string
 
-	Debug bool
-	Trace bool
+	Debug  bool
+	Trace  bool
+	Header http.Header
 
 	//tracker
 	PageURL   string

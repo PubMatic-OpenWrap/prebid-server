@@ -3,6 +3,7 @@ package ctvutils
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -284,4 +285,15 @@ func TrimRightByte(s string, b byte) string {
 		return s[:len(s)-1]
 	}
 	return s
+}
+
+// SetCORSHeaders sets CORS headers in response
+func SetCORSHeaders(w http.ResponseWriter, header http.Header) {
+	origin := header.Get("Origin")
+	if len(origin) == 0 {
+		origin = "*"
+	} else {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+	w.Header().Set("Access-Control-Allow-Origin", origin)
 }
