@@ -103,6 +103,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
+	rCtx.IsApplovinSchainABTestEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && getApplovinSchainABTestEnabled(m.pubFeatures.GetApplovinSchainABTestPercentage())
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	rCtx.HostName = m.cfg.Server.HostName
@@ -753,6 +754,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
+		}
+
+		if rctx.IsApplovinSchainABTestEnabled && ep.BidRequest.Source != nil {
+			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
 		}
 
 		if rctx.IsCTVRequest {
@@ -1552,4 +1557,11 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Native = nil
 		return
 	}
+}
+
+func getApplovinSchainABTestEnabled(percentage int) bool {
+	if percentage > 0 && GetRandomNumberIn1To100() <= percentage {
+		return true
+	}
+	return false
 }

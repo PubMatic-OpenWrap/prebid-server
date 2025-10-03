@@ -335,3 +335,65 @@ func TestSetAllBidderSChain(t *testing.T) {
 		})
 	}
 }
+
+func Test_removeSchainFromSource(t *testing.T) {
+	tests := []struct {
+		name    string
+		src     *openrtb2.Source
+		want    bool
+		wantSrc *openrtb2.Source
+	}{
+		{
+			name: "src_nil",
+			src:  nil,
+			want: false,
+		},
+		{
+			name: "schain_not_present_in_request",
+			src: &openrtb2.Source{
+				SChain: nil,
+			},
+			want: false,
+			wantSrc: &openrtb2.Source{
+				SChain: nil,
+			},
+		},
+		{
+			name: "schain_present_in_source",
+			src: &openrtb2.Source{
+				SChain: &openrtb2.SupplyChain{
+					Complete: 1,
+					Nodes: []openrtb2.SupplyChainNode{
+						{
+							ASI: "applovin.com",
+							SID: "53bf468f18c5a0e2b7d4e3f748c677c1",
+							RID: "494dbe15a3ce08c54f4e456363f35a022247f997",
+							HP:  openrtb2.Int8Ptr(1),
+						},
+					},
+				},
+			},
+			want: true,
+			wantSrc: &openrtb2.Source{
+				SChain: nil,
+			},
+		},
+		{
+			name: "schain_present_in_source_ext",
+			src: &openrtb2.Source{
+				Ext: json.RawMessage(`{"schain":{"complete":0,"nodes":null,"ver":"1"}}`),
+			},
+			want: true,
+			wantSrc: &openrtb2.Source{
+				Ext: json.RawMessage("{}"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := removeSchainFromSource(tt.src)
+			assert.Equal(t, tt.want, got, tt.name)
+			assert.Equal(t, tt.src, tt.wantSrc, tt.name)
+		})
+	}
+}
