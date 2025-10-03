@@ -61,6 +61,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 		},
 	}
 
+	if payload.BidResponse.NBR != nil {
+		return result, nil
+	}
+
 	//Impression counting method enabled bidders
 	if rctx.Endpoint == models.EndpointV25 || sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
@@ -213,7 +217,7 @@ func validateModuleContextAuctionResponseHook(moduleCtx hookstage.ModuleInvocati
 	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in auctionresponsehook()")
-		return models.RequestCtx{}, nil, result, false
+		return rCtx, nil, result, false
 	}
 
 	return rCtx, endpointHookManager, result, true

@@ -22,18 +22,6 @@ type EndpointHookManager interface {
 	HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error)
 }
 
-// type MutationManager interface {
-// 	EntrypointMutation(ep hookstage.EntrypointPayload, rCtx models.RequestCtx) (hookstage.EntrypointPayload, error)
-// 	RawAuctionMutation(rarp hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx) (hookstage.RawAuctionRequestPayload, error)
-// 	BeforeValidationMutation(bvrp hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx) (hookstage.BeforeValidationRequestPayload, error)
-// 	ProcessedAuctionMutation(parp hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx) (hookstage.ProcessedAuctionRequestPayload, error)
-// 	BidderRequestMutation(brp hookstage.BidderRequestPayload, rCtx models.RequestCtx) (hookstage.BidderRequestPayload, error)
-// 	RawBidderResponseMutation(rbrp hookstage.RawBidderResponsePayload, rCtx models.RequestCtx) (hookstage.RawBidderResponsePayload, error)
-// 	AllProcessedBidResponsesMutation(aprp hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx) (hookstage.AllProcessedBidResponsesPayload, error)
-// 	AuctionResponseMutation(arp hookstage.AuctionResponsePayload, rCtx models.RequestCtx) (hookstage.AuctionResponsePayload, error)
-// 	ExitpointMutation(ep hookstage.Exitpoint, rCtx models.RequestCtx) (hookstage.Exitpoint, error)
-// }
-
 func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, cache cache.Cache, creativeCache creativecache.Client) EndpointHookManager {
 	switch endpoint {
 	case models.EndpointORTB:
@@ -43,4 +31,42 @@ func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, ca
 	default:
 		return nil
 	}
+}
+
+type NilEndpointManager struct{}
+
+func (n *NilEndpointManager) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
+	return rCtx, result, nil
+}
+
+func (n *NilEndpointManager) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+	return rCtx, result, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -138,6 +139,7 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 			},
@@ -158,6 +160,7 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 			},
@@ -177,6 +180,7 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointV25,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AllProcessedBidResponsesPayload{

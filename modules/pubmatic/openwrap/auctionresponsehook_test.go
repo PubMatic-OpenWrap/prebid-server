@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
@@ -51,6 +52,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -113,6 +115,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -225,6 +228,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -341,6 +345,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -404,6 +409,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -517,6 +523,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -631,6 +638,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -745,6 +753,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -859,6 +868,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -969,6 +979,12 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				pubFeatures:  mockFeature,
 			}
+
+			// Set metrics engine in rctx
+			ttrctx := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			ttrctx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext["rctx"] = ttrctx
+
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
 			assert.NotEmpty(t, mutations, tt.name)
@@ -1011,6 +1027,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:         "5890",
 							CustomDimensions: map[string]models.CustomDimension{},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1136,6 +1153,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1252,6 +1270,12 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				pubFeatures:  mockFeature,
 			}
+
+			// Set metrics engine in rctx
+			ttrctx := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			ttrctx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext["rctx"] = ttrctx
+
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
 			assert.NotEmpty(t, mutations, tt.name)
