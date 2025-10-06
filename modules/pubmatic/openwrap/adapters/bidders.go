@@ -234,6 +234,10 @@ func builderRubicon(params BidderParameters) (json.RawMessage, error) {
 		fmt.Fprintf(&jsonStr, `"zoneId":%d,`, zoneID)
 	}
 
+	if bidOnMultiFormat, ok := getBool(params.FieldMap["bidonmultiformat"]); ok {
+		fmt.Fprintf(&jsonStr, `"bidonmultiformat":%t,`, bidOnMultiFormat)
+	}
+
 	if _, ok := params.FieldMap["video"]; ok {
 		if videoMap, ok := (params.FieldMap["video"]).(map[string]interface{}); ok {
 			jsonStr.WriteString(`"video":{`)

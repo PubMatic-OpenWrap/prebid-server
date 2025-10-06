@@ -570,10 +570,11 @@ func TestPrepareBidParamJSONForPartnerForRubicon(t *testing.T) {
 	}
 
 	type rubiconTestObj struct {
-		AccountID int      `json:"accountId,omitempty"`
-		ZoneID    int      `json:"zoneId,omitempty"`
-		SiteID    int      `json:"siteId,omitempty"`
-		Video     videoObj `json:"video,omitempty"`
+		AccountID        int      `json:"accountId,omitempty"`
+		ZoneID           int      `json:"zoneId,omitempty"`
+		SiteID           int      `json:"siteId,omitempty"`
+		Video            videoObj `json:"video,omitempty"`
+		BidOnMultiFormat bool     `json:"bidonmultiformat,omitempty"`
 	}
 
 	vMap := map[string]interface{}{
@@ -584,10 +585,11 @@ func TestPrepareBidParamJSONForPartnerForRubicon(t *testing.T) {
 	}
 
 	mapping := map[string]interface{}{
-		"accountId": "12313",
-		"zoneId":    "45343",
-		"siteId":    "12345",
-		"video":     vMap,
+		"accountId":        "12313",
+		"zoneId":           "45343",
+		"siteId":           "12345",
+		"video":            vMap,
+		"bidonmultiformat": true,
 	}
 
 	width := new(int64)
@@ -611,6 +613,7 @@ func TestPrepareBidParamJSONForPartnerForRubicon(t *testing.T) {
 			SizeID:       10,
 			Language:     "eng",
 		},
+		BidOnMultiFormat: true,
 	}
 
 	AssertJSON(t, json.RawMessage(GetJSON(expected)), jsonString)
