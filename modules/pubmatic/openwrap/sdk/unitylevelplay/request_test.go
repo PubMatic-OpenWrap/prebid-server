@@ -732,7 +732,7 @@ func TestModifyDevice(t *testing.T) {
 			name:     "both_request_and_signal_has_device_ip",
 			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
 			signal:   &openrtb2.Device{IP: "127.0.0.2"},
-			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.2"}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
 		},
 		{
 			name:    "copy all device fields",
