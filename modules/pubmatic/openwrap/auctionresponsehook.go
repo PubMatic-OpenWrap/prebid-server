@@ -35,15 +35,15 @@ func (m OpenWrap) handleAuctionResponseHook(
 		return result, nil
 	}
 
-	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rctx
-		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
-	}()
-
 	//SSHB request should not execute module
 	if rctx.Sshb == "1" || rctx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
+
+	defer func() {
+		moduleCtx.ModuleContext["rctx"] = rctx
+		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
+	}()
 
 	// cache rctx for analytics
 	result.AnalyticsTags = hookanalytics.Analytics{

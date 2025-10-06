@@ -17,14 +17,15 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	if !ok {
 		return result, nil
 	}
-	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rCtx
-	}()
 
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == "1" || rCtx.Endpoint == models.EndpointHybrid {
 		return result, nil
 	}
+
+	defer func() {
+		moduleCtx.ModuleContext["rctx"] = rCtx
+	}()
 
 	rCtx, result, err := endpointHookManager.HandleProcessedAuctionHook(payload, rCtx, result, moduleCtx)
 	if err != nil {

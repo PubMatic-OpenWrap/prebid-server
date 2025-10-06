@@ -1391,6 +1391,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1444,6 +1445,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1490,6 +1492,12 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 			}
+
+			// Set metrics engine in rctx
+			ttrctx := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			ttrctx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext["rctx"] = ttrctx
+
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1536,7 +1544,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: module-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: module-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1555,7 +1563,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: request-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1574,7 +1582,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: request-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1588,6 +1596,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{},
@@ -1609,6 +1618,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 							PubID:    5890,
 							PubIDStr: "5890",
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1675,6 +1685,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1777,6 +1788,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1901,6 +1913,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 								},
 							},
 						},
+						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
 					},
 				},
 				payload: hookstage.AuctionResponsePayload{
@@ -1965,6 +1978,12 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 				pubFeatures:  mockFeature,
+			}
+			// update metrics engine in rctx
+			ttRctx, ok := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			if ok {
+				ttRctx.MetricsEngine = o.metricEngine
+				tt.args.moduleCtx.ModuleContext["rctx"] = ttRctx
 			}
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)

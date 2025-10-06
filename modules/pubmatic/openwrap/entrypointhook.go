@@ -67,13 +67,14 @@ func (m OpenWrap) handleEntrypointHook(
 	}()
 
 	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+
+	//Intialise endpoint Hook Manager based on endpoint
+	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache, m.creativeCache)
+
 	if endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
-
-	//Intialise endpoint Hook Manager based on endpoint
-	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache, m.creativeCache)
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -184,6 +185,21 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	}
 
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+
+	rCtx.PubID, err = strconv.Atoi(pubIdStr)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
+		return result, fmt.Errorf("invalid publisher id : %v", err)
+	}
+	rCtx.PubIDStr = pubIdStr
+
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	if rCtx.UidCookie == nil {
@@ -204,20 +220,6 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.PubID = pubid
 	}
 
-	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
-	if len(errs) > 0 {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, errs[0].Error())
-		return result, errs[0]
-	}
-
-	rCtx.PubID, err = strconv.Atoi(pubIdStr)
-	if err != nil {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, "ErrInvalidPublisherID")
-		return result, fmt.Errorf("invalid publisher id : %v", err)
-	}
-	rCtx.PubIDStr = pubIdStr
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)

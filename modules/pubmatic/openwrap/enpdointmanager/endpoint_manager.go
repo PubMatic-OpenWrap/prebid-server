@@ -29,7 +29,7 @@ func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, ca
 	case models.EndpointJson:
 		return ctvjson.NewCTVJSON(metricsEngine, cache, creativeCache)
 	default:
-		return nil
+		return &NilEndpointManager{}
 	}
 }
 

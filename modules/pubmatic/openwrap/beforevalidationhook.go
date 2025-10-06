@@ -32,7 +32,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
@@ -143,18 +142,21 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// Partner throttling
 	result, ok = m.processPartnerThrottling(&rCtx, result)
 	if !ok {
+		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
 
 	// Bidder Filtering
 	result, ok = m.processBidderFiltering(&rCtx, result, payload.BidRequest)
 	if !ok {
+		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
 
 	// Price Granularity
 	result, ok = processPriceGranularity(&rCtx, result, payload.BidRequest)
 	if !ok {
+		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
 
@@ -1096,7 +1098,6 @@ func (m OpenWrap) processPartnerThrottling(rCtx *models.RequestCtx, result hooks
 // processBidderFiltering get filtered bidders
 func (m OpenWrap) processBidderFiltering(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	var allPartnersFilteredFlag bool
-
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(*rCtx, bidRequest)
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, bidRequest)
 	if allPartnersFilteredFlag {
@@ -1209,11 +1210,13 @@ func (m OpenWrap) processImpressions(rCtx *models.RequestCtx, result hookstage.H
 func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest, imp *openrtb2.Imp, impMeta *ImpressionMeta) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	// Parse impression extension
 	impExt := &models.ImpExtension{}
-	if err := jsonutil.Unmarshal(imp.Ext, impExt); err != nil {
-		result.NbrCode = int(openrtb3.NoBidInvalidRequest)
-		result.Errors = append(result.Errors, "failed to parse imp.ext: "+imp.ID)
-		rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
-		return result, false
+	if len(imp.Ext) != 0 {
+		if err := json.Unmarshal(imp.Ext, impExt); err != nil {
+			result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+			result.Errors = append(result.Errors, "failed to parse imp.ext: "+imp.ID)
+			rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
+			return result, false
+		}
 	}
 
 	// Handle tag ID
@@ -1425,8 +1428,6 @@ func (m OpenWrap) processBidders(rCtx *models.RequestCtx, result hookstage.HookR
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 			continue
 		}
-		// Set service side bidder present flag
-		impMeta.serviceSideBidderPresent = true
 
 		partneridstr, ok := partnerConfig[models.PARTNER_ID]
 		if !ok {
@@ -1506,6 +1507,8 @@ func (m OpenWrap) processBidders(rCtx *models.RequestCtx, result hookstage.HookR
 		// Set bid adjustment factor
 		revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
 		impMeta.bidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
+		// Set service side bidder present flag
+		impMeta.serviceSideBidderPresent = true
 	}
 
 	return bidderMeta, nonMapped
