@@ -24,7 +24,6 @@ func (m OpenWrap) handleBidderRequestHook(ctx context.Context,
 	var err error
 	rCtx, result, err = endpointHookManager.HandleBidderRequestHook(payload, rCtx, result, miCtx)
 	if err != nil {
-		result.Errors = append(result.Errors, err.Error())
 		return result, nil
 	}
 

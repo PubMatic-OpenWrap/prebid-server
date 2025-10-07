@@ -201,6 +201,7 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 			miCtx.ModuleContext["rctx"] = rCtx
 		}()
 
+		// Move to Raw bidder response hook once 2.6 fully supported
 		adpod.ConvertUpTo26(rCtx, apbrp.Responses)
 		return apbrp, nil
 	}, hookstage.MutationUpdate, "update-bid-duration")

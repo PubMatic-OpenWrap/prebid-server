@@ -17,7 +17,7 @@ import (
 // handleAllProcessedBidResponsesHook will create unique id for each bid in bid Response. This hook is introduced
 // because bidresponse should be updated in mutations and we need modified bidID at the start of auction response hook.
 func (m OpenWrap) handleAllProcessedBidResponsesHook(
-	ctx context.Context,
+	_ context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
 	payload hookstage.AllProcessedBidResponsesPayload,
 ) (hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
@@ -78,9 +78,7 @@ func updateWakandaHTTPCalls(rCtx *models.RequestCtx, payload hookstage.AllProces
 
 // validateModuleContext validates that required context is available
 func validateModuleContextAllProcessedBidResponsesHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], bool) {
-	result := hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
-		Reject: true,
-	}
+	result := hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{}
 
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAllProcessedBidResponsesHook()")
