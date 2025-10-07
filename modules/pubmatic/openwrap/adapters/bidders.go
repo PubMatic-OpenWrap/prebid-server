@@ -844,3 +844,23 @@ func builderOMS(params BidderParameters) (json.RawMessage, error) {
 
 	return jsonStr.Bytes(), nil
 }
+
+func builderNexx360(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+
+	// Try tagId first (as string)
+	if val, ok := getString(params.FieldMap["tagId"]); ok {
+		fmt.Fprintf(&jsonStr, `{"tagId":"%s"}`, val)
+	} else {
+		// Try placement
+		if val, ok := getString(params.FieldMap["placement"]); ok {
+			fmt.Fprintf(&jsonStr, `{"placement":%s}`, val)
+		}
+	}
+
+	if jsonStr.Len() == 0 {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"tagId", "placement"})
+	}
+
+	return jsonStr.Bytes(), nil
+}
