@@ -6,6 +6,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/creativecache"
 	ctvjson "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/json"
 	ctvopenrtb "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/openrtb"
+	ctvvast "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/vast"
 	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
@@ -25,9 +26,11 @@ type EndpointHookManager interface {
 func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, cache cache.Cache, creativeCache creativecache.Client) EndpointHookManager {
 	switch endpoint {
 	case models.EndpointORTB:
-		return ctvopenrtb.NewCTVOpenRTB(metricsEngine, cache)
+		return ctvopenrtb.NewCTVOpenRTB(metricsEngine)
 	case models.EndpointJson:
-		return ctvjson.NewCTVJSON(metricsEngine, cache, creativeCache)
+		return ctvjson.NewCTVJSON(metricsEngine, creativeCache)
+	case models.EndpointVAST:
+		return ctvvast.NewCTVVAST(metricsEngine)
 	default:
 		return &NilEndpointManager{}
 	}

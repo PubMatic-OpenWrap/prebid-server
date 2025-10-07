@@ -12,7 +12,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
 	impressions "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/legacy/impressions"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/auction"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/creativecache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	ctvutils "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/utils"
@@ -25,19 +24,18 @@ import (
 
 type CTVJSON struct {
 	metricsEngine metrics.MetricsEngine
-	cache         cache.Cache
 	creativeCache creativecache.Client
 }
 
-func NewCTVJSON(metricsEngine metrics.MetricsEngine, cache cache.Cache, creativeCache creativecache.Client) *CTVJSON {
+func NewCTVJSON(metricsEngine metrics.MetricsEngine, creativeCache creativecache.Client) *CTVJSON {
 	return &CTVJSON{
 		metricsEngine: metricsEngine,
-		cache:         cache,
 		creativeCache: creativeCache,
 	}
 }
 
 func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error) {
+	cj.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
 	if len(rCtx.ResponseFormat) > 0 {
 		if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
 			result.NbrCode = int(nbr.InvalidResponseFormat)
