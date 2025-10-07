@@ -190,6 +190,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.NewReqExt.Prebid.Transparency = cto
 	}
 
+	// Floors
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, rCtx.NewReqExt)
 	setFloorsExt(rCtx.NewReqExt, &rCtx, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
 
@@ -225,6 +226,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
+		if rctx.IsApplovinSchainABTestEnabled && ep.BidRequest.Source != nil {
+			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
+		}
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
@@ -1009,6 +1013,7 @@ func (m OpenWrap) populateRequestContext(rCtx *models.RequestCtx, bidRequest *op
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	rCtx.IsTBFFeatureEnabled = m.pubFeatures.IsTBFFeatureEnabled(rCtx.PubID, rCtx.ProfileID)
 	rCtx.CustomDimensions = customdimensions.GetCustomDimensions(rCtx.NewReqExt.Prebid.BidderParams)
+	rCtx.IsApplovinSchainABTestEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && getApplovinSchainABTestEnabled(m.pubFeatures.GetApplovinSchainABTestPercentage())
 
 	// Set test request flag if present in bid request
 	if bidRequest.Test != 0 {
@@ -1624,4 +1629,11 @@ func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookRes
 
 	}
 	return result, true
+}
+
+func getApplovinSchainABTestEnabled(percentage int) bool {
+	if percentage > 0 && GetRandomNumberIn1To100() <= percentage {
+		return true
+	}
+	return false
 }

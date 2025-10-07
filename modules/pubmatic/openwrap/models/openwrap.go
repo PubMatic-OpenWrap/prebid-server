@@ -106,6 +106,7 @@ type RequestCtx struct {
 	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
 	AppLovinMax                     AppLovinMax
+	IsApplovinSchainABTestEnabled   bool
 	LoggerDisabled                  bool
 	TrackerDisabled                 bool
 	ProfileType                     int
