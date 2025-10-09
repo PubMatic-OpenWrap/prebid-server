@@ -30,12 +30,13 @@ type Metrics struct {
 	pubProfImpDisabledViaConfig *prometheus.CounterVec
 
 	// publisher level metrics
-	pubRequestValidationErrors *prometheus.CounterVec // TODO : should we add profiles as label ?
-	pubNoBidResponseErrors     *prometheus.CounterVec
-	pubResponseTime            *prometheus.HistogramVec
-	pubImpsWithContent         *prometheus.CounterVec
-	pubBidRecoveryStatus       *prometheus.CounterVec
-	pubBidRecoveryTime         *prometheus.HistogramVec
+	pubRequestValidationErrors      *prometheus.CounterVec // TODO : should we add profiles as label ?
+	pubNoBidResponseErrors          *prometheus.CounterVec
+	pubResponseTime                 *prometheus.HistogramVec
+	pubImpsWithContent              *prometheus.CounterVec
+	pubBidRecoveryStatus            *prometheus.CounterVec
+	pubBidRecoveryTime              *prometheus.HistogramVec
+	requestsWithSchainABTestEnabled *prometheus.CounterVec
 
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
@@ -383,6 +384,12 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIdLabel},
 	)
 
+	metrics.requestsWithSchainABTestEnabled = newCounter(cfg, promRegistry,
+		"requests_with_schain_AB_Test_enabled",
+		"Count of requests with schain AB test enabled",
+		[]string{},
+	)
+
 	metrics.adPodGeneratedImpressionsCount = newCounter(cfg, promRegistry,
 		"adpod_imps",
 		"Count of impressions generated from adpod configs",
@@ -658,6 +665,11 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher string) {
 	m.loggerFailure.With(prometheus.Labels{
 		pubIDLabel: publisher,
 	}).Inc()
+}
+
+// RecordRequestWithSchainABTestEnabled record request with schain AB test enabled
+func (m *Metrics) RecordRequestWithSchainABTestEnabled() {
+	m.requestsWithSchainABTestEnabled.With(prometheus.Labels{}).Inc()
 }
 
 // RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level

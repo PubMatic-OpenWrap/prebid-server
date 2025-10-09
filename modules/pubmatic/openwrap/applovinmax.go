@@ -103,7 +103,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.UA = signalDevice.UA
 	}
 
-	if signalDevice.IP != "" {
+	if maxRequest.Device.IP == "" && signalDevice.IP != "" {
 		maxRequest.Device.IP = signalDevice.IP
 	}
 

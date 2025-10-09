@@ -268,7 +268,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.UA = signalDevice.UA
 	}
 
-	if signalDevice.IP != "" {
+	if request.Device.IP == "" && signalDevice.IP != "" {
 		request.Device.IP = signalDevice.IP
 	}
 

@@ -3,6 +3,7 @@ package openwrap
 import (
 	"encoding/json"
 
+	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
@@ -87,4 +88,34 @@ func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]
 		return
 	}
 	requestExt.Prebid.SChains = allBidderSChainConfig
+}
+
+func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
+	if removeSchainFromSource(maxRequest.Source) {
+		glog.V(models.LogLevelDebug).Info("Removed schain object from request")
+		rctx.ABTestConfigApplied = 1
+		m.metricEngine.RecordRequestWithSchainABTestEnabled()
+	}
+}
+
+func removeSchainFromSource(src *openrtb2.Source) (removed bool) {
+	if src == nil {
+		return false
+	}
+
+	// Remove SChain object if present
+	if src.SChain != nil {
+		src.SChain = nil
+		removed = true
+	}
+
+	// Remove schain from Ext if exists
+	if len(src.Ext) > 0 {
+		if _, _, _, err := jsonparser.Get(src.Ext, "schain"); err == nil {
+			src.Ext = jsonparser.Delete(src.Ext, "schain")
+			removed = true
+		}
+	}
+
+	return removed
 }

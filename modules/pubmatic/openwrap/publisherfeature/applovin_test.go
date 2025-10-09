@@ -160,6 +160,142 @@ func Test_feature_updateApplovinMultiFloorsFeature(t *testing.T) {
 	}
 }
 
+func Test_feature_updateApplovinSchainABTestFeature(t *testing.T) {
+	type fields struct {
+		publisherFeature     map[int]map[int]models.FeatureData
+		appLovinSchainABTest appLovinSchainABTest
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   int
+	}{
+		{
+			name: "publisherFeature map is nil",
+			fields: fields{
+				publisherFeature: nil,
+			},
+			want: 0,
+		},
+		{
+			name: "update applovin_schain_abtest feature enabled pub with valid percentage",
+			fields: fields{
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureAppLovinSchainABTest: models.FeatureData{
+							Enabled: 1,
+							Value:   "25",
+						},
+					},
+				},
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 0,
+				},
+			},
+			want: 25, // Should take the percentage from pub 0
+		},
+		{
+			name: "update applovin_schain_abtest feature with invalid percentage",
+			fields: fields{
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureAppLovinSchainABTest: models.FeatureData{
+							Enabled: 1,
+							Value:   "invalid",
+						},
+					},
+				},
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 0,
+				},
+			},
+			want: 0, // Should reset to 0 as invalid percentage provided
+		},
+		{
+			name: "update applovin_schain_abtest feature with empty value",
+			fields: fields{
+				publisherFeature: map[int]map[int]models.FeatureData{
+					0: {
+						models.FeatureAppLovinSchainABTest: models.FeatureData{
+							Enabled: 1,
+							Value:   "",
+						},
+					},
+				},
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 0,
+				},
+			},
+			want: 0, // Should reset to 0 as empty value provided
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fe := &feature{
+				publisherFeature:     tt.fields.publisherFeature,
+				appLovinSchainABTest: tt.fields.appLovinSchainABTest,
+			}
+			fe.updateApplovinSchainABTestFeature()
+			assert.Equal(t, tt.want, fe.appLovinSchainABTest.schainABTestPercent, tt.name)
+		})
+	}
+}
+
+func Test_feature_GetApplovinSchainABTestPercentage(t *testing.T) {
+	type fields struct {
+		appLovinSchainABTest appLovinSchainABTest
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   int
+	}{
+		{
+			name: "appLovinSchainABTest not found",
+			fields: fields{
+				appLovinSchainABTest: appLovinSchainABTest{},
+			},
+			want: 0,
+		},
+		{
+			name: "get schain AB test percentage with disabled feature",
+			fields: fields{
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 0,
+				},
+			},
+			want: 0,
+		},
+		{
+			name: "get schain AB test percentage with positive value",
+			fields: fields{
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 25,
+				},
+			},
+			want: 25,
+		},
+		{
+			name: "get schain AB test percentage with maximum value",
+			fields: fields{
+				appLovinSchainABTest: appLovinSchainABTest{
+					schainABTestPercent: 100,
+				},
+			},
+			want: 100,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fe := &feature{
+				appLovinSchainABTest: tt.fields.appLovinSchainABTest,
+			}
+			got := fe.GetApplovinSchainABTestPercentage()
+			assert.Equal(t, tt.want, got, tt.name)
+		})
+	}
+}
+
 func Test_feature_IsApplovinMultiFloorsEnabled(t *testing.T) {
 	type fields struct {
 		appLovinMultiFloors appLovinMultiFloors
