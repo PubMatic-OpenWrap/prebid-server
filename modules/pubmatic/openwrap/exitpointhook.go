@@ -21,7 +21,7 @@ func (m OpenWrap) handleExitpointHook(
 	}
 
 	defer func() {
-		miCtx.ModuleContext["rctx"] = rCtx
+		miCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
 	// result, ok = validateExitpointPayload(&rCtx, result, payload)
@@ -38,20 +38,32 @@ func (m OpenWrap) handleExitpointHook(
 
 // validateModuleContext validates that required context is available
 func validateModuleContextExitpointHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
-	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{}
+	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{
+		ModuleContext: hookstage.NewModuleContext(),
+	}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleExitpointHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtxInterface, ok := moduleCtx.ModuleContext.Get("rctx")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleExitpointHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	rCtx, ok := rCtxInterface.(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleExitpointHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	endpointHookManagerInterface, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleExitpointHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	endpointHookManager, ok := endpointHookManagerInterface.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleExitpointHook()")
 		return models.RequestCtx{}, nil, result, false

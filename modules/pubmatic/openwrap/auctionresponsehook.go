@@ -41,7 +41,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rctx
+		moduleCtx.ModuleContext.Set("rctx", rctx)
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
@@ -143,7 +143,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
-			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			rctx, ok := utils.GetRequestContext(moduleCtx)
+			if !ok {
+				result.Errors = append(result.Errors, "error: request-ctx not found in handleAuctionResponseHook mutation")
+				return ap, nil
+			}
+
 			var err error
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 			if err == nil {
@@ -158,7 +163,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
-		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rctx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "error: request-ctx not found in handleAuctionResponseHook mutation")
+			return ap, nil
+		}
+
 		var err error
 		ap.BidResponse, err = m.updateORTBV25Response(rctx, ap.BidResponse)
 		if err != nil {
@@ -203,18 +213,28 @@ func validateModuleContextAuctionResponseHook(moduleCtx hookstage.ModuleInvocati
 	result := hookstage.HookResult[hookstage.AuctionResponsePayload]{}
 	result.ChangeSet = hookstage.ChangeSet[hookstage.AuctionResponsePayload]{}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in auctionresponsehook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rContext, ok := moduleCtx.ModuleContext.Get("rctx")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in auctionresponsehook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	rCtx, ok := rContext.(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in auctionresponsehook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	hookManager, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in auctionresponsehook()")
+		return rCtx, nil, result, false
+	}
+	endpointHookManager, ok := hookManager.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in auctionresponsehook()")
 		return rCtx, nil, result, false

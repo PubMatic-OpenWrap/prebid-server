@@ -37,7 +37,7 @@ const (
 )
 
 func (m OpenWrap) handleEntrypointHook(
-	ctx context.Context,
+	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
@@ -61,9 +61,12 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return
 		}
-		result.ModuleContext = make(hookstage.ModuleContext)
-		result.ModuleContext["rctx"] = rCtx
-		result.ModuleContext["endpointhookmanager"] = endpointHookManager
+
+		if result.ModuleContext == nil {
+			result.ModuleContext = hookstage.NewModuleContext()
+		}
+		result.ModuleContext.Set("rctx", rCtx)
+		result.ModuleContext.Set("endpointhookmanager", endpointHookManager)
 	}()
 
 	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))

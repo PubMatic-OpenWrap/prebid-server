@@ -26,7 +26,7 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 		return result, nil
 	}
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rCtx
+		moduleCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
 	// Update wakanda bidder http calls
@@ -80,18 +80,30 @@ func updateWakandaHTTPCalls(rCtx *models.RequestCtx, payload hookstage.AllProces
 func validateModuleContextAllProcessedBidResponsesHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], bool) {
 	result := hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAllProcessedBidResponsesHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rContext, ok := moduleCtx.ModuleContext.Get("rctx")
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	rCtx, ok := rContext.(models.RequestCtx)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	hookManager, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleAllProcessedBidResponsesHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	endpointHookManager, ok := hookManager.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleAllProcessedBidResponsesHook()")
 		return models.RequestCtx{}, nil, result, false

@@ -47,7 +47,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rCtx
+		moduleCtx.ModuleContext.Set("rctx", rCtx)
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
@@ -215,9 +215,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// }
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rctx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in handleBeforeValidationHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rctx
+			moduleCtx.ModuleContext.Set("rctx", rctx)
 		}()
 
 		var err error
@@ -960,18 +965,28 @@ func validateModuleContextBeforeValidationHook(moduleCtx hookstage.ModuleInvocat
 		Reject: true,
 	}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtxInterface, ok := moduleCtx.ModuleContext.Get("rctx")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	rCtx, ok := rCtxInterface.(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	endpointHookManagerInterface, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBeforeValidationHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	endpointHookManager, ok := endpointHookManagerInterface.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBeforeValidationHook()")
 		return models.RequestCtx{}, nil, result, false

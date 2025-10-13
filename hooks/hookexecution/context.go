@@ -45,24 +45,32 @@ func (ctx executionContext) getModuleContext(moduleName string) hookstage.Module
 // moduleContexts preserves data the module wants to pass to itself from earlier stages to later stages.
 type moduleContexts struct {
 	sync.RWMutex
-	ctxs map[string]hookstage.ModuleContext // format: {"module_name": hookstage.ModuleContext}
+	ctxs map[string]*hookstage.ModuleContext // format: {"module_name": hookstage.ModuleContext}
 }
 
-func (mc *moduleContexts) put(moduleName string, mCtx hookstage.ModuleContext) {
+func (mc *moduleContexts) put(moduleName string, mCtx *hookstage.ModuleContext) {
+	if mc == nil {
+		return
+	}
+
 	mc.Lock()
 	defer mc.Unlock()
 
-	newCtx := mCtx
-	if existingCtx, ok := mc.ctxs[moduleName]; ok && existingCtx != nil {
-		for k, v := range mCtx {
-			existingCtx[k] = v
-		}
-		newCtx = existingCtx
+	existingCtx, ok := mc.ctxs[moduleName]
+	if !ok {
+		// If there's no existing context, just store the new one directly
+		mc.ctxs[moduleName] = mCtx
+		return
 	}
-	mc.ctxs[moduleName] = newCtx
+
+	// If there is an existing context, update it with values from the new context
+	// This preserves the existing mutex while updating the data
+	for k, v := range mCtx.GetAll() {
+		existingCtx.Set(k, v)
+	}
 }
 
-func (mc *moduleContexts) get(moduleName string) (hookstage.ModuleContext, bool) {
+func (mc *moduleContexts) get(moduleName string) (*hookstage.ModuleContext, bool) {
 	mc.RLock()
 	defer mc.RUnlock()
 	mCtx, ok := mc.ctxs[moduleName]
@@ -74,4 +82,4 @@ type stageModuleContext struct {
 	groupCtx []groupModuleContext
 }
 
-type groupModuleContext map[string]hookstage.ModuleContext
+type groupModuleContext map[string]*hookstage.ModuleContext

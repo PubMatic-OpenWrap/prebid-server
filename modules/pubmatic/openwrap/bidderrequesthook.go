@@ -8,7 +8,8 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func (m OpenWrap) handleBidderRequestHook(ctx context.Context,
+func (m OpenWrap) handleBidderRequestHook(
+	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.BidderRequestPayload) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	rCtx, endpointHookManager, result, ok := validateModuleContextBidderRequestHook(miCtx)
@@ -17,7 +18,7 @@ func (m OpenWrap) handleBidderRequestHook(ctx context.Context,
 	}
 
 	defer func() {
-		miCtx.ModuleContext["rctx"] = rCtx
+		miCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
 	// Execute Endpoint specific bidder request hook
@@ -33,18 +34,28 @@ func (m OpenWrap) handleBidderRequestHook(ctx context.Context,
 func validateModuleContextBidderRequestHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BidderRequestPayload], bool) {
 	result := hookstage.HookResult[hookstage.BidderRequestPayload]{}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBidderRequestHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtxInterface, ok := moduleCtx.ModuleContext.Get("rctx")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	rCtx, ok := rCtxInterface.(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBidderRequestHook()")
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	endpointHookManager, ok := moduleCtx.ModuleContext["endpointhookmanager"].(endpointmanager.EndpointHookManager)
+	endpointHookManagerInterface, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	endpointHookManager, ok := endpointHookManagerInterface.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBidderRequestHook()")
 		return models.RequestCtx{}, nil, result, false

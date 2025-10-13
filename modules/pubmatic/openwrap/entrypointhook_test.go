@@ -72,13 +72,15 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						Sshb:      "1",
 						DeviceCtx: models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 		},
 		{
@@ -111,8 +113,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						Header: http.Header{
 							"User-Agent": []string{"go-test"},
 							"Source_ip":  []string{"127.0.0.1"},
@@ -149,9 +152,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                          "POST",
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -186,8 +190,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						PubIDStr:         "5890",
 						PubID:            5890,
 						ProfileID:        5890,
@@ -215,9 +220,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                          "POST",
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -276,8 +282,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						ProfileID:        43563,
 						PubID:            5890,
 						PubIDStr:         "5890",
@@ -312,9 +319,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                          "POST",
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -343,8 +351,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						ProfileID:        43563,
 						PubID:            5890,
 						PubIDStr:         "5890",
@@ -379,9 +388,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                          "POST",
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -443,12 +453,14 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						Endpoint: models.EndpointHybrid,
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -473,12 +485,14 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						Endpoint: models.EndpointHybrid,
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -512,8 +526,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						PubIDStr:                  "5890",
 						PubID:                     5890,
 						ProfileID:                 5890,
@@ -550,9 +565,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						Method:                          "POST",
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			wantErr: nil,
 		},
@@ -586,8 +602,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext {
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						PubIDStr:                  "5890",
 						PubID:                     5890,
 						ProfileID:                 12929,
@@ -626,9 +643,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						SendBurl:                        true,
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			doMutate: true,
 			wantErr:  nil,
@@ -664,8 +682,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
-					"rctx": models.RequestCtx{
+				ModuleContext: func() *hookstage.ModuleContext{
+					moduleCtx := hookstage.NewModuleContext()
+					moduleCtx.Set("rctx", models.RequestCtx{
 						PubIDStr:                  "111",
 						PubID:                     111,
 						ProfileID:                 222,
@@ -721,9 +740,10 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						},
 						SendBurl:                        true,
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-					},
-					"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-				},
+					})
+					moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+					return moduleCtx
+				}(),
 			},
 			doMutate: true,
 			wantErr:  nil,
@@ -744,7 +764,8 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 
 			if tt.want.ModuleContext != nil {
 				// validate runtime values individually and reset them
-				gotRctx := got.ModuleContext["rctx"].(models.RequestCtx)
+				gotRctxInterface, _ := got.ModuleContext.Get("rctx")
+				gotRctx := gotRctxInterface.(models.RequestCtx)
 				if gotRctx.Endpoint == models.EndpointHybrid || gotRctx.Sshb == "1" {
 					assert.Equal(t, got, tt.want)
 					return
@@ -755,13 +776,14 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				assert.NotEmpty(t, gotRctx.GoogleSDK.StartTime)
 				gotRctx.GoogleSDK.StartTime = time.Time{}
 
-				wantRctx := tt.want.ModuleContext["rctx"].(models.RequestCtx)
+				wantRctxInterface, _ := tt.want.ModuleContext.Get("rctx")
+				wantRctx := wantRctxInterface.(models.RequestCtx)
 				if wantRctx.LoggerImpressionID == "" {
 					assert.Len(t, gotRctx.LoggerImpressionID, 36)
 					gotRctx.LoggerImpressionID = ""
 				}
 				gotRctx.ParsedUidCookie = nil // ignore parsed cookies
-				got.ModuleContext["rctx"] = gotRctx
+				got.ModuleContext.Set("rctx", gotRctx)
 			}
 
 			if tt.doMutate {

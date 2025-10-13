@@ -114,9 +114,14 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rCtx := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleBeforeValidationHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			miCtx.ModuleContext["rctx"] = rCtx
+			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
@@ -147,9 +152,14 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 
 func (cj *CTVJSON) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		rCtx := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleProcessedAuctionHook mutation")
+			return parp, nil
+		}
+
 		defer func() {
-			miCtx.ModuleContext["rctx"] = rCtx
+			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		imps, errs := impressions.GenerateImpressions(rCtx, payload.Request)
@@ -170,9 +180,14 @@ func (cj *CTVJSON) HandleProcessedAuctionHook(payload hookstage.ProcessedAuction
 
 func (cj *CTVJSON) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(ep hookstage.BidderRequestPayload) (hookstage.BidderRequestPayload, error) {
-		rCtx := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleBidderRequestHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			miCtx.ModuleContext["rctx"] = rCtx
+			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// if payload.BidderInfo.OpenRTB.Version != "2.6" && len(rCtx.AdpodCtx) > 0 {
@@ -194,9 +209,14 @@ func (cj *CTVJSON) HandleRawBidderResponseHook(payload hookstage.RawBidderRespon
 
 func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {
-		rCtx := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleAllProcessedBidResponsesHook mutation")
+			return apbrp, nil
+		}
+
 		defer func() {
-			miCtx.ModuleContext["rctx"] = rCtx
+			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// Move to Raw bidder response hook once 2.6 fully supported
@@ -238,9 +258,14 @@ func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx 
 	adpodBids := formCTVJSONResponse(&rCtx, response, cj.creativeCache)
 
 	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
-		rCtx := miCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleExitpointHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			miCtx.ModuleContext["rctx"] = rCtx
+			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 		ep.Response = adpodBids
 		ep.W.Header().Set("Content-Type", "application/json")

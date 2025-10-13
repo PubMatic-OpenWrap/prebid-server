@@ -4018,12 +4018,14 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Sshb: "1",
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4058,9 +4060,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"test_rctx": "test",
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("test-rctx", "test")
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4081,12 +4086,14 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4102,10 +4109,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
 			},
@@ -4132,10 +4141,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4179,10 +4190,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4213,10 +4226,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4260,10 +4275,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4313,10 +4330,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"IN"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4375,10 +4394,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"device":{"geo":{"country":"in"}},"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4428,10 +4449,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4479,14 +4502,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": func() models.RequestCtx {
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", func() models.RequestCtx {
 							testRctx := rctx
 							testRctx.Endpoint = models.EndpointWebS2S
 							return testRctx
-						}(),
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						}())
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4511,8 +4536,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-
-				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordBadRequests(models.EndpointWebS2S, "5890", getPubmaticErrorCode(nbr.InvalidImpressionTagID))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(nbr.InvalidImpressionTagID))
@@ -4535,10 +4558,12 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", rctx)
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":"1"}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4586,8 +4611,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							PubID:                     5890,
 							ProfileID:                 1234,
@@ -4617,9 +4643,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4683,8 +4710,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							PubID:                     5890,
 							ProfileID:                 1234,
@@ -4714,9 +4742,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","native": {},"banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4800,8 +4829,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							PubID:                     5890,
 							ProfileID:                 1234,
@@ -4831,9 +4861,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -4880,8 +4911,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							PubID:                     5890,
 							ProfileID:                 1234,
@@ -4911,9 +4943,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5003,8 +5036,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							PubID:                     5890,
 							ProfileID:                 1234,
@@ -5034,9 +5068,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5104,14 +5139,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:     "1234",
 							ProfileIDStr: "234",
 							Endpoint:     models.EndpointV25,
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{}`),
 			},
@@ -5134,14 +5171,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:     "1234",
 							ProfileIDStr: "234",
 							Endpoint:     models.EndpointV25,
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5164,8 +5203,9 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							PubIDStr:                  "5890",
 							ProfileID:                 1234,
 							PubID:                     5890,
@@ -5195,9 +5235,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
 							MetricsEngine:            mockEngine,
 							WakandaDebug:             &wakanda.Debug{},
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5281,14 +5322,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": func() models.RequestCtx {
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", func() models.RequestCtx {
 							testrctx := rctx
 							testrctx.Endpoint = models.EndpointAppLovinMax
 							return testrctx
-						}(),
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						}())
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5363,14 +5406,16 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": func() models.RequestCtx {
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", func() models.RequestCtx {
 							testrctx := rctx
 							testrctx.Endpoint = models.EndpointAppLovinMax
 							return testrctx
-						}(),
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						}())
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","instl":1,"banner":{"format":[{"w":320,"h":480},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5460,10 +5505,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			}
 
 			// Update Metrics engine
-			ttRctx, ok := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			ttRctxInterface, ok := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			if ok {
+				ttRctx := ttRctxInterface.(models.RequestCtx)
 				ttRctx.MetricsEngine = m.metricEngine
-				tt.args.moduleCtx.ModuleContext["rctx"] = ttRctx
+				tt.args.moduleCtx.ModuleContext.Set("rctx", ttRctx)
 			}
 
 			bidrequest := &openrtb2.BidRequest{}
@@ -5474,7 +5520,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				assert.Equal(t, tt.want.err, err)
 			}
 			// get updated rtcx
-			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+			iRctx, _ := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			if rctx, ok := iRctx.(models.RequestCtx); ok {
 				assert.Equal(t, tt.want.nilCurrencyConversion, rctx.CurrencyConversion == nil, "mismatched CurrencyConversion")
 			}
@@ -5546,10 +5592,12 @@ func TestCurrencyConverion(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"ext":"invalid","id":"imp","tagid":"tag","banner":{"format":[{"w":300,"h":250}]}}],` +
 					`"site":{"publisher":{"id":"5890"}},"ext":{"wrapper":{"profileid":33485},"prebid":{"currency":{"usepbsrates":true,"rates":{"USD":{"EUR":50}}}}}}`),
@@ -5593,10 +5641,12 @@ func TestCurrencyConverion(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"ext":"invalid","id":"imp","tagid":"tag","banner":{"format":[{"w":300,"h":250}]}}],` +
 					`"site":{"publisher":{"id":"5890"}},"ext":{"wrapper":{"profileid":33485},"prebid":{"currency":{"usepbsrates":true,"rates":{"USD":{"EUR":50}}}}}}`),
@@ -5654,9 +5704,9 @@ func TestCurrencyConverion(t *testing.T) {
 		err := json.Unmarshal(tt.args.bidrequest, payload)
 		assert.Nil(t, err, "error should be nil")
 		m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, hookstage.BeforeValidationRequestPayload{BidRequest: payload})
-		iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
-		assert.NotNil(t, iRctx, "rctx should not be nil")
-		rctx := iRctx.(models.RequestCtx)
+		iRctxInterface, _ := tt.args.moduleCtx.ModuleContext.Get("rctx")
+		assert.NotNil(t, iRctxInterface, "rctx should not be nil")
+		rctx := iRctxInterface.(models.RequestCtx)
 		// verify currency-conversion logic
 		convertedValue, err := rctx.CurrencyConversion(tt.args.fromCur, tt.args.toCur, tt.args.value)
 		assert.Equal(t, tt.want.convertedValue, convertedValue, "mismatched convertedValue")
@@ -5699,10 +5749,12 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}}}`),
 			},
@@ -5746,10 +5798,12 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":1}`),
 			},
@@ -5794,9 +5848,9 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 			if len(result.Errors) > 0 {
 				assert.Equal(t, tt.want.moduleError, result.Errors, "mismatched error received from handleBeforeValidationHook execution")
 			}
-			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
-			assert.Equal(t, tt.want.rctx == nil, iRctx == nil, "mismatched rctx received from handleBeforeValidationHook")
-			gotRctx := iRctx.(models.RequestCtx)
+			iRctxInterface, _ := tt.args.moduleCtx.ModuleContext.Get("rctx")
+			assert.Equal(t, tt.want.rctx == nil, iRctxInterface == nil, "mismatched rctx received from handleBeforeValidationHook")
+			gotRctx := iRctxInterface.(models.RequestCtx)
 			assert.Equal(t, tt.want.rctx.DeviceCtx.UA, gotRctx.DeviceCtx.UA, "mismatched rctx.UA received from handleBeforeValidationHook")
 		})
 	}
@@ -5838,10 +5892,12 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -5909,10 +5965,12 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				randomNumber: 20,
@@ -5976,10 +6034,12 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				randomNumber: 20,
@@ -6048,10 +6108,12 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				randomNumber: 20,
@@ -6121,10 +6183,12 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest:   json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				randomNumber: 20,
@@ -6207,7 +6271,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 
 			_, err := m.handleBeforeValidationHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.error, err != nil, "mismatched error received from handleBeforeValidationHook")
-			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+			iRctx, _ := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			assert.Equal(t, tt.want.rctx == nil, iRctx == nil, "mismatched rctx received from handleBeforeValidationHook")
 			gotRctx := iRctx.(models.RequestCtx)
 			assert.Equal(t, tt.want.rctx.VastUnWrap.Enabled, gotRctx.VastUnWrap.Enabled, "mismatched rctx.VastUnWrap.Enabled received from handleBeforeValidationHook")
@@ -6249,10 +6313,12 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -6292,10 +6358,12 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -6349,10 +6417,12 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -6410,10 +6480,12 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}},{"id":"456","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432"},"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -6463,10 +6535,12 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx":                rctx,
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", rctx)
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":"invalid","bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}},{"id":"456","video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"ext":{"wrapper":{"div":"div"},"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432"},"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 			},
@@ -6527,10 +6601,11 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 			}
 
 			// update metrics engine in rctx
-			ttRctx, ok := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			ttRctxInterface, ok := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			if ok {
+				ttRctx := ttRctxInterface.(models.RequestCtx)
 				ttRctx.MetricsEngine = m.metricEngine
-				tt.args.moduleCtx.ModuleContext["rctx"] = ttRctx
+				tt.args.moduleCtx.ModuleContext.Set("rctx", ttRctx)
 			}
 
 			tt.args.payload.BidRequest = &openrtb2.BidRequest{}
@@ -6541,7 +6616,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 				assert.Equal(t, tt.want.err, err, "mismatched error")
 			}
 			assert.Equal(t, tt.want.result, result, "mismatched result")
-			iRctx := tt.args.moduleCtx.ModuleContext["rctx"]
+			iRctx, _ := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			gotRctx := iRctx.(models.RequestCtx)
 			assert.Equal(t, tt.want.rctx.ImpBidCtx, gotRctx.ImpBidCtx, "mismatched rctx.ImpBidCtx")
 		})

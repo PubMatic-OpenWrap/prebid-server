@@ -117,9 +117,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": nil,
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", nil)
+						return ctx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -135,12 +137,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Sshb: "1",
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 			},
 
@@ -156,12 +160,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -176,12 +182,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointV25,
-						},
-						"endpointhookmanager": &endpointmanager.NilEndpointManager{},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AllProcessedBidResponsesPayload{
 					Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{

@@ -84,9 +84,14 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidat
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleBeforeValidationHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
@@ -118,9 +123,14 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidat
 // ProcessedAuctionHook
 func (co *CTVOpenRTB) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleProcessedAuctionHook mutation")
+			return parp, nil
+		}
+
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		imps, errs := impressions.GenerateImpressions(rCtx, payload.Request)
@@ -142,9 +152,14 @@ func (co *CTVOpenRTB) HandleProcessedAuctionHook(payload hookstage.ProcessedAuct
 // BidderRequestHook
 func (co *CTVOpenRTB) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(ep hookstage.BidderRequestPayload) (hookstage.BidderRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleBidderRequestHook mutation")
+			return ep, nil
+		}
+
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// if payload.BidderInfo.OpenRTB.Version != "2.6" && len(rCtx.AdpodCtx) > 0 {
@@ -167,9 +182,14 @@ func (co *CTVOpenRTB) HandleRawBidderResponseHook(payload hookstage.RawBidderRes
 // AllProcessedBidResponsesHook
 func (co *CTVOpenRTB) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleAllProcessedBidResponsesHook mutation")
+			return apbrp, nil
+		}
+
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// Move to Raw bidder response hook once 2.6 fully supported

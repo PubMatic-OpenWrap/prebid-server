@@ -81,9 +81,10 @@ func (cv *CTVVAST) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtxInterface, _ := moduleCtx.ModuleContext.Get("rctx")
+		rCtx := rCtxInterface.(models.RequestCtx)
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
@@ -113,9 +114,10 @@ func (cv *CTVVAST) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 
 func (cv *CTVVAST) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtxInterface, _ := moduleCtx.ModuleContext.Get("rctx")
+		rCtx := rCtxInterface.(models.RequestCtx)
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		imps, errs := impressions.GenerateImpressions(rCtx, payload.Request)
@@ -136,9 +138,10 @@ func (cv *CTVVAST) HandleProcessedAuctionHook(payload hookstage.ProcessedAuction
 
 func (cv *CTVVAST) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
 	result.ChangeSet.AddMutation(func(ep hookstage.BidderRequestPayload) (hookstage.BidderRequestPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtxInterface, _ := moduleCtx.ModuleContext.Get("rctx")
+		rCtx := rCtxInterface.(models.RequestCtx)
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// if payload.BidderInfo.OpenRTB.Version != "2.6" && len(rCtx.AdpodCtx) > 0 {
@@ -159,9 +162,10 @@ func (cv *CTVVAST) HandleRawBidderResponseHook(payload hookstage.RawBidderRespon
 
 func (cv *CTVVAST) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {
-		rCtx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rCtxInterface, _ := moduleCtx.ModuleContext.Get("rctx")
+		rCtx := rCtxInterface.(models.RequestCtx)
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rCtx
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
 		}()
 
 		// Move to Raw bidder response hook once 2.6 fully supported
