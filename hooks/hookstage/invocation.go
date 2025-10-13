@@ -18,7 +18,7 @@ type HookResult[T any] struct {
 	Warnings      []string
 	DebugMessages []string
 	AnalyticsTags hookanalytics.Analytics
-	ModuleContext *ModuleContext                 // holds values that the module wants to pass to itself at later stages
+	ModuleContext *ModuleContext                // holds values that the module wants to pass to itself at later stages
 	SeatNonBid    openrtb_ext.SeatNonBidBuilder // holds list of seatnonbid rejected by hook
 }
 

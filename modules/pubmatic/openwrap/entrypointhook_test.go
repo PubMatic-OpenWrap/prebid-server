@@ -682,7 +682,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: func() *hookstage.ModuleContext{
+				ModuleContext: func() *hookstage.ModuleContext {
 					moduleCtx := hookstage.NewModuleContext()
 					moduleCtx.Set("rctx", models.RequestCtx{
 						PubIDStr:                  "111",
