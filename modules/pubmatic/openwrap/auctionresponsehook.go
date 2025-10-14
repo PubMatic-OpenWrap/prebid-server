@@ -61,7 +61,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		},
 	}
 
-	if payload.BidResponse.NBR != nil {
+	if payload.BidResponse.NBR != nil && rctx.IsCTVRequest {
 		return result, nil
 	}
 
@@ -151,9 +151,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			var err error
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
-			if err == nil {
-				resetBidIdtoOriginal(ap.BidResponse)
-			}
+
 			if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
 				feature.EnrichVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
 			}
@@ -192,8 +190,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		ap.BidResponse.Ext = responseExtjson
 
 		ap.BidResponse = googlesdk.ApplyGoogleSDKResponse(rctx, ap.BidResponse)
-
-		resetBidIdtoOriginal(ap.BidResponse)
 
 		ap.BidResponse = unitylevelplay.ApplyUnityLevelPlayResponse(rctx, ap.BidResponse)
 		if rctx.Endpoint == models.EndpointAppLovinMax {

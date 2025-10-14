@@ -22,6 +22,12 @@ var (
 	redirectTargetingKeys = []string{"pwtpb", "pwtdur", "pwtcid", "pwtpid", "pwtdealtier", "pwtdid", "pwtdt"}
 )
 
+type bidResponseAdpod struct {
+	AdPodBids   []*adPodBid `json:"adpods,omitempty"`
+	Ext         interface{} `json:"ext,omitempty"`
+	RedirectURL string      `json:"redirect_url,omitempty"`
+}
+
 type CacheWrapperStruct struct {
 	Adm    string  `json:"adm,omitempty"`
 	Price  float64 `json:"price"`
@@ -42,6 +48,9 @@ func formCTVJSONResponse(rCtx *models.RequestCtx, response *openrtb2.BidResponse
 	impBidMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range response.SeatBid {
 		for _, bid := range seatBid.Bid {
+			if len(bid.AdM) == 0 || bid.Price <= 0 {
+				continue
+			}
 			impBidMap[bid.ImpID] = append(impBidMap[bid.ImpID], bid)
 		}
 	}

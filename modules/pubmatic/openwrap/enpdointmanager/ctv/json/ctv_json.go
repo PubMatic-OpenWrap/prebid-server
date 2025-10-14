@@ -227,12 +227,6 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 }
 
 func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
-	for _, seatBid := range payload.BidResponse.SeatBid {
-		for _, bid := range seatBid.Bid {
-			ctvutils.AddPWTTargetingKeysForAdpod(rCtx, &bid, seatBid.Seat)
-		}
-	}
-
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
 		var ok bool
@@ -241,6 +235,25 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 			return rCtx, result, nil
 		}
 	}
+
+	result.ChangeSet.AddMutation(func(arp hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
+		rCtx, ok := utils.GetRequestContext(miCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleExitpointHook mutation")
+			return arp, nil
+		}
+
+		defer func() {
+			miCtx.ModuleContext.Set("rctx", rCtx)
+		}()
+
+		for _, seatBid := range arp.BidResponse.SeatBid {
+			for _, bid := range seatBid.Bid {
+				ctvutils.AddPWTTargetingKeysForAdpod(rCtx, &bid, seatBid.Seat)
+			}
+		}
+		return arp, nil
+	}, hookstage.MutationUpdate, "add-pwt-targeting-keys-for-adpod")
 
 	return rCtx, result, nil
 }
@@ -267,7 +280,7 @@ func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx 
 		defer func() {
 			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
-		ep.Response = adpodBids
+		ep.Response = bidResponseAdpod{AdPodBids: adpodBids, Ext: response.Ext}
 		ep.W.Header().Set("Content-Type", "application/json")
 		ep.W.Header().Set("Content-Options", "nosniff")
 		ctvutils.SetCORSHeaders(ep.W, rCtx.Header)

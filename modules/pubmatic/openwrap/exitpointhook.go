@@ -13,7 +13,7 @@ func (m OpenWrap) handleExitpointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.ExitpointPaylaod,
-) (result hookstage.HookResult[hookstage.ExitpointPaylaod], err error) {
+) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
 	// validate module context
 	rCtx, endpointManager, result, ok := validateModuleContextExitpointHook(miCtx)
 	if !ok {
@@ -29,10 +29,18 @@ func (m OpenWrap) handleExitpointHook(
 	// 	return result, nil
 	// }
 
+	var err error
 	rCtx, result, err = endpointManager.HandleExitpointHook(payload, rCtx, result, miCtx)
 	if err != nil {
 		return result, err
 	}
+
+	ortbResponse, ok := payload.Response.(*openrtb2.BidResponse)
+	if ok {
+		resetBidIdtoOriginal(ortbResponse)
+		payload.Response = ortbResponse
+	}
+
 	return result, nil
 }
 
