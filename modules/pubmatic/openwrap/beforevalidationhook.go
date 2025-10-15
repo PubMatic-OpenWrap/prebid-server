@@ -1171,7 +1171,8 @@ func (m OpenWrap) processImpressions(rCtx *models.RequestCtx, result hookstage.H
 	impMeta.displayManager, impMeta.displayManagerVer = getDisplayManagerAndVer(bidRequest.App)
 
 	for _, imp := range bidRequest.Imp {
-		result, ok := m.processImpression(rCtx, result, bidRequest, &imp, impMeta)
+		var ok bool
+		result, ok = m.processImpression(rCtx, result, bidRequest, &imp, impMeta)
 		if !ok {
 			return result, false
 		}
@@ -1309,7 +1310,7 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 	rCtx.MultiFloors[imp.ID] = m.getMultiFloors(*rCtx, reward, *imp)
 
 	// Process bidders for this impression
-	bidderMeta, nonMapped := m.processBidders(rCtx, result, imp, impExt, impMeta)
+	bidderMeta, nonMapped, result := m.processBidders(rCtx, result, imp, impExt, impMeta)
 
 	// update the imp.ext with bidder params for this
 	if impExt.Prebid.Bidder == nil {
@@ -1440,7 +1441,7 @@ func handleStoreURL(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest, im
 }
 
 // processBidders processes bidders for an impression
-func (m OpenWrap) processBidders(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], imp *openrtb2.Imp, impExt *models.ImpExtension, impMeta *ImpressionMeta) (map[string]models.PartnerData, map[string]struct{}) {
+func (m OpenWrap) processBidders(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], imp *openrtb2.Imp, impExt *models.ImpExtension, impMeta *ImpressionMeta) (map[string]models.PartnerData, map[string]struct{}, hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) {
 	bidderMeta := make(map[string]models.PartnerData)
 	nonMapped := make(map[string]struct{})
 
@@ -1531,7 +1532,7 @@ func (m OpenWrap) processBidders(rCtx *models.RequestCtx, result hookstage.HookR
 		impMeta.serviceSideBidderPresent = true
 	}
 
-	return bidderMeta, nonMapped
+	return bidderMeta, nonMapped, result
 }
 
 // prepareBidderParams prepares bidder parameters based on bidder code
