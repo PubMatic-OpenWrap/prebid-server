@@ -97,6 +97,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if err != nil || len(rCtx.PartnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
+		m.addDefaultRequestContextValues(payload.BidRequest, &rCtx)
 		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		m.metricEngine.RecordPublisherInvalidProfileRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.ProfileIDStr)
 		return result, errors.New("invalid profile data")
@@ -1653,4 +1654,20 @@ func getApplovinSchainABTestEnabled(percentage int) bool {
 		return true
 	}
 	return false
+}
+
+func (m *OpenWrap) addDefaultRequestContextValues(bidRequest *openrtb2.BidRequest, rCtx *models.RequestCtx) {
+	rCtx.Source, rCtx.Origin = getSourceAndOrigin(bidRequest)
+	rCtx.PageURL = getPageURL(bidRequest)
+	rCtx.Platform = getPlatformFromRequest(bidRequest)
+	rCtx.HostName = m.cfg.Server.HostName
+	rCtx.ReturnAllBidStatus = rCtx.NewReqExt.Prebid.ReturnAllBidStatus
+
+	// Device
+	rCtx.DeviceCtx.UA = getUserAgent(bidRequest, rCtx.DeviceCtx.UA)
+	rCtx.DeviceCtx.IP = getIP(bidRequest, rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.Country = getCountry(bidRequest)
+	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.Platform = getDevicePlatform(*rCtx, bidRequest)
+	populateDeviceContext(&rCtx.DeviceCtx, bidRequest.Device)
 }
