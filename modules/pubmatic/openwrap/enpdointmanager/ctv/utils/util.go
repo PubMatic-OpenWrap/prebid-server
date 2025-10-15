@@ -198,16 +198,6 @@ func AddPWTTargetingKeysForAdpod(rCtx models.RequestCtx, bid *openrtb2.Bid, seat
 		bidCtx.Prebid.Targeting = make(map[string]string)
 	}
 
-	value := GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seat), bidCtx)
-	if value != "" {
-		AddTargetingKey(bidCtx, openrtb_ext.CategoryDurationKey, value)
-	}
-
-	value = GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seat), bidCtx)
-	if value != "" {
-		AddTargetingKey(bidCtx, openrtb_ext.PbKey, value)
-	}
-
 	bidCtx.Prebid.Targeting[models.PWT_PARTNERID] = seat
 
 	if bidCtx.Prebid != nil {
@@ -239,6 +229,9 @@ func AddPWTTargetingKeysForAdpod(rCtx models.RequestCtx, bid *openrtb2.Bid, seat
 			if len(dur) > 0 && bidCtx.Prebid.Targeting[models.PWT_DURATION] == "" {
 				bidCtx.Prebid.Targeting[models.PWT_DURATION] = dur
 			}
+
+			// Remove pwt_pb_cat_dur from targeting
+			delete(bidCtx.Prebid.Targeting, models.PwtPbCatDur)
 		}
 	}
 

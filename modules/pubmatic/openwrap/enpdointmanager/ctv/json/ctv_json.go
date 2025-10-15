@@ -227,6 +227,41 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 }
 
 func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
+	// Add targetting keys
+	for _, seatBid := range payload.BidResponse.SeatBid {
+		for _, bid := range seatBid.Bid {
+			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
+			if !ok {
+				continue
+			}
+
+			bidCtx, ok := impCtx.BidCtx[bid.ID]
+			if !ok {
+				continue
+			}
+
+			if bidCtx.Prebid == nil {
+				bidCtx.Prebid = &openrtb_ext.ExtBidPrebid{}
+			}
+
+			if bidCtx.Prebid.Targeting == nil {
+				bidCtx.Prebid.Targeting = make(map[string]string)
+			}
+
+			value := ctvutils.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
+			if value != "" {
+				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.CategoryDurationKey, value)
+			}
+
+			value = ctvutils.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
+			if value != "" {
+				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.PbKey, value)
+			}
+
+			impCtx.BidCtx[bid.ID] = bidCtx
+			rCtx.ImpBidCtx[bid.ImpID] = impCtx
+		}
+	}
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
 		var ok bool

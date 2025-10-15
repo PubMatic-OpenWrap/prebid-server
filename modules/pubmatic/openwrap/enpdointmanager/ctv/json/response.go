@@ -20,6 +20,15 @@ const (
 
 var (
 	redirectTargetingKeys = []string{"pwtpb", "pwtdur", "pwtcid", "pwtpid", "pwtdealtier", "pwtdid", "pwtdt"}
+	slotTargetingKeys     = map[string]struct{}{
+		models.PWT_PARTNERID: {},
+		models.PWT_DURATION:  {},
+		models.PwtDT:         {},
+		models.PWT_DEALID:    {},
+		models.PwtPb:         {},
+		models.PwtCat:        {},
+		models.PWT_CACHEID:   {},
+	}
 )
 
 type bidResponseAdpod struct {
@@ -132,7 +141,11 @@ func getTargeting(bidCtx models.BidCtx, slotNo int, cacheId string) map[string]s
 
 	bidCtx.Prebid.Targeting[models.PWT_CACHEID] = cacheId
 	for key, value := range bidCtx.Prebid.Targeting {
-		targetingKeyValMap[prepareSlotLevelKey(slotNo, key)] = value
+		if _, ok := slotTargetingKeys[key]; ok {
+			targetingKeyValMap[prepareSlotLevelKey(slotNo, key)] = value
+			continue
+		}
+		targetingKeyValMap[key] = value
 	}
 
 	return targetingKeyValMap

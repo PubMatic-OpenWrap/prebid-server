@@ -1340,6 +1340,7 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 	impExt.Wrapper = nil
 	impExt.Reward = nil
 	impExt.Bidder = nil
+	impExt.OWSDK = nil
 
 	newImpExt, err := json.Marshal(impExt)
 	if err != nil {
