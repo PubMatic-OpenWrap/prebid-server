@@ -121,6 +121,7 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 	}
 
 	errL := []error{}
+	biddersToDelete := []string{}
 
 	for bidder, val := range prebid.Bidder {
 		coreBidder, _ := openrtb_ext.NormalizeBidderName(bidder)
@@ -137,17 +138,21 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 		} else {
 			if msg, isDisabled := srv.disabledBidders[bidder]; isDisabled {
 				errL = append(errL, &errortypes.BidderTemporarilyDisabled{Message: msg})
-				delete(prebid.Bidder, bidder)
+				biddersToDelete = append(biddersToDelete, bidder)
 				prebidModified = true
 			} else if bidderPromote {
 				errL = append(errL, &errortypes.Warning{Message: fmt.Sprintf("request.imp[%d].ext contains unknown bidder: '%s', ignoring", impIndex, bidder)})
 				ext[bidder] = val
-				delete(prebid.Bidder, bidder)
+				biddersToDelete = append(biddersToDelete, bidder)
 				prebidModified = true
 			} else {
 				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder contains unknown bidder: %s. Did you forget an alias in request.ext.prebid.aliases?", impIndex, bidder)}
 			}
 		}
+	}
+
+	for _, bidder := range biddersToDelete {
+		delete(prebid.Bidder, bidder)
 	}
 
 	if len(prebid.Bidder) == 0 {
