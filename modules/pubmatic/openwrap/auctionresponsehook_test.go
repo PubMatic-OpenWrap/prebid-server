@@ -1481,7 +1481,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 							{
 								Bid: []openrtb2.Bid{
 									{
-										ID:  "12345:: 123422222225",
+										ID:  "12345::123422222225",
 										AdM: `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
 									},
 								},
@@ -1496,7 +1496,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 						{
 							Bid: []openrtb2.Bid{
 								{
-									ID:  "12345",
+									ID:  "12345::123422222225",
 									AdM: "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https:?adv=&af=banner&aps=0&au=&bc=&bidid=12345&di=-1&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=12345&pdvid=0&pid=0&plt=0&pn=&psz=0x0&pubid=0&purl=&sl=1&slot=&ss=1&tst=0\"></div>"},
 							},
 						},
