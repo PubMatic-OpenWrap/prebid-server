@@ -854,7 +854,7 @@ func builderNexx360(params BidderParameters) (json.RawMessage, error) {
 	} else {
 		// Try placement
 		if val, ok := getString(params.FieldMap["placement"]); ok {
-			fmt.Fprintf(&jsonStr, `{"placement":%s}`, val)
+			fmt.Fprintf(&jsonStr, `{"placement":"%s"}`, val)
 		}
 	}
 
