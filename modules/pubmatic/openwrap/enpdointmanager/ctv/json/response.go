@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/creativecache"
@@ -53,6 +54,33 @@ type adPodBid struct {
 	Ext         interface{}           `json:"ext,omitempty"`
 }
 
+// PodPostion represent slot start and end range for pre, mid and post roll.
+type PodPosition struct {
+	PreRoll  Range `json:"preroll,omitempty"`
+	MidRoll  Range `json:"midroll,omitempty"`
+	PostRoll Range `json:"postroll,omitempty"`
+}
+
+// Range defines start and end range for pod position
+type Range struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
+type impMeta struct {
+	impID string
+	video *openrtb2.Video
+}
+
+// newPodPosition is default slot position config for pre, mid and post roll
+func newPodPosition() *PodPosition {
+	return &PodPosition{
+		PreRoll:  Range{Start: 1, End: 30},
+		PostRoll: Range{Start: 31, End: 60},
+		MidRoll:  Range{Start: 61, End: 90},
+	}
+}
+
 func formCTVJSONResponse(rCtx *models.RequestCtx, response *openrtb2.BidResponse, cacheClient creativecache.Client) []*adPodBid {
 	impBidMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range response.SeatBid {
@@ -84,10 +112,32 @@ func prepareSlotLevelKey(slotNo int, key string) string {
 }
 
 func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, cacheClient creativecache.Client) []*adPodBid {
+	impMetas := []impMeta{}
+	for _, impCtx := range rCtx.ImpBidCtx {
+		if impCtx.Video != nil {
+			impMetas = append(impMetas, impMeta{
+				impID: impCtx.ImpID,
+				video: impCtx.Video,
+			})
+		}
+	}
+
+	sortImps(impMetas)
+
+	podPostion := newPodPosition()
+	preRollSlot := podPostion.PreRoll.Start - 1
+	midRollSlot := podPostion.MidRoll.Start - 1
+	postRollSlot := podPostion.PostRoll.Start - 1
+
 	var adpodBids []*adPodBid
-	for impId, bids := range bidsMap {
+	for i := range impMetas {
 		adpodBid := &adPodBid{
-			ID: impId,
+			ID: impMetas[i].impID,
+		}
+
+		bids, ok := bidsMap[impMetas[i].impID]
+		if !ok {
+			continue
 		}
 
 		sort.Slice(bids, func(i, j int) bool { return bids[i].Price > bids[j].Price })
@@ -99,7 +149,7 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 			continue
 		}
 
-		impCtx, ok := rCtx.ImpBidCtx[impId]
+		impCtx, ok := rCtx.ImpBidCtx[impMetas[i].impID]
 		if !ok {
 			continue
 		}
@@ -111,10 +161,26 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 				continue
 			}
 
-			slotNo := i + 1
+			slotNo := 0
+			videoPosition := getVideoPosition(rCtx, impCtx.Video)
+			if videoPosition == adcom1.StartPreRoll {
+				preRollSlot = preRollSlot + 1
+				slotNo = preRollSlot
+			} else if videoPosition == adcom1.StartPostRoll {
+				postRollSlot = postRollSlot + 1
+				slotNo = postRollSlot
+			} else {
+				midRollSlot = midRollSlot + 1
+				slotNo = midRollSlot
+			}
+
 			targeting := getTargeting(bidCtx, slotNo, cacheIds[i])
 			if len(targeting) > 0 {
 				targetings = append(targetings, targeting)
+			}
+
+			if !rCtx.Debug {
+				delete(targeting, models.PwtPbCatDur)
 			}
 		}
 
@@ -228,4 +294,65 @@ func updateAdServerURL(targetings []map[string]string, adServerURL string) strin
 	redirectURL.RawQuery = redirectQuery.Encode()
 
 	return redirectURL.String()
+}
+
+func sortImps(imps []impMeta) {
+	sort.Slice(imps, func(i, j int) bool {
+		// First, sort by StartDelay category (pre-roll, mid-roll, post-roll)
+
+		videoPositionI := categoriseVideoPosition(imps[i].video.StartDelay)
+		videoPositionJ := categoriseVideoPosition(imps[j].video.StartDelay)
+		if videoPositionI != videoPositionJ {
+			return videoPositionI < videoPositionJ
+		}
+
+		// For mid-roll, further sort by StartDelay value
+		if videoPositionI == 2 && *imps[i].video.StartDelay != *imps[j].video.StartDelay {
+			return *imps[i].video.StartDelay < *imps[j].video.StartDelay
+		}
+
+		// Finally, sort by PodID
+		return getPodSequencePriority(imps[i].video.PodSeq) < getPodSequencePriority(imps[j].video.PodSeq)
+	})
+}
+
+// Determines the category of the StartDelay for sorting
+// 0: pre-roll, 1: mid-roll, 2: post-roll
+func categoriseVideoPosition(delay *adcom1.StartDelay) int {
+	if delay == nil {
+		return 1 // Treat nil as highest priority (pre-roll)
+	}
+	switch {
+	case *delay == 0:
+		return 0 // pre-roll
+	case *delay > 0:
+		return 2 // mid-roll
+	case *delay == -1:
+		return 3 // mid-roll
+	case *delay == -2:
+		return 4 // post-roll
+	default:
+		return 5 // post-roll
+	}
+}
+
+func getPodSequencePriority(podSeq adcom1.PodSequence) int {
+	switch {
+	case podSeq == adcom1.PodSeqFirst:
+		return 0
+	case podSeq == adcom1.PodSeqAny:
+		return 1
+	case podSeq == adcom1.PodSeqLast:
+		return 2
+	default:
+		return 2
+	}
+}
+
+func getVideoPosition(rctx *models.RequestCtx, video *openrtb2.Video) adcom1.StartDelay {
+	if len(rctx.AdpodCtx) == 0 || video.StartDelay == nil {
+		return adcom1.StartPreRoll
+	}
+
+	return video.StartDelay.Val()
 }

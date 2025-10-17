@@ -262,6 +262,7 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 			rCtx.ImpBidCtx[bid.ImpID] = impCtx
 		}
 	}
+
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
 		var ok bool

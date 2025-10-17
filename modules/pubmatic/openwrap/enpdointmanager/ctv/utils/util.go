@@ -230,8 +230,10 @@ func AddPWTTargetingKeysForAdpod(rCtx models.RequestCtx, bid *openrtb2.Bid, seat
 				bidCtx.Prebid.Targeting[models.PWT_DURATION] = dur
 			}
 
-			// Remove pwt_pb_cat_dur from targeting
-			delete(bidCtx.Prebid.Targeting, models.PwtPbCatDur)
+			// Remove support deals from targeting when support deals is false
+			if !rCtx.SupportDeals {
+				delete(bidCtx.Prebid.Targeting, models.PwtPbCatDur)
+			}
 		}
 	}
 
