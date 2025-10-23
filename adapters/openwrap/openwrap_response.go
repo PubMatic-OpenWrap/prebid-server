@@ -231,6 +231,8 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 
 				if bid.CrID == "" {
 					bid.CrID = creativeId
+				} else if creativeId != "" && bid.CrID != creativeId {
+					bid.CrID = bid.CrID + "," + creativeId
 				}
 
 			} else if bid.MType == openrtb2.MarkupNative {
