@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -234,6 +235,18 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				} else if creativeId != "" && bid.CrID != creativeId {
 					bid.CrID = bid.CrID + "," + creativeId
 				}
+
+				// Log error with pubid and imp tagid
+				pubID := ""
+				if internalRequest.Site != nil && internalRequest.Site.Publisher != nil {
+					pubID = internalRequest.Site.Publisher.ID
+				}
+
+				if internalRequest.App != nil && internalRequest.App.Publisher != nil {
+					pubID = internalRequest.App.Publisher.ID
+				}
+				glog.Errorf("Openwrap creative processing - PubID: %s, CreativeId: %s, BidCrID: %s",
+					pubID, creativeId, bid.CrID)
 
 			} else if bid.MType == openrtb2.MarkupNative {
 				// Define a structure to unmarshal the adm string.
