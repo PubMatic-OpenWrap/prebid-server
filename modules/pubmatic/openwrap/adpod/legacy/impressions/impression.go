@@ -72,6 +72,7 @@ func GenerateImpressions(rCtx models.RequestCtx, request *openrtb_ext.RequestWra
 
 		for i := range newImpVideoConfig {
 			impCopy := impWrapper.DeepClone()
+			impCopy.Imp.ID = newImpVideoConfig[i].ImpID
 			impCopy.Video.MinDuration = newImpVideoConfig[i].MinDuration
 			impCopy.Video.MaxDuration = newImpVideoConfig[i].MaxDuration
 			impCopy.Video.Sequence = newImpVideoConfig[i].SequenceNumber

@@ -1633,10 +1633,15 @@ func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookRes
 				},
 				Slots: []models.SlotConfig{
 					{
+						Id:                          imp.ID,
 						MinDuration:                 int64(adpodV25.MinDuration),
 						MaxDuration:                 int64(adpodV25.MaxDuration),
 						PodDur:                      imp.Video.MaxDuration,
 						MaxSeq:                      int64(adpodV25.MaxAds),
+						MinAds:                      int64(adpodV25.MinAds),
+						MaxAds:                      int64(adpodV25.MaxAds),
+						MinPodDuration:              imp.Video.MinDuration,
+						MaxPodDuration:              imp.Video.MaxDuration,
 						IABCategoryExclusionPercent: adpodV25.IABCategoryExclusionPercent,
 						AdvertiserExclusionPercent:  adpodV25.AdvertiserExclusionPercent,
 						Flexible:                    true,
@@ -1644,7 +1649,6 @@ func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookRes
 				},
 			}
 		}
-
 	}
 	return result, true
 }

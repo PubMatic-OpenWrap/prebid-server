@@ -105,9 +105,6 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer a.panicHandler(r)
-
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
@@ -121,14 +118,13 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	// Invoke prebid auction enpoint
-	a.handle(adpodResponseWriter, r, p)
+	a.handle(w, r, p)
 
-	redirectURL := adpodResponseWriter.Header().Get("Location")
+	redirectURL := w.Header().Get("Location")
 	if redirectURL != "" {
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
 	}
-
 }
 
 func (a *adpod) panicHandler(r *http.Request) {
