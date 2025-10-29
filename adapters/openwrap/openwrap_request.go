@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/mxmCherry/openrtb/v16/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/errortypes"
@@ -110,6 +111,14 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	request.Ext = extJSON
+
+	// Backup Publisher ID
+	pubID := ""
+	if request.Site != nil && request.Site.Publisher != nil && request.Site.Publisher.ID != "" {
+		pubID = request.Site.Publisher.ID
+	} else if request.App != nil && request.App.Publisher != nil && request.App.Publisher.ID != "" {
+		pubID = request.App.Publisher.ID
+	}
 
 	// Check if site.ext.sspreq is true and perform swapping
 	var isSSPReq bool
@@ -289,7 +298,10 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		// Use regular endpoint when sspreq is false or not present
 		endpoint = a.endpoint
 	}
-
+	// Print reqJSON if PubID is 167 (Kohls)
+	if pubID == "167" || pubID == "164" {
+		glog.Errorf("KOHLSEBAY_SSPREQUEST - PubID: %s, SSPReq: %v, RequestBody: %s", pubID, isSSPReq, string(reqJSON))
+	}
 	return []*adapters.RequestData{{
 		Method:  "POST",
 		Uri:     endpoint,
