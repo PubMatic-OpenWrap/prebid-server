@@ -173,6 +173,9 @@ func RemoveAdpodDataFromExt(bidrequest *openrtb2.BidRequest) {
 
 		bidrequest.Imp[i].Video.Ext = jsonparser.Delete(bidrequest.Imp[i].Video.Ext, "adpod")
 		bidrequest.Imp[i].Video.Ext = jsonparser.Delete(bidrequest.Imp[i].Video.Ext, "offset")
+		if len(bidrequest.Imp[i].Video.Ext) == 0 || string(bidrequest.Imp[i].Video.Ext) == "{}" {
+			bidrequest.Imp[i].Video.Ext = nil
+		}
 	}
 
 	bidrequest.Ext = jsonparser.Delete(bidrequest.Ext, "adpod")
