@@ -321,8 +321,11 @@ func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx 
 		ep.W.Header().Set("Content-Options", "nosniff")
 		ctvutils.SetCORSHeaders(ep.W, rCtx.Header)
 		if checkRedirectResponse(rCtx) && len(adpodBids) > 0 {
-			ep.W.Header().Set("Location", adpodBids[0].ModifiedURL)
-			ep.W.WriteHeader(http.StatusFound)
+			modifiedURL := updateAdServerURL(adpodBids[0].Targeting, rCtx.RedirectURL)
+			if modifiedURL != "" {
+				ep.W.Header().Set("Location", modifiedURL)
+				ep.W.WriteHeader(http.StatusFound)
+			}
 		}
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-exitpoint")
