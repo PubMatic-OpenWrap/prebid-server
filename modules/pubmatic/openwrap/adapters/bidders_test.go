@@ -3438,3 +3438,44 @@ func TestBuilderOMS(t *testing.T) {
 		})
 	}
 }
+
+func TestBuilderNexx360(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (anyOf tagId or placement) is present-tagId",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"tagId": "dbdsfh"}}},
+			want:    json.RawMessage(`{"tagId": "dbdsfh"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (anyOf tagId or placement) is present-placement",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placement": "1234"}}},
+			want:    json.RawMessage(`{"placement": "1234"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of tagId or placement) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderNexx360(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderNexx360() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
