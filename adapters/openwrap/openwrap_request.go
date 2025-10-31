@@ -111,20 +111,6 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	request.Ext = extJSON
 
-	// Backup Publisher ID
-	pubID := ""
-	if request.Site != nil && request.Site.Publisher != nil && request.Site.Publisher.ID != "" {
-		pubID = request.Site.Publisher.ID
-	} else if request.App != nil && request.App.Publisher != nil && request.App.Publisher.ID != "" {
-		pubID = request.App.Publisher.ID
-	}
-
-	// Remove at field if pubID is 167
-	if pubID == "167" {
-		// Set AT to 0 to ensure it's omitted from JSON due to omitempty tag
-		request.AT = 0
-	}
-
 	// Check if site.ext.sspreq is true and perform swapping
 	var isSSPReq bool
 	var queryParams string
