@@ -20,22 +20,20 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 	seatBids := make(map[string]map[string]struct{}, len(bidResponse.SeatBid))
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId, _ := models.GetImpressionID(bid.ImpID)
-			if seatBids[impId] == nil {
-				seatBids[impId] = make(map[string]struct{})
+			if seatBids[bid.ImpID] == nil {
+				seatBids[bid.ImpID] = make(map[string]struct{})
 			}
-			seatBids[impId][seatBid.Seat] = struct{}{}
+			seatBids[bid.ImpID][seatBid.Seat] = struct{}{}
 		}
 	}
 
 	// consider responded but dropped bids to avoid false nobid entries
 	for seat, bids := range rctx.DroppedBids {
 		for _, bid := range bids {
-			impId, _ := models.GetImpressionID(bid.ImpID)
-			if seatBids[impId] == nil {
-				seatBids[impId] = make(map[string]struct{})
+			if seatBids[bid.ImpID] == nil {
+				seatBids[bid.ImpID] = make(map[string]struct{})
 			}
-			seatBids[impId][seat] = struct{}{}
+			seatBids[bid.ImpID][seat] = struct{}{}
 		}
 	}
 
@@ -180,7 +178,6 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 }
 
 func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
-
 	// MultiBidMultiFloor is only supported for AppLovinMax
 	if rctx.Endpoint != models.EndpointAppLovinMax {
 		return rctx.DefaultBids
@@ -192,10 +189,9 @@ func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, b
 	for _, seatBid := range bidResponse.SeatBid {
 		if rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMatic || rctx.PrebidBidderCode[seatBid.Seat] == models.BidderPubMaticSecondaryAlias {
 			for _, bid := range seatBid.Bid {
-				impId, _ := models.GetImpressionID(bid.ImpID)
-				floorValue := rctx.ImpBidCtx[impId].BidCtx[bid.ID].BidExt.MultiBidMultiFloorValue
+				floorValue := rctx.ImpBidCtx[bid.ImpID].BidCtx[bid.ID].BidExt.MultiBidMultiFloorValue
 				if floorValue > 0 {
-					key := fmt.Sprintf("%s-%s-%.2f", impId, seatBid.Seat, floorValue)
+					key := fmt.Sprintf("%s-%s-%.2f", bid.ImpID, seatBid.Seat, floorValue)
 					bidderExcludeFloors[key] = struct{}{}
 				}
 			}

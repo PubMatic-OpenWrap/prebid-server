@@ -55,11 +55,6 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 	customDimensions := customdimensions.ConvertCustomDimensionsToString(rctx.CustomDimensions)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId := bid.ImpID
-			if rctx.IsCTVRequest {
-				impId, _ = models.GetImpressionID(bid.ImpID)
-			}
-
 			tracker := models.Tracker{
 				PubID:             rctx.PubID,
 				ProfileID:         fmt.Sprintf("%d", rctx.ProfileID),
@@ -69,7 +64,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				IID:               rctx.LoggerImpressionID,
 				Platform:          int(rctx.DeviceCtx.Platform),
 				SSAI:              rctx.SSAI,
-				ImpID:             impId,
+				ImpID:             bid.ImpID,
 				Origin:            rctx.Origin,
 				AdPodSlot:         0, //TODO: Need to changes based on AdPodSlot Obj for CTV Req
 				TestGroup:         rctx.ABTestConfigApplied,
@@ -98,7 +93,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				tracker.ATTS, _ = rctx.DeviceCtx.Ext.GetAtts()
 			}
 
-			if impCtx, ok := rctx.ImpBidCtx[impId]; ok {
+			if impCtx, ok := rctx.ImpBidCtx[bid.ImpID]; ok {
 				if bidderMeta, ok := impCtx.Bidders[seatBid.Seat]; ok {
 					matchedSlot = bidderMeta.MatchedSlot
 					partnerID = bidderMeta.PrebidBidderCode
@@ -172,7 +167,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			}
 
 			if seatBid.Seat == "pubmatic" {
-				pmMkt[impId] = pubmaticMarketplaceMeta{
+				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,

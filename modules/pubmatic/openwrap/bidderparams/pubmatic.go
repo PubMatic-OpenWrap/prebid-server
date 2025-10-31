@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
-func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
+func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
@@ -19,7 +19,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		OWSDK:       impExt.OWSDK,
 	}
 
-	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, imp, impExt, partnerID)
 
 	var err error
 	var matchedSlot, matchedPattern string

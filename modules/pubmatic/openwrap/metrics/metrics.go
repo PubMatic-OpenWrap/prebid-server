@@ -27,6 +27,8 @@ type MetricsEngine interface {
 	RecordBidRecoveryStatus(publisher, profile string, success bool)
 	RecordBidRecoveryResponseTime(publisher, profile string, responseTime time.Duration)
 
+	// RecordRequests(endpoint string, publisher string, profile string)
+
 	// not-captured in openwrap module, dont provide enough insights
 	RecordPBSAuctionRequestsStats()
 	RecordPrebidAuctionBidResponse(publisher string, partnerName string, bidderCode string, adapterCode string)

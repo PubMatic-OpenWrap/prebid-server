@@ -13,12 +13,12 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, adpodExt *models.AdPod) (string, json.RawMessage, []string, error) {
+func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, json.RawMessage, []string, error) {
 	if imp.Video == nil {
 		return "", nil, nil, nil
 	}
 
-	slots, slotMap, _, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	slots, slotMap, _, _ := getSlotMeta(rctx, cache, imp, impExt, partnerID)
 	if len(slots) == 0 {
 		return "", nil, nil, nil
 	}
@@ -28,7 +28,7 @@ func PrepareVASTBidderParams(rctx models.RequestCtx, cache cache.Cache, bidReque
 		return "", nil, nil, nil
 	}
 
-	matchedSlotKeys, err := getVASTBidderSlotKeys(&imp, slots[0], slotMap, pubVASTTags, adpodExt)
+	matchedSlotKeys, err := getVASTBidderSlotKeys(&imp, slots[0], slotMap, pubVASTTags, rctx.AdpodCtx)
 	if len(matchedSlotKeys) == 0 {
 		return "", nil, nil, err
 	}
@@ -62,7 +62,7 @@ func getVASTBidderSlotKeys(imp *openrtb2.Imp,
 	slotKey string,
 	slotMap map[string]models.SlotMapping,
 	pubVASTTags models.PublisherVASTTags,
-	adpodExt *models.AdPod) ([]string, error) {
+	adpodCtx models.AdpodCtx) ([]string, error) {
 
 	//TODO: Optimize this function
 	var (
@@ -106,8 +106,23 @@ func getVASTBidderSlotKeys(imp *openrtb2.Imp,
 			continue
 		}
 
+		podId := imp.Video.PodID
+		if podId == "" {
+			podId = imp.ID
+		}
+
+		var podDur int64
+		adpodConfig, ok := adpodCtx[podId]
+		if ok {
+			for _, slot := range adpodConfig.Slots {
+				if slot.Flexible {
+					podDur = slot.PodDur
+				}
+			}
+		}
+
 		//validate vast tag details
-		if err := validateVASTTag(vastTag, imp.Video.MinDuration, imp.Video.MaxDuration, adpodExt); nil != err {
+		if err := validateVASTTag(vastTag, imp.Video.MinDuration, imp.Video.MaxDuration, podDur); err != nil {
 			isValidationError = true
 			continue
 		}
@@ -146,7 +161,7 @@ func formCaseInsensitiveVASTSlotKey(key string) string {
 func validateVASTTag(
 	vastTag *models.VASTTag,
 	videoMinDuration, videoMaxDuration int64,
-	adpod *models.AdPod) error {
+	podDur int64) error {
 
 	if vastTag == nil {
 		return fmt.Errorf("Empty vast tag")
@@ -165,7 +180,7 @@ func validateVASTTag(
 		return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > video.maxduration' vastTagID:%v, tag.duration:%v, video.maxduration:%v", vastTag.ID, vastTag.Duration, videoMaxDuration)
 	}
 
-	if adpod == nil {
+	if podDur == 0 {
 		//non-adpod request
 		if videoMinDuration != 0 && vastTag.Duration < int(videoMinDuration) {
 			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < video.minduration' vastTagID:%v, tag.duration:%v, video.minduration:%v", vastTag.ID, vastTag.Duration, videoMinDuration)
@@ -173,12 +188,8 @@ func validateVASTTag(
 
 	} else {
 		//adpod request
-		if vastTag.Duration < adpod.MinDuration {
-			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration < adpod.minduration' vastTagID:%v, tag.duration:%v, adpod.minduration:%v", vastTag.ID, vastTag.Duration, adpod.MinDuration)
-		}
-
-		if vastTag.Duration > adpod.MaxDuration {
-			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:%v, tag.duration:%v, adpod.maxduration:%v", vastTag.ID, vastTag.Duration, adpod.MaxDuration)
+		if vastTag.Duration > int(podDur) {
+			return fmt.Errorf("VAST tag 'duration' validation failed 'tag.duration > imp.video.PodDur' vastTagID:%v, tag.duration:%v, imp.video.PodDur:%v", vastTag.ID, vastTag.Duration, podDur)
 		}
 	}
 

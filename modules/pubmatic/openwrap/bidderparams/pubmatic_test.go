@@ -1660,7 +1660,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			matchedSlot, matchedPattern, isRegexSlot, params, err := PreparePubMaticParamsV25(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
+			matchedSlot, matchedPattern, isRegexSlot, params, err := PreparePubMaticParamsV25(tt.args.rctx, tt.args.cache, tt.args.imp, tt.args.impExt, tt.args.partnerID)
 			if (err != nil) != tt.want.wantErr {
 				assert.Equal(t, tt.want.wantErr, err != nil)
 				return

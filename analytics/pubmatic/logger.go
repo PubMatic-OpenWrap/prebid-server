@@ -322,12 +322,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			var sequence int
-			impId := bid.ImpID
-			if rCtx.IsCTVRequest {
-				impId, sequence = models.GetImpressionID(impId)
-			}
-			impCtx, ok := rCtx.ImpBidCtx[impId]
+			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
 			if !ok {
 				continue
 			}
@@ -397,7 +392,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if seat == models.BidderPubMatic {
-				pmMkt[impId] = pubmaticMarketplaceMeta{
+				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,
@@ -472,7 +467,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// WinningBids contains map of imp.id against bid.id+::+uuid
-			if rCtx.WinningBids.IsWinningBid(impId, bidIDForLookup) {
+			if rCtx.WinningBids.IsWinningBid(bid.ImpID, bidIDForLookup) {
 				pr.WinningBidStaus = 1
 			}
 
@@ -517,7 +512,6 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			// Adpod parameters
 			if impCtx.AdpodConfig != nil {
-				pr.AdPodSequenceNumber = &sequence
 				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
 				pr.NoBidReason = &aprc
 			}
@@ -527,7 +521,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
 			}
 
-			ipr[impId] = append(ipr[impId], pr)
+			ipr[bid.ImpID] = append(ipr[bid.ImpID], pr)
 		}
 	}
 

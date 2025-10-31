@@ -97,12 +97,7 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 		responseFormat, redirectURL string
 		impToAdserverURL            = map[string]string{}
 	)
-	if reqExt.Wrapper != nil {
-		responseFormat = reqExt.Wrapper.ResponseFormat
-		redirectURL = reqExt.Wrapper.RedirectURL
-		impToAdserverURL = reqExt.Wrapper.ImpToAdServerURL
-		reqExt.Wrapper = nil
-	}
+
 	bidResponse.Ext, _ = json.Marshal(reqExt)
 
 	if bidResponse.SeatBid == nil {
@@ -115,7 +110,7 @@ func (jr *jsonResponse) getJsonResponse(bidResponse *openrtb2.BidResponse, reque
 	bidArrayMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			impId, _ := models.GetImpressionID(bid.ImpID)
+			impId := bid.ID
 			bids, ok := bidArrayMap[impId]
 			if !ok {
 				bidArrayMap[impId] = make([]openrtb2.Bid, 0)
@@ -192,20 +187,9 @@ func createTargetting(bid openrtb2.Bid, slotNo int, cacheId string) map[string]s
 			return targetingKeyValMap
 		}
 
-		for k, v := range bidExt.AdPod.Targeting {
-			targetingKeyValMap[prepareSlotLevelKey(slotNo, k)] = v
-		}
-
-		if bidExt.AdPod.Debug.Targeting != nil {
-			for k, v := range bidExt.AdPod.Debug.Targeting {
-				targetingKeyValMap[k] = v
-			}
-		}
-
 	}
 
 	return targetingKeyValMap
-
 }
 
 func writeErrorResponse(w http.ResponseWriter, code int, err CustomError) {
@@ -249,7 +233,6 @@ func formJSONErrorResponse(id string, errMessage string, nbr *openrtb3.NoBidReas
 }
 
 func formRedirectURL(response *bidResponseAdpod, requestMethod, owRedirectURL string, impToAdserverURL map[string]string) {
-
 	if requestMethod == http.MethodPost {
 		for _, adPodBid := range response.AdPodBids {
 			adServerURL, ok := impToAdserverURL[adPodBid.ID]
@@ -297,7 +280,6 @@ func updateAdServerURL(adPodBid *adPodBid, adServerURL string) string {
 
 	for i, target := range adPodBid.Targeting {
 		sNo := i + 1
-
 		for _, tk := range redirectTargetingKeys {
 			targetingKey := prepareSlotLevelKey(sNo, tk)
 			if value, ok := target[targetingKey]; ok {

@@ -8,7 +8,6 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adpodconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -35,36 +34,56 @@ func setDefaultValues(adpodConfig *models.AdPod) {
 
 }
 
-func GetV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, partnerConfigMap map[int]map[string]string, pubId string, me metrics.MetricsEngine) (*models.AdPod, error) {
-	adpodConfigs, ok, err := resolveV25AdpodConfigs(impVideo, requestExtConfigs, adUnitConfig, pubId, me)
+func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) (*models.AdPod, error) {
+	adpodConfigs, ok, err := resolveV25AdpodConfigs(rctx, imp)
 	if !ok || err != nil {
 		return nil, err
 	}
 
-	// Set default value if adpod object does not exists
-	setDefaultValues(adpodConfigs)
+	if adpodConfigs != nil {
+		setDefaultValues(adpodConfigs)
+	}
 
 	return adpodConfigs, nil
 }
 
-func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.ExtRequestAdPod, adUnitConfig *adunitconfig.AdConfig, pubId string, me metrics.MetricsEngine) (*models.AdPod, bool, error) {
+func resolveV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) (*models.AdPod, bool, error) {
 	var adpodConfig *models.AdPod
 
 	// Check in impression extension
-	if impVideo != nil && impVideo.Ext != nil {
-		adpodBytes, _, _, err := jsonparser.Get(impVideo.Ext, models.Adpod)
+	if imp.Video != nil && imp.Video.Ext != nil {
+		adpodBytes, _, _, err := jsonparser.Get(imp.Video.Ext, models.Adpod)
 		if err == nil && len(adpodBytes) > 0 {
-			me.RecordCTVReqImpsWithReqConfigCount(pubId)
+			rctx.MetricsEngine.RecordCTVReqImpsWithReqConfigCount(rctx.PubIDStr)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			return adpodConfig, true, err
 		}
 	}
 
-	// Check in adunit config
+	// Check in request extension
+	if rctx.NewReqExt != nil && rctx.NewReqExt.AdPod != nil {
+		adpodConfig = &models.AdPod{
+			MinAds:                      rctx.NewReqExt.AdPod.MinAds,
+			MaxAds:                      rctx.NewReqExt.AdPod.MaxAds,
+			MinDuration:                 rctx.NewReqExt.AdPod.MinDuration,
+			MaxDuration:                 rctx.NewReqExt.AdPod.MaxDuration,
+			AdvertiserExclusionPercent:  rctx.NewReqExt.AdPod.AdvertiserExclusionPercent,
+			IABCategoryExclusionPercent: rctx.NewReqExt.AdPod.IABCategoryExclusionPercent,
+		}
+		rctx.MetricsEngine.RecordCTVReqCountWithAdPod(rctx.PubIDStr, rctx.ProfileIDStr)
+		return adpodConfig, true, nil
+	}
+
+	impCtx, ok := rctx.ImpBidCtx[imp.ID]
+	if !ok {
+		return nil, false, nil
+	}
+
+	adUnitConfig := impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
 	if adUnitConfig != nil && adUnitConfig.Video != nil && adUnitConfig.Video.Config != nil && adUnitConfig.Video.Config.Ext != nil {
 		adpodBytes, _, _, err := jsonparser.Get(adUnitConfig.Video.Config.Ext, models.Adpod)
 		if err == nil && len(adpodBytes) > 0 {
-			me.RecordCTVReqImpsWithDbConfigCount(pubId)
+			rctx.MetricsEngine.RecordCTVReqImpsWithDbConfigCount(rctx.PubIDStr)
 			err := json.Unmarshal(adpodBytes, &adpodConfig)
 			return adpodConfig, true, err
 		}
@@ -73,7 +92,7 @@ func resolveV25AdpodConfigs(impVideo *openrtb2.Video, requestExtConfigs *models.
 	return nil, false, nil
 }
 
-func ValidateV25Configs(rCtx models.RequestCtx, config *models.AdPod) error {
+func ValidateV25Configs(rCtx *models.RequestCtx, config *models.AdPod) error {
 	if config == nil {
 		return nil
 	}
