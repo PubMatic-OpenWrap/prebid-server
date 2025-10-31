@@ -221,6 +221,17 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				scriptContent := getScriptContent(bid.AdM)
 
 				if scriptContent == "" {
+					// Log error with pubid and imp tagid
+					pubID := ""
+					if internalRequest.Site != nil && internalRequest.Site.Publisher != nil {
+						pubID = internalRequest.Site.Publisher.ID
+					}
+
+					if internalRequest.App != nil && internalRequest.App.Publisher != nil {
+						pubID = internalRequest.App.Publisher.ID
+					}
+					glog.Errorf("Convert Deal:Error In Prebid Code creative processing - PubID: %s, BidCrID: %s BidAdm: %s",
+						pubID, bid.CrID, bid.AdM)
 					continue
 				}
 				creativeId, clickUrl := parseScriptContent(scriptContent)
@@ -233,20 +244,8 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 				if bid.CrID == "" {
 					bid.CrID = creativeId
 				} else if creativeId != "" && bid.CrID != creativeId {
-					bid.CrID = bid.CrID + "," + creativeId
+					bid.CrID = creativeId + "," + bid.CrID
 				}
-
-				// Log error with pubid and imp tagid
-				pubID := ""
-				if internalRequest.Site != nil && internalRequest.Site.Publisher != nil {
-					pubID = internalRequest.Site.Publisher.ID
-				}
-
-				if internalRequest.App != nil && internalRequest.App.Publisher != nil {
-					pubID = internalRequest.App.Publisher.ID
-				}
-				glog.Errorf("Openwrap creative processing - PubID: %s, CreativeId: %s, BidCrID: %s",
-					pubID, creativeId, bid.CrID)
 
 			} else if bid.MType == openrtb2.MarkupNative {
 				// Define a structure to unmarshal the adm string.
