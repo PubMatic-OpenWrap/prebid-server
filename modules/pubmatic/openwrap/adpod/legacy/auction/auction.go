@@ -158,8 +158,12 @@ func updateWinningBids(rctx *models.RequestCtx, podId string, winningAdpodBid *A
 			BidDealTierSatisfied: bid.DealTierSatisfied,
 		}
 		winningOwBids = append(winningOwBids, owBid)
+		bidIdToAprcMap[bid.ID] = models.StatusWinningBid
 	}
 	rctx.WinningBids[podId] = winningOwBids
+
+	// update aprc in the impCtx
+	impCtx.BidIDToAPRC = bidIdToAprcMap
 
 	// Update NBR for the bids
 	for bidId, aprc := range bidIdToAprcMap {

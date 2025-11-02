@@ -20,6 +20,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/usersync"
@@ -136,6 +137,15 @@ func (m OpenWrap) handleEntrypointHook(
 		result.NbrCode = int(nbr.InvalidProfileID)
 		result.Errors = append(result.Errors, "ErrMissingProfileID")
 		return result, err
+	}
+
+	// validate redirect url
+	if len(requestExtWrapper.AdServerURL) > 0 {
+		if !utils.IsValidURL(requestExtWrapper.AdServerURL) {
+			result.NbrCode = int(nbr.InvalidRedirectURL)
+			result.Errors = append(result.Errors, "Invalid redirect URL")
+			return result, nil
+		}
 	}
 
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
