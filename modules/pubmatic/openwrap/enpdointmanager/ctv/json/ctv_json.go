@@ -3,6 +3,7 @@ package ctvjson
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/golang/glog"
@@ -20,6 +21,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 type CTVJSON struct {
@@ -89,6 +91,38 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 	}
 
 	ctvutils.SetIncludeBrandCategory(rCtx)
+
+	// Add multibid configuration
+	var multibid []*openrtb_ext.ExtMultiBid
+	for _, partnerConfig := range rCtx.PartnerConfigMap {
+		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+			continue
+		}
+
+		partneridstr, ok := partnerConfig[models.PARTNER_ID]
+		if !ok {
+			continue
+		}
+		partnerID, err := strconv.Atoi(partneridstr)
+		if err != nil || partnerID == models.VersionLevelConfigID {
+			continue
+		}
+
+		// bidderCode is in context with pubmatic. Ex. it could be appnexus-1, appnexus-2, etc.
+		bidderCode := partnerConfig[models.BidderCode]
+
+		// prebidBidderCode is equivalent of PBS-Core's bidderCode
+		prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
+
+		multibidConfig := &openrtb_ext.ExtMultiBid{
+			Bidder:                 prebidBidderCode,
+			Alias:                  bidderCode,
+			MaxBids:                ptrutil.ToPtr(int(openrtb_ext.MaxBidLimit)),
+			TargetBidderCodePrefix: bidderCode,
+		}
+		multibid = append(multibid, multibidConfig)
+	}
+	rCtx.NewReqExt.Prebid.MultiBid = multibid
 
 	for _, imp := range payload.BidRequest.Imp {
 		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
@@ -229,6 +263,7 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
 	// Add targetting keys
 	for _, seatBid := range payload.BidResponse.SeatBid {
+		targettingSeq := 1
 		for _, bid := range seatBid.Bid {
 			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
 			if !ok {
@@ -248,15 +283,18 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 				bidCtx.Prebid.Targeting = make(map[string]string)
 			}
 
-			value := ctvutils.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
+			value := ctvutils.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx, targettingSeq)
 			if value != "" {
 				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.CategoryDurationKey, value)
 			}
 
-			value = ctvutils.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
+			value = ctvutils.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx, targettingSeq)
 			if value != "" {
 				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.PbKey, value)
 			}
+
+			// increment targetting seq
+			targettingSeq++
 
 			impCtx.BidCtx[bid.ID] = bidCtx
 			rCtx.ImpBidCtx[bid.ImpID] = impCtx

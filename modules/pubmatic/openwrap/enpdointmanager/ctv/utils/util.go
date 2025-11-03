@@ -151,8 +151,13 @@ func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {
 // it is expected that bid.Ext contains prebid.targeting map
 // if value not present or any error occured empty value will be returned
 // along with error.
-func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bidCtx models.BidCtx) string {
-	bidderSpecificKey := key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidder), 20)
+func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bidCtx models.BidCtx, seq int) string {
+	bidderKey := string(bidder)
+	if seq > 1 {
+		bidderKey = bidderKey + strconv.Itoa(seq)
+	}
+
+	bidderSpecificKey := key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidderKey), 20)
 	return bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
 }
 
