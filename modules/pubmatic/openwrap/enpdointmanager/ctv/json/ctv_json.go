@@ -228,6 +228,16 @@ func (cj *CTVJSON) HandleBidderRequestHook(payload hookstage.BidderRequestPayloa
 		// 	adpod.ConvertDownTo25(ep.Request)
 		// }
 
+		// Remove Multibid object from ext
+		reqExt, err := ep.Request.GetRequestExt()
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to get request ext in CTV handleBidderRequestHook mutation")
+			return ep, nil
+		}
+		prebidExt := reqExt.GetPrebid()
+		prebidExt.MultiBid = nil
+		reqExt.SetPrebid(prebidExt)
+
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-bidder-request")
 
