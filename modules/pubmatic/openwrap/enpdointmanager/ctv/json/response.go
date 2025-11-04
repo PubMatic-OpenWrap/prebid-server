@@ -350,7 +350,7 @@ func getPodSequencePriority(podSeq adcom1.PodSequence) int {
 }
 
 func getVideoPosition(rctx *models.RequestCtx, video *openrtb2.Video) adcom1.StartDelay {
-	if len(rctx.AdpodCtx) == 0 || video.StartDelay == nil {
+	if !rctx.AdruleFlag || video.StartDelay == nil {
 		return adcom1.StartPreRoll
 	}
 
