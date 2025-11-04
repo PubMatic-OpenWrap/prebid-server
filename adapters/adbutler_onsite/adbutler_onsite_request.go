@@ -127,6 +127,8 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 		return nil, errors
 	}
 
+	appExt, _ := adapters.GetAppExtComm(request)
+
 	if siteExt == nil || requestExt == nil {
 		return nil, []error{&errortypes.BadInput{
 			Message: "Missing required ext fields which contains inventory details",
@@ -250,6 +252,14 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	if requestExt.UserID != "" {
 		adButlerReq.UserID = requestExt.UserID
+	}
+
+	isOptedOut := siteExt.IsOptedOut
+	if appExt != nil {
+		isOptedOut = appExt.IsOptedOut
+	}
+	if isOptedOut == 0 {
+		adButlerReq.IP = request.Device.IP
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence

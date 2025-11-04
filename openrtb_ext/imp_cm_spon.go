@@ -52,6 +52,7 @@ type ExtSiteCommerce struct {
 	Page        string `json:"page_name,omitempty"`
 	CpId        string `json:"cpid,omitempty"`
 	SspReq      bool   `json:"sspreq,omitempty"`
+	IsOptedOut  int    `json:"isOptedOut,omitempty"`
 	QueryParams string `json:"queryParams,omitempty"`
 }
 
@@ -60,6 +61,7 @@ type ExtAppCommerce struct {
 	Page        string `json:"page_name,omitempty"`
 	CpId        string `json:"cpid,omitempty"`
 	SspReq      bool   `json:"sspreq,omitempty"`
+	IsOptedOut  int    `json:"isOptedOut,omitempty"`
 	QueryParams string `json:"queryParams,omitempty"`
 }
 
