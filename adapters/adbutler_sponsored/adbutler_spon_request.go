@@ -45,6 +45,8 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 		return nil, errors
 	}
 
+	appExt, _ := adapters.GetAppExtComm(request)
+
 	var configValueMap = make(map[string]string)
 	var configTypeMap = make(map[string]int)
 	for _, obj := range commerceExt.Bidder.CustomConfig {
@@ -184,7 +186,17 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 		}
 	}
 
-	adButlerReq.IP = request.Device.IP
+	isOptedOut := 0
+	if siteExt != nil {
+		isOptedOut = siteExt.IsOptedOut
+	}
+	if appExt != nil {
+		isOptedOut = appExt.IsOptedOut
+	}
+	if isOptedOut == 0 {
+		adButlerReq.IP = request.Device.IP
+	}
+
 	// Domain Name from Site Object if Prsent or App Obj
 	if request.Site != nil {
 		adButlerReq.Referrer = request.Site.Domain
@@ -209,7 +221,7 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 		adButlerReq.IsTestRequest = true
 	}
 	adButlerReq.UserID = request.User.ID
-	adButlerReq.UserAgent = request.Device.UA
+	//adButlerReq.UserAgent = request.Device.UA
 	adButlerReq.Limit = commerceExt.ComParams.SlotsRequested
 
 	//Temporarily for Debugging
@@ -232,4 +244,3 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 	}}, nil
 
 }
-

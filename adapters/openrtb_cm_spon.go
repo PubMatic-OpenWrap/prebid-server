@@ -44,6 +44,25 @@ func GetSiteExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtSiteCommerce,
 	return &siteExt, nil
 }
 
+func GetAppExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtAppCommerce, error) {
+
+	if request == nil || request.App == nil || request.App.Ext == nil {
+		return nil, &errortypes.BadInput{
+			Message: "App extension not provided",
+		}
+	}
+
+	var appExt openrtb_ext.ExtAppCommerce
+
+	if err := json.Unmarshal(request.App.Ext, &appExt); err != nil {
+		return nil, &errortypes.BadInput{
+			Message: "App extension can't be unmarshalled",
+		}
+	}
+
+	return &appExt, nil
+}
+
 func GetRequestExtComm(request *openrtb2.BidRequest) (*openrtb_ext.ExtOWRequest, error) {
 	var requestExt openrtb_ext.ExtOWRequest
 

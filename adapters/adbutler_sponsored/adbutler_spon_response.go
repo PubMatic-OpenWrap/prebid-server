@@ -65,34 +65,33 @@ func (a *AdButlerSponsoredAdapter) MakeBids(internalRequest *openrtb2.BidRequest
 	//fmt.Println(string(u))
 
 	if adButlerResp.Status == RESPONSE_NOADS {
-		if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_REQUEST {
+		switch adButlerResp.Code {
+		case ADBUTLER_RESPONSE_CODE_INVALID_REQUEST:
 			return nil, []error{&errortypes.BidderFailedSchemaValidation{
 				Message: fmt.Sprintf("Invalid Request Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
-		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_SOURCE {
+		case ADBUTLER_RESPONSE_CODE_INVALID_SOURCE:
 			return nil, []error{&errortypes.InvalidSource{
 				Message: fmt.Sprintf("Invalid Source Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
-		} else if adButlerResp.Code == ADBUTLER_RESPONSE_CODE_INVALID_CATALOG {
+		case ADBUTLER_RESPONSE_CODE_INVALID_CATALOG:
 			return nil, []error{&errortypes.InvalidCatalog{
 				Message: fmt.Sprintf("Invalid Catalog Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
-		} else {
+		default:
 			return nil, []error{&errortypes.UnknownError{
 				Message: fmt.Sprintf("Unknown Error Occured at Adbutler for the given request with ErrorCode %d", adButlerResp.Code),
 			}}
 		}
 	}
 
-	if adButlerResp.Status == RESPONSE_SUCCESS && (adButlerResp.Bids == nil ||
-		len(adButlerResp.Bids) <= 0) {
+	if adButlerResp.Status == RESPONSE_SUCCESS && len(adButlerResp.Bids) <= 0 {
 		return nil, []error{&errortypes.NoBidPrice{
 			Message: "No Bid For the given Request",
 		}}
 	}
 
-	if adButlerResp.Status == RESPONSE_SUCCESS && (adButlerResp.Bids != nil &&
-		len(adButlerResp.Bids) > 0) {
+	if adButlerResp.Status == RESPONSE_SUCCESS && len(adButlerResp.Bids) > 0 {
 		impID := internalRequest.Imp[0].ID
 		responseF := a.GetBidderResponse(internalRequest, &adButlerResp, impID)
 		if len(responseF.Bids) <= 0 {
@@ -243,4 +242,3 @@ func GenerateConversionUrl(adbutlerID, zoneID, adbUID, productID string) string 
 
 	return conversionUrl
 }
-
