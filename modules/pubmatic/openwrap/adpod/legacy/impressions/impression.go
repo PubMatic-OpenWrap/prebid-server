@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -14,7 +15,7 @@ import (
 // Observed that typically video impression contains contains minimum and maximum duration in multiples of  5
 const (
 	multipleOf         = 5
-	impressionIDFormat = `%v` + models.ImpressionIDSeparator + `%v` + models.ImpressionIDSeparator + `%v`
+	impressionIDFormat = `%v` + utils.ImpressionIDSeparator + `%v` + utils.ImpressionIDSeparator + `%v`
 )
 
 // ImpGenerator ...

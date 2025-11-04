@@ -771,7 +771,8 @@ func getDealTiers(bidRequest *openrtb2.BidRequest) map[string]openrtb_ext.DealTi
 		if err != nil {
 			continue
 		}
-		impDealMap[imp.ID] = dealTierBidderMap
+		_, impId, _ := utils.DecodeV25ImpID(imp.ID)
+		impDealMap[impId] = dealTierBidderMap
 	}
 
 	return impDealMap

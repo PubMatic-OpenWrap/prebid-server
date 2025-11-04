@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
@@ -76,7 +77,7 @@ func getVASTTagID(key string) int {
 func FilterImpsVastTagsByDuration(rCtx models.RequestCtx, request *openrtb_ext.RequestWrapper) {
 	for _, imp := range request.GetImp() {
 		// Decode Imp ID
-		_, impId, _ := models.DecodeV25ImpID(imp.ID)
+		_, impId, _ := utils.DecodeV25ImpID(imp.ID)
 
 		impCtx, ok := rCtx.ImpBidCtx[impId]
 		if !ok {

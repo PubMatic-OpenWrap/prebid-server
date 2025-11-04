@@ -5,13 +5,14 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func ConvertUpTo26(rCtx models.RequestCtx, responses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 	for _, seatBid := range responses {
 		for i := range seatBid.Bids {
-			_, impId, sequence := models.DecodeV25ImpID(seatBid.Bids[i].Bid.ImpID)
+			_, impId, sequence := utils.DecodeV25ImpID(seatBid.Bids[i].Bid.ImpID)
 			seatBid.Bids[i].Bid.ImpID = impId
 
 			impCtx, ok := rCtx.ImpBidCtx[impId]

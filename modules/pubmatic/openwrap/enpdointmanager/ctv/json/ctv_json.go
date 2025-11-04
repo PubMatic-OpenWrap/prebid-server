@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
@@ -41,8 +42,7 @@ func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCt
 	if len(rCtx.ResponseFormat) > 0 {
 		if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
 			result.NbrCode = int(nbr.InvalidResponseFormat)
-			result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
-			return rCtx, result, nil
+			return rCtx, result, errors.New("Invalid response format, must be 'json' or 'redirect'")
 		}
 	}
 
@@ -62,15 +62,13 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && !utils.IsValidURL(rCtx.RedirectURL) {
 			result.NbrCode = int(nbr.InvalidRedirectURL)
-			result.Errors = append(result.Errors, "Invalid redirect URL")
-			return rCtx, result, nil
+			return rCtx, result, errors.New("Invalid redirect URL")
 		}
 	}
 
 	if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
 		result.NbrCode = int(nbr.MissingOWRedirectURL)
-		result.Errors = append(result.Errors, "owRedirectURL is missing")
-		return rCtx, result, nil
+		return rCtx, result, errors.New("owRedirectURL is missing")
 	}
 
 	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationKey)
@@ -85,9 +83,8 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 	err := ctvutils.ValidateVideoImpressions(payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidVideoRequest)
-		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return rCtx, result, nil
+		return rCtx, result, err
 	}
 
 	ctvutils.SetIncludeBrandCategory(rCtx)

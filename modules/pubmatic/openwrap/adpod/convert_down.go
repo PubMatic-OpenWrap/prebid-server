@@ -2,7 +2,7 @@ package adpod
 
 import (
 	"github.com/prebid/openrtb/v20/adcom1"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -56,7 +56,7 @@ func convertDynamicAdPodDownTo25(imp *openrtb_ext.ImpWrapper) []*openrtb_ext.Imp
 			impCopy.Video.MaxDuration = reqdDurs[i]
 			impCopy.Video.RqdDurs = nil
 		}
-		impCopy.ID = models.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, i)
+		impCopy.ID = utils.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, i)
 		impCopy.Video.PodID = ""
 		impCopy.Video.SlotInPod = adcom1.SlotPositionInPod(0)
 		impCopy.Video.PodDur = 0
@@ -69,7 +69,7 @@ func convertDynamicAdPodDownTo25(imp *openrtb_ext.ImpWrapper) []*openrtb_ext.Imp
 func convertStructuredAdPodDownTo25(imp *openrtb_ext.ImpWrapper) []*openrtb_ext.ImpWrapper {
 	if len(imp.Video.RqdDurs) == 0 {
 		impCopy := imp.DeepClone()
-		impCopy.ID = models.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, 0)
+		impCopy.ID = utils.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, 0)
 		impCopy.Video.PodID = ""
 		impCopy.Video.SlotInPod = adcom1.SlotPositionInPod(0)
 		return []*openrtb_ext.ImpWrapper{impCopy}
@@ -81,7 +81,7 @@ func convertStructuredAdPodDownTo25(imp *openrtb_ext.ImpWrapper) []*openrtb_ext.
 		impCopy.Video.MinDuration = imp.Video.RqdDurs[i]
 		impCopy.Video.MaxDuration = imp.Video.RqdDurs[i]
 		impCopy.Video.RqdDurs = nil
-		impCopy.ID = models.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, i)
+		impCopy.ID = utils.PopulateV25ImpID(impCopy.Video.PodID, imp.ID, i)
 		impCopy.Video.PodID = ""
 		impCopy.Video.SlotInPod = adcom1.SlotPositionInPod(0)
 		imps = append(imps, impCopy)
