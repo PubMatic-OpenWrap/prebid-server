@@ -270,7 +270,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			rejectedBids[seatNonBid.Seat] = map[string]struct{}{}
 		}
 		for _, nonBid := range seatNonBid.NonBid {
-			rejectedBids[seatNonBid.Seat][nonBid.ImpId] = struct{}{}
+			_, impId, _ := utils.DecodeV25ImpID(nonBid.ImpId)
+			rejectedBids[seatNonBid.Seat][impId] = struct{}{}
 			loggerSeat[seatNonBid.Seat] = append(loggerSeat[seatNonBid.Seat], convertNonBidToBidWrapper(&nonBid))
 		}
 	}
@@ -322,7 +323,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
+			_, impId, _ := utils.DecodeV25ImpID(bid.ImpID)
+			impCtx, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				continue
 			}
@@ -392,7 +394,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			if seat == models.BidderPubMatic {
-				pmMkt[bid.ImpID] = pubmaticMarketplaceMeta{
+				pmMkt[impId] = pubmaticMarketplaceMeta{
 					PubmaticKGP:   kgp,
 					PubmaticKGPV:  kgpv,
 					PubmaticKGPSV: kgpsv,
@@ -467,7 +469,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// WinningBids contains map of imp.id against bid.id+::+uuid
-			if rCtx.WinningBids.IsWinningBid(bid.ImpID, bidIDForLookup) {
+			if rCtx.WinningBids.IsWinningBid(impId, bidIDForLookup) {
 				pr.WinningBidStaus = 1
 			}
 
@@ -521,7 +523,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
 			}
 
-			ipr[bid.ImpID] = append(ipr[bid.ImpID], pr)
+			ipr[impId] = append(ipr[impId], pr)
 		}
 	}
 
