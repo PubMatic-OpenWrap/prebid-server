@@ -87,6 +87,9 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		return rCtx, result, err
 	}
 
+	// filter imps with invalid adserver url
+	filterImpsWithInvalidAdserverURL(&rCtx, payload.BidRequest)
+
 	ctvutils.SetIncludeBrandCategory(rCtx)
 
 	// Add multibid configuration
