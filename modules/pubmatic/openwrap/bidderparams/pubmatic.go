@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -18,8 +19,10 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		Floors:      models.GetMultiFloors(rctx.MultiFloors, imp.ID),
 		OWSDK:       impExt.OWSDK,
 	}
+	logger.DebugWithBid(bidRequest.ID, "In prepare Pubmatic params for PB Request for impression : %s", *&imp.ID)
 
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	logger.DebugWithBid(bidRequest.ID, "Mapping found for : %s , slot map: %v, slotmappping info: %v ", slots, slotMap, slotMappingInfo)
 
 	var err error
 	var matchedSlot, matchedPattern string
@@ -42,6 +45,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
+		logger.DebugWithBid(bidRequest.ID, "param map %v", paramMap)
 		if matchedPattern == "" {
 			// use alternate names defined in DB for this slot if selection is non-regex
 			// use owSlotName to addres case insensitive slotname.
@@ -60,6 +64,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			}
 		}
 	}
+	logger.DebugWithBid(bidRequest.ID, "Adslot after param map %v", extImpPubMatic.AdSlot)
 
 	// last resort: send slotname w/o size to translator
 	if extImpPubMatic.AdSlot == "" {
@@ -75,6 +80,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	params, err := json.Marshal(extImpPubMatic)
+	logger.DebugWithBid(bidRequest.ID, "Params after param map %v", params)
+	logger.DebugWithBid(bidRequest.ID, "matched slot: %s, matched pattern : %s, isRegexSlot: %t, bidder params: %v, error: %v", matchedSlot, matchedPattern, isRegexSlot, params, err)
 	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
