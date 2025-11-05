@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
@@ -532,6 +533,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			if err != nil || len(bidderParams) == 0 {
+				logger.DebugWithBid(*&payload.BidRequest.ID, "no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode)
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
 				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
@@ -596,9 +598,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {
+			logger.DebugWithBid(*&payload.BidRequest.ID, "request.imp[%d].ext.prebid.bidder is nil", imp.ID)
 			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 		}
 		for bidder, meta := range bidderMeta {
+			logger.DebugWithBid(*&payload.BidRequest.ID, "request.imp[%d].ext.prebid.bidder[%s] with meta params %v", imp.ID, bidder, meta.Params)
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
 		adserverURL := ""
