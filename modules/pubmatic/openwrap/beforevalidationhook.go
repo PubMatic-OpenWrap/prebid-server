@@ -544,6 +544,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
+			logger.DebugWithBid(payload.BidRequest.ID, "impExt.Bidder -%v\n", impExt.Bidder)
 
 			if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
 				var bidderParamsMap map[string]interface{}
@@ -558,7 +559,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 					}
 				}
 			}
-
+			logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier -%v\n", bidderParams)
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
 				PrebidBidderCode: prebidBidderCode,
@@ -601,10 +602,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder is nil", imp.ID)
 			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 		}
+		logger.DebugWithBid(payload.BidRequest.ID, "bidderMeta %v", bidderMeta)
 		for bidder, meta := range bidderMeta {
 			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder[%s] with meta params %v", imp.ID, bidder, meta.Params)
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
+		logger.DebugWithBid(payload.BidRequest.ID, "impExt.Prebid.Bidder after update %v", impExt.Prebid.Bidder)
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
