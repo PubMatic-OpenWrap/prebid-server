@@ -602,12 +602,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder is nil", imp.ID)
 			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 		}
-		logger.DebugWithBid(payload.BidRequest.ID, "bidderMeta %v", bidderMeta)
 		for bidder, meta := range bidderMeta {
-			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder[%s] with meta params %v", imp.ID, bidder, meta.Params)
+			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder[%s] with meta params %s", imp.ID, bidder, string(meta.Params))
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
-		logger.DebugWithBid(payload.BidRequest.ID, "impExt.Prebid.Bidder after update %v", impExt.Prebid.Bidder)
+		bidderJSON, _ := json.MarshalIndent(impExt.Prebid.Bidder, "", "  ")
+		logger.DebugWithBid(payload.BidRequest.ID, "impExt.Prebid.Bidder after update:\n%s", string(bidderJSON))
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL

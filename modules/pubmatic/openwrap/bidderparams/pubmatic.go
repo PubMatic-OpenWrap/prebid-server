@@ -80,8 +80,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	params, err := json.Marshal(extImpPubMatic)
-	logger.DebugWithBid(bidRequest.ID, "Params after param map %x", params)
-	logger.DebugWithBid(bidRequest.ID, "matched slot: %s, matched pattern : %s, isRegexSlot: %t, bidder params: %x, error: %v", matchedSlot, matchedPattern, isRegexSlot, params, err)
+	logger.DebugWithBid(bidRequest.ID, "Params after param map %s", string(params))
+	logger.DebugWithBid(bidRequest.ID, "matched slot: %s, matched pattern : %s, isRegexSlot: %t, bidder params: %s, error: %v", matchedSlot, matchedPattern, isRegexSlot, string(params), err)
 	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
