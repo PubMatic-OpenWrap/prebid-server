@@ -41,7 +41,7 @@ func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb
 	if !glog.V(models.LogLevelDebug) {
 		return
 	}
-	
+
 	bidRequestJSON, _ := json.Marshal(bidRequest)
 	if nbrCode > 0 {
 		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
