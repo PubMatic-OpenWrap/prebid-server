@@ -36,6 +36,22 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
+// logHookBidRequest logs the bidRequest at different stages of the hook execution
+func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, nbrCode int) {
+	if !glog.V(models.LogLevelDebug) {
+		return
+	}
+	
+	bidRequestJSON, _ := json.Marshal(bidRequest)
+	if nbrCode > 0 {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, string(bidRequestJSON))
+	} else {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, string(bidRequestJSON))
+	}
+}
+
 func (m OpenWrap) handleBeforeValidationHook(
 	ctx context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -54,19 +70,23 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	// Log at the start of the hook
+	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+
+		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
+			logHookBidRequest("hook_end_rejected", rCtx, payload.BidRequest, result.NbrCode)
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
-			if glog.V(models.LogLevelDebug) {
-				bidRequest, _ := json.Marshal(payload.BidRequest)
-				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
-					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
-			}
+		} else {
+			logHookBidRequest("hook_end_success", rCtx, payload.BidRequest, 0)
 		}
 	}()
 
