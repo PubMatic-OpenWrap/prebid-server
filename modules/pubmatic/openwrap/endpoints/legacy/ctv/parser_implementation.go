@@ -5,15 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
-	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v20/adcom1"
-	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
 
 	v26 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -23,7 +18,7 @@ import (
 type OpenRTB struct {
 	request *http.Request
 	values  URLValues
-	ortb    *openrtb2.BidRequest
+	ortb    map[string]interface{}
 }
 
 // NewOpenRTB Returns New ORTB Object of Version 2.5
@@ -33,10 +28,14 @@ func NewOpenRTB(request *http.Request) Parser {
 	obj := &OpenRTB{
 		request: request,
 		values:  URLValues{Values: request.Form},
-		ortb: &openrtb2.BidRequest{
-			Imp: []openrtb2.Imp{
-				{},
+		ortb: map[string]interface{}{
+			"imp": []map[string]interface{}{
+				{
+					"video": map[string]interface{}{},
+					"ext":   map[string]interface{}{},
+				},
 			},
+			"ext": map[string]interface{}{},
 		},
 	}
 
@@ -46,7 +45,7 @@ func NewOpenRTB(request *http.Request) Parser {
 /********************** Helper Functions **********************/
 
 // ParseORTBRequest this will parse ortb request by reading parserMap and calling respective function for mapped parameter
-func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, error) {
+func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (map[string]interface{}, error) {
 	var errs []error
 	for k, value := range o.values.Values {
 		if len(value) > 0 && len(value[0]) > 0 {
@@ -84,12 +83,23 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 
 // formORTBRequest this will generate bidrequestID or impressionID if not present
 func (o *OpenRTB) formORTBRequest() {
-	if len(o.ortb.ID) == 0 {
-		o.ortb.ID = uuid.NewV4().String()
+	if o.ortb == nil {
+		return
 	}
 
-	if len(o.ortb.Imp[0].ID) == 0 {
-		o.ortb.Imp[0].ID = uuid.NewV4().String()
+	reqId, ok := o.ortb["id"].(string)
+	if !ok || len(reqId) == 0 {
+		o.ortb["id"] = uuid.NewV4().String()
+	}
+
+	imps, ok := o.ortb["imp"].([]interface{})
+	if len(imps) == 0 {
+		return
+	}
+
+	if len(imps[0].(map[string]interface{})["id"].(string)) == 0 {
+		imps[0].(map[string]interface{})["id"] = uuid.NewV4().String()
+		o.ortb["imp"] = imps
 	}
 }
 
@@ -97,90 +107,90 @@ func (o *OpenRTB) formORTBRequest() {
 
 // ORTBBidRequestID will read and set ortb BidRequest.ID parameter
 func (o *OpenRTB) ORTBBidRequestID() (err error) {
-	val, ok := o.values.GetString(ORTBBidRequestID)
-	if !ok {
-		o.ortb.ID = uuid.NewV4().String()
+	val := o.values.Get(ORTBBidRequestID)
+	if len(val) == 0 {
+		o.ortb["id"] = uuid.NewV4().String()
 	} else {
-		o.ortb.ID = val
+		o.ortb["id"] = val
 	}
 	return
 }
 
 // ORTBBidRequestTest will read and set ortb BidRequest.Test parameter
 func (o *OpenRTB) ORTBBidRequestTest() (err error) {
-	val, ok, err := o.values.GetInt(ORTBBidRequestTest)
-	if ok {
-		o.ortb.Test = int8(val)
+	val := o.values.Get(ORTBBidRequestTest)
+	if len(val) > 0 {
+		o.ortb["test"] = val
 	}
 	return
 }
 
 // ORTBBidRequestAt will read and set ortb BidRequest.At parameter
 func (o *OpenRTB) ORTBBidRequestAt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBBidRequestAt)
-	if ok {
-		o.ortb.AT = int64(val)
+	val := o.values.Get(ORTBBidRequestAt)
+	if len(val) > 0 {
+		o.ortb["at"] = val
 	}
 	return
 }
 
 // ORTBBidRequestTmax will read and set ortb BidRequest.Tmax parameter
 func (o *OpenRTB) ORTBBidRequestTmax() (err error) {
-	val, ok, err := o.values.GetInt(ORTBBidRequestTmax)
-	if ok {
-		o.ortb.TMax = int64(val)
+	val := o.values.Get(ORTBBidRequestTmax)
+	if len(val) > 0 {
+		o.ortb["tmax"] = val
 	}
 	return
 }
 
 // ORTBBidRequestWseat will read and set ortb BidRequest.Wseat parameter
 func (o *OpenRTB) ORTBBidRequestWseat() (err error) {
-	o.ortb.WSeat = o.values.GetStringArray(ORTBBidRequestWseat, ArraySeparator)
+	o.ortb["wseat"] = o.values.GetStringArray(ORTBBidRequestWseat, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestWlang will read and set ortb BidRequest.Wlang Parameter
 func (o *OpenRTB) ORTBBidRequestWlang() (err error) {
-	o.ortb.WLang = o.values.GetStringArray(ORTBBidRequestWlang, ArraySeparator)
+	o.ortb["wlang"] = o.values.GetStringArray(ORTBBidRequestWlang, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestBseat will read and set ortb BidRequest.Bseat Parameter
 func (o *OpenRTB) ORTBBidRequestBseat() (err error) {
-	o.ortb.BSeat = o.values.GetStringArray(ORTBBidRequestBseat, ArraySeparator)
+	o.ortb["bseat"] = o.values.GetStringArray(ORTBBidRequestBseat, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestAllImps will read and set ortb BidRequest.AllImps parameter
 func (o *OpenRTB) ORTBBidRequestAllImps() (err error) {
-	val, ok, err := o.values.GetInt(ORTBBidRequestAllImps)
-	if ok {
-		o.ortb.AllImps = int8(val)
+	val := o.values.Get(ORTBBidRequestAllImps)
+	if len(val) > 0 {
+		o.ortb["allimps"] = val
 	}
 	return
 }
 
 // ORTBBidRequestCur will read and set ortb BidRequest.Cur parameter
 func (o *OpenRTB) ORTBBidRequestCur() (err error) {
-	o.ortb.Cur = o.values.GetStringArray(ORTBBidRequestCur, ArraySeparator)
+	o.ortb["cur"] = o.values.GetStringArray(ORTBBidRequestCur, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestBcat will read and set ortb BidRequest.Bcat parameter
 func (o *OpenRTB) ORTBBidRequestBcat() (err error) {
-	o.ortb.BCat = o.values.GetStringArray(ORTBBidRequestBcat, ArraySeparator)
+	o.ortb["bcat"] = o.values.GetStringArray(ORTBBidRequestBcat, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestBadv will read and set ortb BidRequest.Badv parameter
 func (o *OpenRTB) ORTBBidRequestBadv() (err error) {
-	o.ortb.BAdv = o.values.GetStringArray(ORTBBidRequestBadv, ArraySeparator)
+	o.ortb["badv"] = o.values.GetStringArray(ORTBBidRequestBadv, ArraySeparator)
 	return
 }
 
 // ORTBBidRequestBapp will read and set ortb BidRequest.Bapp parameter
 func (o *OpenRTB) ORTBBidRequestBapp() (err error) {
-	o.ortb.BApp = o.values.GetStringArray(ORTBBidRequestBapp, ArraySeparator)
+	o.ortb["bapp"] = o.values.GetStringArray(ORTBBidRequestBapp, ArraySeparator)
 	return
 }
 
@@ -188,51 +198,57 @@ func (o *OpenRTB) ORTBBidRequestBapp() (err error) {
 
 // ORTBSourceFD will read and set ortb Source.FD parameter
 func (o *OpenRTB) ORTBSourceFD() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSourceFD)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSourceFD)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Source == nil {
-		o.ortb.Source = &openrtb2.Source{}
+	source, ok := o.ortb["source"].(map[string]interface{})
+	if !ok {
+		source = map[string]interface{}{}
 	}
-	o.ortb.Source.FD = ptrutil.ToPtr(int8(val))
+	source["fd"] = val
+	o.ortb["source"] = source
 	return
 }
 
 // ORTBSourceTID will read and set ortb Source.TID parameter
 func (o *OpenRTB) ORTBSourceTID() (err error) {
-	val, ok := o.values.GetString(ORTBSourceTID)
-	if !ok {
+	val := o.values.Get(ORTBSourceTID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Source == nil {
-		o.ortb.Source = &openrtb2.Source{}
+	source, ok := o.ortb["source"].(map[string]interface{})
+	if !ok {
+		source = map[string]interface{}{}
 	}
-	o.ortb.Source.TID = val
+	source["tid"] = val
+	o.ortb["source"] = source
 	return
 }
 
 // ORTBSourcePChain will read and set ortb Source.PChain parameter
 func (o *OpenRTB) ORTBSourcePChain() (err error) {
-	val, ok := o.values.GetString(ORTBSourcePChain)
-	if !ok {
+	val := o.values.Get(ORTBSourcePChain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Source == nil {
-		o.ortb.Source = &openrtb2.Source{}
+	source, ok := o.ortb["source"].(map[string]interface{})
+	if !ok {
+		source = map[string]interface{}{}
 	}
-	o.ortb.Source.PChain = val
+	source["pchain"] = val
+	o.ortb["source"] = source
 	return
 }
 
 // ORTBSourceSChain will read and set ortb Source.Ext.SChain parameter
 func (o *OpenRTB) ORTBSourceSChain() (err error) {
-	sChainString, ok := o.values.GetString(ORTBSourceSChain)
-	if !ok {
-		return nil
+	sChainString := o.values.Get(ORTBSourceSChain)
+	if len(sChainString) == 0 {
+		return
 	}
-	var sChain *openrtb2.SupplyChain
-	sChain, err = openrtb_ext.DeserializeSupplyChain(sChainString)
+
+	sChain, err := openrtb_ext.DeserializeSupplyChain(sChainString)
 	if err != nil {
 		pubId := ""
 		if v, ok := o.values.GetString(ORTBAppPublisherID); ok {
@@ -244,11 +260,12 @@ func (o *OpenRTB) ORTBSourceSChain() (err error) {
 		return nil
 	}
 
-	if o.ortb.Source == nil {
-		o.ortb.Source = &openrtb2.Source{}
+	source, ok := o.ortb["source"].(map[string]interface{})
+	if !ok {
+		source = map[string]interface{}{}
 	}
-
-	o.ortb.Source.SChain = sChain
+	source["schain"] = sChain
+	o.ortb["source"] = source
 
 	return
 }
@@ -257,145 +274,181 @@ func (o *OpenRTB) ORTBSourceSChain() (err error) {
 
 // ORTBSiteID will read and set ortb Site.ID parameter
 func (o *OpenRTB) ORTBSiteID() (err error) {
-	val, ok := o.values.GetString(ORTBSiteID)
-	if !ok {
+	val := o.values.Get(ORTBSiteID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.ID = val
+	site["id"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteName will read and set ortb Site.Name parameter
 func (o *OpenRTB) ORTBSiteName() (err error) {
-	val, ok := o.values.GetString(ORTBSiteName)
-	if !ok {
+	val := o.values.Get(ORTBSiteName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Name = val
+	site["name"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteDomain will read and set ortb Site.Domain parameter
 func (o *OpenRTB) ORTBSiteDomain() (err error) {
-	val, ok := o.values.GetString(ORTBSiteDomain)
-	if !ok {
+	val := o.values.Get(ORTBSiteDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Domain = val
+	site["domain"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePage will read and set ortb Site.Page parameter
 func (o *OpenRTB) ORTBSitePage() (err error) {
-	val, ok := o.values.GetString(ORTBSitePage)
-	if !ok {
+	val := o.values.Get(ORTBSitePage)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Page = val
+	site["page"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteRef will read and set ortb Site.Ref parameter
 func (o *OpenRTB) ORTBSiteRef() (err error) {
-	val, ok := o.values.GetString(ORTBSiteRef)
-	if !ok {
+	val := o.values.Get(ORTBSiteRef)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Ref = val
+	site["ref"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteSearch will read and set ortb Site.Search parameter
 func (o *OpenRTB) ORTBSiteSearch() (err error) {
-	val, ok := o.values.GetString(ORTBSiteSearch)
-	if !ok {
+	val := o.values.Get(ORTBSiteSearch)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Search = val
+	site["search"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteMobile will read and set ortb Site.Mobile parameter
 func (o *OpenRTB) ORTBSiteMobile() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteMobile)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteMobile)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Mobile = ptrutil.ToPtr(int8(val))
+	site["mobile"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteCat will read and set ortb Site.Cat parameter
 func (o *OpenRTB) ORTBSiteCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSiteCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.Site.Cat = o.values.GetStringArray(ORTBSiteCat, ArraySeparator)
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
+	}
+	site["cat"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteSectionCat will read and set ortb Site.SectionCat parameter
 func (o *OpenRTB) ORTBSiteSectionCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSiteSectionCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.Site.SectionCat = o.values.GetStringArray(ORTBSiteSectionCat, ArraySeparator)
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
+	}
+	site["sectioncat"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePageCat will read and set ortb Site.PageCat parameter
 func (o *OpenRTB) ORTBSitePageCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSitePageCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.Site.PageCat = o.values.GetStringArray(ORTBSitePageCat, ArraySeparator)
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
+	}
+	site["pagecat"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePrivacyPolicy will read and set ortb Site.PrivacyPolicy parameter
 func (o *OpenRTB) ORTBSitePrivacyPolicy() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSitePrivacyPolicy)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSitePrivacyPolicy)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.PrivacyPolicy = ptrutil.ToPtr(int8(val))
+	site["privacypolicy"] = val
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteKeywords will read and set ortb Site.Keywords parameter
 func (o *OpenRTB) ORTBSiteKeywords() (err error) {
-	val, ok := o.values.GetString(ORTBSiteKeywords)
-	if !ok {
+	val := o.values.Get(ORTBSiteKeywords)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Keywords = val
+	site["keywords"] = val
+	o.ortb["site"] = site
 	return
 }
 
@@ -403,61 +456,81 @@ func (o *OpenRTB) ORTBSiteKeywords() (err error) {
 
 // ORTBSitePublisherID will read and set ortb Site.Publisher.ID parameter
 func (o *OpenRTB) ORTBSitePublisherID() (err error) {
-	val, ok := o.values.GetString(ORTBSitePublisherID)
-	if !ok {
+	val := o.values.Get(ORTBSitePublisherID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Publisher == nil {
-		o.ortb.Site.Publisher = &openrtb2.Publisher{}
+	publisher, ok := site["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.Site.Publisher.ID = val
+	publisher["id"] = val
+	site["publisher"] = publisher
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePublisherName will read and set ortb Site.Publisher.Name parameter
 func (o *OpenRTB) ORTBSitePublisherName() (err error) {
-	val, ok := o.values.GetString(ORTBSitePublisherName)
-	if !ok {
+	val := o.values.Get(ORTBSitePublisherName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Publisher == nil {
-		o.ortb.Site.Publisher = &openrtb2.Publisher{}
+	publisher, ok := site["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.Site.Publisher.Name = val
+	publisher["name"] = val
+	site["publisher"] = publisher
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePublisherCat will read and set ortb Site.Publisher.Cat parameter
 func (o *OpenRTB) ORTBSitePublisherCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSitePublisherCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Publisher == nil {
-		o.ortb.Site.Publisher = &openrtb2.Publisher{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Publisher.Cat = o.values.GetStringArray(ORTBSitePublisherCat, ArraySeparator)
+	publisher, ok := site["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
+	}
+	publisher["cat"] = val
+	site["publisher"] = publisher
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSitePublisherDomain will read and set ortb Site.Publisher.Domain parameter
 func (o *OpenRTB) ORTBSitePublisherDomain() (err error) {
-	val, ok := o.values.GetString(ORTBSitePublisherDomain)
-	if !ok {
+	val := o.values.Get(ORTBSitePublisherDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Publisher == nil {
-		o.ortb.Site.Publisher = &openrtb2.Publisher{}
+	publisher, ok := site["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.Site.Publisher.Domain = val
+	publisher["domain"] = val
+	site["publisher"] = publisher
+	o.ortb["site"] = site
 	return
 }
 
@@ -465,369 +538,463 @@ func (o *OpenRTB) ORTBSitePublisherDomain() (err error) {
 
 // ORTBSiteContentID will read and set ortb Site.Content.ID parameter
 func (o *OpenRTB) ORTBSiteContentID() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentID)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.ID = val
+	content["id"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentEpisode will read and set ortb Site.Content.Episode parameter
 func (o *OpenRTB) ORTBSiteContentEpisode() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentEpisode)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentEpisode)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Episode = int64(val)
+	content["episode"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentTitle will read and set ortb Site.Content.Title parameter
 func (o *OpenRTB) ORTBSiteContentTitle() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentTitle)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentTitle)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Title = val
+	content["title"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentSeries will read and set ortb Site.Content.Series parameter
 func (o *OpenRTB) ORTBSiteContentSeries() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentSeries)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentSeries)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Series = val
+	content["series"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentSeason will read and set ortb Site.Content.Season parameter
 func (o *OpenRTB) ORTBSiteContentSeason() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentSeason)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentSeason)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Season = val
+	content["season"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentArtist will read and set ortb Site.Content.Artist parameter
 func (o *OpenRTB) ORTBSiteContentArtist() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentArtist)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentArtist)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Artist = val
+	content["artist"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentGenre will read and set ortb Site.Content.Genre parameter
 func (o *OpenRTB) ORTBSiteContentGenre() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentGenre)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentGenre)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Genre = val
+	content["genre"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentAlbum will read and set ortb Site.Content.Album parameter
 func (o *OpenRTB) ORTBSiteContentAlbum() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentAlbum)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentAlbum)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Album = val
+	content["album"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentIsRc will read and set ortb Site.Content.IsRc parameter
 func (o *OpenRTB) ORTBSiteContentIsRc() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentIsRc)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentIsRc)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.ISRC = val
+	content["isrc"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentURL will read and set ortb Site.Content.URL parameter
 func (o *OpenRTB) ORTBSiteContentURL() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentURL)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentURL)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.URL = val
+	content["url"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentCat will read and set ortb Site.Content.Cat parameter
 func (o *OpenRTB) ORTBSiteContentCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSiteContentCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Cat = o.values.GetStringArray(ORTBSiteContentCat, ArraySeparator)
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
+	}
+	content["cat"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentProdQ will read and set ortb Site.Content.ProdQ parameter
 func (o *OpenRTB) ORTBSiteContentProdQ() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentProdQ)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentProdQ)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	prodQ := adcom1.ProductionQuality(val)
-	o.ortb.Site.Content.ProdQ = &prodQ
+	content["prodq"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentVideoQuality will read and set ortb Site.Content.VideoQuality parameter
 func (o *OpenRTB) ORTBSiteContentVideoQuality() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentVideoQuality)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentVideoQuality)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	videoQuality := adcom1.ProductionQuality(val)
-	o.ortb.Site.Content.VideoQuality = &videoQuality
+	content["videoquality"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 
 }
 
 // ORTBSiteContentContext will read and set ortb Site.Content.Context parameter
 func (o *OpenRTB) ORTBSiteContentContext() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentContext)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentContext)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Context = adcom1.ContentContext(val)
+	content["context"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentContentRating will read and set ortb Site.Content.ContentRating parameter
 func (o *OpenRTB) ORTBSiteContentContentRating() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentContentRating)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentContentRating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.ContentRating = val
+	content["contentrating"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentUserRating will read and set ortb Site.Content.UserRating parameter
 func (o *OpenRTB) ORTBSiteContentUserRating() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentUserRating)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentUserRating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.UserRating = val
+	content["userrating"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentQaGmeDiarating will read and set ortb Site.Content.QaGmeDiarating parameter
 func (o *OpenRTB) ORTBSiteContentQaGmeDiarating() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentQaGmeDiarating)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentQaGmeDiarating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.QAGMediaRating = adcom1.MediaRating(val)
+	content["qagmediarating"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 
 }
 
 // ORTBSiteContentKeywords will read and set ortb Site.Content.Keywords parameter
 func (o *OpenRTB) ORTBSiteContentKeywords() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentKeywords)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentKeywords)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Keywords = val
+	content["keywords"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentLiveStream will read and set ortb Site.Content.LiveStream parameter
 func (o *OpenRTB) ORTBSiteContentLiveStream() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentLiveStream)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentLiveStream)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.LiveStream = ptrutil.ToPtr(int8(val))
+	content["livestream"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentSourceRelationship will read and set ortb Site.Content.SourceRelationship parameter
 func (o *OpenRTB) ORTBSiteContentSourceRelationship() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentSourceRelationship)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentSourceRelationship)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.SourceRelationship = ptrutil.ToPtr(int8(val))
+	content["sourcerelationship"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentLen will read and set ortb Site.Content.Len parameter
 func (o *OpenRTB) ORTBSiteContentLen() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentLen)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentLen)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Len = int64(val)
+	content["len"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentLanguage will read and set ortb Site.Content.Language parameter
 func (o *OpenRTB) ORTBSiteContentLanguage() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentLanguage)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentLanguage)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Language = val
+	content["language"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentEmbeddable will read and set ortb Site.Content.Embeddable parameter
 func (o *OpenRTB) ORTBSiteContentEmbeddable() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentEmbeddable)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSiteContentEmbeddable)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Embeddable = ptrutil.ToPtr(int8(val))
+	content["embeddable"] = val
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
@@ -835,46 +1002,76 @@ func (o *OpenRTB) ORTBSiteContentEmbeddable() (err error) {
 
 // ORTBSiteContentNetworkID will read and set ortb Site.Content.Network.Id parameter
 func (o *OpenRTB) ORTBSiteContentNetworkID() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentNetworkID)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Network == nil {
-		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Network.ID = o.values.Get(ORTBSiteContentNetworkID)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["id"] = val
+	content["network"] = network
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentNetworkName will read and set ortb Site.Content.Network.Name parameter
 func (o *OpenRTB) ORTBSiteContentNetworkName() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentNetworkName)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Network == nil {
-		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Network.Name = o.values.Get(ORTBSiteContentNetworkName)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["name"] = val
+	content["network"] = network
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentNetworkDomain will read and set ortb Site.Content.Network.Domain parameter
 func (o *OpenRTB) ORTBSiteContentNetworkDomain() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentNetworkDomain)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Network == nil {
-		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Network.Domain = o.values.Get(ORTBSiteContentNetworkDomain)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["domain"] = val
+	content["network"] = network
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
@@ -882,46 +1079,76 @@ func (o *OpenRTB) ORTBSiteContentNetworkDomain() (err error) {
 
 // ORTBSiteContentChannelID will read and set ortb Site.Content.Channel.Id parameter
 func (o *OpenRTB) ORTBSiteContentChannelID() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentChannelID)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Channel == nil {
-		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Channel.ID = o.values.Get(ORTBSiteContentChannelID)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["id"] = val
+	content["channel"] = channel
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentChannelName will read and set ortb Site.Content.Channel.Name parameter
 func (o *OpenRTB) ORTBSiteContentChannelName() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentChannelName)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Channel == nil {
-		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Channel.Name = o.values.Get(ORTBSiteContentChannelName)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["name"] = val
+	content["channel"] = channel
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentChannelDomain will read and set ortb Site.Content.Channel.Domain parameter
 func (o *OpenRTB) ORTBSiteContentChannelDomain() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.Get(ORTBSiteContentChannelDomain)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Channel == nil {
-		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Channel.Domain = o.values.Get(ORTBSiteContentChannelDomain)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["domain"] = val
+	content["channel"] = channel
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
@@ -929,73 +1156,101 @@ func (o *OpenRTB) ORTBSiteContentChannelDomain() (err error) {
 
 // ORTBSiteContentProducerID will read and set ortb Site.Content.Producer.ID parameter
 func (o *OpenRTB) ORTBSiteContentProducerID() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentProducerID)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentProducerID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Producer == nil {
-		o.ortb.Site.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Producer.ID = val
+	producer["id"] = val
+	content["producer"] = producer
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentProducerName will read and set ortb Site.Content.Producer.Name parameter
 func (o *OpenRTB) ORTBSiteContentProducerName() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentProducerName)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentProducerName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Producer == nil {
-		o.ortb.Site.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Producer.Name = val
+	producer["name"] = val
+	content["producer"] = producer
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentProducerCat will read and set ortb Site.Content.Producer.Cat parameter
 func (o *OpenRTB) ORTBSiteContentProducerCat() (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	val := o.values.GetStringArray(ORTBSiteContentProducerCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Producer == nil {
-		o.ortb.Site.Content.Producer = &openrtb2.Producer{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Producer.Cat = o.values.GetStringArray(ORTBSiteContentProducerCat, ArraySeparator)
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
+	}
+	producer["cat"] = val
+	content["producer"] = producer
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentProducerDomain will read and set ortb Site.Content.Producer.Domain parameter
 func (o *OpenRTB) ORTBSiteContentProducerDomain() (err error) {
-	val, ok := o.values.GetString(ORTBSiteContentProducerDomain)
-	if !ok {
+	val := o.values.Get(ORTBSiteContentProducerDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Producer == nil {
-		o.ortb.Site.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.Site.Content.Producer.Domain = val
+	producer["domain"] = val
+	content["producer"] = producer
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
@@ -1003,145 +1258,181 @@ func (o *OpenRTB) ORTBSiteContentProducerDomain() (err error) {
 
 // ORTBAppID will read and set ortb App.ID parameter
 func (o *OpenRTB) ORTBAppID() (err error) {
-	val, ok := o.values.GetString(ORTBAppID)
-	if !ok {
+	val := o.values.Get(ORTBAppID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.ID = val
+	app["id"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppName will read and set ortb App.Name parameter
 func (o *OpenRTB) ORTBAppName() (err error) {
-	val, ok := o.values.GetString(ORTBAppName)
-	if !ok {
+	val := o.values.Get(ORTBAppName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Name = val
+	app["name"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppBundle will read and set ortb App.Bundle parameter
 func (o *OpenRTB) ORTBAppBundle() (err error) {
-	val, ok := o.values.GetString(ORTBAppBundle)
-	if !ok {
+	val := o.values.Get(ORTBAppBundle)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Bundle = val
+	app["bundle"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppDomain will read and set ortb App.Domain parameter
 func (o *OpenRTB) ORTBAppDomain() (err error) {
-	val, ok := o.values.GetString(ORTBAppDomain)
-	if !ok {
+	val := o.values.Get(ORTBAppDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Domain = val
+	app["domain"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppStoreURL will read and set ortb App.StoreURL parameter
 func (o *OpenRTB) ORTBAppStoreURL() (err error) {
-	val, ok := o.values.GetString(ORTBAppStoreURL)
-	if !ok {
+	val := o.values.Get(ORTBAppStoreURL)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.StoreURL = val
+	app["storeurl"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppVer will read and set ortb App.Ver parameter
 func (o *OpenRTB) ORTBAppVer() (err error) {
-	val, ok := o.values.GetString(ORTBAppVer)
-	if !ok {
+	val := o.values.Get(ORTBAppVer)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Ver = val
+	app["ver"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPaid will read and set ortb App.Paid parameter
 func (o *OpenRTB) ORTBAppPaid() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppPaid)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppPaid)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Paid = ptrutil.ToPtr(int8(val))
+	app["paid"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppCat will read and set ortb App.Cat parameter
 func (o *OpenRTB) ORTBAppCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.App.Cat = o.values.GetStringArray(ORTBAppCat, ArraySeparator)
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
+	}
+	app["cat"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppSectionCat will read and set ortb App.SectionCat parameter
 func (o *OpenRTB) ORTBAppSectionCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppSectionCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.App.SectionCat = o.values.GetStringArray(ORTBAppSectionCat, ArraySeparator)
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
+	}
+	app["sectioncat"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPageCat will read and set ortb App.PageCat parameter
 func (o *OpenRTB) ORTBAppPageCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppPageCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.App.PageCat = o.values.GetStringArray(ORTBAppPageCat, ArraySeparator)
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
+	}
+	app["pagecat"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPrivacyPolicy will read and set ortb App.PrivacyPolicy parameter
 func (o *OpenRTB) ORTBAppPrivacyPolicy() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppPrivacyPolicy)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppPrivacyPolicy)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.PrivacyPolicy = ptrutil.ToPtr(int8(val))
+	app["privacypolicy"] = val
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppKeywords will read and set ortb App.Keywords parameter
 func (o *OpenRTB) ORTBAppKeywords() (err error) {
-	val, ok := o.values.GetString(ORTBAppKeywords)
-	if !ok {
+	val := o.values.Get(ORTBAppKeywords)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Keywords = val
+	app["keywords"] = val
+	o.ortb["app"] = app
 	return
 }
 
@@ -1149,61 +1440,81 @@ func (o *OpenRTB) ORTBAppKeywords() (err error) {
 
 // ORTBAppPublisherID will read and set ortb App.Publisher.ID parameter
 func (o *OpenRTB) ORTBAppPublisherID() (err error) {
-	val, ok := o.values.GetString(ORTBAppPublisherID)
-	if !ok {
+	val := o.values.Get(ORTBAppPublisherID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Publisher == nil {
-		o.ortb.App.Publisher = &openrtb2.Publisher{}
+	publisher, ok := app["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.App.Publisher.ID = val
+	publisher["id"] = val
+	app["publisher"] = publisher
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPublisherName will read and set ortb App.Publisher.Name parameter
 func (o *OpenRTB) ORTBAppPublisherName() (err error) {
-	val, ok := o.values.GetString(ORTBAppPublisherName)
-	if !ok {
+	val := o.values.Get(ORTBAppPublisherName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Publisher == nil {
-		o.ortb.App.Publisher = &openrtb2.Publisher{}
+	publisher, ok := app["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.App.Publisher.Name = val
+	publisher["name"] = val
+	app["publisher"] = publisher
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPublisherCat will read and set ortb App.Publisher.Cat parameter
 func (o *OpenRTB) ORTBAppPublisherCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppPublisherCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Publisher == nil {
-		o.ortb.App.Publisher = &openrtb2.Publisher{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Publisher.Cat = o.values.GetStringArray(ORTBAppPublisherCat, ArraySeparator)
+	publisher, ok := app["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
+	}
+	publisher["cat"] = val
+	app["publisher"] = publisher
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppPublisherDomain will read and set ortb App.Publisher.Domain parameter
 func (o *OpenRTB) ORTBAppPublisherDomain() (err error) {
-	val, ok := o.values.GetString(ORTBAppPublisherDomain)
-	if !ok {
+	val := o.values.Get(ORTBAppPublisherDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Publisher == nil {
-		o.ortb.App.Publisher = &openrtb2.Publisher{}
+	publisher, ok := app["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	o.ortb.App.Publisher.Domain = val
+	publisher["domain"] = val
+	app["publisher"] = publisher
+	o.ortb["app"] = app
 	return
 }
 
@@ -1211,374 +1522,461 @@ func (o *OpenRTB) ORTBAppPublisherDomain() (err error) {
 
 // ORTBAppContentID will read and set ortb App.Content.ID parameter
 func (o *OpenRTB) ORTBAppContentID() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentID)
-	if !ok {
+	val := o.values.Get(ORTBAppContentID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.ID = val
+	content["id"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentEpisode will read and set ortb App.Content.Episode parameter
 func (o *OpenRTB) ORTBAppContentEpisode() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentEpisode)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentEpisode)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Episode = int64(val)
+	content["episode"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentTitle will read and set ortb App.Content.Title parameter
 func (o *OpenRTB) ORTBAppContentTitle() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentTitle)
-	if !ok {
+	val := o.values.Get(ORTBAppContentTitle)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Title = val
+	content["title"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentSeries will read and set ortb App.Content.Series parameter
 func (o *OpenRTB) ORTBAppContentSeries() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentSeries)
-	if !ok {
+	val := o.values.Get(ORTBAppContentSeries)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Series = val
+	content["series"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentSeason will read and set ortb App.Content.Season parameter
 func (o *OpenRTB) ORTBAppContentSeason() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentSeason)
-	if !ok {
+	val := o.values.Get(ORTBAppContentSeason)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Season = val
+	content["season"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentArtist will read and set ortb App.Content.Artist parameter
 func (o *OpenRTB) ORTBAppContentArtist() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentArtist)
-	if !ok {
+	val := o.values.Get(ORTBAppContentArtist)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Artist = val
+	content["artist"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentGenre will read and set ortb App.Content.Genre parameter
 func (o *OpenRTB) ORTBAppContentGenre() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentGenre)
-	if !ok {
+	val := o.values.Get(ORTBAppContentGenre)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Genre = val
+	content["genre"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentAlbum will read and set ortb App.Content.Album parameter
 func (o *OpenRTB) ORTBAppContentAlbum() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentAlbum)
-	if !ok {
+	val := o.values.Get(ORTBAppContentAlbum)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Album = val
+	content["album"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentIsRc will read and set ortb App.Content.IsRc parameter
 func (o *OpenRTB) ORTBAppContentIsRc() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentIsRc)
-	if !ok {
+	val := o.values.Get(ORTBAppContentIsRc)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.ISRC = val
+	content["isrc"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentURL will read and set ortb App.Content.URL parameter
 func (o *OpenRTB) ORTBAppContentURL() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentURL)
-	if !ok {
+	val := o.values.Get(ORTBAppContentURL)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.URL = val
+	content["url"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentCat will read and set ortb App.Content.Cat parameter
 func (o *OpenRTB) ORTBAppContentCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppContentCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Cat = o.values.GetStringArray(ORTBAppContentCat, ArraySeparator)
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
+	}
+	content["cat"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentProdQ will read and set ortb App.Content.ProdQ parameter
 func (o *OpenRTB) ORTBAppContentProdQ() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentProdQ)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentProdQ)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	prodQ := adcom1.ProductionQuality(val)
-	o.ortb.App.Content.ProdQ = &prodQ
-
-	return err
+	content["prodq"] = val
+	app["content"] = content
+	o.ortb["app"] = app
+	return
 }
 
 // ORTBAppContentVideoQuality will read and set ortb App.Content.VideoQuality parameter
 func (o *OpenRTB) ORTBAppContentVideoQuality() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentVideoQuality)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentVideoQuality)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	videoQuality := adcom1.ProductionQuality(val)
-	o.ortb.App.Content.VideoQuality = &videoQuality
+	content["videoquality"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentContext will read and set ortb App.Content.Context parameter
 func (o *OpenRTB) ORTBAppContentContext() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentContext)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentContext)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	context := adcom1.ContentContext(val)
-	o.ortb.App.Content.Context = context
+	content["context"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentContentRating will read and set ortb App.Content.ContentRating parameter
 func (o *OpenRTB) ORTBAppContentContentRating() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentContentRating)
-	if !ok {
+	val := o.values.Get(ORTBAppContentContentRating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.ContentRating = val
+	content["contentrating"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentUserRating will read and set ortb App.Content.UserRating parameter
 func (o *OpenRTB) ORTBAppContentUserRating() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentUserRating)
-	if !ok {
+	val := o.values.Get(ORTBAppContentUserRating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.UserRating = val
+	content["userrating"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentQaGmeDiarating will read and set ortb App.Content.QaGmeDiarating parameter
 func (o *OpenRTB) ORTBAppContentQaGmeDiarating() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentQaGmeDiarating)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentQaGmeDiarating)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	qagMediaRating := adcom1.MediaRating(val)
-	o.ortb.App.Content.QAGMediaRating = qagMediaRating
-
-	return err
+	content["qagmediarating"] = val
+	app["content"] = content
+	o.ortb["app"] = app
+	return
 }
 
 // ORTBAppContentKeywords will read and set ortb App.Content.Keywords parameter
 func (o *OpenRTB) ORTBAppContentKeywords() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentKeywords)
-	if !ok {
+	val := o.values.Get(ORTBAppContentKeywords)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Keywords = val
+	content["keywords"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentLiveStream will read and set ortb App.Content.LiveStream parameter
 func (o *OpenRTB) ORTBAppContentLiveStream() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentLiveStream)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentLiveStream)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.LiveStream = ptrutil.ToPtr(int8(val))
+	content["livestream"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentSourceRelationship will read and set ortb App.Content.SourceRelationship parameter
 func (o *OpenRTB) ORTBAppContentSourceRelationship() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentSourceRelationship)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentSourceRelationship)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.SourceRelationship = ptrutil.ToPtr(int8(val))
+	content["sourcerelationship"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentLen will read and set ortb App.Content.Len parameter
 func (o *OpenRTB) ORTBAppContentLen() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentLen)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentLen)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Len = int64(val)
+	content["len"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentLanguage will read and set ortb App.Content.Language parameter
 func (o *OpenRTB) ORTBAppContentLanguage() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentLanguage)
-	if !ok {
+	val := o.values.Get(ORTBAppContentLanguage)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Language = val
+	content["language"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentEmbeddable will read and set ortb App.Content.Embeddable parameter
 func (o *OpenRTB) ORTBAppContentEmbeddable() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentEmbeddable)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBAppContentEmbeddable)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Embeddable = ptrutil.ToPtr(int8(val))
+	content["embeddable"] = val
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
@@ -1586,46 +1984,76 @@ func (o *OpenRTB) ORTBAppContentEmbeddable() (err error) {
 
 // ORTBAppContentNetworkID will read and set ortb App.Content.Network.Id parameter
 func (o *OpenRTB) ORTBAppContentNetworkID() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentNetworkID)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Network == nil {
-		o.ortb.App.Content.Network = &openrtb2.Network{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Network.ID = o.values.Get(ORTBAppContentNetworkID)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["id"] = val
+	content["network"] = network
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentNetworkName will read and set ortb App.Content.Network.Name parameter
 func (o *OpenRTB) ORTBAppContentNetworkName() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentNetworkName)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Network == nil {
-		o.ortb.App.Content.Network = &openrtb2.Network{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Network.Name = o.values.Get(ORTBAppContentNetworkName)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["name"] = val
+	content["network"] = network
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentNetworkDomain will read and set ortb App.Content.Network.Domain parameter
 func (o *OpenRTB) ORTBAppContentNetworkDomain() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentNetworkDomain)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Network == nil {
-		o.ortb.App.Content.Network = &openrtb2.Network{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Network.Domain = o.values.Get(ORTBAppContentNetworkDomain)
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
+	}
+	network["domain"] = val
+	content["network"] = network
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
@@ -1633,46 +2061,76 @@ func (o *OpenRTB) ORTBAppContentNetworkDomain() (err error) {
 
 // ORTBAppContentChannelID will read and set ortb App.Content.Channel.Id parameter
 func (o *OpenRTB) ORTBAppContentChannelID() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentChannelID)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Channel == nil {
-		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Channel.ID = o.values.Get(ORTBAppContentChannelID)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["id"] = val
+	content["channel"] = channel
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentChannelName will read and set ortb App.Content.Channel.Name parameter
 func (o *OpenRTB) ORTBAppContentChannelName() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentChannelName)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Channel == nil {
-		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Channel.Name = o.values.Get(ORTBAppContentChannelName)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["name"] = val
+	content["channel"] = channel
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentChannelDomain will read and set ortb App.Content.Channel.Domain parameter
 func (o *OpenRTB) ORTBAppContentChannelDomain() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.Get(ORTBAppContentChannelDomain)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Channel == nil {
-		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Channel.Domain = o.values.Get(ORTBAppContentChannelDomain)
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
+	}
+	channel["domain"] = val
+	content["channel"] = channel
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
@@ -1680,73 +2138,101 @@ func (o *OpenRTB) ORTBAppContentChannelDomain() (err error) {
 
 // ORTBAppContentProducerID will read and set ortb App.Content.Producer.ID parameter
 func (o *OpenRTB) ORTBAppContentProducerID() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentProducerID)
-	if !ok {
+	val := o.values.Get(ORTBAppContentProducerID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Producer == nil {
-		o.ortb.App.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Producer.ID = val
+	producer["id"] = val
+	content["producer"] = producer
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentProducerName will read and set ortb App.Content.Producer.Name parameter
 func (o *OpenRTB) ORTBAppContentProducerName() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentProducerName)
-	if !ok {
+	val := o.values.Get(ORTBAppContentProducerName)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Producer == nil {
-		o.ortb.App.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Producer.Name = val
+	producer["name"] = val
+	content["producer"] = producer
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentProducerCat will read and set ortb App.Content.Producer.Cat parameter
 func (o *OpenRTB) ORTBAppContentProducerCat() (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	val := o.values.GetStringArray(ORTBAppContentProducerCat, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Producer == nil {
-		o.ortb.App.Content.Producer = &openrtb2.Producer{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Producer.Cat = o.values.GetStringArray(ORTBAppContentProducerCat, ArraySeparator)
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
+	}
+	producer["cat"] = val
+	content["producer"] = producer
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentProducerDomain will read and set ortb App.Content.Producer.Domain parameter
 func (o *OpenRTB) ORTBAppContentProducerDomain() (err error) {
-	val, ok := o.values.GetString(ORTBAppContentProducerDomain)
-	if !ok {
+	val := o.values.Get(ORTBAppContentProducerDomain)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Producer == nil {
-		o.ortb.App.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-	o.ortb.App.Content.Producer.Domain = val
+	producer["domain"] = val
+	content["producer"] = producer
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
@@ -1754,310 +2240,480 @@ func (o *OpenRTB) ORTBAppContentProducerDomain() (err error) {
 
 // ORTBImpVideoMimes will read and set ortb Imp.Video.Mimes parameter
 func (o *OpenRTB) ORTBImpVideoMimes() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	val := o.values.GetStringArray(ORTBImpVideoMimes, ArraySeparator)
+	if len(val) == 0 {
+		return
 	}
-	o.ortb.Imp[0].Video.MIMEs = o.values.GetStringArray(ORTBImpVideoMimes, ArraySeparator)
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["mimes"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoMinDuration will read and set ortb Imp.Video.MinDuration parameter
 func (o *OpenRTB) ORTBImpVideoMinDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoMinDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoMinDuration)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.MinDuration = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["minduration"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoMaxDuration will read and set ortb Imp.Video.MaxDuration parameter
 func (o *OpenRTB) ORTBImpVideoMaxDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoMaxDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoMaxDuration)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.MaxDuration = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["maxduration"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoProtocols will read and set ortb Imp.Video.Protocols parameter
 func (o *OpenRTB) ORTBImpVideoProtocols() (err error) {
-	protocols, err := o.values.GetIntArray(ORTBImpVideoProtocols, ArraySeparator)
-	if err != nil {
+	protocols := o.values.GetStringArray(ORTBImpVideoProtocols, ArraySeparator)
+	if len(protocols) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	// o.ortb.Imp[0].Video.Protocols, err = o.values.GetIntArray(ORTBImpVideoProtocols, ArraySeparator)
-	o.ortb.Imp[0].Video.Protocols = v26.GetProtocol(protocols)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["protocols"] = protocols
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoPlayerWidth will read and set ortb Imp.Video.PlayerWidth parameter
 func (o *OpenRTB) ORTBImpVideoPlayerWidth() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
-	val, ok, err := o.values.GetInt(ORTBImpVideoPlayerWidth)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoPlayerWidth)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].Video.W = ptrutil.ToPtr(int64(val))
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["w"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoPlayerHeight will read and set ortb Imp.Video.PlayerHeight parameter
 func (o *OpenRTB) ORTBImpVideoPlayerHeight() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
-	val, ok, err := o.values.GetInt(ORTBImpVideoPlayerHeight)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoPlayerHeight)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].Video.H = ptrutil.ToPtr(int64(val))
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["h"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoStartDelay will read and set ortb Imp.Video.StartDelay parameter
 func (o *OpenRTB) ORTBImpVideoStartDelay() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoStartDelay)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoStartDelay)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	startDelay := adcom1.StartDelay(val)
-	o.ortb.Imp[0].Video.StartDelay = &startDelay
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["startdelay"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoPlacement will read and set ortb Imp.Video.Placement parameter
 func (o *OpenRTB) ORTBImpVideoPlacement() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoPlacement)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoPlacement)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	placement := adcom1.VideoPlacementSubtype(val)
-	o.ortb.Imp[0].Video.Placement = placement
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["placement"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 func (o *OpenRTB) ORTBImpVideoPlcmt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoPlcmt)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoPlcmt)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	plcmt := adcom1.VideoPlcmtSubtype(val)
-	o.ortb.Imp[0].Video.Plcmt = plcmt
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["plcmt"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoLinearity will read and set ortb Imp.Video.Linearity parameter
 func (o *OpenRTB) ORTBImpVideoLinearity() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoLinearity)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoLinearity)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	linearity := adcom1.LinearityMode(val)
-	o.ortb.Imp[0].Video.Linearity = linearity
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["linearity"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoSkip will read and set ortb Imp.Video.Skip parameter
 func (o *OpenRTB) ORTBImpVideoSkip() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoSkip)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoSkip)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	val8 := int8(val)
-	o.ortb.Imp[0].Video.Skip = &val8
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["skip"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoSkipMin will read and set ortb Imp.Video.SkipMin parameter
 func (o *OpenRTB) ORTBImpVideoSkipMin() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoSkipMin)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoSkipMin)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.SkipMin = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["skipmin"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoSkipAfter will read and set ortb Imp.Video.SkipAfter parameter
 func (o *OpenRTB) ORTBImpVideoSkipAfter() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoSkipAfter)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoSkipAfter)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.SkipAfter = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["skipafter"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoSequence will read and set ortb Imp.Video.Sequence parameter
 func (o *OpenRTB) ORTBImpVideoSequence() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoSequence)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoSequence)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.Sequence = int8(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["sequence"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoBAttr will read and set ortb Imp.Video.BAttr parameter
 func (o *OpenRTB) ORTBImpVideoBAttr() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
 	bAttr, err := o.values.GetIntArray(ORTBImpVideoBAttr, ArraySeparator)
-	if bAttr != nil {
-		o.ortb.Imp[0].Video.BAttr = v26.GetCreativeAttributes(bAttr)
+	if err != nil {
+		return
 	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["battr"] = bAttr
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoMaxExtended will read and set ortb Imp.Video.MaxExtended parameter
 func (o *OpenRTB) ORTBImpVideoMaxExtended() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoMaxExtended)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoMaxExtended)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.MaxExtended = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["maxextended"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoMinBitrate will read and set ortb Imp.Video.MinBitrate parameter
 func (o *OpenRTB) ORTBImpVideoMinBitrate() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoMinBitrate)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoMinBitrate)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.MinBitRate = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["minbitrate"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoMaxBitrate will read and set ortb Imp.Video.MaxBitrate parameter
 func (o *OpenRTB) ORTBImpVideoMaxBitrate() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoMaxBitrate)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoMaxBitrate)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.MaxBitRate = int64(val)
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["maxbitrate"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoBoxingAllowed will read and set ortb Imp.Video.BoxingAllowed parameter
 func (o *OpenRTB) ORTBImpVideoBoxingAllowed() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoBoxingAllowed)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoBoxingAllowed)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	o.ortb.Imp[0].Video.BoxingAllowed = ptrutil.ToPtr(int8(val))
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["boxingallowed"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoPlaybackMethod will read and set ortb Imp.Video.PlaybackMethod parameter
 func (o *OpenRTB) ORTBImpVideoPlaybackMethod() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
 	playbackMethod, err := o.values.GetIntArray(ORTBImpVideoPlaybackMethod, ArraySeparator)
-	o.ortb.Imp[0].Video.PlaybackMethod = v26.GetPlaybackMethod(playbackMethod)
+	if err != nil {
+		return
+	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["playbackmethod"] = v26.GetPlaybackMethod(playbackMethod)
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoDelivery will read and set ortb Imp.Video.Delivery parameter
 func (o *OpenRTB) ORTBImpVideoDelivery() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
 	delivery, err := o.values.GetIntArray(ORTBImpVideoDelivery, ArraySeparator)
-	o.ortb.Imp[0].Video.Delivery = v26.GetDeliveryMethod(delivery)
+	if err != nil {
+		return
+	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["delivery"] = delivery
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoPos will read and set ortb Imp.Video.Pos parameter
 func (o *OpenRTB) ORTBImpVideoPos() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoPos)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoPos)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	position := adcom1.PlacementPosition(val)
-	o.ortb.Imp[0].Video.Pos = &position
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["pos"] = val
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoAPI will read and set ortb Imp.Video.API parameter
 func (o *OpenRTB) ORTBImpVideoAPI() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
 	api, err := o.values.GetIntArray(ORTBImpVideoAPI, ArraySeparator)
-	if err == nil {
-		o.ortb.Imp[0].Video.API = v26.GetAPIFramework(api)
+	if err != nil {
+		return
 	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["api"] = api
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoCompanionType will read and set ortb Imp.Video.CompanionType parameter
 func (o *OpenRTB) ORTBImpVideoCompanionType() (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
-	}
 	companionType, err := o.values.GetIntArray(ORTBImpVideoCompanionType, ArraySeparator)
-	if err == nil {
-		o.ortb.Imp[0].Video.CompanionType = v26.GetCompanionType(companionType)
+	if err != nil {
+		return
 	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video["companiontype"] = companionType
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
@@ -2065,14 +2721,16 @@ func (o *OpenRTB) ORTBImpVideoCompanionType() (err error) {
 
 // ORTBRegsCoppa will read and set ortb Regs.Coppa parameter
 func (o *OpenRTB) ORTBRegsCoppa() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRegsCoppa)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRegsCoppa)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
 	}
-	o.ortb.Regs.COPPA = int8(val)
+	regs["coppa"] = val
+	o.ortb["regs"] = regs
 	return
 }
 
@@ -2080,165 +2738,221 @@ func (o *OpenRTB) ORTBRegsCoppa() (err error) {
 
 // ORTBImpID will read and set ortb Imp.ID parameter
 func (o *OpenRTB) ORTBImpID() (err error) {
-	val, ok := o.values.GetString(ORTBImpID)
+	val := o.values.Get(ORTBImpID)
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
 	if !ok {
-		o.ortb.Imp[0].ID = uuid.NewV4().String()
-	} else {
-		o.ortb.Imp[0].ID = val
+		imp = []map[string]interface{}{}
 	}
+
+	if len(val) == 0 {
+		imp[0]["id"] = uuid.NewV4().String()
+	} else {
+		imp[0]["id"] = val
+	}
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpDisplayManager will read and set ortb Imp.DisplayManager parameter
 func (o *OpenRTB) ORTBImpDisplayManager() (err error) {
-	val, ok := o.values.GetString(ORTBImpDisplayManager)
-	if !ok {
+	val := o.values.Get(ORTBImpDisplayManager)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].DisplayManager = val
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["displaymanager"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpDisplayManagerVer will read and set ortb Imp.DisplayManagerVer parameter
 func (o *OpenRTB) ORTBImpDisplayManagerVer() (err error) {
-	val, ok := o.values.GetString(ORTBImpDisplayManagerVer)
-	if !ok {
+	val := o.values.Get(ORTBImpDisplayManagerVer)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].DisplayManagerVer = val
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["displaymanagerver"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpInstl will read and set ortb Imp.Instl parameter
 func (o *OpenRTB) ORTBImpInstl() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpInstl)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpInstl)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].Instl = int8(val)
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["instl"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpTagID will read and set ortb Imp.TagId parameter
 func (o *OpenRTB) ORTBImpTagID() (err error) {
-	val, ok := o.values.GetString(ORTBImpTagID)
-	if !ok {
+	val := o.values.Get(ORTBImpTagID)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].TagID = val
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["tagid"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpBidFloor will read and set ortb Imp.BidFloor parameter
 func (o *OpenRTB) ORTBImpBidFloor() (err error) {
-	bidFloor, ok, err := o.values.GetFloat64(ORTBImpBidFloor)
-	if !ok || err != nil {
+	bidFloor := o.values.Get(ORTBImpBidFloor)
+	if len(bidFloor) == 0 {
 		return
 	}
-	if bidFloor > 0 {
-		o.ortb.Imp[0].BidFloor = bidFloor
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	return err
+	imp[0]["bidfloor"] = bidFloor
+	o.ortb["imp"] = imp
+	return
 }
 
 // ORTBImpBidFloorCur will read and set ortb Imp.BidFloorCur parameter
 func (o *OpenRTB) ORTBImpBidFloorCur() (err error) {
-	bidFloor, ok, err := o.values.GetFloat64(ORTBImpBidFloor)
-	if !ok || err != nil {
+	bidFloor := o.values.Get(ORTBImpBidFloor)
+	if len(bidFloor) == 0 {
 		return
 	}
-	if bidFloor > 0 {
-		bidFloorCur, ok := o.values.GetString(ORTBImpBidFloorCur)
-		if ok {
-			o.ortb.Imp[0].BidFloorCur = bidFloorCur
-		} else {
-			o.ortb.Imp[0].BidFloorCur = USD
-		}
+	bidFloorCur := o.values.Get(ORTBImpBidFloorCur)
+	if len(bidFloorCur) == 0 {
+		bidFloorCur = USD
 	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["bidfloorcur"] = bidFloorCur
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpClickBrowser will read and set ortb Imp.ClickBrowser parameter
 func (o *OpenRTB) ORTBImpClickBrowser() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpClickBrowser)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpClickBrowser)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].ClickBrowser = ptrutil.ToPtr(int8(val))
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["clickbrowser"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpSecure will read and set ortb Imp.Secure parameter
 func (o *OpenRTB) ORTBImpSecure() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpSecure)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpSecure)
+	if len(val) == 0 {
 		return
 	}
-	val8 := int8(val)
-	o.ortb.Imp[0].Secure = &val8
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["secure"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpIframeBuster will read and set ortb Imp.IframeBuster parameter
 func (o *OpenRTB) ORTBImpIframeBuster() (err error) {
-	o.ortb.Imp[0].IframeBuster = o.values.GetStringArray(ORTBImpIframeBuster, ArraySeparator)
+	val := o.values.GetStringArray(ORTBImpIframeBuster, ArraySeparator)
+	if len(val) == 0 {
+		return
+	}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["iframebuster"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpExp will read and set ortb Imp.Exp parameter
 func (o *OpenRTB) ORTBImpExp() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpExp)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpExp)
+	if len(val) == 0 {
 		return
 	}
-	o.ortb.Imp[0].Exp = int64(val)
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["exp"] = val
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpPmp will read and set ortb Imp.Pmp parameter
 func (o *OpenRTB) ORTBImpPmp() (err error) {
-	pmp, ok := o.values.GetString(ORTBImpPmp)
-	if !ok {
+	pmp := o.values.Get(ORTBImpPmp)
+	if len(pmp) == 0 {
 		return
 	}
-	ortbPmp := &openrtb2.PMP{}
-	err = json.Unmarshal([]byte(pmp), ortbPmp)
+	ortbPmp := map[string]interface{}{}
+	err = json.Unmarshal([]byte(pmp), &ortbPmp)
 	if err != nil {
 		return
 	}
-	o.ortb.Imp[0].PMP = ortbPmp
-
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+	imp[0]["pmp"] = ortbPmp
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpExtBidder will read and set ortb Imp.Ext.Bidder parameter
 func (o *OpenRTB) ORTBImpExtBidder() (err error) {
-	str, ok := o.values.GetString(ORTBImpExtBidder)
-	if !ok {
+	val := o.values.Get(ORTBImpExtBidder)
+	if len(val) == 0 {
 		return
 	}
 
-	impExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Ext, &impExt)
-		if err != nil {
-			return
-		}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+
+	impExt, ok := imp[0]["ext"].(map[string]interface{})
+	if !ok {
+		impExt = map[string]interface{}{}
 	}
 
 	impExtBidder := map[string]interface{}{}
-	err = json.Unmarshal([]byte(str), &impExtBidder)
+	err = json.Unmarshal([]byte(val), &impExtBidder)
 	if err != nil {
 		return
 	}
 
 	impExt[BIDDER_KEY] = impExtBidder
-	data, err := json.Marshal(impExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Ext = json.RawMessage(data)
+	imp[0]["ext"] = impExt
+	o.ortb["imp"] = imp
 	return
 }
 
@@ -2249,12 +2963,14 @@ func (o *OpenRTB) ORTBImpExtPrebid() (err error) {
 		return
 	}
 
-	impExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Ext, &impExt)
-		if err != nil {
-			return
-		}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
+	}
+
+	impExt, ok := imp[0]["ext"].(map[string]interface{})
+	if !ok {
+		impExt = map[string]interface{}{}
 	}
 
 	impExtPrebid := map[string]interface{}{}
@@ -2264,12 +2980,8 @@ func (o *OpenRTB) ORTBImpExtPrebid() (err error) {
 	}
 
 	impExt[PrebidKey] = impExtPrebid
-	data, err := json.Marshal(impExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Ext = data
+	imp[0]["ext"] = impExt
+	o.ortb["imp"] = imp
 	return
 }
 
@@ -2277,384 +2989,436 @@ func (o *OpenRTB) ORTBImpExtPrebid() (err error) {
 
 // ORTBDeviceUserAgent will read and set ortb Device.UserAgent parameter
 func (o *OpenRTB) ORTBDeviceUserAgent() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceUserAgent)
-	if !ok {
+	val := o.values.Get(ORTBDeviceUserAgent)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.UA = val
+	device["ua"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceIP will read and set ortb Device.IP parameter
 func (o *OpenRTB) ORTBDeviceIP() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceIP)
-	if !ok {
+	val := o.values.Get(ORTBDeviceIP)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.IP = val
+	device["ip"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceIpv6 will read and set ortb Device.Ipv6 parameter
 func (o *OpenRTB) ORTBDeviceIpv6() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceIpv6)
-	if !ok {
+	val := o.values.Get(ORTBDeviceIpv6)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.IPv6 = val
+	device["ipv6"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDnt will read and set ortb Device.Dnt parameter
 func (o *OpenRTB) ORTBDeviceDnt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceDnt)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceDnt)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	val8 := int8(val)
-	o.ortb.Device.DNT = &val8
+	device["dnt"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceLmt will read and set ortb Device.Lmt parameter
 func (o *OpenRTB) ORTBDeviceLmt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceLmt)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceLmt)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	val8 := int8(val)
-	o.ortb.Device.Lmt = &val8
+	device["lmt"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDeviceType will read and set ortb Device.DeviceType parameter
 func (o *OpenRTB) ORTBDeviceDeviceType() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceDeviceType)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceDeviceType)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	deviceType := adcom1.DeviceType(val)
-	o.ortb.Device.DeviceType = deviceType
-
-	return err
+	device["devicetype"] = val
+	o.ortb["device"] = device
+	return
 }
 
 // ORTBDeviceMake will read and set ortb Device.Make parameter
 func (o *OpenRTB) ORTBDeviceMake() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceMake)
-	if !ok {
+	val := o.values.Get(ORTBDeviceMake)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.Make = val
+	device["make"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceModel will read and set ortb Device.Model parameter
 func (o *OpenRTB) ORTBDeviceModel() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceModel)
-	if !ok {
+	val := o.values.Get(ORTBDeviceModel)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.Model = val
+	device["model"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceOs will read and set ortb Device.Os parameter
 func (o *OpenRTB) ORTBDeviceOs() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceOs)
-	if !ok {
+	val := o.values.Get(ORTBDeviceOs)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.OS = val
+	device["os"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceOsv will read and set ortb Device.Osv parameter
 func (o *OpenRTB) ORTBDeviceOsv() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceOsv)
-	if !ok {
+	val := o.values.Get(ORTBDeviceOsv)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.OSV = val
+	device["osv"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceHwv will read and set ortb Device.Hwv parameter
 func (o *OpenRTB) ORTBDeviceHwv() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceHwv)
-	if !ok {
+	val := o.values.Get(ORTBDeviceHwv)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.HWV = val
+	device["hwv"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceWidth will read and set ortb Device.Width parameter
 func (o *OpenRTB) ORTBDeviceWidth() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceWidth)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceWidth)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.W = int64(val)
+	device["w"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceHeight will read and set ortb Device.Height parameter
 func (o *OpenRTB) ORTBDeviceHeight() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceHeight)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceHeight)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.H = int64(val)
+	device["h"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDevicePpi will read and set ortb Device.Ppi parameter
 func (o *OpenRTB) ORTBDevicePpi() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDevicePpi)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDevicePpi)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.PPI = int64(val)
+	device["ppi"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDevicePxRatio will read and set ortb Device.PxRatio parameter
 func (o *OpenRTB) ORTBDevicePxRatio() (err error) {
-	val, ok, err := o.values.GetFloat64(ORTBDevicePxRatio)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDevicePxRatio)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.PxRatio = val
+	device["pxratio"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceJS will read and set ortb Device.JS parameter
 func (o *OpenRTB) ORTBDeviceJS() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceJS)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceJS)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.JS = ptrutil.ToPtr(int8(val))
+	device["js"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoFetch will read and set ortb Device.Geo.Fetch parameter
 func (o *OpenRTB) ORTBDeviceGeoFetch() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoFetch)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoFetch)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.GeoFetch = ptrutil.ToPtr(int8(val))
+	device["geofetch"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceFlashVer will read and set ortb Device.FlashVer parameter
 func (o *OpenRTB) ORTBDeviceFlashVer() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceFlashVer)
-	if !ok {
+	val := o.values.Get(ORTBDeviceFlashVer)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.FlashVer = val
+	device["flashver"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceLanguage will read and set ortb Device.Language parameter
 func (o *OpenRTB) ORTBDeviceLanguage() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceLanguage)
-	if !ok {
+	val := o.values.Get(ORTBDeviceLanguage)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.Language = val
+	device["language"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceCarrier will read and set ortb Device.Carrier parameter
 func (o *OpenRTB) ORTBDeviceCarrier() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceCarrier)
-	if !ok {
+	val := o.values.Get(ORTBDeviceCarrier)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.Carrier = val
+	device["carrier"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceMccmnc will read and set ortb Device.Mccmnc parameter
 func (o *OpenRTB) ORTBDeviceMccmnc() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceMccmnc)
-	if !ok {
+	val := o.values.Get(ORTBDeviceMccmnc)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.MCCMNC = val
+	device["mccmnc"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceConnectionType will read and set ortb Device.ConnectionType parameter
 func (o *OpenRTB) ORTBDeviceConnectionType() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceConnectionType)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceConnectionType)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	connectionType := adcom1.ConnectionType(val)
-	o.ortb.Device.ConnectionType = &connectionType
-
-	return err
+	device["connectiontype"] = val
+	o.ortb["device"] = device
+	return
 }
 
 // ORTBDeviceIfa will read and set ortb Device.Ifa parameter
 func (o *OpenRTB) ORTBDeviceIfa() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceIfa)
-	if !ok {
+	val := o.values.Get(ORTBDeviceIfa)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.IFA = val
+	device["ifa"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDidSha1 will read and set ortb Device.DidSha1 parameter
 func (o *OpenRTB) ORTBDeviceDidSha1() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceDidSha1)
-	if !ok {
+	val := o.values.Get(ORTBDeviceDidSha1)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.DIDSHA1 = val
+	device["didsha1"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDidMd5 will read and set ortb Device.DidMd5 parameter
 func (o *OpenRTB) ORTBDeviceDidMd5() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceDidMd5)
-	if !ok {
+	val := o.values.Get(ORTBDeviceDidMd5)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.DIDMD5 = val
+	device["didmd5"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDpidSha1 will read and set ortb Device.DpidSha1 parameter
 func (o *OpenRTB) ORTBDeviceDpidSha1() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceDpidSha1)
-	if !ok {
+	val := o.values.Get(ORTBDeviceDpidSha1)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.DPIDSHA1 = val
+	device["dpidsha1"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceDpidMd5 will read and set ortb Device.DpidMd5 parameter
 func (o *OpenRTB) ORTBDeviceDpidMd5() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceDpidMd5)
-	if !ok {
+	val := o.values.Get(ORTBDeviceDpidMd5)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.DPIDMD5 = val
+	device["dpidmd5"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceMacSha1 will read and set ortb Device.MacSha1 parameter
 func (o *OpenRTB) ORTBDeviceMacSha1() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceMacSha1)
-	if !ok {
+	val := o.values.Get(ORTBDeviceMacSha1)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.MACSHA1 = val
+	device["macsha1"] = val
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceMacMd5 will read and set ortb Device.MacMd5 parameter
 func (o *OpenRTB) ORTBDeviceMacMd5() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceMacMd5)
-	if !ok {
+	val := o.values.Get(ORTBDeviceMacMd5)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	o.ortb.Device.MACMD5 = val
+	device["macmd5"] = val
+	o.ortb["device"] = device
 	return
 }
 
@@ -2662,212 +3426,261 @@ func (o *OpenRTB) ORTBDeviceMacMd5() (err error) {
 
 // ORTBDeviceGeoLat will read and set ortb Device.Geo.Lat parameter
 func (o *OpenRTB) ORTBDeviceGeoLat() (err error) {
-	val, ok, err := o.values.GetFloat64(ORTBDeviceGeoLat)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoLat)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Lat = ptrutil.ToPtr(val)
+	geo["lat"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoLon will read and set ortb Device.Geo.Lon parameter
 func (o *OpenRTB) ORTBDeviceGeoLon() (err error) {
-	val, ok, err := o.values.GetFloat64(ORTBDeviceGeoLon)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoLon)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Lon = ptrutil.ToPtr(val)
+	geo["lon"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoType will read and set ortb Device.Geo.Type parameter
 func (o *OpenRTB) ORTBDeviceGeoType() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoType)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoType)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	geoType := adcom1.LocationType(val)
-	o.ortb.Device.Geo.Type = geoType
+	geo["type"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoAccuracy will read and set ortb Device.Geo.Accuracy parameter
 func (o *OpenRTB) ORTBDeviceGeoAccuracy() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoAccuracy)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoAccuracy)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Accuracy = int64(val)
+	geo["accuracy"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoLastFix will read and set ortb Device.Geo.LastFix parameter
 func (o *OpenRTB) ORTBDeviceGeoLastFix() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoLastFix)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoLastFix)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.LastFix = int64(val)
+	geo["lastfix"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoIPService will read and set ortb Device.Geo.IPService parameter
 func (o *OpenRTB) ORTBDeviceGeoIPService() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoIPService)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoIPService)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	IPService := adcom1.IPLocationService(val)
-	o.ortb.Device.Geo.IPService = IPService
+	geo["ipservice"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoCountry will read and set ortb Device.Geo.Country parameter
 func (o *OpenRTB) ORTBDeviceGeoCountry() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoCountry)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoCountry)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Country = val
+	geo["country"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoRegion will read and set ortb Device.Geo.Region parameter
 func (o *OpenRTB) ORTBDeviceGeoRegion() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoRegion)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoRegion)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Region = val
+	geo["region"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoRegionFips104 will read and set ortb Device.Geo.RegionFips104 parameter
 func (o *OpenRTB) ORTBDeviceGeoRegionFips104() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoRegionFips104)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoRegionFips104)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.RegionFIPS104 = val
+	geo["regionfips104"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoMetro will read and set ortb Device.Geo.Metro parameter
 func (o *OpenRTB) ORTBDeviceGeoMetro() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoMetro)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoMetro)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.Metro = val
+	geo["metro"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoCity will read and set ortb Device.Geo.City parameter
 func (o *OpenRTB) ORTBDeviceGeoCity() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoCity)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoCity)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.City = val
+	geo["city"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoZip will read and set ortb Device.Geo.Zip parameter
 func (o *OpenRTB) ORTBDeviceGeoZip() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceGeoZip)
-	if !ok {
+	val := o.values.Get(ORTBDeviceGeoZip)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.ZIP = val
+	geo["zip"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoUtcOffset will read and set ortb Device.Geo.UtcOffset parameter
 func (o *OpenRTB) ORTBDeviceGeoUtcOffset() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceGeoUtcOffset)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBDeviceGeoUtcOffset)
+	if len(val) == 0 {
 		return
 	}
-
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.Device.Geo.UTCOffset = int64(val)
+	geo["utcoffset"] = val
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
@@ -2875,79 +3688,91 @@ func (o *OpenRTB) ORTBDeviceGeoUtcOffset() (err error) {
 
 // ORTBUserID will read and set ortb UserID parameter
 func (o *OpenRTB) ORTBUserID() (err error) {
-	val, ok := o.values.GetString(ORTBUserID)
-	if !ok {
+	val := o.values.Get(ORTBUserID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.ID = val
+	user["id"] = val
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserBuyerUID will read and set ortb UserBuyerUID parameter
 func (o *OpenRTB) ORTBUserBuyerUID() (err error) {
-	val, ok := o.values.GetString(ORTBUserBuyerUID)
-	if !ok {
+	val := o.values.Get(ORTBUserBuyerUID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.BuyerUID = val
+	user["buyeruid"] = val
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserYob will read and set ortb UserYob parameter
 func (o *OpenRTB) ORTBUserYob() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserYob)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserYob)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.Yob = int64(val)
+	user["yob"] = val
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGender will read and set ortb UserGender parameter
 func (o *OpenRTB) ORTBUserGender() (err error) {
-	val, ok := o.values.GetString(ORTBUserGender)
-	if !ok {
+	val := o.values.Get(ORTBUserGender)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.Gender = val
+	user["gender"] = val
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserKeywords will read and set ortb UserKeywords parameter
 func (o *OpenRTB) ORTBUserKeywords() (err error) {
-	val, ok := o.values.GetString(ORTBUserKeywords)
-	if !ok {
+	val := o.values.Get(ORTBUserKeywords)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.Keywords = val
+	user["keywords"] = val
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserCustomData will read and set ortb UserCustomData parameter
 func (o *OpenRTB) ORTBUserCustomData() (err error) {
-	val, ok := o.values.GetString(ORTBUserCustomData)
-	if !ok {
+	val := o.values.Get(ORTBUserCustomData)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	o.ortb.User.CustomData = val
+	user["customdata"] = val
+	o.ortb["user"] = user
 	return
 }
 
@@ -2955,211 +3780,261 @@ func (o *OpenRTB) ORTBUserCustomData() (err error) {
 
 // ORTBUserGeoLat will read and set ortb UserGeo.Lat parameter
 func (o *OpenRTB) ORTBUserGeoLat() (err error) {
-	val, ok, err := o.values.GetFloat64(ORTBUserGeoLat)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoLat)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Lat = ptrutil.ToPtr(val)
+	geo["lat"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoLon will read and set ortb UserGeo.Lon parameter
 func (o *OpenRTB) ORTBUserGeoLon() (err error) {
-	val, ok, err := o.values.GetFloat64(ORTBUserGeoLon)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoLon)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Lon = ptrutil.ToPtr(val)
+	geo["lon"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoType will read and set ortb UserGeo.Type parameter
 func (o *OpenRTB) ORTBUserGeoType() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserGeoType)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoType)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	geoType := adcom1.LocationType(val)
-	o.ortb.User.Geo.Type = geoType
+	geo["type"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoAccuracy will read and set ortb UserGeo.Accuracy parameter
 func (o *OpenRTB) ORTBUserGeoAccuracy() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserGeoAccuracy)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoAccuracy)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Accuracy = int64(val)
+	geo["accuracy"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoLastFix will read and set ortb UserGeo.LastFix parameter
 func (o *OpenRTB) ORTBUserGeoLastFix() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserGeoLastFix)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoLastFix)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.LastFix = int64(val)
+	geo["lastfix"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoIPService will read and set ortb UserGeo.IPService parameter
 func (o *OpenRTB) ORTBUserGeoIPService() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserGeoIPService)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoIPService)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	IPService := adcom1.IPLocationService(val)
-	o.ortb.User.Geo.IPService = IPService
+	geo["ipservice"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoCountry will read and set ortb UserGeo.Country parameter
 func (o *OpenRTB) ORTBUserGeoCountry() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoCountry)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoCountry)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Country = val
+	geo["country"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoRegion will read and set ortb UserGeo.Region parameter
 func (o *OpenRTB) ORTBUserGeoRegion() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoRegion)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoRegion)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Region = val
+	geo["region"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoRegionFips104 will read and set ortb UserGeo.RegionFips104 parameter
 func (o *OpenRTB) ORTBUserGeoRegionFips104() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoRegionFips104)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoRegionFips104)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.RegionFIPS104 = val
+	geo["regionfips104"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoMetro will read and set ortb UserGeo.Metro parameter
 func (o *OpenRTB) ORTBUserGeoMetro() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoMetro)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoMetro)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.Metro = val
+	geo["metro"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoCity will read and set ortb UserGeo.City parameter
 func (o *OpenRTB) ORTBUserGeoCity() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoCity)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoCity)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.City = val
+	geo["city"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoZip will read and set ortb UserGeo.Zip parameter
 func (o *OpenRTB) ORTBUserGeoZip() (err error) {
-	val, ok := o.values.GetString(ORTBUserGeoZip)
-	if !ok {
+	val := o.values.Get(ORTBUserGeoZip)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.ZIP = val
+	geo["zip"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoUtcOffset will read and set ortb UserGeo.UtcOffset parameter
 func (o *OpenRTB) ORTBUserGeoUtcOffset() (err error) {
-	val, ok, err := o.values.GetInt(ORTBUserGeoUtcOffset)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBUserGeoUtcOffset)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-	o.ortb.User.Geo.UTCOffset = int64(val)
+	geo["utcoffset"] = val
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
@@ -3167,17 +4042,14 @@ func (o *OpenRTB) ORTBUserGeoUtcOffset() (err error) {
 
 // ORTBProfileID will read and set ortb ProfileId parameter
 func (o *OpenRTB) ORTBProfileID() (err error) {
-	val, ok, err := o.values.GetInt(ORTBProfileID)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBProfileID)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3187,28 +4059,20 @@ func (o *OpenRTB) ORTBProfileID() (err error) {
 	wrapperExt[ORTBExtProfileId] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBVersionID will read and set ortb VersionId parameter
 func (o *OpenRTB) ORTBVersionID() (err error) {
-	val, ok, err := o.values.GetInt(ORTBVersionID)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBVersionID)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3218,29 +4082,20 @@ func (o *OpenRTB) ORTBVersionID() (err error) {
 	wrapperExt[ORTBExtVersionId] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
-
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBSSAuctionFlag will read and set ortb SSAuctionFlag parameter
 func (o *OpenRTB) ORTBSSAuctionFlag() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSSAuctionFlag)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSSAuctionFlag)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3248,30 +4103,21 @@ func (o *OpenRTB) ORTBSSAuctionFlag() (err error) {
 		wrapperExt = map[string]interface{}{}
 	}
 	wrapperExt[ORTBExtSSAuctionFlag] = val
-
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBSumryDisableFlag will read and set ortb SumryDisableFlag parameter
 func (o *OpenRTB) ORTBSumryDisableFlag() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSumryDisableFlag)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSumryDisableFlag)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3281,28 +4127,20 @@ func (o *OpenRTB) ORTBSumryDisableFlag() (err error) {
 	wrapperExt[ORTBExtSumryDisableFlag] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBClientConfigFlag will read and set ortb ClientConfigFlag parameter
 func (o *OpenRTB) ORTBClientConfigFlag() (err error) {
-	val, ok, err := o.values.GetInt(ORTBClientConfigFlag)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBClientConfigFlag)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3312,28 +4150,20 @@ func (o *OpenRTB) ORTBClientConfigFlag() (err error) {
 	wrapperExt[ORTBExtClientConfigFlag] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBSupportDeals will read and set ortb ClientConfigFlag parameter
 func (o *OpenRTB) ORTBSupportDeals() (err error) {
-	val, ok, err := o.values.GetBoolean(ORTBSupportDeals)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBSupportDeals)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3343,28 +4173,20 @@ func (o *OpenRTB) ORTBSupportDeals() (err error) {
 	wrapperExt[ORTBExtSupportDeals] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBIncludeBrandCategory will read and set ortb ORTBIncludeBrandCategory parameter
 func (o *OpenRTB) ORTBIncludeBrandCategory() (err error) {
-	val, ok, err := o.values.GetInt(ORTBIncludeBrandCategory)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBIncludeBrandCategory)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3374,28 +4196,20 @@ func (o *OpenRTB) ORTBIncludeBrandCategory() (err error) {
 	wrapperExt[ORTBExtIncludeBrandCategory] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
-	return err
+	o.ortb["ext"] = reqExt
+	return
 }
 
 // ORTBSSAI will read and set ortb ssai parameter
 func (o *OpenRTB) ORTBSSAI() (err error) {
-	val, ok := o.values.GetString(ORTBSSAI)
-	if !ok {
+	val := o.values.Get(ORTBSSAI)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3405,12 +4219,7 @@ func (o *OpenRTB) ORTBSSAI() (err error) {
 	wrapperExt[ORTBExtSsai] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
@@ -3421,12 +4230,9 @@ func (o *OpenRTB) ORTBKeyValues() (err error) {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3436,13 +4242,8 @@ func (o *OpenRTB) ORTBKeyValues() (err error) {
 	wrapperExt[ORTBExtKV] = val
 
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-	o.ortb.Ext = data
-
-	return nil
+	o.ortb["ext"] = reqExt
+	return
 }
 
 // ORTBKeyValuesMap read and set keyval parameter
@@ -3452,12 +4253,9 @@ func (o *OpenRTB) ORTBKeyValuesMap() (err error) {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
@@ -3465,43 +4263,32 @@ func (o *OpenRTB) ORTBKeyValuesMap() (err error) {
 		wrapperExt = map[string]interface{}{}
 	}
 	wrapperExt[ORTBExtKV] = val
-
 	reqExt[ORTBExtWrapper] = wrapperExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-	o.ortb.Ext = data
-
-	return nil
+	o.ortb["ext"] = reqExt
+	return
 }
 
 /*********************** User.Ext.Consent ***********************/
 
 // ORTBUserExtConsent will read and set ortb User.Ext.Consent parameter
 func (o *OpenRTB) ORTBUserExtConsent() (err error) {
-	val, ok := o.values.GetString(ORTBUserExtConsent)
-	if !ok {
+	val := o.values.Get(ORTBUserExtConsent)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	userExt := map[string]interface{}{}
-	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
-		if err != nil {
-			return
-		}
+
+	userExt, ok := user["ext"].(map[string]interface{})
+	if !ok {
+		userExt = map[string]interface{}{}
 	}
 	userExt[ORTBExtConsent] = val
-
-	data, err := json.Marshal(userExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Ext = data
+	user["ext"] = userExt
+	o.ortb["user"] = user
 	return
 }
 
@@ -3509,59 +4296,45 @@ func (o *OpenRTB) ORTBUserExtConsent() (err error) {
 
 // ORTBRegsExtGdpr will read and set ortb Regs.Ext.Gdpr parameter
 func (o *OpenRTB) ORTBRegsExtGdpr() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRegsExtGdpr)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRegsExtGdpr)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
 	}
-	val8 := int8(val)
-	o.ortb.Regs.GDPR = &val8
+	regs["gdpr"] = val
 
-	regsExt := map[string]interface{}{}
-	if o.ortb.Regs.Ext != nil {
-		err = json.Unmarshal(o.ortb.Regs.Ext, &regsExt)
-		if err != nil {
-			return
-		}
+	regsExt, ok := regs["ext"].(map[string]interface{})
+	if !ok {
+		regsExt = map[string]interface{}{}
 	}
 	regsExt[ORTBExtGDPR] = val
-
-	data, err := json.Marshal(regsExt)
-	if err != nil {
-		return
-	}
-	o.ortb.Regs.Ext = data
+	regs["ext"] = regsExt
+	o.ortb["regs"] = regs
 	return
 }
 
 // ORTBRegsExtUSPrivacy will read and set ortb Regs.Ext.USPrivacy parameter
 func (o *OpenRTB) ORTBRegsExtUSPrivacy() (err error) {
-	val, ok := o.values.GetString(ORTBRegsExtUSPrivacy)
-	if !ok {
+	val := o.values.Get(ORTBRegsExtUSPrivacy)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
 	}
-	o.ortb.Regs.USPrivacy = val
+	regs["us_privacy"] = val
 
-	regsExt := map[string]interface{}{}
-	if o.ortb.Regs.Ext != nil {
-		err = json.Unmarshal(o.ortb.Regs.Ext, &regsExt)
-		if err != nil {
-			return
-		}
+	regsExt, ok := regs["ext"].(map[string]interface{})
+	if !ok {
+		regsExt = map[string]interface{}{}
 	}
 	regsExt[ORTBExtUSPrivacy] = val
-
-	data, err := json.Marshal(regsExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Regs.Ext = data
+	regs["ext"] = regsExt
+	o.ortb["regs"] = regs
 	return
 }
 
@@ -3569,193 +4342,176 @@ func (o *OpenRTB) ORTBRegsExtUSPrivacy() (err error) {
 
 // ORTBImpVideoExtOffset will read and set ortb Imp.Vid.Ext.Offset parameter
 func (o *OpenRTB) ORTBImpVideoExtOffset() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtOffset)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtOffset)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	videoExt[ORTBExtAdPodOffset] = val
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExtAdPodMinAds will read and set ortb Imp.Vid.Ext.AdPod.MinAds parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMinAds() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMinAds)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtAdPodMinAds)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodMinAds] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExtAdPodMaxAds will read and set ortb Imp.Vid.Ext.AdPod.MaxAds parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMaxAds() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMaxAds)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtAdPodMaxAds)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodMaxAds] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExtAdPodMinDuration will read and set ortb Imp.Vid.Ext.AdPod.MinDuration parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMinDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMinDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtAdPodMinDuration)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodMinDuration] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExtAdPodMaxDuration will read and set ortb Imp.Vid.Ext.AdPod.MaxDuration parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMaxDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMaxDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtAdPodMaxDuration)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodMaxDuration] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExtAdPodAdvertiserExclusionPercent will read and set ortb Imp.Vid.Ext.AdPod.AdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodAdvertiserExclusionPercent() (err error) {
-	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBImpVideoExtAdPodAdvertiserExclusionPercent)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodAdvertiserExclusionPercent] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
@@ -3765,30 +4521,27 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodIABCategoryExclusionPercent() (err error) 
 	if !ok || err != nil {
 		return
 	}
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	videoExt := map[string]interface{}{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &videoExt)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
+	}
 	adpod, ok := videoExt[ORTBExtAdPod].(map[string]interface{})
 	if !ok {
 		adpod = map[string]interface{}{}
 	}
 	adpod[ORTBExtAdPodIABCategoryExclusionPercent] = val
-
 	videoExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(videoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Imp[0].Video.Ext = data
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
@@ -3796,17 +4549,14 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodIABCategoryExclusionPercent() (err error) 
 
 // ORTBRequestExtAdPodMinAds will read and set ortb Request.Ext.AdPod.MinAds parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMinAds() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMinAds)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodMinAds)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3816,28 +4566,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodMinAds() (err error) {
 	adpod[ORTBExtAdPodMinAds] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodMaxAds will read and set ortb Request.Ext.AdPod.MaxAds parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMaxAds() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMaxAds)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodMaxAds)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3847,28 +4589,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodMaxAds() (err error) {
 	adpod[ORTBExtAdPodMaxAds] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodMinDuration will read and set ortb Request.Ext.AdPod.MinDuration parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMinDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMinDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodMinDuration)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3878,28 +4612,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodMinDuration() (err error) {
 	adpod[ORTBExtAdPodMinDuration] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodMaxDuration will read and set ortb Request.Ext.AdPod.MaxDuration parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMaxDuration() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMaxDuration)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodMaxDuration)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3909,28 +4635,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodMaxDuration() (err error) {
 	adpod[ORTBExtAdPodMaxDuration] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodAdvertiserExclusionPercent will read and set ortb Request.Ext.AdPod.AdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionPercent() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodAdvertiserExclusionPercent)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3940,28 +4658,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionPercent() (err error) {
 	adpod[ORTBExtAdPodAdvertiserExclusionPercent] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodIABCategoryExclusionPercent will read and set ortb Request.Ext.AdPod.IABCategoryExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionPercent() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodIABCategoryExclusionPercent)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodIABCategoryExclusionPercent)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -3971,28 +4681,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionPercent() (err error) {
 	adpod[ORTBExtAdPodIABCategoryExclusionPercent] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent will read and set ortb Request.Ext.AdPod.CrossPodAdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -4002,28 +4704,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent() (err e
 	adpod[ORTBExtAdPodCrossPodAdvertiserExclusionPercent] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent will read and set ortb Request.Ext.AdPod.CrossPodIABCategoryExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -4033,28 +4727,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent() (err 
 	adpod[ORTBExtAdPodCrossPodIABCategoryExclusionPercent] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodIABCategoryExclusionWindow will read and set ortb Request.Ext.AdPod.IABCategoryExclusionWindow parameter
 func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionWindow() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodIABCategoryExclusionWindow)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodIABCategoryExclusionWindow)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -4064,28 +4750,20 @@ func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionWindow() (err error) {
 	adpod[ORTBExtAdPodIABCategoryExclusionWindow] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBRequestExtAdPodAdvertiserExclusionWindow will read and set ortb Request.Ext.AdPod.AdvertiserExclusionWindow parameter
 func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionWindow() (err error) {
-	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodAdvertiserExclusionWindow)
-	if !ok || err != nil {
+	val := o.values.Get(ORTBRequestExtAdPodAdvertiserExclusionWindow)
+	if len(val) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	adpod, ok := reqExt[ORTBExtAdPod].(map[string]interface{})
@@ -4095,12 +4773,7 @@ func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionWindow() (err error) {
 	adpod[ORTBExtAdPodAdvertiserExclusionWindow] = val
 
 	reqExt[ORTBExtAdPod] = adpod
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
@@ -4108,653 +4781,509 @@ func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionWindow() (err error) {
 
 // ORTBBidRequestExt will read and set ortb BidRequest.Ext parameter
 func (o *OpenRTB) ORTBBidRequestExt(key string, value *string) (err error) {
-	ext := JSONNode{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &ext)
-		if err != nil {
-			return
-		}
+	ext, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		ext = map[string]interface{}{}
 	}
 	SetValue(ext, key, value)
 
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = ext
 	return
 }
 
 // ORTBSourceExt will read and set ortb Source.Ext parameter
 func (o *OpenRTB) ORTBSourceExt(key string, value *string) (err error) {
-	if o.ortb.Source == nil {
-		o.ortb.Source = &openrtb2.Source{}
-	}
-	ext := JSONNode{}
-	if o.ortb.Source.Ext != nil {
-		err = json.Unmarshal(o.ortb.Source.Ext, &ext)
-		if err != nil {
-			return
-		}
-	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
+	source, ok := o.ortb["source"].(map[string]interface{})
+	if !ok {
+		source = map[string]interface{}{}
 	}
 
-	o.ortb.Source.Ext = data
+	sourceExt, ok := source["ext"].(map[string]interface{})
+	if !ok {
+		sourceExt = map[string]interface{}{}
+	}
+
+	SetValue(sourceExt, key, value)
+	source["ext"] = sourceExt
+	o.ortb["source"] = source
 	return
 }
 
 // ORTBRegsExt will read and set ortb Regs.Ext parameter
 func (o *OpenRTB) ORTBRegsExt(key string, value *string) (err error) {
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
-	}
-	ext := JSONNode{}
-	if o.ortb.Regs.Ext != nil {
-		err = json.Unmarshal(o.ortb.Regs.Ext, &ext)
-		if err != nil {
-			return
-		}
-	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
 	}
 
-	o.ortb.Regs.Ext = data
+	regsExt, ok := regs["ext"].(map[string]interface{})
+	if !ok {
+		regsExt = map[string]interface{}{}
+	}
+	SetValue(regsExt, key, value)
+	regs["ext"] = regsExt
+	o.ortb["regs"] = regs
 	return
 }
 
 // ORTBImpExt will read and set ortb Imp.Ext parameter
 func (o *OpenRTB) ORTBImpExt(key string, value *string) (err error) {
-	ext := JSONNode{}
-	if o.ortb.Imp[0].Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Ext, &ext)
-		if err != nil {
-			return
-		}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
+	impExt, ok := imp[0]["ext"].(map[string]interface{})
+	if !ok {
+		impExt = map[string]interface{}{}
 	}
+	SetValue(impExt, key, value)
 
-	o.ortb.Imp[0].Ext = data
+	imp[0]["ext"] = impExt
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBImpVideoExt will read and set ortb Imp.Video.Ext parameter
 func (o *OpenRTB) ORTBImpVideoExt(key string, value *string) (err error) {
-	if o.ortb.Imp[0].Video == nil {
-		o.ortb.Imp[0].Video = &openrtb2.Video{}
+	imp, ok := o.ortb["imp"].([]map[string]interface{})
+	if !ok {
+		imp = []map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.Imp[0].Video.Ext != nil {
-		err = json.Unmarshal(o.ortb.Imp[0].Video.Ext, &ext)
-		if err != nil {
-			return
-		}
+	video, ok := imp[0]["video"].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
+	videoExt, ok := video["ext"].(map[string]interface{})
+	if !ok {
+		videoExt = map[string]interface{}{}
 	}
 
-	o.ortb.Imp[0].Video.Ext = data
+	SetValue(videoExt, key, value)
+	video["ext"] = videoExt
+	imp[0]["video"] = video
+	o.ortb["imp"] = imp
 	return
 }
 
 // ORTBSiteExt will read and set ortb Site.Ext parameter
 func (o *OpenRTB) ORTBSiteExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.Site.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Ext, &ext)
-		if err != nil {
-			return
-		}
+	siteExt, ok := site["ext"].(map[string]interface{})
+	if !ok {
+		siteExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Ext = data
+	SetValue(siteExt, key, value)
+	site["ext"] = siteExt
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentNetworkExt will read and set ortb Site.Content.Network.Ext parameter
 func (o *OpenRTB) ORTBSiteContentNetworkExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Network == nil {
-		o.ortb.Site.Content.Network = &openrtb2.Network{}
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.Site.Content.Network.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Network.Ext, &ext)
-		if err != nil {
-			return
-		}
+	networkExt, ok := network["ext"].(map[string]interface{})
+	if !ok {
+		networkExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Content.Network.Ext = data
+	SetValue(networkExt, key, value)
+	network["ext"] = networkExt
+	content["network"] = network
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentChannelExt will read and set ortb Site.Content.Channel.Ext parameter
 func (o *OpenRTB) ORTBSiteContentChannelExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Channel == nil {
-		o.ortb.Site.Content.Channel = &openrtb2.Channel{}
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.Site.Content.Channel.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Channel.Ext, &ext)
-		if err != nil {
-			return
-		}
+	channelExt, ok := channel["ext"].(map[string]interface{})
+	if !ok {
+		channelExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Content.Channel.Ext = data
+	SetValue(channelExt, key, value)
+	channel["ext"] = channelExt
+	content["channel"] = channel
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBAppExt will read and set ortb App.Ext parameter
 func (o *OpenRTB) ORTBAppExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-
-	ext := JSONNode{}
-	if o.ortb.App.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Ext, &ext)
-		if err != nil {
-			return
-		}
+	appExt, ok := app["ext"].(map[string]interface{})
+	if !ok {
+		appExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Ext = data
+	SetValue(appExt, key, value)
+	app["ext"] = appExt
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentNetworkExt will read and set ortb App.Content.Network.Ext parameter
 func (o *OpenRTB) ORTBAppContentNetworkExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Network == nil {
-		o.ortb.App.Content.Network = &openrtb2.Network{}
+	network, ok := content["network"].(map[string]interface{})
+	if !ok {
+		network = map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.App.Content.Network.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Content.Network.Ext, &ext)
-		if err != nil {
-			return
-		}
+	networkExt, ok := network["ext"].(map[string]interface{})
+	if !ok {
+		networkExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Content.Network.Ext = data
+	SetValue(networkExt, key, value)
+	network["ext"] = networkExt
+	content["network"] = network
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentChannelExt will read and set ortb App.Content.Channel.Ext parameter
 func (o *OpenRTB) ORTBAppContentChannelExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Channel == nil {
-		o.ortb.App.Content.Channel = &openrtb2.Channel{}
+	channel, ok := content["channel"].(map[string]interface{})
+	if !ok {
+		channel = map[string]interface{}{}
 	}
-	ext := JSONNode{}
-	if o.ortb.App.Content.Channel.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Content.Channel.Ext, &ext)
-		if err != nil {
-			return
-		}
+	channelExt, ok := channel["ext"].(map[string]interface{})
+	if !ok {
+		channelExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Content.Channel.Ext = data
+	SetValue(channelExt, key, value)
+	channel["ext"] = channelExt
+	content["channel"] = channel
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBSitePublisherExt will read and set ortb Site.Publisher.Ext parameter
 func (o *OpenRTB) ORTBSitePublisherExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Publisher == nil {
-		o.ortb.Site.Publisher = &openrtb2.Publisher{}
+	publisher, ok := site["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-
-	ext := JSONNode{}
-	if o.ortb.Site.Publisher.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Publisher.Ext, &ext)
-		if err != nil {
-			return
-		}
+	publisherExt, ok := publisher["ext"].(map[string]interface{})
+	if !ok {
+		publisherExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Publisher.Ext = data
+	SetValue(publisherExt, key, value)
+	publisher["ext"] = publisherExt
+	site["publisher"] = publisher
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentExt will read and set ortb Site.Content.Ext parameter
 func (o *OpenRTB) ORTBSiteContentExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-
-	ext := JSONNode{}
-	if o.ortb.Site.Content.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Ext, &ext)
-		if err != nil {
-			return
-		}
+	contentExt, ok := content["ext"].(map[string]interface{})
+	if !ok {
+		contentExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Content.Ext = data
+	SetValue(contentExt, key, value)
+	content["ext"] = contentExt
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBSiteContentProducerExt will read and set ortb Site.Content.Producer.Ext parameter
 func (o *OpenRTB) ORTBSiteContentProducerExt(key string, value *string) (err error) {
-	if o.ortb.Site == nil {
-		o.ortb.Site = &openrtb2.Site{}
+	site, ok := o.ortb["site"].(map[string]interface{})
+	if !ok {
+		site = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content == nil {
-		o.ortb.Site.Content = &openrtb2.Content{}
+	content, ok := site["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.Site.Content.Producer == nil {
-		o.ortb.Site.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-
-	ext := JSONNode{}
-	if o.ortb.Site.Content.Producer.Ext != nil {
-		err = json.Unmarshal(o.ortb.Site.Content.Producer.Ext, &ext)
-		if err != nil {
-			return
-		}
+	producerExt, ok := producer["ext"].(map[string]interface{})
+	if !ok {
+		producerExt = map[string]interface{}{}
 	}
-	SetValue(ext, key, value)
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Site.Content.Producer.Ext = data
+	SetValue(producerExt, key, value)
+	producer["ext"] = producerExt
+	content["producer"] = producer
+	site["content"] = content
+	o.ortb["site"] = site
 	return
 }
 
 // ORTBAppPublisherExt will read and set ortb App.Publisher.Ext parameter
 func (o *OpenRTB) ORTBAppPublisherExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Publisher == nil {
-		o.ortb.App.Publisher = &openrtb2.Publisher{}
+	publisher, ok := app["publisher"].(map[string]interface{})
+	if !ok {
+		publisher = map[string]interface{}{}
 	}
-	pubExt := JSONNode{}
-	if o.ortb.App.Publisher.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Publisher.Ext, &pubExt)
-		if err != nil {
-			return
-		}
+	pubExt, ok := publisher["ext"].(map[string]interface{})
+	if !ok {
+		pubExt = map[string]interface{}{}
 	}
 	SetValue(pubExt, key, value)
-
-	data, err := json.Marshal(pubExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Publisher.Ext = data
+	publisher["ext"] = pubExt
+	app["publisher"] = publisher
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentExt will read and set ortb App.Content.Ext parameter
 func (o *OpenRTB) ORTBAppContentExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-
-	cntExt := JSONNode{}
-	if o.ortb.App.Content.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Content.Ext, &cntExt)
-		if err != nil {
-			return
-		}
+	cntExt, ok := content["ext"].(map[string]interface{})
+	if !ok {
+		cntExt = map[string]interface{}{}
 	}
 	SetValue(cntExt, key, value)
-
-	data, err := json.Marshal(cntExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Content.Ext = data
+	content["ext"] = cntExt
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBAppContentProducerExt will read and set ortb App.Content.Producer.Ext parameter
 func (o *OpenRTB) ORTBAppContentProducerExt(key string, value *string) (err error) {
-	if o.ortb.App == nil {
-		o.ortb.App = &openrtb2.App{}
+	app, ok := o.ortb["app"].(map[string]interface{})
+	if !ok {
+		app = map[string]interface{}{}
 	}
-	if o.ortb.App.Content == nil {
-		o.ortb.App.Content = &openrtb2.Content{}
+	content, ok := app["content"].(map[string]interface{})
+	if !ok {
+		content = map[string]interface{}{}
 	}
-	if o.ortb.App.Content.Producer == nil {
-		o.ortb.App.Content.Producer = &openrtb2.Producer{}
+	producer, ok := content["producer"].(map[string]interface{})
+	if !ok {
+		producer = map[string]interface{}{}
 	}
-
-	pdcExt := JSONNode{}
-	if o.ortb.App.Content.Producer.Ext != nil {
-		err = json.Unmarshal(o.ortb.App.Content.Producer.Ext, &pdcExt)
-		if err != nil {
-			return
-		}
+	pdcExt, ok := producer["ext"].(map[string]interface{})
+	if !ok {
+		pdcExt = map[string]interface{}{}
 	}
 	SetValue(pdcExt, key, value)
-
-	data, err := json.Marshal(pdcExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.App.Content.Producer.Ext = data
+	producer["ext"] = pdcExt
+	content["producer"] = producer
+	app["content"] = content
+	o.ortb["app"] = app
 	return
 }
 
 // ORTBDeviceExt will read and set ortb Device.Ext parameter
 func (o *OpenRTB) ORTBDeviceExt(key string, value *string) (err error) {
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-
-	deviceExt := JSONNode{}
-	if o.ortb.Device.Ext != nil {
-		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
-		if err != nil {
-			return
-		}
+	deviceExt, ok := device["ext"].(map[string]interface{})
+	if !ok {
+		deviceExt = map[string]interface{}{}
 	}
 	SetValue(deviceExt, key, value)
-
-	data, err := json.Marshal(deviceExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Device.Ext = data
+	device["ext"] = deviceExt
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceGeoExt will read and set ortb Device.Geo.Ext parameter
 func (o *OpenRTB) ORTBDeviceGeoExt(key string, value *string) (err error) {
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-	if o.ortb.Device.Geo == nil {
-		o.ortb.Device.Geo = &openrtb2.Geo{}
+	geo, ok := device["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-
-	deviceGeoExt := JSONNode{}
-	if o.ortb.Device.Geo.Ext != nil {
-		err = json.Unmarshal(o.ortb.Device.Geo.Ext, &deviceGeoExt)
-		if err != nil {
-			return
-		}
+	geoExt, ok := geo["ext"].(map[string]interface{})
+	if !ok {
+		geoExt = map[string]interface{}{}
 	}
-	SetValue(deviceGeoExt, key, value)
-
-	data, err := json.Marshal(deviceGeoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Device.Geo.Ext = data
+	SetValue(geoExt, key, value)
+	geo["ext"] = geoExt
+	device["geo"] = geo
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBUserExt will read and set ortb User.Ext parameter
 func (o *OpenRTB) ORTBUserExt(key string, value *string) (err error) {
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	userExt := JSONNode{}
-	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
-		if err != nil {
-			return
-		}
+	userExt, ok := user["ext"].(map[string]interface{})
+	if !ok {
+		userExt = map[string]interface{}{}
 	}
-	SetValue(userExt, key, value)
-
-	data, err := json.Marshal(userExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Ext = data
+	userExt[key] = value
+	user["ext"] = userExt
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserGeoExt will read and set ortb User.Geo.Ext parameter
 func (o *OpenRTB) ORTBUserGeoExt(key string, value *string) (err error) {
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	if o.ortb.User.Geo == nil {
-		o.ortb.User.Geo = &openrtb2.Geo{}
+	geo, ok := user["geo"].(map[string]interface{})
+	if !ok {
+		geo = map[string]interface{}{}
 	}
-
-	geoExt := JSONNode{}
-	if o.ortb.User.Geo.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Geo.Ext, &geoExt)
-		if err != nil {
-			return
-		}
+	geoExt, ok := geo["ext"].(map[string]interface{})
+	if !ok {
+		geoExt = map[string]interface{}{}
 	}
 	SetValue(geoExt, key, value)
-
-	data, err := json.Marshal(geoExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Geo.Ext = data
+	geo["ext"] = geoExt
+	user["geo"] = geo
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserExtConsent will read and set ortb User.Ext.Consent parameter
 func (o *OpenRTB) ORTBDeviceExtIfaType() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceExtIfaType)
-	if !ok {
+	val := o.values.Get(ORTBDeviceExtIfaType)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-
-	deviceExt := map[string]interface{}{}
-	if o.ortb.Device.Ext != nil {
-		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
-		if err != nil {
-			return
-		}
+	deviceExt, ok := device["ext"].(map[string]interface{})
+	if !ok {
+		deviceExt = map[string]interface{}{}
 	}
 	deviceExt[ORTBExtIfaType] = val
-
-	data, err := json.Marshal(deviceExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Device.Ext = data
+	device["ext"] = deviceExt
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceExtSessionID will read and set ortb device.Ext.SessionID parameter
 func (o *OpenRTB) ORTBDeviceExtSessionID() (err error) {
-	val, ok := o.values.GetString(ORTBDeviceExtSessionID)
-	if !ok {
+	val := o.values.Get(ORTBDeviceExtSessionID)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
 
-	deviceExt := map[string]interface{}{}
-	if o.ortb.Device.Ext != nil {
-		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
-		if err != nil {
-			return
-		}
+	deviceExt, ok := device["ext"].(map[string]interface{})
+	if !ok {
+		deviceExt = map[string]interface{}{}
 	}
 	deviceExt[ORTBExtSessionID] = val
-
-	data, err := json.Marshal(deviceExt)
-	if err != nil {
-		return
-	}
-	o.ortb.Device.Ext = data
+	device["ext"] = deviceExt
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBDeviceExtATTS will read and set ortb device.ext.atts parameter
 func (o *OpenRTB) ORTBDeviceExtATTS() (err error) {
-	value, ok, err := o.values.GetFloat64(ORTBDeviceExtATTS)
-	if !ok || err != nil {
+	value := o.values.Get(ORTBDeviceExtATTS)
+	if len(value) == 0 {
 		return
 	}
-
-	if o.ortb.Device == nil {
-		o.ortb.Device = &openrtb2.Device{}
+	device, ok := o.ortb["device"].(map[string]interface{})
+	if !ok {
+		device = map[string]interface{}{}
 	}
-
-	deviceExt := map[string]interface{}{}
-	if o.ortb.Device.Ext != nil {
-		err = json.Unmarshal(o.ortb.Device.Ext, &deviceExt)
-		if err != nil {
-			return
-		}
+	deviceExt, ok := device["ext"].(map[string]interface{})
+	if !ok {
+		deviceExt = map[string]interface{}{}
 	}
 	deviceExt[ORTBExtATTS] = value
-
-	data, err := json.Marshal(deviceExt)
-	if err != nil {
-		return
-	}
-	o.ortb.Device.Ext = data
+	device["ext"] = deviceExt
+	o.ortb["device"] = device
 	return
 }
 
 // ORTBRequestExtPrebidTransparencyContent will read and set ortb Request.Ext.Prebid.Transparency.Content parameter
 func (o *OpenRTB) ORTBRequestExtPrebidTransparencyContent() (err error) {
-	contentString, ok := o.values.GetString(ORTBRequestExtPrebidTransparencyContent)
+	contentString := o.values.Get(ORTBRequestExtPrebidTransparencyContent)
+	if len(contentString) == 0 {
+		return
+	}
+
+	requestExt, ok := o.ortb["ext"].(map[string]interface{})
 	if !ok {
-		return
+		requestExt = map[string]interface{}{}
 	}
 
-	content := map[string]interface{}{}
-	err = json.Unmarshal([]byte(contentString), &content)
-	if err != nil {
-		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBRequestExtPrebidTransparencyContent, err.Error(), contentString)
-	}
-
-	if len(content) == 0 {
-		return
-	}
-
-	ext := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &ext)
-		if err != nil {
-			return
-		}
-	}
-
-	prebidExt, ok := ext[ORTBExtPrebid].(map[string]interface{})
+	prebidExt, ok := requestExt[ORTBExtPrebid].(map[string]interface{})
 	if !ok {
 		prebidExt = map[string]interface{}{}
 	}
@@ -4763,152 +5292,99 @@ func (o *OpenRTB) ORTBRequestExtPrebidTransparencyContent() (err error) {
 	if !ok {
 		transparancy = map[string]interface{}{}
 	}
-	transparancy[ORTBExtPrebidTransparencyContent] = content
+	transparancy[ORTBExtPrebidTransparencyContent] = contentString
 	prebidExt[ORTBExtPrebidTransparency] = transparancy
-	ext[ORTBExtPrebid] = prebidExt
-
-	data, err := json.Marshal(ext)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	requestExt[ORTBExtPrebid] = prebidExt
+	o.ortb["ext"] = requestExt
 	return
 }
 
 // ORTBUserExtEIDS will read and set ortb user.ext.eids parameter
 func (o *OpenRTB) ORTBUserExtEIDS() (err error) {
-	eidsValue, ok := o.values.GetString(ORTBUserExtEIDS)
+	eidsValue := o.values.Get(ORTBUserExtEIDS)
+	if len(eidsValue) == 0 {
+		return
+	}
+
+	user, ok := o.ortb["user"].(map[string]interface{})
 	if !ok {
-		return
+		user = map[string]interface{}{}
 	}
 
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	userExt, ok := user["ext"].(map[string]interface{})
+	if !ok {
+		userExt = map[string]interface{}{}
 	}
-
-	userExt := map[string]interface{}{}
-	if o.ortb.User.Ext != nil {
-		err = json.Unmarshal(o.ortb.User.Ext, &userExt)
-		if err != nil {
-			return
-		}
-	}
-
-	eids := []openrtb2.EID{}
-	err = json.Unmarshal([]byte(eidsValue), &eids)
-	if err != nil {
-		return fmt.Errorf(ErrJSONUnmarshalFailed, ORTBUserExtEIDS, "Failed to unmarshal user.ext.eids", eidsValue)
-	}
-
-	userExt[ORTBExtEIDS] = eids
-
-	data, err := json.Marshal(userExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Ext = data
+	userExt[ORTBExtEIDS] = eidsValue
+	user["ext"] = userExt
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserExtSessionDuration will read and set ortb User.Ext.sessionduration parameter
 func (o *OpenRTB) ORTBUserExtSessionDuration() (err error) {
-	valStr, ok := o.values.GetString(ORTBUserExtSessionDuration)
-	if !ok || valStr == "" {
+	valStr := o.values.Get(ORTBUserExtSessionDuration)
+	if len(valStr) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	userExt := map[string]interface{}{}
-	if o.ortb.User.Ext != nil {
-		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
-			return
-		}
+	userExt, ok := user["ext"].(map[string]interface{})
+	if !ok {
+		userExt = map[string]interface{}{}
 	}
-
-	val, err := strconv.ParseUint(valStr, 10, 64)
-	if err != nil {
-		logger.Warn("Invalid session duration value '%v': %v", valStr, err)
-		return nil
-	}
-	userExt[ORTBExtSessionDuration] = int64(val)
-
-	data, err := json.Marshal(userExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Ext = data
+	userExt[ORTBExtSessionDuration] = valStr
+	user["ext"] = userExt
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserExtImpDepth will read and set ortb User.Ext.impdepth parameter
 func (o *OpenRTB) ORTBUserExtImpDepth() (err error) {
-	valStr, ok := o.values.GetString(ORTBUserExtImpDepth)
-	if !ok || valStr == "" {
+	valStr := o.values.Get(ORTBUserExtImpDepth)
+	if len(valStr) == 0 {
 		return
 	}
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
+	user, ok := o.ortb["user"].(map[string]interface{})
+	if !ok {
+		user = map[string]interface{}{}
 	}
-	userExt := map[string]interface{}{}
-	if o.ortb.User.Ext != nil {
-		if err = json.Unmarshal(o.ortb.User.Ext, &userExt); err != nil {
-			return
-		}
+	userExt, ok := user["ext"].(map[string]interface{})
+	if !ok {
+		userExt = map[string]interface{}{}
 	}
-
-	val, err := strconv.ParseUint(valStr, 10, 64)
-	if err != nil {
-		logger.Warn("Invalid imp depth value '%v': %v", valStr, err)
-		return nil
-	}
-	userExt[ORTBExtImpDepth] = int64(val)
-
-	data, err := json.Marshal(userExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Ext = data
+	userExt[ORTBExtImpDepth] = valStr
+	user["ext"] = userExt
+	o.ortb["user"] = user
 	return
 }
 
 // ORTBUserData will read and set ortb user.data parameter
 func (o *OpenRTB) ORTBUserData() (err error) {
-	dataValue, ok := o.values.GetString(ORTBUserData)
+	dataValue := o.values.Get(ORTBUserData)
+	if len(dataValue) == 0 {
+		return
+	}
+	user, ok := o.ortb["user"].(map[string]interface{})
 	if !ok {
-		return
+		user = map[string]interface{}{}
 	}
-
-	if o.ortb.User == nil {
-		o.ortb.User = &openrtb2.User{}
-	}
-
-	data := []openrtb2.Data{}
-	err = json.Unmarshal([]byte(dataValue), &data)
-	if err != nil {
-		return
-	}
-
-	o.ortb.User.Data = data
+	user["data"] = dataValue
+	o.ortb["user"] = user
 	return
 }
 
 func (o *OpenRTB) ORTBExtPrebidFloorsEnforceFloorDeals() (err error) {
-	enforcementString, ok := o.values.GetString(ORTBExtPrebidFloorsEnforcement)
-	if !ok {
+	enforcementString := o.values.Get(ORTBExtPrebidFloorsEnforcement)
+	if len(enforcementString) == 0 {
 		return
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	prebidExt, ok := reqExt[ORTBExtPrebid].(map[string]interface{})
@@ -4935,31 +5411,20 @@ func (o *OpenRTB) ORTBExtPrebidFloorsEnforceFloorDeals() (err error) {
 	floors[ORTBExtFloorEnforcement] = enforcement
 	prebidExt[ORTBExtPrebidFloors] = floors
 	reqExt[ORTBExtPrebid] = prebidExt
-
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
+	o.ortb["ext"] = reqExt
 	return
 }
 
 // ORTBExtPrebidReturnAllBidStatus sets returnallbidstatus
 func (o *OpenRTB) ORTBExtPrebidReturnAllBidStatus() (err error) {
-	returnAllbidStatus, ok := o.values.GetString(ORTBExtPrebidReturnAllBidStatus)
-	if !ok {
+	returnAllbidStatus := o.values.Get(ORTBExtPrebidReturnAllBidStatus)
+	if len(returnAllbidStatus) == 0 {
 		return
 	}
-
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
-
 	prebidExt, ok := reqExt[ORTBExtPrebid].(map[string]interface{})
 	if !ok {
 		prebidExt = map[string]interface{}{}
@@ -4972,20 +5437,14 @@ func (o *OpenRTB) ORTBExtPrebidReturnAllBidStatus() (err error) {
 	}
 
 	reqExt[ORTBExtPrebid] = prebidExt
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
-
+	o.ortb["ext"] = reqExt
 	return nil
 }
 
 // ORTBExtPrebidBidderParamsPubmaticCDS sets cds in req.ext.prebid.bidderparams.pubmatic
 func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
-	cdsData, ok := o.values.GetString(ORTBExtPrebidBidderParamsPubmaticCDS)
-	if !ok {
+	cdsData := o.values.Get(ORTBExtPrebidBidderParamsPubmaticCDS)
+	if len(cdsData) == 0 {
 		return
 	}
 
@@ -5000,12 +5459,9 @@ func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
 		return err
 	}
 
-	reqExt := map[string]interface{}{}
-	if o.ortb.Ext != nil {
-		err = json.Unmarshal(o.ortb.Ext, &reqExt)
-		if err != nil {
-			return
-		}
+	reqExt, ok := o.ortb["ext"].(map[string]interface{})
+	if !ok {
+		reqExt = map[string]interface{}{}
 	}
 
 	prebidExt, ok := reqExt[ORTBExtPrebid].(map[string]interface{})
@@ -5027,14 +5483,7 @@ func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
 	bidderParams[models.BidderPubMatic] = pubmaticBidderParams
 	prebidExt[ORTBExtPrebidBidderParams] = bidderParams
 	reqExt[ORTBExtPrebid] = prebidExt
-
-	data, err := json.Marshal(reqExt)
-	if err != nil {
-		return
-	}
-
-	o.ortb.Ext = data
-
+	o.ortb["ext"] = reqExt
 	return
 }
 
@@ -5042,25 +5491,31 @@ func (o *OpenRTB) ORTBExtPrebidBidderParamsPubmaticCDS() (err error) {
 
 // ORTBRegsGpp will read and set ortb Regs.gpp parameter
 func (o *OpenRTB) ORTBRegsGpp() (err error) {
-	val, ok := o.values.GetString(ORTBRegsGpp)
-	if !ok {
+	val := o.values.Get(ORTBRegsGpp)
+	if len(val) == 0 {
 		return
 	}
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
 	}
-	o.ortb.Regs.GPP = val
+	regs["gpp"] = val
+	o.ortb["regs"] = regs
 	return
 }
 
 // ORTBRegsGpp will read and set ortb Regs.gpp_sid parameter
 func (o *OpenRTB) ORTBRegsGppSid() error {
-	var err error
-	if o.ortb.Regs == nil {
-		o.ortb.Regs = &openrtb2.Regs{}
-	}
-	if o.ortb.Regs.GPPSID, err = o.values.GetInt8Array(ORTBRegsGppSid, ArraySeparator); err != nil {
+	val, err := o.values.GetInt8Array(ORTBRegsGppSid, ArraySeparator)
+	if len(val) == 0 {
 		return err
 	}
+
+	regs, ok := o.ortb["regs"].(map[string]interface{})
+	if !ok {
+		regs = map[string]interface{}{}
+	}
+	regs["gpp_sid"] = val
+	o.ortb["regs"] = regs
 	return nil
 }

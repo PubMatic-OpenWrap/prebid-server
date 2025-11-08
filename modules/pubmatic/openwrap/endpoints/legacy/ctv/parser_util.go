@@ -62,6 +62,11 @@ type URLValues struct {
 	url.Values
 }
 
+// Get Value
+func (values *URLValues) Get(key string) string {
+	return values.Values.Get(key)
+}
+
 // GetInt Read Key from Request and Parse to Int Type
 func (values *URLValues) GetInt(key string) (int, bool, error) {
 	v := values.Get(key)

@@ -1,7 +1,5 @@
 package ctv
 
-import "github.com/prebid/openrtb/v20/openrtb2"
-
 // KeyParserMap map type which contains standard key parser functions
 type KeyParserMap map[string]func(Parser) error
 
@@ -372,7 +370,7 @@ func GetORTBParserMap() *ParserMap {
 
 // ORTBParser interface which will be used to generate ortb request from API request
 type ORTBParser interface {
-	ParseORTBRequest(*ParserMap) (*openrtb2.BidRequest, error)
+	ParseORTBRequest(*ParserMap) (map[string]interface{}, error)
 }
 
 type Parser interface {
