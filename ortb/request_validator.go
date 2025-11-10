@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/stored_responses"
@@ -153,6 +154,13 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 
 	for _, bidder := range biddersToDelete {
 		delete(prebid.Bidder, bidder)
+	}
+
+	if prebid.Bidder == nil {
+		logger.Debug("ERROR: imp[%s].ext.prebid.bidder is still nil after processing", imp.ID)
+	} else {
+		bidderJSON, _ := json.Marshal(prebid.Bidder)
+		logger.Debug("Final bidder params for imp[%s]: %s", imp.ID, string(bidderJSON))
 	}
 
 	if len(prebid.Bidder) == 0 {

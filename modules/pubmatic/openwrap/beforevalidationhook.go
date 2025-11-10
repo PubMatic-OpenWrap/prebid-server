@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -57,6 +58,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+		bidRequest, _ := json.Marshal(payload.BidRequest)
+		glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
+
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
@@ -559,7 +564,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 					}
 				}
 			}
-			logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier -%v\n", bidderParams)
+			var prettyJSON bytes.Buffer
+			if err := json.Indent(&prettyJSON, bidderParams, "", "  "); err == nil {
+				logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier:\n%s", prettyJSON.String())
+			} else {
+				logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier (raw): %s", string(bidderParams))
+			}
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
 				PrebidBidderCode: prebidBidderCode,
@@ -608,6 +618,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 		bidderJSON, _ := json.MarshalIndent(impExt.Prebid.Bidder, "", "  ")
 		logger.DebugWithBid(payload.BidRequest.ID, "impExt.Prebid.Bidder after update:\n%s", string(bidderJSON))
+
+		// Add this right after setting the bidder parameters
+		if impExt.Prebid.Bidder == nil {
+			logger.DebugWithBid(payload.BidRequest.ID, "ERROR: impExt.Prebid.Bidder is nil after setting bidders")
+		} else {
+			logger.DebugWithBid(payload.BidRequest.ID, "Bidders set successfully, count: %d", len(impExt.Prebid.Bidder))
+		}
+
+		// Also add this to verify the request structure
+		if impExtJSON, err := json.Marshal(impExt); err == nil {
+			logger.DebugWithBid(payload.BidRequest.ID, "Full impExt after update: %s", string(impExtJSON))
+		}
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
