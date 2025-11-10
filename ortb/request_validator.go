@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/stored_responses"
@@ -121,6 +122,7 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 	}
 
 	errL := []error{}
+	biddersToDelete := []string{}
 
 	for bidder, val := range prebid.Bidder {
 		coreBidder, _ := openrtb_ext.NormalizeBidderName(bidder)
@@ -137,17 +139,28 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 		} else {
 			if msg, isDisabled := srv.disabledBidders[bidder]; isDisabled {
 				errL = append(errL, &errortypes.BidderTemporarilyDisabled{Message: msg})
-				delete(prebid.Bidder, bidder)
+				biddersToDelete = append(biddersToDelete, bidder)
 				prebidModified = true
 			} else if bidderPromote {
 				errL = append(errL, &errortypes.Warning{Message: fmt.Sprintf("request.imp[%d].ext contains unknown bidder: '%s', ignoring", impIndex, bidder)})
 				ext[bidder] = val
-				delete(prebid.Bidder, bidder)
+				biddersToDelete = append(biddersToDelete, bidder)
 				prebidModified = true
 			} else {
 				return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder contains unknown bidder: %s. Did you forget an alias in request.ext.prebid.aliases?", impIndex, bidder)}
 			}
 		}
+	}
+
+	for _, bidder := range biddersToDelete {
+		delete(prebid.Bidder, bidder)
+	}
+
+	if prebid.Bidder == nil {
+		logger.Debug("ERROR: imp[%s].ext.prebid.bidder is still nil after processing", imp.ID)
+	} else {
+		bidderJSON, _ := json.Marshal(prebid.Bidder)
+		logger.Debug("Final bidder params for imp[%s]: %s", imp.ID, string(bidderJSON))
 	}
 
 	if len(prebid.Bidder) == 0 {

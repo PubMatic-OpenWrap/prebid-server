@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"unicode"
 
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	validator "github.com/asaskevich/govalidator"
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
@@ -56,6 +58,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+		bidRequest, _ := json.Marshal(payload.BidRequest)
+		glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
+
 		if result.Reject {
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
@@ -532,6 +538,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			if err != nil || len(bidderParams) == 0 {
+				logger.DebugWithBid(payload.BidRequest.ID, "no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode)
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
 				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
@@ -542,6 +549,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
+			logger.DebugWithBid(payload.BidRequest.ID, "impExt.Bidder -%v\n", impExt.Bidder)
 
 			if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
 				var bidderParamsMap map[string]interface{}
@@ -556,7 +564,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 					}
 				}
 			}
-
+			var prettyJSON bytes.Buffer
+			if err := json.Indent(&prettyJSON, bidderParams, "", "  "); err == nil {
+				logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier:\n%s", prettyJSON.String())
+			} else {
+				logger.DebugWithBid(payload.BidRequest.ID, "bidderParams after deal tier (raw): %s", string(bidderParams))
+			}
 			bidderMeta[bidderCode] = models.PartnerData{
 				PartnerID:        partnerID,
 				PrebidBidderCode: prebidBidderCode,
@@ -596,10 +609,26 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {
+			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder is nil", imp.ID)
 			impExt.Prebid.Bidder = make(map[string]json.RawMessage)
 		}
 		for bidder, meta := range bidderMeta {
+			logger.DebugWithBid(payload.BidRequest.ID, "request.imp[%s].ext.prebid.bidder[%s] with meta params %s", imp.ID, bidder, string(meta.Params))
 			impExt.Prebid.Bidder[bidder] = meta.Params
+		}
+		bidderJSON, _ := json.MarshalIndent(impExt.Prebid.Bidder, "", "  ")
+		logger.DebugWithBid(payload.BidRequest.ID, "impExt.Prebid.Bidder after update:\n%s", string(bidderJSON))
+
+		// Add this right after setting the bidder parameters
+		if impExt.Prebid.Bidder == nil {
+			logger.DebugWithBid(payload.BidRequest.ID, "ERROR: impExt.Prebid.Bidder is nil after setting bidders")
+		} else {
+			logger.DebugWithBid(payload.BidRequest.ID, "Bidders set successfully, count: %d", len(impExt.Prebid.Bidder))
+		}
+
+		// Also add this to verify the request structure
+		if impExtJSON, err := json.Marshal(impExt); err == nil {
+			logger.DebugWithBid(payload.BidRequest.ID, "Full impExt after update: %s", string(impExtJSON))
 		}
 		adserverURL := ""
 		if impExt.Wrapper != nil {
