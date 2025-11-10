@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 
 	v26 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v26"
@@ -47,12 +48,11 @@ func NewOpenRTB(request *http.Request) Parser {
 
 // ParseORTBRequest this will parse ortb request by reading parserMap and calling respective function for mapped parameter
 func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, error) {
-	var errs []error
 	for k, value := range o.values.Values {
 		if len(value) > 0 && len(value[0]) > 0 {
 			if parser, ok := parserMap.KeyMapping[k]; ok {
 				if err := parser(o); err != nil {
-					errs = append(errs, err)
+					return nil, err
 				}
 			} else {
 				//Check for Ext
@@ -63,7 +63,7 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 					if len(childKey) > 0 {
 						if parser, ok := parserMap.ExtMapping[parentKey]; ok {
 							if err := parser(o, childKey, o.values.GetStringPtr(k)); err != nil {
-								errs = append(errs, err)
+								return nil, err
 							}
 						}
 					}
@@ -72,10 +72,6 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 				}
 			}
 		}
-	}
-
-	if len(errs) > 0 {
-		return o.ortb, fmt.Errorf("%v", errs)
 	}
 
 	o.formORTBRequest()
@@ -3168,8 +3164,11 @@ func (o *OpenRTB) ORTBUserGeoUtcOffset() (err error) {
 // ORTBProfileID will read and set ortb ProfileId parameter
 func (o *OpenRTB) ORTBProfileID() (err error) {
 	val, ok, err := o.values.GetInt(ORTBProfileID)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidProfileID, "invalid wrapper profile id")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3597,9 +3596,13 @@ func (o *OpenRTB) ORTBImpVideoExtOffset() (err error) {
 // ORTBImpVideoExtAdPodMinAds will read and set ortb Imp.Vid.Ext.AdPod.MinAds parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMinAds() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMinAds)
-	if !ok || err != nil {
+	if !ok {
 		return
 	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.minads value is invalid")
+	}
+
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
 	}
@@ -3630,9 +3633,13 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodMinAds() (err error) {
 // ORTBImpVideoExtAdPodMaxAds will read and set ortb Imp.Vid.Ext.AdPod.MaxAds parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMaxAds() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMaxAds)
-	if !ok || err != nil {
+	if !ok {
 		return
 	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.maxads value is invalid")
+	}
+
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
 	}
@@ -3663,8 +3670,11 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodMaxAds() (err error) {
 // ORTBImpVideoExtAdPodMinDuration will read and set ortb Imp.Vid.Ext.AdPod.MinDuration parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMinDuration() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMinDuration)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.minduration value is invalid")
 	}
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
@@ -3696,8 +3706,11 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodMinDuration() (err error) {
 // ORTBImpVideoExtAdPodMaxDuration will read and set ortb Imp.Vid.Ext.AdPod.MaxDuration parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodMaxDuration() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodMaxDuration)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.maxduration value is invalid")
 	}
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
@@ -3729,8 +3742,11 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodMaxDuration() (err error) {
 // ORTBImpVideoExtAdPodAdvertiserExclusionPercent will read and set ortb Imp.Vid.Ext.AdPod.AdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodAdvertiserExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.advertiserexclusionpercent value is invalid")
 	}
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
@@ -3762,8 +3778,11 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodAdvertiserExclusionPercent() (err error) {
 // ORTBImpVideoExtAdPodIABCategoryExclusionPercent will read and set ortb Imp.Vid.Ext.AdPod.IABCategoryExclusionPercent parameter
 func (o *OpenRTB) ORTBImpVideoExtAdPodIABCategoryExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBImpVideoExtAdPodIABCategoryExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: imp.ext.adpod.iabcategoryexclusionpercent value is invalid")
 	}
 	if o.ortb.Imp[0].Video == nil {
 		o.ortb.Imp[0].Video = &openrtb2.Video{}
@@ -3797,8 +3816,11 @@ func (o *OpenRTB) ORTBImpVideoExtAdPodIABCategoryExclusionPercent() (err error) 
 // ORTBRequestExtAdPodMinAds will read and set ortb Request.Ext.AdPod.MinAds parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMinAds() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMinAds)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.minads value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3828,8 +3850,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodMinAds() (err error) {
 // ORTBRequestExtAdPodMaxAds will read and set ortb Request.Ext.AdPod.MaxAds parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMaxAds() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMaxAds)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.maxads value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3859,8 +3884,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodMaxAds() (err error) {
 // ORTBRequestExtAdPodMinDuration will read and set ortb Request.Ext.AdPod.MinDuration parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMinDuration() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMinDuration)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.minduration value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3890,8 +3918,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodMinDuration() (err error) {
 // ORTBRequestExtAdPodMaxDuration will read and set ortb Request.Ext.AdPod.MaxDuration parameter
 func (o *OpenRTB) ORTBRequestExtAdPodMaxDuration() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodMaxDuration)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.maxduration value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3921,8 +3952,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodMaxDuration() (err error) {
 // ORTBRequestExtAdPodAdvertiserExclusionPercent will read and set ortb Request.Ext.AdPod.AdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.advertiserexclusionpercent value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3952,8 +3986,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionPercent() (err error) {
 // ORTBRequestExtAdPodIABCategoryExclusionPercent will read and set ortb Request.Ext.AdPod.IABCategoryExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodIABCategoryExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.iabcategoryexclusionpercent value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -3983,8 +4020,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionPercent() (err error) {
 // ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent will read and set ortb Request.Ext.AdPod.CrossPodAdvertiserExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.crosspodadvertiserexclusionpercent value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -4014,8 +4054,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodCrossPodAdvertiserExclusionPercent() (err e
 // ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent will read and set ortb Request.Ext.AdPod.CrossPodIABCategoryExclusionPercent parameter
 func (o *OpenRTB) ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.crosspodiabcategoryexclusionpercent value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -4045,8 +4088,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodCrossPodIABCategoryExclusionPercent() (err 
 // ORTBRequestExtAdPodIABCategoryExclusionWindow will read and set ortb Request.Ext.AdPod.IABCategoryExclusionWindow parameter
 func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionWindow() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodIABCategoryExclusionWindow)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.iabcategoryexclusionwindow value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
@@ -4076,8 +4122,11 @@ func (o *OpenRTB) ORTBRequestExtAdPodIABCategoryExclusionWindow() (err error) {
 // ORTBRequestExtAdPodAdvertiserExclusionWindow will read and set ortb Request.Ext.AdPod.AdvertiserExclusionWindow parameter
 func (o *OpenRTB) ORTBRequestExtAdPodAdvertiserExclusionWindow() (err error) {
 	val, ok, err := o.values.GetInt(ORTBRequestExtAdPodAdvertiserExclusionWindow)
-	if !ok || err != nil {
+	if !ok {
 		return
+	}
+	if err != nil {
+		return NewParseError(nbr.InvalidAdpodConfig, "Invalid adpod configuration: req.ext.adpod.advertiserexclusionwindow value is invalid")
 	}
 
 	reqExt := map[string]interface{}{}
