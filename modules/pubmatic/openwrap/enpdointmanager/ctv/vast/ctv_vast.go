@@ -131,6 +131,9 @@ func (cv *CTVVAST) HandleProcessedAuctionHook(payload hookstage.ProcessedAuction
 			parp.Request.SetImp(imps)
 		}
 
+		// filter vast tag durations
+		adapters.FilterImpsVastTagsByDuration(rCtx, parp.Request)
+
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-ctv-impressions")
 	return rCtx, result, nil
@@ -148,9 +151,6 @@ func (cv *CTVVAST) HandleBidderRequestHook(payload hookstage.BidderRequestPayloa
 		// 	adpod.ConvertDownTo25(ep.Request)
 		// }
 
-		if payload.Bidder == models.BidderVASTBidder {
-			adapters.FilterImpsVastTagsByDuration(rCtx, ep.Request)
-		}
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-bidder-request")
 	return rCtx, result, nil

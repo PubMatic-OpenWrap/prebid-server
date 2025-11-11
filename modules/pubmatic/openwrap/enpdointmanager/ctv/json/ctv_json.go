@@ -175,6 +175,12 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		// Remove adpod data from ext
 		ctvutils.RemoveAdpodDataFromExt(ep.BidRequest)
 
+		// Add GAM URL configs
+		err = ApplyGAMURLConfig(&rCtx, ep.BidRequest)
+		if err != nil {
+			result.Warnings = append(result.Warnings, "Failed to apply GAM URL configs: "+err.Error())
+		}
+
 		// Enable when UI support is added
 		// ep.BidRequest = adpod.ApplyAdpodConfigs(rCtx, ep.BidRequest)
 
