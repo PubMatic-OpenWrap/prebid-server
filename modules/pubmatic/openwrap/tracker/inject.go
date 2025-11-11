@@ -91,15 +91,20 @@ func getUniversalPixels(rctx models.RequestCtx, adformat string, bidderCode stri
 	return pixels
 }
 
-func getBURL(burl, trackerURL string) string {
-	if trackerURL == "" {
+func getBURL(burl string, tracker models.OWTracker) string {
+	if tracker.TrackerURL == "" {
 		return burl
 	}
 
 	if burl == "" {
-		return trackerURL
+		return tracker.TrackerURL
+	}
+
+	if tracker.Tracker.PartnerInfo.PartnerID == models.BidderPubMatic &&
+		tracker.IsOMEnabled && tracker.BidType == models.Banner {
+		return tracker.TrackerURL
 	}
 
 	escapedBurl := url.QueryEscape(burl)
-	return trackerURL + "&" + models.OwSspBurl + "=" + escapedBurl
+	return tracker.TrackerURL + "&" + models.OwSspBurl + "=" + escapedBurl
 }

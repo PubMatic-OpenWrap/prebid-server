@@ -67,7 +67,7 @@ mockgenlogger:
 
 mockgenpublisherfeature:
 	mkdir -p modules/pubmatic/openwrap/publisherfeature
-	mockgen github.com/PubMatic-OpenWrap/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature Feature > modules/pubmatic/openwrap/publisherfeature/mock/mock.go
+	mockgen github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature Feature > modules/pubmatic/openwrap/publisherfeature/mock/mock.go
 
 mockgenwakanda: 
 	mkdir -p modules/pubmatic/openwrap/wakanda/mock

@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -181,6 +182,7 @@ func TestTrackerWithOM(t *testing.T) {
 		rctx              models.RequestCtx
 		prebidPartnerName string
 		dspID             int
+		bidExt            json.RawMessage
 	}
 	tests := []struct {
 		name string
@@ -261,7 +263,7 @@ func TestTrackerWithOM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID); got != tt.want {
+			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID, tt.args.bidExt); got != tt.want {
 				assert.Equal(t, tt.want, got)
 			}
 		})
