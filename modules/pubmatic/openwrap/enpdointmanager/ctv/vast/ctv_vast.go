@@ -2,8 +2,11 @@ package ctvvast
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
@@ -188,5 +191,43 @@ func (cv *CTVVAST) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 }
 
 func (cv *CTVVAST) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleExitpointHook mutation")
+			return ep, nil
+		}
+
+		defer func() {
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
+		}()
+
+		ep.W.Header().Set("Content-Type", "application/xml")
+		ep.W.Header().Set("Content-Options", "nosniff")
+
+		response, ok := ep.Response.(*openrtb2.BidResponse)
+		if !ok {
+			ep.Response = EmptyVASTResponse
+			return ep, nil
+		}
+
+		if nbr := response.NBR; nbr != nil {
+			ep.Response = EmptyVASTResponse
+			if rCtx.Debug {
+				ep.W.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, *nbr))
+			}
+			return ep, nil
+		}
+
+		var nbr *openrtb3.NoBidReason
+		ep.Response, nbr = formVastResponse(&rCtx, response)
+		if nbr != nil {
+			if rCtx.Debug {
+				ep.W.Header().Set(HeaderOpenWrapStatus, fmt.Sprintf(NBRFormat, *nbr))
+			}
+		}
+
+		return ep, nil
+	}, hookstage.MutationUpdate, "ctv-vast-exitpoint")
 	return rCtx, result, nil
 }

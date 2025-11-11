@@ -72,9 +72,6 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer a.panicHandler(r)
-
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
@@ -88,20 +85,7 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	// Invoke prebid auction enpoint
-	a.handle(adpodResponseWriter, r, p)
-
-	responseGenerator := vastResponse{
-		debug:              r.URL.Query().Get(models.Debug),
-		WrapperLoggerDebug: r.URL.Query().Get(models.WrapperLoggerDebug),
-	}
-	response, headers, statusCode := responseGenerator.formVastResponse(adpodResponseWriter)
-
-	SetCORSHeaders(w, r)
-	for k, v := range headers {
-		w.Header().Set(k, v)
-	}
-	w.WriteHeader(statusCode)
-	w.Write(response)
+	a.handle(w, r, p)
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

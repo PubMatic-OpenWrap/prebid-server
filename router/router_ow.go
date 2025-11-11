@@ -46,8 +46,8 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 	r.GET(OpenWrapAdpodJson, adpod.JsonEndpoint)
 
 	// POST
-	r.POST(OpenWrapAdpodOrtb, adpod.OpenrtbEndpoint)
-	r.POST(OpenWrapAdpodVast, adpod.VastEndpoint)
+	r.POST(OpenWrapAdpodOrtb, openrtbEndpoint)
+	r.POST(OpenWrapAdpodVast, openrtbEndpoint)
 	r.POST(OpenWrapAdpodJson, openrtbEndpoint)
 
 	// healthcheck used by k8s
