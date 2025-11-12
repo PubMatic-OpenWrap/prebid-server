@@ -288,7 +288,7 @@ func TestPrepareAdapterParamsV25(t *testing.T) {
 				tt.setup()
 			}
 			adapters.InitBidders("./static/bidder-params/")
-			matchedSlot, matchedPattern, isRegexSlot, params, err := PrepareAdapterParamsV25(tt.args.rctx, tt.args.cache, tt.args.bidRequest, tt.args.imp, tt.args.impExt, tt.args.partnerID)
+			matchedSlot, matchedPattern, isRegexSlot, params, err := PrepareAdapterParamsV25(tt.args.rctx, tt.args.cache, tt.args.imp, tt.args.impExt, tt.args.partnerID)
 			if (err != nil) != tt.want.wantErr {
 				assert.Equal(t, tt.want.wantErr, err != nil)
 				return

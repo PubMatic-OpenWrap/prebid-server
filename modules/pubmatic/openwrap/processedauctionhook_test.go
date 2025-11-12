@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
@@ -52,9 +53,11 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": nil,
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", nil)
+						return moduleCtx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{
@@ -70,11 +73,14 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							Sshb: "1",
-						},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 			},
 
@@ -90,11 +96,14 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
-						},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{
@@ -109,12 +118,15 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						moduleCtx := hookstage.NewModuleContext()
+						moduleCtx.Set("rctx", models.RequestCtx{
 							Endpoint:  models.EndpointV25,
 							DeviceCtx: models.DeviceCtx{IP: "10.20.30.40"},
-						},
-					},
+						})
+						moduleCtx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return moduleCtx
+					}(),
 				},
 				payload: hookstage.ProcessedAuctionRequestPayload{
 					Request: &openrtb_ext.RequestWrapper{

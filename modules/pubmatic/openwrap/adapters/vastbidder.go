@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 func PrepareVASTBidderParamJSON(pubVASTTags models.PublisherVASTTags, matchedSlotKeys []string, slotMap map[string]models.SlotMapping) json.RawMessage {
-
 	bidderExt := openrtb_ext.ExtImpVASTBidder{}
 	bidderExt.Tags = make([]*openrtb_ext.ExtImpVASTBidderTag, len(matchedSlotKeys))
 	var tagIndex int = 0
@@ -74,25 +74,32 @@ func getVASTTagID(key string) int {
 	return id
 }
 
-func FilterImpsVastTagsByDuration(imps []*openrtb_ext.ImpWrapper, impBidCtx map[string]models.ImpCtx) {
-	if len(imps) == 0 {
-		return
-	}
+func FilterImpsVastTagsByDuration(rCtx models.RequestCtx, request *openrtb_ext.RequestWrapper) {
+	for _, imp := range request.GetImp() {
+		// Decode Imp ID
+		_, impId, _ := utils.DecodeV25ImpID(imp.ID)
 
-	for i := range imps {
-		impId, _ := models.GetImpressionID(imps[i].ID)
-		impCtx := impBidCtx[impId]
+		impCtx, ok := rCtx.ImpBidCtx[impId]
+		if !ok {
+			continue
+		}
 
-		impExt, err := imps[i].GetImpExt()
+		impExt, err := imp.GetImpExt()
 		if err != nil {
 			continue
 		}
 
 		prebidExt := impExt.GetPrebid()
+		if prebidExt == nil {
+			continue
+		}
+
+		minDuration := imp.Video.MinDuration
+		maxDuration := imp.Video.MaxDuration
+
 		for bidder, partnerdata := range prebidExt.Bidder {
 			var vastBidderExt openrtb_ext.ExtImpVASTBidder
-			err := json.Unmarshal(partnerdata, &vastBidderExt)
-			if err != nil {
+			if err := json.Unmarshal(partnerdata, &vastBidderExt); err != nil {
 				continue
 			}
 
@@ -101,26 +108,26 @@ func FilterImpsVastTagsByDuration(imps []*openrtb_ext.ImpWrapper, impBidCtx map[
 			}
 
 			partnerData := impCtx.Bidders[bidder]
-			vastTagFlags := partnerData.VASTTagFlags
-			if vastTagFlags == nil {
-				vastTagFlags = make(map[string]bool)
+			if partnerData.VASTTagFlags == nil {
+				partnerData.VASTTagFlags = make(map[string]bool)
 			}
 
-			var compatibleTags []*openrtb_ext.ExtImpVASTBidderTag
+			compatibleTags := make([]*openrtb_ext.ExtImpVASTBidderTag, 0, len(vastBidderExt.Tags))
 			for _, tag := range vastBidderExt.Tags {
-				if imps[i].Video.MinDuration <= int64(tag.Duration) && int64(tag.Duration) <= imps[i].Video.MaxDuration {
+				if minDuration <= int64(tag.Duration) && int64(tag.Duration) <= maxDuration {
 					compatibleTags = append(compatibleTags, tag)
-					vastTagFlags[tag.TagID] = false
+					partnerData.VASTTagFlags[tag.TagID] = false
 				}
 			}
 
-			partnerData.VASTTagFlags = vastTagFlags
 			impCtx.Bidders[bidder] = partnerData
 
 			vastBidderExt.Tags = compatibleTags
 			newPartnerData, _ := json.Marshal(vastBidderExt)
 			prebidExt.Bidder[bidder] = newPartnerData
 		}
+
+		// Set the updated prebid ext back to the imp ext
 		impExt.SetPrebid(prebidExt)
 	}
 }

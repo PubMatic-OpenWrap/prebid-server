@@ -109,6 +109,7 @@ type RequestExtWrapper struct {
 	KeyValues            map[string]interface{} `json:"kv,omitempty"`
 	Video                ExtRequestWrapperVideo `json:"video,omitempty"`
 	PubId                int                    `json:"-"`
+	AdServerURL          string                 `json:"adserverurl,omitempty"`
 }
 
 type ExtRequestWrapperVideo struct {

@@ -1,4 +1,4 @@
-package auction
+package ctvlegacy
 
 import (
 	"math/big"
@@ -52,7 +52,7 @@ type snapshot struct {
 // 1. Determines the number of combinations to be generated
 // 2. Intializes the c.state values required for c.Next() and iteratoor
 // generationOrder indicates how combinations should be generated.
-func (g *generator) Init(podMinDuration, podMaxDuration uint64, config *models.AdPod, durationAdsMap [][2]uint64, generationOrder int) {
+func (g *generator) Init(podMinDuration, podMaxDuration uint64, config models.SlotConfig, durationAdsMap [][2]uint64, generationOrder int) {
 
 	g.podMinDuration = podMinDuration
 	g.podMaxDuration = podMaxDuration

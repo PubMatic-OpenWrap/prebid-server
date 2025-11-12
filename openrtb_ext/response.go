@@ -30,13 +30,6 @@ type ExtBidResponse struct {
 	OwMatchedImpression json.RawMessage `json:"matchedimpression,omitempty"`
 	OwSendAllBids       int             `json:"sendallbids,omitempty"`
 	OwLogger            string          `json:"owlogger,omitempty"`
-	Wrapper             *ExtWrapper     `json:"wrapper,omitempty"`
-}
-
-type ExtWrapper struct {
-	ResponseFormat   string            `json:"responseformat,omitempty"`
-	RedirectURL      string            `json:"redirecturl,omitempty"`
-	ImpToAdServerURL map[string]string `json:"imptoadserverurl,omitempty"`
 }
 
 // ExtResponseDebug defines the contract for bidresponse.ext.debug

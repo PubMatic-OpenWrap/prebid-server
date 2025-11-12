@@ -1,4 +1,4 @@
-package impressions
+package ctvlegacy
 
 import (
 	"fmt"

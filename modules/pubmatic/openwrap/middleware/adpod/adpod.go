@@ -69,13 +69,9 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	}
 	w.WriteHeader(statusCode)
 	w.Write(response)
-
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer a.panicHandler(r)
-
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
@@ -89,78 +85,43 @@ func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	// Invoke prebid auction enpoint
-	a.handle(adpodResponseWriter, r, p)
-
-	responseGenerator := vastResponse{
-		debug:              r.URL.Query().Get(models.Debug),
-		WrapperLoggerDebug: r.URL.Query().Get(models.WrapperLoggerDebug),
-	}
-	response, headers, statusCode := responseGenerator.formVastResponse(adpodResponseWriter)
-
-	SetCORSHeaders(w, r)
-	for k, v := range headers {
-		w.Header().Set(k, v)
-	}
-	w.WriteHeader(statusCode)
-	w.Write(response)
+	a.handle(w, r, p)
 }
 
 func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer a.panicHandler(r)
 
-	// Invoke prebid auction enpoint
-	a.handle(adpodResponseWriter, r, p)
-
-	responseGenerator := jsonResponse{
-		cacheClient: a.cacheClient,
-		debug:       r.URL.Query().Get(models.Debug),
-	}
-	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter, http.MethodPost)
-
-	SetCORSHeaders(w, r)
-	for k, v := range headers {
-		w.Header().Set(k, v)
-	}
-	w.WriteHeader(statusCode)
-	w.Write(response)
-}
-
-// JsonGetEndpoint
-func (a *adpod) JsonGetEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer a.panicHandler(r)
-
-	enrichError := enrichRequestBody(r)
-	if enrichError != nil {
-		a.metricsEngine.RecordBadRequest(models.EndpointJson, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
-		errResponse := formJSONErrorResponse("", enrichError.Error(), nbr.InvalidVideoRequest.Ptr(), nil, r.URL.Query().Get(models.Debug))
-		w.Header().Set(ContentType, ApplicationJSON)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(errResponse)
-		return
+	if r.Method == http.MethodGet {
+		err := enrichRequestBody(r)
+		if err != nil {
+			a.metricsEngine.RecordBadRequest(models.EndpointJson, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
+			errResponse := formJSONErrorResponse(r, err)
+			w.Header().Set(ContentType, ApplicationJSON)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(errResponse)
+			return
+		}
 	}
 
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
 
-	responseGenerator := jsonResponse{
-		cacheClient: a.cacheClient,
-		debug:       r.URL.Query().Get(models.Debug),
-	}
-	response, headers, statusCode := responseGenerator.formJSONResponse(adpodResponseWriter, http.MethodGet)
-
-	SetCORSHeaders(w, r)
-	if statusCode == http.StatusFound {
-		http.Redirect(w, r, string(response), http.StatusFound)
+	redirectURL := adpodResponseWriter.Header().Get("Location")
+	if redirectURL != "" {
+		// http.Redirect(w, r, redirectURL, http.StatusFound)
+		w.Header().Set("Location", redirectURL)
+		w.WriteHeader(http.StatusFound)
 		return
 	}
 
-	for k, v := range headers {
-		w.Header().Set(k, v)
+	for k, v := range adpodResponseWriter.Header() {
+		for _, val := range v {
+			w.Header().Add(k, val)
+		}
 	}
-	w.WriteHeader(statusCode)
-	w.Write(response)
+	w.WriteHeader(adpodResponseWriter.Code)
+	w.Write(adpodResponseWriter.Response.Bytes())
 }
 
 func (a *adpod) panicHandler(r *http.Request) {

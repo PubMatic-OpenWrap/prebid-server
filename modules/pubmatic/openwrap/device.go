@@ -16,6 +16,11 @@ func populateDeviceContext(dvc *models.DeviceCtx, device *openrtb2.Device) {
 	dvc.DeviceIFA = strings.TrimSpace(device.IFA)
 	dvc.Model = device.Model
 	dvc.ID = getDeviceID(dvc, device)
+	dvc.Language = device.Language
+
+	if device.ConnectionType != nil {
+		dvc.ConnectionType = device.ConnectionType
+	}
 
 	if device.Ext == nil {
 		return
