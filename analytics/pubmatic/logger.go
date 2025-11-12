@@ -514,8 +514,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			// Adpod parameters
 			if len(rCtx.AdpodCtx) > 0 && len(impCtx.BidIDToAPRC) > 0 {
-				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
-				pr.NoBidReason = &aprc
+				aprc, ok := impCtx.BidIDToAPRC[bidIDForLookup]
+				if ok {
+					aprcInt := int(aprc)
+					pr.NoBidReason = &aprcInt
+				}
 			}
 
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
