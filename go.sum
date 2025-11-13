@@ -51,8 +51,8 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358 h1:A+ohfTqsSCfiLybo+tRQ+YXqCPTYiBp0U9lA8gv8MS8=
 git.pubmatic.com/PubMatic/go-common v0.0.0-20250114170528-cb2fb632c358/go.mod h1:I6yt+Te6PaQdUW+pq7/LHNWZ6/+5SSlExknAr3Mfv58=
-git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3 h1:zQUpPJOjTBGu2fIydrfRWphH7EWLlBE/Qgn64BSoccI=
-git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20240104092757-5d6f15e25fe3/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
+git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20250624062228-8abe69b422f0 h1:BhQaKVrdBvDKt+/4UtpRyFdtcPciCqTsEw9k4nOvaEI=
+git.pubmatic.com/PubMatic/go-netacuity-client v0.0.0-20250624062228-8abe69b422f0/go.mod h1:w733mqJnHt0hLR9mIFMzyDR0D94qzc7mFHsuE0tFQho=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250413103331-eb94f23db3f9 h1:7Py1K7/++5Ob85kvPSIJSwfUo4Zyb4KgueRFK05lqHk=
 git.pubmatic.com/PubMatic/vastunwrap v0.0.0-20250413103331-eb94f23db3f9/go.mod h1:pKlYgzQa/b4uwwik5ilkiwRRgF6cV00bBj5mAPqaebk=
 github.com/51Degrees/device-detection-go/v4 v4.4.35 h1:qhP2tzoXhGE1aYY3NftMJ+ccxz0+2kM8aF4SH7fTyuA=
