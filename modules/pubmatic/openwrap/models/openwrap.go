@@ -126,7 +126,7 @@ type RequestCtx struct {
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
 	VastUnWrap                      VastUnWrap
-	PerformantDSPs                  map[int]struct{}
+	PerformanceDSPs                 map[int]struct{}
 	InViewEnabledPublishers         map[int]struct{}
 
 	// Adpod

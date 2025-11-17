@@ -62,18 +62,18 @@ func (mr *MockFeatureMockRecorder) GetApplovinSchainABTestPercentage() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinSchainABTestPercentage", reflect.TypeOf((*MockFeature)(nil).GetApplovinSchainABTestPercentage))
 }
 
-// GetEnabledPerformantDSPs mocks base method.
-func (m *MockFeature) GetEnabledPerformantDSPs() map[int]struct{} {
+// GetEnabledPerformanceDSPs mocks base method.
+func (m *MockFeature) GetEnabledPerformanceDSPs() map[int]struct{} {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEnabledPerformantDSPs")
+	ret := m.ctrl.Call(m, "GetEnabledPerformanceDSPs")
 	ret0, _ := ret[0].(map[int]struct{})
 	return ret0
 }
 
-// GetEnabledPerformantDSPs indicates an expected call of GetEnabledPerformantDSPs.
-func (mr *MockFeatureMockRecorder) GetEnabledPerformantDSPs() *gomock.Call {
+// GetEnabledPerformanceDSPs indicates an expected call of GetEnabledPerformanceDSPs.
+func (mr *MockFeatureMockRecorder) GetEnabledPerformanceDSPs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledPerformantDSPs", reflect.TypeOf((*MockFeature)(nil).GetEnabledPerformantDSPs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledPerformanceDSPs", reflect.TypeOf((*MockFeature)(nil).GetEnabledPerformanceDSPs))
 }
 
 // GetImpCountingMethodEnabledBidders mocks base method.

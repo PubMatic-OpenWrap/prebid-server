@@ -573,7 +573,7 @@ const (
 	GDPRCountryCodesQuery            = "GetGDPRCountryCodes"
 	ProfileAdUnitMultiFloorsQuery    = "GetProfileAdUnitMultiFloors"
 	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
-	PerformantDSPsQuery              = "GetPerformantDSPs"
+	PerformanceDSPsQuery             = "GetPerformanceDSPs"
 	InViewEnabledPublishersQuery     = "GetInViewEnabledPublishers"
 )
 

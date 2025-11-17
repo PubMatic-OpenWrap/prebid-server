@@ -185,19 +185,19 @@ func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2)
 }
 
-// GetPerformantDSPs mocks base method.
-func (m *MockCache) GetPerformantDSPs() (map[int]struct{}, error) {
+// GetPerformanceDSPs mocks base method.
+func (m *MockCache) GetPerformanceDSPs() (map[int]struct{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPerformantDSPs")
+	ret := m.ctrl.Call(m, "GetPerformanceDSPs")
 	ret0, _ := ret[0].(map[int]struct{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPerformantDSPs indicates an expected call of GetPerformantDSPs.
-func (mr *MockCacheMockRecorder) GetPerformantDSPs() *gomock.Call {
+// GetPerformanceDSPs indicates an expected call of GetPerformanceDSPs.
+func (mr *MockCacheMockRecorder) GetPerformanceDSPs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformantDSPs", reflect.TypeOf((*MockCache)(nil).GetPerformantDSPs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformanceDSPs", reflect.TypeOf((*MockCache)(nil).GetPerformanceDSPs))
 }
 
 // GetProfileAdUnitMultiFloors mocks base method.

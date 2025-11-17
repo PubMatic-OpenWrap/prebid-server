@@ -49,11 +49,14 @@ func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int, 
 		return false
 	}
 
-	// check for OM active for inview enabled publishers and performant DSPs
-	_, isPerformantDSP := rctx.PerformantDSPs[dspID]
+	// check for OM active for inview enabled publishers and performance DSPs, handle DV360 separately
 	if prebidPartnerName == string(openrtb_ext.BidderPubmatic) {
+		if dspID == models.DspId_DV360 {
+			return true
+		}
 		_, isPresent := rctx.InViewEnabledPublishers[rctx.PubID]
-		return isPresent && isPerformantDSP
+		_, isPerformanceDSP := rctx.PerformanceDSPs[dspID]
+		return isPresent && isPerformanceDSP
 	}
 
 	// check for OM active for other bidders

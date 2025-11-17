@@ -33,7 +33,7 @@ type feature struct {
 	gdprCountryCodes        gdprCountryCodes
 	mbmf                    *mbmf
 	dynamicFloor            dynamicFloor
-	performantDSPs          performantDSPs
+	performanceDSPs         performanceDSPs
 	inViewEnabledPublishers inViewEnabledPublishers
 }
 
@@ -74,7 +74,7 @@ func New(config Config) *feature {
 			gdprCountryCodes:        newGDPRCountryCodes(),
 			mbmf:                    newMBMF(),
 			dynamicFloor:            newDynamicFloor(),
-			performantDSPs:          newPerformantDSPs(),
+			performanceDSPs:         newPerformanceDSPs(),
 			inViewEnabledPublishers: newInViewEnabledPublishers(),
 		}
 	})
@@ -139,7 +139,7 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()
-	fe.updatePerformantDSPs()
+	fe.updatePerformanceDSPs()
 	fe.updateInViewEnabledPublishers()
 
 	if err != nil {

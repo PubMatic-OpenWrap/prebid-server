@@ -22,6 +22,6 @@ type Database interface {
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 	GetLatestCountryPartnerFilter() map[string]map[string]struct{}
-	GetPerformantDSPs() (map[int]struct{}, error)
+	GetPerformanceDSPs() (map[int]struct{}, error)
 	GetInViewEnabledPublishers() (map[int]struct{}, error)
 }

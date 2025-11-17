@@ -20,6 +20,6 @@ type Feature interface {
 	GetMBMFFloorsForAdUnitFormat(pubID int, adUnitFormat string) *models.MultiFloors
 	GetProfileAdUnitMultiFloors(profileID int) map[string]*models.MultiFloors
 	IsDynamicFloorEnabledPublisher(pubID int) bool
-	GetEnabledPerformantDSPs() map[int]struct{}
+	GetEnabledPerformanceDSPs() map[int]struct{}
 	GetInViewEnabledPublishers() map[int]struct{}
 }

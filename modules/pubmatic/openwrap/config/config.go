@@ -83,7 +83,7 @@ type Queries struct {
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 	GetCountryPartnerFilteringData    string
-	GetPerformantDSPQuery             string
+	GetPerformanceDSPQuery            string
 	GetInViewEnabledPublishersQuery   string
 }
 

@@ -22,7 +22,7 @@ type Cache interface {
 	GetAppSubIntegrationPaths() (map[string]int, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
-	GetPerformantDSPs() (map[int]struct{}, error)
+	GetPerformanceDSPs() (map[int]struct{}, error)
 	GetInViewEnabledPublishers() (map[int]struct{}, error)
 
 	GetThrottlePartnersWithCriteria(country string) (map[string]struct{}, error)

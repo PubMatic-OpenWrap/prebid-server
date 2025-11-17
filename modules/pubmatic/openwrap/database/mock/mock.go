@@ -185,19 +185,19 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
 }
 
-// GetPerformantDSPs mocks base method.
-func (m *MockDatabase) GetPerformantDSPs() (map[int]struct{}, error) {
+// GetPerformanceDSPs mocks base method.
+func (m *MockDatabase) GetPerformanceDSPs() (map[int]struct{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPerformantDSPs")
+	ret := m.ctrl.Call(m, "GetPerformanceDSPs")
 	ret0, _ := ret[0].(map[int]struct{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPerformantDSPs indicates an expected call of GetPerformantDSPs.
-func (mr *MockDatabaseMockRecorder) GetPerformantDSPs() *gomock.Call {
+// GetPerformanceDSPs indicates an expected call of GetPerformanceDSPs.
+func (mr *MockDatabaseMockRecorder) GetPerformanceDSPs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformantDSPs", reflect.TypeOf((*MockDatabase)(nil).GetPerformantDSPs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformanceDSPs", reflect.TypeOf((*MockDatabase)(nil).GetPerformanceDSPs))
 }
 
 // GetProfileAdUnitMultiFloors mocks base method.
