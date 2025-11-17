@@ -437,6 +437,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				ADomain:                tracker.Tracker.PartnerInfo.Advertiser,
 				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
 				Bundle:                 bid.Bid.Bundle,
+				InViewCountingFlag:     utils.ConvertBoolToInt(tracker.IsOMEnabled),
 			}
 
 			if models.IsDefaultBid(bid.Bid) {
