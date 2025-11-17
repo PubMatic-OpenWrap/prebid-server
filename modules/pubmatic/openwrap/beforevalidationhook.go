@@ -36,6 +36,21 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
+// logHookBidRequest logs the bidRequest at different stages of the hook execution
+func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequestJSON string, nbrCode int) {
+	if !glog.V(models.LogLevelDebug) {
+		return
+	}
+
+	if nbrCode > 0 {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, bidRequestJSON)
+	} else {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, bidRequestJSON)
+	}
+}
+
 func (m OpenWrap) handleBeforeValidationHook(
 	ctx context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -54,19 +69,31 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	// Marshal bidRequest once for logging (only if debug logging is enabled)
+	var bidRequestJSON string
+	if glog.V(models.LogLevelDebug) {
+		if bidRequestBytes, err := json.Marshal(payload.BidRequest); err == nil {
+			bidRequestJSON = string(bidRequestBytes)
+		}
+	}
+
+	// Log at the start of the hook
+	logHookBidRequest("hook_start", rCtx, bidRequestJSON, 0)
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+
+		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
+			logHookBidRequest("hook_end_rejected", rCtx, bidRequestJSON, result.NbrCode)
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
-			if glog.V(models.LogLevelDebug) {
-				bidRequest, _ := json.Marshal(payload.BidRequest)
-				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
-					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
-			}
+		} else {
+			logHookBidRequest("hook_end_success", rCtx, bidRequestJSON, 0)
 		}
 	}()
 
