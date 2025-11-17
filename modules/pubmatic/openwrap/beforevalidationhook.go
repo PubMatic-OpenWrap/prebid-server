@@ -37,18 +37,17 @@ import (
 )
 
 // logHookBidRequest logs the bidRequest at different stages of the hook execution
-func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, nbrCode int) {
+func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequestJSON string, nbrCode int) {
 	if !glog.V(models.LogLevelDebug) {
 		return
 	}
 
-	bidRequestJSON, _ := json.Marshal(bidRequest)
 	if nbrCode > 0 {
 		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
-			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, string(bidRequestJSON))
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, bidRequestJSON)
 	} else {
 		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] bidrequest:[%s]",
-			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, string(bidRequestJSON))
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, bidRequestJSON)
 	}
 }
 
@@ -71,22 +70,30 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
+	// Marshal bidRequest once for logging (only if debug logging is enabled)
+	var bidRequestJSON string
+	if glog.V(models.LogLevelDebug) {
+		if bidRequestBytes, err := json.Marshal(payload.BidRequest); err == nil {
+			bidRequestJSON = string(bidRequestBytes)
+		}
+	}
+
 	// Log at the start of the hook
-	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
+	logHookBidRequest("hook_start", rCtx, bidRequestJSON, 0)
 
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
 
 		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
-			logHookBidRequest("hook_end_rejected", rCtx, payload.BidRequest, result.NbrCode)
+			logHookBidRequest("hook_end_rejected", rCtx, bidRequestJSON, result.NbrCode)
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
 		} else {
-			logHookBidRequest("hook_end_success", rCtx, payload.BidRequest, 0)
+			logHookBidRequest("hook_end_success", rCtx, bidRequestJSON, 0)
 		}
 	}()
 
