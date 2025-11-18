@@ -1931,6 +1931,8 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				mockEngine.EXPECT().RecordPartnerResponseTimeStats(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockFeature.EXPECT().GetImpCountingMethodEnabledBidders().Return(map[string]struct{}{})
+				mockFeature.EXPECT().GetEnabledPerformanceDSPs().Return(map[int]struct{}{})
+				mockFeature.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{})
 				return mockEngine
 			},
 		},

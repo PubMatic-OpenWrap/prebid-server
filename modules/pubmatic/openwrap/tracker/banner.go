@@ -1,8 +1,10 @@
 package tracker
 
 import (
+	"encoding/json"
 	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -12,7 +14,7 @@ import (
 
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {
 	if sdkutils.IsSdkIntegration(rctx.Endpoint) {
-		return bid.AdM, getBURL(bid.BURL, tracker.TrackerURL)
+		return bid.AdM, getBURL(bid.BURL, tracker)
 	}
 
 	var replacedTrackerStr, trackerFormat string
@@ -41,20 +43,33 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 	return adm
 }
 
-// TrackerWithOM checks for OM active condition for DV360 with Pubmatic and other bidders
-func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int) bool {
+// TrackerWithOM checks for OM active condition
+func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int, bidExt json.RawMessage) bool {
 	if rctx.Platform != models.PLATFORM_APP {
 		return false
 	}
 
-	// check for OM active for DV360 with Pubmatic
-	if prebidPartnerName == string(openrtb_ext.BidderPubmatic) && dspID == models.DspId_DV360 {
-		return true
+	// check for OM active for inview enabled publishers and performance DSPs, handle DV360 separately
+	if prebidPartnerName == string(openrtb_ext.BidderPubmatic) {
+		if dspID == models.DspId_DV360 {
+			return true
+		}
+		_, isPresent := rctx.InViewEnabledPublishers[rctx.PubID]
+		_, isPerformanceDSP := rctx.PerformanceDSPs[dspID]
+		return isPresent && isPerformanceDSP
 	}
 
 	// check for OM active for other bidders
-	_, isPresent := rctx.ImpCountingMethodEnabledBidders[prebidPartnerName]
-	return isPresent
+	if _, isOMEnabledBidder := rctx.ImpCountingMethodEnabledBidders[prebidPartnerName]; isOMEnabledBidder {
+		return true
+	}
+
+	// check for OM active for other bidders based on imp-level flag
+	impCountingMethodFlag, err := jsonparser.GetInt(bidExt, models.ImpCountingMethod)
+	if err != nil {
+		return false
+	}
+	return impCountingMethodFlag == 1
 }
 
 // applyTBFFeature adds the tracker before or after the actual bid.Adm

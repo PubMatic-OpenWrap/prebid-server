@@ -6,11 +6,9 @@ package mock_cache
 
 import (
 	reflect "reflect"
-	"time"
 
 	gomock "github.com/golang/mock/gomock"
 	openrtb2 "github.com/prebid/openrtb/v20/openrtb2"
-	mysql "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mysql"
 	models "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	adpodconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adpodconfig"
 	adunitconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -143,6 +141,21 @@ func (mr *MockCacheMockRecorder) GetGDPRCountryCodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGDPRCountryCodes", reflect.TypeOf((*MockCache)(nil).GetGDPRCountryCodes))
 }
 
+// GetInViewEnabledPublishers mocks base method.
+func (m *MockCache) GetInViewEnabledPublishers() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInViewEnabledPublishers")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInViewEnabledPublishers indicates an expected call of GetInViewEnabledPublishers.
+func (mr *MockCacheMockRecorder) GetInViewEnabledPublishers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInViewEnabledPublishers", reflect.TypeOf((*MockCache)(nil).GetInViewEnabledPublishers))
+}
+
 // GetMappingsFromCacheV25 mocks base method.
 func (m *MockCache) GetMappingsFromCacheV25(arg0 models.RequestCtx, arg1 int) map[string]models.SlotMapping {
 	m.ctrl.T.Helper()
@@ -170,6 +183,21 @@ func (m *MockCache) GetPartnerConfigMap(arg0, arg1, arg2 int) (map[int]map[strin
 func (mr *MockCacheMockRecorder) GetPartnerConfigMap(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartnerConfigMap", reflect.TypeOf((*MockCache)(nil).GetPartnerConfigMap), arg0, arg1, arg2)
+}
+
+// GetPerformanceDSPs mocks base method.
+func (m *MockCache) GetPerformanceDSPs() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPerformanceDSPs")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPerformanceDSPs indicates an expected call of GetPerformanceDSPs.
+func (mr *MockCacheMockRecorder) GetPerformanceDSPs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformanceDSPs", reflect.TypeOf((*MockCache)(nil).GetPerformanceDSPs))
 }
 
 // GetProfileAdUnitMultiFloors mocks base method.
@@ -245,18 +273,6 @@ func (mr *MockCacheMockRecorder) GetSlotToHashValueMapFromCacheV25(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlotToHashValueMapFromCacheV25", reflect.TypeOf((*MockCache)(nil).GetSlotToHashValueMapFromCacheV25), arg0, arg1)
 }
 
-// Set mocks base method.
-func (m *MockCache) Set(arg0 string, arg1 interface{}) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Set", arg0, arg1)
-}
-
-// Set indicates an expected call of Set.
-func (mr *MockCacheMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), arg0, arg1)
-}
-
 // GetThrottlePartnersWithCriteria mocks base method.
 func (m *MockCache) GetThrottlePartnersWithCriteria(arg0 string) (map[string]struct{}, error) {
 	m.ctrl.T.Helper()
@@ -272,15 +288,14 @@ func (mr *MockCacheMockRecorder) GetThrottlePartnersWithCriteria(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThrottlePartnersWithCriteria", reflect.TypeOf((*MockCache)(nil).GetThrottlePartnersWithCriteria), arg0)
 }
 
-// NewCountryPartnerFilter mocks base method.
-func (_m *MockCache) NewCountryPartnerFilter(refreshInterval time.Duration) (*mysql.CountryPartnerFilterDB, error) {
-	ret := _m.ctrl.Call(_m, "NewCountryPartnerFilter", refreshInterval)
-	ret0, _ := ret[0].(*mysql.CountryPartnerFilterDB)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+// Set mocks base method.
+func (m *MockCache) Set(arg0 string, arg1 interface{}) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Set", arg0, arg1)
 }
 
-// NewCountryPartnerFilter indicates an expected call of NewCountryPartnerFilter.
-func (_mr *MockCacheMockRecorder) NewCountryPartnerFilter(refreshInterval interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCallWithMethodType(_mr.mock, "NewCountryPartnerFilter", reflect.TypeOf((*MockCache)(nil).NewCountryPartnerFilter), refreshInterval)
+// Set indicates an expected call of Set.
+func (mr *MockCacheMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), arg0, arg1)
 }

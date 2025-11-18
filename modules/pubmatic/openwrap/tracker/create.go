@@ -180,6 +180,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			}
 
 			tracker.RewardedInventory = isRewardInventory
+			inViewCountingFlag := trackerWithOM(rctx, partnerID, dspId, bid.Ext)
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:              partnerID,
 				BidderCode:             seatBid.Seat,
@@ -197,6 +198,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				DealID:                 "-1",
 				MultiBidMultiFloorFlag: mbmfFlag,
 				NetworkID:              networkId,
+				InViewCountingFlag:     utils.ConvertBoolToInt(inViewCountingFlag),
 			}
 			if rctx.PriceGranularity != nil {
 				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
@@ -229,7 +231,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
 				BidType:       adformat,
-				IsOMEnabled:   trackerWithOM(rctx, partnerID, dspId),
+				IsOMEnabled:   inViewCountingFlag,
 			}
 		}
 	}
@@ -316,6 +318,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if tracker.PartnerInfo.MultiBidMultiFloorFlag == 1 {
 		v.Set(models.TRKMultiBidMultiFloorFlag, strconv.Itoa(tracker.PartnerInfo.MultiBidMultiFloorFlag))
+	}
+	if tracker.PartnerInfo.InViewCountingFlag == 1 {
+		v.Set(models.TRKInViewCountingFlag, strconv.Itoa(tracker.PartnerInfo.InViewCountingFlag))
 	}
 
 	//ProfileMetadata parameters

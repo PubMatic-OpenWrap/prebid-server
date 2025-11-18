@@ -141,6 +141,35 @@ func (mr *MockDatabaseMockRecorder) GetGDPRCountryCodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGDPRCountryCodes", reflect.TypeOf((*MockDatabase)(nil).GetGDPRCountryCodes))
 }
 
+// GetInViewEnabledPublishers mocks base method.
+func (m *MockDatabase) GetInViewEnabledPublishers() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInViewEnabledPublishers")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInViewEnabledPublishers indicates an expected call of GetInViewEnabledPublishers.
+func (mr *MockDatabaseMockRecorder) GetInViewEnabledPublishers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInViewEnabledPublishers", reflect.TypeOf((*MockDatabase)(nil).GetInViewEnabledPublishers))
+}
+
+// GetLatestCountryPartnerFilter mocks base method.
+func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestCountryPartnerFilter")
+	ret0, _ := ret[0].(map[string]map[string]struct{})
+	return ret0
+}
+
+// GetLatestCountryPartnerFilter indicates an expected call of GetLatestCountryPartnerFilter.
+func (mr *MockDatabaseMockRecorder) GetLatestCountryPartnerFilter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestCountryPartnerFilter", reflect.TypeOf((*MockDatabase)(nil).GetLatestCountryPartnerFilter))
+}
+
 // GetMappings mocks base method.
 func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMapping) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
@@ -154,6 +183,21 @@ func (m *MockDatabase) GetMappings(arg0 string, arg1 map[string]models.SlotMappi
 func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
+}
+
+// GetPerformanceDSPs mocks base method.
+func (m *MockDatabase) GetPerformanceDSPs() (map[int]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPerformanceDSPs")
+	ret0, _ := ret[0].(map[int]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPerformanceDSPs indicates an expected call of GetPerformanceDSPs.
+func (mr *MockDatabaseMockRecorder) GetPerformanceDSPs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPerformanceDSPs", reflect.TypeOf((*MockDatabase)(nil).GetPerformanceDSPs))
 }
 
 // GetProfileAdUnitMultiFloors mocks base method.
@@ -244,18 +288,4 @@ func (m *MockDatabase) GetWrapperSlotMappings(arg0 map[int]map[string]string, ar
 func (mr *MockDatabaseMockRecorder) GetWrapperSlotMappings(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWrapperSlotMappings", reflect.TypeOf((*MockDatabase)(nil).GetWrapperSlotMappings), arg0, arg1, arg2)
-}
-
-// GetLatestCountryPartnerFilter mocks base method.
-func (m *MockDatabase) GetLatestCountryPartnerFilter() map[string]map[string]struct{} {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestCountryPartnerFilter")
-	ret0, _ := ret[0].(map[string]map[string]struct{})
-	return ret0
-}
-
-// GetLatestCountryPartnerFilter indicates an expected call of GetLatestCountryPartnerFilter.
-func (mr *MockDatabaseMockRecorder) GetLatestCountryPartnerFilter() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestCountryPartnerFilter", reflect.TypeOf((*MockDatabase)(nil).GetLatestCountryPartnerFilter))
 }

@@ -19,20 +19,22 @@ type feature struct {
 	cache       cache.Cache
 	serviceStop chan struct{}
 	sync.RWMutex
-	defaultExpiry        int
-	publisherFeature     map[int]map[int]models.FeatureData
-	fsc                  fsc
-	tbf                  tbf
-	ant                  analyticsThrottle
-	ampMultiformat       ampMultiformat
-	maxFloors            maxFloors
-	bidRecovery          bidRecovery
-	appLovinMultiFloors  appLovinMultiFloors
-	appLovinSchainABTest appLovinSchainABTest
-	impCountingMethod    impCountingMethod
-	gdprCountryCodes     gdprCountryCodes
-	mbmf                 *mbmf
-	dynamicFloor         dynamicFloor
+	defaultExpiry           int
+	publisherFeature        map[int]map[int]models.FeatureData
+	fsc                     fsc
+	tbf                     tbf
+	ant                     analyticsThrottle
+	ampMultiformat          ampMultiformat
+	maxFloors               maxFloors
+	bidRecovery             bidRecovery
+	appLovinMultiFloors     appLovinMultiFloors
+	appLovinSchainABTest    appLovinSchainABTest
+	impCountingMethod       impCountingMethod
+	gdprCountryCodes        gdprCountryCodes
+	mbmf                    *mbmf
+	dynamicFloor            dynamicFloor
+	performanceDSPs         performanceDSPs
+	inViewEnabledPublishers inViewEnabledPublishers
 }
 
 var fe *feature
@@ -68,10 +70,12 @@ func New(config Config) *feature {
 			appLovinSchainABTest: appLovinSchainABTest{
 				schainABTestPercent: 0,
 			},
-			impCountingMethod: newImpCountingMethod(),
-			gdprCountryCodes:  newGDPRCountryCodes(),
-			mbmf:              newMBMF(),
-			dynamicFloor:      newDynamicFloor(),
+			impCountingMethod:       newImpCountingMethod(),
+			gdprCountryCodes:        newGDPRCountryCodes(),
+			mbmf:                    newMBMF(),
+			dynamicFloor:            newDynamicFloor(),
+			performanceDSPs:         newPerformanceDSPs(),
+			inViewEnabledPublishers: newInViewEnabledPublishers(),
 		}
 	})
 	return fe
@@ -135,6 +139,8 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()
+	fe.updatePerformanceDSPs()
+	fe.updateInViewEnabledPublishers()
 
 	if err != nil {
 		glog.Error(err.Error())

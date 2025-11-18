@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -181,6 +182,7 @@ func TestTrackerWithOM(t *testing.T) {
 		rctx              models.RequestCtx
 		prebidPartnerName string
 		dspID             int
+		bidExt            json.RawMessage
 	}
 	tests := []struct {
 		name string
@@ -258,10 +260,116 @@ func TestTrackerWithOM(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_publisher_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+			},
+			want: true,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_publisher_non_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             999,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_disabled_publisher_non_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{1234: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             999,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_empty_inview_publishers_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_empty_performance_dsps",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_with_imp_counting_method_flag_1",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: "appnexus",
+				bidExt:            json.RawMessage(`{"imp_ct_mthd":1}`),
+			},
+			want: true,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_with_invalid_bidext_json",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: "appnexus",
+				bidExt:            json.RawMessage(`{invalid json}`),
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_dv360_with_inview_and_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{models.DspId_DV360: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID); got != tt.want {
+			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID, tt.args.bidExt); got != tt.want {
 				assert.Equal(t, tt.want, got)
 			}
 		})

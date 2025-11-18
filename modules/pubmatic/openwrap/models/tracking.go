@@ -58,6 +58,7 @@ const (
 	TRKCountryCode            = "cc"
 	TRKNetworkID              = "nwid"
 	TRKVastUnwrapEnabled      = "vu"
+	TRKInViewCountingFlag     = "ctm"
 )
 
 // video error tracker url parameters

@@ -76,6 +76,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 	//Impression counting method enabled bidders
 	if rctx.Endpoint == models.EndpointV25 || sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
+		rctx.PerformanceDSPs = m.pubFeatures.GetEnabledPerformanceDSPs()
+		rctx.InViewEnabledPublishers = m.pubFeatures.GetInViewEnabledPublishers()
 	}
 
 	var winningAdpodBidIds map[string][]string
