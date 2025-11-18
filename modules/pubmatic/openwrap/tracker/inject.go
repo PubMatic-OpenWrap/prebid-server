@@ -100,6 +100,8 @@ func getBURL(burl string, tracker models.OWTracker) string {
 		return tracker.TrackerURL
 	}
 
+	// OM is enabled, ssp sends dummy burl.
+	// To avoid dummy calls to ssptracker app sspburl is not appended.
 	if tracker.Tracker.PartnerInfo.PartnerID == models.BidderPubMatic &&
 		tracker.IsOMEnabled && tracker.BidType == models.Banner {
 		return tracker.TrackerURL
