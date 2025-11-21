@@ -181,6 +181,16 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 			result.Warnings = append(result.Warnings, "Failed to apply GAM URL configs: "+err.Error())
 		}
 
+		// Set Default values for dynamic adpod configs
+		adpod.SetDefaultValuesToPodConfig(&rCtx)
+
+		// Validate adpod configs
+		if err := adpod.ValidateV25Configs(&rCtx); err != nil {
+			result.NbrCode = int(nbr.InvalidAdpodConfig)
+			result.Errors = append(result.Errors, "Invalid adpod configuration: "+err.Error())
+			return ep, nil
+		}
+
 		// Enable when UI support is added
 		// ep.BidRequest = adpod.ApplyAdpodConfigs(rCtx, ep.BidRequest)
 

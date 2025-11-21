@@ -655,7 +655,6 @@ func isSlotEnabled(imp openrtb2.Imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUn
 }
 
 func getPubID(bidRequest openrtb2.BidRequest) (pubID int, err error) {
-
 	if bidRequest.Site != nil && bidRequest.Site.Publisher != nil && bidRequest.Site.Publisher.ID != "" {
 		pubID, err = strconv.Atoi(bidRequest.Site.Publisher.ID)
 	} else if bidRequest.App != nil && bidRequest.App.Publisher != nil && bidRequest.App.Publisher.ID != "" {
@@ -1607,13 +1606,6 @@ func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookRes
 
 			if adpodV25 == nil {
 				continue
-			}
-
-			if err := adpod.ValidateV25Configs(rCtx, adpodV25); err != nil {
-				result.NbrCode = int(nbr.InvalidAdpodConfig)
-				result.Errors = append(result.Errors, "invalid adpod configurations for "+imp.ID+" reason: "+err.Error())
-				rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*bidRequest)
-				return result, false
 			}
 
 			var domainExclusion, categoryExclusion bool
