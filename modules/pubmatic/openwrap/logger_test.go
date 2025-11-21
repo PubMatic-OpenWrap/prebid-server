@@ -252,7 +252,7 @@ func TestGetIncomingSlots(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			slots := getIncomingSlots(tt.args.imp, tt.args.videoAdUnitCtx)
+			slots := models.GetIncomingSlots(tt.args.imp, tt.args.videoAdUnitCtx)
 			assert.ElementsMatch(t, tt.want, slots, "mismatched slots")
 		})
 	}

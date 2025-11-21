@@ -72,6 +72,25 @@ func (m OpenWrap) HandleAllProcessedBidResponsesHook(
 	return m.handleAllProcessedBidResponsesHook(ctx, miCtx, payload)
 }
 
+func (m OpenWrap) HandleBidderRequestHook(
+	ctx context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.BidderRequestPayload,
+) (hookstage.HookResult[hookstage.BidderRequestPayload], error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats(m.cfg.Server.HostName, "HandleBidderRequestHook")
+			request, err := json.Marshal(payload)
+			if err != nil {
+				glog.Error("request:" + string(request) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))
+			}
+			glog.Error("request:" + string(request) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
+	return m.handleBidderRequestHook(ctx, miCtx, payload)
+}
+
 func (m OpenWrap) HandleAuctionResponseHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
@@ -98,6 +117,37 @@ func (m OpenWrap) HandleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats(m.cfg.Server.HostName, "HandleRawBidderResponseHook")
+			response, err := json.Marshal(payload)
+			if err != nil {
+				glog.Error("response:" + string(response) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))
+				return
+			}
+			glog.Error("response:" + string(response) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
 
 	return m.handleRawBidderResponseHook(miCtx, payload)
+}
+
+func (m OpenWrap) HandleExitpointHook(
+	ctx context.Context,
+	miCtx hookstage.ModuleInvocationContext,
+	payload hookstage.ExitpointPaylaod,
+) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.metricEngine.RecordOpenWrapServerPanicStats(m.cfg.Server.HostName, "HandleExitpointHook")
+			response, err := json.Marshal(payload)
+			if err != nil {
+				glog.Error("response:" + string(response) + ". err: " + err.Error() + ". stacktrace:" + string(debug.Stack()))
+				return
+			}
+			glog.Error("response:" + string(response) + ". stacktrace:" + string(debug.Stack()))
+		}
+	}()
+
+	return m.handleExitpointHook(ctx, miCtx, payload)
 }

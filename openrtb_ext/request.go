@@ -396,6 +396,7 @@ type ExtRequestSdkRenderer struct {
 
 type ExtMultiBid struct {
 	Bidder                 string   `json:"bidder,omitempty"`
+	Alias                  string   `json:"alias,omitempty"`
 	Bidders                []string `json:"bidders,omitempty"`
 	MaxBids                *int     `json:"maxbids,omitempty"`
 	TargetBidderCodePrefix string   `json:"targetbiddercodeprefix,omitempty"`

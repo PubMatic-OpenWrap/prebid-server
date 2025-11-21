@@ -30,17 +30,19 @@ const (
 	entityAuctionRequest           entity = "auction-request"
 	entityAuctionResponse          entity = "auction_response"
 	entityAllProcessedBidResponses entity = "all_processed_bid_responses"
+	entityExitpoint                entity = "exitpoint"
 )
 
 type StageExecutor interface {
 	ExecuteEntrypointStage(req *http.Request, body []byte) ([]byte, *RejectError)
 	ExecuteRawAuctionStage(body []byte) ([]byte, *RejectError)
 	ExecuteProcessedAuctionStage(req *openrtb_ext.RequestWrapper) error
-	ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string) *RejectError
+	ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string, bidderInfo config.BidderInfo) *RejectError
 	ExecuteRawBidderResponseStage(response *adapters.BidderResponse, bidder string) *RejectError
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
 	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
+	ExecuteExitpointStage(response any, w http.ResponseWriter) any
 }
 
 type HookStageExecutor interface {
@@ -68,7 +70,7 @@ func NewHookExecutor(builder hooks.ExecutionPlanBuilder, endpoint string, me met
 		endpoint:       endpoint,
 		planBuilder:    builder,
 		stageOutcomes:  []StageOutcome{},
-		moduleContexts: &moduleContexts{ctxs: make(map[string]hookstage.ModuleContext)},
+		moduleContexts: &moduleContexts{ctxs: make(map[string]*hookstage.ModuleContext)},
 		metricEngine:   me,
 	}
 }
@@ -215,7 +217,7 @@ func (e *hookExecutor) ExecuteProcessedAuctionStage(request *openrtb_ext.Request
 	return reject
 }
 
-func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string) *RejectError {
+func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper, bidder string, bidderInfo config.BidderInfo) *RejectError {
 	plan := e.planBuilder.PlanForBidderRequestStage(e.endpoint, e.account)
 	if len(plan) == 0 {
 		return nil
@@ -232,7 +234,7 @@ func (e *hookExecutor) ExecuteBidderRequestStage(req *openrtb_ext.RequestWrapper
 
 	stageName := hooks.StageBidderRequest.String()
 	executionCtx := e.newContext(stageName)
-	payload := hookstage.BidderRequestPayload{Request: req, Bidder: bidder}
+	payload := hookstage.BidderRequestPayload{Request: req, Bidder: bidder, BidderInfo: bidderInfo}
 	outcome, _, contexts, reject := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
 	outcome.Entity = entity(bidder)
 	outcome.Stage = stageName
@@ -326,6 +328,35 @@ func (e *hookExecutor) ExecuteAuctionResponseStage(response *openrtb2.BidRespons
 	e.pushStageOutcome(outcome)
 }
 
+func (e *hookExecutor) ExecuteExitpointStage(response any, w http.ResponseWriter) any {
+	plan := e.planBuilder.PlanForExitpointStage(e.endpoint, e.account)
+	if len(plan) == 0 {
+		return response
+	}
+
+	handler := func(
+		ctx context.Context,
+		moduleCtx hookstage.ModuleInvocationContext,
+		hook hookstage.Exitpoint,
+		payload hookstage.ExitpointPaylaod,
+	) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+		return hook.HandleExitpointHook(ctx, moduleCtx, payload)
+	}
+
+	stageName := hooks.StageExitpoint.String()
+	executionCtx := e.newContext(stageName)
+	payload := hookstage.ExitpointPaylaod{W: w, Response: response}
+
+	outcome, payload, context, _ := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
+	outcome.Entity = entityExitpoint
+	outcome.Stage = stageName
+
+	e.saveModuleContexts(context)
+	e.pushStageOutcome(outcome)
+
+	return payload.Response
+}
+
 func (e *hookExecutor) newContext(stage string) executionContext {
 	return executionContext{
 		account:         e.account,
@@ -373,7 +404,7 @@ func (executor EmptyHookExecutor) ExecuteProcessedAuctionStage(_ *openrtb_ext.Re
 	return nil
 }
 
-func (executor EmptyHookExecutor) ExecuteBidderRequestStage(_ *openrtb_ext.RequestWrapper, bidder string) *RejectError {
+func (executor EmptyHookExecutor) ExecuteBidderRequestStage(_ *openrtb_ext.RequestWrapper, bidder string, _ config.BidderInfo) *RejectError {
 	return nil
 }
 
@@ -384,8 +415,13 @@ func (executor EmptyHookExecutor) ExecuteRawBidderResponseStage(_ *adapters.Bidd
 func (executor EmptyHookExecutor) ExecuteAllProcessedBidResponsesStage(_ map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 }
 
-func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidResponse) {}
+func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidResponse) {
+}
 
 func (executor EmptyHookExecutor) ExecuteBeforeRequestValidationStage(_ *openrtb2.BidRequest) *RejectError {
 	return nil
+}
+
+func (executor EmptyHookExecutor) ExecuteExitpointStage(response any, _ http.ResponseWriter) any {
+	return response
 }

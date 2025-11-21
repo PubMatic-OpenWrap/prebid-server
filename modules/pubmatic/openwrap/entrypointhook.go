@@ -1,10 +1,8 @@
 package openwrap
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -16,11 +14,13 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	v25 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/usersync"
@@ -46,6 +46,7 @@ func (m OpenWrap) handleEntrypointHook(
 	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
 
 	rCtx := models.RequestCtx{}
+	var endpointHookManager endpointmanager.EndpointHookManager
 	var endpoint string
 	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
@@ -61,9 +62,23 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return
 		}
-		result.ModuleContext = make(hookstage.ModuleContext)
-		result.ModuleContext["rctx"] = rCtx
+
+		if result.ModuleContext == nil {
+			result.ModuleContext = hookstage.NewModuleContext()
+		}
+		result.ModuleContext.Set("rctx", rCtx)
+		result.ModuleContext.Set("endpointhookmanager", endpointHookManager)
 	}()
+
+	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+
+	//Intialise endpoint Hook Manager based on endpoint
+	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache, m.creativeCache)
+
+	if endpoint == models.EndpointHybrid {
+		rCtx.Endpoint = models.EndpointHybrid
+		return result, nil
+	}
 
 	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -73,12 +88,8 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.DeviceCtx.UA = payload.Request.Header.Get("User-Agent")
 		return result, nil
 	}
-	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
-	if endpoint == models.EndpointHybrid {
-		rCtx.Endpoint = models.EndpointHybrid
-		return result, nil
-	}
 
+	// Preserve original request body for wakanda
 	originalRequestBody := payload.Body
 
 	if endpoint == models.EndpointAppLovinMax {
@@ -128,9 +139,19 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, err
 	}
 
+	// validate redirect url
+	if len(requestExtWrapper.AdServerURL) > 0 {
+		if !utils.IsValidURL(requestExtWrapper.AdServerURL) {
+			result.NbrCode = int(nbr.InvalidRedirectURL)
+			result.Errors = append(result.Errors, "Invalid redirect URL")
+			return result, nil
+		}
+	}
+
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
 	rCtx = models.RequestCtx{
 		StartTime:          time.Now().Unix(),
+		Header:             payload.Request.Header,
 		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
 		ProfileID:          requestExtWrapper.ProfileId,
 		DisplayID:          requestExtWrapper.VersionId,
@@ -177,22 +198,6 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	}
 
-	// only http.ErrNoCookie is returned, we can ignore it
-	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
-	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
-	if originCookie, _ := payload.Request.Cookie("origin"); originCookie != nil {
-		rCtx.OriginCookie = originCookie.Value
-	}
-
-	if rCtx.LoggerImpressionID == "" {
-		rCtx.LoggerImpressionID = uuid.NewV4().String()
-	}
-
-	// temp, for AMP, etc
-	if pubid != 0 {
-		rCtx.PubID = pubid
-	}
-
 	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
 	if len(errs) > 0 {
 		result.NbrCode = int(nbr.InvalidPublisherID)
@@ -207,6 +212,27 @@ func (m OpenWrap) handleEntrypointHook(
 		return result, fmt.Errorf("invalid publisher id : %v", err)
 	}
 	rCtx.PubIDStr = pubIdStr
+
+	// only http.ErrNoCookie is returned, we can ignore it
+	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
+	if rCtx.UidCookie == nil {
+		m.metricEngine.RecordUidsCookieNotPresentErrorStats(rCtx.PubIDStr, rCtx.ProfileIDStr)
+	}
+
+	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
+	if originCookie, _ := payload.Request.Cookie("origin"); originCookie != nil {
+		rCtx.OriginCookie = originCookie.Value
+	}
+
+	if rCtx.LoggerImpressionID == "" {
+		rCtx.LoggerImpressionID = uuid.NewV4().String()
+	}
+
+	// temp, for AMP, etc
+	if pubid != 0 {
+		rCtx.PubID = pubid
+	}
+
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
@@ -214,11 +240,9 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 
-	if rCtx.IsCTVRequest {
-		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
-			ep.Request.Body = io.NopCloser(bytes.NewBuffer(ep.Body))
-			return ep, nil
-		}, hookstage.MutationUpdate, "update-request-body")
+	rCtx, result, err = endpointHookManager.HandleEntrypointHook(payload, rCtx, result, miCtx)
+	if err != nil {
+		return result, err
 	}
 
 	return result, nil

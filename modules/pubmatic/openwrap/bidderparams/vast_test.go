@@ -16,7 +16,7 @@ func TestGetVASTBidderSlotKeys(t *testing.T) {
 		slotKey     string
 		slotMap     map[string]models.SlotMapping
 		pubVASTTags models.PublisherVASTTags
-		adpodExt    *models.AdPod
+		adpodCtx    models.AdpodCtx
 	}
 	tests := []struct {
 		name    string
@@ -300,7 +300,7 @@ func TestGetVASTBidderSlotKeys(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getVASTBidderSlotKeys(tt.args.imp, tt.args.slotKey, tt.args.slotMap, tt.args.pubVASTTags, tt.args.adpodExt)
+			got, err := getVASTBidderSlotKeys(tt.args.imp, tt.args.slotKey, tt.args.slotMap, tt.args.pubVASTTags, tt.args.adpodCtx)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return
@@ -317,7 +317,7 @@ func TestValidateVASTTag(t *testing.T) {
 		vastTag          *models.VASTTag
 		videoMinDuration int64
 		videoMaxDuration int64
-		adpod            *models.AdPod
+		podDur           int64
 	}
 	tests := []struct {
 		name    string
@@ -420,7 +420,6 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				videoMinDuration: 25,
-				adpod:            &models.AdPod{},
 			},
 			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:101, tag.duration:25, adpod.maxduration:0`),
 		},
@@ -433,9 +432,7 @@ func TestValidateVASTTag(t *testing.T) {
 					Duration: 5,
 				},
 				videoMaxDuration: 25,
-				adpod: &models.AdPod{
-					MinDuration: 10,
-				},
+				podDur:           10,
 			},
 			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration < adpod.minduration' vastTagID:101, tag.duration:5, adpod.minduration:10`),
 		},
@@ -448,11 +445,9 @@ func TestValidateVASTTag(t *testing.T) {
 					Duration: 15,
 				},
 				videoMaxDuration: 25,
-				adpod: &models.AdPod{
-					MaxDuration: 10,
-				},
+				podDur:           10,
 			},
-			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > adpod.maxduration' vastTagID:101, tag.duration:15, adpod.maxduration:10`),
+			wantErr: fmt.Errorf(`VAST tag 'duration' validation failed 'tag.duration > imp.video.PodDur' vastTagID:101, tag.duration:15, imp.video.PodDur:10`),
 		},
 		{
 			name: `adpod_exact_duration_check`,
@@ -463,10 +458,7 @@ func TestValidateVASTTag(t *testing.T) {
 					Duration: 15,
 				},
 				videoMaxDuration: 25,
-				adpod: &models.AdPod{
-					MinDuration: 15,
-					MaxDuration: 15,
-				},
+				podDur:           15,
 			},
 			wantErr: nil,
 		},
@@ -480,10 +472,7 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				videoMinDuration: 5,
-				adpod: &models.AdPod{
-					MinDuration: 15,
-					MaxDuration: 15,
-				},
+				podDur:           15,
 			},
 			wantErr: nil,
 		},
@@ -497,17 +486,14 @@ func TestValidateVASTTag(t *testing.T) {
 				},
 				videoMaxDuration: 25,
 				videoMinDuration: 15,
-				adpod: &models.AdPod{
-					MinDuration: 10,
-					MaxDuration: 10,
-				},
+				podDur:           10,
 			},
 			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := validateVASTTag(tt.args.vastTag, tt.args.videoMinDuration, tt.args.videoMaxDuration, tt.args.adpod); err != nil {
+			if err := validateVASTTag(tt.args.vastTag, tt.args.videoMinDuration, tt.args.videoMaxDuration, tt.args.podDur); err != nil {
 				assert.EqualError(t, err, string(tt.wantErr.Error()), "Expected error:%v but got:%v", tt.wantErr, err)
 			}
 		})

@@ -8,6 +8,7 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/currency"
 	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/experiment/adscert"
@@ -31,8 +32,8 @@ type validatedBidder struct {
 	bidder AdaptedBidder
 }
 
-func (v *validatedBidder) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, hookExecutor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) ([]*entities.PbsOrtbSeatBid, extraBidderRespInfo, []error) {
-	seatBids, extraBidderRespInfo, errs := v.bidder.requestBid(ctx, bidderRequest, conversions, reqInfo, adsCertSigner, bidRequestOptions, alternateBidderCodes, hookExecutor, ruleToAdjustments)
+func (v *validatedBidder) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, hookExecutor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID, bidderInfo config.BidderInfo) ([]*entities.PbsOrtbSeatBid, extraBidderRespInfo, []error) {
+	seatBids, extraBidderRespInfo, errs := v.bidder.requestBid(ctx, bidderRequest, conversions, reqInfo, adsCertSigner, bidRequestOptions, alternateBidderCodes, hookExecutor, ruleToAdjustments, bidderInfo)
 	for _, seatBid := range seatBids {
 		if validationErrors := removeInvalidBids(bidderRequest.BidRequest, seatBid, bidRequestOptions.responseDebugAllowed); len(validationErrors) > 0 {
 			errs = append(errs, validationErrors...)

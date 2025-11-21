@@ -12,7 +12,8 @@ import (
 // Additional dependencies can be added here if modules need something more.
 type ModuleDeps struct {
 	HTTPClient      *http.Client
+	CacheHttpClient *http.Client
+	Config          *config.Configuration
 	RateConvertor   *currency.RateConverter
-	MetricsCfg      *config.Metrics
 	MetricsRegistry metricsCfg.MetricsRegistry
 }

@@ -21,6 +21,7 @@ import (
 	cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	ow_gocache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/gocache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/creativecache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mysql"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
@@ -49,6 +50,7 @@ type OpenWrap struct {
 	profileMetaData profilemetadata.ProfileMetaData
 	uuidGenerator   uuidutil.UUIDGenerator
 	features        feature.Features
+	creativeCache   creativecache.Client
 }
 
 var ow *OpenWrap
@@ -83,7 +85,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 		return OpenWrap{}, errors.New("error while initializing bidder params")
 	}
 
-	metricEngine, err := metrics_cfg.NewMetricsEngine(&cfg, moduleDeps.MetricsCfg, moduleDeps.MetricsRegistry)
+	metricEngine, err := metrics_cfg.NewMetricsEngine(&cfg, &moduleDeps.Config.Metrics, moduleDeps.MetricsRegistry)
 	if err != nil {
 		return OpenWrap{}, fmt.Errorf("error while initializing metrics-engine: %v", err)
 	}
@@ -118,6 +120,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 	uw := unwrap.NewUnwrap(fmt.Sprintf("http://%s:%d/unwrap", cfg.VastUnwrapCfg.APPConfig.Host, cfg.VastUnwrapCfg.APPConfig.Port),
 		cfg.VastUnwrapCfg.APPConfig.UnwrapDefaultTimeout, nil, &metricEngine)
 
+	// Creative Cache
+	creativeCache := creativecache.NewClient(moduleDeps.CacheHttpClient, &moduleDeps.Config.CacheURL, &moduleDeps.Config.ExtCacheURL, metricEngine)
+
 	initOpenWrapServer(&cfg)
 
 	// init geoDBClient
@@ -139,6 +144,7 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			profileMetaData: profileMetaData,
 			uuidGenerator:   uuidutil.UUIDRandomGenerator{},
 			features:        features,
+			creativeCache:   creativeCache,
 		}
 	})
 

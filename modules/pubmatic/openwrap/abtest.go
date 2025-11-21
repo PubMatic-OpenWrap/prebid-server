@@ -39,7 +39,6 @@ func AppendTest(key string) string {
 
 // UpdateTestConfig returns the updated partnerconfig according to the test type
 func UpdateTestConfig(rctx models.RequestCtx) map[int]map[string]string {
-
 	//create copy of the map
 	newPartnerConfig := copyPartnerConfigMap(rctx.PartnerConfigMap)
 
@@ -79,7 +78,6 @@ func UpdateTestConfig(rctx models.RequestCtx) map[int]map[string]string {
 			replaceControlConfig(newPartnerConfig, partnerID, models.SERVER_SIDE_FLAG)
 
 		}
-	default:
 	}
 
 	return newPartnerConfig

@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -116,9 +117,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": nil,
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", nil)
+						return ctx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -134,11 +137,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Sshb: "1",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 			},
 
@@ -154,11 +160,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -173,11 +182,14 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointV25,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AllProcessedBidResponsesPayload{
 					Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{

@@ -19,10 +19,6 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-const (
-	ImpressionIDSeparator = `::`
-)
-
 var SyncerMap map[string]usersync.Syncer
 
 func SetSyncerMap(s map[string]usersync.Syncer) {
@@ -249,31 +245,6 @@ func ErrorWrap(cErr, nErr error) error {
 	}
 
 	return errors.Wrap(cErr, nErr.Error())
-}
-
-// getImpressionID will return impression id and sequence number
-func GetImpressionID(id string) (string, int) {
-	//get original impression id and sequence number
-	ImpID, sequenceNumber := DecodeImpressionID(id)
-	if sequenceNumber < 0 {
-		return id, -1
-	}
-
-	return ImpID, sequenceNumber
-}
-
-func DecodeImpressionID(id string) (string, int) {
-	index := strings.LastIndex(id, ImpressionIDSeparator)
-	if index == -1 {
-		return id, 0
-	}
-
-	sequence, err := strconv.Atoi(id[index+2:])
-	if err != nil || sequence == 0 {
-		return id, 0
-	}
-
-	return id[:index], sequence
 }
 
 func GetSizeForPlatform(width, height int64, platform string) string {

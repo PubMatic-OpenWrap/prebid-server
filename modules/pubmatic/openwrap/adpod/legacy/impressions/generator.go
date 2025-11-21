@@ -1,4 +1,4 @@
-package impressions
+package ctvlegacy
 
 // generator contains Pod Minimum Duration, Pod Maximum Duration, Slot Minimum Duration and Slot Maximum Duration
 // It holds additional attributes required by this algorithm for  internal computation.

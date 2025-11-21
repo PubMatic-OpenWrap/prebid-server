@@ -27,21 +27,10 @@ type BidExt struct {
 	OriginalBidCPMUSD       float64               `json:"origbidcpmusd,omitempty"`
 	Nbr                     *openrtb3.NoBidReason `json:"-"` // Reason for not bidding
 	Fsc                     int                   `json:"fsc,omitempty"`
-	AdPod                   *AdpodBidExt          `json:"adpod,omitempty"`
 	MultiBidMultiFloorValue float64               `json:"-"`
 	InBannerVideo           bool                  `json:"ibv,omitempty"`
 	ClickTrackers           []string              `json:"clicktrackers,omitempty"`
 	OWSDK                   map[string]any        `json:"owsdk,omitempty"`
-}
-
-type AdpodBidExt struct {
-	IsAdpodBid bool              `json:"isAdpodBid,omitempty"`
-	Targeting  map[string]string `json:"targeting,omitempty"`
-	Debug      AdpodDebug        `json:"debug,omitempty"`
-}
-
-type AdpodDebug struct {
-	Targeting map[string]string
 }
 
 // ExtBidVideo defines the contract for bidresponse.seatbid.bid[i].ext.video

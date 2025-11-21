@@ -63,7 +63,7 @@ func TestGetRequestExt(t *testing.T) {
 		{
 			name: "unexpected_end_of_JSON_input",
 			args: args{
-				ext: nil,
+				ext: []byte(`{`),
 			},
 			want:    nil,
 			wantErr: true,

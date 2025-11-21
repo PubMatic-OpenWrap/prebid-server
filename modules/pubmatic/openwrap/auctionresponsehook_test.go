@@ -11,10 +11,12 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -43,15 +45,18 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "single bid and supportdeal is false",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr: "5890",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -105,15 +110,18 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "test auction between 3 bids when supportdeal is false and no bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr: "5890",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -217,15 +225,18 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "test auction between 3 bids when supportdeal is false and all bids satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr: "5890",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -332,16 +343,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "single bid and supportdeal is true",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -395,16 +409,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and no bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -508,16 +525,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only middle bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -622,16 +642,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only last bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -736,16 +759,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only first bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -850,16 +876,19 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and all bids satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:     "5890",
 							SupportDeals: true,
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -969,6 +998,12 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				pubFeatures:  mockFeature,
 			}
+
+			// Set metrics engine in rctx
+			rCtx, _ := utils.GetRequestContext(tt.args.moduleCtx)
+			rCtx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext.Set("rctx", rCtx)
+
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
 			assert.NotEmpty(t, mutations, tt.name)
@@ -1002,16 +1037,19 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 			name: "prebid targeting without custom dimensions",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
 							},
 							PubIDStr:         "5890",
 							CustomDimensions: map[string]models.CustomDimension{},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1115,8 +1153,9 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 			name: "prebid targeting custom dimensions",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
 								"imp1": {},
@@ -1135,8 +1174,10 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 									Value: "23",
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1252,6 +1293,12 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				pubFeatures:  mockFeature,
 			}
+
+			// Set metrics engine in rctx
+			rCtx, _ := utils.GetRequestContext(tt.args.moduleCtx)
+			rCtx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext.Set("rctx", rCtx)
+
 			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			mutations := hookResult.ChangeSet.Mutations()
 			assert.NotEmpty(t, mutations, tt.name)
@@ -1358,16 +1405,19 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointWebS2S,
 							Trackers: map[string]models.OWTracker{
 								"bid1": {
 									BidType: models.Video,
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1411,16 +1461,19 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Endpoint: models.EndpointWebS2S,
 							Trackers: map[string]models.OWTracker{
 								"bid1": {
 									BidType: models.Video,
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1428,7 +1481,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 							{
 								Bid: []openrtb2.Bid{
 									{
-										ID:  "12345:: 123422222225",
+										ID:  "12345::123422222225",
 										AdM: `<VAST version="3.0"><Ad><Wrapper></Wrapper></Ad></VAST>`,
 									},
 								},
@@ -1443,7 +1496,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 						{
 							Bid: []openrtb2.Bid{
 								{
-									ID:  "12345",
+									ID:  "12345::123422222225",
 									AdM: "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https:?adv=&af=banner&aps=0&au=&bc=&bidid=12345&di=-1&eg=0&en=0&ft=0&iid=&kgpv=&orig=&origbidid=12345&pdvid=0&pid=0&plt=0&pn=&psz=0x0&pubid=0&purl=&sl=1&slot=&ss=1&tst=0\"></div>"},
 							},
 						},
@@ -1466,6 +1519,12 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 			}
+
+			// Set metrics engine in rctx
+			rctx, _ := utils.GetRequestContext(tt.args.moduleCtx)
+			rctx.MetricsEngine = o.metricEngine
+			tt.args.moduleCtx.ModuleContext.Set("rctx", rctx)
+
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
 			mutations := hookResult.ChangeSet.Mutations()
@@ -1512,7 +1571,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: module-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: module-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1522,16 +1581,18 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": nil,
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", nil)
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: request-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1541,16 +1602,18 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": "request-ctx", // request-ctx is not of type RequestCtx
-					},
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", "request-ctx") // request-ctx is not of type RequestCtx
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
 			doMutate: false,
 			want: want{
 				result: hookstage.HookResult[hookstage.AuctionResponsePayload]{
-					DebugMessages: []string{"error: request-ctx not found in handleAuctionResponseHook()"},
+					DebugMessages: []string{"error: request-ctx not found in auctionresponsehook()"},
 				},
 				err: nil,
 			},
@@ -1560,11 +1623,14 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Sshb: "1",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
@@ -1579,13 +1645,16 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Sshb:     "0",
 							PubID:    5890,
 							PubIDStr: "5890",
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1612,8 +1681,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
 							Platform: "web",
@@ -1650,8 +1720,10 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 									"rev_share":             "0.5",
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1699,8 +1771,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
 							Platform: "web",
@@ -1752,8 +1825,10 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 									"rev_share":             "0.5",
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1805,12 +1880,12 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: mockEngine,
 				pubFeatures:  mockFeature,
 			}
-			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
+			moduleCtx, ok := tt.args.moduleCtx.ModuleContext.Get("rctx")
 			if ok {
 				rCtx, ok := moduleCtx.(models.RequestCtx)
 				if ok {
 					rCtx.MetricsEngine = mockEngine
-					tt.args.moduleCtx.ModuleContext["rctx"] = rCtx
+					tt.args.moduleCtx.ModuleContext.Set("rctx", rCtx)
 				}
 			}
 			hookResult, err := m.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
@@ -1859,8 +1934,9 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
+					ModuleContext: func() *hookstage.ModuleContext {
+						ctx := hookstage.NewModuleContext()
+						ctx.Set("rctx", models.RequestCtx{
 							Platform: models.PLATFORM_VIDEO,
 							Endpoint: models.EndpointAppLovinMax,
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -1876,8 +1952,10 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 									Price:      1.2,
 								},
 							},
-						},
-					},
+						})
+						ctx.Set("endpointhookmanager", &endpointmanager.NilEndpointManager{})
+						return ctx
+					}(),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1941,6 +2019,13 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				metricEngine: tt.getMetricsEngine(),
 				cache:        mockCache,
 				pubFeatures:  mockFeature,
+			}
+			// update metrics engine in rctx
+			ttRctxInterface, ok := tt.args.moduleCtx.ModuleContext.Get("rctx")
+			if ok {
+				ttRctx := ttRctxInterface.(models.RequestCtx)
+				ttRctx.MetricsEngine = o.metricEngine
+				tt.args.moduleCtx.ModuleContext.Set("rctx", ttRctx)
 			}
 			hookResult, err := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)

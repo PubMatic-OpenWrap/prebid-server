@@ -1,4 +1,4 @@
-package impressions
+package ctvlegacy
 
 import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"

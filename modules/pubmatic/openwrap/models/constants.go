@@ -481,6 +481,7 @@ const (
 const (
 	Pipe           = "|"
 	BidIdSeparator = "::"
+	DelimiterX     = "x"
 )
 
 const (

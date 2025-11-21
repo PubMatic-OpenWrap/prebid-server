@@ -1,4 +1,4 @@
-package auction
+package ctvlegacy
 
 // Package combination generates possible ad pod response
 // based on bid response durations. It ensures that generated
@@ -31,7 +31,7 @@ type CombinationGenerator interface {
 type Combination struct {
 	data      []int
 	generator generator
-	config    *models.AdPod
+	config    models.SlotConfig
 	order     int // order of combination generator
 }
 
@@ -43,7 +43,7 @@ type Combination struct {
 //     repeatitions are <= no of ads received for the duration
 //
 // Use Get method to start getting valid combinations
-func NewCombination(buckets BidsBuckets, podMinDuration, podMaxDuration uint64, config *models.AdPod) CombinationGenerator {
+func NewCombination(buckets BidsBuckets, podMinDuration, podMaxDuration uint64, config models.SlotConfig) CombinationGenerator {
 	generator := new(generator)
 	durationBidsCnts := make([][2]uint64, 0)
 	for duration, bids := range buckets {

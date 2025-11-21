@@ -10,7 +10,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
+func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
 	partnerConfig, ok := rctx.PartnerConfigMap[partnerID]
 	if !ok {
 		return "", "", false, nil, errors.New("ErrBidderParamsValidationError")
@@ -22,7 +22,7 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 	if kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]; kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
 		isRegexKGP = true
 	}
-	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, imp, impExt, partnerID)
 
 	for i, slot := range slots {
 		matchedSlot, matchedPattern = GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
