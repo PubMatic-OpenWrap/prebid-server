@@ -20,6 +20,7 @@ import (
 
 // Configuration specifies the static application config.
 type Configuration struct {
+	OpenWrapConfig   `mapstructure:",squash"`
 	ExternalURL      string      `mapstructure:"external_url"`
 	Host             string      `mapstructure:"host"`
 	Port             int         `mapstructure:"port"`
@@ -116,14 +117,6 @@ type PriceFloors struct {
 	Fetcher PriceFloorFetcher `mapstructure:"fetcher"`
 }
 
-type PriceFloorFetcher struct {
-	HttpClient HTTPClient `mapstructure:"http_client"`
-	CacheSize  int        `mapstructure:"cache_size_mb"`
-	Worker     int        `mapstructure:"worker"`
-	Capacity   int        `mapstructure:"capacity"`
-	MaxRetries int        `mapstructure:"max_retries"`
-}
-
 const MIN_COOKIE_SIZE_BYTES = 500
 
 type HTTPClient struct {
@@ -132,6 +125,7 @@ type HTTPClient struct {
 	MaxIdleConnsPerHost   int          `mapstructure:"max_idle_connections_per_host"`
 	IdleConnTimeout       int          `mapstructure:"idle_connection_timeout_seconds"`
 	TLSHandshakeTimeout   int          `mapstructure:"tls_handshake_timeout_seconds"`
+	ResponseHeaderTimeout int          `mapstructure:"response_header_timeout"`
 	ExpectContinueTimeout int          `mapstructure:"expect_continue_timeout_seconds"`
 	Dialer                Dialer       `mapstructure:"dialer"`
 	Throttle              HTTPThrottle `mapstructure:"throttle"`
@@ -479,6 +473,7 @@ type Analytics struct {
 	File     FileLogs      `mapstructure:"file"`
 	Agma     AgmaAnalytics `mapstructure:"agma"`
 	Pubstack Pubstack      `mapstructure:"pubstack"`
+	PubMatic PubMaticWL    `mapstructure:"pubmatic"`
 }
 
 type CurrencyConverter struct {
@@ -534,6 +529,17 @@ type Pubstack struct {
 	IntakeUrl   string         `mapstructure:"endpoint"`
 	Buffers     PubstackBuffer `mapstructure:"buffers"`
 	ConfRefresh string         `mapstructure:"configuration_refresh_delay"`
+}
+
+type PubMaticWL struct {
+	Enabled        bool `mapstructure:"enabled"`
+	Endpoint       string
+	PublicEndpoint string
+	MaxClients     int32
+	MaxConnections int
+	MaxCalls       int
+	RespTimeout    int
+	Client         HTTPClient `mapstructure:"http_client"`
 }
 
 type PubstackBuffer struct {
@@ -927,9 +933,7 @@ func (cfg *Configuration) GetCachedAssetURL(uuid string) string {
 // Set the default config values for the viper object we are using.
 func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	if filename != "" {
-		v.SetConfigName(filename)
-		v.AddConfigPath(".")
-		v.AddConfigPath("/etc/config")
+		v.SetConfigFile(filename)
 	}
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
@@ -1207,9 +1211,10 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("default_request.alias_info", false)
 	v.SetDefault("blocked_apps", []string{""})
 	v.SetDefault("account_required", false)
+
 	v.SetDefault("account_defaults.disabled", false)
 	v.SetDefault("account_defaults.debug_allow", true)
-	v.SetDefault("account_defaults.price_floors.enabled", false)
+	v.SetDefault("account_defaults.price_floors.enabled", true)
 	v.SetDefault("account_defaults.price_floors.enforce_floors_rate", 100)
 	v.SetDefault("account_defaults.price_floors.adjust_for_bid_adjustment", true)
 	v.SetDefault("account_defaults.price_floors.enforce_deal_floors", false)
@@ -1218,6 +1223,7 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	v.SetDefault("account_defaults.price_floors.max_schema_dims", 3)
 	v.SetDefault("account_defaults.price_floors.fetch.enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.url", "")
+	v.SetDefault("account_defaults.events_enabled", false)
 	v.SetDefault("account_defaults.price_floors.fetch.timeout_ms", 3000)
 	v.SetDefault("account_defaults.price_floors.fetch.max_file_size_kb", 100)
 	v.SetDefault("account_defaults.price_floors.fetch.max_rules", 1000)
@@ -1342,6 +1348,9 @@ func SetupViper(v *viper.Viper, filename string, bidderInfos BidderInfos) {
 	for bidderName := range bidderInfos {
 		setBidderDefaults(v, strings.ToLower(bidderName))
 	}
+	//Defaults for Price floor fetcher
+	v.SetDefault("price_floor_fetcher.worker", 20)
+	v.SetDefault("price_floor_fetcher.capacity", 20000)
 }
 
 func isConfigInfoPresent(v *viper.Viper, prefix string, fields []string) bool {

@@ -5,6 +5,7 @@ import (
 	prebidOrtb2blocking "github.com/prebid/prebid-server/v3/modules/prebid/ortb2blocking"
 	prebidRulesengine "github.com/prebid/prebid-server/v3/modules/prebid/rulesengine"
 	scope3Rtd "github.com/prebid/prebid-server/v3/modules/scope3/rtd"
+	pubmaticOpenwrap "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap"
 )
 
 // builders returns mapping between module name and its builder
@@ -20,6 +21,9 @@ func builders() ModuleBuilders {
 		},
 		"scope3": {
 			"rtd": scope3Rtd.Builder,
+		},
+		"pubmatic": {
+			"openwrap": pubmaticOpenwrap.Builder,
 		},
 	}
 }

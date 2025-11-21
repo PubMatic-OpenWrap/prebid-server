@@ -1,6 +1,7 @@
 package openrtb_ext
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,10 @@ type ExtUser struct {
 	Prebid *ExtUserPrebid `json:"prebid,omitempty"`
 
 	Eids []openrtb2.EID `json:"eids,omitempty"`
+
+	Data            json.RawMessage `json:"data,omitempty"`
+	SessionDuration int64           `json:"sessionduration,omitempty"`
+	ImpDepth        int64           `json:"impdepth,omitempty"`
 }
 
 // ExtUserPrebid defines the contract for bidrequest.user.ext.prebid

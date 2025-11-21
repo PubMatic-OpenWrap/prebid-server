@@ -1204,7 +1204,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_valid_sample.json",
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 			},
 		},
@@ -1213,7 +1213,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenTestFile:  "sample-requests/video/video_invalid_sample.json",
 			expectedStatus: 500,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 			},
 		},
 		{
@@ -1222,7 +1222,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenHeader:    map[string]string{secBrowsingTopics: "anyValue"},
 			expectedStatus: 200,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Content-Type", "application/json")
 				h.Set("Observe-Browsing-Topics", "?1")
 			},
@@ -1233,7 +1233,7 @@ func TestVideoAuctionResponseHeaders(t *testing.T) {
 			givenHeader:    map[string]string{secBrowsingTopics: "anyValue"},
 			expectedStatus: 500,
 			expectedHeaders: func(h http.Header) {
-				h.Set("X-Prebid", "pbs-go/unknown")
+				h.Set("X-Prebid", "owpbs-go/unknown")
 				h.Set("Observe-Browsing-Topics", "?1")
 			},
 		},
@@ -1424,6 +1424,7 @@ func (cf mockVideoStoredReqFetcher) FetchResponses(ctx context.Context, ids []st
 type mockExchangeVideo struct {
 	lastRequest *openrtb2.BidRequest
 	cache       *mockCacheClient
+	seatNonBid  openrtb_ext.SeatNonBidBuilder
 }
 
 func (m *mockExchangeVideo) HoldAuction(ctx context.Context, r *exchange.AuctionRequest, debugLog *exchange.DebugLog) (*exchange.AuctionResponse, error) {
@@ -1458,7 +1459,9 @@ func (m *mockExchangeVideo) HoldAuction(ctx context.Context, r *exchange.Auction
 				{ID: "16", ImpID: "5_2", Ext: ext},
 			},
 		}},
-	}}, nil
+	},
+		SeatNonBid: m.seatNonBid}, nil
+
 }
 
 type mockExchangeAppendBidderNames struct {
@@ -1547,4 +1550,135 @@ func TestVideoRequestValidationFailed(t *testing.T) {
 
 	assert.Equal(t, 500, recorder.Code, "Should catch error in request")
 	assert.Equal(t, "Critical error while running the video endpoint:  request.tmax must be nonnegative. Got -2", errorMessage, "Incorrect request validation message")
+}
+
+func TestSeatNonBidInVideoAuction(t *testing.T) {
+	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
+	defer resetFakeUUID()
+
+	bidRequest := openrtb_ext.BidRequestVideo{
+		Test:            1,
+		StoredRequestId: "80ce30c53c16e6ede735f123ef6e32361bfc7b22",
+		PodConfig: openrtb_ext.PodConfig{
+			DurationRangeSec:     []int{30, 50},
+			RequireExactDuration: true,
+			Pods: []openrtb_ext.Pod{
+				{PodId: 1, AdPodDurationSec: 30, ConfigId: "fba10607-0c12-43d1-ad07-b8a513bc75d6"},
+			},
+		},
+		App: &openrtb2.App{Bundle: "pbs.com"},
+		Video: &openrtb2.Video{
+			MIMEs:     []string{"mp4"},
+			Protocols: []adcom1.MediaCreativeSubtype{1},
+		},
+	}
+
+	type args struct {
+		nonBidsFromHoldAuction openrtb_ext.SeatNonBidBuilder
+	}
+	type want struct {
+		seatNonBid []openrtb_ext.SeatNonBid
+	}
+	testCases := []struct {
+		description string
+		args        args
+		want        want
+	}{
+		{
+			description: "holdAuction returns seatNonBid",
+			args: args{
+				nonBidsFromHoldAuction: getNonBids(map[string][]openrtb_ext.NonBidParams{
+					"pubmatic": {
+						{
+							Bid:          &openrtb2.Bid{ImpID: "imp"},
+							NonBidReason: 100,
+						},
+					},
+				}),
+			},
+			want: want{
+				seatNonBid: []openrtb_ext.SeatNonBid{
+					{
+						Seat: "pubmatic",
+						NonBid: []openrtb_ext.NonBid{
+							{
+								ImpId:      "imp",
+								StatusCode: 100,
+								Ext: openrtb_ext.ExtNonBid{
+									Prebid: openrtb_ext.ExtNonBidPrebid{
+										Bid: openrtb_ext.ExtNonBidPrebidBid{
+											Price:             0,
+											ADomain:           nil,
+											CatTax:            0,
+											Cat:               nil,
+											DealID:            "",
+											W:                 0,
+											H:                 0,
+											Dur:               0,
+											MType:             0,
+											OriginalBidCPM:    0,
+											OriginalBidCur:    "",
+											ID:                "30470a14-2949-4110-abce-b62d57304ad5",
+											DealPriority:      0,
+											DealTierSatisfied: false,
+											Meta:              nil,
+											Type:              "",
+											Video:             nil,
+											BidId:             "",
+											Floors:            nil,
+											OriginalBidCPMUSD: 0,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "holdAuction does not return seatNonBid",
+			args: args{
+				nonBidsFromHoldAuction: openrtb_ext.SeatNonBidBuilder{},
+			},
+			want: want{
+				seatNonBid: nil,
+			},
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			ex := &mockExchangeVideo{seatNonBid: test.args.nonBidsFromHoldAuction}
+			analyticsModule := mockAnalyticsModule{}
+			deps := &endpointDeps{
+				fakeUUIDGenerator{},
+				ex,
+				ortb.NewRequestValidator(openrtb_ext.BuildBidderMap(), map[string]string{}, mockBidderParamValidator{}),
+				&mockVideoStoredReqFetcher{},
+				&mockVideoStoredReqFetcher{},
+				&mockAccountFetcher{data: mockVideoAccountData},
+				&config.Configuration{MaxRequestSize: maxSize},
+				&metricsConfig.NilMetricsEngine{},
+				&analyticsModule,
+				map[string]string{},
+				false,
+				[]byte{},
+				openrtb_ext.BuildBidderMap(),
+				ex.cache,
+				regexp.MustCompile(`[<>]`),
+				hardcodedResponseIPValidator{response: true},
+				empty_fetcher.EmptyFetcher{},
+				hooks.EmptyPlanBuilder{},
+				nil,
+				openrtb_ext.NormalizeBidderName,
+			}
+
+			reqBody, _ := json.Marshal(bidRequest)
+			req := httptest.NewRequest("POST", "/openrtb2/video", strings.NewReader(string(reqBody)))
+			recorder := httptest.NewRecorder()
+			deps.VideoAuctionEndpoint(recorder, req, nil)
+
+			assert.Equal(t, test.want.seatNonBid, analyticsModule.videoObjects[0].SeatNonBid, "mismatched seatnonbid.")
+		})
+	}
 }

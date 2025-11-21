@@ -1,0 +1,338 @@
+{
+    "description": "Hybrid adpod request",
+    "config": {},
+    "mockBidRequest": {
+        "id": "1559039248176",
+        "cur": [
+            "USD"
+        ],
+        "imp": [
+            {
+                "id": "pod1::imp1",
+                "video": {
+                    "mimes": [
+                        "video/3gpp",
+                        "video/mp4",
+                        "video/webm"
+                    ],
+                    "startdelay": 0,
+                    "protocols": [
+                        2,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "placement": 5,
+                    "linearity": 1,
+                    "skip": 1,
+                    "skipmin": 10,
+                    "skipafter": 15,
+                    "battr": [
+                        6,
+                        7
+                    ],
+                    "maxbitrate": 2000,
+                    "boxingallowed": 1,
+                    "playbackmethod": [
+                        1
+                    ],
+                    "playbackend": 1,
+                    "delivery": [
+                        2
+                    ],
+                    "pos": 7,
+                    "podid": "pod1",
+                    "podseq": 1,
+                    "slotinpod": 1,
+                    "minduration": 15,
+                    "maxduration": 30
+                },
+                "tagid": "/15671365/MG_VideoAdUnit",
+                "secure": 0,
+                "ext": {
+                    "data": {
+                        "pbadslot": "/15671365/MG_VideoAdUnit"
+                    },
+                    "prebid": {
+                        "bidder": {
+                            "pubmatic": {
+                                "publisherId": "5890",
+                                "adSlot": "/15671365/MG_VideoAdUnit@0x0"
+                            },
+                            "appnexus": {
+                                "placementId": 12883451
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "id": "pod1::imp2",
+                "video": {
+                    "mimes": [
+                        "video/3gpp",
+                        "video/mp4",
+                        "video/webm"
+                    ],
+                    "startdelay": 0,
+                    "protocols": [
+                        2,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "placement": 5,
+                    "linearity": 1,
+                    "skip": 1,
+                    "skipmin": 10,
+                    "skipafter": 15,
+                    "battr": [
+                        6,
+                        7
+                    ],
+                    "maxbitrate": 2000,
+                    "boxingallowed": 1,
+                    "playbackmethod": [
+                        1
+                    ],
+                    "playbackend": 1,
+                    "delivery": [
+                        2
+                    ],
+                    "pos": 7,
+                    "podid": "pod1",
+                    "podseq": 1,
+                    "slotinpod": 0,
+                    "minduration": 10,
+                    "maxduration": 30
+                },
+                "tagid": "/15671365/MG_VideoAdUnit",
+                "secure": 0,
+                "ext": {
+                    "data": {
+                        "pbadslot": "/15671365/MG_VideoAdUnit"
+                    },
+                    "prebid": {
+                        "bidder": {
+                            "pubmatic": {
+                                "publisherId": "5890",
+                                "adSlot": "/15671365/MG_VideoAdUnit@0x0"
+                            },
+                            "appnexus": {
+                                "placementId": 12883451
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "id": "pod1::imp3",
+                "video": {
+                    "mimes": [
+                        "video/3gpp",
+                        "video/mp4",
+                        "video/webm"
+                    ],
+                    "startdelay": 0,
+                    "protocols": [
+                        2,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "placement": 5,
+                    "linearity": 1,
+                    "skip": 1,
+                    "skipmin": 10,
+                    "skipafter": 15,
+                    "battr": [
+                        6,
+                        7
+                    ],
+                    "maxbitrate": 2000,
+                    "boxingallowed": 1,
+                    "playbackmethod": [
+                        1
+                    ],
+                    "playbackend": 1,
+                    "delivery": [
+                        2
+                    ],
+                    "pos": 7,
+                    "podid": "pod1",
+                    "podseq": 1,
+                    "slotinpod": 0,
+                    "minduration": 30,
+                    "maxduration": 30
+                },
+                "tagid": "/15671365/MG_VideoAdUnit",
+                "secure": 0,
+                "ext": {
+                    "data": {
+                        "pbadslot": "/15671365/MG_VideoAdUnit"
+                    },
+                    "prebid": {
+                        "bidder": {
+                            "pubmatic": {
+                                "publisherId": "5890",
+                                "adSlot": "/15671365/MG_VideoAdUnit@0x0"
+                            },
+                            "appnexus": {
+                                "placementId": 12883451
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "id": "pod2::imp",
+                "video": {
+                    "mimes": [
+                        "video/3gpp",
+                        "video/mp4",
+                        "video/webm"
+                    ],
+                    "startdelay": 0,
+                    "protocols": [
+                        2,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "placement": 5,
+                    "linearity": 1,
+                    "skip": 1,
+                    "skipmin": 10,
+                    "skipafter": 15,
+                    "battr": [
+                        6,
+                        7
+                    ],
+                    "maxbitrate": 2000,
+                    "boxingallowed": 1,
+                    "playbackmethod": [
+                        1
+                    ],
+                    "playbackend": 1,
+                    "delivery": [
+                        2
+                    ],
+                    "pos": 7,
+                    "podid": "pod1",
+                    "podseq": 0,
+                    "slotinpod": 0,
+                    "maxseq": 3,
+                    "poddur": 90,
+                    "minduration": 30,
+                    "maxduration": 30
+                },
+                "tagid": "/15671365/MG_VideoAdUnit",
+                "secure": 0,
+                "ext": {
+                    "data": {
+                        "pbadslot": "/15671365/MG_VideoAdUnit"
+                    },
+                    "prebid": {
+                        "bidder": {
+                            "pubmatic": {
+                                "publisherId": "5890",
+                                "adSlot": "/15671365/MG_VideoAdUnit@0x0"
+                            },
+                            "appnexus": {
+                                "placementId": 12883451
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "app": {
+            "name": "OpenWrapperSample",
+            "bundle": "com.pubmatic.openbid.app",
+            "storeurl": "https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?videobid=10",
+            "ver": "1.0",
+            "publisher": {
+                "id": "5890"
+            }
+        },
+        "device": {
+            "ua": "PostmanRuntime/7.36.3",
+            "ip": "::1"
+        },
+        "at": 1,
+        "tmax": 194999,
+        "source": {
+            "tid": "1559039248176"
+        },
+        "ext": {
+            "prebid": {
+                "aliases": {
+                    "adg": "adgeneration",
+                    "andbeyond": "adkernel",
+                    "districtm": "appnexus",
+                    "districtmDMX": "dmx",
+                    "mediafuse": "appnexus",
+                    "pubmatic2": "pubmatic"
+                },
+                "bidadjustmentfactors": {
+                    "pubmatic": 0.9
+                },
+                "bidderparams": {
+                    "appnexus": {
+                        "placementId": 12883451
+                    },
+                    "pubmatic": {
+                        "wiid": "34d54ecd-fc14-4a52-a6dd-30dcba780a0d"
+                    }
+                },
+                "debug": true,
+                "floors": {
+                    "enforcement": {
+                        "enforcepbs": true
+                    },
+                    "enabled": true
+                },
+                "targeting": {
+                    "pricegranularity": {
+                        "precision": 2,
+                        "ranges": [
+                            {
+                                "min": 0,
+                                "max": 100,
+                                "increment": 0.5
+                            }
+                        ]
+                    },
+                    "mediatypepricegranularity": {},
+                    "includewinners": true,
+                    "includebidderkeys": true,
+                    "includebrandcategory": {
+                        "primaryadserver": 0,
+                        "publisher": "",
+                        "withcategory": false,
+                        "translatecategories": false,
+                        "skipdedup": true
+                    }
+                },
+                "macros": {
+                    "[PLATFORM]": "3",
+                    "[PROFILE_ID]": "81367",
+                    "[PROFILE_VERSION]": "1",
+                    "[UNIX_TIMESTAMP]": "1711103402",
+                    "[WRAPPER_IMPRESSION_ID]": "34d54ecd-fc14-4a52-a6dd-30dcba780a0d"
+                },
+                "returnallbidstatus": true
+            }
+        }
+    },
+    "expectedBidResponse": {},
+    "expectedReturnCode": 200
+}

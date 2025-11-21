@@ -134,9 +134,9 @@
               "ext": {
                 "origbidcpm": 0.3,
                 "prebid": {
+                  "type": "video",
                   "meta": {
                   },
-                  "type": "video",
                   "targeting": {
                     "hb_bidder": "appnexus",
                     "hb_bidder_appnexus": "appnexus",
@@ -153,7 +153,8 @@
                   },
                   "video": {
                     "duration": 30,
-                    "primary_category": ""
+                    "primary_category": "",
+                    "vasttagid": ""
                   }
                 }
               }

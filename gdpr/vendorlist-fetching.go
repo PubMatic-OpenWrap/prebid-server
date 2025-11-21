@@ -22,6 +22,9 @@ import (
 type saveVendors func(uint16, uint16, api.VendorList)
 type VendorListFetcher func(ctx context.Context, specVersion uint16, listVersion uint16, metricsEngine metrics.MetricsEngine) (vendorlist.VendorList, error)
 
+var cacheSave func(specVersion, listVersion uint16, list api.VendorList)
+var cacheLoad func(specVersion, listVersion uint16) api.VendorList
+
 // This file provides the vendorlist-fetching function for Prebid Server.
 //
 // For more info, see https://github.com/prebid/prebid-server/issues/504

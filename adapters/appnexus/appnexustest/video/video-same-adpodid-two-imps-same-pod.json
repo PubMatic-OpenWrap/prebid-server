@@ -47,8 +47,7 @@
 			"id": "test-request-id",
 			"ext": {
 				"appnexus": {
-				 "adpod_id": "10",
-				  "hb_source": 6
+				 "hb_source": 6
 				}
 			},
 			"imp": [

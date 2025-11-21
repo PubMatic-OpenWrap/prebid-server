@@ -241,6 +241,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderSparteo,
 	BidderSspBC,
 	BidderStartIO,
+	BidderSpotX,
 	BidderStroeerCore,
 	BidderTaboola,
 	BidderTappx,
@@ -259,6 +260,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderUndertone,
 	BidderUnicorn,
 	BidderUnruly,
+	BidderVASTBidder,
 	BidderVidazoo,
 	BidderVideoByte,
 	BidderVideoHeroes,
@@ -279,6 +281,9 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderZeroClickFraud,
 	BidderZetaGlobalSsp,
 	BidderZmaticoo,
+
+	BidderORTBTestBidder,      // maintained by OW
+	BidderORTBTestBidderMulti, // maintained by OW
 }
 
 func GetAliasBidderToParent() map[BidderName]BidderName {
@@ -807,6 +812,38 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 		parsedSchemas:  schemas,
 	}, nil
 }
+
+// type OWBidderParamsValidator struct {
+// 	prebid BidderParamValidator
+// 	ow     bidderParamValidator
+// 	mutex  sync.RWMutex
+// }
+
+// func NewOWBidderParamsValidator(schemaDirectory string) (BidderParamValidator, error) {
+// 	obj := &OWBidderParamsValidator{}
+// 	obj.prebid, _ = NewBidderParamsValidator(schemaDirectory)
+// 	return obj, nil
+// }
+
+// func (o *OWBidderParamsValidator) Validate(name BidderName, ext json.RawMessage) error {
+// 	error := o.prebid.Validate(name, ext)
+// 	if error != nil {
+// 		o.ow.Validate(name, ext)
+// 	}
+// 	return nil
+// }
+
+// func (o *OWBidderParamsValidator) Schema(name BidderName) string {
+// 	return ""
+// }
+
+// func (o *OWBidderParamsValidator) Add(schema json.RawMessage) {
+
+// }
+
+// type RTBBidder struct {
+// 	OWBidderParamsValidator
+// }
 
 type bidderParamValidator struct {
 	schemaContents map[BidderName]string

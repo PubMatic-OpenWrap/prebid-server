@@ -800,7 +800,6 @@ func getVTrackRequestData(wi bool, wic bool) (db []byte, e error) {
 
 	return data.Bytes(), e
 }
-
 func TestGetIntegrationType(t *testing.T) {
 	testCases := []struct {
 		description             string

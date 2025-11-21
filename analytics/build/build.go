@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics/agma"
 	"github.com/prebid/prebid-server/v3/analytics/clients"
 	"github.com/prebid/prebid-server/v3/analytics/filesystem"
+	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/analytics/pubstack"
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -56,6 +57,9 @@ func New(analytics *config.Analytics) analytics.Runner {
 		}
 	}
 
+	if analytics.PubMatic.Enabled {
+		modules["pubmatic"] = pubmatic.NewHTTPLogger(analytics.PubMatic)
+	}
 	return modules
 }
 
