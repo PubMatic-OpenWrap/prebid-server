@@ -1539,6 +1539,7 @@ type mockPlanBuilder struct {
 	rawBidderResponsePlan        hooks.Plan[hookstage.RawBidderResponse]
 	allProcessedBidResponsesPlan hooks.Plan[hookstage.AllProcessedBidResponses]
 	auctionResponsePlan          hooks.Plan[hookstage.AuctionResponse]
+	exitPointPlan                hooks.Plan[hookstage.ExitPoint]
 }
 
 func (m mockPlanBuilder) PlanForEntrypointStage(_ string) hooks.Plan[hookstage.Entrypoint] {
@@ -1571,6 +1572,10 @@ func (m mockPlanBuilder) PlanForAllProcessedBidResponsesStage(_ string, _ *confi
 
 func (m mockPlanBuilder) PlanForAuctionResponseStage(_ string, _ *config.Account) hooks.Plan[hookstage.AuctionResponse] {
 	return m.auctionResponsePlan
+}
+
+func (m mockPlanBuilder) PlanForExitPointStage(_ string, _ *config.Account) hooks.Plan[hookstage.ExitPoint] {
+	return m.exitPointPlan
 }
 
 func makePlan[H any](hook H) hooks.Plan[H] {
