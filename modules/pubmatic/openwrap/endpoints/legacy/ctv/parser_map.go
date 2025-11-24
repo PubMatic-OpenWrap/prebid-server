@@ -311,6 +311,7 @@ var ortbMapper = &ParserMap{
 		ORTBSSAI:                 Parser.ORTBSSAI,
 		ORTBKeyValues:            Parser.ORTBKeyValues,
 		ORTBKeyValuesMap:         Parser.ORTBKeyValuesMap,
+		ORTBAdrule:               Parser.ORTBAdrule,
 
 		//VideoExtension
 		ORTBImpVideoExtOffset:                           Parser.ORTBImpVideoExtOffset,
@@ -695,6 +696,7 @@ type Parser interface {
 	ORTBSSAI() error
 	ORTBKeyValues() error
 	ORTBKeyValuesMap() error
+	ORTBAdrule() error
 
 	//VideoExtension
 	ORTBImpVideoExtOffset() error

@@ -3475,6 +3475,43 @@ func (o *OpenRTB) ORTBKeyValuesMap() (err error) {
 	return nil
 }
 
+// ORTBAdrule will read and set ortb ClientConfigFlag parameter
+func (o *OpenRTB) ORTBAdrule() (err error) {
+	val, ok, err := o.values.GetBoolean(ORTBAdrule)
+	if !ok || err != nil {
+		return
+	}
+
+	reqExt := map[string]interface{}{}
+	if o.ortb.Ext != nil {
+		err = json.Unmarshal(o.ortb.Ext, &reqExt)
+		if err != nil {
+			return
+		}
+	}
+
+	wrapperExt, ok := reqExt[ORTBExtWrapper].(map[string]interface{})
+	if !ok {
+		wrapperExt = map[string]interface{}{}
+	}
+
+	video, ok := wrapperExt[ORTBVideo].(map[string]interface{})
+	if !ok {
+		video = map[string]interface{}{}
+	}
+	video[ORTBExtAdrule] = val
+	wrapperExt[ORTBVideo] = video
+	reqExt[ORTBExtWrapper] = wrapperExt
+
+	data, err := json.Marshal(reqExt)
+	if err != nil {
+		return
+	}
+
+	o.ortb.Ext = data
+	return
+}
+
 /*********************** User.Ext.Consent ***********************/
 
 // ORTBUserExtConsent will read and set ortb User.Ext.Consent parameter

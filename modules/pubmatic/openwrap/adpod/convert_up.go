@@ -1,8 +1,6 @@
 package adpod
 
 import (
-	"github.com/buger/jsonparser"
-	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/exchange/entities"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -21,32 +19,31 @@ func ConvertUpTo26(rCtx models.RequestCtx, responses map[openrtb_ext.BidderName]
 			}
 
 			if seatBid.Bids[i].Bid.Dur == 0 {
-				seatBid.Bids[i].Bid.Dur = getBidDuration(seatBid.Bids[i].Bid, impCtx.ImpAdPodCfg, sequence)
+				seatBid.Bids[i].Bid.Dur = getBidDuration(seatBid.Bids[i], impCtx, sequence)
 			}
 		}
 	}
 }
 
-/*
-getBidDuration determines the duration of video ad from given bid.
-it will try to get the actual ad duration returned by the bidder using prebid.video.duration
-if prebid.video.duration not present then uses defaultDuration passed as an argument
-if video lengths matching policy is present for request then it will validate and update duration based on policy
-*/
-func getBidDuration(bid *openrtb2.Bid, config []*models.ImpAdPodConfig, sequence int) int64 {
-	// C1: Read it from bid.ext.prebid.video.duration field
-	duration, err := jsonparser.GetInt(bid.Ext, "prebid", "video", "duration")
-	if err != nil || duration <= 0 {
+func getBidDuration(bid *entities.PbsOrtbBid, impCtx models.ImpCtx, sequence int) int64 {
+	var duration int64
+	if bid.BidVideo != nil {
+		duration = int64(bid.BidVideo.Duration)
+	}
+
+	if duration <= 0 {
 		var defaultDuration int64
-		for i := range config {
-			if sequence == int(config[i].SequenceNumber) {
-				defaultDuration = config[i].MaxDuration
+		if impCtx.Video != nil {
+			defaultDuration = int64(impCtx.Video.MaxDuration)
+		}
+
+		for i := range impCtx.ImpAdPodCfg {
+			if sequence == int(impCtx.ImpAdPodCfg[i].SequenceNumber) {
+				defaultDuration = impCtx.ImpAdPodCfg[i].MaxDuration
 			}
 		}
-		// incase if duration is not present use impression duration directly as it is
 		return defaultDuration
 	}
 
-	//default return duration which is present in bid.ext.prebid.vide.duration field
 	return duration
 }

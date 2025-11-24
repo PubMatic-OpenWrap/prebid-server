@@ -184,6 +184,9 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		// Set Default values for dynamic adpod configs
 		adpod.SetDefaultValuesToPodConfig(&rCtx)
 
+		// Read adrule configurations
+		adpod.ApplyAdruleConfigs(&rCtx, ep.BidRequest)
+
 		// Validate adpod configs
 		if err := adpod.ValidateV25Configs(&rCtx); err != nil {
 			result.NbrCode = int(nbr.InvalidAdpodConfig)

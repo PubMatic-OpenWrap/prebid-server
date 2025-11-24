@@ -5,6 +5,7 @@ import (
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	ctvlegacy "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/legacy/auction"
 
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/auction"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
@@ -13,10 +14,10 @@ func AdpodAuction(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage
 		return result, true
 	}
 
-	for podId, podConfig := range rCtx.AdpodCtx {
+	for _, podConfig := range rCtx.AdpodCtx {
 		switch podConfig.PodType {
 		case models.PodTypeDynamic:
-			errs := dynamicAdpodAuction(rCtx, podId, podConfig, bidresponse)
+			errs := dynamicAdpodAuction(rCtx, podConfig, bidresponse)
 			if len(errs) > 0 {
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
@@ -24,7 +25,7 @@ func AdpodAuction(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage
 				return result, false
 			}
 		case models.PodTypeStructured:
-			errs := structuredAdpodAuction(rCtx, podId, podConfig, bidresponse)
+			errs := structuredAdpodAuction(rCtx, podConfig, bidresponse)
 			if len(errs) > 0 {
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
@@ -32,7 +33,7 @@ func AdpodAuction(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage
 				return result, false
 			}
 		case models.PodTypeHybrid:
-			errs := hybridAdpodAuction(rCtx, podId, podConfig, bidresponse)
+			errs := hybridAdpodAuction(rCtx, podConfig, bidresponse)
 			if len(errs) > 0 {
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
@@ -45,20 +46,17 @@ func AdpodAuction(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage
 	return result, true
 }
 
-func dynamicAdpodAuction(rCtx *models.RequestCtx, podId string, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
+func dynamicAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
 	// Legacy adpod auction
-	errs := ctvlegacy.DynamicAdpodAuction(rCtx, bidresponse, podId, podConfig)
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
+	errs := ctvlegacy.DynamicAdpodAuction(rCtx, bidresponse, podConfig)
+	return errs
 }
 
-func structuredAdpodAuction(rCtx *models.RequestCtx, podId string, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
-	return nil
+func structuredAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
+	errs := auction.StructuredAdpodAuction(rCtx, podConfig, bidresponse)
+	return errs
 }
 
-func hybridAdpodAuction(rCtx *models.RequestCtx, podId string, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
+func hybridAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
 	return nil
 }

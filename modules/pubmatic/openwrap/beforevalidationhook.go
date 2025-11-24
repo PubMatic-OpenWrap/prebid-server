@@ -1580,7 +1580,7 @@ func handleBidderAlias(rCtx *models.RequestCtx, bidderCode string, partnerConfig
 }
 
 func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
-	if !rCtx.IsCTVRequest {
+	if !rCtx.IsCTVRequest || rCtx.AdruleFlag {
 		return result, true
 	}
 

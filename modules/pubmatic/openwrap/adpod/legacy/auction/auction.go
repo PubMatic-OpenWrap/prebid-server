@@ -74,8 +74,8 @@ func GetNearestDuration(duration int64, config []*models.ImpAdPodConfig) int64 {
 	return tmp
 }
 
-func DynamicAdpodAuction(rctx *models.RequestCtx, response *openrtb2.BidResponse, podId string, podConfig models.AdpodConfig) []error {
-	impAdpodBids := getAdpodBid(rctx, response, podId, podConfig)
+func DynamicAdpodAuction(rctx *models.RequestCtx, response *openrtb2.BidResponse, podConfig models.AdpodConfig) []error {
+	impAdpodBids := getAdpodBid(rctx, response, podConfig.PodID, podConfig)
 	winningAdpodBids, errs := doAuctionAndExclusion(impAdpodBids, podConfig)
 	if len(errs) > 0 {
 		return errs
@@ -85,7 +85,7 @@ func DynamicAdpodAuction(rctx *models.RequestCtx, response *openrtb2.BidResponse
 	bidIdToAprcMap := getAprc(impAdpodBids)
 
 	// Update winning bids and impctx
-	updateWinningBids(rctx, podId, winningAdpodBids, bidIdToAprcMap)
+	updateWinningBids(rctx, podConfig.PodID, winningAdpodBids, bidIdToAprcMap)
 
 	return nil
 }
