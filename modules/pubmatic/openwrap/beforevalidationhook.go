@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	validator "github.com/asaskevich/govalidator"
@@ -261,6 +262,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
+	timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+	rCtx.MetricsEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
 
 	allPartnersThrottledFlag := false
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
@@ -798,6 +801,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
+	if glog.V(models.LogLevelDebug) {
+		timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+		remainingTime := timeoutDuration - time.Duration(timeDiff)*time.Millisecond
+		glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, time.Duration(timeDiff)*time.Millisecond)
+		glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
+		glog.Infof("[%s] Timeout after subtracting processing time: %v", rCtx.LoggerImpressionID, remainingTime)
+	}
 	result.Reject = false
 	return result, nil
 }
