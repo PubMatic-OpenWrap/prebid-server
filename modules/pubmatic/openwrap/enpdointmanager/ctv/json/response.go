@@ -135,6 +135,10 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 			ID: impMetas[i].impID,
 		}
 
+		if impMetas[i].video != nil && impMetas[i].video.PodID != "" {
+			adpodBid.ID = impMetas[i].video.PodID
+		}
+
 		bids, ok := bidsMap[impMetas[i].impID]
 		if !ok {
 			continue
