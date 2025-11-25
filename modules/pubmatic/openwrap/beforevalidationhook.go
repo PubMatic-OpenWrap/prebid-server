@@ -263,7 +263,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 	timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
-	rCtx.MetricsEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
+	m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
 
 	allPartnersThrottledFlag := false
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
