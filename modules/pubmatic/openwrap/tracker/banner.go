@@ -44,8 +44,8 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 }
 
 // TrackerWithOM checks for OM active condition
-func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int, bidExt json.RawMessage) bool {
-	if rctx.Platform != models.PLATFORM_APP {
+func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int, bidExt json.RawMessage, adformat string) bool {
+	if rctx.Platform != models.PLATFORM_APP || adformat != models.Banner {
 		return false
 	}
 

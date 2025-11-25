@@ -180,7 +180,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			}
 
 			tracker.RewardedInventory = isRewardInventory
-			inViewCountingFlag := trackerWithOM(rctx, partnerID, dspId, bid.Ext)
+			inViewCountingFlag := trackerWithOM(rctx, partnerID, dspId, bid.Ext, adformat)
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:              partnerID,
 				BidderCode:             seatBid.Seat,
