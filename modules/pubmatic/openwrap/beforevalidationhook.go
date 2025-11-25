@@ -806,7 +806,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		remainingTime := timeoutDuration - time.Duration(timeDiff)*time.Millisecond
 		glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, time.Duration(timeDiff)*time.Millisecond)
 		glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
-		glog.Infof("[%s] Timeout after subtracting processing time: %v", rCtx.LoggerImpressionID, remainingTime)
+		glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
 	}
 	result.Reject = false
 	return result, nil
