@@ -8410,10 +8410,10 @@ func BenchmarkExtractItunesIdFromAppStoreUrl(b *testing.B) {
 
 func TestLogHookBidRequest(t *testing.T) {
 	type args struct {
-		stage          string
-		rCtx           models.RequestCtx
-		bidRequestJSON string
-		nbrCode        int
+		stage      string
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
+		nbrCode    int
 	}
 	tests := []struct {
 		name        string
@@ -8429,8 +8429,13 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 1234,
 					Endpoint:  models.EndpointV25,
 				},
-				bidRequestJSON: `{"id":"test-request-id","imp":[{"id":"imp1"}]}`,
-				nbrCode:        0,
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: 0,
 			},
 			description: "Should log hook start without nbr code",
 		},
@@ -8443,8 +8448,13 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 1234,
 					Endpoint:  models.EndpointV25,
 				},
-				bidRequestJSON: `{"id":"test-request-id","imp":[{"id":"imp1"}]}`,
-				nbrCode:        int(nbr.InvalidImpressionTagID),
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: int(nbr.InvalidImpressionTagID),
 			},
 			description: "Should log hook end rejected with nbr code",
 		},
@@ -8457,8 +8467,13 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 1234,
 					Endpoint:  models.EndpointV25,
 				},
-				bidRequestJSON: `{"id":"test-request-id","imp":[{"id":"imp1"}]}`,
-				nbrCode:        0,
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: 0,
 			},
 			description: "Should log hook end success without nbr code",
 		},
@@ -8471,8 +8486,10 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 1234,
 					Endpoint:  models.EndpointAMP,
 				},
-				bidRequestJSON: `{"id":"empty-request"}`,
-				nbrCode:        0,
+				bidRequest: &openrtb2.BidRequest{
+					ID: "empty-request",
+				},
+				nbrCode: 0,
 			},
 			description: "Should handle empty bidrequest gracefully",
 		},
@@ -8485,8 +8502,13 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 5678,
 					Endpoint:  models.EndpointJson,
 				},
-				bidRequestJSON: `{"id":"json-endpoint-request","imp":[{"id":"imp1","tagid":"div1"}]}`,
-				nbrCode:        0,
+				bidRequest: &openrtb2.BidRequest{
+					ID: "json-endpoint-request",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "div1"},
+					},
+				},
+				nbrCode: 0,
 			},
 			description: "Should log with different endpoint types",
 		},
@@ -8499,13 +8521,15 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 8888,
 					Endpoint:  models.EndpointWebS2S,
 				},
-				bidRequestJSON: `{"id":"high-nbr-request"}`,
-				nbrCode:        int(nbr.AllPartnerThrottled),
+				bidRequest: &openrtb2.BidRequest{
+					ID: "high-nbr-request",
+				},
+				nbrCode: int(nbr.AllPartnerThrottled),
 			},
 			description: "Should log with high nbr code value",
 		},
 		{
-			name: "log_with_empty_json_string",
+			name: "log_with_nil_bidrequest",
 			args: args{
 				stage: "hook_start",
 				rCtx: models.RequestCtx{
@@ -8513,10 +8537,10 @@ func TestLogHookBidRequest(t *testing.T) {
 					ProfileID: 1234,
 					Endpoint:  models.EndpointV25,
 				},
-				bidRequestJSON: "",
-				nbrCode:        0,
+				bidRequest: nil,
+				nbrCode:    0,
 			},
-			description: "Should handle empty JSON string gracefully",
+			description: "Should handle nil bidrequest gracefully",
 		},
 	}
 	for _, tt := range tests {
@@ -8525,22 +8549,27 @@ func TestLogHookBidRequest(t *testing.T) {
 			// and can handle various input combinations
 			// The actual logging output is verified through glog which is tested separately
 			assert.NotPanics(t, func() {
-				logHookBidRequest(tt.args.stage, tt.args.rCtx, tt.args.bidRequestJSON, tt.args.nbrCode)
+				logHookBidRequest(tt.args.stage, tt.args.rCtx, tt.args.bidRequest, tt.args.nbrCode)
 			}, tt.description)
 		})
 	}
 }
 
-func TestLogHookBidRequest_EmptyJSON(t *testing.T) {
-	// Test that function handles empty JSON string gracefully
+func TestLogHookBidRequest_NilBidRequest(t *testing.T) {
+	// Test that function handles nil BidRequest gracefully
 	rCtx := models.RequestCtx{
 		PubID:     5890,
 		ProfileID: 1234,
 		Endpoint:  models.EndpointV25,
 	}
 
-	// Should not panic with empty JSON string
+	// Should not panic with nil BidRequest
 	assert.NotPanics(t, func() {
-		logHookBidRequest("hook_start", rCtx, "", 0)
-	}, "Should handle empty JSON string without panicking")
+		logHookBidRequest("hook_start", rCtx, nil, 0)
+	}, "Should handle nil BidRequest without panicking")
+
+	// Should not panic with empty BidRequest
+	assert.NotPanics(t, func() {
+		logHookBidRequest("hook_start", rCtx, &openrtb2.BidRequest{}, 0)
+	}, "Should handle empty BidRequest without panicking")
 }
