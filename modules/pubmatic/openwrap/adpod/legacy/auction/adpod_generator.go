@@ -236,7 +236,19 @@ func (ag *AdPodGenerator) getUniqueBids(durationSequence []int) *highestCombinat
 		combinations = append(combinations, 1)
 		uniqueDuration++
 	}
-	hbc := findUniqueCombinations(data[:], combinations[:], *ag.slotConfig.IABCategoryExclusionPercent, *ag.slotConfig.AdvertiserExclusionPercent)
+
+	// Set default exclusion percentages to 100 means no exclusion
+	categoryExclusion, domainExclusion := 100, 100
+	if ag.slotConfig.AdpodConfigV25 != nil {
+		if ag.slotConfig.AdpodConfigV25.IABCategoryExclusionPercent != nil {
+			categoryExclusion = *ag.slotConfig.AdpodConfigV25.IABCategoryExclusionPercent
+		}
+		if ag.slotConfig.AdpodConfigV25.AdvertiserExclusionPercent != nil {
+			domainExclusion = *ag.slotConfig.AdpodConfigV25.AdvertiserExclusionPercent
+		}
+	}
+
+	hbc := findUniqueCombinations(data[:], combinations[:], categoryExclusion, domainExclusion)
 	hbc.durations = durationSequence[:]
 	hbc.timeTakenCompExcl = time.Since(startTime)
 

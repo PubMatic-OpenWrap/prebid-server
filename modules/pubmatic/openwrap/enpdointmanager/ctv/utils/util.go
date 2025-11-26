@@ -21,7 +21,7 @@ setIncludeBrandCategory sets PBS's  bidrequest.ext.prebid.Targeting object
     WithCategory        = false
     TranslateCategories = false
 */
-func SetIncludeBrandCategory(rCtx models.RequestCtx) {
+func SetIncludeBrandCategory(rCtx *models.RequestCtx) {
 	includeBrandCategory := &openrtb_ext.ExtIncludeBrandCategory{
 		SkipDedup:           true,
 		TranslateCategories: ptrutil.ToPtr(false),

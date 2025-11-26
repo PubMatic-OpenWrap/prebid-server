@@ -94,8 +94,8 @@ func doAuctionAndExclusion(adpodBid *AdPodBid, podConfig models.AdpodConfig) (*A
 	//combination generator
 	comb := NewCombination(
 		buckets,
-		uint64(podImp.MinPodDuration),
-		uint64(podImp.MaxPodDuration),
+		uint64(podImp.AdpodConfigV25.MinPodDuration),
+		uint64(podImp.AdpodConfigV25.MaxPodDuration),
 		podImp)
 
 	//adpod generator

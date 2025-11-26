@@ -58,7 +58,7 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidat
 		return rCtx, result, nil
 	}
 
-	ctvutils.SetIncludeBrandCategory(rCtx)
+	ctvutils.SetIncludeBrandCategory(&rCtx)
 
 	for _, imp := range payload.BidRequest.Imp {
 		impCtx, ok := rCtx.ImpBidCtx[imp.ID]

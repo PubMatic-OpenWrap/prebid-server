@@ -27,7 +27,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -230,6 +229,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
+		}
+
+		ep.BidRequest, err = adpod.ApplyAdpodConfigs(&rctx, ep.BidRequest)
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to apply adpod configs: "+err.Error())
 		}
 
 		if rctx.IsApplovinSchainABTestEnabled && ep.BidRequest.Source != nil {
@@ -1369,7 +1373,7 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 			BidFloorCur:       imp.BidFloorCur,
 			Type:              slotType,
 			IsBanner:          imp.Banner != nil,
-			Banner:            ortb.DeepCopyImpBanner(imp.Banner),
+			Banner:            imp.Banner,
 			Video:             imp.Video,
 			Native:            imp.Native,
 			IncomingSlots:     incomingSlots,
@@ -1579,79 +1583,6 @@ func handleBidderAlias(rCtx *models.RequestCtx, bidderCode string, partnerConfig
 	return isAlias
 }
 
-func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
-	if !rCtx.IsCTVRequest || rCtx.AdruleFlag {
-		return result, true
-	}
-
-	rCtx.AdpodCtx = make(map[string]models.AdpodConfig)
-	for _, imp := range bidRequest.Imp {
-		if imp.Video == nil {
-			continue
-		}
-
-		if imp.Video.PodID != "" {
-			// TODO: Retrieve pod config from DB
-			// For now, we are using the pod config from the request
-			rCtx.AdpodCtx.AddAdpodConfig(&imp)
-		} else {
-			// Get V25 Adpod configs
-			adpodV25, err := adpod.GetV25AdpodConfigs(rCtx, &imp)
-			if err != nil {
-				result.NbrCode = int(nbr.InvalidAdpodConfig)
-				result.Errors = append(result.Errors, "failed to get adpod configurations for "+imp.ID+" reason: "+err.Error())
-				rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*bidRequest)
-				return result, false
-			}
-
-			if adpodV25 == nil {
-				continue
-			}
-
-			var domainExclusion, categoryExclusion bool
-			if adpodV25.AdvertiserExclusionPercent != nil && *adpodV25.AdvertiserExclusionPercent == 0 {
-				domainExclusion = true
-			}
-			if adpodV25.IABCategoryExclusionPercent != nil && *adpodV25.IABCategoryExclusionPercent == 0 {
-				categoryExclusion = true
-			}
-
-			rCtx.AdpodCtx[imp.ID] = models.AdpodConfig{
-				PodID:   imp.ID,
-				PodType: models.PodTypeDynamic,
-				Exclusion: models.ExclusionConfig{
-					AdvertiserDomainExclusion: domainExclusion,
-					IABCategoryExclusion:      categoryExclusion,
-				},
-				Slots: []models.SlotConfig{
-					{
-						Id:                          imp.ID,
-						MinDuration:                 int64(adpodV25.MinDuration),
-						MaxDuration:                 int64(adpodV25.MaxDuration),
-						PodDur:                      imp.Video.MaxDuration,
-						MaxSeq:                      int64(adpodV25.MaxAds),
-						MinAds:                      int64(adpodV25.MinAds),
-						MaxAds:                      int64(adpodV25.MaxAds),
-						MinPodDuration:              imp.Video.MinDuration,
-						MaxPodDuration:              imp.Video.MaxDuration,
-						IABCategoryExclusionPercent: adpodV25.IABCategoryExclusionPercent,
-						AdvertiserExclusionPercent:  adpodV25.AdvertiserExclusionPercent,
-						Flexible:                    true,
-					},
-				},
-			}
-		}
-	}
-	return result, true
-}
-
-func getApplovinSchainABTestEnabled(percentage int) bool {
-	if percentage > 0 && GetRandomNumberIn1To100() <= percentage {
-		return true
-	}
-	return false
-}
-
 func (m *OpenWrap) addDefaultRequestContextValues(bidRequest *openrtb2.BidRequest, rCtx *models.RequestCtx) {
 	rCtx.Source, rCtx.Origin = getSourceAndOrigin(bidRequest)
 	rCtx.PageURL = getPageURL(bidRequest)
@@ -1666,4 +1597,76 @@ func (m *OpenWrap) addDefaultRequestContextValues(bidRequest *openrtb2.BidReques
 	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(*rCtx, bidRequest)
 	populateDeviceContext(&rCtx.DeviceCtx, bidRequest.Device)
+}
+
+func getApplovinSchainABTestEnabled(percentage int) bool {
+	if percentage > 0 && GetRandomNumberIn1To100() <= percentage {
+		return true
+	}
+	return false
+}
+
+func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrtb2.Imp) ([]models.PodConfig, error) {
+	// Request
+	if len(imp.Video.PodID) > 0 {
+		config := models.PodConfig{
+			PodID:       imp.Video.PodID,
+			PodDur:      imp.Video.PodDur,
+			MaxSeq:      imp.Video.MaxSeq,
+			MinDuration: imp.Video.MinDuration,
+			MaxDuration: imp.Video.MaxDuration,
+			RqdDurs:     imp.Video.RqdDurs,
+			StartDelay:  imp.Video.StartDelay,
+		}
+		return []models.PodConfig{config}, nil
+	}
+
+	// UI
+	if adpod.CheckAdpodUIConfigEnabled(rCtx, imp) {
+		configs, err := adpod.GetAdpodUIConfigs(rCtx, m.cache)
+		if err != nil {
+			err = errors.New("failed to get adpod configurations from UI for impression " + imp.ID + " reason: " + err.Error())
+		}
+		return configs, err
+	}
+
+	// V25
+	configs, err := adpod.GetV25AdpodConfigs(rCtx, imp)
+	if err != nil {
+		err = errors.New("failed to get adpod v25 configurations for impression " + imp.ID + " reason: " + err.Error())
+	}
+	return configs, err
+}
+
+func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+	if !rCtx.IsCTVRequest {
+		return result, true
+	}
+
+	for _, imp := range bidRequest.Imp {
+		if imp.Video == nil {
+			continue
+		}
+
+		configs, err := m.resolveAdpodConfigsForImp(rCtx, &imp)
+		if err != nil {
+			result.NbrCode = int(nbr.InvalidAdpodConfig)
+			result.Errors = append(result.Errors, err.Error())
+			rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*bidRequest)
+			return result, false
+		}
+
+		if len(configs) == 0 {
+			continue
+		}
+
+		podConfigs, ok := rCtx.ImpAdPodConfig[imp.ID]
+		if !ok {
+			podConfigs = make([]models.PodConfig, 0)
+		}
+		podConfigs = append(podConfigs, configs...)
+		rCtx.ImpAdPodConfig[imp.ID] = podConfigs
+	}
+
+	return result, true
 }

@@ -91,16 +91,25 @@ func generateImpressionID(podID string, impID string, seqNo int) string {
 
 // getAdPodImpsConfigs will return number of impressions configurations within adpod
 func getAdPodImpConfig(podID string, dynamicSlotConfig models.SlotConfig, adpodProfileCfg *models.AdpodProfileConfig) ([]*models.ImpAdPodConfig, error) {
+	// TODO: Remove this after ORTB 2.6 based auction is fully implemented
+	if dynamicSlotConfig.AdpodConfigV25 == nil {
+		dynamicSlotConfig.AdpodConfigV25 = &models.AdpodConfigV25{
+			MinAds:         1,
+			MaxAds:         dynamicSlotConfig.MaxSeq,
+			MinPodDuration: dynamicSlotConfig.MinDuration,
+			MaxPodDuration: dynamicSlotConfig.PodDur,
+		}
+	}
 	selectedAlgorithm := SelectAlgorithm(adpodProfileCfg)
 	adpod := &models.AdPod{
 		MinDuration:                 int(dynamicSlotConfig.MinDuration),
 		MaxDuration:                 int(dynamicSlotConfig.MaxDuration),
-		MinAds:                      int(dynamicSlotConfig.MinAds),
-		MaxAds:                      int(dynamicSlotConfig.MaxAds),
-		IABCategoryExclusionPercent: dynamicSlotConfig.IABCategoryExclusionPercent,
-		AdvertiserExclusionPercent:  dynamicSlotConfig.AdvertiserExclusionPercent,
+		MinAds:                      int(dynamicSlotConfig.AdpodConfigV25.MinAds),
+		MaxAds:                      int(dynamicSlotConfig.AdpodConfigV25.MaxAds),
+		IABCategoryExclusionPercent: dynamicSlotConfig.AdpodConfigV25.IABCategoryExclusionPercent,
+		AdvertiserExclusionPercent:  dynamicSlotConfig.AdpodConfigV25.AdvertiserExclusionPercent,
 	}
-	impGen := NewImpressions(dynamicSlotConfig.MinPodDuration, dynamicSlotConfig.MaxPodDuration, adpod, adpodProfileCfg, selectedAlgorithm)
+	impGen := NewImpressions(dynamicSlotConfig.AdpodConfigV25.MinPodDuration, dynamicSlotConfig.AdpodConfigV25.MaxPodDuration, adpod, adpodProfileCfg, selectedAlgorithm)
 	impRanges := impGen.Get()
 
 	// labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}

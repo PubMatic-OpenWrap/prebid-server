@@ -64,14 +64,19 @@ func validateAndCollectBids(rCtx *models.RequestCtx, podCfg models.AdpodConfig, 
 				continue
 			}
 
-			bidsPerSlot[idx] = append(bidsPerSlot[idx], newPodBid(bid))
+			var dealtierSatisfied bool
+			if bidCtx.Prebid != nil {
+				dealtierSatisfied = bidCtx.Prebid.DealTierSatisfied
+			}
+
+			bidsPerSlot[idx] = append(bidsPerSlot[idx], newPodBid(bid, dealtierSatisfied))
 		}
 	}
 
 	return bidsPerSlot
 }
 
-func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid) *podSelection {
+func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid, supportDeals bool) *podSelection {
 	best := &podSelection{dealCount: -1}
 
 	var dfs func(
@@ -90,7 +95,16 @@ func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid
 		curDeals int,
 	) {
 		if slotIdx == len(podCfg.Slots) {
-			// better if more deals, or same deals & higher CPM
+			if !supportDeals {
+				// supportdeals=false → pure price-based
+				if curCPM > best.totalCPM {
+					best.totalCPM = curCPM
+					best.bids = append([]*podBid(nil), current...)
+				}
+				return
+			}
+
+			// supportdeals=true → prefer more DealTierSatisfied bids, then price
 			if curDeals > best.dealCount ||
 				(curDeals == best.dealCount && curCPM > best.totalCPM) {
 				best.dealCount = curDeals
@@ -123,7 +137,8 @@ func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid
 			}
 
 			nextDeals := curDeals
-			if c.Bid.DealID != "" {
+			// Count only tier‑satisfied bids when supportdeals is enabled
+			if supportDeals && c.DealTierSatisfied {
 				nextDeals++
 			}
 
@@ -140,7 +155,7 @@ func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid
 
 	dfs(0, map[string]struct{}{}, map[string]struct{}{}, nil, 0, 0)
 
-	if best.dealCount < 0 || len(best.bids) == 0 {
+	if len(best.bids) == 0 {
 		return nil
 	}
 	return best
@@ -157,34 +172,41 @@ func StructuredAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfi
 		return nil
 	}
 
-	best := getBestAdpodCombination(podConfig, bidsPerSlot)
+	var supportDeals bool
+	if rCtx.NewReqExt != nil {
+		supportDeals = rCtx.NewReqExt.Prebid.SupportDeals
+	}
+
+	best := getBestAdpodCombination(podConfig, bidsPerSlot, supportDeals)
 	if best == nil {
 		return []error{fmt.Errorf("no valid adpod combination found")}
 	}
 
 	// 1) Map winners per imp
-	var winningOwBids []*models.OwBid
 	winnersByImp := make(map[string]*podBid, len(best.bids))
 	for _, wb := range best.bids {
-		impCtx, ok := rCtx.ImpBidCtx[wb.ImpID]
+		winnersByImp[wb.ImpID] = wb
+	}
+
+	// Form OW winning bids
+	for impId, bid := range winnersByImp {
+		impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
 		if !ok {
 			continue
 		}
-		bidCtx, ok := impCtx.BidCtx[wb.ID]
+		bidCtx, ok := impCtx.BidCtx[bid.ID]
 		if !ok {
 			continue
 		}
 		owBid := &models.OwBid{
-			ID:      wb.ID,
+			ID:      bid.ID,
 			NetEcpm: bidCtx.EN,
 		}
 		if bidCtx.BidExt.Prebid != nil {
 			owBid.BidDealTierSatisfied = bidCtx.BidExt.Prebid.DealTierSatisfied
 		}
-		winningOwBids = append(winningOwBids, owBid)
-		winnersByImp[wb.ImpID] = wb
+		rCtx.WinningBids.AppendBid(impId, owBid)
 	}
-	rCtx.WinningBids[podConfig.PodID] = winningOwBids
 
 	// 2) For every candidate, if it’s not a winner and has no NBR yet,
 	//    mark it as lost to deal or lost to higher bid.
@@ -200,11 +222,18 @@ func StructuredAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfi
 				continue
 			}
 
-			// Winner is a deal and this is non‑deal → lost to deal bid
-			if winner.DealID != "" && c.DealID == "" {
+			// If supportDeals is false, always treat as price-based loss.
+			if !rCtx.SupportDeals {
+				c.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
+				continue
+			}
+
+			// supportDeals == true:
+			// Winner satisfied deal tier and loser did not → lost to deal bid.
+			// Otherwise → lost to higher bid.
+			if winner.DealTierSatisfied && !c.DealTierSatisfied {
 				c.Nbr = ptrutil.ToPtr(nbr.LossBidLostToDealBid)
 			} else {
-				// otherwise just lost to a higher bid
 				c.Nbr = ptrutil.ToPtr(nbr.LossBidLostToHigherBid)
 			}
 		}
@@ -232,13 +261,15 @@ func StructuredAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfi
 
 type podBid struct {
 	openrtb2.Bid
-	Nbr *openrtb3.NoBidReason
+	Nbr               *openrtb3.NoBidReason
+	DealTierSatisfied bool
 }
 
-func newPodBid(b openrtb2.Bid) *podBid {
+func newPodBid(b openrtb2.Bid, dealtierSatisfied bool) *podBid {
 	return &podBid{
-		Bid: b,
-		Nbr: nil,
+		Bid:               b,
+		Nbr:               nil,
+		DealTierSatisfied: dealtierSatisfied,
 	}
 }
 

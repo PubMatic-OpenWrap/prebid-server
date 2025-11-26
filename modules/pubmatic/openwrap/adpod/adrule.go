@@ -2,11 +2,9 @@ package adpod
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
 )
 
 const (
@@ -17,12 +15,40 @@ const (
 	ImpressionIDFormat = "%s-%s-%d"
 )
 
-func ApplyAdruleConfigs(rctx *models.RequestCtx, bidRequest *openrtb2.BidRequest) error {
+func checkV26AdpodConfigs(configs []models.PodConfig) bool {
+	var podIdPresent bool
+	for i := range configs {
+		if len(configs[i].PodID) > 0 {
+			podIdPresent = true
+			break
+		}
+	}
+	return podIdPresent
+}
+
+func getAdpodConfigsFromAdrule(adrules []*openrtb2.Video) []models.PodConfig {
+	configs := make([]models.PodConfig, 0)
+
+	for _, rule := range adrules {
+		config := models.PodConfig{
+			PodID:       rule.PodID,
+			PodDur:      rule.PodDur,
+			MaxSeq:      rule.MaxSeq,
+			MinDuration: rule.MinDuration,
+			MaxDuration: rule.MaxDuration,
+			RqdDurs:     rule.RqdDurs,
+			StartDelay:  rule.StartDelay,
+		}
+		configs = append(configs, config)
+	}
+	return configs
+}
+
+func ApplyAdruleAdpodConfigs(rctx *models.RequestCtx, bidRequest *openrtb2.BidRequest) error {
 	if !rctx.AdruleFlag {
 		return nil
 	}
 
-	imps := make([]openrtb2.Imp, 0)
 	for _, imp := range bidRequest.Imp {
 		if imp.Video == nil {
 			continue
@@ -34,25 +60,27 @@ func ApplyAdruleConfigs(rctx *models.RequestCtx, bidRequest *openrtb2.BidRequest
 		}
 
 		if impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig == nil || len(impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig.Adrule) == 0 {
+			rctx.AdruleFlag = false
 			continue
 		}
 
 		if err := validateAdrule(impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig.Adrule); err != nil {
+			rctx.AdruleFlag = false
 			return err
 		}
 
-		imps = append(imps, createImpressions(rctx, &impCtx, &imp, impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig.Adrule)...)
-	}
+		podConfigs, ok := rctx.ImpAdPodConfig[imp.ID]
+		if !ok {
+			rctx.ImpAdPodConfig[imp.ID] = getAdpodConfigsFromAdrule(impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig.Adrule)
+			continue
+		}
 
-	if len(imps) > 0 {
-		bidRequest.Imp = imps
-		// Create adpod Ctx
-		if rctx.AdpodCtx == nil {
-			rctx.AdpodCtx = make(map[string]models.AdpodConfig)
+		if checkV26AdpodConfigs(podConfigs) {
+			rctx.AdruleFlag = false
+			continue
 		}
-		for _, imp := range imps {
-			rctx.AdpodCtx.AddAdpodConfig(&imp)
-		}
+
+		rctx.ImpAdPodConfig[imp.ID] = getAdpodConfigsFromAdrule(impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig.Adrule)
 	}
 
 	return nil
@@ -85,30 +113,4 @@ func validateAdrule(adrule []*openrtb2.Video) error {
 	}
 
 	return nil
-}
-
-func createImpressions(rctx *models.RequestCtx, impCtx *models.ImpCtx, imp *openrtb2.Imp, adrule []*openrtb2.Video) []openrtb2.Imp {
-	imps := make([]openrtb2.Imp, 0)
-	for i, v := range adrule {
-		impCopy := ortb.DeepCloneImpression(imp)
-		impCopy.ID = fmt.Sprintf(ImpressionIDFormat, v.PodID, imp.ID, i)
-		applyAdRule(impCopy.Video, v)
-
-		impCtxCopy := impCtx.DeepCopy()
-		impCtxCopy.ImpID = impCopy.ID
-		impCtxCopy.Video = impCopy.Video
-		rctx.ImpBidCtx[impCopy.ID] = impCtxCopy
-		imps = append(imps, *impCopy)
-	}
-	return imps
-}
-
-func applyAdRule(video *openrtb2.Video, adrule *openrtb2.Video) {
-	video.PodDur = adrule.PodDur
-	video.MaxSeq = adrule.MaxSeq
-	video.MaxDuration = adrule.MaxDuration
-	video.MinDuration = adrule.MinDuration
-	video.PodID = adrule.PodID
-	video.StartDelay = adrule.StartDelay
-	video.RqdDurs = adrule.RqdDurs
 }

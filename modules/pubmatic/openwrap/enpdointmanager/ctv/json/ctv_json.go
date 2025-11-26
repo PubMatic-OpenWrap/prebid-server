@@ -3,8 +3,6 @@ package ctvjson
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -22,7 +20,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 type CTVJSON struct {
@@ -46,6 +43,10 @@ func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCt
 		}
 	}
 
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
+
 	return rCtx, result, nil
 }
 
@@ -54,97 +55,40 @@ func (cj *CTVJSON) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPaylo
 }
 
 func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
-	if len(rCtx.RedirectURL) == 0 {
-		rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.OwRedirectURL)
+	// Redirect URL
+	result, ok := processRedirectURL(&rCtx, result)
+	if !ok {
+		return rCtx, result, nil
 	}
 
-	if len(rCtx.RedirectURL) > 0 {
-		rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
-		if rCtx.ResponseFormat == models.ResponseFormatRedirect && !utils.IsValidURL(rCtx.RedirectURL) {
-			result.NbrCode = int(nbr.InvalidRedirectURL)
-			return rCtx, result, errors.New("Invalid redirect URL")
-		}
-	}
-
-	if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
-		result.NbrCode = int(nbr.MissingOWRedirectURL)
-		return rCtx, result, errors.New("owRedirectURL is missing")
-	}
-
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationKey)
-	policy := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDuration) > 0 {
-		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: policy,
-		}
-	}
-
+	// Validate video request
 	err := ctvutils.ValidateVideoImpressions(payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidVideoRequest)
-		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return rCtx, result, err
 	}
 
-	// filter imps with invalid adserver url
-	filterImpsWithInvalidAdserverURL(&rCtx, payload.BidRequest)
-
-	ctvutils.SetIncludeBrandCategory(rCtx)
-
-	// Add multibid configuration
-	var multibid []*openrtb_ext.ExtMultiBid
-	for _, partnerConfig := range rCtx.PartnerConfigMap {
-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
-			continue
+	// update Adpod Configs from json endpoint features
+	errs := updateAdpodConfigs(&rCtx, payload.BidRequest)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			result.Warnings = append(result.Warnings, err.Error())
 		}
-
-		partneridstr, ok := partnerConfig[models.PARTNER_ID]
-		if !ok {
-			continue
-		}
-		partnerID, err := strconv.Atoi(partneridstr)
-		if err != nil || partnerID == models.VersionLevelConfigID {
-			continue
-		}
-
-		// bidderCode is in context with pubmatic. Ex. it could be appnexus-1, appnexus-2, etc.
-		bidderCode := partnerConfig[models.BidderCode]
-
-		// prebidBidderCode is equivalent of PBS-Core's bidderCode
-		prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
-
-		multibidConfig := &openrtb_ext.ExtMultiBid{
-			Bidder:                 prebidBidderCode,
-			Alias:                  bidderCode,
-			MaxBids:                ptrutil.ToPtr(int(openrtb_ext.MaxBidLimit)),
-			TargetBidderCodePrefix: bidderCode,
-		}
-		multibid = append(multibid, multibidConfig)
 	}
-	rCtx.NewReqExt.Prebid.MultiBid = multibid
 
-	for _, imp := range payload.BidRequest.Imp {
-		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
-		if !ok {
-			continue
-		}
+	// Populate rctx with ctv features
+	ctvutils.SetIncludeBrandCategory(&rCtx)
+	ctvutils.AddMultiBidConfigurations(&rCtx)
+	ctvutils.ProcessAdpodProfileConfig(&rCtx)
 
-		podID := imp.Video.PodID
-		if podID == "" {
-			podID = imp.ID
-		}
+	// Set Default values to V25 dynamic adpod configs
+	adpod.SetDefaultValuesToAdpodConfig(&rCtx)
 
-		_, ok = rCtx.AdpodCtx[podID]
-		//Adding default durations for CTV Test requests
-		if rCtx.IsTestRequest > 0 && ok && rCtx.AdpodProfileConfig == nil {
-			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-				AdserverCreativeDurations:              []int{5, 10},
-				AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
-			}
-		}
-
-		rCtx.ImpBidCtx[imp.ID] = impCtx
+	// Adpod config Validation
+	err = adpod.ValidateAdpodConfigs(&rCtx)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidAdpodConfig)
+		return rCtx, result, err
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
@@ -157,6 +101,9 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		defer func() {
 			miCtx.ModuleContext.Set("rctx", rCtx)
 		}()
+
+		// filter imps with invalid adserver url
+		filterImpsWithInvalidAdserverURL(&rCtx, payload.BidRequest)
 
 		if ep.BidRequest.Source != nil && ep.BidRequest.Source.SChain != nil {
 			err := ctvutils.IsValidSchain(ep.BidRequest.Source.SChain)
@@ -176,26 +123,10 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		ctvutils.RemoveAdpodDataFromExt(ep.BidRequest)
 
 		// Add GAM URL configs
-		err = ApplyGAMURLConfig(&rCtx, ep.BidRequest)
+		err = adpod.ApplyGAMURLConfig(&rCtx, ep.BidRequest)
 		if err != nil {
 			result.Warnings = append(result.Warnings, "Failed to apply GAM URL configs: "+err.Error())
 		}
-
-		// Set Default values for dynamic adpod configs
-		adpod.SetDefaultValuesToPodConfig(&rCtx)
-
-		// Read adrule configurations
-		adpod.ApplyAdruleConfigs(&rCtx, ep.BidRequest)
-
-		// Validate adpod configs
-		if err := adpod.ValidateV25Configs(&rCtx); err != nil {
-			result.NbrCode = int(nbr.InvalidAdpodConfig)
-			result.Errors = append(result.Errors, "Invalid adpod configuration: "+err.Error())
-			return ep, nil
-		}
-
-		// Enable when UI support is added
-		// ep.BidRequest = adpod.ApplyAdpodConfigs(rCtx, ep.BidRequest)
 
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-before-validation")

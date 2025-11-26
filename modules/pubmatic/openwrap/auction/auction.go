@@ -26,9 +26,8 @@ func Auction(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) {
 		for _, bid := range seatBid.Bid {
 			impId := bid.ImpID
 
-			// skip adpod bids
-			// TODO: Check in slot config for structured and hybrid adpod
-			if _, ok := rctx.AdpodCtx[impId]; ok {
+			// Check if impression belongs to adpod slot
+			if rctx.AdpodCtx.IsAdpodSlot(impId) {
 				continue
 			}
 

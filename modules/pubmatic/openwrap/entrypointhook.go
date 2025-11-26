@@ -191,13 +191,6 @@ func (m OpenWrap) handleEntrypointHook(
 		GoogleSDK:                       models.GoogleSDK{StartTime: time.Now()},
 	}
 
-	if rCtx.IsCTVRequest {
-		// SSAuction will be always 1 for CTV request
-		rCtx.SSAuction = 1
-
-		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	}
-
 	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
 	if len(errs) > 0 {
 		result.NbrCode = int(nbr.InvalidPublisherID)

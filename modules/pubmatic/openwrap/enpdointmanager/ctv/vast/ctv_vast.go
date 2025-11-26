@@ -58,7 +58,7 @@ func (cv *CTVVAST) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		return rCtx, result, nil
 	}
 
-	ctvutils.SetIncludeBrandCategory(rCtx)
+	ctvutils.SetIncludeBrandCategory(&rCtx)
 
 	for _, imp := range payload.BidRequest.Imp {
 		impCtx, ok := rCtx.ImpBidCtx[imp.ID]

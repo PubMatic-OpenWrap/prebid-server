@@ -75,6 +75,23 @@ func GetNearestDuration(duration int64, config []*models.ImpAdPodConfig) int64 {
 }
 
 func DynamicAdpodAuction(rctx *models.RequestCtx, response *openrtb2.BidResponse, podConfig models.AdpodConfig) []error {
+	// TODO: Remove this when ORTB 2.6 based auction in place.
+	if podConfig.Slots[0].AdpodConfigV25 == nil {
+		podConfig.Slots[0].AdpodConfigV25 = &models.AdpodConfigV25{
+			MinAds:         1,
+			MaxAds:         podConfig.Slots[0].MaxSeq,
+			MinPodDuration: podConfig.Slots[0].MinDuration,
+			MaxPodDuration: podConfig.Slots[0].PodDur,
+		}
+		if podConfig.Exclusion.IABCategoryExclusion {
+			enable := 0
+			podConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent = &enable
+		}
+		if podConfig.Exclusion.AdvertiserDomainExclusion {
+			enable := 0
+			podConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent = &enable
+		}
+	}
 	impAdpodBids := getAdpodBid(rctx, response, podConfig.PodID, podConfig)
 	winningAdpodBids, errs := doAuctionAndExclusion(impAdpodBids, podConfig)
 	if len(errs) > 0 {
