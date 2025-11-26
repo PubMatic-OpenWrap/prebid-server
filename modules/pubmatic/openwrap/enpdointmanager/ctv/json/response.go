@@ -130,13 +130,20 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 	postRollSlot := podPostion.PostRoll.Start - 1
 
 	var adpodBids []*adPodBid
+	perPodBids := make(map[string]*adPodBid)
 	for i := range impMetas {
-		adpodBid := &adPodBid{
-			ID: impMetas[i].impID,
+		podId := impMetas[i].impID
+		if impMetas[i].video != nil && impMetas[i].video.PodID != "" {
+			podId = impMetas[i].video.PodID
 		}
 
-		if impMetas[i].video != nil && impMetas[i].video.PodID != "" {
-			adpodBid.ID = impMetas[i].video.PodID
+		adpodBid, exists := perPodBids[podId]
+		if !exists {
+			adpodBid = &adPodBid{
+				ID: podId,
+			}
+			perPodBids[podId] = adpodBid
+			adpodBids = append(adpodBids, adpodBid)
 		}
 
 		bids, ok := bidsMap[impMetas[i].impID]
@@ -149,7 +156,6 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 		cacheIds, err := cacheAllBids(bids, cacheClient)
 		if err != nil {
 			adpodBid.Error = err.Error()
-			adpodBids = append(adpodBids, adpodBid)
 			continue
 		}
 
@@ -166,14 +172,14 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 			}
 
 			slotNo := 0
-			videoPosition := getVideoPosition(rCtx, impCtx.Video)
-			if videoPosition == adcom1.StartPreRoll {
+			switch getVideoPosition(rCtx, impCtx.Video) {
+			case adcom1.StartPreRoll:
 				preRollSlot = preRollSlot + 1
 				slotNo = preRollSlot
-			} else if videoPosition == adcom1.StartPostRoll {
+			case adcom1.StartPostRoll:
 				postRollSlot = postRollSlot + 1
 				slotNo = postRollSlot
-			} else {
+			default:
 				midRollSlot = midRollSlot + 1
 				slotNo = midRollSlot
 			}
@@ -189,14 +195,12 @@ func formAdpodBids(rCtx *models.RequestCtx, bidsMap map[string][]openrtb2.Bid, c
 		}
 
 		if len(targetings) > 0 {
-			adpodBid.Targeting = targetings
+			adpodBid.Targeting = append(adpodBid.Targeting, targetings...)
 		}
 
 		if len(impCtx.AdserverURL) > 0 {
 			adpodBid.ModifiedURL = updateAdServerURL(targetings, impCtx.AdserverURL)
 		}
-
-		adpodBids = append(adpodBids, adpodBid)
 	}
 
 	return adpodBids
@@ -303,7 +307,6 @@ func updateAdServerURL(targetings []map[string]string, adServerURL string) strin
 func sortImps(imps []impMeta) {
 	sort.Slice(imps, func(i, j int) bool {
 		// First, sort by StartDelay category (pre-roll, mid-roll, post-roll)
-
 		videoPositionI := categoriseVideoPosition(imps[i].video.StartDelay)
 		videoPositionJ := categoriseVideoPosition(imps[j].video.StartDelay)
 		if videoPositionI != videoPositionJ {
@@ -315,8 +318,14 @@ func sortImps(imps []impMeta) {
 			return *imps[i].video.StartDelay < *imps[j].video.StartDelay
 		}
 
+		podPositionI := getPodSequencePriority(imps[i].video.PodSeq)
+		podPostitionJ := getPodSequencePriority(imps[j].video.PodSeq)
+		if podPositionI != podPostitionJ {
+			return podPositionI < podPostitionJ
+		}
+
 		// Finally, sort by PodID
-		return getPodSequencePriority(imps[i].video.PodSeq) < getPodSequencePriority(imps[j].video.PodSeq)
+		return strings.ToLower(imps[i].video.PodID) < strings.ToLower(imps[j].video.PodID)
 	})
 }
 

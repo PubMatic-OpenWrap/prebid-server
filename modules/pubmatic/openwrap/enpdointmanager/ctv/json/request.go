@@ -41,7 +41,7 @@ func filterImpsWithInvalidAdserverURL(rCtx *models.RequestCtx, bidRequest *openr
 	bidRequest.Imp = validImps
 }
 
-func processRedirectURL(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func processRedirectURL(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) bool {
 	if len(rCtx.RedirectURL) == 0 {
 		rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.OwRedirectURL)
 	}
@@ -51,17 +51,17 @@ func processRedirectURL(rCtx *models.RequestCtx, result hookstage.HookResult[hoo
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && !utils.IsValidURL(rCtx.RedirectURL) {
 			result.NbrCode = int(nbr.InvalidRedirectURL)
 			result.Errors = append(result.Errors, "Invalid redirect URL")
-			return result, false
+			return false
 		}
 	}
 
 	if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
 		result.NbrCode = int(nbr.MissingOWRedirectURL)
 		result.Errors = append(result.Errors, "owRedirectURL is missing")
-		return result, false
+		return false
 	}
 
-	return result, true
+	return true
 }
 
 func updateAdpodConfigs(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) []error {

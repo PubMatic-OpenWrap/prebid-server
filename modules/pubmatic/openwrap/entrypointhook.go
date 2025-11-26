@@ -233,9 +233,10 @@ func (m OpenWrap) handleEntrypointHook(
 
 	result.Reject = false
 
-	rCtx, result, err = endpointHookManager.HandleEntrypointHook(payload, rCtx, result, miCtx)
-	if err != nil {
-		return result, err
+	// Execute endpoint specific entrypoint hook
+	isSuccess := endpointHookManager.HandleEntrypointHook(payload, &rCtx, &result, miCtx)
+	if !isSuccess {
+		return result, nil
 	}
 
 	return result, nil

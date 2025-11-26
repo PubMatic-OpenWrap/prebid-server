@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
@@ -34,12 +33,13 @@ func NewCTVJSON(metricsEngine metrics.MetricsEngine, creativeCache creativecache
 	}
 }
 
-func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error) {
+func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.EntrypointPayload], miCtx hookstage.ModuleInvocationContext) bool {
 	cj.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
 	if len(rCtx.ResponseFormat) > 0 {
 		if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
 			result.NbrCode = int(nbr.InvalidResponseFormat)
-			return rCtx, result, errors.New("Invalid response format, must be 'json' or 'redirect'")
+			result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+			return false
 		}
 	}
 
@@ -47,29 +47,29 @@ func (cj *CTVJSON) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCt
 	rCtx.SSAuction = 1
 	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawAuctionRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
-	return rCtx, result, nil
+func (cj *CTVJSON) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawAuctionRequestPayload], miCtx hookstage.ModuleInvocationContext) bool {
+	return true
 }
 
-func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload], miCtx hookstage.ModuleInvocationContext) bool {
 	// Redirect URL
-	result, ok := processRedirectURL(&rCtx, result)
-	if !ok {
-		return rCtx, result, nil
+	if !processRedirectURL(rCtx, result) {
+		return false
 	}
 
 	// Validate video request
 	err := ctvutils.ValidateVideoImpressions(payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidVideoRequest)
-		return rCtx, result, err
+		result.Errors = append(result.Errors, err.Error())
+		return false
 	}
 
 	// update Adpod Configs from json endpoint features
-	errs := updateAdpodConfigs(&rCtx, payload.BidRequest)
+	errs := updateAdpodConfigs(rCtx, payload.BidRequest)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			result.Warnings = append(result.Warnings, err.Error())
@@ -77,18 +77,19 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 	}
 
 	// Populate rctx with ctv features
-	ctvutils.SetIncludeBrandCategory(&rCtx)
-	ctvutils.AddMultiBidConfigurations(&rCtx)
-	ctvutils.ProcessAdpodProfileConfig(&rCtx)
+	ctvutils.SetIncludeBrandCategory(rCtx)
+	ctvutils.AddMultiBidConfigurations(rCtx)
+	ctvutils.ProcessAdpodProfileConfig(rCtx)
 
 	// Set Default values to V25 dynamic adpod configs
-	adpod.SetDefaultValuesToAdpodConfig(&rCtx)
+	adpod.SetDefaultValuesToAdpodConfig(rCtx)
 
 	// Adpod config Validation
-	err = adpod.ValidateAdpodConfigs(&rCtx)
+	err = adpod.ValidateAdpodConfigs(rCtx)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidAdpodConfig)
-		return rCtx, result, err
+		result.Errors = append(result.Errors, err.Error())
+		return false
 	}
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
@@ -131,10 +132,10 @@ func (cj *CTVJSON) HandleBeforeValidationHook(payload hookstage.BeforeValidation
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-before-validation")
 
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
+func (cj *CTVJSON) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], miCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
 		rCtx, ok := utils.GetRequestContext(miCtx)
 		if !ok {
@@ -162,10 +163,10 @@ func (cj *CTVJSON) HandleProcessedAuctionHook(payload hookstage.ProcessedAuction
 
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-ctv-impressions")
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
+func (cj *CTVJSON) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BidderRequestPayload], miCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(ep hookstage.BidderRequestPayload) (hookstage.BidderRequestPayload, error) {
 		rCtx, ok := utils.GetRequestContext(miCtx)
 		if !ok {
@@ -194,14 +195,14 @@ func (cj *CTVJSON) HandleBidderRequestHook(payload hookstage.BidderRequestPayloa
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-bidder-request")
 
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawBidderResponsePayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	return rCtx, result, nil
+func (cj *CTVJSON) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], miCtx hookstage.ModuleInvocationContext) bool {
+	return true
 }
 
-func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
+func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], miCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {
 		rCtx, ok := utils.GetRequestContext(miCtx)
 		if !ok {
@@ -217,10 +218,10 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 		adpod.ConvertUpTo26(rCtx, apbrp.Responses)
 		return apbrp, nil
 	}, hookstage.MutationUpdate, "update-bid-duration")
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
+func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) bool {
 	// Add targetting keys
 	for _, seatBid := range payload.BidResponse.SeatBid {
 		targettingSeq := 1
@@ -263,10 +264,9 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
-		var ok bool
-		result, ok = auction.AdpodAuction(&rCtx, result, payload.BidResponse)
+		ok := auction.AdpodAuction(rCtx, result, payload.BidResponse)
 		if !ok {
-			return rCtx, result, nil
+			return ok
 		}
 	}
 
@@ -289,20 +289,20 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 		return arp, nil
 	}, hookstage.MutationUpdate, "add-pwt-targeting-keys-for-adpod")
 
-	return rCtx, result, nil
+	return true
 }
 
-func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], miCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ExitpointPaylaod], miCtx hookstage.ModuleInvocationContext) bool {
 	response, ok := payload.Response.(*openrtb2.BidResponse)
 	if !ok {
-		return rCtx, result, nil
+		return true
 	}
 
 	if response.NBR != nil {
-		return rCtx, result, nil
+		return true
 	}
 
-	adpodBids := formCTVJSONResponse(&rCtx, response, cj.creativeCache)
+	adpodBids := formCTVJSONResponse(rCtx, response, cj.creativeCache)
 
 	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
 		rCtx, ok := utils.GetRequestContext(miCtx)
@@ -330,5 +330,5 @@ func (cj *CTVJSON) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx 
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-json-exitpoint")
 
-	return rCtx, result, nil
+	return true
 }

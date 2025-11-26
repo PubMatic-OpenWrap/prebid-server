@@ -29,18 +29,18 @@ func NewCTVOpenRTB(metricsEngine metrics.MetricsEngine) *CTVOpenRTB {
 }
 
 // EntrypointHook
-func (co *CTVOpenRTB) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.EntrypointPayload], error) {
+func (co *CTVOpenRTB) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	co.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
-	return rCtx, result, nil
+	return true
 }
 
 // RawAuctionHook
-func (co *CTVOpenRTB) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
-	return rCtx, result, nil
+func (co *CTVOpenRTB) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
+	return true
 }
 
 // BeforeValidationHook
-func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], error) {
+func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationKey)
 	policy := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationMatchingKey)
 	if len(videoAdDuration) > 0 {
@@ -55,10 +55,10 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidat
 		result.NbrCode = int(nbr.InvalidVideoRequest)
 		result.Errors = append(result.Errors, err.Error())
 		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
-		return rCtx, result, nil
+		return false
 	}
 
-	ctvutils.SetIncludeBrandCategory(&rCtx)
+	ctvutils.SetIncludeBrandCategory(rCtx)
 
 	for _, imp := range payload.BidRequest.Imp {
 		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
@@ -117,11 +117,11 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(payload hookstage.BeforeValidat
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-before-validation")
 
-	return rCtx, result, nil
+	return true
 }
 
 // ProcessedAuctionHook
-func (co *CTVOpenRTB) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], error) {
+func (co *CTVOpenRTB) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {
 		rCtx, ok := utils.GetRequestContext(moduleCtx)
 		if !ok {
@@ -146,11 +146,11 @@ func (co *CTVOpenRTB) HandleProcessedAuctionHook(payload hookstage.ProcessedAuct
 
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-ctv-impressions")
-	return rCtx, result, nil
+	return true
 }
 
 // BidderRequestHook
-func (co *CTVOpenRTB) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.BidderRequestPayload], error) {
+func (co *CTVOpenRTB) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(ep hookstage.BidderRequestPayload) (hookstage.BidderRequestPayload, error) {
 		rCtx, ok := utils.GetRequestContext(moduleCtx)
 		if !ok {
@@ -171,16 +171,16 @@ func (co *CTVOpenRTB) HandleBidderRequestHook(payload hookstage.BidderRequestPay
 		}
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-bidder-request")
-	return rCtx, result, nil
+	return true
 }
 
 // RawBidderResponseHook
-func (co *CTVOpenRTB) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.RawBidderResponsePayload], error) {
-	return rCtx, result, nil
+func (co *CTVOpenRTB) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
+	return true
 }
 
 // AllProcessedBidResponsesHook
-func (co *CTVOpenRTB) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], error) {
+func (co *CTVOpenRTB) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {
 		rCtx, ok := utils.GetRequestContext(moduleCtx)
 		if !ok {
@@ -196,23 +196,22 @@ func (co *CTVOpenRTB) HandleAllProcessedBidResponsesHook(payload hookstage.AllPr
 		adpod.ConvertUpTo26(rCtx, apbrp.Responses)
 		return apbrp, nil
 	}, hookstage.MutationUpdate, "update-bid-duration")
-	return rCtx, result, nil
+	return true
 }
 
 // AuctionResponseHook
-func (co *CTVOpenRTB) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
+func (co *CTVOpenRTB) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
-		var ok bool
-		result, ok = auction.AdpodAuction(&rCtx, result, payload.BidResponse)
+		ok := auction.AdpodAuction(rCtx, result, payload.BidResponse)
 		if !ok {
-			return rCtx, result, nil
+			return ok
 		}
 	}
-	return rCtx, result, nil
+	return true
 }
 
 // ExitpointHook
-func (co *CTVOpenRTB) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
-	return rCtx, result, nil
+func (co *CTVOpenRTB) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) bool {
+	return true
 }

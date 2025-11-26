@@ -37,10 +37,10 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 		return result, nil
 	}
 
-	// Call endpoint hook manager
-	rCtx, result, err := endpointHookManager.HandleAllProcessedBidResponsesHook(payload, rCtx, result, moduleCtx)
-	if err != nil {
-		return result, err
+	// Call endpoint specific all proceessed response hook
+	isSuccess := endpointHookManager.HandleAllProcessedBidResponsesHook(payload, &rCtx, &result, moduleCtx)
+	if !isSuccess {
+		return result, nil
 	}
 
 	result.ChangeSet.AddMutation(func(apbrp hookstage.AllProcessedBidResponsesPayload) (hookstage.AllProcessedBidResponsesPayload, error) {

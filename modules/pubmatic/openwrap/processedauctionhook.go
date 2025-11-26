@@ -28,9 +28,9 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		moduleCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
-	rCtx, result, err := endpointHookManager.HandleProcessedAuctionHook(payload, rCtx, result, moduleCtx)
-	if err != nil {
-		return result, err
+	isSuccess := endpointHookManager.HandleProcessedAuctionHook(payload, &rCtx, &result, moduleCtx)
+	if !isSuccess {
+		return result, nil
 	}
 
 	result.ChangeSet.AddMutation(func(parp hookstage.ProcessedAuctionRequestPayload) (hookstage.ProcessedAuctionRequestPayload, error) {

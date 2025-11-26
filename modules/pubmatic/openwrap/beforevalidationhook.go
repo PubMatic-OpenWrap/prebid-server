@@ -198,9 +198,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// Execute Endpoint specific before validation hook
-	rCtx, result, err = endpointHookManager.HandleBeforeValidationHook(payload, rCtx, result, moduleCtx)
-	if err != nil {
-		result.Errors = append(result.Errors, err.Error())
+	isSuccess := endpointHookManager.HandleBeforeValidationHook(payload, &rCtx, &result, moduleCtx)
+	if !isSuccess {
 		return result, nil
 	}
 

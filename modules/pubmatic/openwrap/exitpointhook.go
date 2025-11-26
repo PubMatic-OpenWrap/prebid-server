@@ -29,10 +29,9 @@ func (m OpenWrap) handleExitpointHook(
 	// 	return result, nil
 	// }
 
-	var err error
-	rCtx, result, err = endpointManager.HandleExitpointHook(payload, rCtx, result, miCtx)
-	if err != nil {
-		return result, err
+	isSuccess := endpointManager.HandleExitpointHook(payload, &rCtx, &result, miCtx)
+	if isSuccess {
+		return result, nil
 	}
 
 	ortbResponse, ok := payload.Response.(*openrtb2.BidResponse)
