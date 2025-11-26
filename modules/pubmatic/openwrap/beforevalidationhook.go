@@ -258,8 +258,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
-	timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
-	m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
 
 	allPartnersThrottledFlag := false
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
@@ -767,6 +765,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 		defer func() {
 			moduleCtx.ModuleContext["rctx"] = rctx
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
+
+			// Always record preprocessing time stats
+			timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
+
+			// Debug logging only
+			if glog.V(models.LogLevelDebug) {
+				processingTime := time.Duration(timeDiff) * time.Millisecond
+				timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+				remainingTime := timeoutDuration - processingTime
+				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
+				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
+				glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
+			}
 		}()
 
 		var err error
@@ -798,13 +810,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return ep, err
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
-	if glog.V(models.LogLevelDebug) {
-		timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
-		remainingTime := timeoutDuration - time.Duration(timeDiff)*time.Millisecond
-		glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, time.Duration(timeDiff)*time.Millisecond)
-		glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
-		glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
-	}
 	result.Reject = false
 	return result, nil
 }
