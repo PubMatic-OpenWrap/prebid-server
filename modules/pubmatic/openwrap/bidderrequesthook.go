@@ -22,8 +22,8 @@ func (m OpenWrap) handleBidderRequestHook(
 	}()
 
 	// Execute Endpoint specific bidder request hook
-	isSuccess := endpointHookManager.HandleBidderRequestHook(payload, &rCtx, &result, miCtx)
-	if !isSuccess {
+	result, ok = endpointHookManager.HandleBidderRequestHook(&rCtx, payload, miCtx, result)
+	if !ok {
 		return result, nil
 	}
 

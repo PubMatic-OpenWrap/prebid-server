@@ -29,8 +29,8 @@ func (m OpenWrap) handleExitpointHook(
 	// 	return result, nil
 	// }
 
-	isSuccess := endpointManager.HandleExitpointHook(payload, &rCtx, &result, miCtx)
-	if isSuccess {
+	result, ok = endpointManager.HandleExitpointHook(&rCtx, payload, miCtx, result)
+	if !ok {
 		return result, nil
 	}
 

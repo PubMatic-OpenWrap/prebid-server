@@ -80,8 +80,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.WinningBids = make(models.WinningBids)
 
 	// Handle Auction Response Hook (Perform endpoint specific auction)
-	isSuccess := endpointHookManager.HandleAuctionResponseHook(payload, &rctx, &result, moduleCtx)
-	if !isSuccess {
+	result, ok = endpointHookManager.HandleAuctionResponseHook(&rctx, payload, moduleCtx, result)
+	if !ok {
 		return result, nil
 	}
 

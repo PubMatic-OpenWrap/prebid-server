@@ -9,18 +9,19 @@ import (
 	ctvvast "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/vast"
 	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/stage"
 )
 
 type EndpointHookManager interface {
-	HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool
-	HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) bool
+	HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) (stage.EntrypointResult, bool)
+	HandleRawAuctionHook(rCtx *models.RequestCtx, payload stage.RawAuctionPayload, moduleCtx stage.ModuleContext, result stage.RawAuctionResult) (stage.RawAuctionResult, bool)
+	HandleBeforeValidationHook(rCtx *models.RequestCtx, payload stage.BeforeValidationPayload, moduleCtx stage.ModuleContext, result stage.BeforeValidationResult) (stage.BeforeValidationResult, bool)
+	HandleProcessedAuctionHook(rCtx *models.RequestCtx, payload stage.ProcessedAuctionPayload, moduleCtx stage.ModuleContext, result stage.ProcessedAuctionResult) (stage.ProcessedAuctionResult, bool)
+	HandleBidderRequestHook(rCtx *models.RequestCtx, payload stage.BidderRequestPayload, moduleCtx stage.ModuleContext, result stage.BidderRequestResult) (stage.BidderRequestResult, bool)
+	HandleRawBidderResponseHook(rCtx *models.RequestCtx, payload stage.RawBidderResponsePayload, moduleCtx stage.ModuleContext, result stage.RawBidderResponseResult) (stage.RawBidderResponseResult, bool)
+	HandleAllProcessedBidResponsesHook(rCtx *models.RequestCtx, payload stage.AllProcessedBidResponsesPayload, moduleCtx hookstage.ModuleInvocationContext, result stage.AllProcessedBidResponsesResult) (stage.AllProcessedBidResponsesResult, bool)
+	HandleAuctionResponseHook(rCtx *models.RequestCtx, payload stage.AuctionResponsePayload, moduleCtx hookstage.ModuleInvocationContext, result stage.AuctionResponseResult) (stage.AuctionResponseResult, bool)
+	HandleExitpointHook(rCtx *models.RequestCtx, payload stage.ExitpointPayload, moduleCtx stage.ModuleContext, result stage.ExitpointResult) (stage.ExitpointResult, bool)
 }
 
 func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, cache cache.Cache, creativeCache creativecache.Client) EndpointHookManager {
@@ -38,38 +39,38 @@ func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, ca
 
 type NilEndpointManager struct{}
 
-func (n *NilEndpointManager) HandleEntrypointHook(payload hookstage.EntrypointPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.EntrypointPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) (stage.EntrypointResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleRawAuctionHook(payload hookstage.RawAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleRawAuctionHook(rCtx *models.RequestCtx, payload stage.RawAuctionPayload, moduleCtx stage.ModuleContext, result stage.RawAuctionResult) (stage.RawAuctionResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleBeforeValidationHook(payload hookstage.BeforeValidationRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleBeforeValidationHook(rCtx *models.RequestCtx, payload stage.BeforeValidationPayload, moduleCtx stage.ModuleContext, result stage.BeforeValidationResult) (stage.BeforeValidationResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleProcessedAuctionHook(payload hookstage.ProcessedAuctionRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleProcessedAuctionHook(rCtx *models.RequestCtx, payload stage.ProcessedAuctionPayload, moduleCtx stage.ModuleContext, result stage.ProcessedAuctionResult) (stage.ProcessedAuctionResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleBidderRequestHook(payload hookstage.BidderRequestPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BidderRequestPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleBidderRequestHook(rCtx *models.RequestCtx, payload stage.BidderRequestPayload, moduleCtx stage.ModuleContext, result stage.BidderRequestResult) (stage.BidderRequestResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleRawBidderResponseHook(payload hookstage.RawBidderResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.RawBidderResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleRawBidderResponseHook(rCtx *models.RequestCtx, payload stage.RawBidderResponsePayload, moduleCtx stage.ModuleContext, result stage.RawBidderResponseResult) (stage.RawBidderResponseResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleAllProcessedBidResponsesHook(payload hookstage.AllProcessedBidResponsesPayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleAllProcessedBidResponsesHook(rCtx *models.RequestCtx, payload stage.AllProcessedBidResponsesPayload, moduleCtx stage.ModuleContext, result stage.AllProcessedBidResponsesResult) (stage.AllProcessedBidResponsesResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleAuctionResponseHook(rCtx *models.RequestCtx, payload stage.AuctionResponsePayload, moduleCtx stage.ModuleContext, result stage.AuctionResponseResult) (stage.AuctionResponseResult, bool) {
+	return result, true
 }
 
-func (n *NilEndpointManager) HandleExitpointHook(payload hookstage.ExitpointPaylaod, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.ExitpointPaylaod], moduleCtx hookstage.ModuleInvocationContext) bool {
-	return true
+func (n *NilEndpointManager) HandleExitpointHook(rCtx *models.RequestCtx, payload stage.ExitpointPayload, moduleCtx stage.ModuleContext, result stage.ExitpointResult) (stage.ExitpointResult, bool) {
+	return result, true
 }

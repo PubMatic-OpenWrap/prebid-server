@@ -28,8 +28,8 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		moduleCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
-	isSuccess := endpointHookManager.HandleProcessedAuctionHook(payload, &rCtx, &result, moduleCtx)
-	if !isSuccess {
+	result, ok = endpointHookManager.HandleProcessedAuctionHook(&rCtx, payload, moduleCtx, result)
+	if !ok {
 		return result, nil
 	}
 

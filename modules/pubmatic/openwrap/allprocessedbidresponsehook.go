@@ -38,8 +38,8 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	}
 
 	// Call endpoint specific all proceessed response hook
-	isSuccess := endpointHookManager.HandleAllProcessedBidResponsesHook(payload, &rCtx, &result, moduleCtx)
-	if !isSuccess {
+	result, ok = endpointHookManager.HandleAllProcessedBidResponsesHook(&rCtx, payload, moduleCtx, result)
+	if !ok {
 		return result, nil
 	}
 

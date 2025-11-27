@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/stage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 )
 
@@ -41,7 +41,7 @@ func filterImpsWithInvalidAdserverURL(rCtx *models.RequestCtx, bidRequest *openr
 	bidRequest.Imp = validImps
 }
 
-func processRedirectURL(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) bool {
+func processRedirectURL(rCtx *models.RequestCtx, result stage.BeforeValidationResult) (stage.BeforeValidationResult, bool) {
 	if len(rCtx.RedirectURL) == 0 {
 		rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.OwRedirectURL)
 	}
@@ -51,17 +51,17 @@ func processRedirectURL(rCtx *models.RequestCtx, result *hookstage.HookResult[ho
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && !utils.IsValidURL(rCtx.RedirectURL) {
 			result.NbrCode = int(nbr.InvalidRedirectURL)
 			result.Errors = append(result.Errors, "Invalid redirect URL")
-			return false
+			return result, false
 		}
 	}
 
 	if rCtx.ResponseFormat == models.ResponseFormatRedirect && len(rCtx.RedirectURL) == 0 {
 		result.NbrCode = int(nbr.MissingOWRedirectURL)
 		result.Errors = append(result.Errors, "owRedirectURL is missing")
-		return false
+		return result, false
 	}
 
-	return true
+	return result, true
 }
 
 func updateAdpodConfigs(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) []error {

@@ -161,7 +161,7 @@ func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid
 	return best
 }
 
-func StructuredAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {
+func StructuredAdpodAuction(rCtx *models.RequestCtx, bidresponse *openrtb2.BidResponse, podConfig models.AdpodConfig) []error {
 	if bidresponse == nil || len(bidresponse.SeatBid) == 0 || len(podConfig.Slots) == 0 {
 		return nil
 	}
