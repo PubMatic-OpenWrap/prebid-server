@@ -151,16 +151,32 @@ func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {
 // it is expected that bid.Ext contains prebid.targeting map
 // if value not present or any error occured empty value will be returned
 // along with error.
-func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bidCtx models.BidCtx, seq int) string {
+func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bidCtx models.BidCtx) string {
 	bidderKey := string(bidder)
 	bidderSpecificKey := key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidderKey), 20)
-	value := bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
-	if len(value) == 0 && seq > 1 {
-		bidderKey = bidderKey + strconv.Itoa(seq)
-		bidderSpecificKey = key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidderKey), 20)
-		value = bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
+
+	if v, ok := bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]; ok && v != "" {
+		return v
 	}
-	return value
+
+	// Fallback: handle sequenced keys like hb_pb_pubmatic1, hb_pb_pubmatic10, ...
+	for k, v := range bidCtx.BidExt.Prebid.Targeting {
+		if len(k) <= len(bidderSpecificKey) {
+			continue
+		}
+		if !strings.HasPrefix(k, bidderSpecificKey) {
+			continue
+		}
+
+		suffix := k[len(bidderSpecificKey):]
+		if _, err := strconv.Atoi(suffix); err != nil {
+			continue
+		}
+
+		return v
+	}
+
+	return ""
 }
 
 func AddTargetingKey(bidCtx models.BidCtx, key openrtb_ext.TargetingKey, value string) {

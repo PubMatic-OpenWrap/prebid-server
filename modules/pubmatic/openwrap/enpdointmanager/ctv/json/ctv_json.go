@@ -224,7 +224,6 @@ func (cj *CTVJSON) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], miCtx hookstage.ModuleInvocationContext) bool {
 	// Add targetting keys
 	for _, seatBid := range payload.BidResponse.SeatBid {
-		targettingSeq := 1
 		for _, bid := range seatBid.Bid {
 			impCtx, ok := rCtx.ImpBidCtx[bid.ImpID]
 			if !ok {
@@ -244,18 +243,15 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 				bidCtx.Prebid.Targeting = make(map[string]string)
 			}
 
-			value := ctvutils.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx, targettingSeq)
+			value := ctvutils.GetTargeting(openrtb_ext.CategoryDurationKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
 			if value != "" {
 				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.CategoryDurationKey, value)
 			}
 
-			value = ctvutils.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx, targettingSeq)
+			value = ctvutils.GetTargeting(openrtb_ext.PbKey, openrtb_ext.BidderName(seatBid.Seat), bidCtx)
 			if value != "" {
 				ctvutils.AddTargetingKey(bidCtx, openrtb_ext.PbKey, value)
 			}
-
-			// increment targetting seq
-			targettingSeq++
 
 			impCtx.BidCtx[bid.ID] = bidCtx
 			rCtx.ImpBidCtx[bid.ImpID] = impCtx
