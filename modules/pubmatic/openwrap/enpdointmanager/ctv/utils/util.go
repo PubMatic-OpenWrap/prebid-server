@@ -153,12 +153,14 @@ func FilterNonVideoImpressions(request *openrtb2.BidRequest) error {
 // along with error.
 func GetTargeting(key openrtb_ext.TargetingKey, bidder openrtb_ext.BidderName, bidCtx models.BidCtx, seq int) string {
 	bidderKey := string(bidder)
-	if seq > 1 {
-		bidderKey = bidderKey + strconv.Itoa(seq)
-	}
-
 	bidderSpecificKey := key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidderKey), 20)
-	return bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
+	value := bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
+	if len(value) == 0 && seq > 1 {
+		bidderKey = bidderKey + strconv.Itoa(seq)
+		bidderSpecificKey = key.BidderKey(models.DefaultTargetingKeyPrefix, openrtb_ext.BidderName(bidderKey), 20)
+		value = bidCtx.BidExt.Prebid.Targeting[bidderSpecificKey]
+	}
+	return value
 }
 
 func AddTargetingKey(bidCtx models.BidCtx, key openrtb_ext.TargetingKey, value string) {
