@@ -71,7 +71,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	// Populate Bid extension
-	result, ok = populateBidExt(&rctx, result, payload.BidResponse)
+	result, ok = populateBidExt(&rctx, payload.BidResponse, result)
 	if !ok {
 		return result, nil
 	}
@@ -204,7 +204,9 @@ func (m OpenWrap) handleAuctionResponseHook(
 }
 
 // validateModuleContext validates that required context is available
-func validateModuleContextAuctionResponseHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AuctionResponsePayload], bool) {
+func validateModuleContextAuctionResponseHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AuctionResponsePayload], bool) {
 	result := hookstage.HookResult[hookstage.AuctionResponsePayload]{}
 	result.ChangeSet = hookstage.ChangeSet[hookstage.AuctionResponsePayload]{}
 
@@ -238,7 +240,11 @@ func validateModuleContextAuctionResponseHook(moduleCtx hookstage.ModuleInvocati
 	return rCtx, endpointHookManager, result, true
 }
 
-func populateBidExt(rctx *models.RequestCtx, result hookstage.HookResult[hookstage.AuctionResponsePayload], bidResponse *openrtb2.BidResponse) (hookstage.HookResult[hookstage.AuctionResponsePayload], bool) {
+func populateBidExt(
+	rctx *models.RequestCtx,
+	bidResponse *openrtb2.BidResponse,
+	result hookstage.HookResult[hookstage.AuctionResponsePayload],
+) (hookstage.HookResult[hookstage.AuctionResponsePayload], bool) {
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			rctx.MetricsEngine.RecordPlatformPublisherPartnerResponseStats(rctx.Platform, rctx.PubIDStr, seatBid.Seat)

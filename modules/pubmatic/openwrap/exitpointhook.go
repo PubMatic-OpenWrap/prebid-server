@@ -44,7 +44,9 @@ func (m OpenWrap) handleExitpointHook(
 }
 
 // validateModuleContext validates that required context is available
-func validateModuleContextExitpointHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
+func validateModuleContextExitpointHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
 	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{
 		ModuleContext: hookstage.NewModuleContext(),
 	}

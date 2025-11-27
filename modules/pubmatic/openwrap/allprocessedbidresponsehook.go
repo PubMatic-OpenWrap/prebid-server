@@ -77,7 +77,9 @@ func updateWakandaHTTPCalls(rCtx *models.RequestCtx, payload hookstage.AllProces
 }
 
 // validateModuleContext validates that required context is available
-func validateModuleContextAllProcessedBidResponsesHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], bool) {
+func validateModuleContextAllProcessedBidResponsesHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload], bool) {
 	result := hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{}
 
 	if moduleCtx.ModuleContext == nil {

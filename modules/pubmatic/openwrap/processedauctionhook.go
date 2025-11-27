@@ -53,7 +53,9 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	return result, nil
 }
 
-func validateModuleContextProcessedAuctionHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], bool) {
+func validateModuleContextProcessedAuctionHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload], bool) {
 	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
 
 	if moduleCtx.ModuleContext == nil {

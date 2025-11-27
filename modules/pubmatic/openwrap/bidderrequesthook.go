@@ -30,7 +30,9 @@ func (m OpenWrap) handleBidderRequestHook(
 	return result, nil
 }
 
-func validateModuleContextBidderRequestHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BidderRequestPayload], bool) {
+func validateModuleContextBidderRequestHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BidderRequestPayload], bool) {
 	result := hookstage.HookResult[hookstage.BidderRequestPayload]{}
 
 	if moduleCtx.ModuleContext == nil {

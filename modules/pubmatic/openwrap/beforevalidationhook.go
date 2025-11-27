@@ -112,7 +112,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// Platform
-	result, ok = m.processPlatform(&rCtx, result, payload.BidRequest)
+	result, ok = m.processPlatform(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
@@ -147,14 +147,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// Bidder Filtering
-	result, ok = m.processBidderFiltering(&rCtx, result, payload.BidRequest)
+	result, ok = m.processBidderFiltering(&rCtx, payload.BidRequest, result)
 	if !ok {
 		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
 
 	// Price Granularity
-	result, ok = processPriceGranularity(&rCtx, result, payload.BidRequest)
+	result, ok = processPriceGranularity(&rCtx, payload.BidRequest, result)
 	if !ok {
 		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
@@ -174,13 +174,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// Adpod processing
-	result, ok = m.processAdpod(&rCtx, result, payload.BidRequest)
+	result, ok = m.processAdpod(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
 
 	// process impressions
-	result, ok = m.processImpressions(&rCtx, result, payload.BidRequest)
+	result, ok = m.processImpressions(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
@@ -963,7 +963,9 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 }
 
 // validateModuleContext validates that required context is available
-func validateModuleContextBeforeValidationHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func validateModuleContextBeforeValidationHook(
+	moduleCtx hookstage.ModuleInvocationContext,
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 		Reject: true,
 	}
@@ -1066,7 +1068,10 @@ func processRequestExtension(rCtx *models.RequestCtx) {
 }
 
 // handleCountryFiltering applies country filtering if needed
-func handleCountryFiltering(rCtx models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func handleCountryFiltering(
+	rCtx models.RequestCtx,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	if shouldApplyCountryFilter(rCtx.Endpoint) && rCtx.DeviceCtx.DerivedCountryCode != "" {
 		mode, countryCodes := getCountryFilterConfig(rCtx.PartnerConfigMap)
 		if !isCountryAllowed(rCtx.DeviceCtx.DerivedCountryCode, mode, countryCodes) {
@@ -1080,7 +1085,11 @@ func handleCountryFiltering(rCtx models.RequestCtx, result hookstage.HookResult[
 }
 
 // validatePlatform validates and process the platform information
-func (m OpenWrap) processPlatform(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func (m OpenWrap) processPlatform(
+	rCtx *models.RequestCtx,
+	bidRequest *openrtb2.BidRequest,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	platform := rCtx.GetVersionLevelKey(models.PLATFORM_KEY)
 	if platform == "" {
 		result.NbrCode = int(nbr.InvalidPlatform)
@@ -1096,7 +1105,10 @@ func (m OpenWrap) processPlatform(rCtx *models.RequestCtx, result hookstage.Hook
 }
 
 // processPartnerThrottling applies partner throttling
-func (m OpenWrap) processPartnerThrottling(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func (m OpenWrap) processPartnerThrottling(
+	rCtx *models.RequestCtx,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	var allPartnersThrottledFlag bool
 
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(*rCtx)
@@ -1119,7 +1131,11 @@ func (m OpenWrap) processPartnerThrottling(rCtx *models.RequestCtx, result hooks
 }
 
 // processBidderFiltering get filtered bidders
-func (m OpenWrap) processBidderFiltering(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func (m OpenWrap) processBidderFiltering(
+	rCtx *models.RequestCtx,
+	bidRequest *openrtb2.BidRequest,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	var allPartnersFilteredFlag bool
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(*rCtx, bidRequest)
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, bidRequest)
@@ -1133,7 +1149,11 @@ func (m OpenWrap) processBidderFiltering(rCtx *models.RequestCtx, result hooksta
 }
 
 // processPriceGranularity processes price granularity
-func processPriceGranularity(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func processPriceGranularity(
+	rCtx *models.RequestCtx,
+	bidRequest *openrtb2.BidRequest,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	priceGranularity, err := computePriceGranularity(*rCtx)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
@@ -1162,7 +1182,11 @@ type ImpressionMeta struct {
 }
 
 // processImpressions processes all impressions in the bid request
-func (m OpenWrap) processImpressions(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func (m OpenWrap) processImpressions(
+	rCtx *models.RequestCtx,
+	bidRequest *openrtb2.BidRequest,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	rCtx.MultiFloors = make(map[string]*models.MultiFloors)
 	impMeta := &ImpressionMeta{
 		aliasGVLIDs:          make(map[string]uint16),
@@ -1637,7 +1661,11 @@ func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrt
 	return configs, err
 }
 
-func (m OpenWrap) processAdpod(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bidRequest *openrtb2.BidRequest) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
+func (m OpenWrap) processAdpod(
+	rCtx *models.RequestCtx,
+	bidRequest *openrtb2.BidRequest,
+	result hookstage.HookResult[hookstage.BeforeValidationRequestPayload],
+) (hookstage.HookResult[hookstage.BeforeValidationRequestPayload], bool) {
 	if !rCtx.IsCTVRequest {
 		return result, true
 	}
