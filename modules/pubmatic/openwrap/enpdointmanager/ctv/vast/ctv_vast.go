@@ -163,10 +163,7 @@ func (cv *CTVVAST) HandleAllProcessedBidResponsesHook(payload hookstage.AllProce
 func (cv *CTVVAST) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
-		ok := auction.AdpodAuction(rCtx, result, payload.BidResponse)
-		if !ok {
-			return ok
-		}
+		auction.AdpodAuction(rCtx, result, payload.BidResponse)
 	}
 	return true
 }

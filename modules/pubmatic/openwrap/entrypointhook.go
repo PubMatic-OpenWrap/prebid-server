@@ -231,13 +231,13 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
-	result.Reject = false
-
 	// Execute endpoint specific entrypoint hook
 	isSuccess := endpointHookManager.HandleEntrypointHook(payload, &rCtx, &result, miCtx)
 	if !isSuccess {
 		return result, nil
 	}
+
+	result.Reject = false
 
 	return result, nil
 }

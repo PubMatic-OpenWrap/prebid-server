@@ -581,12 +581,18 @@ func getAdPodSlot(impId string, rCtx *models.RequestCtx) *AdPodSlot {
 	}
 
 	adPodSlot := AdPodSlot{
-		MinAds:                      int(adPodConfig.Slots[0].AdpodConfigV25.MinAds),
-		MaxAds:                      int(adPodConfig.Slots[0].AdpodConfigV25.MaxAds),
-		MinDuration:                 int(adPodConfig.Slots[0].MinDuration),
-		MaxDuration:                 int(adPodConfig.Slots[0].MaxDuration),
-		AdvertiserExclusionPercent:  *adPodConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent,
-		IABCategoryExclusionPercent: *adPodConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent,
+		MinAds:      int(adPodConfig.Slots[0].AdpodConfigV25.MinAds),
+		MaxAds:      int(adPodConfig.Slots[0].AdpodConfigV25.MaxAds),
+		MinDuration: int(adPodConfig.Slots[0].MinDuration),
+		MaxDuration: int(adPodConfig.Slots[0].MaxDuration),
+	}
+
+	if adPodConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent != nil {
+		adPodSlot.AdvertiserExclusionPercent = *adPodConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent
+	}
+
+	if adPodConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent != nil {
+		adPodSlot.IABCategoryExclusionPercent = *adPodConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent
 	}
 
 	return &adPodSlot

@@ -182,10 +182,10 @@ func (a AdpodCtx) AddAdpodV25Config(imp *openrtb2.Imp, config PodConfig) {
 	a[imp.ID] = adpodConfig
 }
 
-func (a AdpodCtx) IsAdpodSlot(id string) bool {
+func (a AdpodCtx) IsAdpodSlot(slotId string) bool {
 	for _, config := range a {
 		for _, slot := range config.Slots {
-			if slot.Id == id {
+			if slot.Id == slotId {
 				return true
 			}
 		}
@@ -193,9 +193,23 @@ func (a AdpodCtx) IsAdpodSlot(id string) bool {
 	return false
 }
 
-func (a AdpodCtx) IsAdpod(id string) bool {
-	for podId := range a {
-		if podId == id {
+func (a AdpodCtx) IsAdpod(podId string) bool {
+	for ctxPodId := range a {
+		if ctxPodId == podId {
+			return true
+		}
+	}
+	return false
+}
+
+func (a AdpodCtx) IsPodSlot(podId string, slotId string) bool {
+	config, exists := a[podId]
+	if !exists {
+		return false
+	}
+
+	for _, slot := range config.Slots {
+		if slot.Id == slotId {
 			return true
 		}
 	}

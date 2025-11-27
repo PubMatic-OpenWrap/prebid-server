@@ -203,10 +203,7 @@ func (co *CTVOpenRTB) HandleAllProcessedBidResponsesHook(payload hookstage.AllPr
 func (co *CTVOpenRTB) HandleAuctionResponseHook(payload hookstage.AuctionResponsePayload, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], moduleCtx hookstage.ModuleInvocationContext) bool {
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
-		ok := auction.AdpodAuction(rCtx, result, payload.BidResponse)
-		if !ok {
-			return ok
-		}
+		auction.AdpodAuction(rCtx, result, payload.BidResponse)
 	}
 	return true
 }

@@ -264,10 +264,7 @@ func (cj *CTVJSON) HandleAuctionResponseHook(payload hookstage.AuctionResponsePa
 
 	// perform adpod auction
 	if len(rCtx.AdpodCtx) > 0 {
-		ok := auction.AdpodAuction(rCtx, result, payload.BidResponse)
-		if !ok {
-			return ok
-		}
+		auction.AdpodAuction(rCtx, result, payload.BidResponse)
 	}
 
 	result.ChangeSet.AddMutation(func(arp hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {

@@ -47,27 +47,35 @@ func GenerateImpressions(rCtx models.RequestCtx, request *openrtb_ext.RequestWra
 			continue
 		}
 
-		var newImpVideoConfig []*models.ImpAdPodConfig
+		var slotConfig models.SlotConfig
 		for i := range podConfig.Slots {
-			if !podConfig.Slots[i].Flexible {
-				continue
-			}
-
-			var err error
-			newImpVideoConfig, err = getAdPodImpConfig(podId, podConfig.Slots[i], rCtx.AdpodProfileConfig)
-			if err != nil {
-				errs = append(errs, err)
+			if podConfig.Slots[i].Id == impWrapper.Imp.ID {
+				slotConfig = podConfig.Slots[i]
+				break
 			}
 		}
 
-		if newImpVideoConfig == nil {
+		if !slotConfig.Flexible {
 			imps = append(imps, impWrapper)
 			continue
 		}
 
-		impCtx := rCtx.ImpBidCtx[podId]
+		newImpVideoConfig, err := getAdPodImpConfig(podId, slotConfig, rCtx.AdpodProfileConfig)
+		if newImpVideoConfig == nil {
+			if err != nil {
+				errs = append(errs, err)
+			}
+			continue
+		}
+
+		impCtx, ok := rCtx.ImpBidCtx[impWrapper.Imp.ID]
+		if !ok {
+			errs = append(errs, fmt.Errorf("impression %s not found in context, check if it was processed by adpod module", impWrapper.Imp.ID))
+			continue
+		}
+
 		impCtx.ImpAdPodCfg = newImpVideoConfig
-		rCtx.ImpBidCtx[podId] = impCtx
+		rCtx.ImpBidCtx[impWrapper.Imp.ID] = impCtx
 
 		rCtx.MetricsEngine.RecordAdPodGeneratedImpressionsCount(len(newImpVideoConfig), rCtx.PubIDStr)
 

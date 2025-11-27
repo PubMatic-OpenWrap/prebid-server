@@ -10,46 +10,6 @@ import (
 // BidsBuckets bids bucket
 type BidsBuckets map[int][]*Bid
 
-// // doAdPodExclusions
-// func doAdPodExclusions(impBidMap map[string]*AdPodBid, impCtx map[string]models.ImpCtx) ([]*AdPodBid, []error) {
-// 	result := []*AdPodBid{}
-// 	var errs []error
-// 	for impId, bid := range impBidMap {
-// 		if bid != nil && len(bid.Bids) > 0 {
-// 			eachImpCtx := impCtx[impId]
-// 			//TODO: MULTI ADPOD IMPRESSIONS
-// 			//duration wise buckets sorted
-// 			buckets := GetDurationWiseBidsBucket(bid.Bids)
-
-// 			if len(buckets) == 0 {
-// 				errs = append(errs, errors.New("prebid_ctv all bids filtered while matching lineitem duration"))
-// 				continue
-// 			}
-
-// 			//combination generator
-// 			comb := NewCombination(
-// 				buckets,
-// 				uint64(eachImpCtx.Video.MinDuration),
-// 				uint64(eachImpCtx.Video.MaxDuration),
-// 				eachImpCtx.AdpodConfig)
-
-// 			//adpod generator
-// 			adpodGenerator := NewAdPodGenerator(buckets, comb, eachImpCtx.AdpodConfig)
-
-// 			adpodBids := adpodGenerator.GetAdPodBids()
-// 			if adpodBids == nil {
-// 				errs = append(errs, errors.New("prebid_ctv unable to generate adpod from bids combinations"))
-// 				continue
-// 			}
-
-// 			adpodBids.OriginalImpID = bid.OriginalImpID
-// 			adpodBids.SeatName = bid.SeatName
-// 			result = append(result, adpodBids)
-// 		}
-// 	}
-// 	return result, errs
-// }
-
 func GetDurationWiseBidsBucket(bids []*Bid) BidsBuckets {
 	result := BidsBuckets{}
 
@@ -87,7 +47,7 @@ func doAuctionAndExclusion(adpodBid *AdPodBid, podConfig models.AdpodConfig) (*A
 	//duration wise buckets sorted
 	buckets := GetDurationWiseBidsBucket(adpodBid.Bids)
 	if len(buckets) == 0 {
-		errs = append(errs, errors.New("prebid_ctv all bids filtered while matching lineitem duration"))
+		errs = append(errs, errors.New("prebid_ctv all bids filtered while matching lineitem duration for adpod: "+podConfig.PodID))
 		return nil, errs
 	}
 
@@ -103,7 +63,7 @@ func doAuctionAndExclusion(adpodBid *AdPodBid, podConfig models.AdpodConfig) (*A
 
 	newadpodBid := adpodGenerator.GetAdPodBids()
 	if newadpodBid == nil {
-		errs = append(errs, errors.New("prebid_ctv unable to generate adpod from bids combinations"))
+		errs = append(errs, errors.New("prebid_ctv unable to generate adpod from bids combinations for adpod: "+podConfig.PodID))
 		return nil, errs
 	}
 

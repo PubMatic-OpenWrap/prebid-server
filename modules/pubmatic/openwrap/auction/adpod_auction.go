@@ -9,9 +9,9 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func AdpodAuction(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], bidresponse *openrtb2.BidResponse) bool {
+func AdpodAuction(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.AuctionResponsePayload], bidresponse *openrtb2.BidResponse) {
 	if len(rCtx.AdpodCtx) == 0 || len(bidresponse.SeatBid) == 0 {
-		return true
+		return
 	}
 
 	for _, podConfig := range rCtx.AdpodCtx {
@@ -22,7 +22,6 @@ func AdpodAuction(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstag
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
 				}
-				return false
 			}
 		case models.PodTypeStructured:
 			errs := structuredAdpodAuction(rCtx, podConfig, bidresponse)
@@ -30,7 +29,6 @@ func AdpodAuction(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstag
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
 				}
-				return false
 			}
 		case models.PodTypeHybrid:
 			errs := hybridAdpodAuction(rCtx, podConfig, bidresponse)
@@ -38,12 +36,9 @@ func AdpodAuction(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstag
 				for _, err := range errs {
 					result.Errors = append(result.Errors, err.Error())
 				}
-				return false
 			}
 		}
 	}
-
-	return true
 }
 
 func dynamicAdpodAuction(rCtx *models.RequestCtx, podConfig models.AdpodConfig, bidresponse *openrtb2.BidResponse) []error {

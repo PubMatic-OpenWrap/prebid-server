@@ -102,7 +102,7 @@ func DynamicAdpodAuction(rctx *models.RequestCtx, response *openrtb2.BidResponse
 	bidIdToAprcMap := getAprc(impAdpodBids)
 
 	// Update winning bids and impctx
-	updateWinningBids(rctx, podConfig.PodID, winningAdpodBids, bidIdToAprcMap)
+	updateWinningBids(rctx, podConfig, winningAdpodBids, bidIdToAprcMap)
 
 	return nil
 }
@@ -120,7 +120,7 @@ func getAdpodBid(rctx *models.RequestCtx, response *openrtb2.BidResponse, podId 
 				continue
 			}
 
-			if bid.ImpID != podId {
+			if !rctx.AdpodCtx.IsPodSlot(podId, bid.ImpID) {
 				continue
 			}
 
@@ -159,14 +159,13 @@ func validateBidDuration(duration int64, adpodProfileCfg *models.AdpodProfileCon
 	return getDurationBasedOnDurationMatchingPolicy(duration, adpodProfileCfg.AdserverCreativeDurationMatchingPolicy, config)
 }
 
-func updateWinningBids(rctx *models.RequestCtx, podId string, winningAdpodBid *AdPodBid, bidIdToAprcMap map[string]int64) {
-	impCtx, ok := rctx.ImpBidCtx[podId]
+func updateWinningBids(rctx *models.RequestCtx, podConfig models.AdpodConfig, winningAdpodBid *AdPodBid, bidIdToAprcMap map[string]int64) {
+	impCtx, ok := rctx.ImpBidCtx[podConfig.Slots[0].Id]
 	if !ok {
 		return
 	}
 
 	// Update winning bids
-	var winningOwBids []*models.OwBid
 	for _, bid := range winningAdpodBid.Bids {
 		bidCtx := impCtx.BidCtx[bid.ID]
 		owBid := &models.OwBid{
@@ -174,10 +173,9 @@ func updateWinningBids(rctx *models.RequestCtx, podId string, winningAdpodBid *A
 			NetEcpm:              bidCtx.EN,
 			BidDealTierSatisfied: bid.DealTierSatisfied,
 		}
-		winningOwBids = append(winningOwBids, owBid)
 		bidIdToAprcMap[bid.ID] = models.StatusWinningBid
+		rctx.WinningBids.AppendBid(bid.ImpID, owBid)
 	}
-	rctx.WinningBids[podId] = winningOwBids
 
 	// update aprc in the impCtx
 	impCtx.BidIDToAPRC = bidIdToAprcMap
@@ -188,5 +186,5 @@ func updateWinningBids(rctx *models.RequestCtx, podId string, winningAdpodBid *A
 		bidCtx.Nbr = ConvertAPRCToNBR(aprc)
 		impCtx.BidCtx[bidId] = bidCtx
 	}
-	rctx.ImpBidCtx[podId] = impCtx
+	rctx.ImpBidCtx[podConfig.Slots[0].Id] = impCtx
 }
