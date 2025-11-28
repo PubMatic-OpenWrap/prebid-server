@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	validator "github.com/asaskevich/govalidator"
@@ -36,6 +37,27 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
+// logHookBidRequest logs the bidRequest at different stages of the hook execution
+func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, nbrCode int) {
+	if !glog.V(models.LogLevelDebug) {
+		return
+	}
+
+	// Lazy marshal: only convert to JSON if we're actually going to log it
+	var bidRequestJSON string
+	if bidRequestBytes, err := json.Marshal(bidRequest); err == nil {
+		bidRequestJSON = string(bidRequestBytes)
+	}
+
+	if nbrCode > 0 {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, bidRequestJSON)
+	} else {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, bidRequestJSON)
+	}
+}
+
 func (m OpenWrap) handleBeforeValidationHook(
 	ctx context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -54,18 +76,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
+
+	// Log at the start of the hook
+	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
+
 	defer func() {
 		moduleCtx.ModuleContext["rctx"] = rCtx
+
+		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
+			logHookBidRequest("hook_end_rejected", rCtx, payload.BidRequest, result.NbrCode)
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if rCtx.IsCTVRequest {
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
-			}
-			if glog.V(models.LogLevelDebug) {
-				bidRequest, _ := json.Marshal(payload.BidRequest)
-				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
-					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, string(bidRequest))
 			}
 		}
 	}()
@@ -740,6 +764,21 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
 			moduleCtx.ModuleContext["rctx"] = rctx
+			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
+
+			// Always record preprocessing time stats
+			timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
+
+			// Debug logging only
+			if glog.V(models.LogLevelDebug) {
+				processingTime := time.Duration(timeDiff) * time.Millisecond
+				timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+				remainingTime := timeoutDuration - processingTime
+				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
+				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
+				glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
+			}
 		}()
 
 		var err error
