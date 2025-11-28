@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/golang/glog"
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
 	impressions "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/legacy/impressions"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/auction"
@@ -16,7 +16,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/stage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 type CTVOpenRTB struct {
@@ -37,6 +36,9 @@ func (co *CTVOpenRTB) HandleEntrypointHook(
 	result stage.EntrypointResult,
 ) (stage.EntrypointResult, bool) {
 	co.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	return result, true
 }
 
@@ -57,46 +59,26 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(
 	moduleCtx stage.ModuleContext,
 	result stage.BeforeValidationResult,
 ) (stage.BeforeValidationResult, bool) {
-	videoAdDuration := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationKey)
-	policy := models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.VideoAdDurationMatchingKey)
-	if len(videoAdDuration) > 0 {
-		rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-			AdserverCreativeDurations:              utils.GetIntArrayFromString(videoAdDuration, models.ArraySeparator),
-			AdserverCreativeDurationMatchingPolicy: policy,
-		}
-	}
-
+	// Validate video request
 	err := ctvutils.ValidateVideoImpressions(payload.BidRequest)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidVideoRequest)
 		result.Errors = append(result.Errors, err.Error())
-		rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, false
 	}
 
-	ctvutils.SetIncludeBrandCategory(rCtx)
+	// Populate rctx with ctv features
+	ctvutils.PopulateRequestContextWithCTVFeatures(rCtx)
 
-	for _, imp := range payload.BidRequest.Imp {
-		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
-		if !ok {
-			continue
-		}
+	// Set Default values to V25 dynamic adpod configs
+	adpod.SetDefaultValuesToAdpodConfig(rCtx)
 
-		podID := imp.Video.PodID
-		if podID == "" {
-			podID = imp.ID
-		}
-
-		_, ok = rCtx.AdpodCtx[podID]
-		//Adding default durations for CTV Test requests
-		if rCtx.IsTestRequest > 0 && ok && rCtx.AdpodProfileConfig == nil {
-			rCtx.AdpodProfileConfig = &models.AdpodProfileConfig{
-				AdserverCreativeDurations:              []int{5, 10},
-				AdserverCreativeDurationMatchingPolicy: openrtb_ext.OWRoundupVideoAdDurationMatching,
-			}
-		}
-
-		rCtx.ImpBidCtx[imp.ID] = impCtx
+	// Adpod config Validation
+	err = adpod.ValidateAdpodConfigs(rCtx)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidAdpodConfig)
+		result.Errors = append(result.Errors, err.Error())
+		return result, false
 	}
 
 	result.ChangeSet.AddMutation(func(ep stage.BeforeValidationPayload) (stage.BeforeValidationPayload, error) {
@@ -126,9 +108,6 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(
 
 		// Remove adpod data from ext
 		ctvutils.RemoveAdpodDataFromExt(ep.BidRequest)
-
-		// Enable when UI support is added
-		// ep.BidRequest = adpod.ApplyAdpodConfigs(rCtx, ep.BidRequest)
 
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-before-validation")
@@ -193,9 +172,16 @@ func (co *CTVOpenRTB) HandleBidderRequestHook(
 		// 	adpod.ConvertDownTo25(ep.Request)
 		// }
 
-		if payload.Bidder == models.BidderVASTBidder {
-			adapters.FilterImpsVastTagsByDuration(rCtx, ep.Request)
+		// Remove Multibid object from ext
+		reqExt, err := ep.Request.GetRequestExt()
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to get request ext in CTV handleBidderRequestHook mutation")
+			return ep, nil
 		}
+		prebidExt := reqExt.GetPrebid()
+		prebidExt.MultiBid = nil
+		reqExt.SetPrebid(prebidExt)
+
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-bidder-request")
 
@@ -260,5 +246,36 @@ func (co *CTVOpenRTB) HandleExitpointHook(
 	moduleCtx stage.ModuleContext,
 	result stage.ExitpointResult,
 ) (stage.ExitpointResult, bool) {
+	response, ok := payload.Response.(*openrtb2.BidResponse)
+	if !ok {
+		return result, true
+	}
+
+	if response.NBR != nil {
+		return result, true
+	}
+
+	response = formResponse(rCtx, response)
+
+	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleExitpointHook mutation")
+			return ep, nil
+		}
+
+		defer func() {
+			moduleCtx.ModuleContext.Set("rctx", rCtx)
+		}()
+
+		ep.W.Header().Set("Content-Type", "application/json")
+		ep.W.Header().Set("Content-Options", "nosniff")
+		ctvutils.SetCORSHeaders(ep.W, rCtx.Header)
+
+		// Update response
+		ep.Response = response
+
+		return ep, nil
+	}, hookstage.MutationUpdate, "ctv-openrtb-exitpoint")
 	return result, true
 }

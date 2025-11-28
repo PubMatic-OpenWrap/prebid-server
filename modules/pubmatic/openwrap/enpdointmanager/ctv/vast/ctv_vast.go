@@ -38,6 +38,9 @@ func (cv *CTVVAST) HandleEntrypointHook(
 	result stage.EntrypointResult,
 ) (stage.EntrypointResult, bool) {
 	cv.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	return result, true
 }
 
@@ -65,9 +68,7 @@ func (cv *CTVVAST) HandleBeforeValidationHook(
 	}
 
 	// Populate rctx with ctv features
-	ctvutils.SetIncludeBrandCategory(rCtx)
-	ctvutils.AddMultiBidConfigurations(rCtx)
-	ctvutils.ProcessAdpodProfileConfig(rCtx)
+	ctvutils.PopulateRequestContextWithCTVFeatures(rCtx)
 
 	// Set Default values to V25 dynamic adpod configs
 	adpod.SetDefaultValuesToAdpodConfig(rCtx)
@@ -171,6 +172,16 @@ func (cv *CTVVAST) HandleBidderRequestHook(
 		// if payload.BidderInfo.OpenRTB.Version != "2.6" && len(rCtx.AdpodCtx) > 0 {
 		// 	adpod.ConvertDownTo25(ep.Request)
 		// }
+
+		// Remove Multibid object from ext
+		reqExt, err := ep.Request.GetRequestExt()
+		if err != nil {
+			result.Errors = append(result.Errors, "failed to get request ext in CTV handleBidderRequestHook mutation")
+			return ep, nil
+		}
+		prebidExt := reqExt.GetPrebid()
+		prebidExt.MultiBid = nil
+		reqExt.SetPrebid(prebidExt)
 
 		return ep, nil
 	}, hookstage.MutationUpdate, "ctv-openrtb-bidder-request")

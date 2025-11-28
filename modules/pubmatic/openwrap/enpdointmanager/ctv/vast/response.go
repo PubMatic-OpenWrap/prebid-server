@@ -8,11 +8,11 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/vastbuilder"
 	"github.com/rs/vast"
 )
 
 var (
-	VASTVersionsStr   = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 	EmptyVASTResponse = []byte(`<VAST version="2.0"/>`)
 	//HeaderOpenWrapStatus Status of OW Request
 	HeaderOpenWrapStatus = "X-Ow-Status"
@@ -32,7 +32,7 @@ func formVastResponse(rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse
 		return EmptyVASTResponse, nil
 	}
 
-	builder := GetVastBuilder()
+	builder := vastbuilder.GetVastBuilder()
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
 			if bid.Price <= 0 {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/prebid/openrtb/v20/adcom1"
@@ -81,7 +82,7 @@ func newPodPosition() *PodPosition {
 	}
 }
 
-func formCTVJSONResponse(rCtx *models.RequestCtx, response *openrtb2.BidResponse, cacheClient creativecache.Client) []*adPodBid {
+func formResponse(rCtx *models.RequestCtx, response *openrtb2.BidResponse, cacheClient creativecache.Client) []*adPodBid {
 	impBidMap := make(map[string][]openrtb2.Bid)
 	for _, seatBid := range response.SeatBid {
 		for _, bid := range seatBid.Bid {
@@ -304,6 +305,14 @@ func updateAdServerURL(targetings []map[string]string, adServerURL string) strin
 	return redirectURL.String()
 }
 
+func getVideoPosition(rctx *models.RequestCtx, video *openrtb2.Video) adcom1.StartDelay {
+	if !rctx.AdruleFlag || video.StartDelay == nil {
+		return adcom1.StartPreRoll
+	}
+
+	return video.StartDelay.Val()
+}
+
 func sortImps(imps []impMeta) {
 	sort.Slice(imps, func(i, j int) bool {
 		// First, sort by StartDelay category (pre-roll, mid-roll, post-roll)
@@ -325,8 +334,67 @@ func sortImps(imps []impMeta) {
 		}
 
 		// Finally, sort by PodID
-		return strings.ToLower(imps[i].video.PodID) < strings.ToLower(imps[j].video.PodID)
+		return comparePodIds(imps[i].video.PodID, imps[j].video.PodID)
 	})
+}
+
+func comparePodIds(ipodId, jpodId string) bool {
+	pfxI, numI, hasNumI := parsePodID(ipodId)
+	pfxJ, numJ, hasNumJ := parsePodID(jpodId)
+
+	// Compare prefixes first
+	if pfxI != pfxJ {
+		return pfxI < pfxJ
+	}
+
+	// Same prefix
+	switch {
+	case !hasNumI && !hasNumJ:
+		// both non-numeric → simple lexicographic
+		return strings.ToLower(ipodId) < strings.ToLower(jpodId)
+
+	case !hasNumI && hasNumJ:
+		// non-numeric comes before numeric
+		return true
+
+	case hasNumI && !hasNumJ:
+		// numeric comes after non-numeric
+		return false
+
+	default:
+		// both numeric → compare numeric value
+		if numI != numJ {
+			return numI < numJ
+		}
+		// same number, fall back to full string
+		return strings.ToLower(ipodId) < strings.ToLower(jpodId)
+	}
+}
+
+func parsePodID(id string) (prefix string, num int, hasNum bool) {
+	id = strings.ToLower(strings.TrimSpace(id))
+	if id == "" {
+		return "", 0, false
+	}
+
+	i := len(id) - 1
+	for i >= 0 && id[i] >= '0' && id[i] <= '9' {
+		i--
+	}
+
+	// No trailing digits
+	if i == len(id)-1 {
+		return id, 0, false
+	}
+
+	prefix = id[:i+1]
+	numStr := id[i+1:]
+
+	n, err := strconv.Atoi(numStr)
+	if err != nil {
+		return id, 0, false
+	}
+	return prefix, n, true
 }
 
 // Determines the category of the StartDelay for sorting
@@ -360,12 +428,4 @@ func getPodSequencePriority(podSeq adcom1.PodSequence) int {
 	default:
 		return 2
 	}
-}
-
-func getVideoPosition(rctx *models.RequestCtx, video *openrtb2.Video) adcom1.StartDelay {
-	if !rctx.AdruleFlag || video.StartDelay == nil {
-		return adcom1.StartPreRoll
-	}
-
-	return video.StartDelay.Val()
 }

@@ -318,3 +318,9 @@ func SetCORSHeaders(w http.ResponseWriter, header http.Header) {
 	}
 	w.Header().Set("Access-Control-Allow-Origin", origin)
 }
+
+func PopulateRequestContextWithCTVFeatures(rCtx *models.RequestCtx) {
+	SetIncludeBrandCategory(rCtx)
+	AddMultiBidConfigurations(rCtx)
+	ProcessAdpodProfileConfig(rCtx)
+}

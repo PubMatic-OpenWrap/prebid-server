@@ -38,9 +38,6 @@ func NewAdpodWrapperHandle(handleToWrap httprouter.Handle, config *config.Config
 }
 
 func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
-	defer a.panicHandler(r)
-
 	if r.Method == http.MethodGet {
 		err := enrichRequestBody(r)
 		if err != nil {
@@ -55,20 +52,7 @@ func (a *adpod) OpenrtbEndpoint(w http.ResponseWriter, r *http.Request, p httpro
 	}
 
 	// Invoke prebid auction enpoint
-	a.handle(adpodResponseWriter, r, p)
-
-	responseGenerator := ortbResponse{
-		debug:              r.URL.Query().Get(models.Debug),
-		WrapperLoggerDebug: r.URL.Query().Get(models.WrapperLoggerDebug),
-	}
-	response, headers, statusCode := responseGenerator.formOperRTBResponse(adpodResponseWriter)
-
-	SetCORSHeaders(w, r)
-	for k, v := range headers {
-		w.Header().Set(k, v)
-	}
-	w.WriteHeader(statusCode)
-	w.Write(response)
+	a.handle(w, r, p)
 }
 
 func (a *adpod) VastEndpoint(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -134,15 +118,4 @@ func (a *adpod) panicHandler(r *http.Request) {
 		}
 		glog.Error("path:" + r.URL.RequestURI() + " body: " + string(body) + ". stacktrace: \n" + string(debug.Stack()))
 	}
-}
-
-// SetCORSHeaders sets CORS headers in response
-func SetCORSHeaders(w http.ResponseWriter, r *http.Request) {
-	origin := r.Header.Get("Origin")
-	if len(origin) == 0 {
-		origin = "*"
-	} else {
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-	}
-	w.Header().Set("Access-Control-Allow-Origin", origin)
 }

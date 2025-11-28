@@ -1,4 +1,4 @@
-package ctvvast
+package vastbuilder
 
 import (
 	"fmt"
@@ -26,6 +26,10 @@ const (
 	VASTVersionAttribute  = `version`
 	VASTSequenceAttribute = `sequence`
 	HTTPPrefix            = `http`
+)
+
+var (
+	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 )
 
 type VastBuilder interface {

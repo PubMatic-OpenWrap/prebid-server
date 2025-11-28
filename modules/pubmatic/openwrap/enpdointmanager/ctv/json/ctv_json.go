@@ -85,6 +85,9 @@ func (cj *CTVJSON) HandleBeforeValidationHook(
 		return result, false
 	}
 
+	// Populate rctx with ctv features
+	ctvutils.PopulateRequestContextWithCTVFeatures(rCtx)
+
 	// update Adpod Configs from json endpoint features
 	errs := updateAdpodConfigs(rCtx, payload.BidRequest)
 	if len(errs) > 0 {
@@ -92,11 +95,6 @@ func (cj *CTVJSON) HandleBeforeValidationHook(
 			result.Warnings = append(result.Warnings, err.Error())
 		}
 	}
-
-	// Populate rctx with ctv features
-	ctvutils.SetIncludeBrandCategory(rCtx)
-	ctvutils.AddMultiBidConfigurations(rCtx)
-	ctvutils.ProcessAdpodProfileConfig(rCtx)
 
 	// Set Default values to V25 dynamic adpod configs
 	adpod.SetDefaultValuesToAdpodConfig(rCtx)
@@ -344,7 +342,7 @@ func (cj *CTVJSON) HandleExitpointHook(
 		return result, true
 	}
 
-	adpodBids := formCTVJSONResponse(rCtx, response, cj.creativeCache)
+	adpodBids := formResponse(rCtx, response, cj.creativeCache)
 
 	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
 		rCtx, ok := utils.GetRequestContext(moduleCtx)
