@@ -173,14 +173,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return 0, err
 	}
 
-	// Adpod processing
-	result, ok = m.processAdpod(&rCtx, payload.BidRequest, result)
+	// process impressions
+	result, ok = m.processImpressions(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
 
-	// process impressions
-	result, ok = m.processImpressions(&rCtx, payload.BidRequest, result)
+	// Adpod processing
+	result, ok = m.processAdpod(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
@@ -1629,9 +1629,13 @@ func getApplovinSchainABTestEnabled(percentage int) bool {
 	return false
 }
 
-func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrtb2.Imp) ([]models.PodConfig, error) {
-	// Request
-	if len(imp.Video.PodID) > 0 {
+// resolveAdpodConfigsForImp resolves adpod configs for a given impression with below priority
+// 1. Request
+// 2. UI
+// 3. V25
+func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrtb2.Imp) []models.PodConfig {
+	// 1. Request
+	if imp.Video != nil && len(imp.Video.PodID) > 0 {
 		config := models.PodConfig{
 			PodID:       imp.Video.PodID,
 			PodDur:      imp.Video.PodDur,
@@ -1641,24 +1645,31 @@ func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrt
 			RqdDurs:     imp.Video.RqdDurs,
 			StartDelay:  imp.Video.StartDelay,
 		}
-		return []models.PodConfig{config}, nil
+		return []models.PodConfig{config}
 	}
 
-	// UI
+	var (
+		configs []models.PodConfig
+		err     error
+	)
+
+	// 2. UI (if enabled)
 	if adpod.CheckAdpodUIConfigEnabled(rCtx, imp) {
-		configs, err := adpod.GetAdpodUIConfigs(rCtx, m.cache)
+		configs, err = adpod.GetAdpodUIConfigs(rCtx, m.cache)
 		if err != nil {
-			err = errors.New("failed to get adpod configurations from UI for impression " + imp.ID + " reason: " + err.Error())
+			glog.Error("failed to get adpod configurations from UI for impression " + imp.ID + " reason: " + err.Error())
 		}
-		return configs, err
 	}
 
-	// V25
-	configs, err := adpod.GetV25AdpodConfigs(rCtx, imp)
-	if err != nil {
-		err = errors.New("failed to get adpod v25 configurations for impression " + imp.ID + " reason: " + err.Error())
+	// 3. V25 fallback (if UI not enabled, errored, or returned no configs)
+	if len(configs) == 0 {
+		configs, err = adpod.GetV25AdpodConfigs(rCtx, imp)
+		if err != nil {
+			glog.Error("failed to get adpod v25 configurations for impression " + imp.ID + " reason: " + err.Error())
+		}
 	}
-	return configs, err
+
+	return configs
 }
 
 func (m OpenWrap) processAdpod(
@@ -1675,14 +1686,7 @@ func (m OpenWrap) processAdpod(
 			continue
 		}
 
-		configs, err := m.resolveAdpodConfigsForImp(rCtx, &imp)
-		if err != nil {
-			result.NbrCode = int(nbr.InvalidAdpodConfig)
-			result.Errors = append(result.Errors, err.Error())
-			rCtx.ImpBidCtx = models.GetDefaultImpBidCtx(*bidRequest)
-			return result, false
-		}
-
+		configs := m.resolveAdpodConfigsForImp(rCtx, &imp)
 		if len(configs) == 0 {
 			continue
 		}
