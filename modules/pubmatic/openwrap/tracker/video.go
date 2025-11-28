@@ -48,7 +48,7 @@ func injectVideoCreativeTrackers(rctx models.RequestCtx, bid openrtb2.Bid, video
 	}
 
 	if skipTracker && len(videoParams) > 0 {
-		bid.BURL = getBURL(bid.BURL, videoParams[0].TrackerURL)
+		bid.BURL = getBURL(bid.BURL, videoParams[0])
 	}
 
 	return bid.AdM, bid.BURL, nil

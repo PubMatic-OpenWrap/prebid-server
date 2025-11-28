@@ -83,6 +83,8 @@ type Queries struct {
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 	GetCountryPartnerFilteringData    string
+	GetPerformanceDSPQuery            string
+	GetInViewEnabledPublishersQuery   string
 }
 
 type Cache struct {

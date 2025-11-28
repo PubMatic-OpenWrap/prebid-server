@@ -68,6 +68,7 @@ type Partner struct {
 	PriceBucket            string
 	MultiBidMultiFloorFlag int
 	NetworkID              int
+	InViewCountingFlag     int
 }
 
 // LoggerData: this data to be needed in logger

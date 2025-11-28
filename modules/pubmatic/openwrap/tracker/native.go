@@ -8,14 +8,15 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 // Inject TrackerCall in Native Adm
 func injectNativeCreativeTrackers(native *openrtb2.Native, bid openrtb2.Bid, tracker models.OWTracker, endpoint string) (string, string, error) {
 	adm := bid.AdM
 	var err error
-	if endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointUnityLevelPlay {
-		return adm, getBURL(bid.BURL, tracker.TrackerURL), nil
+	if sdkutils.IsSdkIntegration(endpoint) {
+		return adm, getBURL(bid.BURL, tracker), nil
 	}
 	if native == nil {
 		return adm, bid.BURL, errors.New("native object is missing")
