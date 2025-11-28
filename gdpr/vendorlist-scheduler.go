@@ -28,7 +28,7 @@ type vendorListScheduler struct {
 var _instance *vendorListScheduler
 var once sync.Once
 
-func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (*vendorListScheduler, error) {
+func GetVendorListScheduler(interval, timeout string, httpClient *http.Client, metricsEngine metrics.MetricsEngine) (*vendorListScheduler, error) {
 	if _instance != nil {
 		return _instance, nil
 	}
@@ -49,11 +49,12 @@ func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (
 
 	once.Do(func() {
 		_instance = &vendorListScheduler{
-			ticker:     nil,
-			interval:   intervalDuration,
-			done:       make(chan bool),
-			httpClient: httpClient,
-			timeout:    timeoutDuration,
+			ticker:        nil,
+			interval:      intervalDuration,
+			done:          make(chan bool),
+			httpClient:    httpClient,
+			timeout:       timeoutDuration,
+			metricsEngine: metricsEngine,
 		}
 	})
 

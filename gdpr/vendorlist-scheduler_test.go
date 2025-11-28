@@ -14,9 +14,10 @@ import (
 
 func TestGetVendorListScheduler(t *testing.T) {
 	type args struct {
-		interval   string
-		timeout    string
-		httpClient *http.Client
+		interval      string
+		timeout       string
+		httpClient    *http.Client
+		metricsEngine metrics.MetricsEngine
 	}
 	tests := []struct {
 		name    string
@@ -27,21 +28,23 @@ func TestGetVendorListScheduler(t *testing.T) {
 		{
 			name: "Test singleton",
 			args: args{
-				interval:   "1m",
-				timeout:    "1s",
-				httpClient: http.DefaultClient,
+				interval:      "1m",
+				timeout:       "1s",
+				httpClient:    http.DefaultClient,
+				metricsEngine: &metrics.MetricsEngineMock{},
 			},
-			want:    GetExpectedVendorListScheduler("1m", "1s", http.DefaultClient),
+			want:    GetExpectedVendorListScheduler("1m", "1s", http.DefaultClient, &metrics.MetricsEngineMock{}),
 			wantErr: false,
 		},
 		{
 			name: "Test singleton again",
 			args: args{
-				interval:   "2m",
-				timeout:    "2s",
-				httpClient: http.DefaultClient,
+				interval:      "2m",
+				timeout:       "2s",
+				httpClient:    http.DefaultClient,
+				metricsEngine: &metrics.MetricsEngineMock{},
 			},
-			want:    GetExpectedVendorListScheduler("2m", "2s", http.DefaultClient),
+			want:    GetExpectedVendorListScheduler("2m", "2s", http.DefaultClient, &metrics.MetricsEngineMock{}),
 			wantErr: false,
 		},
 	}
@@ -51,8 +54,8 @@ func TestGetVendorListScheduler(t *testing.T) {
 			if tt.want == nil {
 				//_instance = nil
 			}
-
-			got, err := GetVendorListScheduler(tt.args.interval, tt.args.timeout, tt.args.httpClient)
+			m := &metrics.MetricsEngineMock{}
+			got, err := GetVendorListScheduler(tt.args.interval, tt.args.timeout, tt.args.httpClient, m)
 			if got != tt.want {
 				t.Errorf("GetVendorListScheduler() got = %v, want %v", got, tt.want)
 			}
@@ -64,8 +67,8 @@ func TestGetVendorListScheduler(t *testing.T) {
 	}
 }
 
-func GetExpectedVendorListScheduler(interval string, timeout string, httpClient *http.Client) *vendorListScheduler {
-	s, _ := GetVendorListScheduler(interval, timeout, httpClient)
+func GetExpectedVendorListScheduler(interval string, timeout string, httpClient *http.Client, metricsEngine metrics.MetricsEngine) *vendorListScheduler {
+	s, _ := GetVendorListScheduler(interval, timeout, httpClient, metricsEngine)
 	return s
 }
 
@@ -83,7 +86,8 @@ func Test_vendorListScheduler_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.NotNil(t, scheduler, "scheduler instance should not be nil")
 
@@ -114,7 +118,8 @@ func Test_vendorListScheduler_Stop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.NotNil(t, scheduler, "scheduler instance should not be nil")
 
@@ -142,7 +147,8 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var err error
-			tt.fields.scheduler, err = GetVendorListScheduler("5m", "5m", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			tt.fields.scheduler, err = GetVendorListScheduler("5m", "5m", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.False(t, tt.fields.scheduler.isStarted, "VendorListScheduler should not be already running")
 
@@ -183,7 +189,8 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 }
 
 func Benchmark_vendorListScheduler_runLoadCache(b *testing.B) {
-	scheduler, err := GetVendorListScheduler("1m", "30m", http.DefaultClient)
+	m := &metrics.MetricsEngineMock{}
+	scheduler, err := GetVendorListScheduler("1m", "30m", http.DefaultClient, m)
 	assert.Nil(b, err, "")
 	assert.NotNil(b, scheduler, "")
 

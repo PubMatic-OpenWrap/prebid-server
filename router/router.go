@@ -245,7 +245,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 	tcf2CfgBuilder := gdpr.NewTCF2Config
 
 	if cfg.VendorListScheduler.Enabled {
-		vendorListScheduler, err := gdpr.GetVendorListScheduler(cfg.VendorListScheduler.Interval, cfg.VendorListScheduler.Timeout, generalHttpClient)
+		vendorListScheduler, err := gdpr.GetVendorListScheduler(cfg.VendorListScheduler.Interval, cfg.VendorListScheduler.Timeout, generalHttpClient, r.MetricsEngine)
 		if err != nil {
 			glog.Fatal(err)
 		}
