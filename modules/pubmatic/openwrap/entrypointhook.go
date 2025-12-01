@@ -312,6 +312,10 @@ func processWrapperExtension(rCtx *models.RequestCtx, r *http.Request, body []by
 	rCtx.AdruleFlag = requestExtWrapper.Video.AdruleFlag
 	rCtx.ProfileIDStr = strconv.Itoa(requestExtWrapper.ProfileId)
 
+	if rCtx.IsCTVRequest {
+		rCtx.SSAuction = 1
+	}
+
 	return result, true
 }
 
