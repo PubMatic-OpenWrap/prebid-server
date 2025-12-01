@@ -3,6 +3,7 @@ package ctvvast
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -36,12 +37,43 @@ func (cv *CTVVAST) HandleEntrypointHook(
 	payload stage.EntrypointPayload,
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
-) (stage.EntrypointResult, bool) {
+) ([]byte, stage.EntrypointResult, bool) {
 	cv.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
 	// SSAuction will be always 1 for CTV request
 	rCtx.SSAuction = 1
 	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	return result, true
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	if payload.Request.Method != http.MethodGet {
+		return payload.Body, result, true
+	}
+
+	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
+	if err != nil {
+		nbr := openrtb3.NoBidInvalidRequest.Ptr()
+		if cerr, ok := err.(*ctv.ParseError); ok {
+			nbr = cerr.NBR()
+		}
+		result.NbrCode = int(*nbr)
+		result.Errors = append(result.Errors, err.Error())
+		return payload.Body, result, false
+	}
+
+	body, err := json.Marshal(bidRequest)
+	if err != nil {
+		result.NbrCode = int(openrtb3.NoBidTechnicalError)
+		result.Errors = append(result.Errors, "error occured in request proecessing")
+		return payload.Body, result, false
+	}
+
+	result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+		if payload.Request.Method == http.MethodGet {
+			ep.Body = body
+		}
+		return ep, nil
+	}, hookstage.MutationUpdate, "ctv-vast-entrypoint")
+
+	return body, result, true
 }
 
 func (cv *CTVVAST) HandleRawAuctionHook(

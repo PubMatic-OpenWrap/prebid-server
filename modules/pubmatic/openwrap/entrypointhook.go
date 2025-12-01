@@ -3,6 +3,7 @@ package openwrap
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -42,23 +43,23 @@ func (m OpenWrap) handleEntrypointHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.EntrypointPayload,
 ) (result hookstage.HookResult[hookstage.EntrypointPayload], err error) {
-	queryParams := payload.Request.URL.Query()
-	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
+	var (
+		rCtx                models.RequestCtx
+		endpointHookManager endpointmanager.EndpointHookManager
+		pubid               int
+		body                []byte
+		ok                  bool
+	)
 
-	rCtx := models.RequestCtx{}
-	var endpointHookManager endpointmanager.EndpointHookManager
-	var endpoint string
-	var pubid int
-	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
 			if rCtx.PubIDStr == "" {
 				rCtx.PubIDStr = "0"
 			}
-			m.metricEngine.RecordBadRequests(endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
+			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			if glog.V(models.LogLevelDebug) {
 				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
-					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, queryParams.Encode(), string(payload.Body))
+					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, payload.Request.URL.Query().Encode(), string(body))
 			}
 			return
 		}
@@ -70,55 +71,70 @@ func (m OpenWrap) handleEntrypointHook(
 		result.ModuleContext.Set("endpointhookmanager", endpointHookManager)
 	}()
 
-	endpoint = GetEndpoint(payload.Request.URL.Path, source, queryParams.Get(models.Agent))
+	// Intialise configs
+	rCtx.StartTime = time.Now().Unix()
+	rCtx.TMax = m.cfg.Timeout.MaxTimeout
+
+	// process request
+	processHTTPRequest(&rCtx, payload.Request)
 
 	//Intialise endpoint Hook Manager based on endpoint
-	endpointHookManager = endpointmanager.NewEndpointManager(endpoint, m.metricEngine, m.cache, m.creativeCache)
+	endpointHookManager = endpointmanager.NewEndpointManager(rCtx.Endpoint, m.metricEngine, m.cache, m.creativeCache)
 
-	if endpoint == models.EndpointHybrid {
+	if rCtx.Endpoint == models.EndpointHybrid {
 		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
 
-	rCtx.Sshb = queryParams.Get("sshb")
 	//Do not execute the module for requests processed in SSHB(8001)
 	if rCtx.Sshb == models.Enabled {
 		rCtx.VastUnWrap.Enabled = getVastUnwrapperEnable(payload.Request.Context(), models.VastUnwrapperEnableKey)
-		rCtx.DeviceCtx.IP = models.GetIP(payload.Request)
-		rCtx.DeviceCtx.UA = payload.Request.Header.Get("User-Agent")
 		return result, nil
+	}
+
+	// Initialise static values
+	rCtx.MetricsEngine = m.metricEngine
+	rCtx.DCName = m.cfg.Server.DCName
+	rCtx.TrackerEndpoint = m.cfg.Tracker.Endpoint
+	rCtx.VideoErrorTrackerEndpoint = m.cfg.Tracker.VideoErrorTrackerEndpoint
+	rCtx.WakandaDebug = &wakanda.Debug{
+		Config: m.cfg.Wakanda,
 	}
 
 	// Preserve original request body for wakanda
 	originalRequestBody := payload.Body
 
-	if endpoint == models.EndpointAppLovinMax {
-		rCtx.MetricsEngine = m.metricEngine
+	// Execute endpoint specific entrypoint hook
+	body, result, ok = endpointHookManager.HandleEntrypointHook(&rCtx, payload, miCtx, result)
+	if !ok {
+		result.Reject = true
+		return result, nil
+	}
+
+	if rCtx.Endpoint == models.EndpointAppLovinMax {
 		// updating body locally to access updated fields from signal
-		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
+		body = updateAppLovinMaxRequest(body, rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
-			ep.Body = payload.Body
+			ep.Body = body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-max-app-lovin-request")
 	}
 
-	if endpoint == models.EndpointGoogleSDK {
-		rCtx.MetricsEngine = m.metricEngine
+	if rCtx.Endpoint == models.EndpointGoogleSDK {
 		// Update fields from signal
-		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx, m.features)
+		body = googlesdk.ModifyRequestWithGoogleSDKParams(body, rCtx, m.features)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
-			ep.Body = payload.Body
+			ep.Body = body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-google-sdk-request")
 	}
 
-	if endpoint == models.EndpointUnityLevelPlay {
-		rCtx.MetricsEngine = m.metricEngine
+	if rCtx.Endpoint == models.EndpointUnityLevelPlay {
 		// Update fields from signal
 		ulp := unitylevelplay.NewLevelPlay(m.metricEngine)
-		payload.Body = ulp.ModifyRequestWithUnityLevelPlayParams(payload.Body)
+		body = ulp.ModifyRequestWithUnityLevelPlayParams(body)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
-			ep.Body = payload.Body
+			ep.Body = body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-unity-level-play-request")
 	}
@@ -126,72 +142,26 @@ func (m OpenWrap) handleEntrypointHook(
 	// init default for all modules
 	result.Reject = true
 
-	requestExtWrapper, err = GetRequestWrapper(payload, result, endpoint)
-	if err != nil {
-		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
-		result.Errors = append(result.Errors, err.Error())
-		return result, err
+	// process wrapper extension
+	result, ok = processWrapperExtension(&rCtx, payload.Request, body, result)
+	if !ok {
+		return result, nil
 	}
 
-	if requestExtWrapper.ProfileId <= 0 {
-		result.NbrCode = int(nbr.InvalidProfileID)
-		result.Errors = append(result.Errors, "ErrMissingProfileID")
-		return result, err
+	// Initialize request context
+	initializeRequestContext(&rCtx)
+
+	// Debug
+	requestDebug, _ := jsonparser.GetBoolean(body, "ext", "prebid", "debug")
+	if !rCtx.Debug {
+		rCtx.Debug = requestDebug
 	}
 
-	// validate redirect url
-	if len(requestExtWrapper.AdServerURL) > 0 {
-		if !utils.IsValidURL(requestExtWrapper.AdServerURL) {
-			result.NbrCode = int(nbr.InvalidRedirectURL)
-			result.Errors = append(result.Errors, "Invalid redirect URL")
-			return result, nil
-		}
-	}
+	// Features
+	rCtx.SendBurl = getSendBurl(body, rCtx.Endpoint)
+	rCtx.GoogleSDK = models.GoogleSDK{StartTime: time.Now()}
 
-	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
-	rCtx = models.RequestCtx{
-		StartTime:          time.Now().Unix(),
-		Header:             payload.Request.Header,
-		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
-		ProfileID:          requestExtWrapper.ProfileId,
-		DisplayID:          requestExtWrapper.VersionId,
-		DisplayVersionID:   requestExtWrapper.VersionId,
-		SupportDeals:       requestExtWrapper.SupportDeals,
-		ABTestConfig:       requestExtWrapper.ABTestConfig,
-		SSAuction:          requestExtWrapper.SSAuctionFlag,
-		SummaryDisable:     requestExtWrapper.SumryDisableFlag,
-		LoggerImpressionID: requestExtWrapper.LoggerImpressionID,
-		ClientConfigFlag:   requestExtWrapper.ClientConfigFlag,
-		SSAI:               requestExtWrapper.SSAI,
-		AdruleFlag:         requestExtWrapper.Video.AdruleFlag,
-		IsCTVRequest:       models.IsCTVAPIRequest(payload.Request.URL.Path),
-		DeviceCtx: models.DeviceCtx{UA: payload.Request.Header.Get("User-Agent"),
-			IP: models.GetIP(payload.Request)},
-		TrackerEndpoint:           m.cfg.Tracker.Endpoint,
-		VideoErrorTrackerEndpoint: m.cfg.Tracker.VideoErrorTrackerEndpoint,
-		Aliases:                   make(map[string]string),
-		ImpBidCtx:                 make(map[string]models.ImpCtx),
-		PrebidBidderCode:          make(map[string]string),
-		BidderResponseTimeMillis:  make(map[string]int),
-		ProfileIDStr:              strconv.Itoa(requestExtWrapper.ProfileId),
-		Endpoint:                  endpoint,
-		MetricsEngine:             m.metricEngine,
-		DCName:                    m.cfg.Server.DCName,
-		SeatNonBids:               make(map[string][]openrtb_ext.NonBid),
-		ParsedUidCookie:           usersync.ReadCookie(payload.Request, usersync.Base64Decoder{}, &config.HostCookie{}),
-		TMax:                      m.cfg.Timeout.MaxTimeout,
-		Method:                    payload.Request.Method,
-		ResponseFormat:            strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey))),
-		RedirectURL:               queryParams.Get(models.OWRedirectURLKey),
-		WakandaDebug: &wakanda.Debug{
-			Config: m.cfg.Wakanda,
-		},
-		SendBurl:                        getSendBurl(payload.Body, endpoint),
-		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
-		GoogleSDK:                       models.GoogleSDK{StartTime: time.Now()},
-	}
-
-	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, body)
 	if len(errs) > 0 {
 		result.NbrCode = int(nbr.InvalidPublisherID)
 		result.Errors = append(result.Errors, errs[0].Error())
@@ -231,35 +201,29 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
-	// Execute endpoint specific entrypoint hook
-	result, ok := endpointHookManager.HandleEntrypointHook(&rCtx, payload, miCtx, result)
-	if !ok {
-		return result, nil
-	}
-
 	result.Reject = false
 
 	return result, nil
 }
 
-func GetRequestWrapper(payload hookstage.EntrypointPayload, result hookstage.HookResult[hookstage.EntrypointPayload], endpoint string) (models.RequestExtWrapper, error) {
+func getRequestWrapper(r *http.Request, body []byte, endpoint string, result hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestExtWrapper, error) {
 	var requestExtWrapper models.RequestExtWrapper
 	var err error
 	switch endpoint {
 	case models.EndpintInappVideo:
-		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(payload, &result)
+		requestExtWrapper, err = v25.ConvertVideoToAuctionRequest(r, body, &result)
 	case models.EndpointAMP:
-		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(payload.Request)
+		requestExtWrapper, err = models.GetQueryParamRequestExtWrapper(r)
 	case models.EndpointV25:
 		fallthrough
 	case models.EndpointVideo, models.EndpointORTB, models.EndpointVAST, models.EndpointJson:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body, "ext", "wrapper")
+		requestExtWrapper, err = models.GetRequestExtWrapper(body, "ext", "wrapper")
 	case models.EndpointAppLovinMax:
 		fallthrough
 	case models.EndpointWebS2S:
 		fallthrough
 	default:
-		requestExtWrapper, err = models.GetRequestExtWrapper(payload.Body)
+		requestExtWrapper, err = models.GetRequestExtWrapper(body)
 	}
 
 	return requestExtWrapper, err
@@ -310,4 +274,72 @@ func getSendBurl(request []byte, endpoint string) bool {
 	//ignore error, default is false
 	sendBurl, _ := jsonparser.GetBoolean(request, "ext", "prebid", "bidderparams", "pubmatic", "sendburl")
 	return sendBurl
+}
+
+func processWrapperExtension(rCtx *models.RequestCtx, r *http.Request, body []byte, result hookstage.HookResult[hookstage.EntrypointPayload]) (hookstage.HookResult[hookstage.EntrypointPayload], bool) {
+	requestExtWrapper, err := getRequestWrapper(r, body, rCtx.Endpoint, result)
+	if err != nil {
+		result.NbrCode = int(nbr.InvalidRequestWrapperExtension)
+		result.Errors = append(result.Errors, err.Error())
+		return result, false
+	}
+
+	if requestExtWrapper.ProfileId <= 0 {
+		result.NbrCode = int(nbr.InvalidProfileID)
+		result.Errors = append(result.Errors, "ErrMissingProfileID")
+		return result, false
+	}
+
+	// validate redirect url
+	if len(requestExtWrapper.AdServerURL) > 0 {
+		if !utils.IsValidURL(requestExtWrapper.AdServerURL) {
+			result.NbrCode = int(nbr.InvalidRedirectURL)
+			result.Errors = append(result.Errors, "Invalid redirect URL")
+			return result, false
+		}
+	}
+
+	rCtx.ProfileID = requestExtWrapper.ProfileId
+	rCtx.DisplayID = requestExtWrapper.VersionId
+	rCtx.DisplayVersionID = requestExtWrapper.VersionId
+	rCtx.SupportDeals = requestExtWrapper.SupportDeals
+	rCtx.ABTestConfig = requestExtWrapper.ABTestConfig
+	rCtx.SSAuction = requestExtWrapper.SSAuctionFlag
+	rCtx.SummaryDisable = requestExtWrapper.SumryDisableFlag
+	rCtx.LoggerImpressionID = requestExtWrapper.LoggerImpressionID
+	rCtx.ClientConfigFlag = requestExtWrapper.ClientConfigFlag
+	rCtx.SSAI = requestExtWrapper.SSAI
+	rCtx.AdruleFlag = requestExtWrapper.Video.AdruleFlag
+	rCtx.ProfileIDStr = strconv.Itoa(requestExtWrapper.ProfileId)
+
+	return result, true
+}
+
+func initializeRequestContext(rCtx *models.RequestCtx) {
+	rCtx.Aliases = make(map[string]string)
+	rCtx.ImpBidCtx = make(map[string]models.ImpCtx)
+	rCtx.PrebidBidderCode = make(map[string]string)
+	rCtx.BidderResponseTimeMillis = make(map[string]int)
+	rCtx.SeatNonBids = make(map[string][]openrtb_ext.NonBid)
+	rCtx.ImpCountingMethodEnabledBidders = make(map[string]struct{})
+}
+
+func processHTTPRequest(rCtx *models.RequestCtx, r *http.Request) {
+	queryParams := r.URL.Query()
+	source := queryParams.Get("source") //source query param to identify /openrtb2/auction type
+	rCtx.Sshb = queryParams.Get("sshb")
+	rCtx.Debug = queryParams.Get(models.Debug) == "1"
+	rCtx.ResponseFormat = strings.ToLower(strings.TrimSpace(queryParams.Get(models.ResponseFormatKey)))
+	rCtx.RedirectURL = queryParams.Get(models.OWRedirectURLKey)
+
+	endpoint := GetEndpoint(r.URL.Path, source, queryParams.Get(models.Agent))
+	rCtx.Endpoint = endpoint
+
+	rCtx.Header = r.Header
+	rCtx.Method = r.Method
+	rCtx.DeviceCtx = models.DeviceCtx{
+		UA: r.Header.Get("User-Agent"),
+		IP: models.GetIP(r),
+	}
+	rCtx.ParsedUidCookie = usersync.ReadCookie(r, usersync.Base64Decoder{}, &config.HostCookie{})
 }

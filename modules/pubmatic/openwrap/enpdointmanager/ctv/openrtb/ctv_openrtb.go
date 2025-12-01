@@ -2,9 +2,11 @@ package ctvopenrtb
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
 	impressions "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/legacy/impressions"
@@ -34,12 +36,43 @@ func (co *CTVOpenRTB) HandleEntrypointHook(
 	payload stage.EntrypointPayload,
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
-) (stage.EntrypointResult, bool) {
+) ([]byte, stage.EntrypointResult, bool) {
 	co.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
 	// SSAuction will be always 1 for CTV request
 	rCtx.SSAuction = 1
 	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	return result, true
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	if payload.Request.Method != http.MethodGet {
+		return payload.Body, result, true
+	}
+
+	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
+	if err != nil {
+		nbr := openrtb3.NoBidInvalidRequest.Ptr()
+		if cerr, ok := err.(*ctv.ParseError); ok {
+			nbr = cerr.NBR()
+		}
+		result.NbrCode = int(*nbr)
+		result.Errors = append(result.Errors, err.Error())
+		return payload.Body, result, false
+	}
+
+	body, err := json.Marshal(bidRequest)
+	if err != nil {
+		result.NbrCode = int(openrtb3.NoBidTechnicalError)
+		result.Errors = append(result.Errors, "error occured in request proecessing")
+		return payload.Body, result, false
+	}
+
+	result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+		if payload.Request.Method == http.MethodGet {
+			ep.Body = body
+		}
+		return ep, nil
+	}, hookstage.MutationUpdate, "ctv-openrtb-entrypoint")
+
+	return body, result, true
 }
 
 // RawAuctionHook

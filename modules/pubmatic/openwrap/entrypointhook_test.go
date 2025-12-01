@@ -875,7 +875,7 @@ func TestGetRequestWrapper(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetRequestWrapper(tt.args.payload, tt.args.result, tt.args.endpoint)
+			got, err := getRequestWrapper(tt.args.payload.Request, tt.args.payload.Body, tt.args.endpoint, tt.args.result)
 			assert.Equal(t, err != nil, tt.wantErr)
 			assert.Equal(t, tt.want, got)
 		})

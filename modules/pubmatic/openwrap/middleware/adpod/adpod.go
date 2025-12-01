@@ -76,18 +76,6 @@ func (a *adpod) JsonEndpoint(w http.ResponseWriter, r *http.Request, p httproute
 	adpodResponseWriter := &utils.HTTPResponseBufferWriter{}
 	defer a.panicHandler(r)
 
-	if r.Method == http.MethodGet {
-		err := enrichRequestBody(r)
-		if err != nil {
-			a.metricsEngine.RecordBadRequest(models.EndpointJson, ctv.GetPubIdFromQueryParams(r.URL.Query()), nbr.InvalidVideoRequest.Ptr())
-			errResponse := formJSONErrorResponse(r, err)
-			w.Header().Set(ContentType, ApplicationJSON)
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(errResponse)
-			return
-		}
-	}
-
 	// Invoke prebid auction enpoint
 	a.handle(adpodResponseWriter, r, p)
 
