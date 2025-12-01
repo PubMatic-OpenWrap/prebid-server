@@ -250,9 +250,23 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		// Always set secure to 1
 		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
-		//Set gpid
-		if len(request.Imp[0].TagID) > 0 {
-			request.Imp[0].Ext, _ = jsonparser.Set(request.Imp[0].Ext, []byte(strconv.Quote(request.Imp[0].TagID)), "gpid")
+		gpid, err := jsonparser.GetString(request.Imp[0].Ext, "gpid")
+		if err != nil || gpid == "" {
+			// gpid not set, prefer imp.ext.dfp_ad_unit_code or imp.tagid
+			if dfpAdUnitCode, err := jsonparser.GetString(request.Imp[0].Ext, "dfp_ad_unit_code"); err == nil && dfpAdUnitCode != "" {
+				gpid = dfpAdUnitCode
+			} else if len(request.Imp[0].TagID) > 0 {
+				gpid = request.Imp[0].TagID
+			}
+
+			if gpid != "" {
+				// Quote the string value
+				quotedGpID := []byte(`"` + string(gpid) + `"`)
+				request.Imp[0].Ext, err = jsonparser.Set(request.Imp[0].Ext, quotedGpID, "gpid")
+				if err != nil {
+					glog.Errorf("[GoogleSDK] [Error]: failed to set gpid %v", err)
+				}
+			}
 		}
 
 		// Remove banner if impression is rewarded and banner and video both are present
