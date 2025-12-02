@@ -37,7 +37,7 @@ type Metrics struct {
 	pubBidRecoveryStatus            *prometheus.CounterVec
 	pubBidRecoveryTime              *prometheus.HistogramVec
 	requestsWithSchainABTestEnabled *prometheus.CounterVec
-
+	pubPreProcessingTime            *prometheus.HistogramVec
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
 	pubPartnerPlatformResponses *prometheus.CounterVec
@@ -256,6 +256,13 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"Count impressions having app/site content at publisher level.",
 		[]string{pubIDLabel, sourceLabel},
 		//TODO - contentLabel ??
+	)
+
+	metrics.pubPreProcessingTime = newHistogramVec(cfg, promRegistry,
+		"pub_preprocessing_time",
+		"Total time taken for preprocessing in seconds at publisher level.",
+		[]string{pubIDLabel},
+		standardTimeBuckets,
 	)
 
 	// publisher-partner-platform metrics
@@ -725,10 +732,14 @@ func (m *Metrics) RecordBidResponseByDealCountInHB(publisherID, profile, aliasBi
 }
 
 // TODO - remove this functions once we are completely migrated from Header-bidding to module
-func (m *Metrics) RecordSSTimeoutRequests(publisherID, profileID string)               {}
-func (m *Metrics) RecordPartnerTimeoutInPBS(publisherID, profile, aliasBidder string)  {}
-func (m *Metrics) RecordPreProcessingTimeStats(publisherID string, processingTime int) {}
-func (m *Metrics) RecordInvalidCreativeStats(publisherID, partner string)              {}
+func (m *Metrics) RecordSSTimeoutRequests(publisherID, profileID string)              {}
+func (m *Metrics) RecordPartnerTimeoutInPBS(publisherID, profile, aliasBidder string) {}
+func (m *Metrics) RecordPreProcessingTimeStats(publisherID string, processingTime int) {
+	m.pubPreProcessingTime.With(prometheus.Labels{
+		pubIDLabel: publisherID,
+	}).Observe(float64(processingTime) / 1000)
+}
+func (m *Metrics) RecordInvalidCreativeStats(publisherID, partner string) {}
 
 // Code is not migrated yet
 func (m *Metrics) RecordVideoImpDisabledViaConnTypeStats(publisherID, profileID string)           {}
