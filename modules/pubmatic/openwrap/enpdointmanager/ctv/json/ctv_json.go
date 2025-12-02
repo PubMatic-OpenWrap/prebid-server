@@ -35,30 +35,12 @@ func NewCTVJSON(metricsEngine metrics.MetricsEngine, creativeCache creativecache
 	}
 }
 
-func (cj *CTVJSON) HandleEntrypointHook(
+func (cj *CTVJSON) HandleGETEndpoint(
 	rCtx *models.RequestCtx,
 	payload stage.EntrypointPayload,
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
 ) ([]byte, stage.EntrypointResult, bool) {
-	cj.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
-	if len(rCtx.ResponseFormat) > 0 {
-		if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
-			result.NbrCode = int(nbr.InvalidResponseFormat)
-			result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
-			return payload.Body, result, false
-		}
-	}
-
-	// SSAuction will be always 1 for CTV request
-	rCtx.SSAuction = 1
-	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
-
-	if payload.Request.Method != http.MethodGet {
-		return payload.Body, result, true
-	}
-
 	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
 	if err != nil {
 		nbr := openrtb3.NoBidInvalidRequest.Ptr()
@@ -73,7 +55,7 @@ func (cj *CTVJSON) HandleEntrypointHook(
 	body, err := json.Marshal(bidRequest)
 	if err != nil {
 		result.NbrCode = int(openrtb3.NoBidTechnicalError)
-		result.Errors = append(result.Errors, "error occured in request proecessing")
+		result.Errors = append(result.Errors, "error occured in request processing")
 		return payload.Body, result, false
 	}
 
@@ -82,9 +64,32 @@ func (cj *CTVJSON) HandleEntrypointHook(
 			ep.Body = body
 		}
 		return ep, nil
-	}, hookstage.MutationUpdate, "ctv-json-entrypoint")
+	}, hookstage.MutationUpdate, "ctv-get-endpoint")
 
 	return body, result, true
+}
+
+func (cj *CTVJSON) HandleEntrypointHook(
+	rCtx *models.RequestCtx,
+	payload stage.EntrypointPayload,
+	moduleCtx stage.ModuleContext,
+	result stage.EntrypointResult,
+) (stage.EntrypointResult, bool) {
+	cj.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	if len(rCtx.ResponseFormat) > 0 {
+		if rCtx.ResponseFormat != models.ResponseFormatJSON && rCtx.ResponseFormat != models.ResponseFormatRedirect {
+			result.NbrCode = int(nbr.InvalidResponseFormat)
+			result.Errors = append(result.Errors, "Invalid response format, must be 'json' or 'redirect'")
+			return result, false
+		}
+	}
+
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	return result, true
 }
 
 func (cj *CTVJSON) HandleRawAuctionHook(

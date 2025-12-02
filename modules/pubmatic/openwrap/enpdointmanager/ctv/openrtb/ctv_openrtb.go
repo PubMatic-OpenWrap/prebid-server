@@ -30,23 +30,12 @@ func NewCTVOpenRTB(metricsEngine metrics.MetricsEngine) *CTVOpenRTB {
 	}
 }
 
-// EntrypointHook
-func (co *CTVOpenRTB) HandleEntrypointHook(
+func (co *CTVOpenRTB) HandleGETEndpoint(
 	rCtx *models.RequestCtx,
 	payload stage.EntrypointPayload,
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
 ) ([]byte, stage.EntrypointResult, bool) {
-	co.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
-	// SSAuction will be always 1 for CTV request
-	rCtx.SSAuction = 1
-	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
-
-	if payload.Request.Method != http.MethodGet {
-		return payload.Body, result, true
-	}
-
 	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
 	if err != nil {
 		nbr := openrtb3.NoBidInvalidRequest.Ptr()
@@ -61,7 +50,7 @@ func (co *CTVOpenRTB) HandleEntrypointHook(
 	body, err := json.Marshal(bidRequest)
 	if err != nil {
 		result.NbrCode = int(openrtb3.NoBidTechnicalError)
-		result.Errors = append(result.Errors, "error occured in request proecessing")
+		result.Errors = append(result.Errors, "error occured in request processing")
 		return payload.Body, result, false
 	}
 
@@ -70,9 +59,25 @@ func (co *CTVOpenRTB) HandleEntrypointHook(
 			ep.Body = body
 		}
 		return ep, nil
-	}, hookstage.MutationUpdate, "ctv-openrtb-entrypoint")
+	}, hookstage.MutationUpdate, "ctv-get-endpoint")
 
 	return body, result, true
+}
+
+// EntrypointHook
+func (co *CTVOpenRTB) HandleEntrypointHook(
+	rCtx *models.RequestCtx,
+	payload stage.EntrypointPayload,
+	moduleCtx stage.ModuleContext,
+	result stage.EntrypointResult,
+) (stage.EntrypointResult, bool) {
+	co.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	return result, true
 }
 
 // RawAuctionHook

@@ -32,22 +32,12 @@ func NewCTVVAST(metricsEngine metrics.MetricsEngine) *CTVVAST {
 	}
 }
 
-func (cv *CTVVAST) HandleEntrypointHook(
+func (cv *CTVVAST) HandleGETEndpoint(
 	rCtx *models.RequestCtx,
 	payload stage.EntrypointPayload,
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
 ) ([]byte, stage.EntrypointResult, bool) {
-	cv.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
-	// SSAuction will be always 1 for CTV request
-	rCtx.SSAuction = 1
-	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
-	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
-
-	if payload.Request.Method != http.MethodGet {
-		return payload.Body, result, true
-	}
-
 	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
 	if err != nil {
 		nbr := openrtb3.NoBidInvalidRequest.Ptr()
@@ -62,7 +52,7 @@ func (cv *CTVVAST) HandleEntrypointHook(
 	body, err := json.Marshal(bidRequest)
 	if err != nil {
 		result.NbrCode = int(openrtb3.NoBidTechnicalError)
-		result.Errors = append(result.Errors, "error occured in request proecessing")
+		result.Errors = append(result.Errors, "error occured in request processing")
 		return payload.Body, result, false
 	}
 
@@ -71,9 +61,24 @@ func (cv *CTVVAST) HandleEntrypointHook(
 			ep.Body = body
 		}
 		return ep, nil
-	}, hookstage.MutationUpdate, "ctv-vast-entrypoint")
+	}, hookstage.MutationUpdate, "ctv-get-endpoint")
 
 	return body, result, true
+}
+
+func (cv *CTVVAST) HandleEntrypointHook(
+	rCtx *models.RequestCtx,
+	payload stage.EntrypointPayload,
+	moduleCtx stage.ModuleContext,
+	result stage.EntrypointResult,
+) (stage.EntrypointResult, bool) {
+	cv.metricsEngine.RecordCTVHTTPMethodRequests(rCtx.Endpoint, rCtx.PubIDStr, rCtx.Method)
+	// SSAuction will be always 1 for CTV request
+	rCtx.SSAuction = 1
+	rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	return result, true
 }
 
 func (cv *CTVVAST) HandleRawAuctionHook(

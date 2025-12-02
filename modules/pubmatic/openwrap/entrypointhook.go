@@ -104,8 +104,8 @@ func (m OpenWrap) handleEntrypointHook(
 	// Preserve original request body for wakanda
 	originalRequestBody := payload.Body
 
-	// Execute endpoint specific entrypoint hook
-	body, result, ok = endpointHookManager.HandleEntrypointHook(&rCtx, payload, miCtx, result)
+	// Enrich request body for GET endpoints
+	body, result, ok = endpointHookManager.HandleGETEndpoint(&rCtx, payload, miCtx, result)
 	if !ok {
 		result.Reject = true
 		return result, nil
@@ -199,6 +199,13 @@ func (m OpenWrap) handleEntrypointHook(
 	rCtx.WakandaDebug.EnableIfRequired(pubIdStr, rCtx.ProfileIDStr)
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
+	}
+
+	// Execute endpoint specific entrypoint hook
+	result, ok = endpointHookManager.HandleEntrypointHook(&rCtx, payload, miCtx, result)
+	if !ok {
+		result.Reject = true
+		return result, nil
 	}
 
 	result.Reject = false
@@ -311,10 +318,6 @@ func processWrapperExtension(rCtx *models.RequestCtx, r *http.Request, body []by
 	rCtx.SSAI = requestExtWrapper.SSAI
 	rCtx.AdruleFlag = requestExtWrapper.Video.AdruleFlag
 	rCtx.ProfileIDStr = strconv.Itoa(requestExtWrapper.ProfileId)
-
-	if rCtx.IsCTVRequest {
-		rCtx.SSAuction = 1
-	}
 
 	return result, true
 }

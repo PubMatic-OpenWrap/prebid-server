@@ -13,7 +13,8 @@ import (
 )
 
 type EndpointHookManager interface {
-	HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) ([]byte, stage.EntrypointResult, bool)
+	HandleGETEndpoint(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) ([]byte, stage.EntrypointResult, bool)
+	HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) (stage.EntrypointResult, bool)
 	HandleRawAuctionHook(rCtx *models.RequestCtx, payload stage.RawAuctionPayload, moduleCtx stage.ModuleContext, result stage.RawAuctionResult) (stage.RawAuctionResult, bool)
 	HandleBeforeValidationHook(rCtx *models.RequestCtx, payload stage.BeforeValidationPayload, moduleCtx stage.ModuleContext, result stage.BeforeValidationResult) (stage.BeforeValidationResult, bool)
 	HandleProcessedAuctionHook(rCtx *models.RequestCtx, payload stage.ProcessedAuctionPayload, moduleCtx stage.ModuleContext, result stage.ProcessedAuctionResult) (stage.ProcessedAuctionResult, bool)
@@ -39,8 +40,12 @@ func NewEndpointManager(endpoint string, metricsEngine metrics.MetricsEngine, ca
 
 type NilEndpointManager struct{}
 
-func (n *NilEndpointManager) HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) ([]byte, stage.EntrypointResult, bool) {
+func (n *NilEndpointManager) HandleGETEndpoint(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) ([]byte, stage.EntrypointResult, bool) {
 	return payload.Body, result, true
+}
+
+func (n *NilEndpointManager) HandleEntrypointHook(rCtx *models.RequestCtx, payload stage.EntrypointPayload, moduleCtx stage.ModuleContext, result stage.EntrypointResult) (stage.EntrypointResult, bool) {
+	return result, true
 }
 
 func (n *NilEndpointManager) HandleRawAuctionHook(rCtx *models.RequestCtx, payload stage.RawAuctionPayload, moduleCtx stage.ModuleContext, result stage.RawAuctionResult) (stage.RawAuctionResult, bool) {
