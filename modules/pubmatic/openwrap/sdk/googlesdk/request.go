@@ -250,10 +250,11 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		// Always set secure to 1
 		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
-		gpid, err := jsonparser.GetString(request.Imp[0].Ext, "gpid")
+		impExt := request.Imp[0].Ext
+		gpid, err := jsonparser.GetString(impExt, "gpid")
 		if err != nil || gpid == "" {
 			// gpid not set, prefer imp.ext.dfp_ad_unit_code or imp.tagid
-			if dfpAdUnitCode, err := jsonparser.GetString(request.Imp[0].Ext, "dfp_ad_unit_code"); err == nil && dfpAdUnitCode != "" {
+			if dfpAdUnitCode, err := jsonparser.GetString(impExt, "dfp_ad_unit_code"); err == nil && dfpAdUnitCode != "" {
 				gpid = dfpAdUnitCode
 			} else if len(request.Imp[0].TagID) > 0 {
 				gpid = request.Imp[0].TagID
@@ -262,7 +263,7 @@ func modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 			if gpid != "" {
 				// Quote the string value
 				quotedGpID := []byte(`"` + string(gpid) + `"`)
-				request.Imp[0].Ext, err = jsonparser.Set(request.Imp[0].Ext, quotedGpID, "gpid")
+				request.Imp[0].Ext, err = jsonparser.Set(impExt, quotedGpID, "gpid")
 				if err != nil {
 					glog.Errorf("[GoogleSDK] [Error]: failed to set gpid %v", err)
 				}
