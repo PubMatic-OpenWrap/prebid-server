@@ -388,7 +388,6 @@ const (
 	Enabled          = "1"
 
 	// VAST Unwrap
-	RequestContext          = "rctx"
 	UnwrapCount             = "unwrap-count"
 	UnwrapStatus            = "unwrap-status"
 	Timeout                 = "Timeout"
@@ -414,6 +413,13 @@ const (
 
 	//constants for SDK features
 	CTAOVERLAY = "ctaoverlay"
+)
+
+// Hook Stage constants
+const (
+	RequestContext      = "rctx"
+	EndpointHookManager = "endpointhookmanager"
+	ExecuteStage        = "executestage"
 )
 
 const (

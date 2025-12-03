@@ -68,7 +68,7 @@ func addExtInfo(vastBytes []byte, responseExt json.RawMessage) []byte {
 		return vastBytes
 	}
 
-	owExtBytes := append([]byte("<Ext>"), append(responseExt, []byte("</Ext>")...)...)
+	owExtBytes := []byte("<Ext><![CDATA[" + string(responseExt) + "]]></Ext>")
 
 	owExt := vast.Extension{
 		Type: "OpenWrap",

@@ -36,6 +36,13 @@ func (co *CTVOpenRTB) HandleGETEndpoint(
 	moduleCtx stage.ModuleContext,
 	result stage.EntrypointResult,
 ) ([]byte, stage.EntrypointResult, bool) {
+	// Set IsCTVRequest flag
+	rCtx.IsCTVRequest = models.IsCTVAPIRequest(payload.Request.URL.Path)
+
+	if payload.Request.Method != http.MethodGet {
+		return payload.Body, result, true
+	}
+
 	bidRequest, err := ctv.NewOpenRTB(payload.Request).ParseORTBRequest(ctv.GetORTBParserMap())
 	if err != nil {
 		nbr := openrtb3.NoBidInvalidRequest.Ptr()

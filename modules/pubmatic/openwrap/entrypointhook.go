@@ -52,6 +52,12 @@ func (m OpenWrap) handleEntrypointHook(
 	)
 
 	defer func() {
+		if result.ModuleContext == nil {
+			result.ModuleContext = hookstage.NewModuleContext()
+		}
+		result.ModuleContext.Set(models.RequestContext, rCtx)
+		result.ModuleContext.Set(models.EndpointHookManager, endpointHookManager)
+
 		if result.Reject {
 			if rCtx.PubIDStr == "" {
 				rCtx.PubIDStr = "0"
@@ -61,14 +67,7 @@ func (m OpenWrap) handleEntrypointHook(
 				glog.Infof("[bad_request] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] query_params:[%s] body:[%s]",
 					rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, result.NbrCode, payload.Request.URL.Query().Encode(), string(body))
 			}
-			return
 		}
-
-		if result.ModuleContext == nil {
-			result.ModuleContext = hookstage.NewModuleContext()
-		}
-		result.ModuleContext.Set("rctx", rCtx)
-		result.ModuleContext.Set("endpointhookmanager", endpointHookManager)
 	}()
 
 	// Intialise configs

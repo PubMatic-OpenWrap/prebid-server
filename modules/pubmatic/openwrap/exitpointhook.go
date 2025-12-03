@@ -24,21 +24,19 @@ func (m OpenWrap) handleExitpointHook(
 		miCtx.ModuleContext.Set("rctx", rCtx)
 	}()
 
-	// result, ok = validateExitpointPayload(&rCtx, result, payload)
-	// if !ok {
-	// 	return result, nil
-	// }
-
 	result, ok = endpointManager.HandleExitpointHook(&rCtx, payload, miCtx, result)
 	if !ok {
 		return result, nil
 	}
 
-	ortbResponse, ok := payload.Response.(*openrtb2.BidResponse)
-	if ok {
-		resetBidIdtoOriginal(ortbResponse)
-		payload.Response = ortbResponse
-	}
+	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
+		ortbResponse, ok := ep.Response.(*openrtb2.BidResponse)
+		if ok {
+			resetBidIdtoOriginal(ortbResponse)
+			ep.Response = ortbResponse
+		}
+		return ep, nil
+	}, hookstage.MutationUpdate, "reset-bid-id-to-original")
 
 	return result, nil
 }
@@ -47,9 +45,7 @@ func (m OpenWrap) handleExitpointHook(
 func validateModuleContextExitpointHook(
 	moduleCtx hookstage.ModuleInvocationContext,
 ) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
-	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{
-		ModuleContext: hookstage.NewModuleContext(),
-	}
+	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{}
 
 	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleExitpointHook()")
@@ -79,22 +75,4 @@ func validateModuleContextExitpointHook(
 	}
 
 	return rCtx, endpointHookManager, result, true
-}
-
-func validateExitpointPayload(rCtx *models.RequestCtx, result hookstage.HookResult[hookstage.ExitpointPaylaod], payload hookstage.ExitpointPaylaod) (hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
-	response, ok := payload.Response.(*openrtb2.BidResponse)
-	if !ok {
-		result.Errors = append(result.Errors, "invalid response format while processing exitpoint hook")
-		return result, false
-	}
-
-	if response.NBR != nil {
-		return result, false
-	}
-
-	if len(response.SeatBid) == 0 {
-		return result, false
-	}
-
-	return result, true
 }
