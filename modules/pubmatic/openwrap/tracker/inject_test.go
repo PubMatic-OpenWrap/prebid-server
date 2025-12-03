@@ -1162,8 +1162,8 @@ func Test_getUniversalPixels(t *testing.T) {
 
 func Test_getBurlAppLovinMax(t *testing.T) {
 	type args struct {
-		burl       string
-		TrackerURL string
+		burl    string
+		tracker models.OWTracker
 	}
 	tests := []struct {
 		name string
@@ -1173,31 +1173,39 @@ func Test_getBurlAppLovinMax(t *testing.T) {
 		{
 			name: "empty_burl",
 			args: args{
-				burl:       "",
-				TrackerURL: `sample.com`,
+				burl:    "",
+				tracker: models.OWTracker{TrackerURL: `sample.com`},
 			},
 			want: `sample.com`,
 		},
 		{
 			name: "empty_tracker_url",
 			args: args{
-				burl:       `sample.com`,
-				TrackerURL: "",
+				burl:    `sample.com`,
+				tracker: models.OWTracker{TrackerURL: ""},
 			},
 			want: `sample.com`,
 		},
 		{
 			name: "valid_burl_and_tracker_url",
 			args: args{
-				burl:       `https://abc.xyz.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId=161527&siteId=991727&adId=4695996&imprId=B430AE6F-4768-41D0-BC55-8CF9D5DD4DA6&cksum=41C0F6460C2ACF7F&adType=10&adServerId=243&kefact=0.095500&kaxefact=0.095500&kadNetFrequecy=0&kadwidth=300&kadheight=250&kadsizeid=9&kltstamp=1721827593&indirectAdId=0`,
-				TrackerURL: `sampleTracker.com?id=123`,
+				burl:    `https://abc.xyz.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId=161527&siteId=991727&adId=4695996&imprId=B430AE6F-4768-41D0-BC55-8CF9D5DD4DA6&cksum=41C0F6460C2ACF7F&adType=10&adServerId=243&kefact=0.095500&kaxefact=0.095500&kadNetFrequecy=0&kadwidth=300&kadheight=250&kadsizeid=9&kltstamp=1721827593&indirectAdId=0`,
+				tracker: models.OWTracker{TrackerURL: `sampleTracker.com?id=123`},
 			},
 			want: `sampleTracker.com?id=123&owsspburl=https%3A%2F%2Fabc.xyz.com%2FAdServer%2FAdDisplayTrackerServlet%3FoperId%3D1%26pubId%3D161527%26siteId%3D991727%26adId%3D4695996%26imprId%3DB430AE6F-4768-41D0-BC55-8CF9D5DD4DA6%26cksum%3D41C0F6460C2ACF7F%26adType%3D10%26adServerId%3D243%26kefact%3D0.095500%26kaxefact%3D0.095500%26kadNetFrequecy%3D0%26kadwidth%3D300%26kadheight%3D250%26kadsizeid%3D9%26kltstamp%3D1721827593%26indirectAdId%3D0`,
+		},
+		{
+			name: "send_tracker_url_if_om_enabled",
+			args: args{
+				burl:    `https://abc.xyz.com/AdServer/AdDisplayTrackerServlet?operId=1&pubId=161527&siteId=991727&adId=4695996&imprId=B430AE6F-4768-41D0-BC55-8CF9D5DD4DA6&cksum=41C0F6460C2ACF7F&adType=10&adServerId=243&kefact=0.095500&kaxefact=0.095500&kadNetFrequecy=0&kadwidth=300&kadheight=250&kadsizeid=9&kltstamp=1721827593&indirectAdId=0`,
+				tracker: models.OWTracker{TrackerURL: `sampleTracker.com?id=123`, IsOMEnabled: true, BidType: models.Banner, Tracker: models.Tracker{PartnerInfo: models.Partner{PartnerID: models.BidderPubMatic}}},
+			},
+			want: `sampleTracker.com?id=123`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getBURL(tt.args.burl, tt.args.TrackerURL)
+			got := getBURL(tt.args.burl, tt.args.tracker)
 			assert.Equal(t, got, tt.want)
 		})
 	}

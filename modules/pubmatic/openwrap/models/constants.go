@@ -573,6 +573,8 @@ const (
 	GDPRCountryCodesQuery            = "GetGDPRCountryCodes"
 	ProfileAdUnitMultiFloorsQuery    = "GetProfileAdUnitMultiFloors"
 	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
+	PerformanceDSPsQuery             = "GetPerformanceDSPs"
+	InViewEnabledPublishersQuery     = "GetInViewEnabledPublishers"
 )
 
 // constants for owlogger Integration Type

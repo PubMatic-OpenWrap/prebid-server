@@ -151,6 +151,7 @@ type PartnerRecord struct {
 	PriceBucket            string                `json:"pb,omitempty"`
 	MultiBidMultiFloorFlag int                   `json:"mbmf,omitempty"`
 	Bundle                 string                `json:"bndl,omitempty"`
+	InViewCountingFlag     int                   `json:"ctm,omitempty"`
 }
 
 type MetaData struct {

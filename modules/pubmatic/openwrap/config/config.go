@@ -83,6 +83,8 @@ type Queries struct {
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 	GetCountryPartnerFilteringData    string
+	GetPerformanceDSPQuery            string
+	GetInViewEnabledPublishersQuery   string
 }
 
 type Cache struct {
@@ -95,9 +97,10 @@ type Cache struct {
 }
 
 type Timeout struct {
-	MaxTimeout int64
-	MinTimeout int64
-	HBTimeout  int64
+	MaxTimeout  int64
+	MinTimeout  int64
+	HBTimeout   int64
+	PrebidDelta int64
 }
 
 type Tracker struct {

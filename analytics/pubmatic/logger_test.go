@@ -793,6 +793,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 				rCtx: &models.RequestCtx{
 					Trackers: map[string]models.OWTracker{
 						"bid-id-1": {
+							IsOMEnabled: true,
 							Tracker: models.Tracker{
 								PartnerInfo: models.Partner{
 									Adformat:               models.Native,
@@ -847,6 +848,7 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 						KGPSV:                  "kgpsv",
 						PriceBucket:            "10.00",
 						MultiBidMultiFloorFlag: 1,
+						InViewCountingFlag:     1,
 					},
 				},
 			},

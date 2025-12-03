@@ -317,6 +317,16 @@ func TestRecordPublisherResponseTimeStats(t *testing.T) {
 	assertHistogram(t, "pub_response_time", resultingHistogram, 1, 3)
 }
 
+func TestRecordPreProcessingTimeStats(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordPreProcessingTimeStats("5890", 2500)
+	resultingHistogram := getHistogramFromHistogramVec(m.pubPreProcessingTime,
+		pubIDLabel, "5890")
+
+	assertHistogram(t, "pub_pre_processing_time", resultingHistogram, 1, 2.5)
+}
+
 func TestRecordGetProfileDataTime(t *testing.T) {
 	m := createMetricsForTesting()
 
