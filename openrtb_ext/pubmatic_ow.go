@@ -18,6 +18,7 @@ type GoogleSDKParams struct {
 	IsAppOpenAd                 int8                         `json:"is_app_open_ad,omitempty"`
 	AllowedRestrictedCategory   []int                        `json:"allowed_restricted_category,omitempty"`
 	CreativeEnforcementSettings *CreativeEnforcementSettings `json:"creative_enforcement_settings,omitempty"`
+	DFPAdUnitCode               string                       `json:"dfp_ad_unit_code,omitempty"`
 }
 
 type FlexSlot struct {
