@@ -10,7 +10,7 @@ func GetRequestContext(invocationContext hookstage.ModuleInvocationContext) (mod
 		return models.RequestCtx{}, false
 	}
 
-	requestContext, ok := invocationContext.ModuleContext.Get("rctx")
+	requestContext, ok := invocationContext.ModuleContext.Get(models.RequestContext)
 	if !ok {
 		return models.RequestCtx{}, false
 	}

@@ -215,26 +215,26 @@ func validateModuleContextAuctionResponseHook(
 		return models.RequestCtx{}, nil, result, false
 	}
 
-	rContext, ok := moduleCtx.ModuleContext.Get("rctx")
+	rContext, ok := moduleCtx.ModuleContext.Get(models.RequestContext)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in auctionresponsehook()")
-		return models.RequestCtx{}, nil, result, false
+		return models.RequestCtx{}, &endpointmanager.NilEndpointManager{}, result, false
 	}
 	rCtx, ok := rContext.(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in auctionresponsehook()")
-		return models.RequestCtx{}, nil, result, false
+		return models.RequestCtx{}, &endpointmanager.NilEndpointManager{}, result, false
 	}
 
-	hookManager, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	hookManager, ok := moduleCtx.ModuleContext.Get(models.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in auctionresponsehook()")
-		return rCtx, nil, result, false
+		return rCtx, &endpointmanager.NilEndpointManager{}, result, false
 	}
 	endpointHookManager, ok := hookManager.(endpointmanager.EndpointHookManager)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in auctionresponsehook()")
-		return rCtx, nil, result, false
+		return rCtx, &endpointmanager.NilEndpointManager{}, result, false
 	}
 
 	return rCtx, endpointHookManager, result, true
