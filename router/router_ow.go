@@ -41,8 +41,8 @@ func (r *Router) registerOpenWrapEndpoints(openrtbEndpoint, ampEndpoint httprout
 
 	// CTV/OTT
 	//GET
-	r.GET(OpenWrapAdpodOrtb, adpod.OpenrtbEndpoint)
-	r.GET(OpenWrapAdpodVast, adpod.VastEndpoint)
+	r.GET(OpenWrapAdpodOrtb, openrtbEndpoint)
+	r.GET(OpenWrapAdpodVast, openrtbEndpoint)
 	r.GET(OpenWrapAdpodJson, adpod.JsonEndpoint)
 
 	// POST
