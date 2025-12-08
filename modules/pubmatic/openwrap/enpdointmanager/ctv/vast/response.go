@@ -29,7 +29,7 @@ var (
 
 func formVastResponse(rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]byte, *openrtb3.NoBidReason) {
 	if bidResponse == nil || bidResponse.SeatBid == nil {
-		return EmptyVASTResponse, nil
+		return EmptyVASTResponse, openrtb3.NoBidUnknownError.Ptr()
 	}
 
 	builder := vastbuilder.GetVastBuilder()

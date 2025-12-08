@@ -159,7 +159,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 					isRewardInventory = int(*impCtx.IsRewardInventory)
 				}
 
-				if impCtx.AdpodConfig != nil {
+				if rctx.AdpodCtx.IsAdpodSlot(bid.ImpID) {
 					tracker.AdPodSlot = models.AdPodEnabled
 				}
 				tracker.DisplayManager = impCtx.DisplayManager
