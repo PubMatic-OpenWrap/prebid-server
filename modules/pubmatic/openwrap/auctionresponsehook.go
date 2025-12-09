@@ -176,9 +176,6 @@ func (m OpenWrap) handleAuctionResponseHook(
 		if err != nil {
 			return ap, err
 		}
-		if rctx.NewReqExt != nil && rctx.NewReqExt.Prebid.GoogleSSUFeatureEnabled && rctx.Endpoint == models.EndpointVAST {
-			feature.EnrichVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
-		}
 
 		var responseExtjson json.RawMessage
 		responseExtjson, err = json.Marshal(responseExt)

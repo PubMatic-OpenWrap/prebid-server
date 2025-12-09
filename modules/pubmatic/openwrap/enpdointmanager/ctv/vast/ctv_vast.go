@@ -15,9 +15,11 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/auction"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	ctvutils "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager/ctv/utils"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
 	metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/stage"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 )
@@ -277,6 +279,20 @@ func (cv *CTVVAST) HandleAuctionResponseHook(
 	if len(rCtx.AdpodCtx) > 0 {
 		auction.AdpodAuction(rCtx, payload.BidResponse, result)
 	}
+
+	result.ChangeSet.AddMutation(func(ap stage.AuctionResponsePayload) (stage.AuctionResponsePayload, error) {
+		rCtx, ok := utils.GetRequestContext(moduleCtx)
+		if !ok {
+			result.Errors = append(result.Errors, "failed to get request context in CTV handleAuctionResponseHook mutation")
+			return ap, nil
+		}
+
+		if rCtx.NewReqExt != nil && rCtx.NewReqExt.Prebid.GoogleSSUFeatureEnabled {
+			feature.EnrichVASTForSSUFeature(ap.BidResponse, parser.GetTrackerInjector())
+		}
+
+		return ap, nil
+	}, hookstage.MutationUpdate, "ctv-vast-auction-response")
 
 	return result, true
 }
