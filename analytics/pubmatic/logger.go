@@ -528,7 +528,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			if ao.Account == nil {
 				ao.Account = &config.Account{}
 			}
-			ao.Account.BidRounding = config.DefaultBidRoundingMode
+
+			if ao.Account.BidRounding == "" {
+				ao.Account.BidRounding = config.DefaultBidRoundingMode
+			}
 
 			if !models.IsDefaultBid(bid.Bid) && pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
 				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity, *ao.Account)

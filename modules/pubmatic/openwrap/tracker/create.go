@@ -19,12 +19,12 @@ type pubmaticMarketplaceMeta struct {
 	PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
 }
 
-func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
+func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, globalAccountConfig *config.Account) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
-	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt)
+	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt, globalAccountConfig)
 
 	// overwrite marketplace bid details with that of parent bidder
 	for bidID, tracker := range trackers {
@@ -51,7 +51,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 	return trackers
 }
 
-func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
+func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta, globalAccountConfig *config.Account) map[string]models.OWTracker {
 	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
 	customDimensions := customdimensions.ConvertCustomDimensionsToString(rctx.CustomDimensions)
 	for _, seatBid := range bidResponse.SeatBid {
@@ -202,7 +202,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				InViewCountingFlag:     utils.ConvertBoolToInt(inViewCountingFlag),
 			}
 			if rctx.PriceGranularity != nil {
-				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity, config.Account{BidRounding: config.DefaultBidRoundingMode})
+				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity, *globalAccountConfig)
 			}
 			if len(bidId) > 0 {
 				tracker.PartnerInfo.BidID = bidId
