@@ -526,10 +526,10 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
 			if ao.Account == nil {
-				ao.Account = &config.Account{}
-			}
-
-			if ao.Account.BidRounding == "" {
+				ao.Account = &config.Account{
+					BidRounding: config.DefaultBidRoundingMode,
+				}
+			} else if ao.Account.BidRounding == "" {
 				ao.Account.BidRounding = config.DefaultBidRoundingMode
 			}
 
