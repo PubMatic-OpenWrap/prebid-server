@@ -50,6 +50,8 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderAdtelligent)
 	case models.BidderAppStockAlias, models.BidderAdsYieldAlias, models.BidderIionadsAlias:
 		coreBidderName = string(openrtb_ext.BidderLimelightDigital)
+	case models.BidderRobustAppsAlias:
+		coreBidderName = string(openrtb_ext.BidderXeworks)
 	}
 	return coreBidderName
 }
