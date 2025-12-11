@@ -94,6 +94,23 @@ func (values *URLValues) GetBoolean(key string) (bool, bool, error) {
 	}
 }
 
+// GetBoolToInt extracts and parses a boolean value associated with the given key
+func (values *URLValues) GetBoolToInt(key string) (int, bool, error) {
+	v := values.Get(key)
+	if len(v) == 0 {
+		return 0, false, nil
+	}
+
+	switch strings.ToLower(v) {
+	case "true":
+		return 1, true, nil
+	case "false":
+		return 0, true, nil
+	default:
+		return 0, false, fmt.Errorf(parsingErrorFormat, key, fmt.Sprintf(` '%s' is not a bool`, v))
+	}
+}
+
 // GetFloat32 Read Key from Request and Parse to Float Type
 func (values *URLValues) GetFloat32(key string) (float32, bool, error) {
 	v := values.Get(key)

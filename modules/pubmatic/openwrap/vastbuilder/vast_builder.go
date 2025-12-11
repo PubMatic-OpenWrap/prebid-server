@@ -16,7 +16,7 @@ import (
 const (
 	//VAST Constants
 	VASTDefaultVersion    = 2.0
-	VASTMaxVersion        = 4.0
+	VASTMaxVersion        = 4.1
 	VASTDefaultVersionStr = `2.0`
 	VASTDefaultTag        = `<VAST version="` + VASTDefaultVersionStr + `"/>`
 	VASTElement           = `VAST`
@@ -26,10 +26,6 @@ const (
 	VASTVersionAttribute  = `version`
 	VASTSequenceAttribute = `sequence`
 	HTTPPrefix            = `http`
-)
-
-var (
-	VASTVersionsStr = []string{"0", "1.0", "2.0", "3.0", "4.0"}
 )
 
 type VastBuilder interface {
@@ -102,10 +98,10 @@ func (ab *vastBuilderETree) Append(bid *openrtb2.Bid) error {
 }
 
 func (ab *vastBuilderETree) Build() (string, error) {
-	if int(ab.version) > len(VASTVersionsStr) {
+	if ab.version > VASTMaxVersion {
 		ab.version = VASTMaxVersion
 	}
-	ab.vast.CreateAttr(VASTVersionAttribute, VASTVersionsStr[int(ab.version)])
+	ab.vast.CreateAttr(VASTVersionAttribute, strconv.FormatFloat(ab.version, 'f', 1, 64))
 
 	doc := etree.NewDocument()
 	doc.AddChild(ab.vast)
@@ -178,10 +174,10 @@ func (ab *vastBuilderFastXML) Append(bid *openrtb2.Bid) error {
 }
 
 func (ab *vastBuilderFastXML) Build() (string, error) {
-	if int(ab.version) > len(VASTVersionsStr) {
+	if ab.version > VASTMaxVersion {
 		ab.version = VASTMaxVersion
 	}
-	ab.vast.AddAttribute("", VASTVersionAttribute, VASTVersionsStr[int(ab.version)])
+	ab.vast.AddAttribute("", VASTVersionAttribute, strconv.FormatFloat(ab.version, 'f', 1, 64))
 
 	// buf := &bytes.Buffer{}
 	// ab.vast.Write(buf, nil)
