@@ -38,23 +38,34 @@ func formVastResponse(rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse
 		return EmptyVASTResponse, openrtb3.NoBidUnknownError.Ptr()
 	}
 
-	isNobid := true
-	builder := vastbuilder.GetVastBuilder()
+	validBids := make([]*openrtb2.Bid, 0)
 	for _, seatBid := range bidResponse.SeatBid {
 		for _, bid := range seatBid.Bid {
-			if bid.Price <= 0 {
+			if bid.Price <= 0 || len(bid.AdM) == 0 {
 				continue
 			}
-			isNobid = false
-			if err := builder.Append(&bid); err != nil {
-				nbr := exchange.ResponseRejectedGeneral
-				return EmptyVASTResponse, &nbr
-			}
+			validBids = append(validBids, &bid)
 		}
 	}
 
-	if isNobid {
+	if len(validBids) == 0 {
 		return EmptyVASTResponse, openrtb3.NoBidUnknownError.Ptr()
+	}
+
+	if len(rCtx.AdpodCtx) == 0 {
+		vastBytes := []byte(validBids[0].AdM)
+		if rCtx.Debug {
+			vastBytes = addExtInfo(vastBytes, bidResponse.Ext)
+		}
+		return vastBytes, nil
+	}
+
+	builder := vastbuilder.GetVastBuilder()
+	for _, bid := range validBids {
+		if err := builder.Append(bid); err != nil {
+			nbr := exchange.ResponseRejectedGeneral
+			return EmptyVASTResponse, &nbr
+		}
 	}
 
 	creative, err := builder.Build()
