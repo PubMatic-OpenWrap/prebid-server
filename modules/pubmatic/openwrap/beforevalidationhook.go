@@ -15,6 +15,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -1595,6 +1596,42 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	if adUnitCfg.Native.Enabled != nil && !*adUnitCfg.Native.Enabled {
 		imp.Native = nil
 		return
+	}
+	applyNativeVideoDurationFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native)
+}
+
+// applyNativeVideoDurationFromAdUnitConfig updates native video asset durations from adunit config, if configured
+func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native) {
+	if impNative.Request == "" || nativeCfg == nil || !nativeCfg.Video.Enabled {
+		return
+	}
+
+	var nReq nativeRequests.Request
+	if err := json.Unmarshal([]byte(impNative.Request), &nReq); err != nil {
+		return
+	}
+
+	videoCfg := nativeCfg.Video.Config
+	updated := false
+	for i := range nReq.Assets {
+		asset := &nReq.Assets[i]
+		if asset.Video == nil {
+			continue
+		}
+		if videoCfg.MinDuration != nil {
+			asset.Video.MinDuration = *videoCfg.MinDuration
+			updated = true
+		}
+		if videoCfg.MaxDuration != nil {
+			asset.Video.MaxDuration = *videoCfg.MaxDuration
+			updated = true
+		}
+	}
+	if !updated {
+		return
+	}
+	if nReqBytes, err := json.Marshal(&nReq); err == nil {
+		impNative.Request = string(nReqBytes)
 	}
 }
 

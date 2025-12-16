@@ -49,7 +49,18 @@ type Native struct {
 
 type NativeConfig struct {
 	openrtb2.Native
+	Video        NativeVideo     `json:"video,omitempty"`
 	ClientConfig json.RawMessage `json:"clientconfig,omitempty"`
+}
+
+type NativeVideo struct {
+	Enabled bool              `json:"enabled,omitempty"`
+	Config  NativeVideoConfig `json:"config,omitempty"`
+}
+
+type NativeVideoConfig struct {
+	MinDuration *int64 `json:"minduration,omitempty"`
+	MaxDuration *int64 `json:"maxduration,omitempty"`
 }
 
 type Video struct {
