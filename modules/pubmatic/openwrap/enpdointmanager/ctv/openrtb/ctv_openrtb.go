@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
 	impressions "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/legacy/impressions"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/auction"
@@ -188,6 +189,9 @@ func (co *CTVOpenRTB) HandleProcessedAuctionHook(
 		if len(imps) > 0 {
 			parp.Request.SetImp(imps)
 		}
+
+		// filter vast tag durations
+		adapters.FilterImpsVastTagsByDuration(rCtx, parp.Request)
 
 		return parp, nil
 	}, hookstage.MutationUpdate, "update-ctv-impressions")
