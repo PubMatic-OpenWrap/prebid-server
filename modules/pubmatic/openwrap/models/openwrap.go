@@ -187,6 +187,7 @@ type DeviceCtx struct {
 	DerivedCountryCode string
 	ConnectionType     *adcom1.ConnectionType
 	Language           string
+	OS                 string
 }
 
 type ImpCtx struct {
