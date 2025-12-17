@@ -179,6 +179,10 @@ func (me *MetricsEngineMock) RecordStoredResponse(pubId string) {
 	me.Called(pubId)
 }
 
+func (me *MetricsEngineMock) RecordGvlListRequest() {
+	me.Called()
+}
+
 func (me *MetricsEngineMock) RecordRejectedBidsForAccount(pubId string) {
 	me.Called(pubId)
 }
@@ -239,6 +243,17 @@ func (me *MetricsEngineMock) RecordModuleTimeout(labels ModuleLabels) {
 	me.Called(labels)
 }
 
+func (me *MetricsEngineMock) RecordAdapterThrottled(adapterName openrtb_ext.BidderName) {
+	me.Called(adapterName)
+}
+
+func (me *MetricsEngineMock) RecordAdapterConnectionDialError(adapterName openrtb_ext.BidderName) {
+	me.Called()
+}
+
+func (me *MetricsEngineMock) RecordAdapterConnectionDialTime(adapterName openrtb_ext.BidderName, dialStartTime time.Duration) {
+	me.Called(adapterName, dialStartTime)
+}
 func (me *MetricsEngineMock) RecordRejectedBids(pubid, bidder, code string) {
 	me.Called(pubid, bidder, code)
 }

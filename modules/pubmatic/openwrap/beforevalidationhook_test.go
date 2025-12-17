@@ -3445,7 +3445,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -3801,7 +3801,7 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -8241,7 +8241,7 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := OpenWrap{
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 				cache:         mockCache,
 				metricEngine:  mockEngine,
 			}

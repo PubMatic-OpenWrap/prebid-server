@@ -8,14 +8,16 @@ import (
 	"time"
 
 	"github.com/prebid/go-gdpr/api"
+	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetVendorListScheduler(t *testing.T) {
 	type args struct {
-		interval   string
-		timeout    string
-		httpClient *http.Client
+		interval      string
+		timeout       string
+		httpClient    *http.Client
+		metricsEngine metrics.MetricsEngine
 	}
 	tests := []struct {
 		name    string
@@ -26,21 +28,23 @@ func TestGetVendorListScheduler(t *testing.T) {
 		{
 			name: "Test singleton",
 			args: args{
-				interval:   "1m",
-				timeout:    "1s",
-				httpClient: http.DefaultClient,
+				interval:      "1m",
+				timeout:       "1s",
+				httpClient:    http.DefaultClient,
+				metricsEngine: &metrics.MetricsEngineMock{},
 			},
-			want:    GetExpectedVendorListScheduler("1m", "1s", http.DefaultClient),
+			want:    GetExpectedVendorListScheduler("1m", "1s", http.DefaultClient, &metrics.MetricsEngineMock{}),
 			wantErr: false,
 		},
 		{
 			name: "Test singleton again",
 			args: args{
-				interval:   "2m",
-				timeout:    "2s",
-				httpClient: http.DefaultClient,
+				interval:      "2m",
+				timeout:       "2s",
+				httpClient:    http.DefaultClient,
+				metricsEngine: &metrics.MetricsEngineMock{},
 			},
-			want:    GetExpectedVendorListScheduler("2m", "2s", http.DefaultClient),
+			want:    GetExpectedVendorListScheduler("2m", "2s", http.DefaultClient, &metrics.MetricsEngineMock{}),
 			wantErr: false,
 		},
 	}
@@ -50,8 +54,8 @@ func TestGetVendorListScheduler(t *testing.T) {
 			if tt.want == nil {
 				//_instance = nil
 			}
-
-			got, err := GetVendorListScheduler(tt.args.interval, tt.args.timeout, tt.args.httpClient)
+			m := &metrics.MetricsEngineMock{}
+			got, err := GetVendorListScheduler(tt.args.interval, tt.args.timeout, tt.args.httpClient, m)
 			if got != tt.want {
 				t.Errorf("GetVendorListScheduler() got = %v, want %v", got, tt.want)
 			}
@@ -63,8 +67,8 @@ func TestGetVendorListScheduler(t *testing.T) {
 	}
 }
 
-func GetExpectedVendorListScheduler(interval string, timeout string, httpClient *http.Client) *vendorListScheduler {
-	s, _ := GetVendorListScheduler(interval, timeout, httpClient)
+func GetExpectedVendorListScheduler(interval string, timeout string, httpClient *http.Client, metricsEngine metrics.MetricsEngine) *vendorListScheduler {
+	s, _ := GetVendorListScheduler(interval, timeout, httpClient, metricsEngine)
 	return s
 }
 
@@ -82,7 +86,8 @@ func Test_vendorListScheduler_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.NotNil(t, scheduler, "scheduler instance should not be nil")
 
@@ -113,7 +118,8 @@ func Test_vendorListScheduler_Stop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			scheduler, err := GetVendorListScheduler("1m", "30s", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.NotNil(t, scheduler, "scheduler instance should not be nil")
 
@@ -141,13 +147,17 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var err error
-			tt.fields.scheduler, err = GetVendorListScheduler("5m", "5m", http.DefaultClient)
+			m := &metrics.MetricsEngineMock{}
+			tt.fields.scheduler, err = GetVendorListScheduler("5m", "5m", http.DefaultClient, m)
 			assert.Nil(t, err, "error should be nil")
 			assert.False(t, tt.fields.scheduler.isStarted, "VendorListScheduler should not be already running")
 
 			tt.fields.scheduler.timeout = 2 * time.Minute
 			mockCacheSave := func(uint16, uint16, api.VendorList) {}
 			cacheSave, cacheLoad = newVendorListCache() // initialise global func variables
+			metricsEngine := &metrics.MetricsEngineMock{}
+			metricsEngine.On("RecordGvlListRequest").Return()
+			tt.fields.scheduler.metricsEngine = metricsEngine
 
 			tt.fields.scheduler.runLoadCache()
 
@@ -166,7 +176,7 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 			}
 			for _, v := range versions {
 				// saveOne uses mockCacheSave hence it will not save data into actual-cache
-				latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(v.specVersion, 0), mockCacheSave)
+				latestVersion := saveOne(context.Background(), http.DefaultClient, VendorListURLMaker(v.specVersion, 0), mockCacheSave, tt.fields.scheduler.metricsEngine)
 				assert.NotEqual(t, latestVersion, 0, "saveOne function returned 0 for version-[%+v]", v)
 				for i := latestVersion; i >= v.firstListVersion; i-- {
 					// Check if version is present in the cache
@@ -179,7 +189,8 @@ func Test_vendorListScheduler_runLoadCache(t *testing.T) {
 }
 
 func Benchmark_vendorListScheduler_runLoadCache(b *testing.B) {
-	scheduler, err := GetVendorListScheduler("1m", "30m", http.DefaultClient)
+	m := &metrics.MetricsEngineMock{}
+	scheduler, err := GetVendorListScheduler("1m", "30m", http.DefaultClient, m)
 	assert.Nil(b, err, "")
 	assert.NotNil(b, scheduler, "")
 
@@ -204,8 +215,10 @@ func Test_vendorListScheduler_cacheFuncs(t *testing.T) {
 	})))
 	defer server.Close()
 	config := testConfig()
-
-	_ = NewVendorListFetcher(context.Background(), config, server.Client(), testURLMaker(server))
+	cacheSave, cacheLoad = newVendorListCache()
+	metricsEngine := &metrics.MetricsEngineMock{}
+	metricsEngine.On("RecordGvlListRequest").Return()
+	_ = NewVendorListFetcher(context.Background(), config, server.Client(), metricsEngine, testURLMaker(server))
 
 	assert.NotNil(t, cacheSave, "Error gdpr.cacheSave nil")
 	assert.NotNil(t, cacheLoad, "Error gdpr.cacheLoad nil")
