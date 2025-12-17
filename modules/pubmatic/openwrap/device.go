@@ -3,6 +3,7 @@ package openwrap
 import (
 	"strings"
 
+	"github.com/mileusna/useragent"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -111,4 +112,18 @@ func amendDeviceObject(device *openrtb2.Device, dvc *models.DeviceCtx) {
 	if dvc.Ext != nil {
 		device.Ext, _ = dvc.Ext.MarshalJSON()
 	}
+}
+
+// GetDeviceOS : return os is if present else parse and return from user-agent
+func getDeviceOS(bidRequest *openrtb2.BidRequest, ua string) string {
+	var os string
+	if bidRequest != nil && bidRequest.Device != nil {
+		os = bidRequest.Device.OS
+	}
+	if os == "" && ua != "" {
+		if os := useragent.Parse(ua); os.OS != "" {
+			return os.OS
+		}
+	}
+	return os
 }

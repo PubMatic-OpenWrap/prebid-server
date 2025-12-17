@@ -292,9 +292,8 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	adunitconfig.ReplaceAppObjectFromAdUnitConfig(rctx, bidRequest.App)
 	adunitconfig.ReplaceDeviceTypeFromAdUnitConfig(rctx, &bidRequest.Device)
-	bidRequest.Device.IP = rctx.DeviceCtx.IP
-	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
-	amendDeviceObject(bidRequest.Device, &rctx.DeviceCtx)
+
+	upadateDeviceDetails(&rctx, bidRequest)
 
 	if bidRequest.User == nil {
 		bidRequest.User = &openrtb2.User{}
@@ -321,6 +320,13 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Ext = requestExtjson
 	}
 	return bidRequest, err
+}
+
+func upadateDeviceDetails(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) {
+	bidRequest.Device.IP = rCtx.DeviceCtx.IP
+	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
+	bidRequest.Device.OS = rCtx.DeviceCtx.OS
+	amendDeviceObject(bidRequest.Device, &rCtx.DeviceCtx)
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
@@ -1027,6 +1033,7 @@ func (m OpenWrap) populateRequestContext(rCtx *models.RequestCtx, bidRequest *op
 	rCtx.DeviceCtx.Country = getCountry(bidRequest)
 	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(*rCtx, bidRequest)
+	rCtx.DeviceCtx.OS = getDeviceOS(bidRequest, rCtx.DeviceCtx.UA)
 	populateDeviceContext(&rCtx.DeviceCtx, bidRequest.Device)
 
 	// Features
