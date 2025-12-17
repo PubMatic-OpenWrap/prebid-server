@@ -102,9 +102,9 @@ func (values *URLValues) GetBoolToInt(key string) (int, bool, error) {
 	}
 
 	switch strings.ToLower(v) {
-	case "true":
+	case "true", "1":
 		return 1, true, nil
-	case "false":
+	case "false", "0":
 		return 0, true, nil
 	default:
 		return 0, false, fmt.Errorf(parsingErrorFormat, key, fmt.Sprintf(` '%s' is not a bool`, v))
