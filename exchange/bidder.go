@@ -83,15 +83,19 @@ type bidRequestOptions struct {
 
 type extraBidderRespInfo struct {
 	respProcessingStartTime time.Time
-	seatNonBidBuilder       SeatNonBidBuilder
+	seatNonBidBuilder       openrtb_ext.SeatNonBidBuilder
 }
 
 type extraAuctionResponseInfo struct {
 	fledge                  *openrtb_ext.Fledge
 	bidsFound               bool
 	bidderResponseStartTime time.Time
-	seatNonBidBuilder       SeatNonBidBuilder
+	seatNonBidBuilder       openrtb_ext.SeatNonBidBuilder
 }
+
+const (
+	bidderGroupM = "groupm"
+)
 
 const ImpIdReqBody = "Stored bid response for impression id: "
 
@@ -179,7 +183,7 @@ type bidderAdapterThrottleConfig struct {
 func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes, hookExecutor hookexecution.StageExecutor, ruleToAdjustments openrtb_ext.AdjustmentsByDealID) ([]*entities.PbsOrtbSeatBid, extraBidderRespInfo, []error) {
 	request := openrtb_ext.RequestWrapper{BidRequest: bidderRequest.BidRequest}
 	reject := hookExecutor.ExecuteBidderRequestStage(&request, string(bidderRequest.BidderName))
-	seatNonBidBuilder := SeatNonBidBuilder{}
+	seatNonBidBuilder := openrtb_ext.SeatNonBidBuilder{}
 	if reject != nil {
 		return nil, extraBidderRespInfo{}, []error{reject}
 	}
@@ -303,10 +307,14 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 
 		if httpInfo.err == nil {
 			extraRespInfo.respProcessingStartTime = time.Now()
+			httpInfo.request.BidderName = bidderRequest.BidderName
 			bidResponse, moreErrs := bidder.Bidder.MakeBids(bidderRequest.BidRequest, httpInfo.request, httpInfo.response)
 			errs = append(errs, moreErrs...)
 
 			if bidResponse != nil {
+				recordOpenWrapBidResponseMetrics(bidder, bidResponse)
+
+				bidResponse.BidderAlias = bidderRequest.BidderName
 				reject := hookExecutor.ExecuteRawBidderResponseStage(bidResponse, string(bidder.BidderName))
 				if reject != nil {
 					errs = append(errs, reject)
@@ -320,6 +328,13 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 					bidderRequest.BidRequest.Cur = []string{defaultCurrency}
 				}
 
+				// WL and WTK only accepts USD so we would need to convert prices to USD before sending data to them. But,
+				// PBS-Core's getAuctionCurrencyRates() is not exposed and would be too much work to do so. Also, would be a repeated work for SSHB to convert each bid's price
+				// Hence, we would send a USD conversion rate to SSHB for each bid beside prebid's origbidcpm and origbidcur
+				// Ex. req.cur=INR and resp.cur=JYP. Hence, we cannot use origbidcpm and origbidcur and would need a dedicated field for USD conversion rates
+				var conversionRateUSD float64
+				selectedCur := "USD"
+
 				// Try to get a conversion rate
 				// Try to get the first currency from request.cur having a match in the rate converter,
 				// and use it as currency
@@ -328,7 +343,18 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 				for _, bidReqCur := range bidderRequest.BidRequest.Cur {
 					if conversionRate, err = conversions.GetRate(bidResponse.Currency, bidReqCur); err == nil {
 						seatBidMap[bidderRequest.BidderName].Currency = bidReqCur
+						selectedCur = bidReqCur
 						break
+					}
+				}
+
+				// no need of conversionRateUSD if
+				// - bids with conversionRate = 0 would be a dropped
+				// - response would be in USD
+				if conversionRate != float64(0) && selectedCur != "USD" {
+					conversionRateUSD, err = conversions.GetRate(bidResponse.Currency, "USD")
+					if err != nil {
+						errs = append(errs, fmt.Errorf("failed to get USD conversion rate for WL and WTK %v", err))
 					}
 				}
 
@@ -397,18 +423,22 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 						}
 
 						adjustmentFactor := 1.0
-						if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderName.String()))]; ok {
-							adjustmentFactor = givenAdjustment
-						} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderRequest.BidderName.String()))]; ok {
-							adjustmentFactor = givenAdjustment
-						}
 
+						if bidderName != bidderGroupM {
+							if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderName.String()))]; ok {
+								adjustmentFactor = givenAdjustment
+							} else if givenAdjustment, ok := bidRequestOptions.bidAdjustments[(strings.ToLower(bidderRequest.BidderName.String()))]; ok {
+								adjustmentFactor = givenAdjustment
+							}
+						}
 						originalBidCpm := 0.0
 						currencyAfterAdjustments := ""
+						originalBidCPMUSD := 0.0
 						if bidResponse.Bids[i].Bid != nil {
 							originalBidCpm = bidResponse.Bids[i].Bid.Price
 							bidResponse.Bids[i].Bid.Price = bidResponse.Bids[i].Bid.Price * adjustmentFactor * conversionRate
 
+							originalBidCPMUSD = originalBidCpm * adjustmentFactor * conversionRateUSD
 							bidType := getBidTypeForAdjustments(bidResponse.Bids[i].BidType, bidResponse.Bids[i].Bid.ImpID, bidderRequest.BidRequest.Imp)
 							bidResponse.Bids[i].Bid.Price, currencyAfterAdjustments = bidadjustment.Apply(ruleToAdjustments, bidResponse.Bids[i], bidderRequest.BidderName, seatBidMap[bidderRequest.BidderName].Currency, reqInfo, bidType)
 						}
@@ -423,16 +453,23 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 								Seat:      bidderName.String(),
 							}
 						}
+						alternateBidderCode := ""
+						if !strings.EqualFold(bidderRequest.BidderName.String(), bidderName.String()) {
+							alternateBidderCode = bidderRequest.BidderName.String()
+						}
 
 						seatBidMap[bidderName].Bids = append(seatBidMap[bidderName].Bids, &entities.PbsOrtbBid{
-							Bid:            bidResponse.Bids[i].Bid,
-							BidMeta:        bidResponse.Bids[i].BidMeta,
-							BidType:        bidResponse.Bids[i].BidType,
-							BidVideo:       bidResponse.Bids[i].BidVideo,
-							DealPriority:   bidResponse.Bids[i].DealPriority,
-							OriginalBidCPM: originalBidCpm,
-							OriginalBidCur: bidResponse.Currency,
-							AdapterCode:    bidderRequest.BidderCoreName,
+							Bid:                 bidResponse.Bids[i].Bid,
+							BidMeta:             bidResponse.Bids[i].BidMeta,
+							BidType:             bidResponse.Bids[i].BidType,
+							BidVideo:            bidResponse.Bids[i].BidVideo,
+							DealPriority:        bidResponse.Bids[i].DealPriority,
+							OriginalBidCPM:      originalBidCpm,
+							OriginalBidCur:      bidResponse.Currency,
+							AdapterCode:         bidderRequest.BidderCoreName,
+							BidTargets:          bidResponse.Bids[i].BidTargets,
+							OriginalBidCPMUSD:   originalBidCPMUSD,
+							AlternateBidderCode: alternateBidderCode,
 						})
 						seatBidMap[bidderName].Currency = currencyAfterAdjustments
 					}
@@ -443,8 +480,11 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 			}
 		} else {
 			errs = append(errs, httpInfo.err)
+			if errortypes.ReadCode(httpInfo.err) == errortypes.TimeoutErrorCode {
+				recordPartnerTimeout(ctx, bidderRequest.BidderLabels.PubID, bidder.BidderName.String())
+			}
 			nonBidReason := httpInfoToNonBidReason(httpInfo)
-			seatNonBidBuilder.rejectImps(httpInfo.request.ImpIDs, nonBidReason, string(bidderRequest.BidderName))
+			seatNonBidBuilder.RejectImps(httpInfo.request.ImpIDs, nonBidReason, string(bidderRequest.BidderName))
 		}
 	}
 
@@ -560,6 +600,12 @@ func makeExt(httpInfo *httpCallInfo) *openrtb_ext.ExtHttpCall {
 		if httpInfo.err == nil && httpInfo.response != nil {
 			ext.ResponseBody = string(httpInfo.response.Body)
 			ext.Status = httpInfo.response.StatusCode
+		}
+
+		if nil != httpInfo.request.Params {
+			ext.Params = make(map[string]int)
+			ext.Params["ImpIndex"] = httpInfo.request.Params.ImpIndex
+			ext.Params["VASTTagIndex"] = httpInfo.request.Params.VASTTagIndex
 		}
 	}
 
@@ -773,7 +819,7 @@ func (bidder *BidderAdapter) addClientTrace(ctx context.Context, dialMetricsDisa
 		TLSHandshakeDone: func(tls.ConnectionState, error) {
 			tlsHandshakeTime := time.Since(tlsStart)
 
-			bidder.me.RecordTLSHandshakeTime(tlsHandshakeTime)
+			bidder.me.RecordTLSHandshakeTime(bidder.BidderName, tlsHandshakeTime)
 		},
 	}
 
@@ -816,6 +862,14 @@ func prepareStoredResponse(impId string, bidResp json.RawMessage) *httpCallInfo 
 		err: nil,
 	}
 	return respData
+}
+
+func compressToGZIP(requestBody []byte) []byte {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	w.Write([]byte(requestBody))
+	w.Close()
+	return b.Bytes()
 }
 
 func getBidTypeForAdjustments(bidType openrtb_ext.BidType, impID string, imp []openrtb2.Imp) string {

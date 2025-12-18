@@ -27,6 +27,12 @@ func createModuleStageNamesCollection(modules map[string]interface{}) (map[strin
 			moduleStageNameCollector = addModuleStageName(moduleStageNameCollector, id, stageName)
 		}
 
+		if _, ok := hook.(hookstage.BeforeValidationRequest); ok {
+			added = true
+			stageName := hooks.StageBeforeValidationRequest.String()
+			moduleStageNameCollector = addModuleStageName(moduleStageNameCollector, id, stageName)
+		}
+
 		if _, ok := hook.(hookstage.ProcessedAuctionRequest); ok {
 			added = true
 			stageName := hooks.StageProcessedAuctionRequest.String()
