@@ -1597,42 +1597,61 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Native = nil
 		return
 	}
-	applyNativeVideoDurationFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native)
+	applyNativeVideoDurationFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native, rCtx.PubID, rCtx.ProfileID)
 }
 
 // applyNativeVideoDurationFromAdUnitConfig updates native video asset durations from adunit config, if configured
-func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native) {
-	if impNative.Request == "" || nativeCfg == nil || !nativeCfg.Video.Enabled {
+func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native, PubID int, ProfileID int) {
+	if impNative.Request == "" || nativeCfg == nil {
 		return
 	}
 
 	var nReq nativeRequests.Request
 	if err := json.Unmarshal([]byte(impNative.Request), &nReq); err != nil {
+		glog.Errorf("[native_request_json_unmarshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
 		return
 	}
 
-	videoCfg := nativeCfg.Video.Config
-	updated := false
-	for i := range nReq.Assets {
-		asset := &nReq.Assets[i]
-		if asset.Video == nil {
-			continue
+	assets := nReq.Assets
+	changed := false
+	if !nativeCfg.Video.Enabled {
+		writeIdx := 0
+		for i := range assets {
+			if assets[i].Video != nil {
+				changed = true
+				continue
+			}
+			assets[writeIdx] = assets[i]
+			writeIdx++
 		}
-		if videoCfg.MinDuration != nil {
-			asset.Video.MinDuration = *videoCfg.MinDuration
-			updated = true
+		if changed {
+			nReq.Assets = assets[:writeIdx]
 		}
-		if videoCfg.MaxDuration != nil {
-			asset.Video.MaxDuration = *videoCfg.MaxDuration
-			updated = true
+	} else {
+		videoCfg := nativeCfg.Video.Config
+		for i := range assets {
+			if assets[i].Video == nil {
+				continue
+			}
+			if videoCfg.MinDuration != nil {
+				assets[i].Video.MinDuration = *videoCfg.MinDuration
+				changed = true
+			}
+			if videoCfg.MaxDuration != nil {
+				assets[i].Video.MaxDuration = *videoCfg.MaxDuration
+				changed = true
+			}
 		}
 	}
-	if !updated {
+	if !changed {
 		return
 	}
-	if nReqBytes, err := json.Marshal(&nReq); err == nil {
+	nReqBytes, err := json.Marshal(&nReq)
+	if err == nil {
 		impNative.Request = string(nReqBytes)
+		return
 	}
+	glog.Errorf("[native_request_json_marshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
 }
 
 func getApplovinSchainABTestEnabled(percentage int) bool {
