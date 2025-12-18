@@ -412,11 +412,11 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			name: "valid wrapper object and senburl true in bidderparams",
 			args: args{
 				request: &openrtb2.BidRequest{
-					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":true}}}`),
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"biddercode":"pubmatic","profile":123,"version":456},"sendburl":true}}}`),
 				},
 			},
 			expectedReqExt: extRequestAdServer{
-				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456, BidderCode: "pubmatic"},
 				SendBurl: true,
 			},
 			wantErr: false,
@@ -425,11 +425,11 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			name: "valid wrapper object and invalid senburl true in bidderparams",
 			args: args{
 				request: &openrtb2.BidRequest{
-					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":123,"version":456},"sendburl":{}}}}`),
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"biddercode":"pubmatic","profile":123,"version":456},"sendburl":{}}}}`),
 				},
 			},
 			expectedReqExt: extRequestAdServer{
-				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456},
+				Wrapper:  &pubmaticWrapperExt{ProfileID: 123, VersionID: 456, BidderCode: "pubmatic"},
 				SendBurl: false,
 			},
 			wantErr: false,
