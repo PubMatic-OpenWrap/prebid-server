@@ -263,7 +263,7 @@ func updateSeatNonBidsFloors(seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder, r
 }
 
 // GetPriceBucketOW is the externally facing function for computing CPM buckets
-func GetPriceBucketOW(cpm float64, config openrtb_ext.PriceGranularity) string {
+func GetPriceBucketOW(cpm float64, config openrtb_ext.PriceGranularity, account config.Account) string {
 	bid := openrtb2.Bid{
 		Price: cpm,
 	}
@@ -272,7 +272,7 @@ func GetPriceBucketOW(cpm float64, config openrtb_ext.PriceGranularity) string {
 		priceGranularity:          *newPG,
 		mediaTypePriceGranularity: openrtb_ext.MediaTypePriceGranularity{},
 	}
-	return GetPriceBucket(bid, targetData)
+	return GetPriceBucket(bid, targetData, account)
 }
 
 func setPriceGranularityOW(pg *openrtb_ext.PriceGranularity) *openrtb_ext.PriceGranularity {

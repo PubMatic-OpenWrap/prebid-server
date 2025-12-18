@@ -111,6 +111,41 @@ func TestPrepareBidParamJSONForPartner33across(t *testing.T) {
 				fieldMap: map[string]interface{}{
 					"siteId":    "testSite",
 					"productId": "testProduct",
+					"zoneId":    "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    json.RawMessage(`{"productId":"testProduct","siteId":"testSite","zoneId":"123"}`),
+			wantErr: false,
+		},
+		{
+			name: "only productId and zoneId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"productId": "testProduct",
+					"zoneId":    "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    json.RawMessage(`{"productId":"testProduct","zoneId":"123"}`),
+			wantErr: false,
+		},
+		{
+			name: "only productId and siteId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"productId": "testProduct",
+					"siteId":    "testSite",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.Bidder33Across),
@@ -118,6 +153,23 @@ func TestPrepareBidParamJSONForPartner33across(t *testing.T) {
 			},
 			want:    json.RawMessage(`{"productId":"testProduct","siteId":"testSite"}`),
 			wantErr: false,
+		},
+		{
+			name: "only siteId and zoneId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"siteId": "testSite",
+					"zoneId": "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    nil,
+			wantErr: true,
 		},
 		{
 			name: "siteId is missing",

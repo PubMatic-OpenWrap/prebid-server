@@ -144,7 +144,8 @@ type TargetingKey string
 const (
 	PbKey TargetingKey = "_pb"
 
-	// EnvKey exists to support the Prebid Universal Creative. If it exists, the only legal value is mobile-app.
+	// EnvKey exists to support the Prebid Universal Creative.
+	// If it exists, the only legal values are "mobile-app" and "amp".
 	// It will exist only if the incoming bidRequest defined request.app instead of request.site.
 	EnvKey TargetingKey = "_env"
 
@@ -170,6 +171,7 @@ const (
 
 	// EnvAppValue used as a value for EnvKey
 	EnvAppValue string = "mobile-app"
+	EnvAmpValue string = "amp"
 
 	CategoryDurationKey TargetingKey = "_pb_cat_dur"
 )
