@@ -22,7 +22,6 @@ import (
 	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/util"
 	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/exchange"
-	"github.com/prebid/prebid-server/v3/gdpr"
 	"github.com/prebid/prebid-server/v3/hooks"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/metrics"
@@ -216,8 +215,9 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		defer cancel()
 	}
 
-	tcf2Config := gdpr.NewTCF2Config(deps.cfg.GDPR.TCF2, account.GDPR)
 	reqWrapper.BidRequest = request
+	tcf2Config, gdprSignal, gdprEnforced, gdprErrs := deps.processGDPR(reqWrapper, account.GDPR, deps.labels.RType)
+	errL = append(errL, gdprErrs...)
 	auctionRequest := exchange.AuctionRequest{
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: request},
 		Account:           *account,
@@ -229,6 +229,8 @@ func (deps *ctvEndpointDeps) CTVAuctionEndpoint(w http.ResponseWriter, r *http.R
 		HookExecutor:      hookExecutor,
 		TCF2Config:        tcf2Config,
 		TmaxAdjustments:   deps.tmaxAdjustments,
+		GDPRSignal:        gdprSignal,
+		GDPREnforced:      gdprEnforced,
 	}
 
 	auctionResponse, err := deps.holdAuction(ctx, auctionRequest)

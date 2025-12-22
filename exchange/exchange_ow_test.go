@@ -1483,7 +1483,9 @@ func TestGetPriceBucketStringOW(t *testing.T) {
 	for _, testGroup := range testGroups {
 		for i, test := range testGroup.testCases {
 			var priceBucket string
-			assert.NotPanics(t, func() { priceBucket = GetPriceBucketOW(testGroup.cpm, test.granularity) }, "Group: %s Granularity: %d", testGroup.groupDesc, i)
+			assert.NotPanics(t, func() {
+				priceBucket = GetPriceBucketOW(testGroup.cpm, test.granularity, config.Account{BidRounding: config.RoundingModeDown})
+			}, "Group: %s Granularity: %d", testGroup.groupDesc, i)
 			assert.Equal(t, test.expectedPriceBucket, priceBucket, "Group: %s Granularity: %s :: Expected %s, got %s from %f", testGroup.groupDesc, test.granularityId, test.expectedPriceBucket, priceBucket, testGroup.cpm)
 		}
 	}

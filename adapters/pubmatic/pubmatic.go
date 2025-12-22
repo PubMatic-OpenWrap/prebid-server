@@ -447,6 +447,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 		extMap[gpIdKey] = bidderExt.GpId
 	}
 
+	if bidderExt.SKAdnetwork != nil {
+		extMap[skAdnetworkKey] = bidderExt.SKAdnetwork
+	}
+
 	if pubmaticExt.OWSDK != nil {
 		extMap[owSDKKey] = pubmaticExt.OWSDK
 	}
