@@ -864,3 +864,34 @@ func builderNexx360(params BidderParameters) (json.RawMessage, error) {
 
 	return jsonStr.Bytes(), nil
 }
+
+func builder33Across(params BidderParameters) (json.RawMessage, error) {
+	productId, hasProductId := getString(params.FieldMap["productId"])
+	siteId, hasSiteId := getString(params.FieldMap["siteId"])
+	zoneId, hasZoneId := getString(params.FieldMap["zoneId"])
+
+	// productId is mandatory in both anyOf conditions
+	if !hasProductId {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"productId"})
+	}
+
+	// Must satisfy at least one: ["productId", "siteId"] OR ["productId", "zoneId"]
+	if !hasSiteId && !hasZoneId {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"siteId", "zoneId"})
+	}
+
+	// Construct JSON like the Nexx360 builder
+	var buf bytes.Buffer
+	buf.WriteString(`{"productId":"` + productId + `"`)
+
+	if hasSiteId {
+		buf.WriteString(`,"siteId":"` + siteId + `"`)
+	}
+	if hasZoneId {
+		buf.WriteString(`,"zoneId":"` + zoneId + `"`)
+	}
+
+	buf.WriteString("}")
+
+	return buf.Bytes(), nil
+}

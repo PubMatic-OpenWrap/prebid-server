@@ -8,15 +8,17 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/prebid/prebid-server/v3/metrics"
 )
 
 type vendorListScheduler struct {
-	ticker    *time.Ticker
-	interval  time.Duration
-	done      chan bool
-	isRunning bool
-	isStarted bool
-	lastRun   time.Time
+	ticker        *time.Ticker
+	interval      time.Duration
+	done          chan bool
+	isRunning     bool
+	isStarted     bool
+	lastRun       time.Time
+	metricsEngine metrics.MetricsEngine
 
 	httpClient *http.Client
 	timeout    time.Duration
@@ -26,7 +28,7 @@ type vendorListScheduler struct {
 var _instance *vendorListScheduler
 var once sync.Once
 
-func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (*vendorListScheduler, error) {
+func GetVendorListScheduler(interval, timeout string, httpClient *http.Client, metricsEngine metrics.MetricsEngine) (*vendorListScheduler, error) {
 	if _instance != nil {
 		return _instance, nil
 	}
@@ -47,11 +49,12 @@ func GetVendorListScheduler(interval, timeout string, httpClient *http.Client) (
 
 	once.Do(func() {
 		_instance = &vendorListScheduler{
-			ticker:     nil,
-			interval:   intervalDuration,
-			done:       make(chan bool),
-			httpClient: httpClient,
-			timeout:    timeoutDuration,
+			ticker:        nil,
+			interval:      intervalDuration,
+			done:          make(chan bool),
+			httpClient:    httpClient,
+			timeout:       timeoutDuration,
+			metricsEngine: metricsEngine,
 		}
 	})
 
@@ -118,7 +121,7 @@ func (scheduler *vendorListScheduler) runLoadCache() {
 		},
 	}
 	for _, v := range versions {
-		latestVersion := saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(v.specVersion, 0), cacheSave)
+		latestVersion := saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(v.specVersion, 0), cacheSave, scheduler.metricsEngine)
 
 		for i := latestVersion; i >= v.firstListVersion; i-- {
 			// Check if version is present in the cache
@@ -126,7 +129,7 @@ func (scheduler *vendorListScheduler) runLoadCache() {
 				continue
 			}
 			glog.Infof("Downloading: " + VendorListURLMaker(v.specVersion, i))
-			saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(v.specVersion, i), cacheSave)
+			saveOne(preloadContext, scheduler.httpClient, VendorListURLMaker(v.specVersion, i), cacheSave, scheduler.metricsEngine)
 		}
 	}
 }

@@ -220,7 +220,7 @@ func testCTVExchange(testCfg *ctvtestConfigValues, adapterMap map[openrtb_ext.Bi
 		mockBidServersArray = append(mockBidServersArray, bidServer)
 	}
 
-	mockCurrencyConverter := currency.NewRateConverter(mockCurrencyRatesServer.Client(), mockCurrencyRatesServer.URL, time.Second)
+	mockCurrencyConverter := currency.NewRateConverter(mockCurrencyRatesServer.Client(), 60*time.Second, mockCurrencyRatesServer.URL, time.Second)
 	mockCurrencyConverter.Run()
 
 	gdprPermsBuilder := fakePermissionsBuilder{
