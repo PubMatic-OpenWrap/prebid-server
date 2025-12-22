@@ -1597,12 +1597,12 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 		imp.Native = nil
 		return
 	}
-	applyNativeVideoDurationFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native, rCtx.PubID, rCtx.ProfileID)
+	applyNativeVideoAssetRulesFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native, rCtx.PubID, rCtx.ProfileID)
 }
 
-// applyNativeVideoDurationFromAdUnitConfig updates native video asset durations from adunit config, if configured
-func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native, PubID int, ProfileID int) {
-	if impNative.Request == "" || nativeCfg == nil {
+// applyNativeVideoAssetRulesFromAdUnitConfig applies native video asset rules from adunit config, if configured
+func applyNativeVideoAssetRulesFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native, PubID int, ProfileID int) {
+	if impNative.Request == "" || nativeCfg == nil || nativeCfg.Video.Enabled == nil {
 		return
 	}
 
@@ -1614,20 +1614,7 @@ func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.Nati
 
 	assets := nReq.Assets
 	changed := false
-	if !nativeCfg.Video.Enabled {
-		writeIdx := 0
-		for i := range assets {
-			if assets[i].Video != nil {
-				changed = true
-				continue
-			}
-			assets[writeIdx] = assets[i]
-			writeIdx++
-		}
-		if changed {
-			nReq.Assets = assets[:writeIdx]
-		}
-	} else {
+	if *nativeCfg.Video.Enabled {
 		videoCfg := nativeCfg.Video.Config
 		for i := range assets {
 			if assets[i].Video == nil {
@@ -1641,6 +1628,19 @@ func applyNativeVideoDurationFromAdUnitConfig(nativeCfg *modelsAdunitConfig.Nati
 				assets[i].Video.MaxDuration = *videoCfg.MaxDuration
 				changed = true
 			}
+		}
+	} else {
+		writeIdx := 0
+		for i := range assets {
+			if assets[i].Video != nil {
+				changed = true
+				continue
+			}
+			assets[writeIdx] = assets[i]
+			writeIdx++
+		}
+		if changed {
+			nReq.Assets = assets[:writeIdx]
 		}
 	}
 	if !changed {

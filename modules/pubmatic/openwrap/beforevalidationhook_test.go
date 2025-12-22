@@ -8557,7 +8557,7 @@ func TestLogHookBidRequest_NilBidRequest(t *testing.T) {
 	}, "Should handle empty BidRequest without panicking")
 }
 
-func TestApplyNativeVideoDurationFromAdUnitConfig(t *testing.T) {
+func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
 	minDur := int64(5)
 	maxDur := int64(15)
 
@@ -8582,7 +8582,7 @@ func TestApplyNativeVideoDurationFromAdUnitConfig(t *testing.T) {
 		{
 			name: "video_disabled_removes_all_video_assets_with_multiple_assets",
 			args: args{
-				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: false}},
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(false)}},
 				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
 					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
 					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
@@ -8598,7 +8598,7 @@ func TestApplyNativeVideoDurationFromAdUnitConfig(t *testing.T) {
 		{
 			name: "video_enabled_updates_durations_only_for_video_assets_with_multiple_assets",
 			args: args{
-				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: true, Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
 				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
 					{ID: 1, Title: &nativeRequests.Title{Len: 25}},
 					{ID: 2, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
@@ -8616,7 +8616,7 @@ func TestApplyNativeVideoDurationFromAdUnitConfig(t *testing.T) {
 		{
 			name: "video_enabled_with_no_duration_config_does_not_modify_request",
 			args: args{
-				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: true}},
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true)}},
 				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
 					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
 					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
@@ -8632,18 +8632,33 @@ func TestApplyNativeVideoDurationFromAdUnitConfig(t *testing.T) {
 		{
 			name: "invalid_native_request_json_is_noop",
 			args: args{
-				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: true, Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
 				impNative: &openrtb2.Native{Request: "{"},
 				pubID:     rctx.PubID,
 				profileID: rctx.ProfileID,
 			},
 			wantImpNative: &openrtb2.Native{Request: "{"},
 		},
+		{
+			name: "no_change_in_video_assets_if_video_config_not_disabled_explicitely",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			applyNativeVideoDurationFromAdUnitConfig(tt.args.nativeCfg, tt.args.impNative, tt.args.pubID, tt.args.profileID)
+			applyNativeVideoAssetRulesFromAdUnitConfig(tt.args.nativeCfg, tt.args.impNative, tt.args.pubID, tt.args.profileID)
 			assert.Equal(t, tt.wantImpNative, tt.args.impNative)
 		})
 	}

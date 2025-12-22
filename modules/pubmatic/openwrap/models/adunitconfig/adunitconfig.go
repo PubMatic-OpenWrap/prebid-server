@@ -54,7 +54,7 @@ type NativeConfig struct {
 }
 
 type NativeVideo struct {
-	Enabled bool              `json:"enabled,omitempty"`
+	Enabled *bool             `json:"enabled,omitempty"`
 	Config  NativeVideoConfig `json:"config,omitempty"`
 }
 
