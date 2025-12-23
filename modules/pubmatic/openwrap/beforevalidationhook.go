@@ -1647,11 +1647,11 @@ func applyNativeVideoAssetRulesFromAdUnitConfig(nativeCfg *modelsAdunitConfig.Na
 		return
 	}
 	nReqBytes, err := json.Marshal(&nReq)
-	if err == nil {
+	if err != nil {
+		glog.Errorf("[native_request_json_marshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
+	} else {
 		impNative.Request = string(nReqBytes)
-		return
 	}
-	glog.Errorf("[native_request_json_marshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
 }
 
 func getApplovinSchainABTestEnabled(percentage int) bool {
