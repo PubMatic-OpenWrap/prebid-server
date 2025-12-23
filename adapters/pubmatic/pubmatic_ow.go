@@ -209,4 +209,7 @@ func addGoogleSDKParamsToBidExt(bidExtMap map[string]interface{}, bidderExt ExtI
 	if bidderExt.CreativeEnforcementSettings != nil {
 		bidExtMap[creativeEnforcementSettings] = bidderExt.CreativeEnforcementSettings
 	}
+	if bidderExt.DFPAdUnitCode != "" {
+		bidExtMap[ImpExtAdUnitKey] = bidderExt.DFPAdUnitCode
+	}
 }
