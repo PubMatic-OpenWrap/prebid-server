@@ -597,11 +597,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderMeta[bidderCode] = meta
 			}
 
-			// Force robustApp to be treated as alias
-			if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok && prebidPartnerName == models.BidderRobustAppsAlias {
-				partnerConfig[models.IsAlias] = "1"
-			}
-
 			isAlias := false
 			if alias, ok := partnerConfig[models.IsAlias]; ok && alias == "1" {
 				if prebidPartnerName, ok := partnerConfig[models.PREBID_PARTNER_NAME]; ok {
