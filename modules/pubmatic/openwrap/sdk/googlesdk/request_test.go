@@ -1741,6 +1741,64 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Set gpid from dfp_ad_unit_code",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Ext: []byte(`{"dfp_ad_unit_code":"abc"}`),
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Ext:    []byte(`{"dfp_ad_unit_code":"abc","gpid":"abc"}`),
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Set gpid from tag id",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID: "def",
+						Ext:   []byte(`{}`),
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						Ext:    []byte(`{"gpid":"def"}`),
+						TagID:  "def",
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "Do not overwrite gpid from dfp_ad_unit_code if gpid is already present",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID: "def",
+						Ext:   []byte(`{"dfp_ad_unit_code":"abc","gpid":"original_value"}`),
+					},
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						TagID:  "def",
+						Ext:    []byte(`{"dfp_ad_unit_code":"abc","gpid":"original_value"}`),
+						Secure: ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
