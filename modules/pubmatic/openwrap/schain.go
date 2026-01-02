@@ -91,31 +91,76 @@ func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]
 }
 
 func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	if removeSchainFromSource(maxRequest.Source) {
+	if removeApplovinNode(maxRequest.Source) {
 		glog.V(models.LogLevelDebug).Info("Removed schain object from request")
 		rctx.ABTestConfigApplied = 1
 		m.metricEngine.RecordRequestWithSchainABTestEnabled()
 	}
 }
 
-func removeSchainFromSource(src *openrtb2.Source) (removed bool) {
+// removeApplovinNode removes AppLovin node(s) from Source.SChain and source.ext.schain if present
+func removeApplovinNode(src *openrtb2.Source) (removed bool) {
 	if src == nil {
 		return false
 	}
 
-	// Remove SChain object if present
-	if src.SChain != nil {
-		src.SChain = nil
+	// Remove only AppLovin node(s) from Source.SChain if present
+	if isRemoved := removeNode(src.SChain); isRemoved {
 		removed = true
 	}
+	// Remove only AppLovin node(s) from source.ext.schain if exists and return true if removed
+	return removeNodeFromSourceExt(src) || removed
+}
 
-	// Remove schain from Ext if exists
-	if len(src.Ext) > 0 {
-		if _, _, _, err := jsonparser.Get(src.Ext, "schain"); err == nil {
-			src.Ext = jsonparser.Delete(src.Ext, "schain")
-			removed = true
-		}
+// removeNode removes AppLovin node(s) from SupplyChain if present
+func removeNode(schain *openrtb2.SupplyChain) (removed bool) {
+	if schain == nil || len(schain.Nodes) == 0 {
+		return false
 	}
 
+	filtered := schain.Nodes[:0]
+	for _, n := range schain.Nodes {
+		if n.ASI == "applovin.com" {
+			removed = true
+			continue
+		}
+		filtered = append(filtered, n)
+	}
+	if removed {
+		schain.Nodes = filtered
+	}
 	return removed
+}
+
+// removeNodeFromSourceExt removes AppLovin node(s) from source.ext.schain if exists
+func removeNodeFromSourceExt(src *openrtb2.Source) (removed bool) {
+	if len(src.Ext) == 0 {
+		return false
+	}
+
+	schainRaw, _, _, err := jsonparser.Get(src.Ext, "schain")
+	if err != nil {
+		return false
+	}
+
+	var schain openrtb2.SupplyChain
+	if err := json.Unmarshal(schainRaw, &schain); err != nil {
+		return false
+	}
+
+	isRemoved := removeNode(&schain)
+	if !isRemoved {
+		return false
+	}
+
+	updated, err := json.Marshal(&schain)
+	if err != nil {
+		return false
+	}
+
+	src.Ext, err = jsonparser.Set(src.Ext, updated, "schain")
+	if err != nil {
+		return false
+	}
+	return true
 }
