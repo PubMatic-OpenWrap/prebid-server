@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -8555,4 +8556,111 @@ func TestLogHookBidRequest_NilBidRequest(t *testing.T) {
 	assert.NotPanics(t, func() {
 		logHookBidRequest("hook_start", rCtx, &openrtb2.BidRequest{}, 0)
 	}, "Should handle empty BidRequest without panicking")
+}
+
+func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
+	minDur := int64(5)
+	maxDur := int64(15)
+
+	makeNativeRequest := func(t *testing.T, req nativeRequests.Request) string {
+		b, err := json.Marshal(&req)
+		assert.NoError(t, err)
+		return string(b)
+	}
+
+	type args struct {
+		nativeCfg *adunitconfig.NativeConfig
+		impNative *openrtb2.Native
+		pubID     int
+		profileID int
+	}
+
+	tests := []struct {
+		name          string
+		args          args
+		wantImpNative *openrtb2.Native
+	}{
+		{
+			name: "video_disabled_removes_all_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(false)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 3, MaxDuration: 4}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "video_enabled_updates_durations_only_for_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+					{ID: 2, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 100, MaxDuration: 200}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+				{ID: 2, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+				{ID: 3, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+			}})},
+		},
+		{
+			name: "video_enabled_with_no_duration_config_does_not_modify_request",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "invalid_native_request_json_is_noop",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: "{"},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: "{"},
+		},
+		{
+			name: "no_change_in_video_assets_if_video_config_not_disabled_explicitely",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applyNativeVideoAssetRulesFromAdUnitConfig(tt.args.nativeCfg, tt.args.impNative, tt.args.pubID, tt.args.profileID)
+			assert.Equal(t, tt.wantImpNative, tt.args.impNative)
+		})
+	}
 }
