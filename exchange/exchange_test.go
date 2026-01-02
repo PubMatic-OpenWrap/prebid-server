@@ -73,7 +73,7 @@ func TestNewExchange(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -123,7 +123,7 @@ func TestCharacterEscape(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -1389,7 +1389,7 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
 	pbc := pbc.NewClient(&http.Client{}, &cfg.CacheURL, &cfg.ExtCacheURL, testEngine)
@@ -1748,7 +1748,7 @@ func TestBidResponseCurrency(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -1904,7 +1904,7 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	e := NewExchange(adapters, nil, cfg, &mockRequestValidator{}, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, nil, gdprPermsBuilder, nil, nilCategoryFetcher{}, &adscert.NilSigner{}, macros.NewStringIndexBasedReplacer(), nil, nil).(*exchange)
@@ -1979,7 +1979,7 @@ func TestRaceIntegration(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -2087,7 +2087,7 @@ func TestPanicRecovery(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(&http.Client{}, cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -2153,7 +2153,7 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))
@@ -4922,7 +4922,7 @@ func TestPassExperimentConfigsToHoldAuction(t *testing.T) {
 
 	adapters, _, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
-		t.Fatalf("Error intializing adapters: %v", adaptersErr)
+		t.Fatalf("Error initializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, time.Duration(1), "", time.Duration(0))

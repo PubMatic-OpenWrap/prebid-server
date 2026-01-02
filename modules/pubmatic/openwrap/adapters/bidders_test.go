@@ -3531,3 +3531,56 @@ func TestBuilderNexx360(t *testing.T) {
 		})
 	}
 }
+
+func TestBuilderMSFT(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (oneOf placement_id OR inv_code+member) is present-placement_id",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placement_id": 123}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(`{"placement_id":123}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placement_id OR inv_code+member) is present-inv_code+member",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"inv_code": "abc", "member": 456}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(`{"inv_code":"abc","member":456}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of placement_id or inv_code+member) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (inv_code without member) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"inv_code": "abc"}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (member without inv_code) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"member": 456}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderMSFT(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderMSFT() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
