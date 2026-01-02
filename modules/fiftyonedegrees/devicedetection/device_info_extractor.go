@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/prebid/prebid-server/v3/logger"
+	"github.com/golang/glog"
 )
 
 // deviceInfoExtractor is a struct that contains the methods to extract device information
@@ -104,18 +104,18 @@ func (x deviceInfoExtractor) getValue(results Results, propertyName deviceInfoPr
 		",",
 	)
 	if err != nil {
-		logger.Errorf("Failed to get results values string.")
+		glog.Errorf("Failed to get results values string.")
 		return ""
 	}
 
 	hasValues, err := results.HasValues(string(propertyName))
 	if err != nil {
-		logger.Errorf("Failed to check if a matched value exists for property %s.\n", propertyName)
+		glog.Errorf("Failed to check if a matched value exists for property %s.\n", propertyName)
 		return ""
 	}
 
 	if !hasValues {
-		logger.Warnf("Property %s does not have a matched value.\n", propertyName)
+		glog.Warningf("Property %s does not have a matched value.\n", propertyName)
 		return "Unknown"
 	}
 

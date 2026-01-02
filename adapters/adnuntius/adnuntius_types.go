@@ -18,17 +18,12 @@ type NativeRequest struct {
 }
 
 type adnRequestAdunit struct {
-	AuId                string              `json:"auId"`
-	TargetId            string              `json:"targetId"`
-	AdType              string              `json:"adType,omitempty"`
-	NativeRequest       NativeRequest       `json:"nativeRequest,omitempty"`
-	Dimensions          [][]int64           `json:"dimensions,omitempty"`
-	MaxDeals            int                 `json:"maxDeals,omitempty"`
-	Category            []string            `json:"c,omitempty"`
-	Segments            []string            `json:"segments,omitempty"`
-	Keywords            []string            `json:"keywords,omitempty"`
-	KeyValues           map[string][]string `json:"kv,omitempty"`
-	AdUnitMatchingLabel []string            `json:"auml,omitempty"`
+	AuId          string        `json:"auId"`
+	TargetId      string        `json:"targetId"`
+	AdType        string        `json:"adType,omitempty"`
+	NativeRequest NativeRequest `json:"nativeRequest,omitempty"`
+	Dimensions    [][]int64     `json:"dimensions,omitempty"`
+	MaxDeals      int           `json:"maxDeals,omitempty"`
 }
 
 type extDeviceAdnuntius struct {

@@ -1,4 +1,4 @@
-endpoint: "https://client-bids.adsby.bidtheatre.com/prebidjsbid"
+endpoint: "https://prebidjs-bids.bidtheatre.net/prebidjsbid"
 geoscope:
   - EEA
 maintainer:
@@ -15,6 +15,6 @@ capabilities:
       - banner
       - video
 userSync:
-  redirect:
-    url: "https://match.adsby.bidtheatre.com/prebidmatch?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&redir={{.RedirectURL}}"
-    userMacro: "$UID"
+  # bidtheatre supports user syncing, but requires configuration. Please contact operations@bidtheatre.com.
+  supports:
+    - redirect

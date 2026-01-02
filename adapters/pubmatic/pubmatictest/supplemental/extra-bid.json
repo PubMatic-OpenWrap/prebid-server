@@ -97,8 +97,7 @@
             "ext": {
                 "wrapper": {
                     "profile": 5123,
-                    "version":1,
-                    "biddercode":"pubmatic"
+                    "version":1
                 },
                 "acat": ["drg","dlu","ssr"],
                 "marketplace": {

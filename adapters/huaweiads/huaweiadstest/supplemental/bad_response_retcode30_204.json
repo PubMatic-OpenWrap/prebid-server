@@ -156,7 +156,7 @@
       }
     }
   ],
-  "expectedBidResponses": [{"currency":"CNY","bids":[]}],
+  "expectedBidResponses": [{"currency":"USD","bids":[]}],
   "expectedMakeRequestsErrors": [],
   "expectedMakeBidsErrors": [
   ]

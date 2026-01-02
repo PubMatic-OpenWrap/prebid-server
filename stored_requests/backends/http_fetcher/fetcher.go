@@ -9,11 +9,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/prebid/prebid-server/v3/logger"
 	"github.com/prebid/prebid-server/v3/stored_requests"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
-	"golang.org/x/net/context/ctxhttp"
 	jsonpatch "gopkg.in/evanphx/json-patch.v5"
+
+	"github.com/golang/glog"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // NewFetcher returns a Fetcher which uses the Client to pull data from the endpoint.
@@ -58,9 +59,9 @@ func NewFetcher(client *http.Client, endpoint string, useRfcCompliantBuilder boo
 	endpointURL, err := url.Parse(endpoint)
 
 	if err != nil {
-		logger.Fatalf(`Invalid endpoint "%s": %v`, endpoint, err)
+		glog.Fatalf(`Invalid endpoint "%s": %v`, endpoint, err)
 	}
-	logger.Infof("Making http_fetcher for endpoint %v", endpoint)
+	glog.Infof("Making http_fetcher for endpoint %v", endpoint)
 
 	return &HttpFetcher{
 		client:                 client,

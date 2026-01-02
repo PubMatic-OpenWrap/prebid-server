@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/lib/pq"
-	"github.com/prebid/prebid-server/v3/logger"
+
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/stored_requests"
 	"github.com/prebid/prebid-server/v3/stored_requests/backends/db_provider"
 )
@@ -17,13 +18,13 @@ func NewFetcher(
 ) stored_requests.AllFetcher {
 
 	if provider == nil {
-		logger.Fatalf("The Database Stored Request Fetcher requires a database connection. Please report this as a bug.")
+		glog.Fatalf("The Database Stored Request Fetcher requires a database connection. Please report this as a bug.")
 	}
 	if queryTemplate == "" {
-		logger.Fatalf("The Database Stored Request Fetcher requires a queryTemplate. Please report this as a bug.")
+		glog.Fatalf("The Database Stored Request Fetcher requires a queryTemplate. Please report this as a bug.")
 	}
 	if responseQueryTemplate == "" {
-		logger.Fatalf("The Database Stored Response Fetcher requires a responseQueryTemplate. Please report this as a bug.")
+		glog.Fatalf("The Database Stored Response Fetcher requires a responseQueryTemplate. Please report this as a bug.")
 	}
 	return &dbFetcher{
 		provider:              provider,
@@ -61,7 +62,7 @@ func (fetcher *dbFetcher) FetchRequests(ctx context.Context, requestIDs []string
 	rows, err := fetcher.provider.QueryContext(ctx, fetcher.queryTemplate, params...)
 	if err != nil {
 		if err != context.DeadlineExceeded && !isBadInput(err) {
-			logger.Errorf("Error reading from Stored Request DB: %s", err.Error())
+			glog.Errorf("Error reading from Stored Request DB: %s", err.Error())
 			errs := appendErrors("Request", requestIDs, nil, nil)
 			errs = appendErrors("Imp", impIDs, nil, errs)
 			return nil, nil, errs
@@ -70,7 +71,7 @@ func (fetcher *dbFetcher) FetchRequests(ctx context.Context, requestIDs []string
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			logger.Errorf("error closing DB connection: %v", err)
+			glog.Errorf("error closing DB connection: %v", err)
 		}
 	}()
 
@@ -92,7 +93,7 @@ func (fetcher *dbFetcher) FetchRequests(ctx context.Context, requestIDs []string
 		case "imp":
 			storedImpData[id] = data
 		default:
-			logger.Errorf("Database result set with id=%s has invalid type: %s. This will be ignored.", id, dataType)
+			glog.Errorf("Database result set with id=%s has invalid type: %s. This will be ignored.", id, dataType)
 		}
 	}
 
@@ -126,7 +127,7 @@ func (fetcher *dbFetcher) FetchResponses(ctx context.Context, ids []string) (dat
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			logger.Errorf("error closing DB connection: %v", err)
+			glog.Errorf("error closing DB connection: %v", err)
 		}
 	}()
 

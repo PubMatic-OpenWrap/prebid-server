@@ -98,8 +98,7 @@
           "ext": {
             "wrapper": {
               "profile": 1234,
-              "version": 2,
-              "biddercode":"pubmatic"
+              "version": 2
             }
           }
         },

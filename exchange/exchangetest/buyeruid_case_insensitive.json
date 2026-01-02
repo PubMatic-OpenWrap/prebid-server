@@ -74,14 +74,7 @@
                 }
               }
             }
-          ],
-          "ext": {
-            "prebid": {
-              "aliases": {
-                "APPnexus": "appnexus"
-              }
-            }
-          }
+          ]
         }
       }
     },
@@ -110,14 +103,7 @@
                 }
               }
             }
-          ],
-          "ext": {
-            "prebid": {
-              "aliases": {
-                "appNEXUS": "appnexus"
-              }
-            }
-          }
+          ]
         }
       }
     },

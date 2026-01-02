@@ -90,7 +90,7 @@
         "status": 200,
         "body": {
           "id": "test-request-id",
-          "cur": "USD",
+          "currency": "USD",
           "seatbid": [
             {
               "bid": [

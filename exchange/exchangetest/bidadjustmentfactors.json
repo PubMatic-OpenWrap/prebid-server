@@ -96,14 +96,7 @@
                                 }
                             }
                         }
-                    ],
-                    "ext": {
-                        "prebid": {
-                            "aliases": {
-                                "districtm": "appnexus"
-                            }
-                        }
-                    }
+                    ]
                 },
                 "bidAdjustments": {
                     "appnexus": 2.5,

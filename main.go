@@ -10,13 +10,13 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/currency"
-	"github.com/prebid/prebid-server/v3/logger"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/router"
 	"github.com/prebid/prebid-server/v3/server"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/task"
 
+	"github.com/golang/glog"
 	"github.com/spf13/viper"
 )
 
@@ -30,17 +30,16 @@ func Main() {
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
 	if err != nil {
-		logger.Fatalf("Unable to build configuration directory path: %v", err)
+		glog.Exitf("Unable to build configuration directory path: %v", err)
 	}
 
 	bidderInfos, err := config.LoadBidderInfoFromDisk(bidderInfoPath)
 	if err != nil {
-		logger.Fatalf("Unable to load bidder configurations: %v", err)
+		glog.Exitf("Unable to load bidder configurations: %v", err)
 	}
-
 	cfg, err := loadConfig(bidderInfos)
 	if err != nil {
-		logger.Fatalf("Configuration could not be loaded or did not pass validation: %v", err)
+		glog.Exitf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
 	main_ow(cfg)
 
@@ -54,7 +53,7 @@ func Main() {
 
 	err = serve(cfg)
 	if err != nil {
-		logger.Fatalf("prebid-server failed: %v", err)
+		glog.Exitf("prebid-server failed: %v", err)
 	}
 }
 
@@ -83,7 +82,7 @@ func serve(cfg *config.Configuration) error {
 
 	corsRouter := router.SupportCORS(r)
 	if err := server.Listen(cfg, router.NoCache{Handler: corsRouter}, router.Admin(currencyConverter, fetchingInterval), r.MetricsEngine); err != nil {
-		logger.Fatalf("prebid-server returned an error: %v", err)
+		glog.Fatalf("prebid-server returned an error: %v", err)
 	}
 
 	r.Shutdown()

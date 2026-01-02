@@ -895,23 +895,3 @@ func builder33Across(params BidderParameters) (json.RawMessage, error) {
 
 	return buf.Bytes(), nil
 }
-
-// builderMSFT for building json object for Microsoft bidder
-func builderMSFT(params BidderParameters) (json.RawMessage, error) {
-	jsonStr := bytes.Buffer{}
-	placementID, hasPlacementID := getInt(params.FieldMap["placement_id"])
-	invCode, hasInvCode := getString(params.FieldMap["inv_code"])
-	member, hasMember := getInt(params.FieldMap["member"])
-
-	if hasPlacementID {
-		fmt.Fprintf(&jsonStr, `{"placement_id":%d}`, placementID)
-		return jsonStr.Bytes(), nil
-	}
-
-	if hasInvCode && invCode != "" && hasMember {
-		fmt.Fprintf(&jsonStr, `{"inv_code":"%s","member":%d}`, invCode, member)
-		return jsonStr.Bytes(), nil
-	}
-
-	return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"placement_id", "inv_code", "member"})
-}

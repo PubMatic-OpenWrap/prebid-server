@@ -62,7 +62,7 @@ require (
 	github.com/diegoholiveira/jsonlogic/v3 v3.5.3
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang/mock v1.6.0
-	github.com/prebid/prebid-server/v3 v3.30.0
+	github.com/prebid/prebid-server/v3 v3.22.0
 	github.com/rs/vast v0.0.0-20180618195556-06597a11a4c3
 	github.com/satori/go.uuid v1.2.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
@@ -94,7 +94,6 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	github.com/yudai/pp v2.0.1+incompatible // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
