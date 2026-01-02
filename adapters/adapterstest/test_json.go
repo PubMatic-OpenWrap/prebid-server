@@ -248,31 +248,14 @@ func assertMakeRequestsOutput(t *testing.T, filename string, actual []*adapters.
 		t.Fatalf("%s: MakeRequests had wrong request count. Expected %d, got %d", filename, len(expected), len(actual))
 	}
 
-	// try to match expected to actual without assuming order, as the use of maps in some adapters purposely randomizes order.
-	expectedMatched := map[int]struct{}{}
-	actualMatched := map[int]struct{}{}
 	for i := 0; i < len(expected); i++ {
 		var err error
 		for j := 0; j < len(actual); j++ {
 			if err = diffHttpRequests(fmt.Sprintf("%s: httpRequest[%d]", filename, i), actual[j], &(expected[i].Request)); err == nil {
-				expectedMatched[i] = struct{}{}
-				actualMatched[j] = struct{}{}
 				break
 			}
 		}
-		assert.NoError(t, err, fmt.Sprintf("%s: Expected RequestData was not returned by adapters' MakeRequests() implementation: httpRequest[%d]", filename, i))
-	}
-
-	// verify all expected and actual were involved in a match
-	for i := 0; i < len(expected); i++ {
-		if _, ok := expectedMatched[i]; !ok {
-			t.Errorf("%s: Expected RequestData[%d] was not matched to a result", filename, i)
-		}
-	}
-	for i := 0; i < len(actual); i++ {
-		if _, ok := actualMatched[i]; !ok {
-			t.Errorf("%s: Actual RequestData[%d] was not matched to a result", filename, i)
-		}
+		assert.NoError(t, err, fmt.Sprintf("%s Expected RequestData was not returned by adapters' MakeRequests() implementation: httpRequest[%d]", filename, i))
 	}
 }
 
@@ -283,22 +266,19 @@ func assertErrorList(t *testing.T, description string, actual []error, expected 
 		t.Fatalf("%s had wrong error count. Expected %d, got %d (%v)", description, len(expected), len(actual), actual)
 	}
 	for i := 0; i < len(actual); i++ {
-		switch expected[i].Comparison {
-		case "":
-			fallthrough
-		case "literal":
+		if expected[i].Comparison == "literal" {
 			if expected[i].Value != actual[i].Error() {
 				t.Errorf(`%s error[%d] had wrong message. Expected "%s", got "%s"`, description, i, expected[i].Value, actual[i].Error())
 			}
-		case "regex":
+		} else if expected[i].Comparison == "regex" {
 			if matched, _ := regexp.MatchString(expected[i].Value, actual[i].Error()); !matched {
 				t.Errorf(`%s error[%d] had wrong message. Expected match with regex "%s", got "%s"`, description, i, expected[i].Value, actual[i].Error())
 			}
-		case "startswith":
+		} else if expected[i].Comparison == "startswith" {
 			if !strings.HasPrefix(actual[i].Error(), expected[i].Value) {
 				t.Errorf(`%s error[%d] had wrong message. Expected to start with "%s", got "%s"`, description, i, expected[i].Value, actual[i].Error())
 			}
-		default:
+		} else {
 			t.Fatalf(`invalid comparison type "%s"`, expected[i].Comparison)
 		}
 	}
@@ -306,21 +286,12 @@ func assertErrorList(t *testing.T, description string, actual []error, expected 
 
 func assertMakeBidsOutput(t *testing.T, filename string, bidderResponse *adapters.BidderResponse, expected expectedBidResponse) {
 	t.Helper()
-
-	if expected.Currency != "" {
-		if !assert.Equal(t, expected.Currency, bidderResponse.Currency, "%s: Wrong MakeBids bidderResponse.Currency. Got %s, expected %s", filename, bidderResponse.Currency, expected.Currency) {
-			return
-		}
-	}
-
 	if !assert.Len(t, bidderResponse.Bids, len(expected.Bids), "%s: Wrong MakeBids bidderResponse.Bids count. len(bidderResponse.Bids) = %d vs len(spec.BidResponses.Bids) = %d", filename, len(bidderResponse.Bids), len(expected.Bids)) {
 		return
 	}
-
 	for i := 0; i < len(bidderResponse.Bids); i++ {
 		diffBids(t, fmt.Sprintf("%s:  typedBid[%d]", filename, i), bidderResponse.Bids[i], &(expected.Bids[i]))
 	}
-
 	if expected.FledgeAuctionConfigs != nil {
 		assert.NotNilf(t, bidderResponse.FledgeAuctionConfigs, "%s: expected fledgeauctionconfigs in bidderResponse", filename)
 		fledgeAuctionConfigsJson, err := json.Marshal(bidderResponse.FledgeAuctionConfigs)
@@ -334,6 +305,7 @@ func assertMakeBidsOutput(t *testing.T, filename string, bidderResponse *adapter
 // diffHttpRequests compares the actual HTTP request data to the expected one.
 // It assumes that the request bodies are JSON
 func diffHttpRequests(description string, actual *adapters.RequestData, expected *httpRequest) error {
+
 	if actual == nil {
 		return fmt.Errorf("Bidders cannot return nil HTTP calls. %s was nil.", description)
 	}
@@ -364,7 +336,6 @@ func diffHttpRequests(description string, actual *adapters.RequestData, expected
 	if !cmp.Equal(expected.ImpIDs, actual.ImpIDs, opt) {
 		return fmt.Errorf(`%s actual.ImpIDs "%q" do not match expected "%q"`, description, actual.ImpIDs, expected.ImpIDs)
 	}
-
 	return diffJson(description, actual.Body, expected.Body)
 }
 

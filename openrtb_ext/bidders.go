@@ -87,12 +87,10 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderBluesea,
 	BidderBmtm,
 	BidderBoldwin,
-	BidderBoldwinRapid,
 	BidderBrave,
 	BidderBWX,
 	BidderCadentApertureMX,
 	BidderCcx,
-	BidderClydo,
 	BidderCointraffic,
 	BidderCoinzilla,
 	BidderColossus,
@@ -179,7 +177,6 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderMetaX,
 	BidderMgid,
 	BidderMgidX,
-	BidderMicrosoft,
 	BidderMinuteMedia,
 	BidderMissena,
 	BidderMobfoxpb,
@@ -469,12 +466,10 @@ const (
 	BidderBluesea           BidderName = "bluesea"
 	BidderBmtm              BidderName = "bmtm"
 	BidderBoldwin           BidderName = "boldwin"
-	BidderBoldwinRapid      BidderName = "boldwin_rapid"
 	BidderBrave             BidderName = "brave"
 	BidderBWX               BidderName = "bwx"
 	BidderCadentApertureMX  BidderName = "cadent_aperture_mx"
 	BidderCcx               BidderName = "ccx"
-	BidderClydo             BidderName = "clydo"
 	BidderCointraffic       BidderName = "cointraffic"
 	BidderCoinzilla         BidderName = "coinzilla"
 	BidderColossus          BidderName = "colossus"
@@ -561,7 +556,6 @@ const (
 	BidderMetaX             BidderName = "metax"
 	BidderMgid              BidderName = "mgid"
 	BidderMgidX             BidderName = "mgidX"
-	BidderMicrosoft         BidderName = "msft"
 	BidderMinuteMedia       BidderName = "minutemedia"
 	BidderMissena           BidderName = "missena"
 	BidderMobfoxpb          BidderName = "mobfoxpb"

@@ -29,7 +29,6 @@
             }
         ],
         "ext": {
-          "appnexus": {},
             "prebid": {
                 "targeting": {
                     "includebrandcategory": {

@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-type LogMsg func(string, ...any)
+type LogMsg func(string, ...interface{})
 
 type randomGenerator func() float32
 

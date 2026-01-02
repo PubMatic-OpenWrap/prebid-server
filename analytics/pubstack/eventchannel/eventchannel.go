@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/prebid/prebid-server/v3/logger"
+	"github.com/golang/glog"
 )
 
 type Metrics struct {
@@ -66,7 +66,7 @@ func (c *EventChannel) buffer(event []byte) {
 
 	_, err := c.gz.Write(event)
 	if err != nil {
-		logger.Warnf("[pubstack] fail to compress, skip the event")
+		glog.Warning("[pubstack] fail to compress, skip the event")
 		return
 	}
 
@@ -104,7 +104,7 @@ func (c *EventChannel) flush() {
 	// finish writing gzip header
 	err := c.gz.Close()
 	if err != nil {
-		logger.Warnf("[pubstack] fail to close gzipped buffer")
+		glog.Warning("[pubstack] fail to close gzipped buffer")
 		return
 	}
 
@@ -112,7 +112,7 @@ func (c *EventChannel) flush() {
 	payload := make([]byte, c.buff.Len())
 	_, err = c.buff.Read(payload)
 	if err != nil {
-		logger.Warnf("[pubstack] fail to copy the buffer")
+		glog.Warning("[pubstack] fail to copy the buffer")
 		return
 	}
 

@@ -2456,7 +2456,6 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 		gdprAllowedBidders     []openrtb_ext.BidderName
 		expectedBidders        []openrtb_ext.BidderName
 		expectedBlockedBidders []openrtb_ext.BidderName
-		expectedErrors         []error
 	}{
 		{
 			description:            "gdpr enforced, one request allowed and one request blocked",
@@ -2464,10 +2463,6 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			gdprAllowedBidders:     []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus},
 			expectedBidders:        []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus},
 			expectedBlockedBidders: []openrtb_ext.BidderName{openrtb_ext.BidderRubicon},
-			expectedErrors: []error{&errortypes.Warning{
-				Message:     `bidder "rubicon" blocked by privacy settings`,
-				WarningCode: errortypes.BidderBlockedByPrivacySettings,
-			}},
 		},
 		{
 			description:            "gdpr enforced, two requests allowed and no requests blocked",
@@ -2536,7 +2531,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			bidders = append(bidders, req.BidderName)
 		}
 
-		assert.Equal(t, test.expectedErrors, errs, test.description)
+		assert.Empty(t, errs, test.description)
 		assert.ElementsMatch(t, bidders, test.expectedBidders, test.description)
 
 		for _, blockedBidder := range test.expectedBlockedBidders {
@@ -2756,11 +2751,6 @@ func TestBuildRequestExtForBidder(t *testing.T) {
 			name:         "targeting",
 			requestExt:   json.RawMessage(`{"prebid":{"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includebidderkeys":true,"includewinners":true,"includebrandcategory":{"primaryadserver":1,"publisher":"anyPublisher","withcategory":true}}}}`),
 			expectedJson: json.RawMessage(`{"prebid":{"targeting":{"includebrandcategory":{"primaryadserver":1,"publisher":"anyPublisher","withcategory":true}}}}`),
-		},
-		{
-			name:         "request_ext_with_aliase",
-			requestExt:   json.RawMessage(`{"prebid":{"aliases":{"foo":"pubmatic", "bar":"pubmatic"}}}`),
-			expectedJson: json.RawMessage(`{"prebid":{"aliases":{"foo":"pubmatic"}}}`),
 		},
 	}
 
@@ -5134,7 +5124,6 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 		expectedDevice    openrtb2.Device
 		expectedSource    openrtb2.Source
 		expectedImpExt    json.RawMessage
-		expectedErrors    []error
 	}{
 		{
 			name:              "fetch_bids_request_with_one_bidder_allowed",
@@ -5154,10 +5143,6 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 			expectedUser:      expectedUserDefault,
 			expectedDevice:    expectedDeviceDefault,
 			expectedSource:    expectedSourceDefault,
-			expectedErrors: []error{&errortypes.Warning{
-				Message:     `bidder "appnexus" blocked by privacy settings`,
-				WarningCode: errortypes.BidderBlockedByPrivacySettings,
-			}},
 		},
 		{
 			name:              "transmit_ufpd_allowed",
@@ -5302,7 +5287,7 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 			}
 
 			bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
-			assert.Equal(t, test.expectedErrors, errs)
+			assert.Empty(t, errs)
 			assert.Len(t, bidderRequests, test.expectedReqNumber)
 
 			if test.expectedReqNumber == 1 {

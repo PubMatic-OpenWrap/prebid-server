@@ -307,7 +307,7 @@
   ],
   "expectedBidResponses": [
     {
-      "currency": "CNY",
+      "currency": "USD",
       "bids": [
         {
           "bid": {

@@ -77,7 +77,7 @@
               }
           }]
         }],
-        "cur": "EUR"
+        "currency": "EUR"
       }
     }
   }],

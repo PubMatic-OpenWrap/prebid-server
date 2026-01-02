@@ -190,10 +190,6 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 
 		// privacy blocking
 		if rs.isBidderBlockedByPrivacy(reqWrapperCopy, auctionReq.Activities, auctionPermissions, coreBidder, openrtb_ext.BidderName(bidder)) {
-			errs = append(errs, &errortypes.Warning{
-				Message:     fmt.Sprintf("bidder %q blocked by privacy settings", coreBidder),
-				WarningCode: errortypes.BidderBlockedByPrivacySettings,
-			})
 			continue
 		}
 
@@ -510,14 +506,6 @@ func buildRequestExtForBidder(bidder string, req *openrtb_ext.RequestWrapper, re
 	prebidNew := openrtb_ext.ExtRequestPrebid{
 		BidderParams:         reqExtBidderParams[bidder],
 		AlternateBidderCodes: alternateBidderCodes,
-	}
-
-	if prebid != nil && prebid.Aliases != nil {
-		if aliasValue, ok := prebid.Aliases[bidder]; ok {
-			prebidNew.Aliases = map[string]string{
-				bidder: aliasValue,
-			}
-		}
 	}
 
 	// Copy Allowed Fields

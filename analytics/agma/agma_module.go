@@ -12,10 +12,10 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/docker/go-units"
+	"github.com/golang/glog"
 	"github.com/prebid/go-gdpr/vendorconsent"
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/logger"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -93,7 +93,7 @@ func (l *AgmaLogger) start() {
 	for {
 		select {
 		case <-l.sigTermCh:
-			logger.Infof("[AgmaAnalytics] Received Close, trying to flush buffer")
+			glog.Infof("[AgmaAnalytics] Received Close, trying to flush buffer")
 			l.flush()
 			return
 		case event := <-l.bufferCh:
@@ -139,7 +139,7 @@ func (l *AgmaLogger) flush() {
 	if err != nil {
 		l.reset()
 		l.mux.Unlock()
-		logger.Warnf("[AgmaAnalytics] fail to copy the buffer")
+		glog.Warning("[AgmaAnalytics] fail to copy the buffer")
 		return
 	}
 
@@ -223,7 +223,7 @@ func (l *AgmaLogger) LogAuctionObject(event *analytics.AuctionObject) {
 	}
 	data, err := serializeAnayltics(event.RequestWrapper, EventTypeAuction, code, event.StartTime)
 	if err != nil {
-		logger.Errorf("[AgmaAnalytics] Error serializing auction object: %v", err)
+		glog.Errorf("[AgmaAnalytics] Error serializing auction object: %v", err)
 		return
 	}
 	l.bufferCh <- data
@@ -239,7 +239,7 @@ func (l *AgmaLogger) LogAmpObject(event *analytics.AmpObject) {
 	}
 	data, err := serializeAnayltics(event.RequestWrapper, EventTypeAmp, code, event.StartTime)
 	if err != nil {
-		logger.Errorf("[AgmaAnalytics] Error serializing amp object: %v", err)
+		glog.Errorf("[AgmaAnalytics] Error serializing amp object: %v", err)
 		return
 	}
 	l.bufferCh <- data
@@ -255,14 +255,14 @@ func (l *AgmaLogger) LogVideoObject(event *analytics.VideoObject) {
 	}
 	data, err := serializeAnayltics(event.RequestWrapper, EventTypeVideo, code, event.StartTime)
 	if err != nil {
-		logger.Errorf("[AgmaAnalytics] Error serializing video object: %v", err)
+		glog.Errorf("[AgmaAnalytics] Error serializing video object: %v", err)
 		return
 	}
 	l.bufferCh <- data
 }
 
 func (l *AgmaLogger) Shutdown() {
-	logger.Infof("[AgmaAnalytics] Shutdown, trying to flush buffer")
+	glog.Info("[AgmaAnalytics] Shutdown, trying to flush buffer")
 	l.flush() // mutex safe
 }
 
