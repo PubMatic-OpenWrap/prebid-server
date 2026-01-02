@@ -680,3 +680,8 @@ const (
 	MBMFNoEntryFound         = 6
 	MBMFInvalidAdFormat      = 7
 )
+
+// constants for video protocol
+const (
+	CreativeVAST43Wrapper = 16
+)
