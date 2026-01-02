@@ -48,6 +48,7 @@ const (
 	InvalidUserUIDsWarningCode
 	TooLongTargetingPrefixWarningCode
 	TooShortTargetingPrefixWarningCode
+	BidderBlockedByPrivacySettings
 )
 
 // Coder provides an error or warning code with severity.
