@@ -93,7 +93,7 @@ func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]
 
 func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
 	if removeApplovinNode(maxRequest.Source) {
-		glog.V(models.LogLevelDebug).Info("Removed schain object from request")
+		glog.V(models.LogLevelDebug).Info("Removed applovin node from schain object from request")
 		rctx.ABTestConfigApplied = 1
 		m.metricEngine.RecordRequestWithSchainABTestEnabled()
 	}
