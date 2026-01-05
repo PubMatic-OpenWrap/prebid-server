@@ -52,7 +52,7 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 		if len(value) > 0 && len(value[0]) > 0 {
 			if parser, ok := parserMap.KeyMapping[k]; ok {
 				if err := parser(o); err != nil {
-					return nil, err
+					return o.ortb, err
 				}
 			} else {
 				//Check for Ext
@@ -63,7 +63,7 @@ func (o *OpenRTB) ParseORTBRequest(parserMap *ParserMap) (*openrtb2.BidRequest, 
 					if len(childKey) > 0 {
 						if parser, ok := parserMap.ExtMapping[parentKey]; ok {
 							if err := parser(o, childKey, o.values.GetStringPtr(k)); err != nil {
-								return nil, err
+								return o.ortb, err
 							}
 						}
 					}

@@ -81,7 +81,6 @@ func (m OpenWrap) handleEntrypointHook(
 	endpointHookManager = endpointmanager.NewEndpointManager(rCtx.Endpoint, m.metricEngine, m.cache, m.creativeCache)
 
 	if rCtx.Endpoint == models.EndpointHybrid {
-		rCtx.Endpoint = models.EndpointHybrid
 		return result, nil
 	}
 
