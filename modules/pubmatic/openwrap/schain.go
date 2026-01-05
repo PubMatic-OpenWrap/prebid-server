@@ -1,6 +1,7 @@
 package openwrap
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/buger/jsonparser"
@@ -140,6 +141,11 @@ func removeNodeFromSourceExt(src *openrtb2.Source) (removed bool) {
 
 	schainRaw, _, _, err := jsonparser.Get(src.Ext, "schain")
 	if err != nil {
+		return false
+	}
+
+	//avoid full unmarshal/marshal if AppLovin node doesn't exist in schain obj.
+	if !bytes.Contains(schainRaw, []byte("applovin.com")) {
 		return false
 	}
 
