@@ -325,7 +325,9 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 func upadateDeviceDetails(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) {
 	bidRequest.Device.IP = rCtx.DeviceCtx.IP
 	bidRequest.Device.Language = getValidLanguage(bidRequest.Device.Language)
-	bidRequest.Device.OS = rCtx.DeviceCtx.OS
+	if bidRequest.Device.OS == "" {
+		bidRequest.Device.OS = rCtx.DeviceCtx.OS
+	}
 	amendDeviceObject(bidRequest.Device, &rCtx.DeviceCtx)
 }
 
@@ -1637,9 +1639,9 @@ func getApplovinSchainABTestEnabled(percentage int) bool {
 }
 
 // resolveAdpodConfigsForImp resolves adpod configs for a given impression with below priority
-// 1. Request
+// 1. Request v2.6
 // 2. UI
-// 3. V25
+// 3. Request v2.5 from extension
 func (m OpenWrap) resolveAdpodConfigsForImp(rCtx *models.RequestCtx, imp *openrtb2.Imp) []models.PodConfig {
 	// 1. Request
 	if imp.Video != nil && len(imp.Video.PodID) > 0 {
