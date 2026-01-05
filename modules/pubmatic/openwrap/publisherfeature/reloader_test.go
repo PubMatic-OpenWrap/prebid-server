@@ -128,13 +128,12 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		cache cache.Cache
 	}
 	type want struct {
-		fsc                  fsc
-		tbf                  tbf
-		ampMultiformat       ampMultiformat
-		bidRecovery          bidRecovery
-		appLovinMultiFloors  appLovinMultiFloors
-		impCountingMethod    impCountingMethod
-		appLovinSchainABTest appLovinSchainABTest
+		fsc                 fsc
+		tbf                 tbf
+		ampMultiformat      ampMultiformat
+		bidRecovery         bidRecovery
+		appLovinMultiFloors appLovinMultiFloors
+		impCountingMethod   impCountingMethod
 	}
 	tests := []struct {
 		name   string
@@ -430,58 +429,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "fetch applovin_schain_abtest feature data",
-			fields: fields{
-				cache: mockCache,
-			},
-			setup: func() {
-				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{
-					0: {
-						models.FeatureAppLovinSchainABTest: {
-							Enabled: 1,
-							Value:   "10",
-						},
-					},
-				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
-					6: 100,
-				}, nil)
-				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
-				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
-				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
-			},
-			want: want{
-				fsc: fsc{
-					disabledPublishers: map[int]struct{}{},
-					thresholdsPerDsp: map[int]int{
-						6: 100,
-					},
-				},
-				ampMultiformat: ampMultiformat{
-					enabledPublishers: map[int]struct{}{},
-				},
-				tbf: tbf{
-					pubProfileTraffic: map[int]map[int]int{},
-				},
-				bidRecovery: bidRecovery{
-					enabledPublisherProfile: map[int]map[int]struct{}{},
-				},
-				appLovinMultiFloors: appLovinMultiFloors{
-					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
-				},
-				impCountingMethod: impCountingMethod{
-					enabledBidders: [2]map[string]struct{}{
-						{},
-						{},
-					},
-					index: 1,
-				},
-				appLovinSchainABTest: appLovinSchainABTest{
-					schainABTestPercent: 10,
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -511,7 +458,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)
 			assert.Equal(t, tt.want.appLovinMultiFloors, fe.appLovinMultiFloors, tt.name)
 			assert.Equal(t, tt.want.impCountingMethod, fe.impCountingMethod, tt.name)
-			assert.Equal(t, tt.want.appLovinSchainABTest, fe.appLovinSchainABTest, tt.name)
 		})
 	}
 }

@@ -618,21 +618,20 @@ const (
 
 // constants for feature id
 const (
-	FeatureFSC                  = 1
-	FeatureTBF                  = 2
-	FeatureAMPMultiFormat       = 3
-	FeatureAnalyticsThrottle    = 4
-	FeatureMaxFloors            = 5
-	FeatureBidRecovery          = 6
-	FeatureApplovinMultiFloors  = 7
-	FeatureImpCountingMethod    = 8
-	FeatureMBMFCountry          = 9
-	FeatureMBMFPublisher        = 10
-	FeatureMBMFInstlFloors      = 11
-	FeatureMBMFRwddFloors       = 12
-	FeatureMBMFBannerFloors     = 13
-	FeatureDynamicFloor         = 15
-	FeatureAppLovinSchainABTest = 16
+	FeatureFSC                 = 1
+	FeatureTBF                 = 2
+	FeatureAMPMultiFormat      = 3
+	FeatureAnalyticsThrottle   = 4
+	FeatureMaxFloors           = 5
+	FeatureBidRecovery         = 6
+	FeatureApplovinMultiFloors = 7
+	FeatureImpCountingMethod   = 8
+	FeatureMBMFCountry         = 9
+	FeatureMBMFPublisher       = 10
+	FeatureMBMFInstlFloors     = 11
+	FeatureMBMFRwddFloors      = 12
+	FeatureMBMFBannerFloors    = 13
+	FeatureDynamicFloor        = 15
 )
 
 // constants for sdk integrations

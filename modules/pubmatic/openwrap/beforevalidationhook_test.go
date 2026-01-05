@@ -5618,7 +5618,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
-				mockFeature.EXPECT().GetApplovinSchainABTestPercentage().Return(100)
 				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
@@ -5700,7 +5699,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
-				mockFeature.EXPECT().GetApplovinSchainABTestPercentage().Return(0)
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -8331,55 +8329,6 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 			m.updateAppLovinMaxRequestSchain(tt.rctx, tt.maxRequest)
 			assert.Equal(t, tt.want, tt.maxRequest)
 			assert.Equal(t, tt.wantABTestEnabled, (tt.rctx.ABTestConfigApplied == 1))
-		})
-	}
-}
-
-func Test_getApplovinSchainABTestEnabled(t *testing.T) {
-	tests := []struct {
-		name         string
-		percentage   int
-		randomNumber int
-		want         bool
-	}{
-		{
-			name:         "percentage_is_negative_number, randomNumber_is_less_than_percentage",
-			percentage:   -10,
-			want:         false,
-			randomNumber: 1,
-		},
-		{
-			name:         "percentage_is_0, randomNumber_is_less_than_percentage",
-			percentage:   0,
-			want:         false,
-			randomNumber: 50,
-		},
-		{
-			name:         "percentage_is_100, randomNumber_is_less_than_percentage",
-			percentage:   100,
-			want:         true,
-			randomNumber: 10,
-		},
-		{
-			name:         "percentage_is_50, randomNumber_is_equal_to_percentage",
-			percentage:   50,
-			want:         true,
-			randomNumber: 50,
-		},
-		{
-			name:         "percentage_is_57, randomNumber_is_greater_than_percentage",
-			percentage:   57,
-			want:         false,
-			randomNumber: 75,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			GetRandomNumberIn1To100 = func() int {
-				return tt.randomNumber
-			}
-			got := getApplovinSchainABTestEnabled(tt.percentage)
-			assert.Equal(t, tt.want, got)
 		})
 	}
 }
