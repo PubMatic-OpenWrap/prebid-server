@@ -4,25 +4,16 @@ import (
 	"fmt"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-type podSelection struct {
+type structuredPodSelection struct {
 	bids      []*podBid
 	totalCPM  float64
 	dealCount int
-}
-
-func cloneSet(m map[string]struct{}) map[string]struct{} {
-	out := make(map[string]struct{}, len(m))
-	for k := range m {
-		out[k] = struct{}{}
-	}
-	return out
 }
 
 func validateAndCollectBids(rCtx *models.RequestCtx, podCfg models.AdpodConfig, bidresponse *openrtb2.BidResponse) [][]*podBid {
@@ -76,8 +67,8 @@ func validateAndCollectBids(rCtx *models.RequestCtx, podCfg models.AdpodConfig, 
 	return bidsPerSlot
 }
 
-func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid, supportDeals bool) *podSelection {
-	best := &podSelection{dealCount: -1}
+func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid, supportDeals bool) *structuredPodSelection {
+	best := &structuredPodSelection{dealCount: -1}
 
 	var dfs func(
 		slotIdx int,
@@ -119,12 +110,12 @@ func getBestAdpodCombination(podCfg models.AdpodConfig, candsPerSlot [][]*podBid
 
 		// Option 2: try each candidate for this slot
 		for _, c := range candsPerSlot[slotIdx] {
-			if !canUse(podCfg.Exclusion, c, usedDom, usedCat) {
+			if !exclusionSatisfied(podCfg.Exclusion, c, usedDom, usedCat) {
 				continue
 			}
 
-			nd := cloneSet(usedDom)
-			nc := cloneSet(usedCat)
+			nd := deepCloneMap(usedDom)
+			nc := deepCloneMap(usedCat)
 			if podCfg.Exclusion.AdvertiserDomainExclusion {
 				for _, d := range c.Bid.ADomain {
 					nd[d] = struct{}{}
@@ -257,60 +248,4 @@ func StructuredAdpodAuction(rCtx *models.RequestCtx, bidresponse *openrtb2.BidRe
 	}
 
 	return nil
-}
-
-type podBid struct {
-	openrtb2.Bid
-	Nbr               *openrtb3.NoBidReason
-	DealTierSatisfied bool
-}
-
-func newPodBid(b openrtb2.Bid, dealtierSatisfied bool) *podBid {
-	return &podBid{
-		Bid:               b,
-		Nbr:               nil,
-		DealTierSatisfied: dealtierSatisfied,
-	}
-}
-
-// minduration/maxduration OR rqddurs
-func durationOK(dur int64, s models.SlotConfig) bool {
-	if len(s.RqdDurs) > 0 {
-		for _, d := range s.RqdDurs {
-			if d == dur {
-				return true
-			}
-		}
-		return false
-	}
-	if s.MinDuration > 0 && dur < s.MinDuration {
-		return false
-	}
-	if s.MaxDuration > 0 && dur > s.MaxDuration {
-		return false
-	}
-	return true
-}
-
-func canUse(excl models.ExclusionConfig, c *podBid, usedDom, usedCat map[string]struct{}) bool {
-	if c == nil {
-		return false
-	}
-	if excl.AdvertiserDomainExclusion {
-		for _, d := range c.ADomain {
-			if _, ok := usedDom[d]; ok {
-				c.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeAdvertiserExclusions)
-				return false
-			}
-		}
-	}
-	if excl.IABCategoryExclusion {
-		for _, cat := range c.Cat {
-			if _, ok := usedCat[cat]; ok {
-				c.Nbr = ptrutil.ToPtr(exchange.ResponseRejectedCreativeCategoryExclusions)
-				return false
-			}
-		}
-	}
-	return true
 }

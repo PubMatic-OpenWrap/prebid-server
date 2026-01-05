@@ -1498,7 +1498,7 @@ func (o *OpenRTB) ORTBAppContentKeywords() (err error) {
 
 // ORTBAppContentLiveStream will read and set ortb App.Content.LiveStream parameter
 func (o *OpenRTB) ORTBAppContentLiveStream() (err error) {
-	val, ok, err := o.values.GetInt(ORTBAppContentLiveStream)
+	val, ok, err := o.values.GetBoolToInt(ORTBAppContentLiveStream)
 	if !ok || err != nil {
 		return
 	}
