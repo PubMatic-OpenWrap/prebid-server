@@ -7,6 +7,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
+// TODO: Execute this functionality in mutations
 func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device **openrtb2.Device) {
 	if *device == nil {
 		*device = &openrtb2.Device{}
@@ -27,6 +28,11 @@ func ReplaceDeviceTypeFromAdUnitConfig(rCtx models.RequestCtx, device **openrtb2
 	}
 
 	if adUnitCfg == nil || adUnitCfg.Device == nil {
+		return
+	}
+
+	// Validate value of deviceType. Check https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf#page=56
+	if adUnitCfg.Device.DeviceType < adcom1.DeviceMobile || adUnitCfg.Device.DeviceType > adcom1.DeviceOOH {
 		return
 	}
 
