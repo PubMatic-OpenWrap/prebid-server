@@ -1018,6 +1018,29 @@ func (m OpenWrap) validateBidRequest(rCtx models.RequestCtx, result hookstage.Ho
 		return result, false
 	}
 
+	// validate user ext
+	if bidRequest.User != nil {
+		var userExt openrtb_ext.ExtUser
+		err := json.Unmarshal(bidRequest.User.Ext, &userExt)
+		if err != nil {
+			result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+			result.Errors = append(result.Errors, "invalid user.ext")
+			return result, false
+		}
+
+		if userExt.ImpDepth < 0 {
+			result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+			result.Errors = append(result.Errors, "invalid user.ext.impdepth")
+			return result, false
+		}
+
+		if userExt.SessionDuration < 0 {
+			result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+			result.Errors = append(result.Errors, "invalid user.ext.sessionduration")
+			return result, false
+		}
+	}
+
 	return result, true
 }
 
@@ -1276,6 +1299,14 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 		}
 	}
 
+	err := validateImpExtension(impExt)
+	if err != nil {
+		result.NbrCode = int(openrtb3.NoBidInvalidRequest)
+		result.Errors = append(result.Errors, err.Error())
+		rCtx.ImpBidCtx = map[string]models.ImpCtx{} // do not create "s" object in owlogger
+		return result, false
+	}
+
 	// Handle tag ID
 	if rCtx.Endpoint == models.EndpointWebS2S {
 		imp.TagID = getTagID(*imp, impExt)
@@ -1425,6 +1456,24 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 	}
 
 	return result, true
+}
+
+func validateImpExtension(impExt *models.ImpExtension) error {
+	if impExt == nil {
+		return nil
+	}
+
+	// validate dealtier
+	for bidder, bidderExt := range impExt.Bidder {
+		if bidderExt.DealTier == nil {
+			continue
+		}
+		if bidderExt.DealTier.MinDealTier < 1 || strings.TrimSpace(bidderExt.DealTier.Prefix) == "" {
+			return fmt.Errorf("invalid deal tier for bidder %s", bidder)
+		}
+	}
+
+	return nil
 }
 
 // processAdUnitConfig processes ad unit configuration for an impression
