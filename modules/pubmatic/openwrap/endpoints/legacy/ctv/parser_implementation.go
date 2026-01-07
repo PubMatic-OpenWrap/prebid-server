@@ -749,7 +749,7 @@ func (o *OpenRTB) ORTBSiteContentKeywords() (err error) {
 
 // ORTBSiteContentLiveStream will read and set ortb Site.Content.LiveStream parameter
 func (o *OpenRTB) ORTBSiteContentLiveStream() (err error) {
-	val, ok, err := o.values.GetInt(ORTBSiteContentLiveStream)
+	val, ok, err := o.values.GetBoolToInt(ORTBSiteContentLiveStream)
 	if !ok || err != nil {
 		return
 	}
@@ -2326,7 +2326,7 @@ func (o *OpenRTB) ORTBDeviceDnt() (err error) {
 
 // ORTBDeviceLmt will read and set ortb Device.Lmt parameter
 func (o *OpenRTB) ORTBDeviceLmt() (err error) {
-	val, ok, err := o.values.GetInt(ORTBDeviceLmt)
+	val, ok, err := o.values.GetBoolToInt(ORTBDeviceLmt)
 	if !ok || err != nil {
 		return
 	}

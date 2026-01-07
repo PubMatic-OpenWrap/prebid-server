@@ -101,6 +101,11 @@ func (values *URLValues) GetBoolToInt(key string) (int, bool, error) {
 		return 0, false, nil
 	}
 
+	intVal, err := strconv.Atoi(v)
+	if err == nil {
+		return intVal, true, nil
+	}
+
 	switch strings.ToLower(v) {
 	case "true", "1":
 		return 1, true, nil
