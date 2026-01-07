@@ -307,7 +307,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		addLostToDealBidNonBRCode(&rctx)
 	}
 
-	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse)
+	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse, moduleCtx.GlobalAccountConfig)
 	if len(droppedBids) != 0 {
 		rctx.DroppedBids = droppedBids
 	}
@@ -350,7 +350,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
 	rctx.DefaultBids = m.addDefaultBidsForMultiFloorsConfig(&rctx, payload.BidResponse, responseExt)
 
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse, moduleCtx.GlobalAccountConfig)
 
 	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs

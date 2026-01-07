@@ -864,3 +864,54 @@ func builderNexx360(params BidderParameters) (json.RawMessage, error) {
 
 	return jsonStr.Bytes(), nil
 }
+
+func builder33Across(params BidderParameters) (json.RawMessage, error) {
+	productId, hasProductId := getString(params.FieldMap["productId"])
+	siteId, hasSiteId := getString(params.FieldMap["siteId"])
+	zoneId, hasZoneId := getString(params.FieldMap["zoneId"])
+
+	// productId is mandatory in both anyOf conditions
+	if !hasProductId {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"productId"})
+	}
+
+	// Must satisfy at least one: ["productId", "siteId"] OR ["productId", "zoneId"]
+	if !hasSiteId && !hasZoneId {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"siteId", "zoneId"})
+	}
+
+	// Construct JSON like the Nexx360 builder
+	var buf bytes.Buffer
+	buf.WriteString(`{"productId":"` + productId + `"`)
+
+	if hasSiteId {
+		buf.WriteString(`,"siteId":"` + siteId + `"`)
+	}
+	if hasZoneId {
+		buf.WriteString(`,"zoneId":"` + zoneId + `"`)
+	}
+
+	buf.WriteString("}")
+
+	return buf.Bytes(), nil
+}
+
+// builderMSFT for building json object for Microsoft bidder
+func builderMSFT(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	placementID, hasPlacementID := getInt(params.FieldMap["placement_id"])
+	invCode, hasInvCode := getString(params.FieldMap["inv_code"])
+	member, hasMember := getInt(params.FieldMap["member"])
+
+	if hasPlacementID {
+		fmt.Fprintf(&jsonStr, `{"placement_id":%d}`, placementID)
+		return jsonStr.Bytes(), nil
+	}
+
+	if hasInvCode && invCode != "" && hasMember {
+		fmt.Fprintf(&jsonStr, `{"inv_code":"%s","member":%d}`, invCode, member)
+		return jsonStr.Bytes(), nil
+	}
+
+	return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"placement_id", "inv_code", "member"})
+}

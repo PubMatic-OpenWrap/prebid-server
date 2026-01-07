@@ -472,6 +472,37 @@ func TestModifyImpression(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "native object",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "1",
+						Native: &openrtb2.Native{
+							Request: "request-native",
+						},
+					},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ID: "1",
+					Native: &openrtb2.Native{
+						Request: "signal-native",
+					},
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "1",
+						Native: &openrtb2.Native{
+							Request: "signal-native",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

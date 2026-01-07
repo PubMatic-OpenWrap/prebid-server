@@ -1,5 +1,7 @@
 package config
 
+const DefaultBidRoundingMode = RoundingModeDown
+
 type OpenWrapConfig struct {
 	// OpenWrap Configurations
 	FastXMLEnabledPercentage int                 `mapstructure:"fast_xml_enabled_percentage"`

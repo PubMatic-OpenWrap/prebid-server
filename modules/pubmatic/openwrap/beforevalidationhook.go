@@ -15,6 +15,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -1595,6 +1596,61 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	if adUnitCfg.Native.Enabled != nil && !*adUnitCfg.Native.Enabled {
 		imp.Native = nil
 		return
+	}
+	applyNativeVideoAssetRulesFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native, rCtx.PubID, rCtx.ProfileID)
+}
+
+// applyNativeVideoAssetRulesFromAdUnitConfig applies native video asset rules from adunit config, if configured
+func applyNativeVideoAssetRulesFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native, PubID int, ProfileID int) {
+	if impNative.Request == "" || nativeCfg == nil || nativeCfg.Video.Enabled == nil {
+		return
+	}
+
+	var nReq nativeRequests.Request
+	if err := json.Unmarshal([]byte(impNative.Request), &nReq); err != nil {
+		glog.Errorf("[native_request_json_unmarshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
+		return
+	}
+
+	assets := nReq.Assets
+	changed := false
+	if *nativeCfg.Video.Enabled {
+		videoCfg := nativeCfg.Video.Config
+		for i := range assets {
+			if assets[i].Video == nil {
+				continue
+			}
+			if videoCfg.MinDuration != nil {
+				assets[i].Video.MinDuration = *videoCfg.MinDuration
+				changed = true
+			}
+			if videoCfg.MaxDuration != nil {
+				assets[i].Video.MaxDuration = *videoCfg.MaxDuration
+				changed = true
+			}
+		}
+	} else {
+		writeIdx := 0
+		for i := range assets {
+			if assets[i].Video != nil {
+				changed = true
+				continue
+			}
+			assets[writeIdx] = assets[i]
+			writeIdx++
+		}
+		if changed {
+			nReq.Assets = assets[:writeIdx]
+		}
+	}
+	if !changed {
+		return
+	}
+	nReqBytes, err := json.Marshal(&nReq)
+	if err != nil {
+		glog.Errorf("[native_request_json_marshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
+	} else {
+		impNative.Request = string(nReqBytes)
 	}
 }
 

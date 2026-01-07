@@ -20,6 +20,7 @@ const (
 	BidderAppStockAlias          = "appstock"
 	BidderAdsYieldAlias          = "adsyield"
 	BidderIionadsAlias           = "iionads"
+	BidderRobustAppsAlias        = "robustApps"
 )
 
 const (

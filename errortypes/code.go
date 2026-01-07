@@ -18,6 +18,7 @@ const (
 	FailedToMarshalErrorCode
 	FailedToUnmarshalErrorCode
 	InvalidImpFirstPartyDataErrorCode
+	BidderTemporarilyThrottledErrorCode
 
 	// NYC: shall we have different range for OW error codes to avoid change in codes with introduction of new PBS error codes.
 	NoBidPriceErrorCode
@@ -47,6 +48,7 @@ const (
 	InvalidUserUIDsWarningCode
 	TooLongTargetingPrefixWarningCode
 	TooShortTargetingPrefixWarningCode
+	BidderBlockedByPrivacySettings
 )
 
 // Coder provides an error or warning code with severity.

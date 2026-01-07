@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -87,10 +88,11 @@ var rctx = models.RequestCtx{
 func Test_createTrackers(t *testing.T) {
 	startTime := time.Now().Unix()
 	type args struct {
-		trackers    map[string]models.OWTracker
-		rctx        models.RequestCtx
-		bidResponse *openrtb2.BidResponse
-		pmMkt       map[string]pubmaticMarketplaceMeta
+		trackers            map[string]models.OWTracker
+		rctx                models.RequestCtx
+		bidResponse         *openrtb2.BidResponse
+		pmMkt               map[string]pubmaticMarketplaceMeta
+		globalAccountConfig *config.Account
 	}
 	tests := []struct {
 		name string
@@ -121,6 +123,7 @@ func Test_createTrackers(t *testing.T) {
 					}()
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -203,6 +206,7 @@ func Test_createTrackers(t *testing.T) {
 					testRctx.PrebidBidderCode["pubmatic2"] = "pubmatic"
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -341,6 +345,7 @@ func Test_createTrackers(t *testing.T) {
 					}()
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -419,7 +424,7 @@ func Test_createTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := createTrackers(tt.args.rctx, tt.args.trackers, tt.args.bidResponse, tt.args.pmMkt)
+			got := createTrackers(tt.args.rctx, tt.args.trackers, tt.args.bidResponse, tt.args.pmMkt, tt.args.globalAccountConfig)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -1166,8 +1171,9 @@ func TestConstructVideoErrorURL(t *testing.T) {
 func TestCreateTrackers(t *testing.T) {
 	startTime := time.Now().Unix()
 	type args struct {
-		rctx        models.RequestCtx
-		bidResponse *openrtb2.BidResponse
+		rctx                models.RequestCtx
+		bidResponse         *openrtb2.BidResponse
+		globalAccountConfig *config.Account
 	}
 	tests := []struct {
 		name string
@@ -1202,6 +1208,7 @@ func TestCreateTrackers(t *testing.T) {
 					},
 					Cur: models.USD,
 				},
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 			},
 			want: map[string]models.OWTracker{
 				"bidID-1": {
@@ -1254,7 +1261,7 @@ func TestCreateTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse)
+			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse, tt.args.globalAccountConfig)
 			assert.Equal(t, tt.want, got)
 		})
 	}

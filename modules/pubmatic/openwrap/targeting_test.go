@@ -4,18 +4,20 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddInAppTargettingKeys(t *testing.T) {
 	type args struct {
-		targeting        map[string]string
-		seat             string
-		ecpm             float64
-		bid              *openrtb2.Bid
-		isWinningBid     bool
-		priceGranularity *openrtb_ext.PriceGranularity
+		targeting           map[string]string
+		seat                string
+		ecpm                float64
+		bid                 *openrtb2.Bid
+		isWinningBid        bool
+		priceGranularity    *openrtb_ext.PriceGranularity
+		globalAccountConfig *config.Account
 	}
 	tests := []struct {
 		name          string
@@ -32,10 +34,11 @@ func TestAddInAppTargettingKeys(t *testing.T) {
 					H:      300,
 					DealID: "1",
 				},
-				seat:         "pubmatic",
-				isWinningBid: true,
-				ecpm:         2.34,
-				targeting:    map[string]string{},
+				seat:                "pubmatic",
+				isWinningBid:        true,
+				ecpm:                2.34,
+				targeting:           map[string]string{},
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 			},
 			wantTargeting: map[string]string{
 				"pwtecp_pubmatic": "2.34",
@@ -64,11 +67,12 @@ func TestAddInAppTargettingKeys(t *testing.T) {
 					H:      300,
 					DealID: "1",
 				},
-				seat:             "pubmatic",
-				priceGranularity: &priceGranularityAuto,
-				isWinningBid:     true,
-				ecpm:             2.34,
-				targeting:        map[string]string{},
+				seat:                "pubmatic",
+				priceGranularity:    &priceGranularityAuto,
+				isWinningBid:        true,
+				ecpm:                2.34,
+				targeting:           map[string]string{},
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 			},
 			wantTargeting: map[string]string{
 				"pwtecp_pubmatic": "2.34",
@@ -99,11 +103,12 @@ func TestAddInAppTargettingKeys(t *testing.T) {
 					H:      300,
 					DealID: "1",
 				},
-				seat:             "pubmatic",
-				priceGranularity: &priceGranularityAuto,
-				isWinningBid:     false,
-				ecpm:             2.34,
-				targeting:        map[string]string{},
+				seat:                "pubmatic",
+				priceGranularity:    &priceGranularityAuto,
+				isWinningBid:        false,
+				ecpm:                2.34,
+				targeting:           map[string]string{},
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 			},
 			wantTargeting: map[string]string{
 				"pwtecp_pubmatic": "2.34",
@@ -119,7 +124,7 @@ func TestAddInAppTargettingKeys(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			addInAppTargettingKeys(tt.args.targeting, tt.args.seat, tt.args.ecpm, tt.args.bid, tt.args.isWinningBid, tt.args.priceGranularity)
+			addInAppTargettingKeys(tt.args.targeting, tt.args.seat, tt.args.ecpm, tt.args.bid, tt.args.isWinningBid, tt.args.priceGranularity, tt.args.globalAccountConfig)
 			assert.Equal(t, tt.wantTargeting, tt.args.targeting, tt.name)
 		})
 	}

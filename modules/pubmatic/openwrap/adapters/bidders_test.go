@@ -111,6 +111,41 @@ func TestPrepareBidParamJSONForPartner33across(t *testing.T) {
 				fieldMap: map[string]interface{}{
 					"siteId":    "testSite",
 					"productId": "testProduct",
+					"zoneId":    "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    json.RawMessage(`{"productId":"testProduct","siteId":"testSite","zoneId":"123"}`),
+			wantErr: false,
+		},
+		{
+			name: "only productId and zoneId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"productId": "testProduct",
+					"zoneId":    "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    json.RawMessage(`{"productId":"testProduct","zoneId":"123"}`),
+			wantErr: false,
+		},
+		{
+			name: "only productId and siteId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"productId": "testProduct",
+					"siteId":    "testSite",
 				},
 				slotKey:     "",
 				adapterName: string(openrtb_ext.Bidder33Across),
@@ -118,6 +153,23 @@ func TestPrepareBidParamJSONForPartner33across(t *testing.T) {
 			},
 			want:    json.RawMessage(`{"productId":"testProduct","siteId":"testSite"}`),
 			wantErr: false,
+		},
+		{
+			name: "only siteId and zoneId present",
+			args: args{
+
+				width:  nil,
+				height: nil,
+				fieldMap: map[string]interface{}{
+					"siteId": "testSite",
+					"zoneId": "123",
+				},
+				slotKey:     "",
+				adapterName: string(openrtb_ext.Bidder33Across),
+				bidderCode:  string(openrtb_ext.Bidder33Across),
+			},
+			want:    nil,
+			wantErr: true,
 		},
 		{
 			name: "siteId is missing",
@@ -3473,6 +3525,59 @@ func TestBuilderNexx360(t *testing.T) {
 			got, err := builderNexx360(tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("builderNexx360() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
+
+func TestBuilderMSFT(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenerio (oneOf placement_id OR inv_code+member) is present-placement_id",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placement_id": 123}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(`{"placement_id":123}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenerio (oneOf placement_id OR inv_code+member) is present-inv_code+member",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"inv_code": "abc", "member": 456}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(`{"inv_code":"abc","member":456}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenerio (None Of placement_id or inv_code+member) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (inv_code without member) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"inv_code": "abc"}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenerio (member without inv_code) is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"member": 456}, AdapterName: string(openrtb_ext.BidderMicrosoft)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderMSFT(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderMSFT() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			AssertJSON(t, tt.want, got)

@@ -10,6 +10,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
@@ -872,6 +873,9 @@ func TestGetPartnerRecordsByImpForTracker(t *testing.T) {
 								Seat: "pubmatic",
 							},
 						},
+					},
+					Account: &config.Account{
+						BidRounding: config.RoundingModeDown,
 					},
 				},
 				rCtx: &models.RequestCtx{
@@ -1778,6 +1782,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							},
 						},
 					},
+					Account: &config.Account{BidRounding: config.RoundingModeDown},
 				},
 				rCtx: &models.RequestCtx{
 					PriceGranularity: &pg,
@@ -1877,6 +1882,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							},
 						},
 					},
+					Account: &config.Account{BidRounding: config.RoundingModeDown},
 				},
 				rCtx: &models.RequestCtx{
 					PriceGranularity: &pg,
@@ -2084,6 +2090,7 @@ func TestGetPartnerRecordsByImpForSeatNonBid(t *testing.T) {
 							},
 						},
 					},
+					Account: &config.Account{BidRounding: config.RoundingModeDown},
 				},
 				rCtx: &models.RequestCtx{
 					PriceGranularity: &pg,

@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -3445,7 +3446,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -3801,7 +3802,7 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -5618,7 +5619,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 				mockFeature.EXPECT().GetApplovinSchainABTestPercentage().Return(100)
-				mockEngine.EXPECT().RecordRequestWithSchainABTestEnabled()
 				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
@@ -5633,8 +5633,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 					DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","DisplayManager":"","DisplayManagerVer":"","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"Native":null,"IncomingSlots":["700x900","728x90","300x250","640x480"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"gpid":"adunit","prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"NativeAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
 					AnalyticsTags: hookanalytics.Analytics{},
 				},
-				// bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","secure":1,"banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}},"gpid":"adunit"}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1","schain":{"ver":"2.0","complete":1,"nodes":[{"asi":"indirectseller-1.com","sid":"00001","hp":1}]}}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true},"schains":[{"bidders":["bidderA"],"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":""}]}}],"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
-				bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","secure":1,"banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}},"gpid":"adunit"}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true},"schains":[{"bidders":["bidderA"],"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":""}]}}],"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+				bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","secure":1,"banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}},"gpid":"adunit"}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1","schain":{"ver":"2.0","complete":1,"nodes":[{"asi":"indirectseller-1.com","sid":"00001","hp":1}]}}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true,"floordeals":true},"enabled":true},"schains":[{"bidders":["bidderA"],"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":""}]}}],"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"3","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
 				error:                 false,
 				doMutate:              true,
 				nilCurrencyConversion: false,
@@ -8241,7 +8240,7 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := OpenWrap{
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 				cache:         mockCache,
 				metricEngine:  mockEngine,
 			}
@@ -8311,7 +8310,10 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 			},
 			want: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{
-					SChain: nil,
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Nodes:    []openrtb2.SupplyChainNode{},
+					},
 				},
 			},
 			wantABTestEnabled: true,
@@ -8554,4 +8556,111 @@ func TestLogHookBidRequest_NilBidRequest(t *testing.T) {
 	assert.NotPanics(t, func() {
 		logHookBidRequest("hook_start", rCtx, &openrtb2.BidRequest{}, 0)
 	}, "Should handle empty BidRequest without panicking")
+}
+
+func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
+	minDur := int64(5)
+	maxDur := int64(15)
+
+	makeNativeRequest := func(t *testing.T, req nativeRequests.Request) string {
+		b, err := json.Marshal(&req)
+		assert.NoError(t, err)
+		return string(b)
+	}
+
+	type args struct {
+		nativeCfg *adunitconfig.NativeConfig
+		impNative *openrtb2.Native
+		pubID     int
+		profileID int
+	}
+
+	tests := []struct {
+		name          string
+		args          args
+		wantImpNative *openrtb2.Native
+	}{
+		{
+			name: "video_disabled_removes_all_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(false)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 3, MaxDuration: 4}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "video_enabled_updates_durations_only_for_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+					{ID: 2, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 100, MaxDuration: 200}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+				{ID: 2, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+				{ID: 3, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+			}})},
+		},
+		{
+			name: "video_enabled_with_no_duration_config_does_not_modify_request",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "invalid_native_request_json_is_noop",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: "{"},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: "{"},
+		},
+		{
+			name: "no_change_in_video_assets_if_video_config_not_disabled_explicitely",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applyNativeVideoAssetRulesFromAdUnitConfig(tt.args.nativeCfg, tt.args.impNative, tt.args.pubID, tt.args.profileID)
+			assert.Equal(t, tt.wantImpNative, tt.args.impNative)
+		})
+	}
 }
