@@ -1019,7 +1019,7 @@ func (m OpenWrap) validateBidRequest(rCtx models.RequestCtx, result hookstage.Ho
 	}
 
 	// validate user ext
-	if bidRequest.User != nil {
+	if bidRequest.User != nil && len(bidRequest.User.Ext) > 0 {
 		var userExt openrtb_ext.ExtUser
 		err := json.Unmarshal(bidRequest.User.Ext, &userExt)
 		if err != nil {
