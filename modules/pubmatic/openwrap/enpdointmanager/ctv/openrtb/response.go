@@ -6,6 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/vastbuilder"
 )
@@ -46,6 +47,12 @@ func formResponse(rCtx *models.RequestCtx, bidResponse *openrtb2.BidResponse) *o
 		if len(videoSeatBid.Bid) > 0 {
 			seatBids = append(seatBids, videoSeatBid)
 		}
+	}
+
+	if len(seatBids) == 0 && len(bidsByPod) == 0 {
+		bidResponse.NBR = openrtb3.NoBidUnknownError.Ptr()
+		bidResponse.SeatBid = nil
+		return bidResponse
 	}
 
 	seatBids = append(seatBids, getPrebidCTVSeatBid(bidsByPod)...)
