@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -181,12 +182,40 @@ func TestTrackerWithOM(t *testing.T) {
 		rctx              models.RequestCtx
 		prebidPartnerName string
 		dspID             int
+		bidExt            json.RawMessage
+		adformat          string
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
+		{
+			name: "in-app_partner_pubmatic_video_dv360",
+			args: args{
+
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
+				adformat:          models.Video,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_native_dv360",
+			args: args{
+
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
+				adformat:          models.Native,
+			},
+			want: false,
+		},
 		{
 			name: "in-app_partner_other_than_pubmatic",
 			args: args{
@@ -195,6 +224,7 @@ func TestTrackerWithOM(t *testing.T) {
 					Platform: models.PLATFORM_APP,
 				},
 				prebidPartnerName: "test",
+				adformat:          models.Banner,
 			},
 			want: false,
 		},
@@ -206,6 +236,7 @@ func TestTrackerWithOM(t *testing.T) {
 				},
 				prebidPartnerName: models.BidderPubMatic,
 				dspID:             -1,
+				adformat:          models.Banner,
 			},
 			want: false,
 		},
@@ -217,6 +248,7 @@ func TestTrackerWithOM(t *testing.T) {
 				},
 				prebidPartnerName: models.BidderPubMatic,
 				dspID:             models.DspId_DV360,
+				adformat:          models.Banner,
 			},
 			want: false,
 		},
@@ -229,6 +261,7 @@ func TestTrackerWithOM(t *testing.T) {
 				},
 				prebidPartnerName: models.BidderPubMatic,
 				dspID:             models.DspId_DV360,
+				adformat:          models.Banner,
 			},
 			want: true,
 		},
@@ -242,6 +275,7 @@ func TestTrackerWithOM(t *testing.T) {
 					},
 				},
 				prebidPartnerName: "ix",
+				adformat:          models.Banner,
 			},
 			want: true,
 		},
@@ -255,13 +289,128 @@ func TestTrackerWithOM(t *testing.T) {
 					},
 				},
 				prebidPartnerName: "magnite",
+				adformat:          models.Banner,
 			},
 			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_publisher_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+				adformat:          models.Banner,
+			},
+			want: true,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_publisher_non_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             999,
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_disabled_publisher_non_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{1234: {}},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             999,
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_empty_inview_publishers_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{},
+					PerformanceDSPs:         map[int]struct{}{101: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_inview_enabled_empty_performance_dsps",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             101,
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_with_imp_counting_method_flag_1",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: "appnexus",
+				bidExt:            json.RawMessage(`{"imp_ct_mthd":1}`),
+				adformat:          models.Banner,
+			},
+			want: true,
+		},
+		{
+			name: "in-app_partner_other_than_pubmatic_with_invalid_bidext_json",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+				},
+				prebidPartnerName: "appnexus",
+				bidExt:            json.RawMessage(`{invalid json}`),
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
+		{
+			name: "in-app_partner_pubmatic_dv360_with_inview_and_performance_dsp",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform:                models.PLATFORM_APP,
+					PubID:                   5890,
+					InViewEnabledPublishers: map[int]struct{}{5890: {}},
+					PerformanceDSPs:         map[int]struct{}{models.DspId_DV360: {}},
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             models.DspId_DV360,
+				adformat:          models.Banner,
+			},
+			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID); got != tt.want {
+			if got := trackerWithOM(tt.args.rctx, tt.args.prebidPartnerName, tt.args.dspID, tt.args.bidExt, tt.args.adformat); got != tt.want {
 				assert.Equal(t, tt.want, got)
 			}
 		})

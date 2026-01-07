@@ -12,8 +12,8 @@ import (
 func (m OpenWrap) handleExitpointHook(
 	_ context.Context,
 	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.ExitpointPaylaod,
-) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+	payload hookstage.ExitpointPayload,
+) (hookstage.HookResult[hookstage.ExitpointPayload], error) {
 	// validate module context
 	rCtx, endpointManager, result, ok := validateModuleContextExitpointHook(miCtx)
 	if !ok {
@@ -29,7 +29,7 @@ func (m OpenWrap) handleExitpointHook(
 		return result, nil
 	}
 
-	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
+	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPayload) (hookstage.ExitpointPayload, error) {
 		ortbResponse, ok := ep.Response.(*openrtb2.BidResponse)
 		if ok {
 			resetBidIdtoOriginal(ortbResponse)
@@ -44,8 +44,8 @@ func (m OpenWrap) handleExitpointHook(
 // validateModuleContext validates that required context is available
 func validateModuleContextExitpointHook(
 	moduleCtx hookstage.ModuleInvocationContext,
-) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPaylaod], bool) {
-	result := hookstage.HookResult[hookstage.ExitpointPaylaod]{}
+) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.ExitpointPayload], bool) {
+	result := hookstage.HookResult[hookstage.ExitpointPayload]{}
 
 	if moduleCtx.ModuleContext == nil {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleExitpointHook()")

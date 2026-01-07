@@ -135,8 +135,8 @@ func (m OpenWrap) HandleRawBidderResponseHook(
 func (m OpenWrap) HandleExitpointHook(
 	ctx context.Context,
 	miCtx hookstage.ModuleInvocationContext,
-	payload hookstage.ExitpointPaylaod,
-) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+	payload hookstage.ExitpointPayload,
+) (hookstage.HookResult[hookstage.ExitpointPayload], error) {
 	defer func() {
 		if r := recover(); r != nil {
 			m.metricEngine.RecordOpenWrapServerPanicStats(m.cfg.Server.HostName, "HandleExitpointHook")

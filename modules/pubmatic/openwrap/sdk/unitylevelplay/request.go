@@ -171,6 +171,12 @@ func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 		request.Imp[0].Video = signalImps[0].Video
 	}
 
+	// modify native
+	request.Imp[0].Native = nil
+	if signalImps[0].Native != nil {
+		request.Imp[0].Native = signalImps[0].Native
+	}
+
 	// modify ext
 	request.Imp[0].Ext = modifyImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
 }

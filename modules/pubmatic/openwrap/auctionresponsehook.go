@@ -68,6 +68,8 @@ func (m OpenWrap) handleAuctionResponseHook(
 	//Impression counting method enabled bidders
 	if rctx.Endpoint == models.EndpointV25 || sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		rctx.ImpCountingMethodEnabledBidders = m.pubFeatures.GetImpCountingMethodEnabledBidders()
+		rctx.PerformanceDSPs = m.pubFeatures.GetEnabledPerformanceDSPs()
+		rctx.InViewEnabledPublishers = m.pubFeatures.GetInViewEnabledPublishers()
 	}
 
 	// Populate Bid extension
@@ -92,7 +94,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		m.metricEngine.RecordNobidErrPrebidServerResponse(rctx.PubIDStr)
 	}
 
-	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse)
+	droppedBids, warnings := m.addPWTTargetingForBid(rctx, payload.BidResponse, moduleCtx.GlobalAccountConfig)
 	if len(droppedBids) != 0 {
 		rctx.DroppedBids = droppedBids
 	}
@@ -111,7 +113,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.DefaultBids = m.addDefaultBids(&rctx, payload.BidResponse, responseExt)
 	rctx.DefaultBids = m.addDefaultBidsForMultiFloorsConfig(&rctx, payload.BidResponse, responseExt)
 
-	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse)
+	rctx.Trackers = tracker.CreateTrackers(rctx, payload.BidResponse, moduleCtx.GlobalAccountConfig)
 
 	for bidder, responseTimeMs := range responseExt.ResponseTimeMillis {
 		rctx.BidderResponseTimeMillis[bidder.String()] = responseTimeMs

@@ -306,7 +306,7 @@ func (co *CTVOpenRTB) HandleExitpointHook(
 
 	response = formResponse(rCtx, response)
 
-	result.ChangeSet.AddMutation(func(ep hookstage.ExitpointPaylaod) (hookstage.ExitpointPaylaod, error) {
+	result.ChangeSet.AddMutation(func(ep stage.ExitpointPayload) (stage.ExitpointPayload, error) {
 		rCtx, ok := utils.GetRequestContext(moduleCtx)
 		if !ok {
 			result.Errors = append(result.Errors, "failed to get request context in CTV handleExitpointHook mutation")

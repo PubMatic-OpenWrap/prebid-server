@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
@@ -28,10 +29,14 @@ type ModuleInvocationContext struct {
 	AccountID string
 	// AccountConfig represents module config rewritten at the account-level.
 	AccountConfig json.RawMessage
+	// GlobalAccountConfig holds the global account configuration
+	GlobalAccountConfig *config.Account
 	// Endpoint represents the path of the current endpoint.
 	Endpoint string
 	// ModuleContext holds values that the module passes to itself from the previous stages.
 	ModuleContext *ModuleContext
+	// HookImplCode is the hook_impl_code for a module instance to differentiate between multiple hooks
+	HookImplCode string
 }
 
 // ModuleContext holds arbitrary data passed between module hooks at different stages.

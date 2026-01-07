@@ -8,11 +8,13 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -34,6 +36,27 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
+// logHookBidRequest logs the bidRequest at different stages of the hook execution
+func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, nbrCode int) {
+	if !glog.V(models.LogLevelDebug) {
+		return
+	}
+
+	// Lazy marshal: only convert to JSON if we're actually going to log it
+	var bidRequestJSON string
+	if bidRequestBytes, err := json.Marshal(bidRequest); err == nil {
+		bidRequestJSON = string(bidRequestBytes)
+	}
+
+	if nbrCode > 0 {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] nbr:[%d] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, nbrCode, bidRequestJSON)
+	} else {
+		glog.Infof("[%s] pubid:[%d] profid:[%d] endpoint:[%s] bidrequest:[%s]",
+			stage, rCtx.PubID, rCtx.ProfileID, rCtx.Endpoint, bidRequestJSON)
+	}
+}
+
 func (m OpenWrap) handleBeforeValidationHook(
 	_ context.Context,
 	moduleCtx hookstage.ModuleInvocationContext,
@@ -45,9 +68,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
+	// Log at the start of the hook
+	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
+
 	defer func() {
 		moduleCtx.ModuleContext.Set("rctx", rCtx)
+
+		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
+			logHookBidRequest("hook_end_rejected", rCtx, payload.BidRequest, result.NbrCode)
 			m.metricEngine.RecordBadRequests(rCtx.Endpoint, rCtx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)))
 			m.metricEngine.RecordNobidErrPrebidServerRequests(rCtx.PubIDStr, result.NbrCode)
 			if glog.V(models.LogLevelDebug) {
@@ -222,6 +251,21 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		defer func() {
 			moduleCtx.ModuleContext.Set("rctx", rctx)
+			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
+
+			// Always record preprocessing time stats
+			timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
+
+			// Debug logging only
+			if glog.V(models.LogLevelDebug) {
+				processingTime := time.Duration(timeDiff) * time.Millisecond
+				timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+				remainingTime := timeoutDuration - processingTime
+				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
+				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
+				glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
+			}
 		}()
 
 		var err error
@@ -967,6 +1011,61 @@ func (m *OpenWrap) applyNativeAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2
 	if adUnitCfg.Native.Enabled != nil && !*adUnitCfg.Native.Enabled {
 		imp.Native = nil
 		return
+	}
+	applyNativeVideoAssetRulesFromAdUnitConfig(adUnitCfg.Native.Config, imp.Native, rCtx.PubID, rCtx.ProfileID)
+}
+
+// applyNativeVideoAssetRulesFromAdUnitConfig applies native video asset rules from adunit config, if configured
+func applyNativeVideoAssetRulesFromAdUnitConfig(nativeCfg *modelsAdunitConfig.NativeConfig, impNative *openrtb2.Native, PubID int, ProfileID int) {
+	if impNative.Request == "" || nativeCfg == nil || nativeCfg.Video.Enabled == nil {
+		return
+	}
+
+	var nReq nativeRequests.Request
+	if err := json.Unmarshal([]byte(impNative.Request), &nReq); err != nil {
+		glog.Errorf("[native_request_json_unmarshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
+		return
+	}
+
+	assets := nReq.Assets
+	changed := false
+	if *nativeCfg.Video.Enabled {
+		videoCfg := nativeCfg.Video.Config
+		for i := range assets {
+			if assets[i].Video == nil {
+				continue
+			}
+			if videoCfg.MinDuration != nil {
+				assets[i].Video.MinDuration = *videoCfg.MinDuration
+				changed = true
+			}
+			if videoCfg.MaxDuration != nil {
+				assets[i].Video.MaxDuration = *videoCfg.MaxDuration
+				changed = true
+			}
+		}
+	} else {
+		writeIdx := 0
+		for i := range assets {
+			if assets[i].Video != nil {
+				changed = true
+				continue
+			}
+			assets[writeIdx] = assets[i]
+			writeIdx++
+		}
+		if changed {
+			nReq.Assets = assets[:writeIdx]
+		}
+	}
+	if !changed {
+		return
+	}
+	nReqBytes, err := json.Marshal(&nReq)
+	if err != nil {
+		glog.Errorf("[native_request_json_marshal_failed][PubID]: %d [ProfileID]: %d [Error]: %s", PubID, ProfileID, err.Error())
+	} else {
+		impNative.Request = string(nReqBytes)
 	}
 }
 

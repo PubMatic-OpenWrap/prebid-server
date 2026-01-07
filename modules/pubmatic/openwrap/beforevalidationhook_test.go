@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
+	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/currency"
@@ -3447,7 +3448,7 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -3803,7 +3804,7 @@ func TestOpenWrap_applyBannerAdUnitConfig(t *testing.T) {
 				cache:         tt.fields.cache,
 				metricEngine:  tt.fields.metricEngine,
 				pubFeatures:   mockFeature,
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 			}
 			if tt.setup != nil {
 				tt.setup()
@@ -4805,6 +4806,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeVideo, "5890", "1234")
 				mockEngine.EXPECT().RecordImpDisabledViaConfigStats(models.ImpTypeBanner, "5890", "1234")
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5014,6 +5016,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "pub2-alias")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "dm-alias")
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5117,6 +5120,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "in-app")
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5299,6 +5303,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
@@ -5382,7 +5387,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockFeature.EXPECT().IsMaxFloorsEnabled(gomock.Any()).Return(false)
 				mockFeature.EXPECT().GetApplovinSchainABTestPercentage().Return(100)
-				mockEngine.EXPECT().RecordRequestWithSchainABTestEnabled()
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -5607,8 +5612,8 @@ func TestCurrencyConverion(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(5890, 1234).Return(false)
@@ -5659,8 +5664,8 @@ func TestCurrencyConverion(t *testing.T) {
 				metricEngine: mockEngine,
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointV25, "5890", "amp")
 				mockEngine.EXPECT().RecordBadRequests(rctx.Endpoint, rctx.PubIDStr, getPubmaticErrorCode(openrtb3.NoBidInvalidRequest))
 				mockEngine.EXPECT().RecordNobidErrPrebidServerRequests("5890", int(openrtb3.NoBidInvalidRequest))
 				mockFeature.EXPECT().IsTBFFeatureEnabled(5890, 1234).Return(false)
@@ -5943,9 +5948,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -6012,9 +6017,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -6086,9 +6091,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -6161,9 +6166,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -6231,9 +6236,9 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				}, nil)
 				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{})
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
-				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+				mockEngine.EXPECT().RecordPublisherRequests(rctx.Endpoint, "5890", rctx.Platform)
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats(rctx.Platform, "5890", "appnexus")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
@@ -7872,7 +7877,7 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := OpenWrap{
-				rateConvertor: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
+				rateConvertor: currency.NewRateConverter(&http.Client{}, 60*time.Second, "", time.Duration(0)),
 				cache:         mockCache,
 				metricEngine:  mockEngine,
 			}
@@ -7942,7 +7947,10 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 			},
 			want: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{
-					SChain: nil,
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Nodes:    []openrtb2.SupplyChainNode{},
+					},
 				},
 			},
 			wantABTestEnabled: true,
@@ -8018,5 +8026,278 @@ func BenchmarkExtractItunesIdFromAppStoreUrl(b *testing.B) {
 	testURL := "https://apps.apple.com/us/app/example-app/id=123456789"
 	for i := 0; i < b.N; i++ {
 		extractItunesIdFromAppStoreUrl(testURL)
+	}
+}
+
+func TestLogHookBidRequest(t *testing.T) {
+	type args struct {
+		stage      string
+		rCtx       models.RequestCtx
+		bidRequest *openrtb2.BidRequest
+		nbrCode    int
+	}
+	tests := []struct {
+		name        string
+		args        args
+		description string
+	}{
+		{
+			name: "log_hook_start_with_valid_bidrequest",
+			args: args{
+				stage: "hook_start",
+				rCtx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+					Endpoint:  models.EndpointV25,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: 0,
+			},
+			description: "Should log hook start without nbr code",
+		},
+		{
+			name: "log_hook_end_rejected_with_nbr_code",
+			args: args{
+				stage: "hook_end_rejected",
+				rCtx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+					Endpoint:  models.EndpointV25,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: int(nbr.InvalidImpressionTagID),
+			},
+			description: "Should log hook end rejected with nbr code",
+		},
+		{
+			name: "log_hook_end_success_without_nbr_code",
+			args: args{
+				stage: "hook_end_success",
+				rCtx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+					Endpoint:  models.EndpointV25,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "test-request-id",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1"},
+					},
+				},
+				nbrCode: 0,
+			},
+			description: "Should log hook end success without nbr code",
+		},
+		{
+			name: "log_with_empty_bidrequest",
+			args: args{
+				stage: "hook_start",
+				rCtx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+					Endpoint:  models.EndpointAMP,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "empty-request",
+				},
+				nbrCode: 0,
+			},
+			description: "Should handle empty bidrequest gracefully",
+		},
+		{
+			name: "log_with_different_endpoint",
+			args: args{
+				stage: "hook_start",
+				rCtx: models.RequestCtx{
+					PubID:     1234,
+					ProfileID: 5678,
+					Endpoint:  models.EndpointJson,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "json-endpoint-request",
+					Imp: []openrtb2.Imp{
+						{ID: "imp1", TagID: "div1"},
+					},
+				},
+				nbrCode: 0,
+			},
+			description: "Should log with different endpoint types",
+		},
+		{
+			name: "log_with_high_nbr_code",
+			args: args{
+				stage: "hook_end_rejected",
+				rCtx: models.RequestCtx{
+					PubID:     9999,
+					ProfileID: 8888,
+					Endpoint:  models.EndpointWebS2S,
+				},
+				bidRequest: &openrtb2.BidRequest{
+					ID: "high-nbr-request",
+				},
+				nbrCode: int(nbr.AllPartnerThrottled),
+			},
+			description: "Should log with high nbr code value",
+		},
+		{
+			name: "log_with_nil_bidrequest",
+			args: args{
+				stage: "hook_start",
+				rCtx: models.RequestCtx{
+					PubID:     5890,
+					ProfileID: 1234,
+					Endpoint:  models.EndpointV25,
+				},
+				bidRequest: nil,
+				nbrCode:    0,
+			},
+			description: "Should handle nil bidrequest gracefully",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// This test verifies that logHookBidRequest doesn't panic
+			// and can handle various input combinations
+			// The actual logging output is verified through glog which is tested separately
+			assert.NotPanics(t, func() {
+				logHookBidRequest(tt.args.stage, tt.args.rCtx, tt.args.bidRequest, tt.args.nbrCode)
+			}, tt.description)
+		})
+	}
+}
+
+func TestLogHookBidRequest_NilBidRequest(t *testing.T) {
+	// Test that function handles nil BidRequest gracefully
+	rCtx := models.RequestCtx{
+		PubID:     5890,
+		ProfileID: 1234,
+		Endpoint:  models.EndpointV25,
+	}
+
+	// Should not panic with nil BidRequest
+	assert.NotPanics(t, func() {
+		logHookBidRequest("hook_start", rCtx, nil, 0)
+	}, "Should handle nil BidRequest without panicking")
+
+	// Should not panic with empty BidRequest
+	assert.NotPanics(t, func() {
+		logHookBidRequest("hook_start", rCtx, &openrtb2.BidRequest{}, 0)
+	}, "Should handle empty BidRequest without panicking")
+}
+
+func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
+	minDur := int64(5)
+	maxDur := int64(15)
+
+	makeNativeRequest := func(t *testing.T, req nativeRequests.Request) string {
+		b, err := json.Marshal(&req)
+		assert.NoError(t, err)
+		return string(b)
+	}
+
+	type args struct {
+		nativeCfg *adunitconfig.NativeConfig
+		impNative *openrtb2.Native
+		pubID     int
+		profileID int
+	}
+
+	tests := []struct {
+		name          string
+		args          args
+		wantImpNative *openrtb2.Native
+	}{
+		{
+			name: "video_disabled_removes_all_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(false)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 3, MaxDuration: 4}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "video_enabled_updates_durations_only_for_video_assets_with_multiple_assets",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+					{ID: 2, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 3, Video: &nativeRequests.Video{MinDuration: 100, MaxDuration: 200}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Title: &nativeRequests.Title{Len: 25}},
+				{ID: 2, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+				{ID: 3, Video: &nativeRequests.Video{MinDuration: minDur, MaxDuration: maxDur}},
+			}})},
+		},
+		{
+			name: "video_enabled_with_no_duration_config_does_not_modify_request",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true)}},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+		{
+			name: "invalid_native_request_json_is_noop",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{Video: adunitconfig.NativeVideo{Enabled: ptrutil.ToPtr(true), Config: adunitconfig.NativeVideoConfig{MinDuration: &minDur, MaxDuration: &maxDur}}},
+				impNative: &openrtb2.Native{Request: "{"},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: "{"},
+		},
+		{
+			name: "no_change_in_video_assets_if_video_config_not_disabled_explicitely",
+			args: args{
+				nativeCfg: &adunitconfig.NativeConfig{},
+				impNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+					{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+					{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+				}})},
+				pubID:     rctx.PubID,
+				profileID: rctx.ProfileID,
+			},
+			wantImpNative: &openrtb2.Native{Request: makeNativeRequest(t, nativeRequests.Request{Assets: []nativeRequests.Asset{
+				{ID: 1, Video: &nativeRequests.Video{MinDuration: 1, MaxDuration: 2}},
+				{ID: 2, Title: &nativeRequests.Title{Len: 10}},
+			}})},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applyNativeVideoAssetRulesFromAdUnitConfig(tt.args.nativeCfg, tt.args.impNative, tt.args.pubID, tt.args.profileID)
+			assert.Equal(t, tt.wantImpNative, tt.args.impNative)
+		})
 	}
 }

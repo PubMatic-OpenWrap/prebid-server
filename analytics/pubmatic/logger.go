@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
@@ -434,6 +435,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				ADomain:                tracker.Tracker.PartnerInfo.Advertiser,
 				MultiBidMultiFloorFlag: tracker.Tracker.PartnerInfo.MultiBidMultiFloorFlag,
 				Bundle:                 bid.Bid.Bundle,
+				InViewCountingFlag:     utils.ConvertBoolToInt(tracker.IsOMEnabled),
 			}
 
 			if models.IsDefaultBid(bid.Bid) {
@@ -522,8 +524,16 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
+			if ao.Account == nil {
+				ao.Account = &config.Account{
+					BidRounding: config.DefaultBidRoundingMode,
+				}
+			} else if ao.Account.BidRounding == "" {
+				ao.Account.BidRounding = config.DefaultBidRoundingMode
+			}
+
 			if !models.IsDefaultBid(bid.Bid) && pr.PriceBucket == "" && rCtx.PriceGranularity != nil {
-				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity)
+				pr.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rCtx.PriceGranularity, *ao.Account)
 			}
 
 			ipr[impId] = append(ipr[impId], pr)

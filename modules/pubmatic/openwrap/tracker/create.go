@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -18,12 +19,12 @@ type pubmaticMarketplaceMeta struct {
 	PubmaticKGP, PubmaticKGPV, PubmaticKGPSV string
 }
 
-func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) map[string]models.OWTracker {
+func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse, globalAccountConfig *config.Account) map[string]models.OWTracker {
 	trackers := make(map[string]models.OWTracker)
 
 	pmMkt := make(map[string]pubmaticMarketplaceMeta)
 
-	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt)
+	trackers = createTrackers(rctx, trackers, bidResponse, pmMkt, globalAccountConfig)
 
 	// overwrite marketplace bid details with that of parent bidder
 	for bidID, tracker := range trackers {
@@ -50,7 +51,7 @@ func CreateTrackers(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) m
 	return trackers
 }
 
-func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta) map[string]models.OWTracker {
+func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker, bidResponse *openrtb2.BidResponse, pmMkt map[string]pubmaticMarketplaceMeta, globalAccountConfig *config.Account) map[string]models.OWTracker {
 	floorsDetails := models.GetFloorsDetails(rctx.ResponseExt)
 	customDimensions := customdimensions.ConvertCustomDimensionsToString(rctx.CustomDimensions)
 	for _, seatBid := range bidResponse.SeatBid {
@@ -175,6 +176,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 			}
 
 			tracker.RewardedInventory = isRewardInventory
+			inViewCountingFlag := trackerWithOM(rctx, partnerID, dspId, bid.Ext, adformat)
 			tracker.PartnerInfo = models.Partner{
 				PartnerID:              partnerID,
 				BidderCode:             seatBid.Seat,
@@ -192,9 +194,10 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				DealID:                 "-1",
 				MultiBidMultiFloorFlag: mbmfFlag,
 				NetworkID:              networkId,
+				InViewCountingFlag:     utils.ConvertBoolToInt(inViewCountingFlag),
 			}
 			if rctx.PriceGranularity != nil {
-				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity)
+				tracker.PartnerInfo.PriceBucket = exchange.GetPriceBucketOW(bid.Price, *rctx.PriceGranularity, *globalAccountConfig)
 			}
 			if len(bidId) > 0 {
 				tracker.PartnerInfo.BidID = bidId
@@ -224,7 +227,7 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 				PriceCurrency: bidResponse.Cur,
 				ErrorURL:      constructVideoErrorURL(rctx, rctx.VideoErrorTrackerEndpoint, bid, tracker),
 				BidType:       adformat,
-				IsOMEnabled:   trackerWithOM(rctx, partnerID, dspId),
+				IsOMEnabled:   inViewCountingFlag,
 			}
 		}
 	}
@@ -311,6 +314,9 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	}
 	if tracker.PartnerInfo.MultiBidMultiFloorFlag == 1 {
 		v.Set(models.TRKMultiBidMultiFloorFlag, strconv.Itoa(tracker.PartnerInfo.MultiBidMultiFloorFlag))
+	}
+	if tracker.PartnerInfo.InViewCountingFlag == 1 {
+		v.Set(models.TRKInViewCountingFlag, strconv.Itoa(tracker.PartnerInfo.InViewCountingFlag))
 	}
 
 	//ProfileMetadata parameters

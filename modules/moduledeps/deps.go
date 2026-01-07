@@ -15,5 +15,7 @@ type ModuleDeps struct {
 	CacheHttpClient *http.Client
 	Config          *config.Configuration
 	RateConvertor   *currency.RateConverter
+	Geoscope        map[string][]string
+	MetricsCfg      *config.Metrics
 	MetricsRegistry metricsCfg.MetricsRegistry
 }

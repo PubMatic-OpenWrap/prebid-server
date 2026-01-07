@@ -1058,4 +1058,62 @@ func Test_updateBidExtWithMultiFloor(t *testing.T) {
 	}
 }
 
+func TestAddGoogleSDKParamsToBidExt(t *testing.T) {
+	type args struct {
+		bidExtMap  map[string]interface{}
+		bidderExt  ExtImpBidderPubmatic
+		bidderName openrtb_ext.BidderName
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]interface{}
+	}{
+		{
+			name: "bidExtMap with all values",
+			args: args{
+				bidExtMap: map[string]interface{}{
+					"billing_id":                    []string{"123"},
+					"publisher_setting_list_id":     []string{"456"},
+					"allowed_vendor_type":           []int{789},
+					"excluded_creatives":            []int{123},
+					"is_app_open_ad":                int8(1),
+					"allowed_restricted_category":   []int{456},
+					"creative_enforcement_settings": []int{789},
+					"dfp_ad_unit_code":              "test-dfp-ad-unit-code",
+				},
+				bidderExt: ExtImpBidderPubmatic{
+					GoogleSDKParams: openrtb_ext.GoogleSDKParams{
+						BillingIds:                  []string{"123"},
+						PublisherSettingListIds:     []string{"456"},
+						AllowedVendorType:           []int{789},
+						ExcludedCreatives:           []openrtb_ext.BuyerCreative{{BuyerCreativeId: "123"}},
+						IsAppOpenAd:                 1,
+						AllowedRestrictedCategory:   []int{456},
+						CreativeEnforcementSettings: &openrtb_ext.CreativeEnforcementSettings{PolicyEnforcement: 789},
+						DFPAdUnitCode:               "test-dfp-ad-unit-code",
+					},
+				},
+				bidderName: openrtb_ext.BidderPubmatic,
+			},
+			want: map[string]interface{}{
+				"billing_id":                    []string{"123"},
+				"publisher_setting_list_id":     []string{"456"},
+				"allowed_vendor_type":           []int{789},
+				"excluded_creatives":            []openrtb_ext.BuyerCreative{{BuyerCreativeId: "123"}},
+				"is_app_open_ad":                int8(1),
+				"allowed_restricted_category":   []int{456},
+				"creative_enforcement_settings": &openrtb_ext.CreativeEnforcementSettings{PolicyEnforcement: 789},
+				"dfp_ad_unit_code":              "test-dfp-ad-unit-code",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addGoogleSDKParamsToBidExt(tt.args.bidExtMap, tt.args.bidderExt)
+			assert.Equal(t, tt.want, tt.args.bidExtMap)
+		})
+	}
+}
+
 //Need to write happy path test cases with nil bidExt

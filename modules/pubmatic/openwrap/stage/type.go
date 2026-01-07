@@ -27,8 +27,8 @@ type (
 	AuctionResponsePayload = hookstage.AuctionResponsePayload
 	AuctionResponseResult  = hookstage.HookResult[hookstage.AuctionResponsePayload]
 
-	ExitpointPayload = hookstage.ExitpointPaylaod
-	ExitpointResult  = hookstage.HookResult[hookstage.ExitpointPaylaod]
+	ExitpointPayload = hookstage.ExitpointPayload
+	ExitpointResult  = hookstage.HookResult[hookstage.ExitpointPayload]
 
 	ModuleContext = hookstage.ModuleInvocationContext
 )

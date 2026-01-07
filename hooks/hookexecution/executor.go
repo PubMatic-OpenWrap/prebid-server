@@ -41,8 +41,8 @@ type StageExecutor interface {
 	ExecuteRawBidderResponseStage(response *adapters.BidderResponse, bidder string) *RejectError
 	ExecuteAllProcessedBidResponsesStage(adapterBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid)
 	ExecuteAuctionResponseStage(response *openrtb2.BidResponse)
-	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
 	ExecuteExitpointStage(response any, w http.ResponseWriter) any
+	ExecuteBeforeRequestValidationStage(req *openrtb2.BidRequest) *RejectError
 }
 
 type HookStageExecutor interface {
@@ -338,14 +338,14 @@ func (e *hookExecutor) ExecuteExitpointStage(response any, w http.ResponseWriter
 		ctx context.Context,
 		moduleCtx hookstage.ModuleInvocationContext,
 		hook hookstage.Exitpoint,
-		payload hookstage.ExitpointPaylaod,
-	) (hookstage.HookResult[hookstage.ExitpointPaylaod], error) {
+		payload hookstage.ExitpointPayload,
+	) (hookstage.HookResult[hookstage.ExitpointPayload], error) {
 		return hook.HandleExitpointHook(ctx, moduleCtx, payload)
 	}
 
 	stageName := hooks.StageExitpoint.String()
 	executionCtx := e.newContext(stageName)
-	payload := hookstage.ExitpointPaylaod{W: w, Response: response}
+	payload := hookstage.ExitpointPayload{W: w, Response: response}
 
 	outcome, payload, context, _ := executeStage(executionCtx, plan, payload, handler, e.metricEngine)
 	outcome.Entity = entityExitpoint
@@ -415,13 +415,12 @@ func (executor EmptyHookExecutor) ExecuteRawBidderResponseStage(_ *adapters.Bidd
 func (executor EmptyHookExecutor) ExecuteAllProcessedBidResponsesStage(_ map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
 }
 
-func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidResponse) {
+func (executor EmptyHookExecutor) ExecuteExitpointStage(response any, _ http.ResponseWriter) any {
+	return response
 }
+
+func (executor EmptyHookExecutor) ExecuteAuctionResponseStage(_ *openrtb2.BidResponse) {}
 
 func (executor EmptyHookExecutor) ExecuteBeforeRequestValidationStage(_ *openrtb2.BidRequest) *RejectError {
 	return nil
-}
-
-func (executor EmptyHookExecutor) ExecuteExitpointStage(response any, _ http.ResponseWriter) any {
-	return response
 }

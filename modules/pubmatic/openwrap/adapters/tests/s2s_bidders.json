@@ -166,5 +166,20 @@
                 "pid": "123456"
             }
         }
+    },
+    {
+        "name": "msft_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "msft",
+            "requestJSON": {
+                "placement_id": 123456,
+                "inv_code": "abcdefg"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placement_id": 123456
+            }
+        }
     }
 ]

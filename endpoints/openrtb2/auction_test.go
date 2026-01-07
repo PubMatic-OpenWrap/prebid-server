@@ -29,6 +29,7 @@ import (
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/exchange"
+	"github.com/prebid/prebid-server/v3/gdpr"
 	"github.com/prebid/prebid-server/v3/hooks"
 	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
@@ -5490,9 +5491,18 @@ func TestSetSeatNonBidRaw(t *testing.T) {
 }
 
 func TestValidateAliases(t *testing.T) {
+	// This test runs against a real list of bidders, so we must use real bidder names for core bidders,
+	// but can use test values for the alias names.
 	deps := &endpointDeps{
-		disabledBidders: map[string]string{"rubicon": "rubicon"},
-		bidderMap:       map[string]openrtb_ext.BidderName{"appnexus": openrtb_ext.BidderName("appnexus")},
+		disabledBidders: map[string]string{
+			"rubicon":  "rubicon is disabled",
+			"appnexus": `Bidder "appnexus" can only be aliased and cannot be used directly.`, // exact wording needed to recognize white label only adapter error state
+		},
+		bidderMap: map[string]openrtb_ext.BidderName{
+			"appnexus": openrtb_ext.BidderName("appnexus"),
+			"rubicon":  openrtb_ext.BidderName("rubicon"),
+			"openx":    openrtb_ext.BidderName("openx"),
+		},
 	}
 
 	testCases := []struct {
@@ -5502,15 +5512,15 @@ func TestValidateAliases(t *testing.T) {
 		expectedError   error
 	}{
 		{
-			description:     "valid case",
-			aliases:         map[string]string{"test": "appnexus"},
-			expectedAliases: map[string]string{"test": "appnexus"},
+			description:     "valid",
+			aliases:         map[string]string{"test": "openx"},
+			expectedAliases: map[string]string{"test": "openx"},
 			expectedError:   nil,
 		},
 		{
-			description:     "valid case - case insensitive",
-			aliases:         map[string]string{"test": "Appnexus"},
-			expectedAliases: map[string]string{"test": "appnexus"},
+			description:     "valid - case insensitive",
+			aliases:         map[string]string{"test": "OpenX"},
+			expectedAliases: map[string]string{"test": "openx"},
 			expectedError:   nil,
 		},
 		{
@@ -5527,9 +5537,15 @@ func TestValidateAliases(t *testing.T) {
 		},
 		{
 			description:     "alias name is coreBidder name",
-			aliases:         map[string]string{"appnexus": "appnexus"},
+			aliases:         map[string]string{"openx": "openx"},
 			expectedAliases: nil,
-			expectedError:   errors.New("request.ext.prebid.aliases.appnexus defines a no-op alias. Choose a different alias, or remove this entry."),
+			expectedError:   errors.New("request.ext.prebid.aliases.openx defines a no-op alias. Choose a different alias, or remove this entry."),
+		},
+		{
+			description:     "white label only bidder cannot be aliased",
+			aliases:         map[string]string{"test": "appnexus"},
+			expectedAliases: nil,
+			expectedError:   errors.New("request.ext.prebid.aliases.test refers to a bidder that cannot be aliased: appnexus"),
 		},
 	}
 
@@ -5539,7 +5555,7 @@ func TestValidateAliases(t *testing.T) {
 			if err != nil {
 				assert.Equal(t, testCase.expectedError, err)
 			} else {
-				assert.ObjectsAreEqualValues(testCase.expectedAliases, map[string]string{"test": "appnexus"})
+				assert.Equal(t, testCase.expectedAliases, testCase.aliases)
 			}
 		})
 	}
@@ -7585,5 +7601,221 @@ func TestGetStringValueFromRequest(t *testing.T) {
 		assert.Equal(t, test.expectedAccID, accountId, "getStringValueFromRequest should return expected account ID for test case: %s", test.description)
 		assert.Equal(t, test.expectedExist, exists, "getStringValueFromRequest should return expected exists for test case: %s", test.description)
 		assert.Equal(t, test.expectedError, err, "getStringValueFromRequest should return expected error for test case: %s", test.description)
+	}
+}
+
+func TestProcessGDPR(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		req                  *openrtb_ext.RequestWrapper
+		accountGDPR          config.AccountGDPR
+		requestType          metrics.RequestType
+		cfg                  *config.Configuration
+		expectedGDPREnforced bool
+		expectedGDPRSignal   gdpr.Signal
+		expectedErrorCount   int
+	}{
+		{
+			name: "gdpr-not-enforced-no-signal",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeAMP,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: false,
+			expectedGDPRSignal:   gdpr.SignalAmbiguous,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-enforced-with-signal-yes",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Regs: &openrtb2.Regs{
+						GDPR: ptrutil.ToPtr[int8](1),
+					},
+					User: &openrtb2.User{
+						Consent: "consent-string",
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeORTB2Web,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: true,
+			expectedGDPRSignal:   gdpr.SignalYes,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-enforced-with-eea-country",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Geo: &openrtb2.Geo{
+							Country: "FRA",
+						},
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeORTB2Web,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: true,
+			expectedGDPRSignal:   gdpr.SignalAmbiguous,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-not-enforced-with-non-eea-country",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Geo: &openrtb2.Geo{
+							Country: "USA",
+						},
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeORTB2Web,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: false,
+			expectedGDPRSignal:   gdpr.SignalAmbiguous,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-with-gpp-string",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Regs: &openrtb2.Regs{
+						GDPR: ptrutil.ToPtr[int8](1),
+						GPP:  "DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA",
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeORTB2Web,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: true,
+			expectedGDPRSignal:   gdpr.SignalYes,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-with-account-eea-countries",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Device: &openrtb2.Device{
+						Geo: &openrtb2.Geo{
+							Country: "ITA",
+						},
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{
+				EEACountries: []string{"ITA", "ESP"},
+			},
+			requestType: metrics.ReqTypeORTB2Web,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "1",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: true,
+					},
+				},
+			},
+			expectedGDPREnforced: true,
+			expectedGDPRSignal:   gdpr.SignalAmbiguous,
+			expectedErrorCount:   0,
+		},
+		{
+			name: "gdpr-disabled-tcf2",
+			req: &openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					Regs: &openrtb2.Regs{
+						GDPR: ptrutil.ToPtr[int8](1),
+					},
+				},
+			},
+			accountGDPR: config.AccountGDPR{},
+			requestType: metrics.ReqTypeAMP,
+			cfg: &config.Configuration{
+				GDPR: config.GDPR{
+					Enabled:      true,
+					DefaultValue: "0",
+					EEACountries: []string{"FRA", "DEU"},
+					TCF2: config.TCF2{
+						Enabled: false,
+					},
+				},
+			},
+			expectedGDPREnforced: false,
+			expectedGDPRSignal:   gdpr.SignalYes,
+			expectedErrorCount:   0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			deps := &endpointDeps{
+				cfg: tc.cfg,
+			}
+
+			tcf2Config, gdprSignal, gdprEnforced, gdprErrs := deps.processGDPR(
+				tc.req,
+				tc.accountGDPR,
+				tc.requestType,
+			)
+
+			assert.Equal(t, tc.expectedGDPREnforced, gdprEnforced)
+			assert.Equal(t, tc.expectedGDPRSignal, gdprSignal)
+			assert.Len(t, gdprErrs, tc.expectedErrorCount)
+			assert.NotNil(t, tcf2Config)
+		})
 	}
 }

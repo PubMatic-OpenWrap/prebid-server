@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -87,10 +88,11 @@ var rctx = models.RequestCtx{
 func Test_createTrackers(t *testing.T) {
 	startTime := time.Now().Unix()
 	type args struct {
-		trackers    map[string]models.OWTracker
-		rctx        models.RequestCtx
-		bidResponse *openrtb2.BidResponse
-		pmMkt       map[string]pubmaticMarketplaceMeta
+		trackers            map[string]models.OWTracker
+		rctx                models.RequestCtx
+		bidResponse         *openrtb2.BidResponse
+		pmMkt               map[string]pubmaticMarketplaceMeta
+		globalAccountConfig *config.Account
 	}
 	tests := []struct {
 		name string
@@ -121,6 +123,7 @@ func Test_createTrackers(t *testing.T) {
 					}()
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -203,6 +206,7 @@ func Test_createTrackers(t *testing.T) {
 					testRctx.PrebidBidderCode["pubmatic2"] = "pubmatic"
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -341,6 +345,7 @@ func Test_createTrackers(t *testing.T) {
 					}()
 					return testRctx
 				}(),
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 				bidResponse: &openrtb2.BidResponse{
 					SeatBid: []openrtb2.SeatBid{
 						{
@@ -419,7 +424,7 @@ func Test_createTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := createTrackers(tt.args.rctx, tt.args.trackers, tt.args.bidResponse, tt.args.pmMkt)
+			got := createTrackers(tt.args.rctx, tt.args.trackers, tt.args.bidResponse, tt.args.pmMkt, tt.args.globalAccountConfig)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -524,25 +529,26 @@ func TestConstructTrackerURL(t *testing.T) {
 						FloorProvider: "PM",
 					},
 					PartnerInfo: models.Partner{
-						PartnerID:      "AppNexus",
-						BidderCode:     "AppNexus1",
-						BidID:          "6521",
-						OrigBidID:      "6521",
-						GrossECPM:      4.3,
-						NetECPM:        2.5,
-						KGPV:           "adunit@300x250",
-						AdDuration:     10,
-						Adformat:       models.Banner,
-						AdSize:         "300x250",
-						ServerSide:     1,
-						Advertiser:     "fb.com",
-						DealID:         "420",
-						FloorValue:     4.4,
-						FloorRuleValue: 2,
+						PartnerID:          "AppNexus",
+						BidderCode:         "AppNexus1",
+						BidID:              "6521",
+						OrigBidID:          "6521",
+						GrossECPM:          4.3,
+						NetECPM:            2.5,
+						KGPV:               "adunit@300x250",
+						AdDuration:         10,
+						Adformat:           models.Banner,
+						AdSize:             "300x250",
+						ServerSide:         1,
+						Advertiser:         "fb.com",
+						DealID:             "420",
+						FloorValue:         4.4,
+						FloorRuleValue:     2,
+						InViewCountingFlag: 1,
 					},
 				},
 			},
-			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&fp=PM&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
+			want: "https://t.pubmatic.com/wt?adv=fb.com&af=banner&aps=0&au=adunit&bc=AppNexus1&bidid=6521&cds=traffic=media;age=23&ctm=1&di=420&dur=10&eg=4.3&en=2.5&fmv=test version&fp=PM&frv=2&fskp=0&fsrc=1&ft=1&fv=4.4&iid=98765&kgpv=adunit@300x250&orig=www.publisher.com&origbidid=6521&pdvid=1&pid=123&plt=1&pn=AppNexus&psz=300x250&pubid=12345&purl=www.abc.com&rwrd=1&sl=1&slot=1234_1234&ss=1&ssai=mediatailor&tgid=1&tst=0",
 		},
 		{
 			name: "all_details_with_secure_enable_in_tracker",
@@ -1165,8 +1171,9 @@ func TestConstructVideoErrorURL(t *testing.T) {
 func TestCreateTrackers(t *testing.T) {
 	startTime := time.Now().Unix()
 	type args struct {
-		rctx        models.RequestCtx
-		bidResponse *openrtb2.BidResponse
+		rctx                models.RequestCtx
+		bidResponse         *openrtb2.BidResponse
+		globalAccountConfig *config.Account
 	}
 	tests := []struct {
 		name string
@@ -1201,6 +1208,7 @@ func TestCreateTrackers(t *testing.T) {
 					},
 					Cur: models.USD,
 				},
+				globalAccountConfig: &config.Account{BidRounding: config.DefaultBidRoundingMode},
 			},
 			want: map[string]models.OWTracker{
 				"bidID-1": {
@@ -1253,7 +1261,7 @@ func TestCreateTrackers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse)
+			got := CreateTrackers(tt.args.rctx, tt.args.bidResponse, tt.args.globalAccountConfig)
 			assert.Equal(t, tt.want, got)
 		})
 	}
