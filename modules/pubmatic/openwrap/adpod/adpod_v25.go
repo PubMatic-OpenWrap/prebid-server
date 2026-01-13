@@ -16,14 +16,35 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 		return nil, err
 	}
 
+	minPodDuration := imp.Video.MinDuration // For V25, minpodDuration was imp.video.minduration
+	maxPodDuration := imp.Video.MaxDuration // For V25, maxpodDuration was imp.video.maxduration
+
+	impCtx := rctx.ImpBidCtx[imp.ID]
+
+	if minPodDuration == 0 {
+		adUnitConfig := impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
+		if adUnitConfig != nil && adUnitConfig.Video != nil &&
+			adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled {
+			minPodDuration = adUnitConfig.Video.Config.MinDuration
+		}
+	}
+
+	if maxPodDuration == 0 {
+		adUnitConfig := impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
+		if adUnitConfig != nil && adUnitConfig.Video != nil &&
+			adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled {
+			maxPodDuration = adUnitConfig.Video.Config.MaxDuration
+		}
+	}
+
 	podConfig := models.PodConfig{
 		MinDuration: int64(adpodConfigV25.MinDuration),
 		MaxDuration: int64(adpodConfigV25.MaxDuration),
 		AdpodConfigV25: &models.AdpodConfigV25{
 			MinAds:                      int64(adpodConfigV25.MinAds),
 			MaxAds:                      int64(adpodConfigV25.MaxAds),
-			MinPodDuration:              imp.Video.MinDuration, // For V25, minpodDuration was imp.video.minduration
-			MaxPodDuration:              imp.Video.MaxDuration, // For V25, maxpodDuration was imp.video.maxduration
+			MinPodDuration:              minPodDuration,
+			MaxPodDuration:              maxPodDuration,
 			IABCategoryExclusionPercent: adpodConfigV25.IABCategoryExclusionPercent,
 			AdvertiserExclusionPercent:  adpodConfigV25.AdvertiserExclusionPercent,
 		},

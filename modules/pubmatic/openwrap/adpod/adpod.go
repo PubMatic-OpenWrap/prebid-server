@@ -117,6 +117,12 @@ func SetDefaultValuesToAdpodConfig(rCtx *models.RequestCtx) {
 		for i := range configs {
 			if configs[i].AdpodConfigV25 != nil {
 				setDefaultValuesToV25PodConfig(configs[i].AdpodConfigV25)
+				if configs[i].MinDuration == 0 && configs[i].AdpodConfigV25.MinPodDuration > 0 {
+					configs[i].MinDuration = int64(configs[i].AdpodConfigV25.MinPodDuration / 2)
+				}
+				if configs[i].MaxDuration == 0 && configs[i].AdpodConfigV25.MaxPodDuration > 0 {
+					configs[i].MaxDuration = int64(configs[i].AdpodConfigV25.MaxPodDuration / 2)
+				}
 			}
 		}
 		rCtx.ImpAdPodConfig[impId] = configs
