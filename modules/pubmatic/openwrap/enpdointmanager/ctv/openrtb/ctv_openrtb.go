@@ -116,9 +116,6 @@ func (co *CTVOpenRTB) HandleBeforeValidationHook(
 	// Populate rctx with ctv features
 	ctvutils.PopulateRequestContextWithCTVFeatures(rCtx)
 
-	// Set Default values to V25 dynamic adpod configs
-	adpod.SetDefaultValuesToAdpodConfig(rCtx)
-
 	// Adpod config Validation
 	err = adpod.ValidateAdpodConfigs(rCtx)
 	if err != nil {

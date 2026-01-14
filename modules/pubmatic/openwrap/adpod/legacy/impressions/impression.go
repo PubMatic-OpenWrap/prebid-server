@@ -110,10 +110,10 @@ func getAdPodImpConfig(podID string, dynamicSlotConfig models.SlotConfig, adpodP
 	}
 	selectedAlgorithm := SelectAlgorithm(adpodProfileCfg)
 	adpod := &models.AdPod{
-		MinDuration:                 int(dynamicSlotConfig.MinDuration),
-		MaxDuration:                 int(dynamicSlotConfig.MaxDuration),
-		MinAds:                      int(dynamicSlotConfig.AdpodConfigV25.MinAds),
-		MaxAds:                      int(dynamicSlotConfig.AdpodConfigV25.MaxAds),
+		MinDuration:                 &dynamicSlotConfig.MinDuration,
+		MaxDuration:                 &dynamicSlotConfig.MaxDuration,
+		MinAds:                      &dynamicSlotConfig.AdpodConfigV25.MinAds,
+		MaxAds:                      &dynamicSlotConfig.AdpodConfigV25.MaxAds,
 		IABCategoryExclusionPercent: dynamicSlotConfig.AdpodConfigV25.IABCategoryExclusionPercent,
 		AdvertiserExclusionPercent:  dynamicSlotConfig.AdpodConfigV25.AdvertiserExclusionPercent,
 	}
@@ -172,7 +172,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, a
 		return &g
 
 	case models.ByDurationRanges:
-		g := newByDurationRanges(adpodProfileCfg, int(adpod.MaxAds), adpod.MinDuration, adpod.MaxDuration)
+		g := newByDurationRanges(adpodProfileCfg, int(*adpod.MaxAds), int(*adpod.MinDuration), int(*adpod.MaxDuration))
 		return &g
 	}
 
@@ -220,10 +220,10 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod *models.AdPod) generat
 	config.requested = pod{
 		podMinDuration:  podMinDuration,
 		podMaxDuration:  podMaxDuration,
-		slotMinDuration: int64(vPod.MinDuration),
-		slotMaxDuration: int64(vPod.MaxDuration),
-		minAds:          int64(vPod.MinAds),
-		maxAds:          int64(vPod.MaxAds),
+		slotMinDuration: *vPod.MinDuration,
+		slotMaxDuration: *vPod.MaxDuration,
+		minAds:          *vPod.MinAds,
+		maxAds:          *vPod.MaxAds,
 	}
 
 	// configure internal object (FOR INTERNAL USE ONLY)

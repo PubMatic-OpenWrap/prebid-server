@@ -138,9 +138,6 @@ func (cj *CTVJSON) HandleBeforeValidationHook(
 		}
 	}
 
-	// Set Default values to V25 dynamic adpod configs
-	adpod.SetDefaultValuesToAdpodConfig(rCtx)
-
 	// Adpod config Validation
 	err = adpod.ValidateAdpodConfigs(rCtx)
 	if err != nil {

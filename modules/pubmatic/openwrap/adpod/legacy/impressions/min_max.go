@@ -35,30 +35,29 @@ type MinMax struct {
 func newMinMaxAlgorithm(podMinDuration, podMaxDuration int64, p *models.AdPod) MinMax {
 	generator := make([]generator, 0)
 	// step 1 - same as Algorithm1
-	generator = append(generator, initGenerator(podMinDuration, podMaxDuration, p, p.MinAds, p.MaxAds))
+	generator = append(generator, initGenerator(podMinDuration, podMaxDuration, p, *p.MinAds, *p.MaxAds))
 	// step 2 - pod duration = pod max, no of ads = max ads
-	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, p.MaxAds, p.MaxAds))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MaxAds, *p.MaxAds))
 	// step 3 - pod duration = pod max, no of ads = min ads
-	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, p.MinAds, p.MinAds))
+	generator = append(generator, initGenerator(podMaxDuration, podMaxDuration, p, *p.MinAds, *p.MinAds))
 	// step 4 - pod duration = pod min, no of ads = max  ads
-	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, p.MaxAds, p.MaxAds))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MaxAds, *p.MaxAds))
 	// step 5 - pod duration = pod min, no of ads = min  ads
-	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, p.MinAds, p.MinAds))
+	generator = append(generator, initGenerator(podMinDuration, podMinDuration, p, *p.MinAds, *p.MinAds))
 
 	return MinMax{generator: generator, requested: generator[0].requested}
 }
 
-func initGenerator(podMinDuration, podMaxDuration int64, p *models.AdPod, minAds, maxAds int) generator {
+func initGenerator(podMinDuration, podMaxDuration int64, p *models.AdPod, minAds, maxAds int64) generator {
 	config := newConfigWithMultipleOf(podMinDuration, podMaxDuration, newVideoAdPod(p, minAds, maxAds), multipleOf)
 	return config
 }
 
-func newVideoAdPod(p *models.AdPod, minAds, maxAds int) *models.AdPod {
-
+func newVideoAdPod(p *models.AdPod, minAds, maxAds int64) *models.AdPod {
 	adpod := models.AdPod{MinDuration: p.MinDuration,
 		MaxDuration: p.MaxDuration,
-		MinAds:      minAds,
-		MaxAds:      maxAds}
+		MinAds:      &minAds,
+		MaxAds:      &maxAds}
 	return &adpod
 }
 

@@ -37,12 +37,15 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 		}
 	}
 
+	// set default values
+	setDefaultValuesToV25PodConfig(adpodConfigV25, minPodDuration, maxPodDuration)
+
 	podConfig := models.PodConfig{
-		MinDuration: int64(adpodConfigV25.MinDuration),
-		MaxDuration: int64(adpodConfigV25.MaxDuration),
+		MinDuration: *adpodConfigV25.MinDuration,
+		MaxDuration: *adpodConfigV25.MaxDuration,
 		AdpodConfigV25: &models.AdpodConfigV25{
-			MinAds:                      int64(adpodConfigV25.MinAds),
-			MaxAds:                      int64(adpodConfigV25.MaxAds),
+			MinAds:                      *adpodConfigV25.MinAds,
+			MaxAds:                      *adpodConfigV25.MaxAds,
 			MinPodDuration:              minPodDuration,
 			MaxPodDuration:              maxPodDuration,
 			IABCategoryExclusionPercent: adpodConfigV25.IABCategoryExclusionPercent,
@@ -98,13 +101,21 @@ func resolveV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) (*models
 	return nil, false, nil
 }
 
-func setDefaultValuesToV25PodConfig(config *models.AdpodConfigV25) {
-	if config.MinAds == 0 {
-		config.MinAds = models.DefaultMinAds
+func setDefaultValuesToV25PodConfig(config *models.AdPod, minPodDuration int64, maxPodDuration int64) {
+	if config.MinAds == nil {
+		config.MinAds = ptrutil.ToPtr(int64(models.DefaultMinAds))
 	}
 
-	if config.MaxAds == 0 {
-		config.MaxAds = models.DefaultMaxAds
+	if config.MaxAds == nil {
+		config.MaxAds = ptrutil.ToPtr(int64(models.DefaultMaxAds))
+	}
+
+	if config.MinDuration == nil {
+		config.MinDuration = ptrutil.ToPtr(minPodDuration / 2)
+	}
+
+	if config.MaxDuration == nil {
+		config.MaxDuration = ptrutil.ToPtr(maxPodDuration / 2)
 	}
 
 	if config.AdvertiserExclusionPercent == nil {
