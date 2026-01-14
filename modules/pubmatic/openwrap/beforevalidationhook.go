@@ -190,7 +190,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// Adunit Config
-	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
+	m.processAdUnitConfig(&rCtx, payload.BidRequest)
 
 	// Get currency rates conversions and store in rctx for tracker/logger calculation
 	conversions := currency.GetAuctionCurrencyRates(m.rateConvertor, rCtx.NewReqExt.Prebid.CurrencyConversions)
@@ -202,14 +202,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return 0, err
 	}
 
-	// process impressions
-	result, ok = m.processImpressions(&rCtx, payload.BidRequest, result)
+	// Adpod processing
+	result, ok = m.processAdpod(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
 
-	// Adpod processing
-	result, ok = m.processAdpod(&rCtx, payload.BidRequest, result)
+	// process impressions
+	result, ok = m.processImpressions(&rCtx, payload.BidRequest, result)
 	if !ok {
 		return result, nil
 	}
@@ -1445,8 +1445,17 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 		sdkutils.AddSize300x600ForInterstitialBanner(imp)
 	}
 
-	// Process ad unit configurations
-	videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx := m.processAdUnitConfig(rCtx, imp, div)
+	// Create or update impression context
+	impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+	if !ok {
+		impCtx = models.ImpCtx{}
+	}
+
+	// Handle AMP video
+	if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig) {
+		rCtx.AmpVideoEnabled = true
+		imp.Video = &openrtb2.Video{}
+	}
 
 	slotType := "banner"
 	// Handle video specific logic
@@ -1456,19 +1465,18 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 	}
 
 	// Get slot information
-	incomingSlots := models.GetIncomingSlots(*imp, videoAdUnitCtx)
+	incomingSlots := models.GetIncomingSlots(*imp, impCtx.VideoAdUnitCtx)
 	slotName := models.GetSlotName(imp.TagID, impExt)
 	adUnitName := models.GetAdunitName(imp.TagID, impExt)
 
 	// Check if slot is enabled
-	if !isSlotEnabled(*imp, videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx) {
+	if !isSlotEnabled(*imp, impCtx.VideoAdUnitCtx, impCtx.BannerAdUnitCtx, impCtx.NativeAdUnitCtx) {
 		impMeta.disabledSlots[imp.ID] = struct{}{}
-		rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{ // for wrapper logger sz
-			IncomingSlots:     incomingSlots,
-			AdUnitName:        adUnitName,
-			SlotName:          slotName,
-			IsRewardInventory: reward,
-		}
+		impCtx.IncomingSlots = incomingSlots
+		impCtx.AdUnitName = adUnitName
+		impCtx.SlotName = slotName
+		impCtx.IsRewardInventory = reward
+		rCtx.ImpBidCtx[imp.ID] = impCtx
 		return result, true
 	}
 
@@ -1524,35 +1532,29 @@ func (m OpenWrap) processImpression(rCtx *models.RequestCtx, result hookstage.Ho
 		displaymanagerVer = imp.DisplayManagerVer
 	}
 
-	// Create or update impression context
-	if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
-		rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
-			ImpID:             imp.ID,
-			TagID:             imp.TagID,
-			Div:               div,
-			IsRewardInventory: reward,
-			BidFloor:          imp.BidFloor,
-			BidFloorCur:       imp.BidFloorCur,
-			Type:              slotType,
-			IsBanner:          imp.Banner != nil,
-			Banner:            imp.Banner,
-			Video:             imp.Video,
-			Native:            imp.Native,
-			IncomingSlots:     incomingSlots,
-			BidCtx:            make(map[string]models.BidCtx),
-			NewExt:            newImpExt,
-			SlotName:          slotName,
-			AdUnitName:        adUnitName,
-			AdserverURL:       adserverURL,
-			DisplayManager:    displaymanager,
-			DisplayManagerVer: displaymanagerVer,
-			Bidders:           bidderMeta,
-			NonMapped:         nonMapped,
-			VideoAdUnitCtx:    videoAdUnitCtx,
-			BannerAdUnitCtx:   bannerAdUnitCtx,
-			NativeAdUnitCtx:   nativeAdUnitCtx,
-		}
-	}
+	impCtx.ImpID = imp.ID
+	impCtx.TagID = imp.TagID
+	impCtx.Div = div
+	impCtx.IsRewardInventory = reward
+	impCtx.BidFloor = imp.BidFloor
+	impCtx.BidFloorCur = imp.BidFloorCur
+	impCtx.Type = slotType
+	impCtx.IsBanner = imp.Banner != nil
+	impCtx.Banner = imp.Banner
+	impCtx.Video = imp.Video
+	impCtx.Native = imp.Native
+	impCtx.IncomingSlots = incomingSlots
+	impCtx.BidCtx = make(map[string]models.BidCtx)
+	impCtx.NewExt = newImpExt
+	impCtx.SlotName = slotName
+	impCtx.AdUnitName = adUnitName
+	impCtx.AdserverURL = adserverURL
+	impCtx.DisplayManager = displaymanager
+	impCtx.DisplayManagerVer = displaymanagerVer
+	impCtx.Bidders = bidderMeta
+	impCtx.NonMapped = nonMapped
+
+	rCtx.ImpBidCtx[imp.ID] = impCtx
 
 	return result, true
 }
@@ -1576,27 +1578,35 @@ func validateImpExtension(impExt *models.ImpExtension) error {
 }
 
 // processAdUnitConfig processes ad unit configuration for an impression
-func (m OpenWrap) processAdUnitConfig(rCtx *models.RequestCtx, imp *openrtb2.Imp, div string) (models.AdUnitCtx, models.AdUnitCtx, models.AdUnitCtx) {
-	var videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx
+func (m OpenWrap) processAdUnitConfig(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) {
+	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(bidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
 
-	// Update video object with ad unit config
-	videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(*rCtx, *imp, div, rCtx.DeviceCtx.ConnectionType)
+	for _, imp := range bidRequest.Imp {
+		div, _ := jsonparser.GetString(imp.Ext, "wrapper", "div")
+		var videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx models.AdUnitCtx
 
-	// Handle AMP video
-	if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
-		rCtx.AmpVideoEnabled = true
-		imp.Video = &openrtb2.Video{}
+		// Update video object with ad unit config
+		videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(*rCtx, imp, string(div), rCtx.DeviceCtx.ConnectionType)
+
+		// Update banner object with ad unit config (except for AMP)
+		if rCtx.Endpoint != models.EndpointAMP {
+			bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(*rCtx, imp, string(div))
+		}
+
+		// Update native object with ad unit config
+		nativeAdUnitCtx = adunitconfig.UpdateNativeObjectWithAdunitConfig(*rCtx, imp, string(div))
+
+		impCtx, ok := rCtx.ImpBidCtx[imp.ID]
+		if !ok {
+			impCtx = models.ImpCtx{}
+		}
+
+		impCtx.VideoAdUnitCtx = videoAdUnitCtx
+		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
+		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
+
+		rCtx.ImpBidCtx[imp.ID] = impCtx
 	}
-
-	// Update banner object with ad unit config (except for AMP)
-	if rCtx.Endpoint != models.EndpointAMP {
-		bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(*rCtx, *imp, div)
-	}
-
-	// Update native object with ad unit config
-	nativeAdUnitCtx = adunitconfig.UpdateNativeObjectWithAdunitConfig(*rCtx, *imp, div)
-
-	return videoAdUnitCtx, bannerAdUnitCtx, nativeAdUnitCtx
 }
 
 // processVideoImpression handles video-specific impression processing
