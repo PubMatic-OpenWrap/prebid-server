@@ -38,7 +38,6 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 	}
 
 	podConfig := models.PodConfig{
-		PodID:       imp.ID,
 		MinDuration: int64(adpodConfigV25.MinDuration),
 		MaxDuration: int64(adpodConfigV25.MaxDuration),
 		AdpodConfigV25: &models.AdpodConfigV25{
