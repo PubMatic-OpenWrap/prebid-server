@@ -66,14 +66,9 @@ func processRedirectURL(rCtx *models.RequestCtx, result stage.BeforeValidationRe
 
 func updateAdpodConfigs(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) []error {
 	var errs []error
-	// Apply GAM URL adpod configs
-	err := adpod.ApplyGAMURLAdpodConfig(rCtx, bidRequest)
-	if err != nil {
-		errs = append(errs, err)
-	}
 
 	// Apply Adrule settings
-	err = adpod.ApplyAdruleAdpodConfigs(rCtx, bidRequest)
+	err := adpod.ApplyAdruleAdpodConfigs(rCtx, bidRequest)
 	if err != nil {
 		errs = append(errs, err)
 	}

@@ -19,6 +19,17 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 	minPodDuration := imp.Video.MinDuration // For V25, minpodDuration was imp.video.minduration
 	maxPodDuration := imp.Video.MaxDuration // For V25, maxpodDuration was imp.video.maxduration
 
+	if rctx.Endpoint == models.EndpointJson {
+		// Apply GAM URL adpod configs
+		GAMMinPodDuration, GAMMaxPodDuration := ApplyGAMURLAdpodConfig(rctx, adpodConfigV25)
+		if minPodDuration == 0 {
+			minPodDuration = GAMMinPodDuration
+		}
+		if maxPodDuration == 0 {
+			maxPodDuration = GAMMaxPodDuration
+		}
+	}
+
 	impCtx := rctx.ImpBidCtx[imp.ID]
 
 	if minPodDuration == 0 {

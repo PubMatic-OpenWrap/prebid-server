@@ -5,9 +5,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func checkGAMURLLookupEnabled(rCtx *models.RequestCtx) bool {
@@ -39,33 +41,35 @@ func ApplyGAMURLConfig(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest)
 	return nil
 }
 
-func ApplyGAMURLAdpodConfig(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) error {
+func ApplyGAMURLAdpodConfig(rCtx *models.RequestCtx, adpodV25 *models.AdPod) (minPodDuration int64, maxPodDuration int64) {
 	if !checkGAMURLLookupEnabled(rCtx) {
-		return nil
+		return
 	}
 
 	gamRedirectURL, err := url.Parse(rCtx.RedirectURL)
 	if err != nil {
-		return err
+		glog.Error("failed to parse redirect URL in ApplyGAMURLAdpodConfig: " + err.Error())
+		return
 	}
 
-	gamQueryParams := gamRedirectURL.Query()
-	config, ok := getAdpodConfigFromGAMQuery(gamQueryParams)
-	if !ok {
-		return nil
-	}
+	queryParams := gamRedirectURL.Query()
+	setAdpodConfigFromGAMQuery(queryParams, adpodV25)
 
-	for _, imp := range bidRequest.Imp {
-		podConfigs, ok := rCtx.ImpAdPodConfig[imp.ID]
-		if !ok {
-			podConfigs = []models.PodConfig{config}
-		} else {
-			setAdpodConfigFromGAMQuery(podConfigs, config)
+	if minPodDur := queryParams.Get(models.GAMVideoMinDuration); len(minPodDur) > 0 {
+		minPodDurationInt, err := strconv.Atoi(minPodDur)
+		if err == nil {
+			minPodDuration = int64(minPodDurationInt)
 		}
-		rCtx.ImpAdPodConfig[imp.ID] = podConfigs
 	}
 
-	return nil
+	if maxPodDur := queryParams.Get(models.GAMVideoMaxDuration); len(maxPodDur) > 0 {
+		maxPodDurationInt, err := strconv.Atoi(maxPodDur)
+		if err == nil {
+			maxPodDuration = int64(maxPodDurationInt)
+		}
+	}
+
+	return
 }
 
 func setDeviceParams(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest, queryParams url.Values) {
@@ -146,79 +150,28 @@ func getDimension(size string) []string {
 	return strings.Split(strings.Split(size, models.Pipe)[0], models.DelimiterX)
 }
 
-func getAdpodConfigFromGAMQuery(queryParams url.Values) (models.PodConfig, bool) {
-	config := models.PodConfig{
-		AdpodConfigV25: &models.AdpodConfigV25{},
-	}
-
-	var isConfigSet bool
-	if maxAds := queryParams.Get(models.GAMAdpodMaxAds); len(maxAds) > 0 {
+func setAdpodConfigFromGAMQuery(queryParams url.Values, v25Config *models.AdPod) {
+	if maxAds := queryParams.Get(models.GAMAdpodMaxAds); len(maxAds) > 0 && v25Config.MaxAds == nil {
 		maxAdsInt, err := strconv.Atoi(maxAds)
 		if err == nil {
-			config.AdpodConfigV25.MaxAds = int64(maxAdsInt)
-			isConfigSet = true
+			v25Config.MaxAds = ptrutil.ToPtr(int64(maxAdsInt))
+
 		}
 	}
 
-	if minPodDuration := queryParams.Get(models.GAMVideoMinDuration); len(minPodDuration) > 0 {
-		minPodDurationInt, err := strconv.Atoi(minPodDuration)
-		if err == nil {
-			config.AdpodConfigV25.MinPodDuration = int64(minPodDurationInt)
-			isConfigSet = true
-		}
-	}
-
-	if maxPodDuration := queryParams.Get(models.GAMVideoMaxDuration); len(maxPodDuration) > 0 {
-		maxPodDurationInt, err := strconv.Atoi(maxPodDuration)
-		if err == nil {
-			config.AdpodConfigV25.MaxPodDuration = int64(maxPodDurationInt)
-			isConfigSet = true
-		}
-	}
-
-	if minDuration := queryParams.Get(models.GAMAdMinDuration); len(minDuration) > 0 {
+	if minDuration := queryParams.Get(models.GAMAdMinDuration); len(minDuration) > 0 && v25Config.MinDuration == nil {
 		minDurationInt, err := strconv.Atoi(minDuration)
 		if err == nil {
-			config.MinDuration = int64(minDurationInt)
-			isConfigSet = true
+			v25Config.MinDuration = ptrutil.ToPtr(int64(minDurationInt))
+
 		}
 	}
 
-	if maxDuration := queryParams.Get(models.GAMAdMaxDuration); len(maxDuration) > 0 {
+	if maxDuration := queryParams.Get(models.GAMAdMaxDuration); len(maxDuration) > 0 && v25Config.MaxDuration == nil {
 		maxDurationInt, err := strconv.Atoi(maxDuration)
 		if err == nil {
-			config.MaxDuration = int64(maxDurationInt)
-			isConfigSet = true
-		}
-	}
+			v25Config.MaxDuration = ptrutil.ToPtr(int64(maxDurationInt))
 
-	return config, isConfigSet
-}
-
-func setAdpodConfigFromGAMQuery(podConfigs []models.PodConfig, gamAdpodConfig models.PodConfig) {
-	for i := range podConfigs {
-		if podConfigs[i].AdpodConfigV25 == nil {
-			continue
-		}
-
-		if podConfigs[i].AdpodConfigV25.MaxAds == 0 {
-			podConfigs[i].AdpodConfigV25.MaxAds = gamAdpodConfig.AdpodConfigV25.MaxAds
-		}
-
-		if podConfigs[i].AdpodConfigV25.MinPodDuration == 0 {
-			podConfigs[i].AdpodConfigV25.MinPodDuration = gamAdpodConfig.AdpodConfigV25.MinPodDuration
-		}
-
-		if podConfigs[i].AdpodConfigV25.MaxPodDuration == 0 {
-			podConfigs[i].AdpodConfigV25.MaxPodDuration = gamAdpodConfig.AdpodConfigV25.MaxPodDuration
-		}
-
-		if podConfigs[i].MinDuration == 0 {
-			podConfigs[i].MinDuration = gamAdpodConfig.MinDuration
-		}
-
-		if podConfigs[i].MaxDuration == 0 {
-			podConfigs[i].MaxDuration = gamAdpodConfig.MaxDuration
 		}
 	}
 }
