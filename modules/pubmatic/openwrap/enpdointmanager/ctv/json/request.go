@@ -42,10 +42,6 @@ func filterImpsWithInvalidAdserverURL(rCtx *models.RequestCtx, bidRequest *openr
 }
 
 func processRedirectURL(rCtx *models.RequestCtx, result stage.BeforeValidationResult) (stage.BeforeValidationResult, bool) {
-	if len(rCtx.RedirectURL) == 0 {
-		rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.OwRedirectURL)
-	}
-
 	if len(rCtx.RedirectURL) > 0 {
 		rCtx.RedirectURL = strings.TrimSpace(rCtx.RedirectURL)
 		if rCtx.ResponseFormat == models.ResponseFormatRedirect && !utils.IsValidURL(rCtx.RedirectURL) {

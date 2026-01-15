@@ -1848,6 +1848,12 @@ func (m OpenWrap) processAdpod(
 		return result, true
 	}
 
+	// Parse redirect url to apply GAM URL feature
+	// TODO: Move this to CTV specific implementation, along with adpod config processing
+	if len(rCtx.RedirectURL) == 0 {
+		rCtx.RedirectURL = models.GetVersionLevelPropertyFromPartnerConfig(rCtx.PartnerConfigMap, models.OwRedirectURL)
+	}
+
 	for _, imp := range bidRequest.Imp {
 		if imp.Video == nil {
 			continue

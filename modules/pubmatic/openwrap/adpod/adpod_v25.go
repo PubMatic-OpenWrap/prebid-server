@@ -35,7 +35,7 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 	if minPodDuration == 0 {
 		adUnitConfig := impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
 		if adUnitConfig != nil && adUnitConfig.Video != nil &&
-			adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled {
+			(adUnitConfig.Video.Enabled == nil || *adUnitConfig.Video.Enabled) {
 			minPodDuration = adUnitConfig.Video.Config.MinDuration
 		}
 	}
@@ -43,7 +43,7 @@ func GetV25AdpodConfigs(rctx *models.RequestCtx, imp *openrtb2.Imp) ([]models.Po
 	if maxPodDuration == 0 {
 		adUnitConfig := impCtx.VideoAdUnitCtx.AppliedSlotAdUnitConfig
 		if adUnitConfig != nil && adUnitConfig.Video != nil &&
-			adUnitConfig.Video.Enabled != nil && *adUnitConfig.Video.Enabled {
+			(adUnitConfig.Video.Enabled == nil || *adUnitConfig.Video.Enabled) {
 			maxPodDuration = adUnitConfig.Video.Config.MaxDuration
 		}
 	}
