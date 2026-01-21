@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
@@ -108,10 +109,20 @@ func getAdPodImpConfig(podID string, dynamicSlotConfig models.SlotConfig, adpodP
 			MaxPodDuration: dynamicSlotConfig.PodDur,
 		}
 	}
+	minDuration := dynamicSlotConfig.MinDuration
+	maxDuration := dynamicSlotConfig.MaxDuration
+	if minDuration == 0 && len(dynamicSlotConfig.RqdDurs) > 0 {
+		minDuration = slices.Min(dynamicSlotConfig.RqdDurs)
+	}
+
+	if maxDuration == 0 && len(dynamicSlotConfig.RqdDurs) > 0 {
+		maxDuration = slices.Max(dynamicSlotConfig.RqdDurs)
+	}
+
 	selectedAlgorithm := SelectAlgorithm(adpodProfileCfg)
 	adpod := &models.AdPod{
-		MinDuration:                 &dynamicSlotConfig.MinDuration,
-		MaxDuration:                 &dynamicSlotConfig.MaxDuration,
+		MinDuration:                 &minDuration,
+		MaxDuration:                 &maxDuration,
 		MinAds:                      &dynamicSlotConfig.AdpodConfigV25.MinAds,
 		MaxAds:                      &dynamicSlotConfig.AdpodConfigV25.MaxAds,
 		IABCategoryExclusionPercent: dynamicSlotConfig.AdpodConfigV25.IABCategoryExclusionPercent,
