@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/golang/glog"
+
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -11,6 +13,7 @@ import (
 )
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
+	glog.V(3).Infof("[prepare_pubmatic_params_v25][PubID]: %d [ProfileID]: %d,[ImpID]: %s [ImpExt]: %v", rctx.PubID, rctx.ProfileID, imp.ID, impExt)
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
@@ -75,6 +78,10 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	params, err := json.Marshal(extImpPubMatic)
+	if err != nil {
+		glog.Errorf("[prepare_pubmatic_params_v25][Error]: %s", err.Error())
+	}
+	glog.V(3).Infof("[prepare_pubmatic_params_v25][Params]: %s", string(params))
 	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
