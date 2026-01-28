@@ -687,6 +687,7 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	}
 
 	bidderParamsJson := prebid.BidderParams
+	glog.V(3).Infof("[mergeBidderParams] bidderParamsJson: %s", string(bidderParamsJson))
 	if len(bidderParamsJson) == 0 {
 		return nil
 	}
@@ -695,6 +696,8 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	if err := jsonutil.Unmarshal(bidderParamsJson, &bidderParams); err != nil {
 		return nil
 	}
+	jsonData, _ := json.MarshalIndent(bidderParams, "", "  ")
+	glog.V(3).Infof("---[mergeBidderParams] bidderParams:\n%s", string(jsonData))
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
@@ -704,11 +707,13 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
 		if err := mergeBidderParamsImpExt(impExt, bidderParams); err != nil {
+			glog.Errorf("[mergeBidderParamsImpExt] error processing bidder parameters for imp[%d]: %s", i, err.Error())
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.prebid.bidder.BIDDER level
 		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams); err != nil {
+			glog.Errorf("[mergeBidderParamsImpExtPrebid] error processing bidder parameters for imp[%d]: %s", i, err.Error())
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
 	}
@@ -721,6 +726,8 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 // expected since the ext json was validated during the bid request unmarshal.
 func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage) error {
 	extMap := impExt.GetExt()
+	jsonData, _ := json.MarshalIndent(extMap, "", "  ")
+	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMap:\n%s", string(jsonData))
 	extMapModified := false
 
 	for bidder, params := range reqExtParams {
@@ -736,6 +743,7 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 		impExtBidderMap := map[string]json.RawMessage{}
 		if len(impExtBidder) > 0 {
 			if err := jsonutil.Unmarshal(impExtBidder, &impExtBidderMap); err != nil {
+				glog.Errorf("---[mergeBidderParamsImpExt] error unmarshalling ext.BIDDER: %s", err.Error())
 				continue
 			}
 		}
@@ -751,13 +759,14 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 		if modified {
 			impExtBidderJson, err := jsonutil.Marshal(impExtBidderMap)
 			if err != nil {
+				glog.Errorf("---[mergeBidderParamsImpExt] error marshalling ext.BIDDER: %s", err.Error())
 				return fmt.Errorf("error marshalling ext.BIDDER: %s", err.Error())
 			}
 			extMap[bidder] = impExtBidderJson
 			extMapModified = true
 		}
 	}
-
+	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMapModified: %v, extMap: %s", extMapModified, extMap)
 	if extMapModified {
 		impExt.SetExt(extMap)
 	}
@@ -784,6 +793,9 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		impExtPrebidBidderMap := map[string]json.RawMessage{}
 		if len(impExtPrebidBidder) > 0 {
 			if err := jsonutil.Unmarshal(impExtPrebidBidder, &impExtPrebidBidderMap); err != nil {
+				glog.Errorf("impExtPrebidBidder: %s", impExtPrebidBidder)
+				glog.Errorf("impExtPrebidBidderMap: %s", impExtPrebidBidderMap)
+				glog.Errorf("error unmarshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 				continue
 			}
 		}
@@ -799,13 +811,15 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		if modified {
 			impExtPrebidBidderJson, err := jsonutil.Marshal(impExtPrebidBidderMap)
 			if err != nil {
+				glog.Errorf("impExtPrebidBidderMap: %s", impExtPrebidBidderMap)
+				glog.Errorf("error marshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 				return fmt.Errorf("error marshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 			}
 			prebid.Bidder[bidder] = impExtPrebidBidderJson
 			prebidModified = true
 		}
 	}
-
+	glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] prebidModified: %v, prebid: %s", prebidModified, prebid)
 	if prebidModified {
 		impExt.SetPrebid(prebid)
 	}
