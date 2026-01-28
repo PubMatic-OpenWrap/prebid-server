@@ -157,6 +157,8 @@ func getPubMaticPublisherID(rctx models.RequestCtx, partnerID int) string {
 }
 
 func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessage {
+	glog.V(3).Infof("Inside [getPubMaticWrapperExt]-----")
+	glog.V(3).Infof("[getPubMaticWrapperExt] Display ID : %d, Profile ID:%d", rctx.DisplayID, rctx.ProfileID)
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
 
 	// change profile id for pubmatic2

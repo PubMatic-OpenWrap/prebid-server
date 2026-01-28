@@ -135,6 +135,7 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 					glog.Errorf("error validating bidder params: impid: [%s], imp.Ext: [%s], val: [%s]", imp.ID, string(imp.Ext), string(val))
 					return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
 				}
+				glog.Errorf("Valid bidder params: impid: [%s], imp.Ext: [%s], val: [%s]", imp.ID, string(imp.Ext), string(val))
 			}
 		} else {
 			if msg, isDisabled := srv.disabledBidders[bidder]; isDisabled {
