@@ -353,7 +353,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
-			glog.V(3).Infof("[before_validation_hook][ImpExt] Original: %v", impExt)
+			glog.V(3).Infof("[before_validation_hook][ImpExt] Original: %s", string(imp.Ext))
 			if err != nil {
 				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
@@ -655,7 +655,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Bidder = nil
 		impExt.OWSDK = nil
 		newImpExt, err := json.Marshal(impExt)
-		glog.V(3).Infof("[before_validation_hook][ImpExt] Updated: %v", newImpExt)
+		glog.V(3).Infof("[before_validation_hook][ImpExt] Updated: %s", string(newImpExt))
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
@@ -965,7 +965,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
-	glog.V(3).Infof("[apply_imp_changes][ImpExt] Final: %v", imp.Ext)
+	glog.V(3).Infof("[apply_imp_changes][ImpExt] Final: %s", string(imp.Ext))
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
