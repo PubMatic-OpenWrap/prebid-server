@@ -701,8 +701,8 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
-		impExtJson, _ := json.Marshal(impExt)
-		glog.V(3).Infof("[mergeBidderParams][ImpExt] before: %v", impExtJson)
+		impExtJson, _ := json.MarshalIndent(impExt, "", "  ")
+		glog.V(3).Infof("[mergeBidderParams][ImpExt] before: %s", string(impExtJson))
 		if err != nil {
 			continue
 		}
@@ -768,7 +768,13 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 			extMapModified = true
 		}
 	}
-	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMapModified: %v, extMap: %v", extMapModified, extMap)
+	// Convert extMap to a readable format
+	extMapReadable := make(map[string]string, len(extMap))
+	for k, v := range extMap {
+		extMapReadable[k] = string(v)
+	}
+	extMapJson, _ := json.MarshalIndent(extMapReadable, "", "  ")
+	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMapModified: %v, extMap: %s", extMapModified, string(extMapJson))
 	if extMapModified {
 		impExt.SetExt(extMap)
 	}
@@ -821,7 +827,8 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 			prebidModified = true
 		}
 	}
-	glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] prebidModified: %v, prebid: %v", prebidModified, prebid)
+	prebidJson, _ := json.MarshalIndent(prebid, "", "  ")
+	glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] prebidModified: %v, prebid: %s", prebidModified, string(prebidJson))
 	if prebidModified {
 		impExt.SetPrebid(prebid)
 	}

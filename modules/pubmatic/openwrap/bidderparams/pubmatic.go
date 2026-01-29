@@ -77,6 +77,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		}
 	}
 
+	glog.V(3).Infof("[prepare_pubmatic_params_v25] Before marshaling extImpPubMatic: %+v", extImpPubMatic)
 	params, err := json.Marshal(extImpPubMatic)
 	if err != nil {
 		glog.Errorf("[prepare_pubmatic_params_v25][Error]: %s", err.Error())
