@@ -13,7 +13,8 @@ import (
 )
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
-	glog.V(3).Infof("[prepare_pubmatic_params_v25][PubID]: %d [ProfileID]: %d,[ImpID]: %s [ImpExt]: %v", rctx.PubID, rctx.ProfileID, imp.ID, impExt)
+	impExtJSON, _ := json.MarshalIndent(impExt, "", "  ")
+	glog.V(3).Infof("[prepare_pubmatic_params_v25][PubID]: %d [ProfileID]: %d, [ImpID]: %s\n[ImpExt]: %s", rctx.PubID, rctx.ProfileID, imp.ID, string(impExtJSON))
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
@@ -76,7 +77,17 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			matchedPattern = slots[0]
 		}
 	}
-
+	if len(extImpPubMatic.WrapExt) > 0 {
+		var wrapExtObj interface{}
+		if err := json.Unmarshal(extImpPubMatic.WrapExt, &wrapExtObj); err == nil {
+			wrapExtJSON, _ := json.MarshalIndent(wrapExtObj, "", "  ")
+			glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt: %s", string(wrapExtJSON))
+		} else {
+			glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt (raw): %s", string(extImpPubMatic.WrapExt))
+		}
+	} else {
+		glog.V(3).Info("[prepare_pubmatic_params_v25] WrapExt is empty")
+	}
 	glog.V(3).Infof("[prepare_pubmatic_params_v25] Before marshaling extImpPubMatic: %+v", extImpPubMatic)
 	params, err := json.Marshal(extImpPubMatic)
 	if err != nil {
