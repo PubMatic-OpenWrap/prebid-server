@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/errortypes"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/stored_responses"
@@ -131,6 +132,7 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 		if coreBidderNormalized, isValid := srv.bidderMap[coreBidder.String()]; isValid {
 			if !cfg.SkipBidderParams {
 				if err := srv.paramsValidator.Validate(coreBidderNormalized, val); err != nil {
+					glog.Errorf("error validating bidder params: impid: [%s], imp.Ext: [%s], val: [%s]", imp.ID, string(imp.Ext), string(val))
 					return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
 				}
 			}
