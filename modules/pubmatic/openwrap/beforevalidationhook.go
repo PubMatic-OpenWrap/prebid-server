@@ -766,6 +766,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
+	newReqExtLog, _ := json.Marshal(rCtx.NewReqExt)
+
+	glog.V(3).Infof("[before_validation_hook] impExt: %s, RequestExt: %s", string(newReqExtLog), string(requestExt.Prebid.BidderParams))
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
@@ -861,6 +864,8 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
+		impExtLog, _ := json.Marshal(bidRequest.Imp[i].Ext)
+		glog.V(3).Infof("[apply_profile_changes] ImpID: %s, [ImpExt] Updated: %s", bidRequest.Imp[i].ID, string(impExtLog))
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)

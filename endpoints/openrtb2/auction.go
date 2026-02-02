@@ -588,7 +588,29 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		errs = []error{err}
 		return
 	}
+	glog.V(3).Infof("[PrepareRequest] BidRequest: %s", string(requestJson))
 
+	var bidRequestJSON string
+	if bidRequestBytes, err := json.Marshal(req.BidRequest); err == nil {
+		bidRequestJSON = string(bidRequestBytes)
+	}
+
+	glog.V(3).Infof("[PrepareRequest] req: %s", bidRequestJSON)
+
+	for i, imp := range req.GetImp() {
+		impExt, err := imp.GetImpExt()
+		if err != nil {
+			glog.Errorf("[PrepareRequest][ImpExt]ImpID: %s error getting imp ext for imp[%d]: %s", imp.ID, i, err.Error())
+			continue
+		}
+		impExtJson, err := json.MarshalIndent(impExt, "", "  ")
+		if err != nil {
+			glog.Errorf("[PrepareRequest][ImpExt]ImpID: %s error getting marshalled imp ext for imp[%d]: %s", imp.ID, i, err.Error())
+			continue
+		}
+		glog.V(3).Infof("[mergeBidderParams][ImpExt] ImpID: %s before: %s", imp.ID, string(impExtJson))
+
+	}
 	if err := mergeBidderParams(req); err != nil {
 		errs = []error{err}
 		return
@@ -710,11 +732,16 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
-		impExtJson, _ := json.MarshalIndent(impExt, "", "  ")
-		glog.V(3).Infof("[mergeBidderParams][ImpExt] ImpID: %s before: %s", imp.ID, string(impExtJson))
 		if err != nil {
+			glog.Errorf("[mergeBidderParams][ImpExt]ImpID: %s error getting imp ext for imp[%d]: %s", imp.ID, i, err.Error())
 			continue
 		}
+		impExtJson, err := json.MarshalIndent(impExt, "", "  ")
+		if err != nil {
+			glog.Errorf("[mergeBidderParams][ImpExt]ImpID: %s error getting marshalled imp ext for imp[%d]: %s", imp.ID, i, err.Error())
+			continue
+		}
+		glog.V(3).Infof("[mergeBidderParams][ImpExt] ImpID: %s before: %s", imp.ID, string(impExtJson))
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
 		if err := mergeBidderParamsImpExt(impExt, bidderParams); err != nil {
