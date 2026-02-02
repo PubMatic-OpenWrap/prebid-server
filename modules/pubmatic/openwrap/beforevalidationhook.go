@@ -658,7 +658,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Bidder = nil
 		impExt.OWSDK = nil
 		newImpExt, err := json.Marshal(impExt)
-		glog.V(3).Infof("[before_validation_hook][ImpExt] Updated: %s", string(newImpExt))
+		glog.V(3).Infof("[before_validation_hook] ImpID: %s, [ImpExt] Updated: %s", imp.ID, string(newImpExt))
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
@@ -968,7 +968,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
-	glog.V(3).Infof("[apply_imp_changes][ImpExt] Final: %s", string(imp.Ext))
+	glog.V(3).Infof("[apply_imp_changes] ImpID: %s, [ImpExt] Final: %s", imp.ID, string(imp.Ext))
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
