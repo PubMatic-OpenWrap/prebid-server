@@ -766,9 +766,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
-	newReqExtLog, _ := json.Marshal(rCtx.NewReqExt)
-
-	glog.V(3).Infof("[before_validation_hook] impExt: %s, RequestExt: %s", string(newReqExtLog), string(requestExt.Prebid.BidderParams))
+	newImp, _ := json.Marshal(rCtx.ImpBidCtx)
+	// Safely access the first impression ID if available
+	var impID string
+	if len(rCtx.ImpBidCtx) > 0 {
+		for _, impCtx := range rCtx.ImpBidCtx {
+			impID = impCtx.ImpID
+			break
+		}
+	}
+	glog.V(3).Infof("[before_validation_hook] imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
