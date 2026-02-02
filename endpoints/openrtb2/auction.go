@@ -582,20 +582,20 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		errs = append(errs, rejectErr)
 		return
 	}
-
+	glog.V(3).Infof("Before ConvertUpTo26 [PrepareRequest] BidRequest: %s", string(requestJson))
 	// normalize to openrtb 2.6
 	if err := openrtb_ext.ConvertUpTo26(req); err != nil {
 		errs = []error{err}
 		return
 	}
-	glog.V(3).Infof("[PrepareRequest] BidRequest: %s", string(requestJson))
+	glog.V(3).Infof("After ConvertUpTo26 [PrepareRequest] BidRequest: %s", string(requestJson))
 
 	var bidRequestJSON string
 	if bidRequestBytes, err := json.Marshal(req.BidRequest); err == nil {
 		bidRequestJSON = string(bidRequestBytes)
 	}
 
-	glog.V(3).Infof("[PrepareRequest] req: %s", bidRequestJSON)
+	glog.V(3).Infof("Before mergeBidderParams [PrepareRequest] req: %s", bidRequestJSON)
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
@@ -603,7 +603,7 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 			glog.Errorf("[PrepareRequest][ImpExt]ImpID: %s error getting imp ext for imp[%d]: %s", imp.ID, i, err.Error())
 			continue
 		}
-		impExtJson, err := json.MarshalIndent(impExt, "", "  ")
+		impExtJson, err := json.Marshal(impExt)
 		if err != nil {
 			glog.Errorf("[PrepareRequest][ImpExt]ImpID: %s error getting marshalled imp ext for imp[%d]: %s", imp.ID, i, err.Error())
 			continue
@@ -615,6 +615,8 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		errs = []error{err}
 		return
 	}
+
+	glog.V(3).Infof("After mergeBidderParams [PrepareRequest] req: %s", bidRequestJSON)
 
 	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
 	if errsL := deps.setFieldsImplicitly(httpRequest, req, account); len(errsL) > 0 {

@@ -806,10 +806,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 				ep.BidRequest.Source.SChain = nil
 			}
 		}
+		var reqJSON string
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			reqJSON = string(bidRequestBytes)
+		}
+		glog.V(3).Infof("[before_validation_hook] before apply_profile_changes: %s", reqJSON)
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
+		var r string
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			r = string(bidRequestBytes)
+		}
+		glog.V(3).Infof("[before_validation_hook] after apply_profile_changes: %s", r)
 
 		if rctx.IsApplovinSchainABTestEnabled && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
@@ -832,6 +842,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
 func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
+	var reqJSON string
+	if bidRequestBytes, err := json.Marshal(bidRequest); err == nil {
+		reqJSON = string(bidRequestBytes)
+	}
+	glog.V(3).Infof("[before_validation_hook] Inside apply_profile_changes: %s", reqJSON)
 	if rctx.IsTestRequest > 0 {
 		bidRequest.Test = 1
 	}
@@ -865,6 +880,9 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	bidRequest.Source.TID = bidRequest.ID
 
 	for i := 0; i < len(bidRequest.Imp); i++ {
+		impExt, _ := json.Marshal(bidRequest.Imp[i].Ext)
+		glog.V(3).Infof("Before calling [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", bidRequest.Imp[i].ID, string(impExt))
+
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
@@ -872,7 +890,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
 		impExtLog, _ := json.Marshal(bidRequest.Imp[i].Ext)
-		glog.V(3).Infof("[apply_profile_changes] ImpID: %s, [ImpExt] Updated: %s", bidRequest.Imp[i].ID, string(impExtLog))
+		glog.V(3).Infof("After calling [apply_imp_changes] ImpID: %s, [ImpExt] Updated: %s", bidRequest.Imp[i].ID, string(impExtLog))
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
@@ -963,6 +981,8 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 }
 
 func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+	impExtLog, _ := json.Marshal(imp.Ext)
+	glog.V(3).Infof("Inside [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", imp.ID, string(impExtLog))
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
@@ -980,7 +1000,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
-	glog.V(3).Infof("[apply_imp_changes] ImpID: %s, [ImpExt] Final: %s", imp.ID, string(imp.Ext))
+	glog.V(3).Infof("End [apply_imp_changes] ImpID: %s, [ImpExt] Final: %s", imp.ID, string(imp.Ext))
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
