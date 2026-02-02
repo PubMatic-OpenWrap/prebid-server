@@ -778,6 +778,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 	glog.V(3).Infof("[before_validation_hook] imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		var rjson string
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			rjson = string(bidRequestBytes)
+			glog.V(3).Infof("Inside mutation ----- : %s", rjson)
+		} else {
+			glog.V(3).Infof("Inside mutation ----- : %s", err.Error())
+		}
+
 		defer func() {
 			moduleCtx.ModuleContext["rctx"] = rctx
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
