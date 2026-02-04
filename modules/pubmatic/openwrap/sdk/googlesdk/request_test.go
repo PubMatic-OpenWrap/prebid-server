@@ -1,9 +1,11 @@
 package googlesdk
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"testing"
 
+	"github.com/buger/jsonparser"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -934,6 +936,24 @@ func TestModifyRegs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Copy COPPA, GDPR and US privacy from signal",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"existing":1}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				COPPA: 1,
+				Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"existing":1,"gdpr":1,"us_privacy":"1YNN"}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -941,6 +961,62 @@ func TestModifyRegs(t *testing.T) {
 			modifyRegs(tt.request, tt.signalRegs)
 			assert.Equal(t, tt.expectedResult, tt.request, "Unexpected result for test: %s", tt.name)
 		})
+	}
+}
+
+func TestModifyRequestWithGoogleSDKParams_Privacy(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+
+	signal := &openrtb2.BidRequest{
+		Regs: &openrtb2.Regs{
+			COPPA: 1,
+			Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+		},
+	}
+
+	signalBytes, err := json.Marshal(signal)
+	assert.NoError(t, err)
+	encodedSignal := base64.StdEncoding.EncodeToString(signalBytes)
+
+	requestBody := `{
+		"id": "123",
+		"imp": [{
+			"id": "imp1",
+			"ext": {
+				"ad_unit_mapping": [
+					{
+						"keyvals": [
+							{"key": "publisher_id", "value": "12345"},
+							{"key": "profile_id", "value": "67890"},
+							{"key": "ad_unit_id", "value": "tag-123"}
+						]
+					}
+				],
+				"buyer_generated_request_data": [{
+					"source_app": {"id": "com.google.ads.mediation.pubmatic.PubMaticMediationAdapter"},
+					"data": "` + encodedSignal + `"
+				}]
+			}
+		}]
+	}`
+
+	result := ModifyRequestWithGoogleSDKParams([]byte(requestBody), models.RequestCtx{MetricsEngine: mockEngine}, nil)
+
+	modified := &openrtb2.BidRequest{}
+	err = json.Unmarshal(result, modified)
+	assert.NoError(t, err)
+
+	if assert.NotNil(t, modified.Regs) {
+		assert.Equal(t, int8(1), modified.Regs.COPPA)
+		gdpr, err := jsonparser.GetInt(modified.Regs.Ext, "gdpr")
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), gdpr)
+
+		usPrivacy, err := jsonparser.GetString(modified.Regs.Ext, "us_privacy")
+		assert.NoError(t, err)
+		assert.Equal(t, "1YNN", usPrivacy)
 	}
 }
 func TestModifySource(t *testing.T) {
