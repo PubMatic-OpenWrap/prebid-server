@@ -85,6 +85,7 @@ type Queries struct {
 	GetCountryPartnerFilteringData    string
 	GetPerformanceDSPQuery            string
 	GetInViewEnabledPublishersQuery   string
+	GetAllDspActPcntQuery             string
 }
 
 type Cache struct {

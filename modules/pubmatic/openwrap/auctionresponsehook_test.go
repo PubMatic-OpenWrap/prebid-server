@@ -78,6 +78,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "pubmatic")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -164,6 +165,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -276,6 +278,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -368,6 +371,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "pubmatic")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -455,6 +459,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -568,6 +573,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -682,6 +688,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -796,6 +803,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -910,6 +918,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -1062,6 +1071,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -1187,6 +1197,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "rubicon")
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				return mockEngine
 			},
 			want: want{
@@ -1682,6 +1693,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				mockEngine.EXPECT().RecordIBVRequest("5890", gomock.Any())
 				return mockEngine
 			},
@@ -1784,6 +1796,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 				mockEngine.EXPECT().RecordPublisherPartnerNoCookieStats("5890", gomock.Any()).AnyTimes()
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 				return mockEngine
 			},
 			doMutate: true,
@@ -1929,6 +1942,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats(gomock.Any(), gomock.Any(), gomock.Any())
 				mockEngine.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any())
 				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				mockFeature.EXPECT().IsActApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
 				mockEngine.EXPECT().RecordPartnerResponseTimeStats(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockFeature.EXPECT().GetImpCountingMethodEnabledBidders().Return(map[string]struct{}{})
 				mockFeature.EXPECT().GetEnabledPerformanceDSPs().Return(map[int]struct{}{})

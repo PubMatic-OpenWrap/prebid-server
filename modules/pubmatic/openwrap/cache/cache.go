@@ -16,6 +16,7 @@ type Cache interface {
 	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 
 	GetFSCThresholdPerDSP() (map[int]int, error)
+	GetACTThresholdPerDSP() (map[int]int, error)
 	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)

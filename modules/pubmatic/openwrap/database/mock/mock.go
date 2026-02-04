@@ -126,6 +126,21 @@ func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCThresholdPerDSP))
 }
 
+// GetACTThresholdPerDSP mocks base method.
+func (m *MockDatabase) GetACTThresholdPerDSP() (map[int]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetACTThresholdPerDSP")
+	ret0, _ := ret[0].(map[int]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetACTThresholdPerDSP indicates an expected call of GetACTThresholdPerDSP.
+func (mr *MockDatabaseMockRecorder) GetACTThresholdPerDSP() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetACTThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetACTThresholdPerDSP))
+}
+
 // GetGDPRCountryCodes mocks base method.
 func (m *MockDatabase) GetGDPRCountryCodes() (models.HashSet, error) {
 	m.ctrl.T.Helper()

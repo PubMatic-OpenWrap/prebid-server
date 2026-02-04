@@ -575,6 +575,7 @@ const (
 	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
 	PerformanceDSPsQuery             = "GetPerformanceDSPs"
 	InViewEnabledPublishersQuery     = "GetInViewEnabledPublishers"
+	AllDspActPcntQuery               = "GetAllDspActPcntQuery"
 )
 
 // constants for owlogger Integration Type
@@ -633,6 +634,7 @@ const (
 	FeatureMBMFBannerFloors     = 13
 	FeatureDynamicFloor         = 15
 	FeatureAppLovinSchainABTest = 16
+	FeatureACT                  = 17
 )
 
 // constants for sdk integrations

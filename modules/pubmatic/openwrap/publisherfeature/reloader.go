@@ -35,6 +35,7 @@ type feature struct {
 	dynamicFloor            dynamicFloor
 	performanceDSPs         performanceDSPs
 	inViewEnabledPublishers inViewEnabledPublishers
+	act                     act
 }
 
 var fe *feature
@@ -115,6 +116,7 @@ var initReloader = func(fe *feature) {
 func (fe *feature) updateFeatureConfigMaps() {
 	var err error
 	var errFscUpdate error
+	var errActUpdate error
 
 	publisherFeatureMap, errPubFeature := fe.cache.GetPublisherFeatureMap()
 	if errPubFeature != nil {
@@ -127,6 +129,9 @@ func (fe *feature) updateFeatureConfigMaps() {
 
 	if errFscUpdate = fe.updateFscConfigMapsFromCache(); errFscUpdate != nil {
 		err = models.ErrorWrap(err, errFscUpdate)
+	}
+	if errActUpdate = fe.updateActConfigMapsFromCache(); errActUpdate != nil {
+		err = models.ErrorWrap(err, errActUpdate)
 	}
 
 	fe.updateTBFConfigMap()
