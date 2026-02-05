@@ -817,8 +817,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		var rjson string
-		t = time.Now()
-		timingLog("inside mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, t, begin)
+		mutationStart := time.Now()
+		glog.Infof("[mutation-start] req:%s imp:%s totalElapsedBeforeStart:%v",
+			ep.BidRequest.ID, rctx.LoggerImpressionID, time.Since(begin))
+
+		timingLog("inside mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationStart, begin)
 		stageDur["inside mutation"] = time.Since(t).Milliseconds()
 		glog.V(3).Infof("[before_validation_hook] inside mutation reqID:%s elapsed:%dms",
 			ep.BidRequest.ID, time.Since(begin).Milliseconds())
@@ -830,6 +833,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		defer func() {
+			mutationElapsed := time.Since(mutationStart)
+			stageDur["mutationElapsed"] = mutationElapsed.Milliseconds()
+			glog.Infof("[mutation-timing] req:%s imp:%s elapsed:%v", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationElapsed)
+
 			timingLog("completed mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, t, begin)
 			stageDur["completed mutation"] = time.Since(t).Milliseconds()
 			moduleCtx.ModuleContext["rctx"] = rctx
