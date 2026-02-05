@@ -381,7 +381,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
-			// err := json.Unmarshal(imp.Ext, impExt)
+			err := json.Unmarshal(imp.Ext, impExt)
 			// glog.V(3).Infof("[before_validation_hook][ImpExt] Original: %s", string(imp.Ext))
 			if err != nil {
 				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
@@ -663,8 +663,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for bidder, meta := range bidderMeta {
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
-		// impExtJSON, _ := json.Marshal(impExt)
-		// glog.V(3).Infof("ImpID: %s, [update_imp_ext][ImpExt] with bidder params---: %s", imp.ID, string(impExtJSON))
+		impExtJSON, _ := json.Marshal(impExt)
+		glog.V(3).Infof("ImpID: %s, [update_imp_ext][ImpExt] with bidder params---: %s", imp.ID, string(impExtJSON))
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
@@ -801,16 +801,16 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
-	newImp, _ := json.Marshal(rCtx.ImpBidCtx)
+	// newImp, _ := json.Marshal(rCtx.ImpBidCtx)
 	// Safely access the first impression ID if available
-	var impID string
-	if len(rCtx.ImpBidCtx) > 0 {
-		for _, impCtx := range rCtx.ImpBidCtx {
-			impID = impCtx.ImpID
-			break
-		}
-	}
-	glog.V(3).Infof("[before_validation_hook] before mutation imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
+	// var impID string
+	// if len(rCtx.ImpBidCtx) > 0 {
+	// 	for _, impCtx := range rCtx.ImpBidCtx {
+	// 		impID = impCtx.ImpID
+	// 		break
+	// 	}
+	// }
+	// glog.V(3).Infof("[before_validation_hook] before mutation imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
 	glog.V(3).Infof("[before_validation_hook] pre-mutation complete reqID:%s elapsed:%dms",
 		payload.BidRequest.ID, time.Since(begin).Milliseconds())
 	glog.Infof("[timing-summary-before-mutation] req:%s elapsed:%dms", payload.BidRequest.ID, time.Since(begin).Milliseconds())
