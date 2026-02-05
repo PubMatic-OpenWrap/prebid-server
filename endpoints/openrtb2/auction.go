@@ -800,13 +800,13 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 			extMapModified = true
 		}
 	}
-	// Convert extMap to a readable format
-	extMapReadable := make(map[string]string, len(extMap))
-	for k, v := range extMap {
-		extMapReadable[k] = string(v)
-	}
-	extMapJson, _ := json.MarshalIndent(extMapReadable, "", "  ")
-	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMapModified: %v, extMap: %s", extMapModified, string(extMapJson))
+	// // Convert extMap to a readable format
+	// extMapReadable := make(map[string]string, len(extMap))
+	// for k, v := range extMap {
+	// 	extMapReadable[k] = string(v)
+	// }
+	// extMapJson, _ := json.MarshalIndent(extMapReadable, "", "  ")
+	// glog.V(3).Infof("---[mergeBidderParamsImpExt] extMapModified: %v, extMap: %s", extMapModified, string(extMapJson))
 	if extMapModified {
 		impExt.SetExt(extMap)
 	}
