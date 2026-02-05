@@ -590,12 +590,12 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 	}
 	// glog.V(3).Infof("After ConvertUpTo26 [PrepareRequest] BidRequest: %s", string(requestJson))
 
-	var bidRequestJSON string
-	if bidRequestBytes, err := json.Marshal(req.BidRequest); err == nil {
-		bidRequestJSON = string(bidRequestBytes)
-	}
+	// var bidRequestJSON string
+	// if bidRequestBytes, err := json.Marshal(req.BidRequest); err == nil {
+	// 	bidRequestJSON = string(bidRequestBytes)
+	// }
 
-	glog.V(3).Infof("Before mergeBidderParams [PrepareRequest] req: %s", bidRequestJSON)
+	// glog.V(3).Infof("Before mergeBidderParams [PrepareRequest] req: %s", bidRequestJSON)
 
 	// for i, imp := range req.GetImp() {
 	// impExt, err := imp.GetImpExt()
@@ -711,7 +711,7 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	}
 
 	bidderParamsJson := prebid.BidderParams
-	glog.V(3).Infof("[mergeBidderParams] bidderParamsJson: %s", string(bidderParamsJson))
+	// glog.V(3).Infof("[mergeBidderParams] bidderParamsJson: %s", string(bidderParamsJson))
 	if len(bidderParamsJson) == 0 {
 		return nil
 	}
@@ -720,8 +720,8 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	if err := jsonutil.Unmarshal(bidderParamsJson, &bidderParams); err != nil {
 		return nil
 	}
-	jsonData, _ := json.MarshalIndent(bidderParams, "", "  ")
-	glog.V(3).Infof("---[mergeBidderParams] bidderParams:\n%s", string(jsonData))
+	// jsonData, _ := json.MarshalIndent(bidderParams, "", "  ")
+	// glog.V(3).Infof("---[mergeBidderParams] bidderParams:\n%s", string(jsonData))
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
@@ -760,8 +760,8 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 // expected since the ext json was validated during the bid request unmarshal.
 func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage) error {
 	extMap := impExt.GetExt()
-	jsonData, _ := json.MarshalIndent(extMap, "", "  ")
-	glog.V(3).Infof("---[mergeBidderParamsImpExt] extMap:\n%s", string(jsonData))
+	// jsonData, _ := json.MarshalIndent(extMap, "", "  ")
+	// glog.V(3).Infof("---[mergeBidderParamsImpExt] extMap:\n%s", string(jsonData))
 	extMapModified := false
 
 	for bidder, params := range reqExtParams {
@@ -817,7 +817,7 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 // mergeBidderParamsImpExtPrebid merges bidder parameters in req.ext down to the imp[].ext.prebid.bidder.BIDDER
 // level, giving priority to imp[].ext.prebid.bidder.BIDDER in case of a conflict.
 func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage, impID string) error {
-	glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] ImpID: %s,	impExt: %s", impID, impExt)
+	// glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] ImpID: %s,	impExt: %s", impID, impExt)
 	prebid := impExt.GetPrebid()
 	prebidModified := false
 
@@ -834,9 +834,6 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		impExtPrebidBidderMap := map[string]json.RawMessage{}
 		if len(impExtPrebidBidder) > 0 {
 			if err := jsonutil.Unmarshal(impExtPrebidBidder, &impExtPrebidBidderMap); err != nil {
-				glog.Errorf("impExtPrebidBidder: %s", impExtPrebidBidder)
-				glog.Errorf("impExtPrebidBidderMap: %s", impExtPrebidBidderMap)
-				glog.Errorf("error unmarshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 				continue
 			}
 		}
@@ -852,8 +849,6 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		if modified {
 			impExtPrebidBidderJson, err := jsonutil.Marshal(impExtPrebidBidderMap)
 			if err != nil {
-				glog.Errorf("impExtPrebidBidderMap: %s", impExtPrebidBidderMap)
-				glog.Errorf("error marshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 				return fmt.Errorf("error marshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 			}
 			prebid.Bidder[bidder] = impExtPrebidBidderJson

@@ -77,18 +77,18 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			matchedPattern = slots[0]
 		}
 	}
-	if len(extImpPubMatic.WrapExt) > 0 {
-		var wrapExtObj interface{}
-		if err := json.Unmarshal(extImpPubMatic.WrapExt, &wrapExtObj); err == nil {
-			wrapExtJSON, _ := json.MarshalIndent(wrapExtObj, "", "  ")
-			glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt: %s", string(wrapExtJSON))
-		} else {
-			glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt (raw): %s", string(extImpPubMatic.WrapExt))
-		}
-	} else {
-		glog.V(3).Info("[prepare_pubmatic_params_v25] WrapExt is empty")
-	}
-	glog.V(3).Infof("[prepare_pubmatic_params_v25] Before marshaling extImpPubMatic: %+v", extImpPubMatic)
+	// if len(extImpPubMatic.WrapExt) > 0 {
+	// 	var wrapExtObj interface{}
+	// 	if err := json.Unmarshal(extImpPubMatic.WrapExt, &wrapExtObj); err == nil {
+	// 		wrapExtJSON, _ := json.MarshalIndent(wrapExtObj, "", "  ")
+	// 		glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt: %s", string(wrapExtJSON))
+	// 	} else {
+	// 		glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt (raw): %s", string(extImpPubMatic.WrapExt))
+	// 	}
+	// } else {
+	// 	glog.V(3).Info("[prepare_pubmatic_params_v25] WrapExt is empty")
+	// }
+	// glog.V(3).Infof("[prepare_pubmatic_params_v25] Before marshaling extImpPubMatic: %+v", extImpPubMatic)
 	params, err := json.Marshal(extImpPubMatic)
 	if err != nil {
 		glog.Errorf("[prepare_pubmatic_params_v25][Error]: %s", err.Error())
