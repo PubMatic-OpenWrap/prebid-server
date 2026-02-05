@@ -937,7 +937,7 @@ func TestModifyRegs(t *testing.T) {
 			},
 		},
 		{
-			name: "Copy COPPA, GDPR and US privacy from signal",
+			name: "copy_coppa_gdpr_us_privacy_from_signal",
 			request: &openrtb2.BidRequest{
 				Regs: &openrtb2.Regs{
 					Ext: []byte(`{"existing":1}`),
@@ -951,6 +951,79 @@ func TestModifyRegs(t *testing.T) {
 				Regs: &openrtb2.Regs{
 					COPPA: 1,
 					Ext:   []byte(`{"existing":1,"gdpr":1,"us_privacy":"1YNN"}`),
+				},
+			},
+		},
+		{
+			name: "signal_overrides_request_coppa_gdpr_us_privacy_when_both_present",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":0,"us_privacy":"1---","existing":1}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				COPPA: 1,
+				Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN","existing":1}`),
+				},
+			},
+		},
+		{
+			name: "signal_coppa_0_does_not_override_request_coppa",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				COPPA: 0,
+				Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+				},
+			},
+		},
+		{
+			name: "signal_missing_gdpr_us_privacy_keeps_request_values",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN","existing":1}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				COPPA: 1,
+				Ext:   []byte(`{"dsa":{"dsarequired":true}}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					COPPA: 1,
+					Ext:   []byte(`{"gdpr":1,"us_privacy":"1YNN","existing":1,"dsa":{"dsarequired":true}}`),
+				},
+			},
+		},
+		{
+			name: "signal_empty_us_privacy_does_not_override_request_us_privacy",
+			request: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
+				},
+			},
+			signalRegs: &openrtb2.Regs{
+				Ext: []byte(`{"us_privacy":""}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Regs: &openrtb2.Regs{
+					Ext: []byte(`{"gdpr":1,"us_privacy":"1YNN"}`),
 				},
 			},
 		},
