@@ -1236,6 +1236,54 @@ func TestModifyUser(t *testing.T) {
 			},
 		},
 		{
+			name: "copy_consent_from_signal_user_ext",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue"}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"consent":"BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"existingKey":"existingValue","consent":"BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA"}`),
+				},
+			},
+		},
+		{
+			name: "signal_consent_overrides_request_consent_when_both_present",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"consent":"OLD"}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"consent":"NEW"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"consent":"NEW"}`),
+				},
+			},
+		},
+		{
+			name: "empty_signal_consent_does_not_override_request_consent",
+			request: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"consent":"OLD"}`),
+				},
+			},
+			signalUser: &openrtb2.User{
+				Ext: []byte(`{"consent":""}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				User: &openrtb2.User{
+					Ext: []byte(`{"consent":"OLD"}`),
+				},
+			},
+		},
+		{
 			name: "Signal user has empty ext, no changes",
 			request: &openrtb2.BidRequest{
 				User: &openrtb2.User{
