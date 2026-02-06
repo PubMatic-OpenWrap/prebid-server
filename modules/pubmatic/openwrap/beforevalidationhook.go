@@ -457,6 +457,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 				AdUnitName:        adUnitName,
 				SlotName:          slotName,
 				IsRewardInventory: reward,
+				Instl:             imp.Instl,
+				IsAppOpenAd:       impExt.IsAppOpenAd,
 			}
 			continue
 		}

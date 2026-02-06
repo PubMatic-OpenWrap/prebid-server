@@ -140,7 +140,7 @@ func (m OpenWrap) addPWTTargetingForBid(rctx models.RequestCtx, bidResponse *ope
 				if m.pubFeatures.IsFscApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
 					bidCtx.Fsc = 1
 				}
-				if m.pubFeatures.IsActApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
+				if impCtx.Instl == 1 && impCtx.IsAppOpenAd != 1 && m.pubFeatures.IsActApplicable(rctx.PubID, seatBid.Seat, bidCtx.DspId) {
 					bidCtx.Act = 1
 				}
 			} else if !rctx.SendAllBids {
