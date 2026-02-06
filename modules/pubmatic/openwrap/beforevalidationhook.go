@@ -103,7 +103,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		processingTime := time.Since(begin)
-		timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+		timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
 		remainingTime := timeoutDuration - processingTime
 		glog.Infof("[hook_end] total pre-processing:%v timeout:%v remaining:%v",
 			processingTime, timeoutDuration, remainingTime)
@@ -542,6 +542,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		nonMapped := make(map[string]struct{})
 		stageDur["getMultiFloors"] = time.Since(t).Milliseconds()
 		timingLog("getMultiFloors", payload.BidRequest.ID, imp.ID, t, begin)
+		partnerConfigStart := time.Now()
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
 			if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 				continue
@@ -655,6 +656,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
+		stageDur["PartnerConfigMap"] = time.Since(partnerConfigStart).Milliseconds()
+		timingLog("PartnerConfigMap", payload.BidRequest.ID, imp.ID, t, begin)
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {
@@ -848,7 +851,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
 
 			processingTime := time.Since(begin)
-			timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+			timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
 			remainingTime := timeoutDuration - processingTime
 			glog.Infof("Mutation End [%s] total pre-processing:%v timeout:%v remaining:%v",
 				rCtx.LoggerImpressionID, processingTime, timeoutDuration, remainingTime)
@@ -856,7 +859,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			// Debug logging only
 			if glog.V(models.LogLevelDebug) {
 				processingTime := time.Duration(timeDiff) * time.Millisecond
-				timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+				timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
 				remainingTime := timeoutDuration - processingTime
 				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
 				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
