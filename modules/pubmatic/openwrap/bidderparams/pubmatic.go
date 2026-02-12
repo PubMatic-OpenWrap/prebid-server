@@ -3,18 +3,30 @@ package bidderparams
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
-
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
-func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
-	impExtJSON, _ := json.MarshalIndent(impExt, "", "  ")
-	glog.V(3).Infof("[prepare_pubmatic_params_v25][PubID]: %d [ProfileID]: %d, [ImpID]: %s\n[ImpExt]: %s", rctx.PubID, rctx.ProfileID, imp.ID, string(impExtJSON))
+// timingLog helps with uniform timing instrumentation.
+func timing(label, reqID, impID string, start, begin time.Time) {
+	elapsed := time.Since(start).Milliseconds()
+	total := time.Since(begin).Milliseconds()
+	glog.V(3).Infof("[timing][%s] imp:%s req:%s elapsed:%dms total:%dms", label, impID, reqID, elapsed, total)
+}
+
+func getLabel(function, impid, biddercode string) string {
+	return fmt.Sprintf("function_imp_%s_bidder_%s", impid, biddercode)
+}
+
+func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
+	start := time.Now()
+	t := time.Now()
+	stageDur := make(map[string]int64)
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
@@ -22,9 +34,14 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		Floors:      models.GetMultiFloors(rctx.MultiFloors, imp.ID),
 		OWSDK:       impExt.OWSDK,
 	}
-
+	label := getLabel("before_getSlotMeta", imp.ID, prebidBidderCode)
+	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
+	t = time.Now()
+	label = getLabel("after_getSlotMeta", imp.ID, prebidBidderCode)
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
-
+	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
 	var err error
 	var matchedSlot, matchedPattern string
 	var isRegexSlot, isRegexKGP bool
@@ -42,10 +59,19 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
 
+	t = time.Now()
+	label = getLabel("getMatchingSlotAndPattern", imp.ID, prebidBidderCode)
 	// simple+regex key match
 	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 
+	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
+	t = time.Now()
+	label = getLabel("getSlotMappings", imp.ID, prebidBidderCode)
+
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
+		stageDur[label] = time.Since(t).Milliseconds()
+		timing(label, bidRequest.ID, imp.ID, t, begin)
 		if matchedPattern == "" {
 			// use alternate names defined in DB for this slot if selection is non-regex
 			// use owSlotName to addres case insensitive slotname.
@@ -71,29 +97,26 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		if impExt.Wrapper != nil {
 			div = impExt.Wrapper.Div
 		}
+		t = time.Now()
+		label = getLabel("getDefaultMappingKGP", imp.ID, prebidBidderCode)
 		unmappedKPG := getDefaultMappingKGP(kgp)
+		stageDur[label] = time.Since(t).Milliseconds()
+		timing(label, bidRequest.ID, imp.ID, t, begin)
+		t = time.Now()
+		label = getLabel("GenerateSlotName", imp.ID, prebidBidderCode)
 		extImpPubMatic.AdSlot = models.GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
+		stageDur[label] = time.Since(t).Milliseconds()
+		timing(label, bidRequest.ID, imp.ID, t, begin)
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		}
 	}
-	// if len(extImpPubMatic.WrapExt) > 0 {
-	// 	var wrapExtObj interface{}
-	// 	if err := json.Unmarshal(extImpPubMatic.WrapExt, &wrapExtObj); err == nil {
-	// 		wrapExtJSON, _ := json.MarshalIndent(wrapExtObj, "", "  ")
-	// 		glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt: %s", string(wrapExtJSON))
-	// 	} else {
-	// 		glog.V(3).Infof("[prepare_pubmatic_params_v25] WrapExt (raw): %s", string(extImpPubMatic.WrapExt))
-	// 	}
-	// } else {
-	// 	glog.V(3).Info("[prepare_pubmatic_params_v25] WrapExt is empty")
-	// }
-	// glog.V(3).Infof("[prepare_pubmatic_params_v25] Before marshaling extImpPubMatic: %+v", extImpPubMatic)
+
 	params, err := json.Marshal(extImpPubMatic)
-	if err != nil {
-		glog.Errorf("[prepare_pubmatic_params_v25][Error]: %s", err.Error())
-	}
-	glog.V(3).Infof("[prepare_pubmatic_params_v25][Params]: %s", string(params))
+	total := time.Since(begin).Milliseconds()
+	end := time.Since(start).Milliseconds()
+	glog.Infof("[PreparePubmaticParamsV25] req:%s total from beforevalidation:%dms total preparepubmaticbidderparams:%dms stages:%v", bidRequest.ID, total, end, stageDur)
+
 	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
@@ -169,8 +192,6 @@ func getPubMaticPublisherID(rctx models.RequestCtx, partnerID int) string {
 }
 
 func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessage {
-	glog.V(3).Infof("Inside [getPubMaticWrapperExt]-----")
-	glog.V(3).Infof("[getPubMaticWrapperExt] Display ID : %d, Profile ID:%d", rctx.DisplayID, rctx.ProfileID)
 	wrapExt := fmt.Sprintf(`{"%s":%d,"%s":%d}`, models.SS_PM_VERSION_ID, rctx.DisplayID, models.SS_PM_PROFILE_ID, rctx.ProfileID)
 
 	// change profile id for pubmatic2
