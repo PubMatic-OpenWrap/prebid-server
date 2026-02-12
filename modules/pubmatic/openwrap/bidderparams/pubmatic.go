@@ -19,8 +19,8 @@ func timing(label, reqID, impID string, start, begin time.Time) {
 	glog.V(3).Infof("[timing][%s] imp:%s req:%s elapsed:%dms total:%dms", label, impID, reqID, elapsed, total)
 }
 
-func getLabel(function, impid, biddercode string) string {
-	return fmt.Sprintf("function_imp_%s_bidder_%s", impid, biddercode)
+func getLabel(function, impid, biddercode, slot string) string {
+	return fmt.Sprintf("function_imp_%s_bidder_%s_slot_%s", impid, biddercode, slot)
 }
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
@@ -34,11 +34,11 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		Floors:      models.GetMultiFloors(rctx.MultiFloors, imp.ID),
 		OWSDK:       impExt.OWSDK,
 	}
-	label := getLabel("before_getSlotMeta", imp.ID, prebidBidderCode)
+	label := getLabel("before_getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	t = time.Now()
-	label = getLabel("after_getSlotMeta", imp.ID, prebidBidderCode)
+	label = getLabel("after_getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
@@ -60,14 +60,14 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	t = time.Now()
-	label = getLabel("getMatchingSlotAndPattern", imp.ID, prebidBidderCode)
+	label = getLabel("getMatchingSlotAndPattern_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	// simple+regex key match
 	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
 
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	t = time.Now()
-	label = getLabel("getSlotMappings", imp.ID, prebidBidderCode)
+	label = getLabel("getSlotMappings_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
 		stageDur[label] = time.Since(t).Milliseconds()
@@ -98,12 +98,12 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 			div = impExt.Wrapper.Div
 		}
 		t = time.Now()
-		label = getLabel("getDefaultMappingKGP", imp.ID, prebidBidderCode)
+		label = getLabel("getDefaultMappingKGP_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 		unmappedKPG := getDefaultMappingKGP(kgp)
 		stageDur[label] = time.Since(t).Milliseconds()
 		timing(label, bidRequest.ID, imp.ID, t, begin)
 		t = time.Now()
-		label = getLabel("GenerateSlotName", imp.ID, prebidBidderCode)
+		label = getLabel("GenerateSlotName_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 		extImpPubMatic.AdSlot = models.GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
 		stageDur[label] = time.Since(t).Milliseconds()
 		timing(label, bidRequest.ID, imp.ID, t, begin)

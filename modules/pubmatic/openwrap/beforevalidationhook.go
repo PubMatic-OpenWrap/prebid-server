@@ -588,7 +588,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
 				glog.V(3).Infof("PrepareAdapterParamsV25 default---: %s, %s", imp.ID, prebidBidderCode)
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode)
 			}
 			label := fmt.Sprintf("prepareBidderParams_imp_%s_bidder_%s", imp.ID, prebidBidderCode)
 			stageDur[label] = time.Since(t).Milliseconds()
