@@ -12,7 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
+func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string, slotMetaCache *SlotMetaCache) (string, string, bool, []byte, error) {
 	start := time.Now()
 	stageDur := make(map[string]int64)
 
@@ -34,9 +34,13 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 	}
 	t = time.Now()
 	label = getLabel("after_getSlotMeta_PrepareAdapterParamsV25", imp.ID, prebidBidderCode, "")
-	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
+	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID, slotMetaCache)
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	stageDur[label] = time.Since(t).Milliseconds()
+
+	if len(slots) == 0 || slotMap == nil {
+		return "", "", false, nil, nil
+	}
 
 	for i, slot := range slots {
 		glog.V(3).Infof("PrepareAdapterParamsV25: slot: %v", slot)
@@ -51,13 +55,14 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 			continue
 		}
 
-		slotMappingObj, ok := slotMap[strings.ToLower(matchedSlot)]
+		lowerSlot := strings.ToLower(matchedSlot)
+		slotMappingObj, ok := slotMap[lowerSlot]
 		if !ok {
 			slotMappingObj = slotMap[strings.ToLower(matchedPattern)]
 			isRegexSlot = true
 		}
 
-		bidderParams := make(map[string]interface{}, len(slotMappingObj.SlotMappings))
+		bidderParams := make(map[string]interface{}, len(slotMappingObj.SlotMappings)+len(partnerConfig))
 		for k, v := range slotMappingObj.SlotMappings {
 			bidderParams[k] = v
 		}

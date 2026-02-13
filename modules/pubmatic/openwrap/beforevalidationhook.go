@@ -375,6 +375,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	aliasgvlids := make(map[string]uint16)
 	rCtx.MultiFloors = make(map[string]*models.MultiFloors)
+	// Cache slot map + mapping info per partner so PrepareAdapterParamsV25 avoids repeated cache calls across imps (keeps partner loop under timeout for non-first calls).
+	partnerSlotCache := make(map[int]*bidderparams.SlotMetaCache)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
 		imp := payload.BidRequest.Imp[i]
@@ -543,6 +545,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		stageDur["getMultiFloors"] = time.Since(t).Milliseconds()
 		timingLog("getMultiFloors", payload.BidRequest.ID, imp.ID, t, begin)
 		partnerConfigStart := time.Now()
+		biddersProcessedForImp := 0
+		biddersSkippedForImp := 0
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
 			if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 				continue
@@ -574,6 +578,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 				continue
 			}
 
+			if m.cfg.Timeout.MaxServerSideBiddersPerImp > 0 && biddersProcessedForImp >= m.cfg.Timeout.MaxServerSideBiddersPerImp {
+				biddersSkippedForImp++
+				glog.Infof("[before_validation_hook] skip bidder (limit) req:%s imp:%s bidder:%s limit:%d",
+					payload.BidRequest.ID, imp.ID, prebidBidderCode, m.cfg.Timeout.MaxServerSideBiddersPerImp)
+				continue
+			}
+			biddersProcessedForImp++
+
 			var (
 				isRegex             bool
 				slot, kgpv          string
@@ -588,7 +600,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
 				glog.V(3).Infof("PrepareAdapterParamsV25 default---: %s, %s", imp.ID, prebidBidderCode)
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode)
+				if partnerSlotCache[partnerID] == nil {
+					partnerSlotCache[partnerID] = bidderparams.GetSlotMapAndInfoForPartner(rCtx, m.cache, partnerID)
+				}
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode, partnerSlotCache[partnerID])
 			}
 			label := fmt.Sprintf("prepareBidderParams_imp_%s_bidder_%s", imp.ID, prebidBidderCode)
 			stageDur[label] = time.Since(t).Milliseconds()
@@ -596,6 +611,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 			glog.V(3).Infof("Beforvalidationhook: %s, %s", imp.ID, prebidBidderCode)
 			glog.V(3).Infof("[prepare_bidder_params][Slot]: %s, [KGPV]: %s, [IsRegex]: %v, [BidderParams]: %s, [Error]: %v", slot, kgpv, isRegex, string(bidderParams), err)
 			if err != nil || len(bidderParams) == 0 {
+				elapsedMs := time.Since(begin).Milliseconds()
+				glog.Infof("[bidder_params_validation_error] req:%s imp:%s partner:%s elapsed_ms:%d err:%v",
+					payload.BidRequest.ID, imp.ID, prebidBidderCode, elapsedMs, err)
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
 				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
@@ -659,6 +677,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		} // for(rctx.PartnerConfigMap
 		stageDur["PartnerConfigMap"] = time.Since(partnerConfigStart).Milliseconds()
 		timingLog("PartnerConfigMap", payload.BidRequest.ID, imp.ID, t, begin)
+		glog.Infof("[before_validation_hook] imp summary req:%s imp:%s bidders_processed:%d bidders_skipped:%d partner_loop_ms:%d",
+			payload.BidRequest.ID, imp.ID, biddersProcessedForImp, biddersSkippedForImp, stageDur["PartnerConfigMap"])
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {

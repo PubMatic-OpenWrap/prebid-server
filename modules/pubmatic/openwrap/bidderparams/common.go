@@ -29,12 +29,70 @@ var ignoreKeys = map[string]bool{
 	models.BidderFilters:        true,
 }
 
-func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
+// SlotMetaCache holds slotMap and slotMappingInfo for a partner so they can be reused across imps in the same request (avoids repeated cache calls).
+type SlotMetaCache struct {
+	SlotMap         map[string]models.SlotMapping
+	SlotMappingInfo models.SlotMappingInfo
+}
+
+// GetSlotMapAndInfoForPartner fetches slot map and mapping info from cache once per partner per request. Caller can cache the result and pass to getSlotMeta via SlotMetaCache to avoid repeated cache lookups for the same partner across imps.
+func GetSlotMapAndInfoForPartner(rctx models.RequestCtx, c cache.Cache, partnerID int) *SlotMetaCache {
+	if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
+		return nil
+	}
+	slotMap := c.GetMappingsFromCacheV25(rctx, partnerID)
+	if slotMap == nil {
+		return nil
+	}
+	slotMappingInfo := c.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
+	if len(slotMappingInfo.OrderedSlotList) == 0 {
+		return nil
+	}
+	return &SlotMetaCache{SlotMap: slotMap, SlotMappingInfo: slotMappingInfo}
+}
+
+func getSlotsAndHW(imp openrtb2.Imp, impExt models.ImpExtension, rctx models.RequestCtx, partnerID int) ([]string, [][2]int64) {
+	var hw [][2]int64
+	if imp.Banner != nil {
+		if imp.Banner.W != nil && imp.Banner.H != nil {
+			hw = append(hw, [2]int64{*imp.Banner.H, *imp.Banner.W})
+		}
+		for _, format := range imp.Banner.Format {
+			hw = append(hw, [2]int64{format.H, format.W})
+		}
+	}
+	if imp.Video != nil {
+		hw = append(hw, [2]int64{0, 0})
+	}
+	if imp.Native != nil {
+		hw = append(hw, [2]int64{1, 1})
+	}
+	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
+	var div string
+	if impExt.Wrapper != nil {
+		div = impExt.Wrapper.Div
+	}
+	var slots []string
+	for _, format := range hw {
+		slot := models.GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
+		if slot != "" {
+			slots = append(slots, slot)
+		}
+	}
+	return slots, hw
+}
+
+func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, slotMetaCache *SlotMetaCache) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
 	var slotMap map[string]models.SlotMapping
 	var slotMappingInfo models.SlotMappingInfo
-
-	//don't read mappings from cache in case of test=2
-	if !(rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic) {
+	if slotMetaCache != nil {
+		slotMap = slotMetaCache.SlotMap
+		slotMappingInfo = slotMetaCache.SlotMappingInfo
+	} else {
+		if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
+			slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
+			return slots, nil, models.SlotMappingInfo{}, hw
+		}
 		slotMap = cache.GetMappingsFromCacheV25(rctx, partnerID)
 		if slotMap == nil {
 			return nil, nil, models.SlotMappingInfo{}, nil
@@ -44,44 +102,7 @@ func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.
 			return nil, nil, models.SlotMappingInfo{}, nil
 		}
 	}
-
-	var hw [][2]int64
-	if imp.Banner != nil {
-		if imp.Banner.W != nil && imp.Banner.H != nil {
-			hw = append(hw, [2]int64{*imp.Banner.H, *imp.Banner.W})
-		}
-
-		for _, format := range imp.Banner.Format {
-			hw = append(hw, [2]int64{format.H, format.W})
-		}
-	}
-
-	if imp.Video != nil {
-		hw = append(hw, [2]int64{0, 0})
-	}
-
-	if imp.Native != nil {
-		hw = append(hw, [2]int64{1, 1})
-	}
-
-	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
-
-	var div string
-	if impExt.Wrapper != nil {
-		div = impExt.Wrapper.Div
-	}
-
-	var slots []string
-	for _, format := range hw {
-		// TODO fix the param sequence. make it consistent. HxW
-		slot := models.GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
-		if slot != "" {
-			slots = append(slots, slot)
-			// NYC_TODO: break at i=0 for pubmatic?
-		}
-	}
-
-	// NYC_TODO wh is returned temporarily
+	slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
 	return slots, slotMap, slotMappingInfo, hw
 }
 
