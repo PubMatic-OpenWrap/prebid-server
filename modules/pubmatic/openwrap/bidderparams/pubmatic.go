@@ -39,7 +39,7 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	t = time.Now()
 	label = getLabel("after_getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
-	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID, nil)
+	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	var err error

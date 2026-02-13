@@ -29,28 +29,6 @@ var ignoreKeys = map[string]bool{
 	models.BidderFilters:        true,
 }
 
-// SlotMetaCache holds slotMap and slotMappingInfo for a partner so they can be reused across imps in the same request (avoids repeated cache calls).
-type SlotMetaCache struct {
-	SlotMap         map[string]models.SlotMapping
-	SlotMappingInfo models.SlotMappingInfo
-}
-
-// GetSlotMapAndInfoForPartner fetches slot map and mapping info from cache once per partner per request. Caller can cache the result and pass to getSlotMeta via SlotMetaCache to avoid repeated cache lookups for the same partner across imps.
-func GetSlotMapAndInfoForPartner(rctx models.RequestCtx, c cache.Cache, partnerID int) *SlotMetaCache {
-	if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
-		return nil
-	}
-	slotMap := c.GetMappingsFromCacheV25(rctx, partnerID)
-	if slotMap == nil {
-		return nil
-	}
-	slotMappingInfo := c.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
-	if len(slotMappingInfo.OrderedSlotList) == 0 {
-		return nil
-	}
-	return &SlotMetaCache{SlotMap: slotMap, SlotMappingInfo: slotMappingInfo}
-}
-
 func getSlotsAndHW(imp openrtb2.Imp, impExt models.ImpExtension, rctx models.RequestCtx, partnerID int) ([]string, [][2]int64) {
 	var hw [][2]int64
 	if imp.Banner != nil {
@@ -82,25 +60,18 @@ func getSlotsAndHW(imp openrtb2.Imp, impExt models.ImpExtension, rctx models.Req
 	return slots, hw
 }
 
-func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, slotMetaCache *SlotMetaCache) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
-	var slotMap map[string]models.SlotMapping
-	var slotMappingInfo models.SlotMappingInfo
-	if slotMetaCache != nil {
-		slotMap = slotMetaCache.SlotMap
-		slotMappingInfo = slotMetaCache.SlotMappingInfo
-	} else {
-		if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
-			slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
-			return slots, nil, models.SlotMappingInfo{}, hw
-		}
-		slotMap = cache.GetMappingsFromCacheV25(rctx, partnerID)
-		if slotMap == nil {
-			return nil, nil, models.SlotMappingInfo{}, nil
-		}
-		slotMappingInfo = cache.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
-		if len(slotMappingInfo.OrderedSlotList) == 0 {
-			return nil, nil, models.SlotMappingInfo{}, nil
-		}
+func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
+	if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
+		slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
+		return slots, nil, models.SlotMappingInfo{}, hw
+	}
+	slotMap := cache.GetMappingsFromCacheV25(rctx, partnerID)
+	if slotMap == nil {
+		return nil, nil, models.SlotMappingInfo{}, nil
+	}
+	slotMappingInfo := cache.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
+	if len(slotMappingInfo.OrderedSlotList) == 0 {
+		return nil, nil, models.SlotMappingInfo{}, nil
 	}
 	slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
 	return slots, slotMap, slotMappingInfo, hw

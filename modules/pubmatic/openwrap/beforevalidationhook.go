@@ -375,8 +375,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	aliasgvlids := make(map[string]uint16)
 	rCtx.MultiFloors = make(map[string]*models.MultiFloors)
-	// Cache slot map + mapping info per partner so PrepareAdapterParamsV25 avoids repeated cache calls across imps (keeps partner loop under timeout for non-first calls).
-	partnerSlotCache := make(map[int]*bidderparams.SlotMetaCache)
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
 		imp := payload.BidRequest.Imp[i]
@@ -600,10 +598,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
 				glog.V(3).Infof("PrepareAdapterParamsV25 default---: %s, %s", imp.ID, prebidBidderCode)
-				if partnerSlotCache[partnerID] == nil {
-					partnerSlotCache[partnerID] = bidderparams.GetSlotMapAndInfoForPartner(rCtx, m.cache, partnerID)
-				}
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode, partnerSlotCache[partnerID])
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode)
 			}
 			label := fmt.Sprintf("prepareBidderParams_imp_%s_bidder_%s", imp.ID, prebidBidderCode)
 			stageDur[label] = time.Since(t).Milliseconds()

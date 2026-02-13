@@ -12,7 +12,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string, slotMetaCache *SlotMetaCache) (string, string, bool, []byte, error) {
+func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
 	start := time.Now()
 	stageDur := make(map[string]int64)
 
@@ -34,7 +34,7 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 	}
 	t = time.Now()
 	label = getLabel("after_getSlotMeta_PrepareAdapterParamsV25", imp.ID, prebidBidderCode, "")
-	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID, slotMetaCache)
+	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 	timing(label, bidRequest.ID, imp.ID, t, begin)
 	stageDur[label] = time.Since(t).Milliseconds()
 
