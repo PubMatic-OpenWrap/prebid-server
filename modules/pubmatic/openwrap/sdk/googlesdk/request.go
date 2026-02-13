@@ -426,6 +426,14 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.IP = signalDevice.IP
 	}
 
+	if signalDevice.IPv6 != "" {
+		request.Device.IPv6 = signalDevice.IPv6
+	}
+
+	if signalDevice.DeviceType > 0 {
+		request.Device.DeviceType = signalDevice.DeviceType
+	}
+
 	if signalDevice.IFA != "" {
 		request.Device.IFA = signalDevice.IFA
 	}
@@ -437,6 +445,47 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	if signalDevice.HWV != "" {
 		request.Device.HWV = signalDevice.HWV
 	}
+
+	if signalDevice.Lmt != nil {
+		request.Device.Lmt = signalDevice.Lmt
+	}
+
+	if signalDevice.OS != "" {
+		request.Device.OS = signalDevice.OS
+	}
+
+	if signalDevice.OSV != "" {
+		request.Device.OSV = signalDevice.OSV
+	}
+
+	if signalDevice.W > 0 {
+		request.Device.W = signalDevice.W
+	}
+
+	if signalDevice.H > 0 {
+		request.Device.H = signalDevice.H
+	}
+
+	if signalDevice.PxRatio > 0 {
+		request.Device.PxRatio = signalDevice.PxRatio
+	}
+
+	if signalDevice.Language != "" {
+		request.Device.Language = signalDevice.Language
+	}
+
+	if signalDevice.Carrier != "" {
+		request.Device.Carrier = signalDevice.Carrier
+	}
+
+	if signalDevice.MCCMNC != "" {
+		request.Device.MCCMNC = signalDevice.MCCMNC
+	}
+
+	if signalDevice.ConnectionType != nil {
+		request.Device.ConnectionType = signalDevice.ConnectionType
+	}
+
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {

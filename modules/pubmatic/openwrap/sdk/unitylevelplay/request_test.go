@@ -763,7 +763,25 @@ func TestModifyDevice(t *testing.T) {
 			name:     "both_request_and_signal_has_device_ip",
 			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
 			signal:   &openrtb2.Device{IP: "127.0.0.2"},
-			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.2"}},
+		},
+		{
+			name:     "signal_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   &openrtb2.Device{IPv6: "2001:db8::1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::1"}},
+		},
+		{
+			name:     "request_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+		},
+		{
+			name:     "both_request_and_signal_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+			signal:   &openrtb2.Device{IPv6: "2001:db8::1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::1"}},
 		},
 		{
 			name:    "copy all device fields",

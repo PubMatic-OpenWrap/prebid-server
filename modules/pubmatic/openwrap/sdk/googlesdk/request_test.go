@@ -844,6 +844,45 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_device_copies_ipv6_devicetype_lmt_os_dims_lang_carrier_mccmnc_connectiontype",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA: "Mozilla/5.0",
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				IPv6:           "2001:db8::1",
+				DeviceType:     adcom1.DeviceType(4),
+				Lmt:            ptrutil.ToPtr(int8(1)),
+				OS:             "android",
+				OSV:            "13.0.0",
+				W:              1080,
+				H:              2400,
+				PxRatio:        2.75,
+				Language:       "en_US",
+				Carrier:        "MYTEL",
+				MCCMNC:         "200-260",
+				ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(2)),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:             "Mozilla/5.0",
+					IPv6:           "2001:db8::1",
+					DeviceType:     adcom1.DeviceType(4),
+					Lmt:            ptrutil.ToPtr(int8(1)),
+					OS:             "android",
+					OSV:            "13.0.0",
+					W:              1080,
+					H:              2400,
+					PxRatio:        2.75,
+					Language:       "en_US",
+					Carrier:        "MYTEL",
+					MCCMNC:         "200-260",
+					ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(2)),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

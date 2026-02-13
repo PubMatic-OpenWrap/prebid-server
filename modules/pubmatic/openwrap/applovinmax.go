@@ -111,6 +111,62 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.IFA = signalDevice.IFA
 	}
 
+	if signalDevice.Lmt != nil {
+		maxRequest.Device.Lmt = signalDevice.Lmt
+	}
+
+	if signalDevice.IP != "" {
+		maxRequest.Device.IP = signalDevice.IP
+	}
+
+	if signalDevice.IPv6 != "" {
+		maxRequest.Device.IPv6 = signalDevice.IPv6
+	}
+
+	if signalDevice.DeviceType > 0 {
+		maxRequest.Device.DeviceType = signalDevice.DeviceType
+	}
+
+	if len(signalDevice.Make) > 0 {
+		maxRequest.Device.Make = signalDevice.Make
+	}
+
+	if signalDevice.OS != "" {
+		maxRequest.Device.OS = signalDevice.OS
+	}
+
+	if signalDevice.OSV != "" {
+		maxRequest.Device.OSV = signalDevice.OSV
+	}
+
+	if signalDevice.HWV != "" {
+		maxRequest.Device.HWV = signalDevice.HWV
+	}
+
+	if signalDevice.W > 0 {
+		maxRequest.Device.W = signalDevice.W
+	}
+
+	if signalDevice.H > 0 {
+		maxRequest.Device.H = signalDevice.H
+	}
+
+	if signalDevice.PxRatio > 0 {
+		maxRequest.Device.PxRatio = signalDevice.PxRatio
+	}
+
+	if signalDevice.JS != nil {
+		maxRequest.Device.JS = signalDevice.JS
+	}
+
+	if signalDevice.Language != "" {
+		maxRequest.Device.Language = signalDevice.Language
+	}
+
+	if signalDevice.Carrier != "" {
+		maxRequest.Device.Carrier = signalDevice.Carrier
+	}
+
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 
 	if signalDevice.Geo == nil {

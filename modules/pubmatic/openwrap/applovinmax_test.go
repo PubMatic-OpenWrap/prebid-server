@@ -201,7 +201,7 @@ func TestUpdateDevice(t *testing.T) {
 				sdkDevice:  &openrtb2.Device{IP: "127.0.0.1"},
 				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{IP: "10.0.0.1"}},
 			},
-			want: &openrtb2.Device{IP: "10.0.0.1"},
+			want: &openrtb2.Device{IP: "127.0.0.1"},
 		},
 		{
 			name: "sdkDevice_has_mccmnc_connectiontype",
@@ -234,6 +234,48 @@ func TestUpdateDevice(t *testing.T) {
 				maxRequest: &openrtb2.BidRequest{},
 			},
 			want: &openrtb2.Device{Geo: &openrtb2.Geo{City: "Delhi", UTCOffset: 3}, Ext: json.RawMessage(`{"atts":3}`)},
+		},
+		{
+			name: "sdkDevice_has_ipv6",
+			args: args{
+				sdkDevice:  &openrtb2.Device{IPv6: "2001:db8::1"},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
+			},
+			want: &openrtb2.Device{DeviceType: 5, IPv6: "2001:db8::1"},
+		},
+		{
+			name: "sdkDevice_has_devicetype_make_os_osv_hwv_dims_pxr_js_lang_carrier_lmt",
+			args: args{
+				sdkDevice: &openrtb2.Device{
+					DeviceType: 4,
+					Make:       "Samsung",
+					OS:         "android",
+					OSV:        "13",
+					HWV:        "SM-G991B",
+					W:          1080,
+					H:          2400,
+					PxRatio:    2.75,
+					JS:         ptrutil.ToPtr(int8(1)),
+					Language:   "en_US",
+					Carrier:    "MYTEL",
+					Lmt:        ptrutil.ToPtr(int8(1)),
+				},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{DeviceType: 5}},
+			},
+			want: &openrtb2.Device{
+				DeviceType: 4,
+				Make:       "Samsung",
+				OS:         "android",
+				OSV:        "13",
+				HWV:        "SM-G991B",
+				W:          1080,
+				H:          2400,
+				PxRatio:    2.75,
+				JS:         ptrutil.ToPtr(int8(1)),
+				Language:   "en_US",
+				Carrier:    "MYTEL",
+				Lmt:        ptrutil.ToPtr(int8(1)),
+			},
 		},
 	}
 	for _, tt := range tests {

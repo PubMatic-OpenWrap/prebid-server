@@ -362,6 +362,14 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		request.Device.IFA = signalDevice.IFA
 	}
 
+	if signalDevice.IP != "" {
+		request.Device.IP = signalDevice.IP
+	}
+
+	if signalDevice.IPv6 != "" {
+		request.Device.IPv6 = signalDevice.IPv6
+	}
+
 	request.Device.Ext, _ = sdkutils.CopyPath(signalDevice.Ext, request.Device.Ext, "atts")
 }
 
