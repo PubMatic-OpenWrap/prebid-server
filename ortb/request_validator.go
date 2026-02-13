@@ -132,10 +132,10 @@ func (srv *standardRequestValidator) validateImpExt(imp *openrtb_ext.ImpWrapper,
 		if coreBidderNormalized, isValid := srv.bidderMap[coreBidder.String()]; isValid {
 			if !cfg.SkipBidderParams {
 				if err := srv.paramsValidator.Validate(coreBidderNormalized, val); err != nil {
-					glog.Errorf("error validating bidder params: impid: [%s], imp.Ext: [%s], val: [%s]", imp.ID, string(imp.Ext), string(val))
+					glog.Errorf("error validating bidder params: impid: [%s], bidder: [%s], val: [%s]", imp.ID, bidder, string(val))
 					return []error{fmt.Errorf("request.imp[%d].ext.prebid.bidder.%s failed validation.\n%v", impIndex, bidder, err)}
 				}
-				glog.Errorf("Valid bidder params: impid: [%s], imp.Ext: [%s], val: [%s]", imp.ID, string(imp.Ext), string(val))
+				glog.Infof("Valid bidder params: impid: [%s], bidder: [%s]", imp.ID, bidder)
 			}
 		} else {
 			if msg, isDisabled := srv.disabledBidders[bidder]; isDisabled {
