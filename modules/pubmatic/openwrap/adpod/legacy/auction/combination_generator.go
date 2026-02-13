@@ -1,4 +1,4 @@
-package auction
+package ctvlegacy
 
 import (
 	"math/big"
@@ -52,19 +52,17 @@ type snapshot struct {
 // 1. Determines the number of combinations to be generated
 // 2. Intializes the c.state values required for c.Next() and iteratoor
 // generationOrder indicates how combinations should be generated.
-func (g *generator) Init(podMinDuration, podMaxDuration uint64, config *models.AdPod, durationAdsMap [][2]uint64, generationOrder int) {
-
+func (g *generator) Init(podMinDuration, podMaxDuration uint64, config models.SlotConfig, durationAdsMap [][2]uint64, generationOrder int) {
 	g.podMinDuration = podMinDuration
 	g.podMaxDuration = podMaxDuration
-	g.minAds = uint64(config.MinAds)
-	g.maxAds = uint64(config.MaxAds)
+	g.minAds = uint64(config.AdpodConfigV25.MinAds)
+	g.maxAds = uint64(config.AdpodConfigV25.MaxAds)
 
 	// map of key = duration value = number of ads(must be non zero positive number)
 	g.slotDurationAdMap = make(map[uint64]uint64, len(g.slotDurations))
 
 	// iterate and extract duration and number of ads belonging to the duration
 	// split logic - :: separated
-
 	cnt := 0
 	g.slotDurations = make([]uint64, len(durationAdsMap))
 	for _, durationNoOfAds := range durationAdsMap {

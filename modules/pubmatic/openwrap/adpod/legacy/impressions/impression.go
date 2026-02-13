@@ -1,15 +1,13 @@
-package impressions
+package ctvlegacy
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 
-	"github.com/golang/glog"
-	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
@@ -18,7 +16,7 @@ import (
 // Observed that typically video impression contains contains minimum and maximum duration in multiples of  5
 const (
 	multipleOf         = 5
-	impressionIDFormat = `%v` + models.ImpressionIDSeparator + `%v`
+	impressionIDFormat = `%v` + utils.ImpressionIDSeparator + `%v` + utils.ImpressionIDSeparator + `%v`
 )
 
 // ImpGenerator ...
@@ -27,81 +25,110 @@ type ImpGenerator interface {
 	// Algorithm() int // returns algorithm used for computing number of impressions
 }
 
-func GenerateImpressions(request *openrtb_ext.RequestWrapper, impCtx map[string]models.ImpCtx, adpodProfileCfg *models.AdpodProfileConfig, pubId string, me metrics.MetricsEngine) ([]*openrtb_ext.ImpWrapper, []error) {
+func GenerateImpressions(rCtx models.RequestCtx, request *openrtb_ext.RequestWrapper) ([]*openrtb_ext.ImpWrapper, []error) {
+	if len(rCtx.AdpodCtx) == 0 {
+		return nil, nil
+	}
+
 	var imps []*openrtb_ext.ImpWrapper
 	var errs []error
-
 	for _, impWrapper := range request.GetImp() {
-		eachImpCtx := impCtx[impWrapper.ID]
+		if impWrapper.Video == nil {
+			continue
+		}
 
-		impAdpodConfig, err := getAdPodImpConfig(impWrapper.Imp, eachImpCtx.AdpodConfig, adpodProfileCfg)
-		if impAdpodConfig == nil {
+		podId := impWrapper.Video.PodID
+		if podId == "" {
+			podId = impWrapper.Imp.ID
+		}
+
+		podConfig, ok := rCtx.AdpodCtx[podId]
+		if !ok {
 			imps = append(imps, impWrapper)
+			continue
+		}
+
+		var slotConfig models.SlotConfig
+		for i := range podConfig.Slots {
+			if podConfig.Slots[i].Id == impWrapper.Imp.ID {
+				slotConfig = podConfig.Slots[i]
+				break
+			}
+		}
+
+		if !slotConfig.Flexible {
+			imps = append(imps, impWrapper)
+			continue
+		}
+
+		newImpVideoConfig, err := getAdPodImpConfig(podId, slotConfig, rCtx.AdpodProfileConfig)
+		if newImpVideoConfig == nil {
 			if err != nil {
 				errs = append(errs, err)
 			}
 			continue
 		}
 
-		me.RecordAdPodGeneratedImpressionsCount(len(impAdpodConfig), pubId)
-		eachImpCtx.ImpAdPodCfg = impAdpodConfig
-		impCtx[impWrapper.ID] = eachImpCtx
-
-		err = impWrapper.RebuildImp()
-		if err != nil {
-			errs = append(errs, err)
+		impCtx, ok := rCtx.ImpBidCtx[impWrapper.Imp.ID]
+		if !ok {
+			errs = append(errs, fmt.Errorf("impression %s not found in context, check if it was processed by adpod module", impWrapper.Imp.ID))
 			continue
 		}
 
-		for i := range impAdpodConfig {
-			video := *impWrapper.Video
-			video.MinDuration = impAdpodConfig[i].MinDuration
-			video.MaxDuration = impAdpodConfig[i].MaxDuration
-			video.Sequence = impAdpodConfig[i].SequenceNumber
-			video.MaxExtended = 0
+		impCtx.ImpAdPodCfg = newImpVideoConfig
+		rCtx.ImpBidCtx[impWrapper.Imp.ID] = impCtx
 
-			// Remove adpod Extension
-			var videoExt map[string]interface{}
-			err := json.Unmarshal(video.Ext, &videoExt)
-			if err != nil {
-				glog.Warningf("error while unmarshalling video extension for impression: %s", impAdpodConfig[i].ImpID)
-			}
-			delete(videoExt, "adpod")
-			delete(videoExt, "offset")
-			if len(videoExt) == 0 {
-				video.Ext = nil
-			} else {
-				video.Ext, _ = json.Marshal(videoExt)
-			}
+		rCtx.MetricsEngine.RecordAdPodGeneratedImpressionsCount(len(newImpVideoConfig), rCtx.PubIDStr)
 
-			newImp := *impWrapper.Imp
-			newImp.ID = impAdpodConfig[i].ImpID
-			newImp.Video = &video
-
-			newImpWrapper := &openrtb_ext.ImpWrapper{Imp: &newImp}
-			newImpWrapper.GetImpExt()
-
-			imps = append(imps, newImpWrapper)
+		for i := range newImpVideoConfig {
+			impCopy := impWrapper.DeepClone()
+			impCopy.Imp.ID = newImpVideoConfig[i].ImpID
+			impCopy.Video.MinDuration = newImpVideoConfig[i].MinDuration
+			impCopy.Video.MaxDuration = newImpVideoConfig[i].MaxDuration
+			impCopy.Video.Sequence = newImpVideoConfig[i].SequenceNumber
+			impCopy.Video.MaxExtended = 0
+			imps = append(imps, impCopy)
 		}
-
 	}
 
 	return imps, errs
-
 }
 
-func generateImpressionID(impID string, seqNo int) string {
-	return fmt.Sprintf(impressionIDFormat, impID, seqNo)
+func generateImpressionID(podID string, impID string, seqNo int) string {
+	return fmt.Sprintf(impressionIDFormat, podID, impID, seqNo)
 }
 
 // getAdPodImpsConfigs will return number of impressions configurations within adpod
-func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) ([]*models.ImpAdPodConfig, error) {
-	// This case for non adpod video impression
-	if adpod == nil {
-		return nil, nil
+func getAdPodImpConfig(podID string, dynamicSlotConfig models.SlotConfig, adpodProfileCfg *models.AdpodProfileConfig) ([]*models.ImpAdPodConfig, error) {
+	// TODO: Remove this after ORTB 2.6 based auction is fully implemented
+	if dynamicSlotConfig.AdpodConfigV25 == nil {
+		dynamicSlotConfig.AdpodConfigV25 = &models.AdpodConfigV25{
+			MinAds:         1,
+			MaxAds:         dynamicSlotConfig.MaxSeq,
+			MinPodDuration: dynamicSlotConfig.MinDuration,
+			MaxPodDuration: dynamicSlotConfig.PodDur,
+		}
 	}
-	selectedAlgorithm := SelectAlgorithm(adpod, adpodProfileCfg)
-	impGen := NewImpressions(imp.Video.MinDuration, imp.Video.MaxDuration, adpod, adpodProfileCfg, selectedAlgorithm)
+	minDuration := dynamicSlotConfig.MinDuration
+	maxDuration := dynamicSlotConfig.MaxDuration
+	if minDuration == 0 && len(dynamicSlotConfig.RqdDurs) > 0 {
+		minDuration = slices.Min(dynamicSlotConfig.RqdDurs)
+	}
+
+	if maxDuration == 0 && len(dynamicSlotConfig.RqdDurs) > 0 {
+		maxDuration = slices.Max(dynamicSlotConfig.RqdDurs)
+	}
+
+	selectedAlgorithm := SelectAlgorithm(adpodProfileCfg)
+	adpod := &models.AdPod{
+		MinDuration:                 &minDuration,
+		MaxDuration:                 &maxDuration,
+		MinAds:                      &dynamicSlotConfig.AdpodConfigV25.MinAds,
+		MaxAds:                      &dynamicSlotConfig.AdpodConfigV25.MaxAds,
+		IABCategoryExclusionPercent: dynamicSlotConfig.AdpodConfigV25.IABCategoryExclusionPercent,
+		AdvertiserExclusionPercent:  dynamicSlotConfig.AdpodConfigV25.AdvertiserExclusionPercent,
+	}
+	impGen := NewImpressions(dynamicSlotConfig.AdpodConfigV25.MinPodDuration, dynamicSlotConfig.AdpodConfigV25.MaxPodDuration, adpod, adpodProfileCfg, selectedAlgorithm)
 	impRanges := impGen.Get()
 
 	// labels := metrics.PodLabels{AlgorithmName: impressions.MonitorKey[selectedAlgorithm], NoOfImpressions: new(int)}
@@ -112,13 +139,13 @@ func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod, adpodProfileCfg *
 
 	// check if algorithm has generated impressions
 	if len(impRanges) == 0 {
-		return nil, errors.New("unable to generate impressions for adpod for impression: " + imp.ID)
+		return nil, errors.New("unable to generate impressions for adpod for impression: " + dynamicSlotConfig.Id)
 	}
 
 	config := make([]*models.ImpAdPodConfig, len(impRanges))
 	for i, value := range impRanges {
 		eachConfig := models.ImpAdPodConfig{
-			ImpID:          generateImpressionID(imp.ID, i+1),
+			ImpID:          generateImpressionID(podID, dynamicSlotConfig.Id, i+1),
 			MinDuration:    value[0],
 			MaxDuration:    value[1],
 			SequenceNumber: int8(i + 1), /* Must be starting with 1 */
@@ -132,13 +159,12 @@ func getAdPodImpConfig(imp *openrtb2.Imp, adpod *models.AdPod, adpodProfileCfg *
 // Return Value:
 //   - MinMaxAlgorithm (default)
 //   - ByDurationRanges: if reqAdPod extension has VideoAdDuration and VideoAdDurationMatchingPolicy is "exact" algorithm
-func SelectAlgorithm(reqAdPod *models.AdPod, adpodProfileCfg *models.AdpodProfileConfig) int {
-	if reqAdPod != nil {
-		if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurations) > 0 &&
-			(models.OWExactVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy || models.OWRoundupVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) {
-			return models.ByDurationRanges
-		}
+func SelectAlgorithm(adpodProfileCfg *models.AdpodProfileConfig) int {
+	if adpodProfileCfg != nil && len(adpodProfileCfg.AdserverCreativeDurations) > 0 &&
+		(models.OWExactVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy || models.OWRoundupVideoAdDurationMatching == adpodProfileCfg.AdserverCreativeDurationMatchingPolicy) {
+		return models.ByDurationRanges
 	}
+
 	return models.MinMaxAlgorithm
 }
 
@@ -157,7 +183,7 @@ func NewImpressions(podMinDuration, podMaxDuration int64, adpod *models.AdPod, a
 		return &g
 
 	case models.ByDurationRanges:
-		g := newByDurationRanges(adpodProfileCfg, int(adpod.MaxAds), adpod.MinDuration, adpod.MaxDuration)
+		g := newByDurationRanges(adpodProfileCfg, int(*adpod.MaxAds), int(*adpod.MinDuration), int(*adpod.MaxDuration))
 		return &g
 	}
 
@@ -205,10 +231,10 @@ func newConfig(podMinDuration, podMaxDuration int64, vPod *models.AdPod) generat
 	config.requested = pod{
 		podMinDuration:  podMinDuration,
 		podMaxDuration:  podMaxDuration,
-		slotMinDuration: int64(vPod.MinDuration),
-		slotMaxDuration: int64(vPod.MaxDuration),
-		minAds:          int64(vPod.MinAds),
-		maxAds:          int64(vPod.MaxAds),
+		slotMinDuration: *vPod.MinDuration,
+		slotMaxDuration: *vPod.MaxDuration,
+		minAds:          *vPod.MinAds,
+		maxAds:          *vPod.MaxAds,
 	}
 
 	// configure internal object (FOR INTERNAL USE ONLY)

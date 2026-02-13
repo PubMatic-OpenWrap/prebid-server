@@ -195,10 +195,10 @@ func (m *Module) HandleEntrypointHook(
 	payload hookstage.EntrypointPayload,
 ) (hookstage.HookResult[hookstage.EntrypointPayload], error) {
 	// Initialize module context with sync.Map for thread-safe segment storage
+	moduleCtx := hookstage.NewModuleContext()
+	moduleCtx.Set(asyncRequestKey, m.NewAsyncRequest(payload.Request))
 	return hookstage.HookResult[hookstage.EntrypointPayload]{
-		ModuleContext: hookstage.ModuleContext{
-			asyncRequestKey: m.NewAsyncRequest(payload.Request),
-		},
+		ModuleContext: moduleCtx,
 	}, nil
 }
 
@@ -210,8 +210,8 @@ func (m *Module) HandleRawAuctionHook(
 ) (hookstage.HookResult[hookstage.RawAuctionRequestPayload], error) {
 	var ret hookstage.HookResult[hookstage.RawAuctionRequestPayload]
 	analyticsNamePrefix := "HandleRawAuctionHook."
-
-	asyncRequest, ok := miCtx.ModuleContext[asyncRequestKey].(*AsyncRequest)
+	asyncRequestInterface, _ := miCtx.ModuleContext.Get(asyncRequestKey)
+	asyncRequest, ok := asyncRequestInterface.(*AsyncRequest)
 	if !ok {
 		// Log error but don't fail the auction
 		ret.AnalyticsTags = hookanalytics.Analytics{
@@ -258,7 +258,8 @@ func (m *Module) HandleAuctionResponseHook(
 ) (hookstage.HookResult[hookstage.AuctionResponsePayload], error) {
 	analyticsNamePrefix := "HandleAuctionResponseHook."
 	var ret hookstage.HookResult[hookstage.AuctionResponsePayload]
-	asyncRequest, ok := miCtx.ModuleContext[asyncRequestKey].(*AsyncRequest)
+	asyncRequestInterface, _ := miCtx.ModuleContext.Get(asyncRequestKey)
+	asyncRequest, ok := asyncRequestInterface.(*AsyncRequest)
 	if !ok {
 		// Log error but don't fail the auction
 		ret.AnalyticsTags = hookanalytics.Analytics{

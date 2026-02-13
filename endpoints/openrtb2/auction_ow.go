@@ -2,6 +2,7 @@ package openrtb2
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"runtime/debug"
 	"strconv"
@@ -149,4 +150,22 @@ func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.A
 		Ext: ext,
 	}
 	return rCtx.GoogleSDK.RejectedBidResponse
+}
+
+func writeResponse(w http.ResponseWriter, response any, labels *metrics.Labels, ao *analytics.AuctionObject) {
+	switch v := response.(type) {
+	case []byte:
+		_, err := w.Write(v)
+		if err != nil {
+			labels.RequestStatus = metrics.RequestStatusNetworkErr
+			ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/auction Failed to send response: %v", err))
+		}
+	default:
+		enc := json.NewEncoder(w)
+		enc.SetEscapeHTML(false)
+		if err := enc.Encode(v); err != nil {
+			labels.RequestStatus = metrics.RequestStatusNetworkErr
+			ao.Errors = append(ao.Errors, fmt.Errorf("/openrtb2/auction Failed to send response: %v", err))
+		}
+	}
 }

@@ -53,7 +53,8 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 					IsTestRequest: 2,
 				},
 				bidRequest: openrtb2.BidRequest{
-					App: &openrtb2.App{},
+					Test: 2,
+					App:  &openrtb2.App{},
 				},
 			},
 			want: map[int]map[string]string{
@@ -88,7 +89,8 @@ func TestOpenWrap_getProfileData(t *testing.T) {
 					IsTestRequest: 2,
 				},
 				bidRequest: openrtb2.BidRequest{
-					App: nil,
+					Test: 2,
+					App:  nil,
 				},
 			},
 			want: map[int]map[string]string{

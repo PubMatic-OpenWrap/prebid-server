@@ -1371,7 +1371,7 @@ func TestParseORTBRequestEmptyFields(t *testing.T) {
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"dev.ext.atts": []string{"invalid_value"}}, http.Header{})
 	parser = NewOpenRTB(request)
 	_, err = parser.ParseORTBRequest(GetORTBParserMap())
-	assert.Equal(t, err.Error(), "[parsing error key:dev.ext.atts msg:strconv.ParseFloat: parsing \"invalid_value\": invalid syntax]", "dev.ext.atts error does not match")
+	assert.Equal(t, err.Error(), "parsing error key:dev.ext.atts msg:strconv.ParseFloat: parsing \"invalid_value\": invalid syntax", "dev.ext.atts error does not match")
 
 	request = GetHTTPTestRequest("GET", "/ortb/vast", url.Values{"dev.ext.atts": []string{"1"}}, http.Header{})
 	parser = NewOpenRTB(request)

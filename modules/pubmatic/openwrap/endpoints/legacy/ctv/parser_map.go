@@ -1,6 +1,9 @@
 package ctv
 
-import "github.com/prebid/openrtb/v20/openrtb2"
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
+)
 
 // KeyParserMap map type which contains standard key parser functions
 type KeyParserMap map[string]func(Parser) error
@@ -308,6 +311,7 @@ var ortbMapper = &ParserMap{
 		ORTBSSAI:                 Parser.ORTBSSAI,
 		ORTBKeyValues:            Parser.ORTBKeyValues,
 		ORTBKeyValuesMap:         Parser.ORTBKeyValuesMap,
+		ORTBAdrule:               Parser.ORTBAdrule,
 
 		//VideoExtension
 		ORTBImpVideoExtOffset:                           Parser.ORTBImpVideoExtOffset,
@@ -373,6 +377,26 @@ func GetORTBParserMap() *ParserMap {
 // ORTBParser interface which will be used to generate ortb request from API request
 type ORTBParser interface {
 	ParseORTBRequest(*ParserMap) (*openrtb2.BidRequest, error)
+}
+
+type ParseError struct {
+	Code    *openrtb3.NoBidReason
+	Message string
+}
+
+func NewParseError(code openrtb3.NoBidReason, message string) *ParseError {
+	return &ParseError{
+		Code:    &code,
+		Message: message,
+	}
+}
+
+func (e *ParseError) Error() string {
+	return e.Message
+}
+
+func (e *ParseError) NBR() *openrtb3.NoBidReason {
+	return e.Code
 }
 
 type Parser interface {
@@ -672,6 +696,7 @@ type Parser interface {
 	ORTBSSAI() error
 	ORTBKeyValues() error
 	ORTBKeyValuesMap() error
+	ORTBAdrule() error
 
 	//VideoExtension
 	ORTBImpVideoExtOffset() error

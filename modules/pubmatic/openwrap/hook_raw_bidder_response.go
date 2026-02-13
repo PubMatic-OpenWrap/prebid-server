@@ -7,8 +7,10 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/adapters"
+	endpointmanager "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/enpdointmanager"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/privacy"
 	"github.com/prebid/prebid-server/v3/util/iputil"
@@ -62,9 +64,13 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
+	rCtx, ok := utils.GetRequestContext(miCtx)
+	if !ok {
+		return result, nil
+	}
+
 	var (
-		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnWrap.Enabled
+		isVastUnwrapEnabled  = rCtx.VastUnWrap.Enabled
 		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
 	)
 
@@ -175,4 +181,37 @@ func applyPrivacyMaskingToIP(vastUnWrap models.VastUnWrap, ip string) string {
 	default:
 		return ip
 	}
+}
+
+func validateModuleContextRawBidderResponseHook(moduleCtx hookstage.ModuleInvocationContext) (models.RequestCtx, endpointmanager.EndpointHookManager, hookstage.HookResult[hookstage.RawBidderResponsePayload], bool) {
+	result := hookstage.HookResult[hookstage.RawBidderResponsePayload]{}
+
+	if moduleCtx.ModuleContext == nil {
+		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	rCtxInterface, ok := moduleCtx.ModuleContext.Get("rctx")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	rCtx, ok := rCtxInterface.(models.RequestCtx)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	endpointHookManagerInterface, ok := moduleCtx.ModuleContext.Get("endpointhookmanager")
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+	endpointHookManager, ok := endpointHookManagerInterface.(endpointmanager.EndpointHookManager)
+	if !ok {
+		result.DebugMessages = append(result.DebugMessages, "error: endpoint-hook-manager not found in handleBidderRequestHook()")
+		return models.RequestCtx{}, nil, result, false
+	}
+
+	return rCtx, endpointHookManager, result, true
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -17,8 +18,8 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestExtWrapper, error) {
-	values := payload.Request.URL.Query()
+func ConvertVideoToAuctionRequest(r *http.Request, requestBody []byte, result *hookstage.HookResult[hookstage.EntrypointPayload]) (models.RequestExtWrapper, error) {
+	values := r.URL.Query()
 
 	pubID := values.Get(models.PUBID_KEY)
 	profileID := values.Get(models.PROFILEID_KEY)
@@ -233,7 +234,7 @@ func ConvertVideoToAuctionRequest(payload hookstage.EntrypointPayload, result *h
 			url = redirectQueryParams.Get(models.DescriptionURLKey)
 		}
 		if url == "" {
-			url = payload.Request.Header.Get(models.PAGE_URL_HEADER)
+			url = r.Header.Get(models.PAGE_URL_HEADER)
 		}
 
 		bidRequest.Site = &openrtb2.Site{

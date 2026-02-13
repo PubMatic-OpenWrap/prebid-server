@@ -343,6 +343,7 @@ const (
 	ORTBSSAI                 = "req.ext.wrapper.ssai"                 //ORTBSSAI get the api parameter req.ext.wrapper.ssai
 	ORTBKeyValues            = "req.ext.wrapper.kv"                   //ORTBKeyValues get the api parameter req.ext.wrapper.kv
 	ORTBKeyValuesMap         = "req.ext.wrapper.kvm"                  //ORTBKeyValuesMap get the api parameter req.ext.wrapper.kvm
+	ORTBAdrule               = "req.ext.wrapper.video.adrule"         //ORTBAdrule get api parameter req.ext.wrapper.video.adrule
 
 	// ReqAdPodExt level parameters
 	ORTBRequestExtAdPodMinAds                              = "req.ext.adpod.minads"             //ORTBRequestExtAdPodMinAds get api parameter req.ext.adpod.minads
@@ -404,6 +405,8 @@ const (
 	ORTBExtAdPodCrossPodIABCategoryExclusionPercent = "crosspodexcliabcat"   //ORTBExtAdPodCrossPodIABCategoryExclusionPercent get api parameter crosspodexcliabcat
 	ORTBExtAdPodIABCategoryExclusionWindow          = "excliabcatwindow"     //ORTBExtAdPodIABCategoryExclusionWindow get api parameter excliabcatwindow
 	ORTBExtAdPodAdvertiserExclusionWindow           = "excladvwindow"        //ORTBExtAdPodAdvertiserExclusionWindow get api parameter excladvwindow
+	ORTBExtAdrule                                   = "adrule"               ////ORTBExtAdrule get api parameter adrule
+	ORTBVideo                                       = "video"
 
 	//Device Extensions Parameters
 	ORTBDeviceExtIfaType   = "dev.ext.ifa_type"   //ORTBDeviceExtIfaType get api parameter ifa_type

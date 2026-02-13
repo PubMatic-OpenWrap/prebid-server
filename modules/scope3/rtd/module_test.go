@@ -82,16 +82,17 @@ func TestHandleEntrypointHook(t *testing.T) {
 	result, err := module.HandleEntrypointHook(ctx, miCtx, payload)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, result.ModuleContext[asyncRequestKey])
+	value, _ := result.ModuleContext.Get(asyncRequestKey)
+	assert.NotNil(t, value)
 }
 
 func TestHandleAuctionResponseHook_NoSegments(t *testing.T) {
 	module := &Module{}
 	ctx := context.Background()
+	moduleCtx := hookstage.NewModuleContext()
+	moduleCtx.Set("segments", &sync.Map{})
 	miCtx := hookstage.ModuleInvocationContext{
-		ModuleContext: hookstage.ModuleContext{
-			"segments": &sync.Map{},
-		},
+		ModuleContext: moduleCtx,
 	}
 	payload := hookstage.AuctionResponsePayload{}
 
@@ -250,7 +251,8 @@ func TestScope3APIIntegrationWithTargeting(t *testing.T) {
 	// Test entrypoint hook
 	entrypointResult, err := module.HandleEntrypointHook(ctx, hookstage.ModuleInvocationContext{}, getTestEntrypointPayload(t))
 	require.NoError(t, err)
-	assert.NotNil(t, entrypointResult.ModuleContext[asyncRequestKey])
+	value, _ := entrypointResult.ModuleContext.Get(asyncRequestKey)
+	assert.NotNil(t, value)
 
 	// Create test request payload
 	width := int64(300)
@@ -368,7 +370,8 @@ func TestScope3APIIntegrationWithExistingPrebidTargeting(t *testing.T) {
 	// Test entrypoint hook
 	entrypointResult, err := module.HandleEntrypointHook(ctx, hookstage.ModuleInvocationContext{}, getTestEntrypointPayload(t))
 	require.NoError(t, err)
-	assert.NotNil(t, entrypointResult.ModuleContext[asyncRequestKey])
+	value, _ := entrypointResult.ModuleContext.Get(asyncRequestKey)
+	assert.NotNil(t, value)
 
 	// Create test request payload
 	width := int64(300)
@@ -486,7 +489,8 @@ func TestScope3APIIntegrationWithExistingPrebidNoTargeting(t *testing.T) {
 	// Test entrypoint hook
 	entrypointResult, err := module.HandleEntrypointHook(ctx, hookstage.ModuleInvocationContext{}, getTestEntrypointPayload(t))
 	require.NoError(t, err)
-	assert.NotNil(t, entrypointResult.ModuleContext[asyncRequestKey])
+	value, _ := entrypointResult.ModuleContext.Get(asyncRequestKey)
+	assert.NotNil(t, value)
 
 	// Create test request payload
 	width := int64(300)

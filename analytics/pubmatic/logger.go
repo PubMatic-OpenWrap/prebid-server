@@ -118,7 +118,7 @@ func GetLogAuctionObjectAsURL(ao analytics.AuctionObject, rCtx *models.RequestCt
 			Adunit:            impCtx.AdUnitName,
 			PartnerData:       partnerData,
 			RewardedInventory: int(reward),
-			AdPodSlot:         getAdPodSlot(impCtx.AdpodConfig),
+			AdPodSlot:         getAdPodSlot(impId, rCtx),
 			DisplayManager:    impCtx.DisplayManager,
 			DisplayManagerVer: impCtx.DisplayManagerVer,
 		})
@@ -271,7 +271,8 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			rejectedBids[seatNonBid.Seat] = map[string]struct{}{}
 		}
 		for _, nonBid := range seatNonBid.NonBid {
-			rejectedBids[seatNonBid.Seat][nonBid.ImpId] = struct{}{}
+			_, impId, _ := utils.DecodeV25ImpID(nonBid.ImpId)
+			rejectedBids[seatNonBid.Seat][impId] = struct{}{}
 			loggerSeat[seatNonBid.Seat] = append(loggerSeat[seatNonBid.Seat], convertNonBidToBidWrapper(&nonBid))
 		}
 	}
@@ -323,11 +324,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 
 		for _, bid := range bids {
-			var sequence int
-			impId := bid.ImpID
-			if rCtx.IsCTVRequest {
-				impId, sequence = models.GetImpressionID(impId)
-			}
+			_, impId, _ := utils.DecodeV25ImpID(bid.ImpID)
 			impCtx, ok := rCtx.ImpBidCtx[impId]
 			if !ok {
 				continue
@@ -518,10 +515,12 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 			}
 
 			// Adpod parameters
-			if impCtx.AdpodConfig != nil {
-				pr.AdPodSequenceNumber = &sequence
-				aprc := int(impCtx.BidIDToAPRC[bidIDForLookup])
-				pr.NoBidReason = &aprc
+			if len(rCtx.AdpodCtx) > 0 && len(impCtx.BidIDToAPRC) > 0 {
+				aprc, ok := impCtx.BidIDToAPRC[bidIDForLookup]
+				if ok {
+					aprcInt := int(aprc)
+					pr.NoBidReason = &aprcInt
+				}
 			}
 
 			pr.PriceBucket = tracker.Tracker.PartnerInfo.PriceBucket
@@ -573,18 +572,37 @@ func getDefaultPartnerRecordsByImp(rCtx *models.RequestCtx) map[string][]Partner
 	return ipr
 }
 
-func getAdPodSlot(adPodConfig *models.AdPod) *AdPodSlot {
-	if adPodConfig == nil {
+func getAdPodSlot(impId string, rCtx *models.RequestCtx) *AdPodSlot {
+	if rCtx.AdpodCtx == nil {
+		return nil
+	}
+
+	adPodConfig, ok := rCtx.AdpodCtx[impId]
+	if !ok {
+		return nil
+	}
+
+	if len(adPodConfig.Slots) != 1 {
+		return nil
+	}
+
+	if adPodConfig.Slots[0].AdpodConfigV25 == nil {
 		return nil
 	}
 
 	adPodSlot := AdPodSlot{
-		MinAds:                      adPodConfig.MinAds,
-		MaxAds:                      adPodConfig.MaxAds,
-		MinDuration:                 adPodConfig.MinDuration,
-		MaxDuration:                 adPodConfig.MaxDuration,
-		AdvertiserExclusionPercent:  *adPodConfig.AdvertiserExclusionPercent,
-		IABCategoryExclusionPercent: *adPodConfig.IABCategoryExclusionPercent,
+		MinAds:      int(adPodConfig.Slots[0].AdpodConfigV25.MinAds),
+		MaxAds:      int(adPodConfig.Slots[0].AdpodConfigV25.MaxAds),
+		MinDuration: int(adPodConfig.Slots[0].MinDuration),
+		MaxDuration: int(adPodConfig.Slots[0].MaxDuration),
+	}
+
+	if adPodConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent != nil {
+		adPodSlot.AdvertiserExclusionPercent = *adPodConfig.Slots[0].AdpodConfigV25.AdvertiserExclusionPercent
+	}
+
+	if adPodConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent != nil {
+		adPodSlot.IABCategoryExclusionPercent = *adPodConfig.Slots[0].AdpodConfigV25.IABCategoryExclusionPercent
 	}
 
 	return &adPodSlot

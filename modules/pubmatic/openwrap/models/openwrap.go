@@ -7,6 +7,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
@@ -54,8 +55,9 @@ type RequestCtx struct {
 	ParsedUidCookie *usersync.Cookie
 	OriginCookie    string
 
-	Debug bool
-	Trace bool
+	Debug  bool
+	Trace  bool
+	Header http.Header
 
 	//tracker
 	PageURL   string
@@ -133,6 +135,7 @@ type RequestCtx struct {
 	AdruleFlag         bool
 	AdpodProfileConfig *AdpodProfileConfig
 	ImpAdPodConfig     map[string][]PodConfig
+	AdpodCtx           AdpodCtx
 }
 
 type VastUnWrap struct {
@@ -184,6 +187,9 @@ type DeviceCtx struct {
 	Country            string
 	IP                 string
 	DerivedCountryCode string
+	ConnectionType     *adcom1.ConnectionType
+	Language           string
+	OS                 string
 }
 
 type ImpCtx struct {

@@ -215,7 +215,7 @@ func New(cfg *config.Configuration, rateConvertor *currency.RateConverter) (r *R
 
 	metricsRegistry := metricsConf.NewMetricsRegistry()
 	normalizedGeoscopes := getNormalizedGeoscopes(cfg.BidderInfos)
-	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor, Geoscope: normalizedGeoscopes}
+	moduleDeps := moduledeps.ModuleDeps{HTTPClient: generalHttpClient, MetricsCfg: &cfg.Metrics, MetricsRegistry: metricsRegistry, RateConvertor: rateConvertor, Geoscope: normalizedGeoscopes, CacheHttpClient: cacheHttpClient, Config: cfg}
 	repo, moduleStageNames, shutdownModules, err := modules.NewBuilder().Build(cfg.Hooks.Modules, moduleDeps)
 	if err != nil {
 		logger.Fatalf("Failed to init hook modules: %v", err)

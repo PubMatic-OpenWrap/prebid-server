@@ -529,6 +529,7 @@ func UpdateUserExtWithValidValues(user *openrtb2.User) {
 		var userExt openrtb_ext.ExtUser
 		err := json.Unmarshal(user.Ext, &userExt)
 		if err != nil {
+			user.Ext = nil
 			return
 		}
 		if userExt.SessionDuration < 0 {

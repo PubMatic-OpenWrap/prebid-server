@@ -658,7 +658,11 @@ func buildMultiBidMap(prebid *openrtb_ext.ExtRequestPrebid) map[string]openrtb_e
 	for _, multiBid := range prebid.MultiBid {
 		if multiBid.Bidder != "" {
 			if bidderNormalized, bidderFound := openrtb_ext.NormalizeBidderName(multiBid.Bidder); bidderFound {
-				multiBidMap[string(bidderNormalized)] = *multiBid
+				if multiBid.Alias != "" {
+					multiBidMap[multiBid.Alias] = *multiBid
+				} else {
+					multiBidMap[string(bidderNormalized)] = *multiBid
+				}
 			}
 		} else {
 			for _, bidder := range multiBid.Bidders {
@@ -737,7 +741,8 @@ func getDealTiers(bidRequest *openrtb2.BidRequest) map[string]openrtb_ext.DealTi
 		if err != nil {
 			continue
 		}
-		impDealMap[imp.ID] = dealTierBidderMap
+		_, impId, _ := utils.DecodeV25ImpID(imp.ID)
+		impDealMap[impId] = dealTierBidderMap
 	}
 
 	return impDealMap
@@ -838,7 +843,7 @@ func (e *exchange) getAllBids(
 				bidderRequestStartTime: start,
 				responseDebugAllowed:   responseDebugAllowed,
 			}
-			seatBids, extraBidderRespInfo, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest, conversions, &reqInfo, e.adsCertSigner, bidReqOptions, alternateBidderCodes, hookExecutor, bidAdjustmentRules)
+			seatBids, extraBidderRespInfo, err := e.adapterMap[bidderRequest.BidderCoreName].requestBid(ctx, bidderRequest, conversions, &reqInfo, e.adsCertSigner, bidReqOptions, alternateBidderCodes, hookExecutor, bidAdjustmentRules, e.bidderInfo[string(bidderRequest.BidderCoreName)])
 			brw.bidderResponseStartTime = extraBidderRespInfo.respProcessingStartTime
 
 			// Add in time reporting
