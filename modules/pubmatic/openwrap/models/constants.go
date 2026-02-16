@@ -558,7 +558,6 @@ const (
 	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
 	SlotNameHash                       = "GetSlotNameHash"
 	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
-	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
 	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
@@ -575,7 +574,7 @@ const (
 	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
 	PerformanceDSPsQuery             = "GetPerformanceDSPs"
 	InViewEnabledPublishersQuery     = "GetInViewEnabledPublishers"
-	AllDspActPcntQuery               = "GetAllDspActPcntQuery"
+	AllDspFscAndActPcntQuery         = "GetAllDspFscAndActPcntQuery"
 )
 
 // constants for owlogger Integration Type

@@ -11,6 +11,7 @@ import (
 	mock_database "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,7 @@ func TestCache_GetFSCAndACTThresholdsPerDSP(t *testing.T) {
 			setup: func() {
 				mockDatabase.EXPECT().GetFSCAndACTThresholdsPerDSP().
 					Return(nil, nil, errors.New("QUERY FAILED"))
-				mockEngine.EXPECT().RecordDBQueryFailure(allDspFscAndActPcntQuery, "", "").Return()
+				mockEngine.EXPECT().RecordDBQueryFailure(models.AllDspFscAndActPcntQuery, "", "").Return()
 			},
 			fields: fields{
 				cache: gocache.New(100, 100),
