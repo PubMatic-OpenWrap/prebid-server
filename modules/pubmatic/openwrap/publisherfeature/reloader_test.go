@@ -465,7 +465,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
 				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)

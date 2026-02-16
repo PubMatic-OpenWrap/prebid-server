@@ -35,7 +35,7 @@ func TestCache_GetFSCAndACTThresholdsPerDSP(t *testing.T) {
 		wantWrap string
 	}{
 		{
-			name: "Valid Data present in DB, return same",
+			name:    "Valid Data present in DB, return same",
 			wantFsc: map[int]int{6: 70, 7: 50},
 			wantAct: map[int]int{6: 80, 7: 60},
 			setup: func() {
@@ -72,7 +72,7 @@ func TestCache_GetFSCAndACTThresholdsPerDSP(t *testing.T) {
 			wantWrap: "ErrorFscActDspUpdate",
 		},
 		{
-			name: "Empty maps from DB, return empty",
+			name:    "Empty maps from DB, return empty",
 			wantFsc: map[int]int{},
 			wantAct: map[int]int{},
 			setup: func() {
