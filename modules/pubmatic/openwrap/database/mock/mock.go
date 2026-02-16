@@ -111,34 +111,20 @@ func (mr *MockDatabaseMockRecorder) GetAppSubIntegrationPaths() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSubIntegrationPaths", reflect.TypeOf((*MockDatabase)(nil).GetAppSubIntegrationPaths))
 }
 
-// GetFSCThresholdPerDSP mocks base method.
-func (m *MockDatabase) GetFSCThresholdPerDSP() (map[int]int, error) {
+// GetFSCAndACTThresholdsPerDSP mocks base method.
+func (m *MockDatabase) GetFSCAndACTThresholdsPerDSP() (map[int]int, map[int]int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFSCThresholdPerDSP")
+	ret := m.ctrl.Call(m, "GetFSCAndACTThresholdsPerDSP")
 	ret0, _ := ret[0].(map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(map[int]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP.
-func (mr *MockDatabaseMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
+// GetFSCAndACTThresholdsPerDSP indicates an expected call of GetFSCAndACTThresholdsPerDSP.
+func (mr *MockDatabaseMockRecorder) GetFSCAndACTThresholdsPerDSP() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCThresholdPerDSP))
-}
-
-// GetACTThresholdPerDSP mocks base method.
-func (m *MockDatabase) GetACTThresholdPerDSP() (map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetACTThresholdPerDSP")
-	ret0, _ := ret[0].(map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetACTThresholdPerDSP indicates an expected call of GetACTThresholdPerDSP.
-func (mr *MockDatabaseMockRecorder) GetACTThresholdPerDSP() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetACTThresholdPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetACTThresholdPerDSP))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCAndACTThresholdsPerDSP", reflect.TypeOf((*MockDatabase)(nil).GetFSCAndACTThresholdsPerDSP))
 }
 
 // GetGDPRCountryCodes mocks base method.

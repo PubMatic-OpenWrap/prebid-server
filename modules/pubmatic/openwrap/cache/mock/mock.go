@@ -111,34 +111,20 @@ func (mr *MockCacheMockRecorder) GetAppSubIntegrationPaths() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSubIntegrationPaths", reflect.TypeOf((*MockCache)(nil).GetAppSubIntegrationPaths))
 }
 
-// GetFSCThresholdPerDSP mocks base method.
-func (m *MockCache) GetFSCThresholdPerDSP() (map[int]int, error) {
+// GetFSCAndACTThresholdsPerDSP mocks base method.
+func (m *MockCache) GetFSCAndACTThresholdsPerDSP() (map[int]int, map[int]int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFSCThresholdPerDSP")
+	ret := m.ctrl.Call(m, "GetFSCAndACTThresholdsPerDSP")
 	ret0, _ := ret[0].(map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(map[int]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetFSCThresholdPerDSP indicates an expected call of GetFSCThresholdPerDSP.
-func (mr *MockCacheMockRecorder) GetFSCThresholdPerDSP() *gomock.Call {
+// GetFSCAndACTThresholdsPerDSP indicates an expected call of GetFSCAndACTThresholdsPerDSP.
+func (mr *MockCacheMockRecorder) GetFSCAndACTThresholdsPerDSP() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCThresholdPerDSP", reflect.TypeOf((*MockCache)(nil).GetFSCThresholdPerDSP))
-}
-
-// GetACTThresholdPerDSP mocks base method.
-func (m *MockCache) GetACTThresholdPerDSP() (map[int]int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetACTThresholdPerDSP")
-	ret0, _ := ret[0].(map[int]int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetACTThresholdPerDSP indicates an expected call of GetACTThresholdPerDSP.
-func (mr *MockCacheMockRecorder) GetACTThresholdPerDSP() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetACTThresholdPerDSP", reflect.TypeOf((*MockCache)(nil).GetACTThresholdPerDSP))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSCAndACTThresholdsPerDSP", reflect.TypeOf((*MockCache)(nil).GetFSCAndACTThresholdsPerDSP))
 }
 
 // GetGDPRCountryCodes mocks base method.

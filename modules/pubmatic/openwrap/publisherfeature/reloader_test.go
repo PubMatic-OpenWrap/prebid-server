@@ -65,8 +65,7 @@ func TestInitiateReloader(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{}, map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
@@ -151,10 +150,9 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(nil, errors.New("QUERY FAILED"))
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
-				}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -205,8 +203,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(nil, nil, errors.New("QUERY FAILED"))
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -267,8 +264,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -341,8 +337,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -417,8 +412,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
 			},
@@ -471,10 +465,9 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
-				}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{}, nil)
+				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -537,8 +530,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
-				mockCache.EXPECT().GetACTThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{6: 100}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
