@@ -784,6 +784,53 @@ func TestModifyDevice(t *testing.T) {
 			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::1"}},
 		},
 		{
+			name: "geo_lat_lon_present_in_request_keep_coupled_fields_from_request",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(1.1)),
+				Lon:      ptrutil.ToPtr(float64(2.2)),
+				Type:     3,
+				Accuracy: 10,
+				LastFix:  123,
+			}}},
+			signal: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+				Country:  "US",
+			}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(1.1)),
+				Lon:      ptrutil.ToPtr(float64(2.2)),
+				Type:     3,
+				Accuracy: 10,
+				LastFix:  123,
+				Country:  "US",
+			}}},
+		},
+		{
+			name: "geo_lat_lon_missing_in_request_copy_coupled_fields_from_signal",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat: nil,
+				Lon: ptrutil.ToPtr(float64(2.2)),
+			}}},
+			signal: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+			}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+			}}},
+		},
+		{
 			name:    "copy all device fields",
 			request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
 			signal: &openrtb2.Device{
