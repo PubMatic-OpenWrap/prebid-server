@@ -236,6 +236,45 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{Geo: &openrtb2.Geo{City: "Delhi", UTCOffset: 3}, Ext: json.RawMessage(`{"atts":3}`)},
 		},
 		{
+			name: "sdkDevice_geo_does_not_override_existing_lat_lon_but_merges_other_fields",
+			args: func() args {
+				reqLat := 12.34
+				reqLon := 56.78
+				signalLat := 11.11
+				signalLon := 22.22
+				return args{
+					sdkDevice: &openrtb2.Device{Geo: &openrtb2.Geo{
+						Lat:       &signalLat,
+						Lon:       &signalLon,
+						Country:   "IN",
+						Region:    "DL",
+						Metro:     "NCR",
+						City:      "New Delhi",
+						ZIP:       "110001",
+						UTCOffset: 330,
+					}},
+					maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+						Lat: &reqLat,
+						Lon: &reqLon,
+					}}},
+				}
+			}(),
+			want: func() *openrtb2.Device {
+				wantLat := 12.34
+				wantLon := 56.78
+				return &openrtb2.Device{Geo: &openrtb2.Geo{
+					Lat:       &wantLat,
+					Lon:       &wantLon,
+					Country:   "IN",
+					Region:    "DL",
+					Metro:     "NCR",
+					City:      "New Delhi",
+					ZIP:       "110001",
+					UTCOffset: 330,
+				}}
+			}(),
+		},
+		{
 			name: "sdkDevice_has_ipv6",
 			args: args{
 				sdkDevice:  &openrtb2.Device{IPv6: "2001:db8::1"},

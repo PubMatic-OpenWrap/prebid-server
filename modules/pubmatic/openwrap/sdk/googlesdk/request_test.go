@@ -883,6 +883,43 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_device_geo_does_not_override_existing_lat_lon_but_merges_other_fields",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Lat: ptrutil.ToPtr(float64(1.23)),
+						Lon: ptrutil.ToPtr(float64(4.56)),
+					},
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Lat:       ptrutil.ToPtr(float64(9.87)),
+					Lon:       ptrutil.ToPtr(float64(6.54)),
+					Country:   "IN",
+					Region:    "DL",
+					Metro:     "NCR",
+					City:      "New Delhi",
+					ZIP:       "110001",
+					UTCOffset: 330,
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Lat:       ptrutil.ToPtr(float64(1.23)),
+						Lon:       ptrutil.ToPtr(float64(4.56)),
+						Country:   "IN",
+						Region:    "DL",
+						Metro:     "NCR",
+						City:      "New Delhi",
+						ZIP:       "110001",
+						UTCOffset: 330,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

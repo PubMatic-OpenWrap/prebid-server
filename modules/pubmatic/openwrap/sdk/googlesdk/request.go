@@ -439,7 +439,26 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	}
 
 	if signalDevice.Geo != nil {
-		request.Device.Geo = signalDevice.Geo
+		if request.Device.Geo == nil {
+			request.Device.Geo = &openrtb2.Geo{}
+		}
+
+		hasReqLatLon := request.Device.Geo.Lat != nil && request.Device.Geo.Lon != nil
+		if !hasReqLatLon {
+			request.Device.Geo.Lat = signalDevice.Geo.Lat
+			request.Device.Geo.Lon = signalDevice.Geo.Lon
+			request.Device.Geo.Type = signalDevice.Geo.Type
+			request.Device.Geo.LastFix = signalDevice.Geo.LastFix
+			request.Device.Geo.Accuracy = signalDevice.Geo.Accuracy
+		}
+		if signalDevice.Geo.Country != "" {
+			request.Device.Geo.Country = signalDevice.Geo.Country
+		}
+		request.Device.Geo.Region = signalDevice.Geo.Region
+		request.Device.Geo.Metro = signalDevice.Geo.Metro
+		request.Device.Geo.City = signalDevice.Geo.City
+		request.Device.Geo.ZIP = signalDevice.Geo.ZIP
+		request.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
 	}
 
 	if signalDevice.HWV != "" {

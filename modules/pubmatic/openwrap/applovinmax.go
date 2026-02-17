@@ -177,13 +177,22 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		maxRequest.Device.Geo = &openrtb2.Geo{}
 	}
 
-	if signalDevice.Geo.City != "" {
-		maxRequest.Device.Geo.City = signalDevice.Geo.City
+	hasReqLatLon := maxRequest.Device.Geo.Lat != nil && maxRequest.Device.Geo.Lon != nil
+	if !hasReqLatLon {
+		maxRequest.Device.Geo.Lat = signalDevice.Geo.Lat
+		maxRequest.Device.Geo.Lon = signalDevice.Geo.Lon
+		maxRequest.Device.Geo.Type = signalDevice.Geo.Type
+		maxRequest.Device.Geo.LastFix = signalDevice.Geo.LastFix
+		maxRequest.Device.Geo.Accuracy = signalDevice.Geo.Accuracy
 	}
-
-	if signalDevice.Geo.UTCOffset != 0 {
-		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
+	if signalDevice.Geo.Country != "" {
+		maxRequest.Device.Geo.Country = signalDevice.Geo.Country
 	}
+	maxRequest.Device.Geo.Region = signalDevice.Geo.Region
+	maxRequest.Device.Geo.Metro = signalDevice.Geo.Metro
+	maxRequest.Device.Geo.City = signalDevice.Geo.City
+	maxRequest.Device.Geo.ZIP = signalDevice.Geo.ZIP
+	maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
 
 }
 
