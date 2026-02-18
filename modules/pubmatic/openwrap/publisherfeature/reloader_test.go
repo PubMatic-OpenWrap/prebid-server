@@ -65,7 +65,7 @@ func TestInitiateReloader(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{}, map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
@@ -135,6 +135,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		appLovinMultiFloors  appLovinMultiFloors
 		impCountingMethod    impCountingMethod
 		appLovinSchainABTest appLovinSchainABTest
+		act                  act
 	}
 	tests := []struct {
 		name   string
@@ -149,9 +150,9 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(nil, errors.New("QUERY FAILED"))
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
-				}, nil)
+				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -176,6 +177,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 					index: 0,
 				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
+				},
 			},
 		},
 		{
@@ -198,13 +203,17 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(nil, nil, errors.New("QUERY FAILED"))
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
 			},
 			want: want{
 				fsc: fsc{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
+				},
+				act: act{
 					disabledPublishers: map[int]struct{}{},
 					thresholdsPerDsp:   map[int]int{},
 				},
@@ -255,7 +264,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -268,6 +277,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{
@@ -324,7 +337,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -337,6 +350,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{
@@ -395,7 +412,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
 			},
@@ -405,6 +422,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{},
@@ -444,9 +465,9 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
-				}, nil)
+				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -457,6 +478,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{},
@@ -482,6 +507,78 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "act threshold per DSP query success",
+			fields: fields{
+				cache: mockCache,
+			},
+			setup: func() {
+				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{
+					5890: {
+						models.FeatureFSC: {
+							Enabled: 0,
+						},
+						models.FeatureACT: {
+							Enabled: 0,
+						},
+						models.FeatureTBF: {
+							Enabled: 1,
+							Value:   `{"1234": 100}`,
+						},
+						models.FeatureAMPMultiFormat: {
+							Enabled: 1,
+						},
+					},
+				}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
+				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
+				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
+			},
+			want: want{
+				fsc: fsc{
+					disabledPublishers: map[int]struct{}{
+						5890: {},
+					},
+					thresholdsPerDsp: map[int]int{
+						6: 100,
+					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{
+						5890: {},
+					},
+					thresholdsPerDsp: map[int]int{
+						6: 100,
+					},
+				},
+				ampMultiformat: ampMultiformat{
+					enabledPublishers: map[int]struct{}{
+						5890: {},
+					},
+				},
+				tbf: tbf{
+					pubProfileTraffic: map[int]map[int]int{
+						5890: {
+							1234: 100,
+						},
+					},
+				},
+				bidRecovery: bidRecovery{
+					enabledPublisherProfile: map[int]map[int]struct{}{},
+				},
+				appLovinMultiFloors: appLovinMultiFloors{
+					enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
+				},
+				impCountingMethod: impCountingMethod{
+					enabledBidders: [2]map[string]struct{}{
+						{},
+						{},
+					},
+					index: 1,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -489,6 +586,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			fe := &feature{
 				cache: tt.fields.cache,
 				fsc: fsc{
+					disabledPublishers: make(map[int]struct{}),
+					thresholdsPerDsp:   make(map[int]int),
+				},
+				act: act{
 					disabledPublishers: make(map[int]struct{}),
 					thresholdsPerDsp:   make(map[int]int),
 				},
@@ -506,6 +607,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			}()
 			fe.updateFeatureConfigMaps()
 			assert.Equal(t, tt.want.fsc, fe.fsc, tt.name)
+			assert.Equal(t, tt.want.act, fe.act, tt.name)
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
 			assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)

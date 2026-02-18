@@ -72,7 +72,6 @@ type Queries struct {
 	GetAdunitConfigForLiveVersion     string
 	GetSlotNameHash                   string
 	GetPublisherVASTTagsQuery         string
-	GetAllDspFscPcntQuery             string
 	GetPublisherFeatureMapQuery       string
 	GetAnalyticsThrottlingQuery       string
 	GetAdpodConfig                    string
@@ -85,6 +84,7 @@ type Queries struct {
 	GetCountryPartnerFilteringData    string
 	GetPerformanceDSPQuery            string
 	GetInViewEnabledPublishersQuery   string
+	GetAllDspFscAndActPcntQuery       string
 }
 
 type Cache struct {

@@ -198,6 +198,8 @@ type ImpCtx struct {
 	BidFloor          float64
 	BidFloorCur       string
 	IsRewardInventory *int8
+	Instl             int8
+	IsAppOpenAd       int8
 	IsBanner          bool
 	Banner            *openrtb2.Banner
 	Video             *openrtb2.Video
