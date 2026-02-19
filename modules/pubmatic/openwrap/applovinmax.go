@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
@@ -83,116 +84,84 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
-	if maxRequest.Device == nil {
-		maxRequest.Device = &openrtb2.Device{}
+	var (
+		reqOS       string
+		reqOSV      string
+		reqLanguage string
+		reqCarrier  string
+		reqMake     string
+		reqW        int64
+		reqH        int64
+		reqPxRatio  float64
+		reqGeo      *openrtb2.Geo
+	)
+	if maxRequest.Device != nil {
+		reqOS = maxRequest.Device.OS
+		reqOSV = maxRequest.Device.OSV
+		reqLanguage = maxRequest.Device.Language
+		reqCarrier = maxRequest.Device.Carrier
+		reqMake = maxRequest.Device.Make
+		reqW = maxRequest.Device.W
+		reqH = maxRequest.Device.H
+		reqPxRatio = maxRequest.Device.PxRatio
+		reqGeo = maxRequest.Device.Geo
 	}
 
-	if signalDevice.MCCMNC != "" {
-		maxRequest.Device.MCCMNC = signalDevice.MCCMNC
+	sdkutils.MergeDevice(&maxRequest.Device, signalDevice)
+
+	if reqOS != "" {
+		maxRequest.Device.OS = reqOS
+	}
+	if reqOSV != "" {
+		maxRequest.Device.OSV = reqOSV
+	}
+	if reqLanguage != "" {
+		maxRequest.Device.Language = reqLanguage
+	}
+	if reqCarrier != "" {
+		maxRequest.Device.Carrier = reqCarrier
+	}
+	if reqMake != "" {
+		maxRequest.Device.Make = reqMake
+	}
+	if reqW > 0 {
+		maxRequest.Device.W = reqW
+	}
+	if reqH > 0 {
+		maxRequest.Device.H = reqH
+	}
+	if reqPxRatio > 0 {
+		maxRequest.Device.PxRatio = reqPxRatio
 	}
 
-	if signalDevice.ConnectionType != nil {
-		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
-	}
-
-	if signalDevice.Model != "" {
-		maxRequest.Device.Model = signalDevice.Model
-	}
-
-	if signalDevice.UA != "" {
-		maxRequest.Device.UA = signalDevice.UA
-	}
-
-	if maxRequest.Device.IP == "" && signalDevice.IP != "" {
-		maxRequest.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IFA != "" {
-		maxRequest.Device.IFA = signalDevice.IFA
-	}
-
-	if signalDevice.Lmt != nil {
-		maxRequest.Device.Lmt = signalDevice.Lmt
-	}
-
-	if signalDevice.IP != "" {
-		maxRequest.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IPv6 != "" {
-		maxRequest.Device.IPv6 = signalDevice.IPv6
-	}
-
-	if signalDevice.DeviceType > 0 {
-		maxRequest.Device.DeviceType = signalDevice.DeviceType
-	}
-
-	if len(signalDevice.Make) > 0 {
-		maxRequest.Device.Make = signalDevice.Make
-	}
-
-	if signalDevice.OS != "" {
-		maxRequest.Device.OS = signalDevice.OS
-	}
-
-	if signalDevice.OSV != "" {
-		maxRequest.Device.OSV = signalDevice.OSV
-	}
-
-	if signalDevice.HWV != "" {
-		maxRequest.Device.HWV = signalDevice.HWV
-	}
-
-	if signalDevice.W > 0 {
-		maxRequest.Device.W = signalDevice.W
-	}
-
-	if signalDevice.H > 0 {
-		maxRequest.Device.H = signalDevice.H
-	}
-
-	if signalDevice.PxRatio > 0 {
-		maxRequest.Device.PxRatio = signalDevice.PxRatio
-	}
-
-	if signalDevice.JS != nil {
-		maxRequest.Device.JS = signalDevice.JS
-	}
-
-	if signalDevice.Language != "" {
-		maxRequest.Device.Language = signalDevice.Language
-	}
-
-	if signalDevice.Carrier != "" {
-		maxRequest.Device.Carrier = signalDevice.Carrier
+	if reqGeo != nil {
+		if maxRequest.Device.Geo == nil {
+			maxRequest.Device.Geo = &openrtb2.Geo{}
+		}
+		if maxRequest.Device.Geo.Country == "" {
+			maxRequest.Device.Geo.Country = reqGeo.Country
+		}
+		if maxRequest.Device.Geo.Region == "" {
+			maxRequest.Device.Geo.Region = reqGeo.Region
+		}
+		if maxRequest.Device.Geo.Metro == "" {
+			maxRequest.Device.Geo.Metro = reqGeo.Metro
+		}
+		if maxRequest.Device.Geo.City == "" {
+			maxRequest.Device.Geo.City = reqGeo.City
+		}
+		if maxRequest.Device.Geo.ZIP == "" {
+			maxRequest.Device.Geo.ZIP = reqGeo.ZIP
+		}
+		if maxRequest.Device.Geo.UTCOffset == 0 {
+			maxRequest.Device.Geo.UTCOffset = reqGeo.UTCOffset
+		}
+		if maxRequest.Device.Geo.Ext == nil {
+			maxRequest.Device.Geo.Ext = reqGeo.Ext
+		}
 	}
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
-
-	if signalDevice.Geo == nil {
-		return
-	}
-
-	if maxRequest.Device.Geo == nil {
-		maxRequest.Device.Geo = &openrtb2.Geo{}
-	}
-
-	hasReqLatLon := maxRequest.Device.Geo.Lat != nil && maxRequest.Device.Geo.Lon != nil
-	if !hasReqLatLon {
-		maxRequest.Device.Geo.Lat = signalDevice.Geo.Lat
-		maxRequest.Device.Geo.Lon = signalDevice.Geo.Lon
-		maxRequest.Device.Geo.Type = signalDevice.Geo.Type
-		maxRequest.Device.Geo.LastFix = signalDevice.Geo.LastFix
-		maxRequest.Device.Geo.Accuracy = signalDevice.Geo.Accuracy
-	}
-	if signalDevice.Geo.Country != "" {
-		maxRequest.Device.Geo.Country = signalDevice.Geo.Country
-	}
-	maxRequest.Device.Geo.Region = signalDevice.Geo.Region
-	maxRequest.Device.Geo.Metro = signalDevice.Geo.Metro
-	maxRequest.Device.Geo.City = signalDevice.Geo.City
-	maxRequest.Device.Geo.ZIP = signalDevice.Geo.ZIP
-	maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
 
 }
 
