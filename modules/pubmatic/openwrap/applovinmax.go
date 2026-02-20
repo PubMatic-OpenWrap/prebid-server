@@ -188,11 +188,21 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 	if signalDevice.Geo.Country != "" {
 		maxRequest.Device.Geo.Country = signalDevice.Geo.Country
 	}
-	maxRequest.Device.Geo.Region = signalDevice.Geo.Region
-	maxRequest.Device.Geo.Metro = signalDevice.Geo.Metro
-	maxRequest.Device.Geo.City = signalDevice.Geo.City
-	maxRequest.Device.Geo.ZIP = signalDevice.Geo.ZIP
-	maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
+	if signalDevice.Geo.Region != "" {
+		maxRequest.Device.Geo.Region = signalDevice.Geo.Region
+	}
+	if signalDevice.Geo.Metro != "" {
+		maxRequest.Device.Geo.Metro = signalDevice.Geo.Metro
+	}
+	if signalDevice.Geo.City != "" {
+		maxRequest.Device.Geo.City = signalDevice.Geo.City
+	}
+	if signalDevice.Geo.ZIP != "" {
+		maxRequest.Device.Geo.ZIP = signalDevice.Geo.ZIP
+	}
+	if signalDevice.Geo.UTCOffset != 0 {
+		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
+	}
 
 }
 
