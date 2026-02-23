@@ -15,7 +15,8 @@ type Cache interface {
 	GetPublisherVASTTagsFromCache(pubID int) models.PublisherVASTTags
 	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 
-	GetFSCThresholdPerDSP() (map[int]int, error)
+	// GetFSCAndACTThresholdsPerDSP returns both FSC and ACT DSP thresholds in one call when possible to avoid duplicate DB/cache round-trips.
+	GetFSCAndACTThresholdsPerDSP() (fscMap map[int]int, actMap map[int]int, err error)
 	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)

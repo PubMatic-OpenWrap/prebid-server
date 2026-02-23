@@ -558,7 +558,6 @@ const (
 	AdunitConfigForLiveVersion         = "GetAdunitConfigForLiveVersion"
 	SlotNameHash                       = "GetSlotNameHash"
 	PublisherVASTTagsQuery             = "GetPublisherVASTTagsQuery"
-	AllDspFscPcntQuery                 = "GetAllDspFscPcntQuery"
 	AdUnitFailUnmarshal                = "GetAdUnitUnmarshal"
 	PublisherFeatureMapQuery           = "GetPublisherFeatureMapQuery"
 	AnalyticsThrottlingPercentageQuery = "GetAnalyticsThrottlingPercentage"
@@ -575,6 +574,7 @@ const (
 	CountryPartnerFilteringDataQuery = "GetCountryPartnerFilteringData"
 	PerformanceDSPsQuery             = "GetPerformanceDSPs"
 	InViewEnabledPublishersQuery     = "GetInViewEnabledPublishers"
+	AllDspFscAndActPcntQuery         = "GetAllDspFscAndActPcntQuery"
 )
 
 // constants for owlogger Integration Type
@@ -633,6 +633,7 @@ const (
 	FeatureMBMFBannerFloors     = 13
 	FeatureDynamicFloor         = 15
 	FeatureAppLovinSchainABTest = 16
+	FeatureACT                  = 17
 )
 
 // constants for sdk integrations

@@ -231,6 +231,20 @@ func (mr *MockFeatureMockRecorder) IsFscApplicable(arg0, arg1, arg2 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFscApplicable", reflect.TypeOf((*MockFeature)(nil).IsFscApplicable), arg0, arg1, arg2)
 }
 
+// IsActApplicable mocks base method.
+func (m *MockFeature) IsActApplicable(arg0 int, arg1 string, arg2 int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsActApplicable", arg0, arg1, arg2)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsActApplicable indicates an expected call of IsActApplicable.
+func (mr *MockFeatureMockRecorder) IsActApplicable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsActApplicable", reflect.TypeOf((*MockFeature)(nil).IsActApplicable), arg0, arg1, arg2)
+}
+
 // IsMBMFCountryForPublisher mocks base method.
 func (m *MockFeature) IsMBMFCountryForPublisher(arg0 string, arg1 int) bool {
 	m.ctrl.T.Helper()
