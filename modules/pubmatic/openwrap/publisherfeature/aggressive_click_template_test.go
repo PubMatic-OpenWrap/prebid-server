@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsUnderFSCThreshold(t *testing.T) {
+func TestIsUnderACTThreshold(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	type fields struct {
-		fsc fsc
+		act act
 	}
 	type args struct {
 		pubid int
@@ -26,13 +26,13 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 		want   int
 	}{
 		{
-			name: "When pubId,dspid and FSC maps are valid, pubID enabled(default) FSC return fsc with prediction algo",
+			name: "When_pubId_dspid_and_ACT_maps_are_valid,_pubID_enabled(default)_ACT_return_act_with_prediction_algo",
 			args: args{
 				pubid: 5890,
 				dspid: 6,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						58903: {},
 					},
@@ -42,13 +42,13 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 			want: 1,
 		},
 		{
-			name: "When pubId,dspid and FSC maps are valid, pubID disabled FSC return fsc=0",
+			name: "When_pubId_dspid_and_ACT_maps_are_valid,_pubID_disabled_ACT_return_act_with_prediction_algo",
 			args: args{
 				pubid: 5890,
 				dspid: 6,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						5890: {},
 					},
@@ -57,13 +57,13 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "When pubId,dspid are not present, pubID disabled FSC return fsc=0",
+			name: "When_pubId_dspid_are_not_present,_pubID_disabled_ACT_return_act_with_prediction_algo",
 			args: args{
 				pubid: 58907,
 				dspid: 90,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						5890: {},
 					},
@@ -77,22 +77,22 @@ func TestIsUnderFSCThreshold(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fe := feature{
 				cache: mockCache,
-				fsc:   tt.fields.fsc,
+				act:   tt.fields.act,
 			}
-			if got := fe.isUnderFSCThreshold(tt.args.pubid, tt.args.dspid); got != tt.want {
-				t.Errorf("fsc.IsUnderFSCThreshold() = %v, want %v", got, tt.want)
+			if got := fe.isUnderACTThreshold(tt.args.pubid, tt.args.dspid); got != tt.want {
+				t.Errorf("act.IsUnderACTThreshold() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestIsFscApplicable(t *testing.T) {
+func TestIsActApplicable(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 
 	type fields struct {
-		fsc fsc
+		act act
 	}
 	type args struct {
 		pubId int
@@ -106,14 +106,14 @@ func TestIsFscApplicable(t *testing.T) {
 		fields fields
 	}{
 		{
-			name: "Valid Case1: All Params Correct",
+			name: "Valid_Case1:All_Params_Correct",
 			args: args{
 				pubId: 5890,
 				seat:  "pubmatic",
 				dspId: 6,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						58903: {},
 					},
@@ -123,14 +123,14 @@ func TestIsFscApplicable(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Valid Case2: All Params Correct, seat is pubmatic alaias",
+			name: "Valid_Case2:All_Params_Correct_seat_is_pubmatic_alaias",
 			args: args{
 				pubId: 5890,
 				seat:  "pubmatic2",
 				dspId: 6,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						58903: {},
 					},
@@ -140,14 +140,14 @@ func TestIsFscApplicable(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "Invalid Case1: DspId is 0",
+			name: "Invalid_Case1:_DspId_is_0",
 			args: args{
 				pubId: 5890,
 				seat:  "pubmatic",
 				dspId: 0,
 			},
 			fields: fields{
-				fsc: fsc{
+				act: act{
 					disabledPublishers: map[int]struct{}{
 						58903: {},
 					},
@@ -157,7 +157,7 @@ func TestIsFscApplicable(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Invalid Case2: different seat ",
+			name: "Invalid_Case2:_different_seat ",
 			args: args{
 				pubId: 5890,
 				seat:  "appnexus",
@@ -170,9 +170,9 @@ func TestIsFscApplicable(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fe := feature{
 				cache: mockCache,
-				fsc:   tt.fields.fsc,
+				act:   tt.fields.act,
 			}
-			got := fe.IsFscApplicable(tt.args.pubId, tt.args.seat, tt.args.dspId)
+			got := fe.IsActApplicable(tt.args.pubId, tt.args.seat, tt.args.dspId)
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}

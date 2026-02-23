@@ -22,4 +22,5 @@ type Feature interface {
 	IsDynamicFloorEnabledPublisher(pubID int) bool
 	GetEnabledPerformanceDSPs() map[int]struct{}
 	GetInViewEnabledPublishers() map[int]struct{}
+	IsActApplicable(pubId int, seat string, dspId int) bool
 }

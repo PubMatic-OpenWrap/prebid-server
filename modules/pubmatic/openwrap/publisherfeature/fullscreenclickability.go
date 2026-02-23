@@ -1,39 +1,12 @@
 package publisherfeature
 
 import (
-	"math/rand"
-
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
 type fsc struct {
 	disabledPublishers map[int]struct{}
 	thresholdsPerDsp   map[int]int
-}
-
-// updateFscConfigMapsFromCache update the fsc disabled publishers and thresholds per dsp
-func (fe *feature) updateFscConfigMapsFromCache() error {
-	thresholdsPerDsp, err := fe.cache.GetFSCThresholdPerDSP()
-	if err != nil {
-		return err
-	}
-
-	disabledPublishers := make(map[int]struct{})
-	if fe.publisherFeature != nil {
-		for pubID, feature := range fe.publisherFeature {
-			if val, ok := feature[models.FeatureFSC]; ok && val.Enabled == 0 {
-				disabledPublishers[pubID] = struct{}{}
-			}
-		}
-	}
-
-	fe.Lock()
-	fe.fsc.disabledPublishers = disabledPublishers
-	if thresholdsPerDsp != nil {
-		fe.fsc.thresholdsPerDsp = thresholdsPerDsp
-	}
-	fe.Unlock()
-	return nil
 }
 
 /*
@@ -45,19 +18,7 @@ IsUnderFSCThreshold:- returns fsc 1/0 based on:
 func (fe *feature) isUnderFSCThreshold(pubid int, dspid int) int {
 	fe.RLock()
 	defer fe.RUnlock()
-
-	if _, isPresent := fe.fsc.disabledPublishers[pubid]; isPresent {
-		return 0
-	}
-
-	if dspThreshold, isPresent := fe.fsc.thresholdsPerDsp[dspid]; isPresent && predictFscValue(dspThreshold) {
-		return 1
-	}
-	return 0
-}
-
-func predictFscValue(threshold int) bool {
-	return (rand.Intn(100)) < threshold
+	return isUnderThreshold(fe.fsc.disabledPublishers, fe.fsc.thresholdsPerDsp, pubid, dspid)
 }
 
 // IsFscApplicable returns true if fsc can be applied (fsc=1)

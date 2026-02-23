@@ -35,6 +35,7 @@ type feature struct {
 	dynamicFloor            dynamicFloor
 	performanceDSPs         performanceDSPs
 	inViewEnabledPublishers inViewEnabledPublishers
+	act                     act
 }
 
 var fe *feature
@@ -114,7 +115,6 @@ var initReloader = func(fe *feature) {
 
 func (fe *feature) updateFeatureConfigMaps() {
 	var err error
-	var errFscUpdate error
 
 	publisherFeatureMap, errPubFeature := fe.cache.GetPublisherFeatureMap()
 	if errPubFeature != nil {
@@ -125,8 +125,9 @@ func (fe *feature) updateFeatureConfigMaps() {
 		fe.publisherFeature = publisherFeatureMap
 	}
 
-	if errFscUpdate = fe.updateFscConfigMapsFromCache(); errFscUpdate != nil {
-		err = models.ErrorWrap(err, errFscUpdate)
+	// Single cache/DB call for both FSC and ACT when possible (same logic: publisher enabled/disabled + DSP percentage threshold).
+	if errFscActUpdate := fe.updateFscAndActConfigMapsFromCache(); errFscActUpdate != nil {
+		err = models.ErrorWrap(err, errFscActUpdate)
 	}
 
 	fe.updateTBFConfigMap()

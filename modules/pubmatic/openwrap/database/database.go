@@ -13,7 +13,8 @@ type Database interface {
 	GetWrapperSlotMappings(partnerConfigMap map[int]map[string]string, profileID, displayVersion int) (map[int][]models.SlotMapping, error)
 	GetPublisherVASTTags(pubID int) (models.PublisherVASTTags, error)
 	GetMappings(slotKey string, slotMap map[string]models.SlotMapping) (map[string]interface{}, error)
-	GetFSCThresholdPerDSP() (map[int]int, error)
+	// GetFSCAndACTThresholdsPerDSP returns FSC and ACT DSP thresholds in one call (requires GetAllDspFscAndActPcntQuery).
+	GetFSCAndACTThresholdsPerDSP() (fscMap map[int]int, actMap map[int]int, err error)
 	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 	GetProfileTypePlatforms() (map[string]int, error)
