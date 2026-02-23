@@ -89,7 +89,7 @@ func MergeDevice(dst **openrtb2.Device, src *openrtb2.Device) {
 		(*dst).HWV = src.HWV
 	}
 
-	if src.Lmt != nil && *src.Lmt != 0 {
+	if src.Lmt != nil {
 		(*dst).Lmt = src.Lmt
 	}
 

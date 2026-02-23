@@ -84,88 +84,9 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
-	if maxRequest.Device == nil {
-		maxRequest.Device = &openrtb2.Device{}
-
-		// var (
-		// 	reqOS       string
-		// 	reqOSV      string
-		// 	reqLanguage string
-		// 	reqCarrier  string
-		// 	reqMake     string
-		// 	reqW        int64
-		// 	reqH        int64
-		// 	reqPxRatio  float64
-		// 	reqGeo      *openrtb2.Geo
-		// )
-		// if maxRequest.Device != nil {
-		// 	reqOS = maxRequest.Device.OS
-		// 	reqOSV = maxRequest.Device.OSV
-		// 	reqLanguage = maxRequest.Device.Language
-		// 	reqCarrier = maxRequest.Device.Carrier
-		// 	reqMake = maxRequest.Device.Make
-		// 	reqW = maxRequest.Device.W
-		// 	reqH = maxRequest.Device.H
-		// 	reqPxRatio = maxRequest.Device.PxRatio
-		// 	reqGeo = maxRequest.Device.Geo
-		// }
-
-		sdkutils.MergeDevice(&maxRequest.Device, signalDevice)
-
-		// if reqOS != "" {
-		// 	maxRequest.Device.OS = reqOS
-		// }
-		// if reqOSV != "" {
-		// 	maxRequest.Device.OSV = reqOSV
-		// }
-		// if reqLanguage != "" {
-		// 	maxRequest.Device.Language = reqLanguage
-		// }
-		// if reqCarrier != "" {
-		// 	maxRequest.Device.Carrier = reqCarrier
-		// }
-		// if reqMake != "" {
-		// 	maxRequest.Device.Make = reqMake
-		// }
-		// if reqW > 0 {
-		// 	maxRequest.Device.W = reqW
-		// }
-		// if reqH > 0 {
-		// 	maxRequest.Device.H = reqH
-		// }
-		// if reqPxRatio > 0 {
-		// 	maxRequest.Device.PxRatio = reqPxRatio
-		// }
-
-		// if reqGeo != nil {
-		// 	if maxRequest.Device.Geo == nil {
-		// 		maxRequest.Device.Geo = &openrtb2.Geo{}
-		// 	}
-		// 	if maxRequest.Device.Geo.Country == "" {
-		// 		maxRequest.Device.Geo.Country = reqGeo.Country
-		// 	}
-		// 	if maxRequest.Device.Geo.Region == "" {
-		// 		maxRequest.Device.Geo.Region = reqGeo.Region
-		// 	}
-		// 	if maxRequest.Device.Geo.Metro == "" {
-		// 		maxRequest.Device.Geo.Metro = reqGeo.Metro
-		// 	}
-		// 	if maxRequest.Device.Geo.City == "" {
-		// 		maxRequest.Device.Geo.City = reqGeo.City
-		// 	}
-		// 	if maxRequest.Device.Geo.ZIP == "" {
-		// 		maxRequest.Device.Geo.ZIP = reqGeo.ZIP
-		// 	}
-		// 	if maxRequest.Device.Geo.UTCOffset == 0 {
-		// 		maxRequest.Device.Geo.UTCOffset = reqGeo.UTCOffset
-		// 	}
-		// 	if maxRequest.Device.Geo.Ext == nil {
-		// 		maxRequest.Device.Geo.Ext = reqGeo.Ext
-		// 	}
-	}
+	sdkutils.MergeDevice(&maxRequest.Device, signalDevice)
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
-
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
