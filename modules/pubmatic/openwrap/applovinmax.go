@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
@@ -83,127 +84,9 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
-	if maxRequest.Device == nil {
-		maxRequest.Device = &openrtb2.Device{}
-	}
-
-	if signalDevice.MCCMNC != "" {
-		maxRequest.Device.MCCMNC = signalDevice.MCCMNC
-	}
-
-	if signalDevice.ConnectionType != nil {
-		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
-	}
-
-	if signalDevice.Model != "" {
-		maxRequest.Device.Model = signalDevice.Model
-	}
-
-	if signalDevice.UA != "" {
-		maxRequest.Device.UA = signalDevice.UA
-	}
-
-	if maxRequest.Device.IP == "" && signalDevice.IP != "" {
-		maxRequest.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IFA != "" {
-		maxRequest.Device.IFA = signalDevice.IFA
-	}
-
-	if signalDevice.Lmt != nil {
-		maxRequest.Device.Lmt = signalDevice.Lmt
-	}
-
-	if signalDevice.IP != "" {
-		maxRequest.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IPv6 != "" {
-		maxRequest.Device.IPv6 = signalDevice.IPv6
-	}
-
-	if signalDevice.DeviceType > 0 {
-		maxRequest.Device.DeviceType = signalDevice.DeviceType
-	}
-
-	if len(signalDevice.Make) > 0 {
-		maxRequest.Device.Make = signalDevice.Make
-	}
-
-	if signalDevice.OS != "" {
-		maxRequest.Device.OS = signalDevice.OS
-	}
-
-	if signalDevice.OSV != "" {
-		maxRequest.Device.OSV = signalDevice.OSV
-	}
-
-	if signalDevice.HWV != "" {
-		maxRequest.Device.HWV = signalDevice.HWV
-	}
-
-	if signalDevice.W > 0 {
-		maxRequest.Device.W = signalDevice.W
-	}
-
-	if signalDevice.H > 0 {
-		maxRequest.Device.H = signalDevice.H
-	}
-
-	if signalDevice.PxRatio > 0 {
-		maxRequest.Device.PxRatio = signalDevice.PxRatio
-	}
-
-	if signalDevice.JS != nil {
-		maxRequest.Device.JS = signalDevice.JS
-	}
-
-	if signalDevice.Language != "" {
-		maxRequest.Device.Language = signalDevice.Language
-	}
-
-	if signalDevice.Carrier != "" {
-		maxRequest.Device.Carrier = signalDevice.Carrier
-	}
+	sdkutils.MergeDevice(&maxRequest.Device, signalDevice)
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
-
-	if signalDevice.Geo == nil {
-		return
-	}
-
-	if maxRequest.Device.Geo == nil {
-		maxRequest.Device.Geo = &openrtb2.Geo{}
-	}
-
-	hasReqLatLon := maxRequest.Device.Geo.Lat != nil && maxRequest.Device.Geo.Lon != nil
-	if !hasReqLatLon {
-		maxRequest.Device.Geo.Lat = signalDevice.Geo.Lat
-		maxRequest.Device.Geo.Lon = signalDevice.Geo.Lon
-		maxRequest.Device.Geo.Type = signalDevice.Geo.Type
-		maxRequest.Device.Geo.LastFix = signalDevice.Geo.LastFix
-		maxRequest.Device.Geo.Accuracy = signalDevice.Geo.Accuracy
-	}
-	if signalDevice.Geo.Country != "" {
-		maxRequest.Device.Geo.Country = signalDevice.Geo.Country
-	}
-	if signalDevice.Geo.Region != "" {
-		maxRequest.Device.Geo.Region = signalDevice.Geo.Region
-	}
-	if signalDevice.Geo.Metro != "" {
-		maxRequest.Device.Geo.Metro = signalDevice.Geo.Metro
-	}
-	if signalDevice.Geo.City != "" {
-		maxRequest.Device.Geo.City = signalDevice.Geo.City
-	}
-	if signalDevice.Geo.ZIP != "" {
-		maxRequest.Device.Geo.ZIP = signalDevice.Geo.ZIP
-	}
-	if signalDevice.Geo.UTCOffset != 0 {
-		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
-	}
-
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
