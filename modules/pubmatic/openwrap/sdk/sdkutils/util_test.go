@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
@@ -11,6 +12,237 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMergeDevice(t *testing.T) {
+	lmt0 := int8(0)
+	lmt1 := int8(1)
+	js1 := int8(1)
+	ct5 := adcom1.ConnectionType(5)
+	lat := float64(40.74)
+	lon := float64(-73.93)
+
+	tests := []struct {
+		name     string
+		dst      *openrtb2.Device
+		src      *openrtb2.Device
+		expected *openrtb2.Device
+	}{
+		{
+			name:     "both_nil",
+			dst:      nil,
+			src:      nil,
+			expected: nil,
+		},
+		{
+			name: "src_nil_returns_dst_unchanged",
+			dst: &openrtb2.Device{
+				UA: "existing_ua",
+			},
+			src: nil,
+			expected: &openrtb2.Device{
+				UA: "existing_ua",
+			},
+		},
+		{
+			name: "dst_nil_src_non-nil_allocates_new_device",
+			dst:  nil,
+			src: &openrtb2.Device{
+				UA:   "signal_ua",
+				Make: "Google",
+			},
+			expected: &openrtb2.Device{
+				UA:   "signal_ua",
+				Make: "Google",
+			},
+		},
+		{
+			name: "src_fields_overwrite_empty_dst_fields",
+			dst:  &openrtb2.Device{},
+			src: &openrtb2.Device{
+				UA:             "signal_ua",
+				Make:           "Google",
+				Model:          "Pixel",
+				IP:             "1.2.3.4",
+				IPv6:           "::1",
+				DeviceType:     adcom1.DeviceType(4),
+				IFA:            "test-ifa",
+				HWV:            "ruby",
+				OS:             "Android",
+				OSV:            "13",
+				W:              1080,
+				H:              1920,
+				PxRatio:        2.75,
+				Language:       "en",
+				Carrier:        "T-Mobile",
+				MCCMNC:         "310-260",
+				JS:             &js1,
+				Lmt:            &lmt1,
+				ConnectionType: &ct5,
+			},
+			expected: &openrtb2.Device{
+				UA:             "signal_ua",
+				Make:           "Google",
+				Model:          "Pixel",
+				IP:             "1.2.3.4",
+				IPv6:           "::1",
+				DeviceType:     adcom1.DeviceType(4),
+				IFA:            "test-ifa",
+				HWV:            "ruby",
+				OS:             "Android",
+				OSV:            "13",
+				W:              1080,
+				H:              1920,
+				PxRatio:        2.75,
+				Language:       "en",
+				Carrier:        "T-Mobile",
+				MCCMNC:         "310-260",
+				JS:             &js1,
+				Lmt:            &lmt1,
+				ConnectionType: &ct5,
+			},
+		},
+		{
+			name: "dst_fields_preserved_when_src_fields_are_zero/empty",
+			dst: &openrtb2.Device{
+				UA:   "existing_ua",
+				Make: "Apple",
+				OS:   "iOS",
+			},
+			src: &openrtb2.Device{
+				UA:   "",
+				Make: "",
+				OS:   "",
+			},
+			expected: &openrtb2.Device{
+				UA:   "existing_ua",
+				Make: "Apple",
+				OS:   "iOS",
+			},
+		},
+		{
+			name: "partial_merge:_only_non-zero_src_fields_overwrite_dst",
+			dst: &openrtb2.Device{
+				UA:   "existing_ua",
+				Make: "Apple",
+				OS:   "iOS",
+				OSV:  "16",
+			},
+			src: &openrtb2.Device{
+				Make: "Google",
+				OS:   "Android",
+			},
+			expected: &openrtb2.Device{
+				UA:   "existing_ua",
+				Make: "Google",
+				OS:   "Android",
+				OSV:  "16",
+			},
+		},
+		{
+			name: "lmt_zero_value_in_src_does_not_overwrite_dst_lmt",
+			dst: &openrtb2.Device{
+				Lmt: &lmt1,
+			},
+			src: &openrtb2.Device{
+				Lmt: &lmt0,
+			},
+			expected: &openrtb2.Device{
+				Lmt: &lmt0,
+			},
+		},
+		{
+			name: "geo_nil_in_src_leaves_dst_geo_unchanged",
+			dst: &openrtb2.Device{
+				Geo: &openrtb2.Geo{Country: "USA"},
+			},
+			src: &openrtb2.Device{
+				UA:  "signal_ua",
+				Geo: nil,
+			},
+			expected: &openrtb2.Device{
+				UA:  "signal_ua",
+				Geo: &openrtb2.Geo{Country: "USA"},
+			},
+		},
+		{
+			name: "geo_nil_in_dst_gets_allocated_from_src",
+			dst:  &openrtb2.Device{},
+			src: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Country: "USA",
+					Region:  "ny",
+					City:    "Queens",
+					ZIP:     "11101",
+					Lat:     &lat,
+					Lon:     &lon,
+				},
+			},
+			expected: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Country: "USA",
+					Region:  "ny",
+					City:    "Queens",
+					ZIP:     "11101",
+					Lat:     &lat,
+					Lon:     &lon,
+				},
+			},
+		},
+		{
+			name: "geo_lat/lon_preserved_in_dst_when_already_set",
+			dst: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Lat: &lat,
+					Lon: &lon,
+				},
+			},
+			src: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Lat:     func() *float64 { v := 0.0; return &v }(),
+					Lon:     func() *float64 { v := 0.0; return &v }(),
+					Country: "USA",
+				},
+			},
+			expected: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Lat:     &lat,
+					Lon:     &lon,
+					Country: "USA",
+				},
+			},
+		},
+		{
+			name: "geo_partial_merge:_only_non-empty_src_geo_fields_overwrite_dst",
+			dst: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Country: "IND",
+					City:    "Mumbai",
+				},
+			},
+			src: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Country: "USA",
+					Region:  "ny",
+					City:    "",
+				},
+			},
+			expected: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Country: "USA",
+					Region:  "ny",
+					City:    "Mumbai",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := MergeDevice(tt.dst, tt.src)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
 
 func TestCopyPath(t *testing.T) {
 	tests := []struct {

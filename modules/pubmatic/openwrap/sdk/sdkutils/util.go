@@ -49,36 +49,7 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 	}
 
 	if src.Geo != nil {
-		if dst.Geo == nil {
-			dst.Geo = &openrtb2.Geo{}
-		}
-
-		hasReqLatLon := dst.Geo.Lat != nil && dst.Geo.Lon != nil
-		if !hasReqLatLon {
-			dst.Geo.Lat = src.Geo.Lat
-			dst.Geo.Lon = src.Geo.Lon
-			dst.Geo.Type = src.Geo.Type
-			dst.Geo.LastFix = src.Geo.LastFix
-			dst.Geo.Accuracy = src.Geo.Accuracy
-		}
-		if src.Geo.Country != "" {
-			dst.Geo.Country = src.Geo.Country
-		}
-		if src.Geo.Region != "" {
-			dst.Geo.Region = src.Geo.Region
-		}
-		if src.Geo.Metro != "" {
-			dst.Geo.Metro = src.Geo.Metro
-		}
-		if src.Geo.City != "" {
-			dst.Geo.City = src.Geo.City
-		}
-		if src.Geo.ZIP != "" {
-			dst.Geo.ZIP = src.Geo.ZIP
-		}
-		if src.Geo.UTCOffset != 0 {
-			dst.Geo.UTCOffset = src.Geo.UTCOffset
-		}
+		dst.Geo = mergeGeo(dst.Geo, src.Geo)
 	}
 
 	if src.HWV != "" {
@@ -123,6 +94,42 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 
 	if src.ConnectionType != nil {
 		dst.ConnectionType = src.ConnectionType
+	}
+
+	return dst
+}
+
+func mergeGeo(dst *openrtb2.Geo, src *openrtb2.Geo) *openrtb2.Geo {
+	if dst == nil {
+		dst = &openrtb2.Geo{}
+	}
+
+	hasReqLatLon := dst.Lat != nil && dst.Lon != nil
+	if !hasReqLatLon {
+		dst.Lat = src.Lat
+		dst.Lon = src.Lon
+		dst.Type = src.Type
+		dst.LastFix = src.LastFix
+		dst.Accuracy = src.Accuracy
+	}
+
+	if src.Country != "" {
+		dst.Country = src.Country
+	}
+	if src.Region != "" {
+		dst.Region = src.Region
+	}
+	if src.Metro != "" {
+		dst.Metro = src.Metro
+	}
+	if src.City != "" {
+		dst.City = src.City
+	}
+	if src.ZIP != "" {
+		dst.ZIP = src.ZIP
+	}
+	if src.UTCOffset != 0 {
+		dst.UTCOffset = src.UTCOffset
 	}
 
 	return dst
