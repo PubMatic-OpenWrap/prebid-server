@@ -7,127 +7,125 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-func MergeDevice(dst **openrtb2.Device, src *openrtb2.Device) {
+func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 	if src == nil {
-		return
+		return dst
 	}
 
 	if dst == nil {
-		return
-	}
-
-	if *dst == nil {
-		*dst = &openrtb2.Device{}
+		dst = &openrtb2.Device{}
 	}
 
 	if len(src.UA) > 0 {
-		(*dst).UA = src.UA
+		dst.UA = src.UA
 	}
 
 	if len(src.Make) > 0 {
-		(*dst).Make = src.Make
+		dst.Make = src.Make
 	}
 
 	if len(src.Model) > 0 {
-		(*dst).Model = src.Model
+		dst.Model = src.Model
 	}
 
 	if src.JS != nil {
-		(*dst).JS = src.JS
+		dst.JS = src.JS
 	}
 
 	if src.IP != "" {
-		(*dst).IP = src.IP
+		dst.IP = src.IP
 	}
 
 	if src.IPv6 != "" {
-		(*dst).IPv6 = src.IPv6
+		dst.IPv6 = src.IPv6
 	}
 
 	if src.DeviceType > 0 {
-		(*dst).DeviceType = src.DeviceType
+		dst.DeviceType = src.DeviceType
 	}
 
 	if src.IFA != "" {
-		(*dst).IFA = src.IFA
+		dst.IFA = src.IFA
 	}
 
 	if src.Geo != nil {
-		if (*dst).Geo == nil {
-			(*dst).Geo = &openrtb2.Geo{}
+		if dst.Geo == nil {
+			dst.Geo = &openrtb2.Geo{}
 		}
 
-		hasReqLatLon := (*dst).Geo.Lat != nil && (*dst).Geo.Lon != nil
+		hasReqLatLon := dst.Geo.Lat != nil && dst.Geo.Lon != nil
 		if !hasReqLatLon {
-			(*dst).Geo.Lat = src.Geo.Lat
-			(*dst).Geo.Lon = src.Geo.Lon
-			(*dst).Geo.Type = src.Geo.Type
-			(*dst).Geo.LastFix = src.Geo.LastFix
-			(*dst).Geo.Accuracy = src.Geo.Accuracy
+			dst.Geo.Lat = src.Geo.Lat
+			dst.Geo.Lon = src.Geo.Lon
+			dst.Geo.Type = src.Geo.Type
+			dst.Geo.LastFix = src.Geo.LastFix
+			dst.Geo.Accuracy = src.Geo.Accuracy
 		}
 		if src.Geo.Country != "" {
-			(*dst).Geo.Country = src.Geo.Country
+			dst.Geo.Country = src.Geo.Country
 		}
 		if src.Geo.Region != "" {
-			(*dst).Geo.Region = src.Geo.Region
+			dst.Geo.Region = src.Geo.Region
 		}
 		if src.Geo.Metro != "" {
-			(*dst).Geo.Metro = src.Geo.Metro
+			dst.Geo.Metro = src.Geo.Metro
 		}
 		if src.Geo.City != "" {
-			(*dst).Geo.City = src.Geo.City
+			dst.Geo.City = src.Geo.City
 		}
 		if src.Geo.ZIP != "" {
-			(*dst).Geo.ZIP = src.Geo.ZIP
+			dst.Geo.ZIP = src.Geo.ZIP
 		}
 		if src.Geo.UTCOffset != 0 {
-			(*dst).Geo.UTCOffset = src.Geo.UTCOffset
+			dst.Geo.UTCOffset = src.Geo.UTCOffset
 		}
 	}
 
 	if src.HWV != "" {
-		(*dst).HWV = src.HWV
+		dst.HWV = src.HWV
 	}
 
 	if src.Lmt != nil {
-		(*dst).Lmt = src.Lmt
+		dst.Lmt = src.Lmt
 	}
 
 	if src.OS != "" {
-		(*dst).OS = src.OS
+		dst.OS = src.OS
 	}
 
 	if src.OSV != "" {
-		(*dst).OSV = src.OSV
+		dst.OSV = src.OSV
 	}
 
 	if src.W > 0 {
-		(*dst).W = src.W
+		dst.W = src.W
 	}
 
 	if src.H > 0 {
-		(*dst).H = src.H
+		dst.H = src.H
 	}
 
 	if src.PxRatio > 0 {
-		(*dst).PxRatio = src.PxRatio
+		dst.PxRatio = src.PxRatio
 	}
 
 	if src.Language != "" {
-		(*dst).Language = src.Language
+		dst.Language = src.Language
 	}
 
 	if src.Carrier != "" {
-		(*dst).Carrier = src.Carrier
+		dst.Carrier = src.Carrier
 	}
 
 	if src.MCCMNC != "" {
-		(*dst).MCCMNC = src.MCCMNC
+		dst.MCCMNC = src.MCCMNC
 	}
 
 	if src.ConnectionType != nil {
-		(*dst).ConnectionType = src.ConnectionType
+		dst.ConnectionType = src.ConnectionType
 	}
+
+	return dst
 }
 
 func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {

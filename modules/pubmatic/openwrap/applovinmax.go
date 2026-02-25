@@ -84,7 +84,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
-	sdkutils.MergeDevice(&maxRequest.Device, signalDevice)
+	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 }

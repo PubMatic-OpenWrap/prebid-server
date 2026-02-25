@@ -402,11 +402,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		return
 	}
 
-	if request.Device == nil {
-		request.Device = &openrtb2.Device{}
-	}
-
-	sdkutils.MergeDevice(&request.Device, signalDevice)
+	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
