@@ -402,41 +402,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		return
 	}
 
-	if request.Device == nil {
-		request.Device = &openrtb2.Device{}
-	}
-
-	if len(signalDevice.UA) > 0 {
-		request.Device.UA = signalDevice.UA
-	}
-
-	if len(signalDevice.Make) > 0 {
-		request.Device.Make = signalDevice.Make
-	}
-
-	if len(signalDevice.Model) > 0 {
-		request.Device.Model = signalDevice.Model
-	}
-
-	if signalDevice.JS != nil {
-		request.Device.JS = signalDevice.JS
-	}
-
-	if signalDevice.IP != "" {
-		request.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IFA != "" {
-		request.Device.IFA = signalDevice.IFA
-	}
-
-	if signalDevice.Geo != nil {
-		request.Device.Geo = signalDevice.Geo
-	}
-
-	if signalDevice.HWV != "" {
-		request.Device.HWV = signalDevice.HWV
-	}
+	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {

@@ -844,6 +844,82 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_device_copies_ipv6_devicetype_lmt_os_dims_lang_carrier_mccmnc_connectiontype",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA: "Mozilla/5.0",
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				IPv6:           "2001:db8::1",
+				DeviceType:     adcom1.DeviceType(4),
+				Lmt:            ptrutil.ToPtr(int8(1)),
+				OS:             "android",
+				OSV:            "13.0.0",
+				W:              1080,
+				H:              2400,
+				PxRatio:        2.75,
+				Language:       "en_US",
+				Carrier:        "MYTEL",
+				MCCMNC:         "200-260",
+				ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(2)),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:             "Mozilla/5.0",
+					IPv6:           "2001:db8::1",
+					DeviceType:     adcom1.DeviceType(4),
+					Lmt:            ptrutil.ToPtr(int8(1)),
+					OS:             "android",
+					OSV:            "13.0.0",
+					W:              1080,
+					H:              2400,
+					PxRatio:        2.75,
+					Language:       "en_US",
+					Carrier:        "MYTEL",
+					MCCMNC:         "200-260",
+					ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(2)),
+				},
+			},
+		},
+		{
+			name: "signal_device_geo_does_not_override_existing_lat_lon_but_merges_other_fields",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Lat: ptrutil.ToPtr(float64(1.23)),
+						Lon: ptrutil.ToPtr(float64(4.56)),
+					},
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Geo: &openrtb2.Geo{
+					Lat:       ptrutil.ToPtr(float64(9.87)),
+					Lon:       ptrutil.ToPtr(float64(6.54)),
+					Country:   "IN",
+					Region:    "DL",
+					Metro:     "NCR",
+					City:      "New Delhi",
+					ZIP:       "110001",
+					UTCOffset: 330,
+				},
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					Geo: &openrtb2.Geo{
+						Lat:       ptrutil.ToPtr(float64(1.23)),
+						Lon:       ptrutil.ToPtr(float64(4.56)),
+						Country:   "IN",
+						Region:    "DL",
+						Metro:     "NCR",
+						City:      "New Delhi",
+						ZIP:       "110001",
+						UTCOffset: 330,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
