@@ -65,7 +65,7 @@ func TestInitiateReloader(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(map[int]map[int]models.FeatureData{}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{}, map[int]int{}, nil)
 				mockCache.EXPECT().GetGDPRCountryCodes().Return(map[string]struct{}{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
@@ -128,12 +128,13 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		cache cache.Cache
 	}
 	type want struct {
-		fsc                 fsc
-		tbf                 tbf
-		ampMultiformat      ampMultiformat
-		bidRecovery         bidRecovery
-		appLovinMultiFloors appLovinMultiFloors
-		impCountingMethod   impCountingMethod
+		fsc                  fsc
+		tbf                  tbf
+		ampMultiformat       ampMultiformat
+		bidRecovery          bidRecovery
+		appLovinMultiFloors  appLovinMultiFloors
+		impCountingMethod    impCountingMethod
+		act                  act
 	}
 	tests := []struct {
 		name   string
@@ -148,9 +149,9 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetPublisherFeatureMap().Return(nil, errors.New("QUERY FAILED"))
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{
 					6: 100,
-				}, nil)
+				}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -175,6 +176,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					},
 					index: 0,
 				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
+				},
 			},
 		},
 		{
@@ -197,13 +202,17 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(nil, errors.New("QUERY FAILED"))
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(nil, nil, errors.New("QUERY FAILED"))
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
 			},
 			want: want{
 				fsc: fsc{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
+				},
+				act: act{
 					disabledPublishers: map[int]struct{}{},
 					thresholdsPerDsp:   map[int]int{},
 				},
@@ -254,7 +263,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -267,6 +276,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{
@@ -323,7 +336,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetProfileAdUnitMultiFloors().Return(models.ProfileAdUnitMultiFloors{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
@@ -336,6 +349,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{
@@ -394,7 +411,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				}, nil)
-				mockCache.EXPECT().GetFSCThresholdPerDSP().Return(map[int]int{6: 100}, nil)
+				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
 				mockCache.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}, nil)
 				mockCache.EXPECT().GetPerformanceDSPs().Return(map[int]struct{}{}, nil)
 			},
@@ -404,6 +421,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					thresholdsPerDsp: map[int]int{
 						6: 100,
 					},
+				},
+				act: act{
+					disabledPublishers: map[int]struct{}{},
+					thresholdsPerDsp:   map[int]int{},
 				},
 				ampMultiformat: ampMultiformat{
 					enabledPublishers: map[int]struct{}{},
@@ -439,6 +460,10 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					disabledPublishers: make(map[int]struct{}),
 					thresholdsPerDsp:   make(map[int]int),
 				},
+				act: act{
+					disabledPublishers: make(map[int]struct{}),
+					thresholdsPerDsp:   make(map[int]int),
+				},
 				tbf: tbf{
 					pubProfileTraffic: make(map[int]map[int]int),
 				},
@@ -453,6 +478,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			}()
 			fe.updateFeatureConfigMaps()
 			assert.Equal(t, tt.want.fsc, fe.fsc, tt.name)
+			assert.Equal(t, tt.want.act, fe.act, tt.name)
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
 			assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)

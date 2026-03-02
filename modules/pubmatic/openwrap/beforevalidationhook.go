@@ -691,6 +691,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
+		impCtx.Instl = imp.Instl
+		impCtx.IsAppOpenAd = impExt.IsAppOpenAd
 		impCtx.Bidders = bidderMeta
 		impCtx.NonMapped = nonMapped
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
