@@ -48,20 +48,6 @@ func (mr *MockFeatureMockRecorder) GetApplovinMultiFloors(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetApplovinMultiFloors), arg0, arg1)
 }
 
-// GetApplovinSchainABTestPercentage mocks base method.
-func (m *MockFeature) GetApplovinSchainABTestPercentage() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetApplovinSchainABTestPercentage")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// GetApplovinSchainABTestPercentage indicates an expected call of GetApplovinSchainABTestPercentage.
-func (mr *MockFeatureMockRecorder) GetApplovinSchainABTestPercentage() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplovinSchainABTestPercentage", reflect.TypeOf((*MockFeature)(nil).GetApplovinSchainABTestPercentage))
-}
-
 // GetEnabledPerformanceDSPs mocks base method.
 func (m *MockFeature) GetEnabledPerformanceDSPs() map[int]struct{} {
 	m.ctrl.T.Helper()
