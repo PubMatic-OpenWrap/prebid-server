@@ -128,13 +128,13 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		cache cache.Cache
 	}
 	type want struct {
-		fsc                  fsc
-		tbf                  tbf
-		ampMultiformat       ampMultiformat
-		bidRecovery          bidRecovery
-		appLovinMultiFloors  appLovinMultiFloors
-		impCountingMethod    impCountingMethod
-		act                  act
+		fsc                 fsc
+		tbf                 tbf
+		ampMultiformat      ampMultiformat
+		bidRecovery         bidRecovery
+		appLovinMultiFloors appLovinMultiFloors
+		impCountingMethod   impCountingMethod
+		act                 act
 	}
 	tests := []struct {
 		name   string
