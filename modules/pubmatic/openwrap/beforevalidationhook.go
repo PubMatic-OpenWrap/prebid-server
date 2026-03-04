@@ -102,11 +102,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		processingTime := time.Since(begin)
-		timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
-		remainingTime := timeoutDuration - processingTime
-		glog.Infof("[hook_end] total pre-processing:%v timeout:%v remaining:%v",
-			processingTime, timeoutDuration, remainingTime)
 	}()
 
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -834,29 +829,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// glog.V(3).Infof("[before_validation_hook] before mutation imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
 	glog.V(3).Infof("[before_validation_hook] pre-mutation complete reqID:%s elapsed:%dms",
 		payload.BidRequest.ID, time.Since(begin).Milliseconds())
-	glog.Infof("[timing-summary-before-mutation] req:%s elapsed:%dms", payload.BidRequest.ID, time.Since(begin).Milliseconds())
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
-		var rjson string
 		mutationStart := time.Now()
-		glog.Infof("[mutation-start] req:%s imp:%s totalElapsedBeforeStart:%v",
-			ep.BidRequest.ID, rctx.LoggerImpressionID, time.Since(begin))
-
 		timingLog("inside mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationStart, begin)
 		stageDur["inside mutation"] = time.Since(t).Milliseconds()
-		glog.V(3).Infof("[before_validation_hook] inside mutation reqID:%s elapsed:%dms",
-			ep.BidRequest.ID, time.Since(begin).Milliseconds())
-		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
-			rjson = string(bidRequestBytes)
-			glog.V(3).Infof("Inside mutation ----- : %s", rjson)
-		} else {
-			glog.V(3).Infof("Inside mutation ----- : %s", err.Error())
-		}
 
 		defer func() {
 			mutationElapsed := time.Since(mutationStart)
 			stageDur["mutationElapsed"] = mutationElapsed.Milliseconds()
-			glog.Infof("[mutation-timing] req:%s imp:%s elapsed:%v", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationElapsed)
 
 			timingLog("completed mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, t, begin)
 			stageDur["completed mutation"] = time.Since(t).Milliseconds()
@@ -865,7 +846,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			// Always record preprocessing time stats
 			timeDiff := time.Since(begin).Milliseconds()
-			glog.V(3).Infof("[before_validation_hook] end of mutation requestID: %s, imp ID: %s, timeDiff: %d", ep.BidRequest.ID, rctx.LoggerImpressionID, timeDiff)
 			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
 
 			processingTime := time.Since(begin)
@@ -873,16 +853,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			remainingTime := timeoutDuration - processingTime
 			glog.Infof("Mutation End [%s] total pre-processing:%v timeout:%v remaining:%v",
 				rCtx.LoggerImpressionID, processingTime, timeoutDuration, remainingTime)
-
-			// Debug logging only
-			if glog.V(models.LogLevelDebug) {
-				processingTime := time.Duration(timeDiff) * time.Millisecond
-				timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
-				remainingTime := timeoutDuration - processingTime
-				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
-				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
-				glog.Infof("[%s] Remaining time for the auction: %v", rCtx.LoggerImpressionID, remainingTime)
-			}
 		}()
 
 		var err error
@@ -974,17 +944,13 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	bidRequest.Source.TID = bidRequest.ID
 
 	for i := 0; i < len(bidRequest.Imp); i++ {
-		// impExt, _ := json.Marshal(bidRequest.Imp[i].Ext)
-		// glog.V(3).Infof("Before calling [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", bidRequest.Imp[i].ID, string(impExt))
-
+		
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
-		// impExtLog, _ := json.Marshal(bidRequest.Imp[i].Ext)
-		// glog.V(3).Infof("After calling [apply_imp_changes] ImpID: %s, [ImpExt] Updated: %s", bidRequest.Imp[i].ID, string(impExtLog))
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
@@ -1075,8 +1041,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 }
 
 func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-	// impExtLog, _ := json.Marshal(imp.Ext)
-	// glog.V(3).Infof("Inside [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", imp.ID, string(impExtLog))
+	
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
