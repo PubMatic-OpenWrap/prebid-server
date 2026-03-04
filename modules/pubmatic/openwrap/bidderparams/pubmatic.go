@@ -25,7 +25,6 @@ func getLabel(function, impid, biddercode, slot string) string {
 
 func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
 	start := time.Now()
-	t := time.Now()
 	stageDur := make(map[string]int64)
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
@@ -34,11 +33,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		Floors:      models.GetMultiFloors(rctx.MultiFloors, imp.ID),
 		OWSDK:       impExt.OWSDK,
 	}
-	label := getLabel("before_getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
-	stageDur[label] = time.Since(t).Milliseconds()
-	timing(label, bidRequest.ID, imp.ID, t, begin)
-	t = time.Now()
-	label = getLabel("after_getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
+	t := time.Now()
+	label := getLabel("getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
@@ -66,12 +62,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 
 	stageDur[label] = time.Since(t).Milliseconds()
 	timing(label, bidRequest.ID, imp.ID, t, begin)
-	t = time.Now()
-	label = getLabel("getSlotMappings_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
-		stageDur[label] = time.Since(t).Milliseconds()
-		timing(label, bidRequest.ID, imp.ID, t, begin)
 		if matchedPattern == "" {
 			// use alternate names defined in DB for this slot if selection is non-regex
 			// use owSlotName to addres case insensitive slotname.
@@ -97,16 +89,8 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		if impExt.Wrapper != nil {
 			div = impExt.Wrapper.Div
 		}
-		t = time.Now()
-		label = getLabel("getDefaultMappingKGP_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 		unmappedKPG := getDefaultMappingKGP(kgp)
-		stageDur[label] = time.Since(t).Milliseconds()
-		timing(label, bidRequest.ID, imp.ID, t, begin)
-		t = time.Now()
-		label = getLabel("GenerateSlotName_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 		extImpPubMatic.AdSlot = models.GenerateSlotName(0, 0, unmappedKPG, imp.TagID, div, rctx.Source)
-		stageDur[label] = time.Since(t).Milliseconds()
-		timing(label, bidRequest.ID, imp.ID, t, begin)
 		if len(slots) != 0 { // reuse this field for wt and wl in combination with isRegex
 			matchedPattern = slots[0]
 		}
