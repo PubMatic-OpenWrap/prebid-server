@@ -21,22 +21,17 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 		return "", "", false, nil, errors.New("ErrBidderParamsValidationError")
 	}
 
-	t := time.Now()
-	label := getLabel("before_getSlotMeta_PrepareAdapterParamsV25", imp.ID, prebidBidderCode, "")
-	timing(label, bidRequest.ID, imp.ID, t, begin)
-	stageDur[label] = time.Since(t).Milliseconds()
-
 	var isRegexSlot, isRegexKGP bool
 	var matchedSlot, matchedPattern string
 
 	if kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]; kgp == models.REGEX_KGP || kgp == models.ADUNIT_SIZE_REGEX_KGP {
 		isRegexKGP = true
 	}
-	t = time.Now()
-	label = getLabel("after_getSlotMeta_PrepareAdapterParamsV25", imp.ID, prebidBidderCode, "")
+	t := time.Now()
+	label := getLabel("getSlotMeta_PrepareAdapterParamsV25", imp.ID, prebidBidderCode, "")
 	slots, slotMap, slotMappingInfo, hw := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
-	timing(label, bidRequest.ID, imp.ID, t, begin)
 	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
 
 	if len(slots) == 0 || slotMap == nil {
 		return "", "", false, nil, nil
@@ -45,12 +40,10 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 	for i, slot := range slots {
 		glog.V(3).Infof("PrepareAdapterParamsV25: slot: %v", slot)
 		t = time.Now()
-		label = getLabel("before_getMatchingSlot_PrepareAdapterParamsV25_slot", imp.ID, prebidBidderCode, slot)
-		timing(label, bidRequest.ID, imp.ID, t, begin)
-		stageDur[label] = time.Since(t).Milliseconds()
+		label = getLabel("getMatchingSlot_PrepareAdapterParamsV25_slot", imp.ID, prebidBidderCode, slot)
 		matchedSlot, matchedPattern = GetMatchingSlot(rctx, cache, slot, slotMap, slotMappingInfo, isRegexKGP, partnerID)
-		timing(label, bidRequest.ID, imp.ID, t, begin)
 		stageDur[label] = time.Since(t).Milliseconds()
+		timing(label, bidRequest.ID, imp.ID, t, begin)
 		if matchedSlot == "" {
 			continue
 		}
@@ -76,7 +69,7 @@ func PrepareAdapterParamsV25(rctx models.RequestCtx, cache cache.Cache, bidReque
 		h := hw[i][0]
 		w := hw[i][1]
 		t = time.Now()
-		label = getLabel("before_prepareBidParamJSONForPartner_PrepareAdapterParamsV25_slot", imp.ID, prebidBidderCode, slot)
+		label = getLabel("prepareBidParamJSONForPartner_PrepareAdapterParamsV25_slot", imp.ID, prebidBidderCode, slot)
 		params, err := adapters.PrepareBidParamJSONForPartner(&w, &h, bidderParams, slot, partnerConfig[models.PREBID_PARTNER_NAME], partnerConfig[models.BidderCode], &impExt)
 		timing(label, bidRequest.ID, imp.ID, t, begin)
 		stageDur[label] = time.Since(t).Milliseconds()
