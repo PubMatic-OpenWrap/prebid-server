@@ -104,7 +104,6 @@ type RequestCtx struct {
 	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
 	AppLovinMax                     AppLovinMax
-	IsApplovinSchainABTestEnabled   bool
 	LoggerDisabled                  bool
 	TrackerDisabled                 bool
 	ProfileType                     int
@@ -198,6 +197,8 @@ type ImpCtx struct {
 	BidFloor          float64
 	BidFloorCur       string
 	IsRewardInventory *int8
+	Instl             int8
+	IsAppOpenAd       int8
 	IsBanner          bool
 	Banner            *openrtb2.Banner
 	Video             *openrtb2.Video

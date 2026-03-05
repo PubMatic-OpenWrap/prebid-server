@@ -11,7 +11,6 @@ type Feature interface {
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
 	IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool
 	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
-	GetApplovinSchainABTestPercentage() int
 	GetImpCountingMethodEnabledBidders() map[string]struct{}
 	IsCountryGDPREnabled(countryCode string) bool
 	IsMBMFCountryForPublisher(countryCode string, pubID int) bool
@@ -22,4 +21,5 @@ type Feature interface {
 	IsDynamicFloorEnabledPublisher(pubID int) bool
 	GetEnabledPerformanceDSPs() map[int]struct{}
 	GetInViewEnabledPublishers() map[int]struct{}
+	IsActApplicable(pubId int, seat string, dspId int) bool
 }

@@ -359,6 +359,7 @@ func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "sessionduration")
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "impdepth")
+	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "consent")
 }
 
 func modifySource(request *openrtb2.BidRequest, signalSource *openrtb2.Source) {
@@ -383,11 +384,17 @@ func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 		request.Regs = &openrtb2.Regs{}
 	}
 
+	if signalRegs.COPPA > 0 {
+		request.Regs.COPPA = signalRegs.COPPA
+	}
+
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "dsarequired")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "pubrender")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp_sid")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gdpr")
+	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "us_privacy")
 }
 
 func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
@@ -395,41 +402,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 		return
 	}
 
-	if request.Device == nil {
-		request.Device = &openrtb2.Device{}
-	}
-
-	if len(signalDevice.UA) > 0 {
-		request.Device.UA = signalDevice.UA
-	}
-
-	if len(signalDevice.Make) > 0 {
-		request.Device.Make = signalDevice.Make
-	}
-
-	if len(signalDevice.Model) > 0 {
-		request.Device.Model = signalDevice.Model
-	}
-
-	if signalDevice.JS != nil {
-		request.Device.JS = signalDevice.JS
-	}
-
-	if signalDevice.IP != "" {
-		request.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IFA != "" {
-		request.Device.IFA = signalDevice.IFA
-	}
-
-	if signalDevice.Geo != nil {
-		request.Device.Geo = signalDevice.Geo
-	}
-
-	if signalDevice.HWV != "" {
-		request.Device.HWV = signalDevice.HWV
-	}
+	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {

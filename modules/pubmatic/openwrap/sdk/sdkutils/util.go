@@ -7,6 +7,134 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
+func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
+	if src == nil {
+		return dst
+	}
+
+	if dst == nil {
+		dst = &openrtb2.Device{}
+	}
+
+	if len(src.UA) > 0 {
+		dst.UA = src.UA
+	}
+
+	if len(src.Make) > 0 {
+		dst.Make = src.Make
+	}
+
+	if len(src.Model) > 0 {
+		dst.Model = src.Model
+	}
+
+	if src.JS != nil {
+		dst.JS = src.JS
+	}
+
+	if src.IP != "" {
+		dst.IP = src.IP
+	}
+
+	if src.IPv6 != "" {
+		dst.IPv6 = src.IPv6
+	}
+
+	if src.DeviceType > 0 {
+		dst.DeviceType = src.DeviceType
+	}
+
+	if src.IFA != "" {
+		dst.IFA = src.IFA
+	}
+
+	if src.Geo != nil {
+		dst.Geo = mergeGeo(dst.Geo, src.Geo)
+	}
+
+	if src.HWV != "" {
+		dst.HWV = src.HWV
+	}
+
+	if src.Lmt != nil {
+		dst.Lmt = src.Lmt
+	}
+
+	if src.OS != "" {
+		dst.OS = src.OS
+	}
+
+	if src.OSV != "" {
+		dst.OSV = src.OSV
+	}
+
+	if src.W > 0 {
+		dst.W = src.W
+	}
+
+	if src.H > 0 {
+		dst.H = src.H
+	}
+
+	if src.PxRatio > 0 {
+		dst.PxRatio = src.PxRatio
+	}
+
+	if src.Language != "" {
+		dst.Language = src.Language
+	}
+
+	if src.Carrier != "" {
+		dst.Carrier = src.Carrier
+	}
+
+	if src.MCCMNC != "" {
+		dst.MCCMNC = src.MCCMNC
+	}
+
+	if src.ConnectionType != nil {
+		dst.ConnectionType = src.ConnectionType
+	}
+
+	return dst
+}
+
+func mergeGeo(dst *openrtb2.Geo, src *openrtb2.Geo) *openrtb2.Geo {
+	if dst == nil {
+		dst = &openrtb2.Geo{}
+	}
+
+	hasReqLatLon := dst.Lat != nil && dst.Lon != nil
+	if !hasReqLatLon {
+		dst.Lat = src.Lat
+		dst.Lon = src.Lon
+		dst.Type = src.Type
+		dst.LastFix = src.LastFix
+		dst.Accuracy = src.Accuracy
+	}
+
+	if src.Country != "" {
+		dst.Country = src.Country
+	}
+	if src.Region != "" {
+		dst.Region = src.Region
+	}
+	if src.Metro != "" {
+		dst.Metro = src.Metro
+	}
+	if src.City != "" {
+		dst.City = src.City
+	}
+	if src.ZIP != "" {
+		dst.ZIP = src.ZIP
+	}
+	if src.UTCOffset != 0 {
+		dst.UTCOffset = src.UTCOffset
+	}
+
+	return dst
+}
+
 func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
 	if source == nil {
 		return target, nil

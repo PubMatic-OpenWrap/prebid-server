@@ -32,6 +32,7 @@ type BidExt struct {
 	InBannerVideo           bool                  `json:"ibv,omitempty"`
 	ClickTrackers           []string              `json:"clicktrackers,omitempty"`
 	OWSDK                   map[string]any        `json:"owsdk,omitempty"`
+	Act                     int                   `json:"act,omitempty"`
 }
 
 type AdpodBidExt struct {

@@ -28,13 +28,13 @@ type feature struct {
 	maxFloors               maxFloors
 	bidRecovery             bidRecovery
 	appLovinMultiFloors     appLovinMultiFloors
-	appLovinSchainABTest    appLovinSchainABTest
 	impCountingMethod       impCountingMethod
 	gdprCountryCodes        gdprCountryCodes
 	mbmf                    *mbmf
 	dynamicFloor            dynamicFloor
 	performanceDSPs         performanceDSPs
 	inViewEnabledPublishers inViewEnabledPublishers
+	act                     act
 }
 
 var fe *feature
@@ -66,9 +66,6 @@ func New(config Config) *feature {
 			},
 			appLovinMultiFloors: appLovinMultiFloors{
 				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
-			},
-			appLovinSchainABTest: appLovinSchainABTest{
-				schainABTestPercent: 0,
 			},
 			impCountingMethod:       newImpCountingMethod(),
 			gdprCountryCodes:        newGDPRCountryCodes(),
@@ -114,7 +111,6 @@ var initReloader = func(fe *feature) {
 
 func (fe *feature) updateFeatureConfigMaps() {
 	var err error
-	var errFscUpdate error
 
 	publisherFeatureMap, errPubFeature := fe.cache.GetPublisherFeatureMap()
 	if errPubFeature != nil {
@@ -125,8 +121,9 @@ func (fe *feature) updateFeatureConfigMaps() {
 		fe.publisherFeature = publisherFeatureMap
 	}
 
-	if errFscUpdate = fe.updateFscConfigMapsFromCache(); errFscUpdate != nil {
-		err = models.ErrorWrap(err, errFscUpdate)
+	// Single cache/DB call for both FSC and ACT when possible (same logic: publisher enabled/disabled + DSP percentage threshold).
+	if errFscActUpdate := fe.updateFscAndActConfigMapsFromCache(); errFscActUpdate != nil {
+		err = models.ErrorWrap(err, errFscActUpdate)
 	}
 
 	fe.updateTBFConfigMap()
@@ -135,7 +132,6 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateAnalyticsThrottling()
 	fe.updateBidRecoveryEnabledPublishers()
 	fe.updateApplovinMultiFloorsFeature()
-	fe.updateApplovinSchainABTestFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()

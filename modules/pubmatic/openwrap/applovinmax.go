@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
@@ -83,52 +84,9 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
-	if maxRequest.Device == nil {
-		maxRequest.Device = &openrtb2.Device{}
-	}
-
-	if signalDevice.MCCMNC != "" {
-		maxRequest.Device.MCCMNC = signalDevice.MCCMNC
-	}
-
-	if signalDevice.ConnectionType != nil {
-		maxRequest.Device.ConnectionType = signalDevice.ConnectionType
-	}
-
-	if signalDevice.Model != "" {
-		maxRequest.Device.Model = signalDevice.Model
-	}
-
-	if signalDevice.UA != "" {
-		maxRequest.Device.UA = signalDevice.UA
-	}
-
-	if maxRequest.Device.IP == "" && signalDevice.IP != "" {
-		maxRequest.Device.IP = signalDevice.IP
-	}
-
-	if signalDevice.IFA != "" {
-		maxRequest.Device.IFA = signalDevice.IFA
-	}
+	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts")
-
-	if signalDevice.Geo == nil {
-		return
-	}
-
-	if maxRequest.Device.Geo == nil {
-		maxRequest.Device.Geo = &openrtb2.Geo{}
-	}
-
-	if signalDevice.Geo.City != "" {
-		maxRequest.Device.Geo.City = signalDevice.Geo.City
-	}
-
-	if signalDevice.Geo.UTCOffset != 0 {
-		maxRequest.Device.Geo.UTCOffset = signalDevice.Geo.UTCOffset
-	}
-
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {

@@ -128,7 +128,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
-	rCtx.IsApplovinSchainABTestEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && getApplovinSchainABTestEnabled(m.pubFeatures.GetApplovinSchainABTestPercentage())
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
 
 	rCtx.HostName = m.cfg.Server.HostName
@@ -692,6 +691,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
+		impCtx.Instl = imp.Instl
+		impCtx.IsAppOpenAd = impExt.IsAppOpenAd
 		impCtx.Bidders = bidderMeta
 		impCtx.NonMapped = nonMapped
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
@@ -796,7 +797,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
-		if rctx.IsApplovinSchainABTestEnabled && ep.BidRequest.Source != nil {
+		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
 		}
 
@@ -1652,11 +1653,4 @@ func applyNativeVideoAssetRulesFromAdUnitConfig(nativeCfg *modelsAdunitConfig.Na
 	} else {
 		impNative.Request = string(nReqBytes)
 	}
-}
-
-func getApplovinSchainABTestEnabled(percentage int) bool {
-	if percentage > 0 && GetRandomNumberIn1To100() <= percentage {
-		return true
-	}
-	return false
 }
