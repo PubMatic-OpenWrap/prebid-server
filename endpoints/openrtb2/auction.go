@@ -695,14 +695,14 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	if err := jsonutil.Unmarshal(bidderParamsJson, &bidderParams); err != nil {
 		return nil
 	}
-	
+
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
 		if err != nil {
 			glog.Errorf("[mergeBidderParams][ImpExt]ImpID: %s error getting imp ext for imp[%d]: %s", imp.ID, i, err.Error())
 			continue
 		}
-		
+
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
 		if err := mergeBidderParamsImpExt(impExt, bidderParams); err != nil {
 			glog.Errorf("[mergeBidderParamsImpExt] error processing bidder parameters for imp[%d]: %s", i, err.Error())
@@ -762,7 +762,7 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 			extMapModified = true
 		}
 	}
-	
+
 	if extMapModified {
 		impExt.SetExt(extMap)
 	}
@@ -773,7 +773,6 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 // mergeBidderParamsImpExtPrebid merges bidder parameters in req.ext down to the imp[].ext.prebid.bidder.BIDDER
 // level, giving priority to imp[].ext.prebid.bidder.BIDDER in case of a conflict.
 func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage, impID string) error {
-	// glog.V(3).Infof("---[mergeBidderParamsImpExtPrebid] ImpID: %s,	impExt: %s", impID, impExt)
 	prebid := impExt.GetPrebid()
 	prebidModified := false
 
