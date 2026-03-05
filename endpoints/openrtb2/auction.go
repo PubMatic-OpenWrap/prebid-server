@@ -588,7 +588,7 @@ func (deps *endpointDeps) parseRequest(httpRequest *http.Request, labels *metric
 		errs = []error{err}
 		return
 	}
-	
+
 	if err := mergeBidderParams(req); err != nil {
 		errs = []error{err}
 		return
@@ -703,7 +703,6 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 			continue
 		}
 		
-
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
 		if err := mergeBidderParamsImpExt(impExt, bidderParams); err != nil {
 			glog.Errorf("[mergeBidderParamsImpExt] error processing bidder parameters for imp[%d]: %s", i, err.Error())
@@ -715,7 +714,6 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 			glog.Errorf("[mergeBidderParamsImpExtPrebid] error processing bidder parameters for imp[%d]: %s", i, err.Error())
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
-
 	}
 
 	return nil
