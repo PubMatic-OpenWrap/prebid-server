@@ -317,7 +317,7 @@ func TestUpdateDevice(t *testing.T) {
 			},
 		},
 		{
-			name: "sdkDevice_has_ext_ifv",
+			name: "signalDevice_has_ext_ifv",
 			args: args{
 				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
 				maxRequest: &openrtb2.BidRequest{},
@@ -341,7 +341,7 @@ func TestUpdateDevice(t *testing.T) {
 			want: &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`)},
 		},
 		{
-			name: "sdkDevice_has_both_atts_and_ifv",
+			name: "signalDevice_has_both_atts_and_ifv",
 			args: args{
 				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
 				maxRequest: &openrtb2.BidRequest{},
