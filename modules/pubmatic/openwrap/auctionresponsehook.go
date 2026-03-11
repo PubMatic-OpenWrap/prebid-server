@@ -180,7 +180,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 			// For video ads: when imp.ext.owsdk.ctaoverlay=1, sdk 4.9.0–4.11.0, and bid.ext.owsdk.ctaoverlay not present, parse VAST and set bid.ext.owsdk.ctaoverlay
 			if models.IsPubmaticCorePartner(seatBid.Seat) && IsVideoBidEligibleForCTAOverlay(bidExt, impCtx.IsCTAOverlayRequest, impCtx.DisplayManagerVer) {
-				if ctaVal, ok := ExtractCTAOverlayFromVAST(bid.AdM); ok {
+				if ctaVal, ok := ExtractCTAOverlayFromVASTFastXML(bid.AdM); ok {
 					if bidExt.OWSDK == nil {
 						bidExt.OWSDK = make(map[string]any)
 					}

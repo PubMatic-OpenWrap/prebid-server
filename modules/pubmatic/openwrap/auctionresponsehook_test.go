@@ -1122,8 +1122,10 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 				assert.NotNil(t, bidCtx.BidExt.OWSDK, tt.name)
 				ctaVal := bidCtx.BidExt.OWSDK[models.CTAOVERLAY]
 				assert.NotNil(t, ctaVal, "OWSDK.ctaoverlay should be set")
-				ctaMap, ok := ctaVal.(map[string]interface{})
-				assert.True(t, ok, "ctaoverlay value is map")
+				raw, ok := ctaVal.(json.RawMessage)
+				assert.True(t, ok, "ctaoverlay value is json.RawMessage")
+				var ctaMap map[string]interface{}
+				assert.NoError(t, json.Unmarshal(raw, &ctaMap), "ctaoverlay JSON must be valid")
 				assert.Equal(t, "Learn More", ctaMap["ctacopy"], tt.name)
 				assert.Equal(t, float64(1), ctaMap["pos"], tt.name)
 				assert.Equal(t, float64(0), ctaMap["delay"], tt.name)

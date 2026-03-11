@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
@@ -229,4 +230,45 @@ func (ti *FastXMLHandler) newCategoryNode(categories []string) *fastxml.XMLEleme
 	catElement := fastxml.NewElement(models.VideoAdCatTag)
 	catElement.SetText(strings.Join(categories, ","), true, fastxml.NoEscaping)
 	return catElement
+}
+
+// ExtractCTAOverlayFromVAST returns all raw CDATA/text of CreativeExtensions with id="PubMatic"
+// under VAST/Ad/InLine (order preserved). Call after Parse(vast). Performs version check first (VAST 3.0+ only).
+// Caller can try each in order until one parses as JSON with a non-empty "ctaoverlay" key.
+func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() []string {
+	if ti.doc == nil || ti.vastTag == nil {
+		return nil
+	}
+	if !VastVersionSupportsCreativeExtensions(ti.version) {
+		return nil
+	}
+	var out []string
+	adElements := ti.doc.SelectElements(ti.vastTag, models.VideoAdTag)
+	for _, ad := range adElements {
+		inLine := ti.doc.SelectElement(ad, models.VideoVASTInLineTag)
+		if inLine == nil {
+			continue
+		}
+		creatives := ti.doc.SelectElements(inLine, "Creatives", "Creative")
+		for _, cr := range creatives {
+			exts := ti.doc.SelectElements(cr, models.VideoCreativeExtensionsTag, models.VideoCreativeExtensionTag)
+			for _, ext := range exts {
+				if ti.doc.SelectAttrValue(ext, "id", "") != models.VideoCTAOverlayPubMaticID {
+					continue
+				}
+				out = append(out, ti.doc.RawText(ext))
+			}
+		}
+	}
+	return out
+}
+
+// VastVersionSupportsCreativeExtensions reports whether the VAST version supports CreativeExtensions (3.0+).
+func VastVersionSupportsCreativeExtensions(version string) bool {
+	parts := strings.SplitN(strings.TrimSpace(version), ".", 2)
+	if len(parts) == 0 {
+		return false
+	}
+	major, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	return err == nil && major >= 3
 }

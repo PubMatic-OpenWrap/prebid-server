@@ -3,21 +3,17 @@ package openwrap
 import (
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
-	"strconv"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 )
 
-func vastVersionSupportsCreativeExtensions(version string) bool {
-	parts := strings.SplitN(strings.TrimSpace(version), ".", 2)
-	if len(parts) == 0 {
-		return false
-	}
-	major, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-	return err == nil && major >= 3
+var ctaOverlayAllowedSDKVersions = map[string]struct{}{
+	"4.9.0":  {},
+	"4.9.1":  {},
+	"4.10.0": {},
+	"4.11.0": {},
 }
 
 func trimCDATA(b []byte) []byte {
@@ -29,82 +25,48 @@ func trimCDATA(b []byte) []byte {
 		bytes.HasSuffix(s, []byte(cdataEnd)) {
 		return s[len(cdataStart) : len(s)-len(cdataEnd)]
 	}
-	return b
+	return s
 }
 
-type creativeExtensionWithID struct {
-	Id   string `xml:"id,attr,omitempty"`
-	Type string `xml:"type,attr,omitempty"`
-	Data []byte `xml:",innerxml"`
-}
-
-type vastInLineOnly struct {
-	XMLName xml.Name `xml:"VAST"`
-	Version string   `xml:"version,attr,omitempty"`
-	Ads     []struct {
-		InLine *struct {
-			Creatives []struct {
-				CreativeExtensions []creativeExtensionWithID `xml:"CreativeExtensions>CreativeExtension"`
-			} `xml:"Creatives>Creative"`
-		} `xml:"InLine"`
-	} `xml:"Ad"`
-}
-
-// ExtractCTAOverlayFromVAST parses adm as VAST and returns ctaoverlay for bid.ext.owsdk.ctaoverlay.
-// Only InLine; first CreativeExtension id="PubMatic" wins.
-func ExtractCTAOverlayFromVAST(adm string) (interface{}, bool) {
-	if adm == "" {
-		return nil, false
-	}
-
-	var doc vastInLineOnly
-	if err := xml.Unmarshal([]byte(adm), &doc); err != nil {
-		return nil, false
-	}
-	if !vastVersionSupportsCreativeExtensions(doc.Version) {
-		return nil, false
-	}
-	for _, ad := range doc.Ads {
-		if ad.InLine == nil {
+// GetCTAOverlayFromFastXMLHandler returns the ctaoverlay JSON from an already-parsed FastXML handler.
+// The caller must create the handler and call Parse(adm) before calling this. Returns json.RawMessage
+// so the caller can inject it directly without a second unmarshal. Tries each CreativeExtension id=PubMatic
+// in order until one parses as JSON with a non-empty "ctaoverlay" key.
+func getCTAOverlayFromFastXMLHandler(h *parser.FastXMLHandler) (json.RawMessage, bool) {
+	for _, raw := range h.ExtractCTAOverlayFromVAST() {
+		trimmed := trimCDATA([]byte(raw))
+		var payload struct {
+			Ctaoverlay json.RawMessage `json:"ctaoverlay"`
+		}
+		if err := json.Unmarshal(trimmed, &payload); err != nil {
 			continue
 		}
-		for _, cr := range ad.InLine.Creatives {
-			for _, ext := range cr.CreativeExtensions {
-				if ext.Id != "PubMatic" {
-					continue
-				}
-				raw := trimCDATA(ext.Data)
-				var payload struct {
-					Ctaoverlay json.RawMessage `json:"ctaoverlay"`
-				}
-				if err := json.Unmarshal(raw, &payload); err != nil {
-					glog.Warningf("ctaoverlay: invalid JSON in CreativeExtension id=PubMatic: %v", err)
-					continue
-				}
-				if len(payload.Ctaoverlay) == 0 {
-					continue
-				}
-				var out interface{}
-				if err := json.Unmarshal(payload.Ctaoverlay, &out); err != nil {
-					glog.Warningf("ctaoverlay: invalid JSON in CreativeExtension id=PubMatic: %v", err)
-					continue
-				}
-				return out, true
-			}
+		if len(payload.Ctaoverlay) == 0 {
+			continue
 		}
+		return payload.Ctaoverlay, true
 	}
 	return nil, false
 }
 
-var ctaOverlayAllowedSDKVersions = map[string]struct{}{
-	"4.9.0":  {},
-	"4.9.1":  {},
-	"4.10.0": {},
-	"4.11.0": {},
+// ExtractCTAOverlayFromVASTFastXML parses adm with the FastXML handler and returns ctaoverlay as json.RawMessage
+// for direct injection (e.g. into bid.ext.owsdk.ctaoverlay). It creates the handler, calls Parse(adm), then getCTAOverlayFromFastXMLHandler(h).
+func ExtractCTAOverlayFromVASTFastXML(adm string) (json.RawMessage, bool) {
+	if adm == "" {
+		return nil, false
+	}
+	h := &parser.FastXMLHandler{}
+	if err := h.Parse(adm); err != nil {
+		return nil, false
+	}
+	return getCTAOverlayFromFastXMLHandler(h)
 }
 
 // IsVideoBidEligibleForCTAOverlay returns true when we should parse adm and inject bid.ext.owsdk.ctaoverlay.
 func IsVideoBidEligibleForCTAOverlay(bidExt *models.BidExt, ctaOverlayRequested bool, displayManagerVer string) bool {
+	if !ctaOverlayRequested {
+		return false
+	}
 	if bidExt == nil || bidExt.CreativeType != models.MediaTypeVideo {
 		return false
 	}

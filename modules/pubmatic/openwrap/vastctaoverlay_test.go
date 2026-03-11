@@ -1,9 +1,11 @@
 package openwrap
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -135,10 +137,12 @@ func TestExtractCTAOverlayFromVAST(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVal, gotOk := ExtractCTAOverlayFromVAST(tt.adm)
-			assert.Equal(t, tt.wantOk, gotOk, "ExtractCTAOverlayFromVAST ok")
+			gotRaw, gotOk := ExtractCTAOverlayFromVASTFastXML(tt.adm)
+			assert.Equal(t, tt.wantOk, gotOk, "ExtractCTAOverlayFromVASTFastXML ok")
 			if tt.wantOk {
-				assert.Equal(t, tt.wantVal, gotVal, "ExtractCTAOverlayFromVAST value")
+				var got interface{}
+				assert.NoError(t, json.Unmarshal(gotRaw, &got), "ctaoverlay JSON must be valid")
+				assert.Equal(t, tt.wantVal, got, "ExtractCTAOverlayFromVASTFastXML value")
 			}
 		})
 	}
@@ -161,7 +165,7 @@ func TestVastVersionSupportsCreativeExtensions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
-			got := vastVersionSupportsCreativeExtensions(tt.version)
+			got := parser.VastVersionSupportsCreativeExtensions(tt.version)
 			assert.Equal(t, tt.want, got)
 		})
 	}

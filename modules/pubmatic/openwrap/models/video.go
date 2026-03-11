@@ -43,4 +43,10 @@ const (
 	VideoTagForwardSlash = "/"
 	//VideoVAST2ExtensionPriceElement video parameter constant
 	VideoVAST2ExtensionPriceElement = VideoTagLookupStart + VideoExtensionTag + VideoTagForwardSlash + VideoPricingTag
+	//VideoCreativeExtensionsTag video creative extensions element constant
+	VideoCreativeExtensionsTag = "CreativeExtensions"
+	//VideoCreativeExtensionTag video creative extension element constant
+	VideoCreativeExtensionTag = "CreativeExtension"
+	//VideoCTAOverlayPubMaticID video cta overlay pubmatic id constant
+	VideoCTAOverlayPubMaticID = "PubMatic"
 )
