@@ -1,7 +1,6 @@
 package openwrap
 
 import (
-	"bytes"
 	"encoding/json"
 	"strings"
 
@@ -16,37 +15,21 @@ var ctaOverlayAllowedSDKVersions = map[string]struct{}{
 	"4.11.0": {},
 }
 
-func trimCDATA(b []byte) []byte {
-	s := bytes.TrimSpace(b)
-	const cdataStart = "<![CDATA["
-	const cdataEnd = "]]>"
-	if len(s) >= len(cdataStart)+len(cdataEnd) &&
-		bytes.EqualFold(s[:len(cdataStart)], []byte(cdataStart)) &&
-		bytes.HasSuffix(s, []byte(cdataEnd)) {
-		return s[len(cdataStart) : len(s)-len(cdataEnd)]
-	}
-	return s
-}
-
-// GetCTAOverlayFromFastXMLHandler returns the ctaoverlay JSON from an already-parsed FastXML handler.
+// getCTAOverlayFromFastXMLHandler returns the ctaoverlay JSON from an already-parsed FastXML handler.
 // The caller must create the handler and call Parse(adm) before calling this. Returns json.RawMessage
-// so the caller can inject it directly without a second unmarshal. Tries each CreativeExtension id=PubMatic
-// in order until one parses as JSON with a non-empty "ctaoverlay" key.
+// so the caller can inject it directly without a second unmarshal. Parser returns first CreativeExtension name=PubMatic (case-insensitive; CDATA-trimmed).
 func getCTAOverlayFromFastXMLHandler(h *parser.FastXMLHandler) (json.RawMessage, bool) {
-	for _, raw := range h.ExtractCTAOverlayFromVAST() {
-		trimmed := trimCDATA([]byte(raw))
-		var payload struct {
-			Ctaoverlay json.RawMessage `json:"ctaoverlay"`
-		}
-		if err := json.Unmarshal(trimmed, &payload); err != nil {
-			continue
-		}
-		if len(payload.Ctaoverlay) == 0 {
-			continue
-		}
-		return payload.Ctaoverlay, true
+	raw := h.ExtractCTAOverlayFromVAST()
+	if raw == "" {
+		return nil, false
 	}
-	return nil, false
+	var payload struct {
+		Ctaoverlay json.RawMessage `json:"ctaoverlay"`
+	}
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil || len(payload.Ctaoverlay) == 0 {
+		return nil, false
+	}
+	return payload.Ctaoverlay, true
 }
 
 // ExtractCTAOverlayFromVASTFastXML parses adm with the FastXML handler and returns ctaoverlay as json.RawMessage
@@ -76,5 +59,5 @@ func IsVideoBidEligibleForCTAOverlay(bidExt *models.BidExt, ctaOverlayRequested 
 	if bidExt.OWSDK != nil && bidExt.OWSDK[models.CTAOVERLAY] != nil {
 		return false
 	}
-	return ctaOverlayRequested
+	return true
 }

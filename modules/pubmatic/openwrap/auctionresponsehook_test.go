@@ -984,8 +984,8 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 
-	// VAST 3.0 InLine with CreativeExtension id=PubMatic and ctaoverlay JSON
-	vastWithCTA := `<VAST version="3.0"><Ad><InLine><AdSystem>Test</AdSystem><AdTitle></AdTitle><Impression></Impression><Creatives><Creative><CreativeExtensions><CreativeExtension id="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0,"pos":1,"ctacopy":"Learn More"}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
+	// VAST 3.0 InLine with CreativeExtension name=PubMatic and ctaoverlay JSON
+	vastWithCTA := `<VAST version="3.0"><Ad><InLine><AdSystem>Test</AdSystem><AdTitle></AdTitle><Impression></Impression><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0,"pos":1,"ctacopy":"Learn More"}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
 
 	type args struct {
 		ctx       context.Context

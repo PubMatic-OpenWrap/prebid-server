@@ -232,43 +232,53 @@ func (ti *FastXMLHandler) newCategoryNode(categories []string) *fastxml.XMLEleme
 	return catElement
 }
 
-// ExtractCTAOverlayFromVAST returns all raw CDATA/text of CreativeExtensions with id="PubMatic"
-// under VAST/Ad/InLine (order preserved). Call after Parse(vast). Performs version check first (VAST 3.0+ only).
-// Caller can try each in order until one parses as JSON with a non-empty "ctaoverlay" key.
-func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() []string {
+// isPubMaticCreativeExtensionName reports whether the CreativeExtension name attribute is a case-insensitive
+// match for PubMatic (e.g. "PubMatic", "pubmatic", "PUBMATIC").
+func isPubMaticCreativeExtensionName(attrValue string) bool {
+	s := strings.TrimSpace(attrValue)
+	if s == "" {
+		return false
+	}
+	lower := strings.ToLower(s)
+	return lower == "pubmatic"
+}
+
+// ExtractCTAOverlayFromVAST returns the raw CDATA/text of the first CreativeExtension with name="PubMatic"
+// (case-insensitive) under VAST/Ad/InLine, or "" if none. Call after Parse(vast). Performs version check first (VAST 3.0+ only).
+func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() string {
 	if ti.doc == nil || ti.vastTag == nil {
-		return nil
+		return ""
 	}
 	if !VastVersionSupportsCreativeExtensions(ti.version) {
-		return nil
+		return ""
 	}
-	var out []string
 	adElements := ti.doc.SelectElements(ti.vastTag, models.VideoAdTag)
 	for _, ad := range adElements {
 		inLine := ti.doc.SelectElement(ad, models.VideoVASTInLineTag)
 		if inLine == nil {
 			continue
 		}
-		creatives := ti.doc.SelectElements(inLine, "Creatives", "Creative")
+		creatives := ti.doc.SelectElements(inLine, models.VideoCreativesTag, models.VideoCreativeTag)
 		for _, cr := range creatives {
 			exts := ti.doc.SelectElements(cr, models.VideoCreativeExtensionsTag, models.VideoCreativeExtensionTag)
 			for _, ext := range exts {
-				if ti.doc.SelectAttrValue(ext, "id", "") != models.VideoCTAOverlayPubMaticID {
+				if !isPubMaticCreativeExtensionName(ti.doc.SelectAttrValue(ext, "name", "")) {
 					continue
 				}
-				out = append(out, ti.doc.RawText(ext))
+				return ti.doc.Text(ext)
 			}
 		}
 	}
-	return out
+	return ""
 }
 
 // VastVersionSupportsCreativeExtensions reports whether the VAST version supports CreativeExtensions (3.0+).
 func VastVersionSupportsCreativeExtensions(version string) bool {
-	parts := strings.SplitN(strings.TrimSpace(version), ".", 2)
-	if len(parts) == 0 {
+	version = strings.TrimSpace(version)
+	if version == "" {
 		return false
 	}
+	parts := strings.SplitN(version, ".", 2)
 	major, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 	return err == nil && major >= 3
 }
