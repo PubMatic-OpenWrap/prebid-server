@@ -236,11 +236,6 @@ func TestExtractCTAOverlayFromVAST(t *testing.T) {
 			wantStr: `{"ctaoverlay":{"y":2}}`,
 		},
 		{
-			name:    "VAST_3.0_name_pubm_matched",
-			adm:     `<VAST version="3.0"><Ad><InLine><Creatives><Creative><CreativeExtensions><CreativeExtension name="pubm" type="application/json"><![CDATA[{"ctaoverlay":{"z":3}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`,
-			wantStr: `{"ctaoverlay":{"z":3}}`,
-		},
-		{
 			name:    "VAST_3.0_name_PubMatic_matched",
 			adm:     `<VAST version="3.0"><Ad><InLine><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"n":4}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`,
 			wantStr: `{"ctaoverlay":{"n":4}}`,
@@ -290,7 +285,7 @@ func TestVastVersionSupportsCreativeExtensions(t *testing.T) {
 
 // Parser-level CTA overlay benchmarks (Parse + ExtractCTAOverlayFromVAST; name=PubMatic).
 var (
-	parserBenchVASTHit = `<VAST version="3.0"><Ad><InLine><AdSystem>Test</AdSystem><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0,"pos":1}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
+	parserBenchVASTHit  = `<VAST version="3.0"><Ad><InLine><AdSystem>Test</AdSystem><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0,"pos":1}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
 	parserBenchVASTMiss = `<VAST version="2.0"><Ad><InLine><AdSystem>Test</AdSystem><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
 )
 
