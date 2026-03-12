@@ -187,7 +187,7 @@
         "args" : {
             "adapterName": "playdigo",
             "requestJSON": {
-                "placement_id": "0",
+                "placementId": "0",
                 "endpointId": "0"   
             }
         },
