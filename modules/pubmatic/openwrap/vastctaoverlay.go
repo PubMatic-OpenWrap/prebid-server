@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
 )
@@ -27,6 +28,7 @@ func getCTAOverlayFromFastXMLHandler(h *parser.FastXMLHandler) (json.RawMessage,
 		Ctaoverlay json.RawMessage `json:"ctaoverlay"`
 	}
 	if err := json.Unmarshal([]byte(raw), &payload); err != nil || len(payload.Ctaoverlay) == 0 {
+		glog.Errorf("[getCTAOverlayFromFastXMLHandler] Error unmarshalling ctaoverlay: %s, raw: %s", err, raw)
 		return nil, false
 	}
 	return payload.Ctaoverlay, true
