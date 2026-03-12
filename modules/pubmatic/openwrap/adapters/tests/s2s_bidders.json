@@ -181,5 +181,21 @@
                 "placement_id": 123456
             }
         }
+    },
+     {
+        "name": "playdigo_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "playdigo",
+            "requestJSON": {
+                "placement_id": "0",
+                "endpointId": "0"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "0"
+            }
+        }
     }
+
 ]
