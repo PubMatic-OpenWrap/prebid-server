@@ -3532,6 +3532,59 @@ func TestBuilderNexx360(t *testing.T) {
 	}
 }
 
+func TestBuilderPlaydigo(t *testing.T) {
+	type args struct {
+		params BidderParameters
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name:    "Valid Scenario - placementId is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "abc123"}, AdapterName: string(openrtb_ext.BidderPlaydigo)}},
+			want:    json.RawMessage(`{"placementId":"abc123"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenario - endpointId is present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"endpointId": "ep456"}, AdapterName: string(openrtb_ext.BidderPlaydigo)}},
+			want:    json.RawMessage(`{"endpointId":"ep456"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Valid Scenario - both placementId and endpointId present, placementId takes priority",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": "abc123", "endpointId": "ep456"}, AdapterName: string(openrtb_ext.BidderPlaydigo)}},
+			want:    json.RawMessage(`{"placementId":"abc123"}`),
+			wantErr: false,
+		},
+		{
+			name:    "Invalid Scenario - neither placementId nor endpointId present",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{}, AdapterName: string(openrtb_ext.BidderPlaydigo)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+		{
+			name:    "Invalid Scenario - placementId is empty string",
+			args:    args{params: BidderParameters{FieldMap: JSONObject{"placementId": ""}, AdapterName: string(openrtb_ext.BidderPlaydigo)}},
+			want:    json.RawMessage(``),
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := builderPlaydigo(tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("builderPlaydigo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
+
 func TestBuilderMSFT(t *testing.T) {
 	type args struct {
 		params BidderParameters
