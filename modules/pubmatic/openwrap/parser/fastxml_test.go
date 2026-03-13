@@ -277,7 +277,7 @@ func TestVastVersionSupportsCreativeExtensions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
-			got := VastVersionSupportsCreativeExtensions(tt.version)
+			got := vastVersionSupportsCreativeExtensions(tt.version)
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -249,7 +249,7 @@ func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() string {
 	if ti.doc == nil || ti.vastTag == nil {
 		return ""
 	}
-	if !VastVersionSupportsCreativeExtensions(ti.version) {
+	if !vastVersionSupportsCreativeExtensions(ti.version) {
 		return ""
 	}
 	adElements := ti.doc.SelectElements(ti.vastTag, models.VideoAdTag)
@@ -272,8 +272,8 @@ func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() string {
 	return ""
 }
 
-// VastVersionSupportsCreativeExtensions reports whether the VAST version supports CreativeExtensions (3.0+).
-func VastVersionSupportsCreativeExtensions(version string) bool {
+// vastVersionSupportsCreativeExtensions reports whether the VAST version supports CreativeExtensions (3.0+).
+func vastVersionSupportsCreativeExtensions(version string) bool {
 	version = strings.TrimSpace(version)
 	if version == "" {
 		return false
