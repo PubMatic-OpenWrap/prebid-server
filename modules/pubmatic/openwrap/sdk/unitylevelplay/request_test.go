@@ -957,6 +957,20 @@ func TestModifyDevice(t *testing.T) {
 			}},
 		},
 		{
+			name: "signal_has_empty_ifv_overwrites_request_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Ext: []byte(`{"ifv":""}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":""}`),
+			}},
+		},
+		{
 			name: "signal_has_both_atts_and_ifv",
 			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
 				UA: "test-ua",

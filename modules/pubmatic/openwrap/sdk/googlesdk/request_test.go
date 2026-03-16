@@ -974,6 +974,24 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_has_empty_ifv_overwrites_request_ifv",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":""}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":""}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
