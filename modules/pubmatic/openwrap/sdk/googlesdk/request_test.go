@@ -920,6 +920,78 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_device_has_ifv",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA: "Mozilla/5.0",
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+				},
+			},
+		},
+		{
+			name: "request_has_ifv_signal_does_not",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Make: "Samsung",
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:   "Mozilla/5.0",
+					Make: "Samsung",
+					Ext:  json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+				},
+			},
+		},
+		{
+			name: "both_request_and_signal_have_ifv_signal_wins",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+				},
+			},
+		},
+		{
+			name: "signal_has_empty_ifv_overwrites_request_ifv",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+				},
+			},
+			signalDevice: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":""}`),
+			},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{
+					UA:  "Mozilla/5.0",
+					Ext: json.RawMessage(`{"ifv":""}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

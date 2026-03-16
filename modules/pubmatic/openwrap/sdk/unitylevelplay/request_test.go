@@ -914,6 +914,75 @@ func TestModifyDevice(t *testing.T) {
 				Model:    "test-model",
 			}},
 		},
+		{
+			name: "signal_has_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA: "test-ua",
+			}},
+			signal: &openrtb2.Device{
+				Ext: []byte(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			}},
+		},
+		{
+			name: "request_has_ifv_signal_does_not",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Make: "test-make",
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:   "test-ua",
+				Make: "test-make",
+				Ext:  []byte(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+		},
+		{
+			name: "both_request_and_signal_have_ifv_signal_wins",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Ext: []byte(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+			}},
+		},
+		{
+			name: "signal_has_empty_ifv_overwrites_request_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Ext: []byte(`{"ifv":""}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"ifv":""}`),
+			}},
+		},
+		{
+			name: "signal_has_both_atts_and_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA: "test-ua",
+			}},
+			signal: &openrtb2.Device{
+				Ext: []byte(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: []byte(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			}},
+		},
 	}
 
 	for _, tt := range tests {

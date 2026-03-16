@@ -316,6 +316,38 @@ func TestUpdateDevice(t *testing.T) {
 				Lmt:        ptrutil.ToPtr(int8(1)),
 			},
 		},
+		{
+			name: "signalDevice_has_ext_ifv",
+			args: args{
+				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
+				maxRequest: &openrtb2.BidRequest{},
+			},
+			want: &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
+		},
+		{
+			name: "request_has_ifv_signal_does_not",
+			args: args{
+				sdkDevice:  &openrtb2.Device{Make: "Apple"},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`)}},
+			},
+			want: &openrtb2.Device{Make: "Apple", Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`)},
+		},
+		{
+			name: "both_request_and_signal_have_ifv_signal_wins",
+			args: args{
+				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`)},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`)}},
+			},
+			want: &openrtb2.Device{Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`)},
+		},
+		{
+			name: "signalDevice_has_both_atts_and_ifv",
+			args: args{
+				sdkDevice:  &openrtb2.Device{Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
+				maxRequest: &openrtb2.BidRequest{},
+			},
+			want: &openrtb2.Device{Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
