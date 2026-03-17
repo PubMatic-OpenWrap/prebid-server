@@ -213,7 +213,7 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 			if activateCampaignId != "" {
 				bid.CID = activateCampaignId
 			}
-			if strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
+			if bid.MType == openrtb2.MarkupBanner && strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
 				//updatedAdmActivate := strings.Replace(admActivateBanner, "CONVERT_CREATIVE", thirdPartyTagCreative, 1)
 				//finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
 				updatedAdmActivate := admActivateBanner
@@ -247,69 +247,72 @@ func (a *OpenWrapAdapter) MakeBids(internalRequest *openrtb2.BidRequest, externa
 					bid.CrID = creativeId + "," + bid.CrID
 				}
 
-			} else if bid.MType == openrtb2.MarkupNative {
-				// Define a structure to unmarshal the adm string.
-				var admData struct {
-					Link struct {
-						URL           string   `json:"url"`
-						Clicktrackers []string `json:"clicktrackers"`
-					} `json:"link"`
-					Imptrackers []string `json:"imptrackers"`
-				}
-
-				var adm Adm
-				var width, height int64
-
-				err := json.Unmarshal([]byte(bid.AdM), &adm)
-				if err != nil {
-					continue
-				}
-				// Iterate over assets to find asset with id==1.
-				for _, asset := range adm.Assets {
-					if asset.Id == 1 && asset.Img != nil {
-						width = asset.Img.W
-						height = asset.Img.H
+			} else if bid.MType == openrtb2.MarkupNative && strings.Contains(bid.AdM, "CONVERT_SSP_TAG") {
+				bidType = openrtb_ext.BidTypeNative
+				/*
+					// Define a structure to unmarshal the adm string.
+					var admData struct {
+						Link struct {
+							URL           string   `json:"url"`
+							Clicktrackers []string `json:"clicktrackers"`
+						} `json:"link"`
+						Imptrackers []string `json:"imptrackers"`
 					}
-				}
 
-				// Unmarshal the adm JSON string.
-				// Unmarshal the adm JSON string and check for errors.
-				if err := json.Unmarshal([]byte(bid.AdM), &admData); err != nil {
-					continue // or handle the error as appropriate
-				}
-				// Check if imptrackers and clicktrackers slices contain at least one element.
-				if len(admData.Imptrackers) == 0 {
-					continue // or handle the situation as needed
-				}
-				if len(admData.Link.Clicktrackers) == 0 {
-					continue // or handle the situation as needed
-				}
+					var adm Adm
+					var width, height int64
 
-				// Extract the link URL.
-				linkURL := admData.Link.URL
-				impTrackersStr := admData.Imptrackers[0]
-				clickTrackersStr := admData.Link.Clicktrackers[0]
+					err := json.Unmarshal([]byte(bid.AdM), &adm)
+					if err != nil {
+						continue
+					}
+					// Iterate over assets to find asset with id==1.
+					for _, asset := range adm.Assets {
+						if asset.Id == 1 && asset.Img != nil {
+							width = asset.Img.W
+							height = asset.Img.H
+						}
+					}
 
-				updatedAdmActivate := strings.Replace(admActivateNative, "CONVERT_CREATIVE", bid.IURL, 1)
-				updatedAdmActivate = strings.Replace(updatedAdmActivate, "DSP_IMP_URL", impTrackersStr, 1)
-				if len(admData.Imptrackers) > 1 {
-					updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
-				}
-				combinedClicks := "\"" + linkURL + "\",\"" + clickTrackersStr + "\""
-				finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
-				finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", combinedClicks, 1)
-				updatedAdmActivateNative := finalClickScript + updatedAdmActivate
-				updatedAdmActivateNative = strings.Replace(updatedAdmActivateNative, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
+					// Unmarshal the adm JSON string.
+					// Unmarshal the adm JSON string and check for errors.
+					if err := json.Unmarshal([]byte(bid.AdM), &admData); err != nil {
+						continue // or handle the error as appropriate
+					}
+					// Check if imptrackers and clicktrackers slices contain at least one element.
+					if len(admData.Imptrackers) == 0 {
+						continue // or handle the situation as needed
+					}
+					if len(admData.Link.Clicktrackers) == 0 {
+						continue // or handle the situation as needed
+					}
 
-				bid.AdM = updatedAdmActivateNative
-				bid.MType = openrtb2.MarkupBanner
-				bid.BURL = ""
-				bidType = openrtb_ext.BidTypeBanner
+					// Extract the link URL.
+					linkURL := admData.Link.URL
+					impTrackersStr := admData.Imptrackers[0]
+					clickTrackersStr := admData.Link.Clicktrackers[0]
 
-				if width != 0 && height != 0 {
-					bid.W = width
-					bid.H = height
-				}
+					updatedAdmActivate := strings.Replace(admActivateNative, "CONVERT_CREATIVE", bid.IURL, 1)
+					updatedAdmActivate = strings.Replace(updatedAdmActivate, "DSP_IMP_URL", impTrackersStr, 1)
+					if len(admData.Imptrackers) > 1 {
+						updatedAdmActivate = strings.Replace(updatedAdmActivate, "PUB_IMP_URL", admData.Imptrackers[1], 1)
+					}
+					combinedClicks := "\"" + linkURL + "\",\"" + clickTrackersStr + "\""
+					finalClickScript := strings.Replace(clickScript, "CONVERT_LANDING_PAGE_DV", redirectDVTestLandingUrl, 1)
+					finalClickScript = strings.Replace(finalClickScript, "ALL_CLICK_URLS", combinedClicks, 1)
+					updatedAdmActivateNative := finalClickScript + updatedAdmActivate
+					updatedAdmActivateNative = strings.Replace(updatedAdmActivateNative, "VALID_IMP_INDEX", strconv.Itoa(i), 4)
+
+					bid.AdM = updatedAdmActivateNative
+					bid.MType = openrtb2.MarkupBanner
+					bid.BURL = ""
+					bidType = openrtb_ext.BidTypeBanner
+
+					if width != 0 && height != 0 {
+						bid.W = width
+						bid.H = height
+					}
+				*/
 			}
 
 			bidResponse.Bids = append(bidResponse.Bids, &adapters.TypedBid{
