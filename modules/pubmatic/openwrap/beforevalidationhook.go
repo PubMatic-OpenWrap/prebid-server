@@ -648,7 +648,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		isCTAOverlayRequest := impExt.OWSDK != nil && impExt.OWSDK["ctaoverlay"] == float64(1)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
@@ -694,7 +693,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx := rCtx.ImpBidCtx[imp.ID]
 		impCtx.Instl = imp.Instl
 		impCtx.IsAppOpenAd = impExt.IsAppOpenAd
-		impCtx.IsCTAOverlayRequest = isCTAOverlayRequest
 		impCtx.Bidders = bidderMeta
 		impCtx.NonMapped = nonMapped
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx

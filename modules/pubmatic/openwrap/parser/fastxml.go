@@ -3,7 +3,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/PubMatic-OpenWrap/fastxml"
@@ -230,55 +229,4 @@ func (ti *FastXMLHandler) newCategoryNode(categories []string) *fastxml.XMLEleme
 	catElement := fastxml.NewElement(models.VideoAdCatTag)
 	catElement.SetText(strings.Join(categories, ","), true, fastxml.NoEscaping)
 	return catElement
-}
-
-// isPubMaticCreativeExtensionName reports whether the CreativeExtension name attribute is a case-insensitive
-// match for PubMatic (e.g. "PubMatic", "pubmatic", "PUBMATIC").
-func isPubMaticCreativeExtensionName(attrValue string) bool {
-	s := strings.TrimSpace(attrValue)
-	if s == "" {
-		return false
-	}
-	lower := strings.ToLower(s)
-	return lower == "pubmatic"
-}
-
-// ExtractCTAOverlayFromVAST returns the raw CDATA/text of the first CreativeExtension with name="PubMatic"
-// (case-insensitive) under VAST/Ad/InLine, or "" if none. Call after Parse(vast). Performs version check first (VAST 3.0+ only).
-func (ti *FastXMLHandler) ExtractCTAOverlayFromVAST() string {
-	if ti.doc == nil || ti.vastTag == nil {
-		return ""
-	}
-	if !vastVersionSupportsCreativeExtensions(ti.version) {
-		return ""
-	}
-	adElements := ti.doc.SelectElements(ti.vastTag, models.VideoAdTag)
-	for _, ad := range adElements {
-		inLine := ti.doc.SelectElement(ad, models.VideoVASTInLineTag)
-		if inLine == nil {
-			continue
-		}
-		creatives := ti.doc.SelectElements(inLine, models.VideoCreativesTag, models.VideoCreativeTag)
-		for _, cr := range creatives {
-			exts := ti.doc.SelectElements(cr, models.VideoCreativeExtensionsTag, models.VideoCreativeExtensionTag)
-			for _, ext := range exts {
-				if !isPubMaticCreativeExtensionName(ti.doc.SelectAttrValue(ext, "name", "")) {
-					continue
-				}
-				return ti.doc.Text(ext)
-			}
-		}
-	}
-	return ""
-}
-
-// vastVersionSupportsCreativeExtensions reports whether the VAST version supports CreativeExtensions (3.0+).
-func vastVersionSupportsCreativeExtensions(version string) bool {
-	version = strings.TrimSpace(version)
-	if version == "" {
-		return false
-	}
-	parts := strings.SplitN(version, ".", 2)
-	major, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-	return err == nil && major >= 3
 }
