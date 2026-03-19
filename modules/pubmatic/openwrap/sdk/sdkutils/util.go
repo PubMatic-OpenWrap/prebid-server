@@ -188,6 +188,22 @@ func CopyPath(source []byte, target []byte, path ...string) ([]byte, error) {
 	}
 }
 
+// CopyIFV copies the ifv key from source to target JSON, including empty string values.
+// Unlike CopyPath, this does not skip empty strings.
+func CopyIFV(source, target []byte) []byte {
+	value, _, _, err := jsonparser.Get(source, "ifv")
+	if err != nil {
+		return target
+	}
+	if target == nil {
+		target = []byte(`{}`)
+	}
+	if result, err := jsonparser.Set(target, []byte(`"`+string(value)+`"`), "ifv"); err == nil {
+		return result
+	}
+	return target
+}
+
 func IsSdkIntegration(endpoint string) bool {
 	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK
 }

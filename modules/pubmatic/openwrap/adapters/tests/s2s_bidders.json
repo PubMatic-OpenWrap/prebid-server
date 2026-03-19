@@ -181,5 +181,36 @@
                 "placement_id": 123456
             }
         }
+    },
+    {
+        "name": "playdigo_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "playdigo",
+            "requestJSON": {
+                "placementId": "0",
+                "endpointId": "0"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "0"
+            }
+        }
+    },
+    {
+        "name": "edge226_json_OneOf - placementId/endpointId",
+        "args" : {
+            "adapterName": "edge226",
+            "requestJSON": {
+                "placementId": "0",
+                "endpointId": "0"   
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "placementId": "0"
+            }
+        }
     }
+
 ]

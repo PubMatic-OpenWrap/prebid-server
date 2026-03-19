@@ -403,6 +403,8 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	}
 
 	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
+
+	request.Device.Ext = sdkutils.CopyIFV(signalDevice.Ext, request.Device.Ext)
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {

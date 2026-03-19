@@ -896,6 +896,44 @@ func builder33Across(params BidderParameters) (json.RawMessage, error) {
 	return buf.Bytes(), nil
 }
 
+// builderPlaydigo for building json object for Playdigo bidder
+func builderPlaydigo(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	placementID, hasPlacementID := getString(params.FieldMap["placementId"])
+	endpointID, hasEndpointID := getString(params.FieldMap["endpointId"])
+
+	if hasPlacementID && placementID != "" {
+		fmt.Fprintf(&jsonStr, `{"placementId":"%s"}`, placementID)
+		return jsonStr.Bytes(), nil
+	}
+
+	if hasEndpointID && endpointID != "" {
+		fmt.Fprintf(&jsonStr, `{"endpointId":"%s"}`, endpointID)
+		return jsonStr.Bytes(), nil
+	}
+
+	return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"placementId", "endpointId"})
+}
+
+// builderEdge226 for building json object for Edge226 bidder
+func builderEdge226(params BidderParameters) (json.RawMessage, error) {
+	jsonStr := bytes.Buffer{}
+	placementID, hasPlacementID := getString(params.FieldMap["placementId"])
+	endpointID, hasEndpointID := getString(params.FieldMap["endpointId"])
+
+	if hasPlacementID && placementID != "" {
+		fmt.Fprintf(&jsonStr, `{"placementId":"%s"}`, placementID)
+		return jsonStr.Bytes(), nil
+	}
+
+	if hasEndpointID && endpointID != "" {
+		fmt.Fprintf(&jsonStr, `{"endpointId":"%s"}`, endpointID)
+		return jsonStr.Bytes(), nil
+	}
+
+	return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"placementId", "endpointId"})
+}
+
 // builderMSFT for building json object for Microsoft bidder
 func builderMSFT(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
