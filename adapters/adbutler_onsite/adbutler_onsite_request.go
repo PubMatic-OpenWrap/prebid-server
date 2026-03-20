@@ -158,6 +158,14 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 	adButlerReq.Type = AdButler_Req_Type
 	adButlerReq.Ads = AdButler_Req_Ads
 
+	isOptedOut := siteExt.IsOptedOut
+	if appExt != nil {
+		isOptedOut = appExt.IsOptedOut
+	}
+	if isOptedOut == 0 {
+		adButlerReq.IP = request.Device.IP
+	}
+
 	adButlerReq.Target = make(map[string]interface{})
 
 	//Add Geo Targeting
@@ -200,14 +208,16 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	//Add Dynamic Targeting from AdRequest
 
-	for _, targetObj := range requestExt.Targeting {
-		adButlerReq.Target[targetObj.Name] = targetObj.Value
-	}
+	if isOptedOut == 0 {
+		for _, targetObj := range requestExt.Targeting {
+			adButlerReq.Target[targetObj.Name] = targetObj.Value
+		}
 
-	if len(requestExt.ReportingKeys) != 0 {
-		adButlerReq.Reporting = make(map[string]interface{})
-		for key, value := range requestExt.ReportingKeys {
-			adButlerReq.Reporting[key] = value
+		if len(requestExt.ReportingKeys) != 0 {
+			adButlerReq.Reporting = make(map[string]interface{})
+			for key, value := range requestExt.ReportingKeys {
+				adButlerReq.Reporting[key] = value
+			}
 		}
 	}
 
@@ -252,14 +262,6 @@ func (a *AdButlerOnsiteAdapter) MakeRequests(request *openrtb2.BidRequest, reqIn
 
 	if requestExt.UserID != "" {
 		adButlerReq.UserID = requestExt.UserID
-	}
-
-	isOptedOut := siteExt.IsOptedOut
-	if appExt != nil {
-		isOptedOut = appExt.IsOptedOut
-	}
-	if isOptedOut == 0 {
-		adButlerReq.IP = request.Device.IP
 	}
 
 	adButlerReq.Sequence = requestExt.Sequence
