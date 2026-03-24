@@ -682,16 +682,16 @@ func TestGetMobileAppPlatform(t *testing.T) {
 			want:            models.DevicePlatformMobileAppAndroid,
 		},
 		{
-			name:            "os_ios_without_space_uses_fallback_regex",
+			name:            "os_ios_without_space_is_invalid_without_ua",
 			os:              "ios17",
 			userAgentString: "",
-			want:            models.DevicePlatformMobileAppIos,
+			want:            models.DevicePlatformNotDefined,
 		},
 		{
-			name:            "os_android_without_space_uses_fallback_regex",
+			name:            "os_android_without_space_is_invalid_without_ua",
 			os:              "android14",
 			userAgentString: "",
-			want:            models.DevicePlatformMobileAppAndroid,
+			want:            models.DevicePlatformNotDefined,
 		},
 		{
 			name:            "os_empty_ua_ios_fallback",
