@@ -73,10 +73,8 @@ func init() {
 	//integerRegEx := regexp.MustCompile(models.MACRO_INTEGER)
 	divRegEx = regexp.MustCompile(models.MACRO_DIV)
 
-	openRTBDeviceOsAndroidRegex = regexp.MustCompile(models.OpenRTBDeviceOsAndroidRegexPattern)
 	androidUARegex = regexp.MustCompile(models.AndroidUARegexPattern)
 	iosUARegex = regexp.MustCompile(models.IosUARegexPattern)
-	openRTBDeviceOsIosRegex = regexp.MustCompile(models.OpenRTBDeviceOsIosRegexPattern)
 	mobileDeviceUARegex = regexp.MustCompile(models.MobileDeviceUARegexPattern)
 	ctvRegex = regexp.MustCompile(models.ConnectedDeviceUARegexPattern)
 }
@@ -97,10 +95,8 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 		if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 			os = bidRequest.Device.OS
 		}
-		if isIos(os, userAgentString) {
-			return models.DevicePlatformMobileAppIos
-		} else if isAndroid(os, userAgentString) {
-			return models.DevicePlatformMobileAppAndroid
+		if platform := getMobileAppPlatform(os, userAgentString); platform != models.DevicePlatformNotDefined {
+			return platform
 		}
 
 	case models.PLATFORM_DISPLAY:
@@ -149,11 +145,8 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			if bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 				os = bidRequest.Device.OS
 			}
-
-			if isIos(os, userAgentString) {
-				return models.DevicePlatformMobileAppIos
-			} else if isAndroid(os, userAgentString) {
-				return models.DevicePlatformMobileAppAndroid
+			if platform := getMobileAppPlatform(os, userAgentString); platform != models.DevicePlatformNotDefined {
+				return platform
 			}
 		}
 
@@ -176,18 +169,25 @@ func isMobile(deviceType adcom1.DeviceType, userAgentString string) bool {
 	return false
 }
 
-func isIos(os string, userAgentString string) bool {
-	if openRTBDeviceOsIosRegex.Match([]byte(strings.ToLower(os))) || iosUARegex.Match([]byte(strings.ToLower(userAgentString))) {
-		return true
+// getMobileAppPlatform returns iOS or Android for mobile app; for SDK/integration endpoints
+// uses device.os first when valid, else falls back to UA/os in isIos/isAndroid.
+// TODO: Need to add endpoint check for SDK/integration endpoints when we add AMP and CTV endpoint code in modules code.
+func getMobileAppPlatform(os, userAgentString string) models.DevicePlatform {
+	osLower := strings.ToLower(strings.TrimSpace(os))
+	if osLower == "ios" || strings.HasPrefix(osLower, "ios ") {
+		return models.DevicePlatformMobileAppIos
 	}
-	return false
-}
+	if osLower == "android" || strings.HasPrefix(osLower, "android ") {
+		return models.DevicePlatformMobileAppAndroid
+	}
 
-func isAndroid(os string, userAgentString string) bool {
-	if openRTBDeviceOsAndroidRegex.Match([]byte(strings.ToLower(os))) || androidUARegex.Match([]byte(strings.ToLower(userAgentString))) {
-		return true
+	if iosUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return models.DevicePlatformMobileAppIos
 	}
-	return false
+	if androidUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return models.DevicePlatformMobileAppAndroid
+	}
+	return models.DevicePlatformNotDefined
 }
 
 // GetIntArray converts interface to int array if it is compatible
