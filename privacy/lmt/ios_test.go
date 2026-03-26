@@ -229,41 +229,6 @@ func TestIsRequestForIOS(t *testing.T) {
 	}
 }
 
-// func TestModifyForIOS14X(t *testing.T) {
-// 	testCases := []struct {
-// 		description string
-// 		givenDevice openrtb2.Device
-// 		expectedLMT *int8
-// 	}{
-// 		{
-// 			description: "IFA Empty",
-// 			givenDevice: openrtb2.Device{IFA: "", Lmt: nil},
-// 			expectedLMT: openrtb2.Int8Ptr(1),
-// 		},
-// 		{
-// 			description: "IFA Zero UUID",
-// 			givenDevice: openrtb2.Device{IFA: "00000000-0000-0000-0000-000000000000", Lmt: nil},
-// 			expectedLMT: openrtb2.Int8Ptr(1),
-// 		},
-// 		{
-// 			description: "IFA Populated",
-// 			givenDevice: openrtb2.Device{IFA: "any-real-value", Lmt: nil},
-// 			expectedLMT: openrtb2.Int8Ptr(0),
-// 		},
-// 		{
-// 			description: "Overwrites Existing",
-// 			givenDevice: openrtb2.Device{IFA: "", Lmt: openrtb2.Int8Ptr(0)},
-// 			expectedLMT: openrtb2.Int8Ptr(1),
-// 		},
-// 	}
-
-// 	for _, test := range testCases {
-// 		request := &openrtb2.BidRequest{Device: &test.givenDevice}
-// 		modifyForIOS14X(request)
-// 		assert.Equal(t, test.expectedLMT, request.Device.Lmt, test.description)
-// 	}
-// }
-
 func TestModifyForIOS142OrGreater(t *testing.T) {
 	testCases := []struct {
 		description string
