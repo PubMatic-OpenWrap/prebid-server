@@ -2238,6 +2238,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 	)
 	testCases := []struct {
 		description         string
+		deviceOS            string
 		lmt                 *int8
 		enforceLMT          bool
 		expectDataScrub     bool
@@ -2245,6 +2246,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 	}{
 		{
 			description:     "Feature Flag Enabled - OpenTRB Enabled",
+			deviceOS:        "iOS",
 			lmt:             &enabled,
 			enforceLMT:      true,
 			expectDataScrub: true,
@@ -2254,6 +2256,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 		},
 		{
 			description:     "Feature Flag Disabled - OpenTRB Enabled",
+			deviceOS:        "iOS",
 			lmt:             &enabled,
 			enforceLMT:      false,
 			expectDataScrub: false,
@@ -2263,6 +2266,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 		},
 		{
 			description:     "Feature Flag Enabled - OpenTRB Disabled",
+			deviceOS:        "iOS",
 			lmt:             &disabled,
 			enforceLMT:      true,
 			expectDataScrub: false,
@@ -2272,6 +2276,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 		},
 		{
 			description:     "Feature Flag Disabled - OpenTRB Disabled",
+			deviceOS:        "iOS",
 			lmt:             &disabled,
 			enforceLMT:      false,
 			expectDataScrub: false,
@@ -2279,11 +2284,22 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 				LMTEnforced: false,
 			},
 		},
+		{
+			description:     "Feature Flag Enabled - OpenTRB Enabled - Non Mobile OS",
+			deviceOS:        "windows",
+			lmt:             &enabled,
+			enforceLMT:      true,
+			expectDataScrub: false,
+			expectPrivacyLabels: metrics.PrivacyLabels{
+				LMTEnforced: true,
+			},
+		},
 	}
 
 	for _, test := range testCases {
 		req := newBidRequest()
 		req.Device.Lmt = test.lmt
+		req.Device.OS = test.deviceOS
 
 		auctionReq := AuctionRequest{
 			BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
@@ -2323,6 +2339,8 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 			assert.NotEqual(t, result.BidRequest.User.BuyerUID, "", test.description+":User.BuyerUID")
 			assert.NotEqual(t, result.BidRequest.Device.DIDMD5, "", test.description+":Device.DIDMD5")
 		}
+		// LMT enforcement scrubs IDs/demographics but must not mask device IP (GDPR/CCPA/activity still can via other paths).
+		assert.Equal(t, "132.173.230.74", result.BidRequest.Device.IP, test.description+":Device.IP")
 		assert.Equal(t, test.expectPrivacyLabels, privacyLabels, test.description+":PrivacyLabels")
 	}
 }
