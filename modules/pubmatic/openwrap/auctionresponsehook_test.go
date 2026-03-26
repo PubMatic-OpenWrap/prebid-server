@@ -979,6 +979,164 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 	}
 }
 
+func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+
+	// VAST 3.0 InLine with CreativeExtension name=PubMatic and ctaoverlay JSON
+	vastWithCTA := `<VAST version="3.0"><Ad><InLine><AdSystem>Test</AdSystem><AdTitle></AdTitle><Impression></Impression><Creatives><Creative><CreativeExtensions><CreativeExtension name="PubMatic" type="application/json"><![CDATA[{"ctaoverlay":{"delay":0,"pos":1,"ctacopy":"Learn More"}}]]></CreativeExtension></CreativeExtensions></Creative></Creatives></InLine></Ad></VAST>`
+
+	type args struct {
+		ctx       context.Context
+		moduleCtx hookstage.ModuleInvocationContext
+		payload   hookstage.AuctionResponsePayload
+	}
+	tests := []struct {
+		name                   string
+		args                   args
+		wantCTAOverlayInjected bool // true: bid should have OWSDK[ctaoverlay] set
+		wantImpID              string
+		wantBidID              string
+		getMetricsEngine       func() *mock_metrics.MockMetricsEngine
+	}{
+		{
+			name: "CTA_overlay_injected_for_pubmatic_video_bid_when_imp_requests_it",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime:        time.Now().UnixMilli(),
+							PubIDStr:         "5890",
+							PartnerConfigMap: map[int]map[string]string{1: {models.REVSHARE: "0.5"}},
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {
+									IsCTAOverlayRequest: true,
+									DisplayManagerVer:   "4.10.0",
+									Bidders:             map[string]models.PartnerData{"pubmatic": {PartnerID: 1}},
+								},
+							},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-cta-1",
+										ImpID: "imp1",
+										Price: 2.5,
+										AdM:   vastWithCTA,
+										Ext:   json.RawMessage(`{"prebid":{"type":"video"}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantCTAOverlayInjected: true,
+			wantImpID:              "imp1",
+			wantBidID:              "bid-cta-1",
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "pubmatic")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				return mockEngine
+			},
+		},
+		{
+			name: "CTA_overlay_not_injected_when_seat_not_pubmatic_core",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime:        time.Now().UnixMilli(),
+							PubIDStr:         "5890",
+							PartnerConfigMap: map[int]map[string]string{2: {models.REVSHARE: "0.5"}},
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {
+									IsCTAOverlayRequest: true,
+									DisplayManagerVer:   "4.10.0",
+									Bidders:             map[string]models.PartnerData{"appnexus": {PartnerID: 2}},
+								},
+							},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "appnexus",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-cta-2",
+										ImpID: "imp1",
+										Price: 3,
+										AdM:   vastWithCTA,
+										Ext:   json.RawMessage(`{"prebid":{"type":"video"}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantCTAOverlayInjected: false,
+			wantImpID:              "imp1",
+			wantBidID:              "bid-cta-2",
+			getMetricsEngine: func() *mock_metrics.MockMetricsEngine {
+				mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+				mockEngine.EXPECT().RecordPublisherResponseTimeStats("5890", gomock.Any())
+				mockEngine.EXPECT().RecordPlatformPublisherPartnerResponseStats("", "5890", "appnexus")
+				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+				mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false)
+				return mockEngine
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := OpenWrap{
+				metricEngine: tt.getMetricsEngine(),
+				pubFeatures:  mockFeature,
+			}
+			hookResult, _ := o.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+			mutations := hookResult.ChangeSet.Mutations()
+			assert.NotEmpty(t, mutations, tt.name)
+			rctxInterface := hookResult.AnalyticsTags.Activities[0].Results[0].Values["request-ctx"]
+			rctx := rctxInterface.(*models.RequestCtx)
+			impCtx, ok := rctx.ImpBidCtx[tt.wantImpID]
+			assert.True(t, ok, "imp %s in ImpBidCtx", tt.wantImpID)
+			bidCtx, ok := impCtx.BidCtx[tt.wantBidID]
+			assert.True(t, ok, "bid %s in BidCtx", tt.wantBidID)
+			if tt.wantCTAOverlayInjected {
+				assert.NotNil(t, bidCtx.BidExt.OWSDK, tt.name)
+				ctaVal := bidCtx.BidExt.OWSDK[models.CTAOVERLAY]
+				assert.NotNil(t, ctaVal, "OWSDK.ctaoverlay should be set")
+				raw, ok := ctaVal.(json.RawMessage)
+				assert.True(t, ok, "ctaoverlay value is json.RawMessage")
+				var ctaMap map[string]interface{}
+				assert.NoError(t, json.Unmarshal(raw, &ctaMap), "ctaoverlay JSON must be valid")
+				assert.Equal(t, "Learn More", ctaMap["ctacopy"], tt.name)
+				assert.Equal(t, float64(1), ctaMap["pos"], tt.name)
+				assert.Equal(t, float64(0), ctaMap["delay"], tt.name)
+			} else {
+				assert.True(t, bidCtx.BidExt.OWSDK == nil || bidCtx.BidExt.OWSDK[models.CTAOVERLAY] == nil,
+					"OWSDK.ctaoverlay should not be set for non-PubMatic core partner")
+			}
+		})
+	}
+}
+
 func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
