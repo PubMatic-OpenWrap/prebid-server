@@ -73,8 +73,10 @@ func init() {
 	//integerRegEx := regexp.MustCompile(models.MACRO_INTEGER)
 	divRegEx = regexp.MustCompile(models.MACRO_DIV)
 
+	openRTBDeviceOsAndroidRegex = regexp.MustCompile(models.OpenRTBDeviceOsAndroidRegexPattern)
 	androidUARegex = regexp.MustCompile(models.AndroidUARegexPattern)
 	iosUARegex = regexp.MustCompile(models.IosUARegexPattern)
+	openRTBDeviceOsIosRegex = regexp.MustCompile(models.OpenRTBDeviceOsIosRegexPattern)
 	mobileDeviceUARegex = regexp.MustCompile(models.MobileDeviceUARegexPattern)
 	ctvRegex = regexp.MustCompile(models.ConnectedDeviceUARegexPattern)
 }
@@ -145,8 +147,10 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			if bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 				os = bidRequest.Device.OS
 			}
-			if platform := getMobileAppPlatform(os, userAgentString); platform != models.DevicePlatformNotDefined {
-				return platform
+			if isIos(os, userAgentString) {
+				return models.DevicePlatformMobileAppIos
+			} else if isAndroid(os, userAgentString) {
+				return models.DevicePlatformMobileAppAndroid
 			}
 		}
 
@@ -164,6 +168,20 @@ func isMobile(deviceType adcom1.DeviceType, userAgentString string) bool {
 	}
 
 	if mobileDeviceUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return true
+	}
+	return false
+}
+
+func isIos(os string, userAgentString string) bool {
+	if openRTBDeviceOsIosRegex.Match([]byte(strings.ToLower(os))) || iosUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return true
+	}
+	return false
+}
+
+func isAndroid(os string, userAgentString string) bool {
+	if openRTBDeviceOsAndroidRegex.Match([]byte(strings.ToLower(os))) || androidUARegex.Match([]byte(strings.ToLower(userAgentString))) {
 		return true
 	}
 	return false

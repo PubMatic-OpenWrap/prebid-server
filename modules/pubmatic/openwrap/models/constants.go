@@ -287,10 +287,12 @@ const (
 	AdunitConfigFloorJSON   = "floors"
 	AdunitConfigRegex       = "regex"
 
-	IosUARegexPattern             string = `\b(iphone|ipad|darwin)\b`
-	AndroidUARegexPattern         string = `android.*`
-	MobileDeviceUARegexPattern    string = `(mobi|tablet|ios).*`
-	ConnectedDeviceUARegexPattern string = `Roku|SMART-TV|SmartTV|AndroidTV|Android TV|AppleTV|Apple TV|VIZIO|PHILIPS|BRAVIA|PlayStation|Chromecast|ExoPlayerLib|MIBOX3|Xbox|ComcastAppPlatform|AFT|HiSmart|BeyondTV|D.*ATV|PlexTV|Xstream|MiTV|AI PONT`
+	OpenRTBDeviceOsIosRegexPattern     string = `(ios).*`
+	OpenRTBDeviceOsAndroidRegexPattern string = `(android).*`
+	IosUARegexPattern                  string = `\b(iphone|ipad|darwin)\b`
+	AndroidUARegexPattern              string = `android.*`
+	MobileDeviceUARegexPattern         string = `(mobi|tablet|ios).*`
+	ConnectedDeviceUARegexPattern      string = `Roku|SMART-TV|SmartTV|AndroidTV|Android TV|AppleTV|Apple TV|VIZIO|PHILIPS|BRAVIA|PlayStation|Chromecast|ExoPlayerLib|MIBOX3|Xbox|ComcastAppPlatform|AFT|HiSmart|BeyondTV|D.*ATV|PlexTV|Xstream|MiTV|AI PONT`
 
 	HbBuyIdPrefix               = "hb_buyid_"
 	HbBuyIdPubmaticConstantKey  = "hb_buyid_pubmatic"

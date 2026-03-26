@@ -632,6 +632,140 @@ func Test_getUserAgent(t *testing.T) {
 	}
 }
 
+func TestIsIos(t *testing.T) {
+	type args struct {
+		os              string
+		userAgentString string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "iOS_test_for_Web_Browser_Mobile-Tablet",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (iPad; CPU OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60",
+			},
+			want: true,
+		},
+		{
+			name: "iOS_test_for_Safari_13_Mobile-Phone",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
+			},
+			want: true,
+		},
+		{
+			name: "Test_for_Safari_web-browser_on_mobile_User-Agent",
+			args: args{
+				os:              "",
+				userAgentString: "MobileSafari/602.1 CFNetwork/811.5.4 Darwin/16.7.0",
+			},
+			want: true,
+		},
+		{
+			name: "Test_for_iPhone_XR_simulator_User-Agent",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/7.0.4 Mobile/16B91 Safari/605.1.15",
+			},
+			want: true,
+		},
+		{
+			name: "Test_for_Outlook_3_Application_User-Agent",
+			args: args{
+				os:              "",
+				userAgentString: "Outlook-iOS/709.2144270.prod.iphone (3.23.0)",
+			},
+			want: true,
+		},
+		{
+			name: "iOS_test_for_Safari_12_Mobile-Phone",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1",
+			},
+			want: true,
+		},
+		{
+			name: "Android_HiPad_X_UA_should_not_match_iOS",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (Linux; Android 10; HiPad X Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.79 Safari/537.36",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isIos(tt.args.os, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestIsAndroid(t *testing.T) {
+	type args struct {
+		os              string
+		userAgentString string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test_android_with_correct_os_value",
+			args: args{
+				os:              "android",
+				userAgentString: "",
+			},
+			want: true,
+		},
+		{
+			name: "Test_android_with_invalid_os_value",
+			args: args{
+				os:              "ios",
+				userAgentString: "",
+			},
+			want: false,
+		},
+		{
+			name: "Test_android_with_invalid_osv_alue",
+			args: args{
+				os:              "",
+				userAgentString: "",
+			},
+			want: false,
+		},
+		{
+			name: "Test_android_with_UA_value",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Focus/1.0 Chrome/59.0.3029.83 Mobile Safari/537.36",
+			},
+			want: true,
+		},
+		{
+			name: "Android_HiPad_X_UA_should_match_Android",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (Linux; Android 10; HiPad X Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.79 Safari/537.36",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isAndroid(tt.args.os, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGetMobileAppPlatform(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -734,6 +868,18 @@ func TestGetMobileAppPlatform(t *testing.T) {
 			os:              "",
 			userAgentString: "Mozilla/5.0 (Linux; Android 12; HiPad Max Build/SKQ1.220119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.120 Safari/537.36",
 			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "ua_partial_word_hipad_without_android_should_not_be_ios",
+			os:              "Android",
+			userAgentString: "Mozilla/5.0 (Linux; HiPad Max Build/SKQ1.220119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.120 Safari/537.36",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "ua_partial_word_myiphoneapp_should_not_be_ios",
+			os:              "ios",
+			userAgentString: "MyIphoneApp/1.0 (custom agent)",
+			want:            models.DevicePlatformMobileAppIos,
 		},
 		{
 			name:            "os_invalid_ua_empty_not_defined",
