@@ -2242,54 +2242,71 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 		lmt                 *int8
 		enforceLMT          bool
 		expectDataScrub     bool
+		expectedDeviceIP    string
 		expectPrivacyLabels metrics.PrivacyLabels
 	}{
 		{
-			description:     "Feature Flag Enabled - OpenTRB Enabled",
-			deviceOS:        "iOS",
-			lmt:             &enabled,
-			enforceLMT:      true,
-			expectDataScrub: true,
+			description:      "Feature Flag Enabled - OpenTRB Enabled",
+			deviceOS:         "iOS",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: true,
 			},
 		},
 		{
-			description:     "Feature Flag Disabled - OpenTRB Enabled",
-			deviceOS:        "iOS",
-			lmt:             &enabled,
-			enforceLMT:      false,
-			expectDataScrub: false,
+			description:      "Feature Flag Disabled - OpenTRB Enabled",
+			deviceOS:         "iOS",
+			lmt:              &enabled,
+			enforceLMT:       false,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
 			},
 		},
 		{
-			description:     "Feature Flag Enabled - OpenTRB Disabled",
-			deviceOS:        "iOS",
-			lmt:             &disabled,
-			enforceLMT:      true,
-			expectDataScrub: false,
+			description:      "Feature Flag Enabled - OpenTRB Disabled",
+			deviceOS:         "iOS",
+			lmt:              &disabled,
+			enforceLMT:       true,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
 			},
 		},
 		{
-			description:     "Feature Flag Disabled - OpenTRB Disabled",
-			deviceOS:        "iOS",
-			lmt:             &disabled,
-			enforceLMT:      false,
-			expectDataScrub: false,
+			description:      "Feature Flag Disabled - OpenTRB Disabled",
+			deviceOS:         "iOS",
+			lmt:              &disabled,
+			enforceLMT:       false,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
 			},
 		},
 		{
-			description:     "Feature Flag Enabled - OpenTRB Enabled - Non Mobile OS",
-			deviceOS:        "windows",
-			lmt:             &enabled,
-			enforceLMT:      true,
-			expectDataScrub: false,
+			description:      "Feature Flag Enabled - OpenTRB Enabled - Non Mobile OS",
+			deviceOS:         "windows",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "0.0.0.0",
+			expectPrivacyLabels: metrics.PrivacyLabels{
+				LMTEnforced: true,
+			},
+		},
+		{
+			description:      "Feature Flag Enabled - OpenTRB Enabled - iOS With Version",
+			deviceOS:         "iOS 17.4",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: true,
 			},
@@ -2339,8 +2356,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 			assert.NotEqual(t, result.BidRequest.User.BuyerUID, "", test.description+":User.BuyerUID")
 			assert.NotEqual(t, result.BidRequest.Device.DIDMD5, "", test.description+":Device.DIDMD5")
 		}
-		// LMT enforcement scrubs IDs/demographics but must not mask device IP (GDPR/CCPA/activity still can via other paths).
-		assert.Equal(t, "132.173.230.74", result.BidRequest.Device.IP, test.description+":Device.IP")
+		assert.Equal(t, test.expectedDeviceIP, result.BidRequest.Device.IP, test.description+":Device.IP")
 		assert.Equal(t, test.expectPrivacyLabels, privacyLabels, test.description+":PrivacyLabels")
 	}
 }
