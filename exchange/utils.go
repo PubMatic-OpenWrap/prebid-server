@@ -406,16 +406,12 @@ func (rs *requestSplitter) applyPrivacy(reqWrapper *openrtb_ext.RequestWrapper, 
 	}
 
 	// COPPA: full scrub including device IP.
-	// LMT: for iOS/Android preserve IP, for non-mobile keep existing IP scrub behavior.
-	isMobileAppOS := false
-	if reqWrapper.Device != nil {
-		osLower := strings.ToLower(strings.TrimSpace(reqWrapper.Device.OS))
-		isMobileAppOS = osLower == "ios" || strings.HasPrefix(osLower, "ios ") ||
-			osLower == "android" || strings.HasPrefix(osLower, "android ")
-	}
+	// LMT: for app traffic only, when device.os is iOS or Android, preserve IP; otherwise mask IP (incl. site / non-mobile).
 	if coppa {
 		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", true, true)
 	} else if lmt {
+		isMobileAppOS := reqWrapper.App != nil && reqWrapper.Device != nil &&
+			(strings.EqualFold(reqWrapper.Device.OS, "ios") || strings.EqualFold(reqWrapper.Device.OS, "android"))
 		scrubDeviceIP := !isMobileAppOS
 		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, scrubDeviceIP)
 	}
