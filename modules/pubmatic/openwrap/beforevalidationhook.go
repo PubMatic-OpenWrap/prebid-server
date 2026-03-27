@@ -38,6 +38,13 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
+// timingLog helps with uniform timing instrumentation.
+func timingLog(label, reqID, impID string, start, begin time.Time) {
+	elapsed := time.Since(start).Milliseconds()
+	total := time.Since(begin).Milliseconds()
+	glog.V(3).Infof("[timing][%s] imp:%s req:%s elapsed:%dms total:%dms", label, impID, reqID, elapsed, total)
+}
+
 // logHookBidRequest logs the bidRequest at different stages of the hook execution
 func logHookBidRequest(stage string, rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, nbrCode int) {
 	if !glog.V(models.LogLevelDebug) {
@@ -67,7 +74,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
 		Reject: true,
 	}
-
+	begin := time.Now()
+	stageDur := make(map[string]int64)
 	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
@@ -93,6 +101,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 				m.metricEngine.RecordCTVInvalidReasonCount(getPubmaticErrorCode(openrtb3.NoBidReason(result.NbrCode)), rCtx.PubIDStr)
 			}
 		}
+
+		processingTime := time.Since(begin)
+		timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
+		remainingTime := timeoutDuration - processingTime
+		glog.Infof("[hook_end] total pre-processing:%v timeout:%v remaining:%v",
+			processingTime, timeoutDuration, remainingTime)
 	}()
 
 	//Do not execute the module for requests processed in SSHB(8001)
@@ -158,8 +172,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	if payload.BidRequest.Test != 0 {
 		rCtx.IsTestRequest = payload.BidRequest.Test
 	}
-
+	t := time.Now()
 	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
+	timingLog("getProfileData", payload.BidRequest.ID, "", t, begin)
+	stageDur["getProfileData"] = time.Since(t).Milliseconds()
+
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
@@ -169,6 +186,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	// Country filter
+	t = time.Now()
 	if shouldApplyCountryFilter(rCtx.Endpoint) {
 		if rCtx.DeviceCtx.DerivedCountryCode != "" {
 			mode, countryCodes := getCountryFilterConfig(partnerConfigMap)
@@ -180,6 +198,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 	}
+	timingLog("shouldApplyCountryFilter", payload.BidRequest.ID, "", t, begin)
+	stageDur["shouldApplyCountryFilter"] = time.Since(t).Milliseconds()
 
 	if rCtx.IsCTVRequest && rCtx.Endpoint == models.EndpointJson {
 		if len(rCtx.ResponseFormat) > 0 {
@@ -258,10 +278,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
-
+	t = time.Now()
 	allPartnersThrottledFlag := false
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
-
+	stageDur["applyPartnerThrottling"] = time.Since(t).Milliseconds()
+	timingLog("applyPartnerThrottling", payload.BidRequest.ID, "", t, begin)
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
 		result.Errors = append(result.Errors, "All adapters Blocked due to Geo Filtering")
@@ -271,17 +292,20 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	var allPartnersFilteredFlag bool
-
+	t = time.Now()
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
-
+	stageDur["GetAdapterThrottleMap"] = time.Since(t).Milliseconds()
+	timingLog("GetAdapterThrottleMap", payload.BidRequest.ID, "", t, begin)
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
 		result.Errors = append(result.Errors, "All adapters throttled")
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
-
+	t = time.Now()
 	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
+	stageDur["getFilteredBidders"] = time.Since(t).Milliseconds()
+	timingLog("getFilteredBidders", payload.BidRequest.ID, "", t, begin)
 
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, payload)
 
@@ -291,7 +315,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
-
+	t = time.Now()
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPriceGranularityConfig)
@@ -299,9 +323,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, nil
 	}
+	stageDur["computePriceGranularity"] = time.Since(t).Milliseconds()
+	timingLog("computePriceGranularity", payload.BidRequest.ID, "", t, begin)
 
 	rCtx.PriceGranularity = &priceGranularity
+	t = time.Now()
 	rCtx.AdUnitConfig = m.cache.GetAdunitConfigFromCache(payload.BidRequest, rCtx.PubID, rCtx.ProfileID, rCtx.DisplayID)
+	stageDur["GetAdunitConfigFromCache"] = time.Since(t).Milliseconds()
+	timingLog("GetAdunitConfigFromCache", payload.BidRequest.ID, "", t, begin)
 
 	requestExt.Prebid.Debug = rCtx.Debug
 	requestExt.Prebid.DebugOverride = rCtx.WakandaDebug.IsEnable()
@@ -352,6 +381,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt := &models.ImpExtension{}
 		if len(imp.Ext) != 0 {
 			err := json.Unmarshal(imp.Ext, impExt)
+			// glog.V(3).Infof("[before_validation_hook][ImpExt] Original: %s", string(imp.Ext))
 			if err != nil {
 				result.NbrCode = int(openrtb3.NoBidInvalidRequest)
 				err = errors.New("failed to parse imp.ext: " + imp.ID)
@@ -505,10 +535,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 				rCtx.ImpAdPodConfig[imp.ID] = podConfigs
 			}
 		}
-
+		t = time.Now()
 		rCtx.MultiFloors[imp.ID] = m.getMultiFloors(rCtx, reward, imp)
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
+		stageDur["getMultiFloors"] = time.Since(t).Milliseconds()
+		timingLog("getMultiFloors", payload.BidRequest.ID, imp.ID, t, begin)
+		partnerConfigStart := time.Now()
+		biddersProcessedForImp := 0
+		biddersSkippedForImp := 0
 		for _, partnerConfig := range rCtx.PartnerConfigMap {
 			if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 				continue
@@ -540,22 +575,39 @@ func (m OpenWrap) handleBeforeValidationHook(
 				continue
 			}
 
+			if m.cfg.Timeout.MaxServerSideBiddersPerImp > 0 && biddersProcessedForImp >= m.cfg.Timeout.MaxServerSideBiddersPerImp {
+				biddersSkippedForImp++
+				glog.Infof("[before_validation_hook] skip bidder (limit) req:%s imp:%s bidder:%s limit:%d",
+					payload.BidRequest.ID, imp.ID, prebidBidderCode, m.cfg.Timeout.MaxServerSideBiddersPerImp)
+				continue
+			}
+			biddersProcessedForImp++
+
 			var (
 				isRegex             bool
 				slot, kgpv          string
 				bidderParams        json.RawMessage
 				matchedSlotKeysVAST []string
 			)
+			t := time.Now()
 			switch prebidBidderCode {
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode)
 			case models.BidderVASTBidder:
 				slot, bidderParams, matchedSlotKeysVAST, err = bidderparams.PrepareVASTBidderParams(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, adpodConfig)
 			default:
-				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
+				glog.V(3).Infof("PrepareAdapterParamsV25 default---: %s, %s", imp.ID, prebidBidderCode)
+				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID, begin, prebidBidderCode)
 			}
-
+			label := fmt.Sprintf("prepareBidderParams_imp_%s_bidder_%s", imp.ID, prebidBidderCode)
+			stageDur[label] = time.Since(t).Milliseconds()
+			timingLog(label, payload.BidRequest.ID, imp.ID, t, begin)
+			glog.V(3).Infof("Beforvalidationhook: %s, %s", imp.ID, prebidBidderCode)
+			glog.V(3).Infof("[prepare_bidder_params][Slot]: %s, [KGPV]: %s, [IsRegex]: %v, [BidderParams]: %s, [Error]: %v", slot, kgpv, isRegex, string(bidderParams), err)
 			if err != nil || len(bidderParams) == 0 {
+				elapsedMs := time.Since(begin).Milliseconds()
+				glog.Infof("[bidder_params_validation_error] req:%s imp:%s partner:%s elapsed_ms:%d err:%v",
+					payload.BidRequest.ID, imp.ID, prebidBidderCode, elapsedMs, err)
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
 				nonMapped[bidderCode] = struct{}{}
 				m.metricEngine.RecordPartnerConfigErrors(rCtx.PubIDStr, rCtx.ProfileIDStr, bidderCode, models.PartnerErrSlotNotMapped)
@@ -617,6 +669,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(rctx.PartnerConfigMap
+		stageDur["PartnerConfigMap"] = time.Since(partnerConfigStart).Milliseconds()
+		timingLog("PartnerConfigMap", payload.BidRequest.ID, imp.ID, t, begin)
+		glog.Infof("[before_validation_hook] imp summary req:%s imp:%s bidders_processed:%d bidders_skipped:%d partner_loop_ms:%d",
+			payload.BidRequest.ID, imp.ID, biddersProcessedForImp, biddersSkippedForImp, stageDur["PartnerConfigMap"])
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {
@@ -625,6 +681,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for bidder, meta := range bidderMeta {
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
+		impExtJSON, _ := json.Marshal(impExt)
+		glog.V(3).Infof("ImpID: %s, [update_imp_ext][ImpExt] with bidder params---: %s", imp.ID, string(impExtJSON))
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL
@@ -653,6 +711,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Bidder = nil
 		impExt.OWSDK = nil
 		newImpExt, err := json.Marshal(impExt)
+		// glog.V(3).Infof("[before_validation_hook] ImpID: %s, [ImpExt] Updated: %s", imp.ID, string(newImpExt))
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
 		}
@@ -762,20 +821,62 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
+	// newImp, _ := json.Marshal(rCtx.ImpBidCtx)
+	// Safely access the first impression ID if available
+	// var impID string
+	// if len(rCtx.ImpBidCtx) > 0 {
+	// 	for _, impCtx := range rCtx.ImpBidCtx {
+	// 		impID = impCtx.ImpID
+	// 		break
+	// 	}
+	// }
+	// glog.V(3).Infof("[before_validation_hook] before mutation imp ID: %s, impBidCtx: %s, RequestExt Bidder params: %s", impID, string(newImp), string(requestExt.Prebid.BidderParams))
+	glog.V(3).Infof("[before_validation_hook] pre-mutation complete reqID:%s elapsed:%dms",
+		payload.BidRequest.ID, time.Since(begin).Milliseconds())
+	glog.Infof("[timing-summary-before-mutation] req:%s elapsed:%dms", payload.BidRequest.ID, time.Since(begin).Milliseconds())
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		var rjson string
+		mutationStart := time.Now()
+		glog.Infof("[mutation-start] req:%s imp:%s totalElapsedBeforeStart:%v",
+			ep.BidRequest.ID, rctx.LoggerImpressionID, time.Since(begin))
+
+		timingLog("inside mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationStart, begin)
+		stageDur["inside mutation"] = time.Since(t).Milliseconds()
+		glog.V(3).Infof("[before_validation_hook] inside mutation reqID:%s elapsed:%dms",
+			ep.BidRequest.ID, time.Since(begin).Milliseconds())
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			rjson = string(bidRequestBytes)
+			glog.V(3).Infof("Inside mutation ----- : %s", rjson)
+		} else {
+			glog.V(3).Infof("Inside mutation ----- : %s", err.Error())
+		}
+
 		defer func() {
+			mutationElapsed := time.Since(mutationStart)
+			stageDur["mutationElapsed"] = mutationElapsed.Milliseconds()
+			glog.Infof("[mutation-timing] req:%s imp:%s elapsed:%v", ep.BidRequest.ID, rctx.LoggerImpressionID, mutationElapsed)
+
+			timingLog("completed mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, t, begin)
+			stageDur["completed mutation"] = time.Since(t).Milliseconds()
 			moduleCtx.ModuleContext["rctx"] = rctx
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
 
 			// Always record preprocessing time stats
-			timeDiff := time.Since(time.Unix(rCtx.StartTime, 0)).Milliseconds()
+			timeDiff := time.Since(begin).Milliseconds()
+			glog.V(3).Infof("[before_validation_hook] end of mutation requestID: %s, imp ID: %s, timeDiff: %d", ep.BidRequest.ID, rctx.LoggerImpressionID, timeDiff)
 			m.metricEngine.RecordPreProcessingTimeStats(rCtx.PubIDStr, int(timeDiff))
+
+			processingTime := time.Since(begin)
+			timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
+			remainingTime := timeoutDuration - processingTime
+			glog.Infof("Mutation End [%s] total pre-processing:%v timeout:%v remaining:%v",
+				rCtx.LoggerImpressionID, processingTime, timeoutDuration, remainingTime)
 
 			// Debug logging only
 			if glog.V(models.LogLevelDebug) {
 				processingTime := time.Duration(timeDiff) * time.Millisecond
-				timeoutDuration := time.Duration(rCtx.TMax) * time.Millisecond
+				timeoutDuration := time.Duration(rCtx.TMax-300) * time.Millisecond
 				remainingTime := timeoutDuration - processingTime
 				glog.Infof("[%s] Total processing time taken before auction: %v", rCtx.LoggerImpressionID, processingTime)
 				glog.Infof("[%s] Max Timeout set: %v, Prebid Delta set: %v", rCtx.LoggerImpressionID, timeoutDuration, m.cfg.Timeout.PrebidDelta)
@@ -792,10 +893,23 @@ func (m OpenWrap) handleBeforeValidationHook(
 				ep.BidRequest.Source.SChain = nil
 			}
 		}
+		var reqJSON string
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			reqJSON = string(bidRequestBytes)
+		}
+		t = time.Now()
+		glog.V(3).Infof("[before_validation_hook] before apply_profile_changes: %s, requestID: %s, impID: %s", reqJSON, ep.BidRequest.ID, rctx.LoggerImpressionID)
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
+		stageDur["apply_profile_changes_inside_mutation"] = time.Since(t).Milliseconds()
+		timingLog("apply_profile_changes_inside_mutation", ep.BidRequest.ID, rctx.LoggerImpressionID, t, begin)
+		var r string
+		if bidRequestBytes, err := json.Marshal(ep.BidRequest); err == nil {
+			r = string(bidRequestBytes)
+		}
+		glog.V(3).Infof("[before_validation_hook] after apply_profile_changes bidrequest: %s", r)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
@@ -813,11 +927,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}, hookstage.MutationUpdate, "request-body-with-profile-data")
 
 	result.Reject = false
+	total := time.Since(begin).Milliseconds()
+	glog.Infof("[before_validation_summary] req:%s total:%dms stages:%v", payload.BidRequest.ID, total, stageDur)
+
 	return result, nil
 }
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
 func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openrtb2.BidRequest) (*openrtb2.BidRequest, error) {
+	// var reqJSON string
+	// if bidRequestBytes, err := json.Marshal(bidRequest); err == nil {
+	// 	reqJSON = string(bidRequestBytes)
+	// }
+	// glog.V(3).Infof("[before_validation_hook] Inside apply_profile_changes: %s", reqJSON)
 	if rctx.IsTestRequest > 0 {
 		bidRequest.Test = 1
 	}
@@ -851,12 +973,17 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	bidRequest.Source.TID = bidRequest.ID
 
 	for i := 0; i < len(bidRequest.Imp); i++ {
+		// impExt, _ := json.Marshal(bidRequest.Imp[i].Ext)
+		// glog.V(3).Infof("Before calling [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", bidRequest.Imp[i].ID, string(impExt))
+
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyImpChanges(rctx, &bidRequest.Imp[i])
+		// impExtLog, _ := json.Marshal(bidRequest.Imp[i].Ext)
+		// glog.V(3).Infof("After calling [apply_imp_changes] ImpID: %s, [ImpExt] Updated: %s", bidRequest.Imp[i].ID, string(impExtLog))
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
@@ -947,6 +1074,8 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 }
 
 func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+	// impExtLog, _ := json.Marshal(imp.Ext)
+	// glog.V(3).Infof("Inside [apply_imp_changes] ImpID: %s, [ImpExt] Before: %s", imp.ID, string(impExtLog))
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
@@ -964,6 +1093,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
+	// glog.V(3).Infof("End [apply_imp_changes] ImpID: %s, [ImpExt] Final: %s", imp.ID, string(imp.Ext))
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
