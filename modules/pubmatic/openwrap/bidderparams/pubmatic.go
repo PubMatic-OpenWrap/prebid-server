@@ -3,14 +3,29 @@ package bidderparams
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
-func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) (string, string, bool, []byte, error) {
+// timingLog helps with uniform timing instrumentation.
+func timing(label, reqID, impID string, start, begin time.Time) {
+	elapsed := time.Since(start).Milliseconds()
+	total := time.Since(begin).Milliseconds()
+	glog.V(3).Infof("[timing][%s] imp:%s req:%s elapsed:%dms total:%dms", label, impID, reqID, elapsed, total)
+}
+
+func getLabel(function, impid, biddercode, slot string) string {
+	return fmt.Sprintf("function_imp_%s_bidder_%s_slot_%s", impid, biddercode, slot)
+}
+
+func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int, begin time.Time, prebidBidderCode string) (string, string, bool, []byte, error) {
+	start := time.Now()
+	stageDur := make(map[string]int64)
 	extImpPubMatic := openrtb_ext.ExtImpPubmatic{
 		PublisherId: getPubMaticPublisherID(rctx, partnerID),
 		WrapExt:     getPubMaticWrapperExt(rctx, partnerID),
@@ -18,9 +33,11 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		Floors:      models.GetMultiFloors(rctx.MultiFloors, imp.ID),
 		OWSDK:       impExt.OWSDK,
 	}
-
+	t := time.Now()
+	label := getLabel("getSlotMeta_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	slots, slotMap, slotMappingInfo, _ := getSlotMeta(rctx, cache, bidRequest, imp, impExt, partnerID)
-
+	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
 	var err error
 	var matchedSlot, matchedPattern string
 	var isRegexSlot, isRegexKGP bool
@@ -38,8 +55,13 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 		return extImpPubMatic.AdSlot, "", false, params, err
 	}
 
+	t = time.Now()
+	label = getLabel("getMatchingSlotAndPattern_PreparePubMaticParamsV25", imp.ID, prebidBidderCode, "")
 	// simple+regex key match
 	matchedSlot, matchedPattern, isRegexSlot = getMatchingSlotAndPattern(rctx, cache, slots, slotMap, slotMappingInfo, isRegexKGP, isRegexSlot, partnerID, &extImpPubMatic, imp)
+
+	stageDur[label] = time.Since(t).Milliseconds()
+	timing(label, bidRequest.ID, imp.ID, t, begin)
 
 	if paramMap := getSlotMappings(matchedSlot, matchedPattern, slotMap); paramMap != nil {
 		if matchedPattern == "" {
@@ -75,6 +97,10 @@ func PreparePubMaticParamsV25(rctx models.RequestCtx, cache cache.Cache, bidRequ
 	}
 
 	params, err := json.Marshal(extImpPubMatic)
+	total := time.Since(begin).Milliseconds()
+	end := time.Since(start).Milliseconds()
+	glog.Infof("[PreparePubmaticParamsV25] req:%s total from beforevalidation:%dms total preparepubmaticbidderparams:%dms stages:%v", bidRequest.ID, total, end, stageDur)
+
 	return matchedSlot, matchedPattern, isRegexSlot, params, err
 }
 
