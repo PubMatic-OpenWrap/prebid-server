@@ -1,5 +1,5 @@
 {
-    "description": "Well Formed iOS 14.0 App Request With Unspecified LMT + Empty IFA",
+    "description": "iOS 14.2+ app with device.ext.atts denied (2); ModifyForIOS sets lmt=1",
     "mockBidRequest": {
         "id": "some-request-id",
         "app": {
@@ -7,8 +7,11 @@
         },
         "device": {
             "os": "iOS",
-            "osv": "14.0",
-            "ifa": ""
+            "osv": "14.2",
+            "ifa": "",
+            "ext": {
+                "atts": 2
+            }
         },
         "imp": [{
             "id": "my-imp-id",

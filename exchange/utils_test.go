@@ -2238,45 +2238,84 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 	)
 	testCases := []struct {
 		description         string
+		withApp             bool
+		deviceOS            string
 		lmt                 *int8
 		enforceLMT          bool
 		expectDataScrub     bool
+		expectedDeviceIP    string
 		expectPrivacyLabels metrics.PrivacyLabels
 	}{
 		{
-			description:     "Feature Flag Enabled - OpenTRB Enabled",
-			lmt:             &enabled,
-			enforceLMT:      true,
-			expectDataScrub: true,
+			description:      "Feature Flag Enabled - OpenTRB Enabled",
+			withApp:          true,
+			deviceOS:         "iOS",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: true,
 			},
 		},
 		{
-			description:     "Feature Flag Disabled - OpenTRB Enabled",
-			lmt:             &enabled,
-			enforceLMT:      false,
-			expectDataScrub: false,
+			description:      "Feature Flag Disabled - OpenTRB Enabled",
+			withApp:          false,
+			deviceOS:         "iOS",
+			lmt:              &enabled,
+			enforceLMT:       false,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
 			},
 		},
 		{
-			description:     "Feature Flag Enabled - OpenTRB Disabled",
-			lmt:             &disabled,
-			enforceLMT:      true,
-			expectDataScrub: false,
+			description:      "Feature Flag Enabled - OpenTRB Disabled",
+			withApp:          false,
+			deviceOS:         "iOS",
+			lmt:              &disabled,
+			enforceLMT:       true,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
 			},
 		},
 		{
-			description:     "Feature Flag Disabled - OpenTRB Disabled",
-			lmt:             &disabled,
-			enforceLMT:      false,
-			expectDataScrub: false,
+			description:      "Feature Flag Disabled - OpenTRB Disabled",
+			withApp:          false,
+			deviceOS:         "iOS",
+			lmt:              &disabled,
+			enforceLMT:       false,
+			expectDataScrub:  false,
+			expectedDeviceIP: "132.173.230.74",
 			expectPrivacyLabels: metrics.PrivacyLabels{
 				LMTEnforced: false,
+			},
+		},
+		{
+			description:      "Feature Flag Enabled - OpenTRB Enabled - Non Mobile OS",
+			withApp:          true,
+			deviceOS:         "windows",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "0.0.0.0",
+			expectPrivacyLabels: metrics.PrivacyLabels{
+				LMTEnforced: true,
+			},
+		},
+		{
+			description:      "Feature Flag Enabled - OpenTRB Enabled - Android",
+			withApp:          true,
+			deviceOS:         "Android",
+			lmt:              &enabled,
+			enforceLMT:       true,
+			expectDataScrub:  true,
+			expectedDeviceIP: "132.173.230.74",
+			expectPrivacyLabels: metrics.PrivacyLabels{
+				LMTEnforced: true,
 			},
 		},
 	}
@@ -2284,6 +2323,11 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 	for _, test := range testCases {
 		req := newBidRequest()
 		req.Device.Lmt = test.lmt
+		req.Device.OS = test.deviceOS
+		if test.withApp {
+			req.Site = nil
+			req.App = &openrtb2.App{ID: "test-app-id"}
+		}
 
 		auctionReq := AuctionRequest{
 			BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
@@ -2294,6 +2338,8 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 		gdprPermissionsBuilder := fakePermissionsBuilder{
 			permissions: &permissionsMock{
 				allowAllBidders: true,
+				passGeo:         true,
+				passID:          true,
 			},
 		}.Builder
 
@@ -2323,7 +2369,153 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 			assert.NotEqual(t, result.BidRequest.User.BuyerUID, "", test.description+":User.BuyerUID")
 			assert.NotEqual(t, result.BidRequest.Device.DIDMD5, "", test.description+":Device.DIDMD5")
 		}
+		assert.Equal(t, test.expectedDeviceIP, result.BidRequest.Device.IP, test.description+":Device.IP")
 		assert.Equal(t, test.expectPrivacyLabels, privacyLabels, test.description+":PrivacyLabels")
+	}
+}
+
+// newAuctionRequestForPrivacyTest is the AuctionRequest shape cleanOpenRTBRequests needs for exchange privacy tests.
+func newAuctionRequestForPrivacyTest(req *openrtb2.BidRequest, account config.Account, activities privacy.ActivityControl, gdprEnforced bool) AuctionRequest {
+	return AuctionRequest{
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
+		UserSyncs:         &emptyUsersync{},
+		Account:           account,
+		Activities:        activities,
+		TCF2Config:        gdpr.NewTCF2Config(config.TCF2{}, account.GDPR),
+		GDPREnforced:      gdprEnforced,
+		GDPRSignal:        gdpr.SignalYes,
+	}
+}
+
+// TestCleanOpenRTBRequestsLMTOtherPrivacy: full IP only on pure LMT+app+iOS/Android; COPPA/CCPA/geo activity still mask IP.
+func TestCleanOpenRTBRequestsLMTOtherPrivacy(t *testing.T) {
+	var (
+		enabled int8 = 1
+		trueVal      = true
+	)
+	tcf2Consent := "COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA"
+
+	base := func() *openrtb2.BidRequest {
+		req := newBidRequest()
+		req.Site = nil
+		req.App = &openrtb2.App{ID: "test-app-id"}
+		req.Device.Lmt = &enabled
+		req.Device.OS = "iOS"
+		return req
+	}
+
+	testCases := []struct {
+		desc             string
+		req              *openrtb2.BidRequest
+		expectedDeviceIP string
+		privacyConfig    config.Privacy
+		account          config.Account
+		activities       privacy.ActivityControl
+		passGeo          bool
+		gdprEnforced     bool
+	}{
+		{
+			desc:             "LMT_only_app_iOS_only_—_full_IP_preserved",
+			req:              base(),
+			expectedDeviceIP: "132.173.230.74",
+			privacyConfig:    config.Privacy{LMT: config.LMT{Enforce: true}},
+			account:          config.Account{},
+			passGeo:          true,
+		},
+		{
+			desc: "COPPA_with_LMT_—_full_IP_scrub_(COPPA_branch,_not_LMT_IP_preservation)",
+			req: func() *openrtb2.BidRequest {
+				r := base()
+				r.Regs = &openrtb2.Regs{COPPA: 1}
+				return r
+			}(),
+			expectedDeviceIP: "0.0.0.0",
+			privacyConfig:    config.Privacy{LMT: config.LMT{Enforce: true}},
+			account:          config.Account{},
+			passGeo:          true,
+		},
+		{
+			desc: "CCPA_opt-out_with_LMT_—_IP_scrubbed_by_CCPA_before_LMT",
+			req: func() *openrtb2.BidRequest {
+				r := base()
+				r.Regs = &openrtb2.Regs{USPrivacy: "1-Y-"}
+				return r
+			}(),
+			expectedDeviceIP: "0.0.0.0",
+			privacyConfig: config.Privacy{
+				LMT:  config.LMT{Enforce: true},
+				CCPA: config.CCPA{Enforce: true},
+			},
+			account: config.Account{
+				CCPA: config.AccountCCPA{Enabled: &trueVal},
+			},
+			passGeo: true,
+		},
+		{
+			desc: "GDPR_PassGeo_false_masks_device_IP_via_ScrubGeoAndDeviceIP_not_LMT_IP_rule",
+			req: func() *openrtb2.BidRequest {
+				r := base()
+				r.User.Consent = tcf2Consent
+				return r
+			}(),
+			expectedDeviceIP: "0.0.0.0",
+			privacyConfig:    config.Privacy{LMT: config.LMT{Enforce: true}},
+			account:          config.Account{},
+			passGeo:          false,
+			gdprEnforced:     true,
+		},
+		{
+			desc:             "TransmitPreciseGeo_denied_with_LMT_—_IP_truncated_per_account_IPv4_config",
+			req:              base(),
+			expectedDeviceIP: "132.173.0.0",
+			privacyConfig:    config.Privacy{LMT: config.LMT{Enforce: true}},
+			account: func() config.Account {
+				ap := getTransmitPreciseGeoActivityConfig("appnexus", false)
+				ap.IPv4Config = config.IPv4{AnonKeepBits: 16}
+				ap.IPv6Config = config.IPv6{AnonKeepBits: 32}
+				return config.Account{Privacy: ap}
+			}(),
+			activities: func() privacy.ActivityControl {
+				ap := getTransmitPreciseGeoActivityConfig("appnexus", false)
+				ap.IPv4Config = config.IPv4{AnonKeepBits: 16}
+				ap.IPv6Config = config.IPv6{AnonKeepBits: 32}
+				return privacy.NewActivityControl(&ap)
+			}(),
+			passGeo: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			req := tc.req
+
+			metricsMock := metrics.MetricsEngineMock{}
+			metricsMock.Mock.On("RecordAdapterBuyerUIDScrubbed", mock.Anything).Return()
+
+			auctionReq := newAuctionRequestForPrivacyTest(req, tc.account, tc.activities, tc.gdprEnforced)
+
+			gdprPermissionsBuilder := fakePermissionsBuilder{
+				permissions: &permissionsMock{
+					allowAllBidders: true,
+					passGeo:         tc.passGeo,
+					passID:          true,
+				},
+			}.Builder
+
+			reqSplitter := &requestSplitter{
+				bidderToSyncerKey: map[string]string{},
+				me:                &metricsMock,
+				privacyConfig:     tc.privacyConfig,
+				gdprPermsBuilder:  gdprPermissionsBuilder,
+				hostSChainNode:    nil,
+				bidderInfo:        config.BidderInfos{},
+			}
+
+			results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
+			assert.Empty(t, errs, tc.desc)
+			assert.Len(t, results, 1, tc.desc)
+			assert.Equal(t, tc.expectedDeviceIP, results[0].BidRequest.Device.IP, tc.desc)
+		})
 	}
 }
 
