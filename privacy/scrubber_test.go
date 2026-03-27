@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
@@ -497,5 +498,84 @@ func TestScrubUserExtIDs(t *testing.T) {
 	for _, test := range testCases {
 		result := scrubExtIDs(test.userExt, "eids")
 		assert.Equal(t, test.expected, result, test.description)
+	}
+}
+
+func TestScrubDeviceIDsIPsUserDemoExt_ApplyDeviceIPScrub(t *testing.T) {
+	tests := []struct {
+		name               string
+		applyDeviceIPScrub bool
+		ipConf             IPConf
+		device             *openrtb2.Device
+		user               *openrtb2.User
+		wantIPv4           string
+		wantIPv6           string
+		wantGeoLat         float64
+	}{
+		{
+			name:               "applyDeviceIPScrub_false_keeps_ip_ipv6",
+			applyDeviceIPScrub: false,
+			ipConf: IPConf{
+				IPV4: config.IPv4{AnonKeepBits: 24},
+				IPV6: config.IPv6{AnonKeepBits: 56},
+			},
+			device: &openrtb2.Device{
+				IP:     "192.168.1.100",
+				IPv6:   "2001:db8::1",
+				IFA:    "ifa-value",
+				DIDMD5: "did-md5",
+				Geo:    &openrtb2.Geo{Lat: ptrutil.ToPtr(12.3456)},
+			},
+			user: &openrtb2.User{
+				BuyerUID: "buyer",
+				Ext:      json.RawMessage(`{"eids":[]}`),
+			},
+			wantIPv4:   "192.168.1.100",
+			wantIPv6:   "2001:db8::1",
+			wantGeoLat: 12.35,
+		},
+		{
+			name:               "applyDeviceIPScrub_true_masks_ip_ipv6",
+			applyDeviceIPScrub: true,
+			ipConf: IPConf{
+				IPV4: config.IPv4{AnonKeepBits: 24},
+				IPV6: config.IPv6{AnonKeepBits: 56},
+			},
+			device: &openrtb2.Device{
+				IP:     "192.168.1.100",
+				IPv6:   "2001:db8::1",
+				IFA:    "ifa-value",
+				DIDMD5: "did-md5",
+				Geo:    &openrtb2.Geo{Lat: ptrutil.ToPtr(12.3456)},
+			},
+			user: &openrtb2.User{
+				BuyerUID: "buyer",
+				Ext:      json.RawMessage(`{"eids":[]}`),
+			},
+			wantIPv4:   "192.168.1.0",
+			wantIPv6:   "2001:db8::",
+			wantGeoLat: 12.35,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			brw := &openrtb_ext.RequestWrapper{BidRequest: &openrtb2.BidRequest{
+				Device: ptrutil.Clone(tt.device),
+				User:   ptrutil.Clone(tt.user),
+			}}
+			ScrubDeviceIDsIPsUserDemoExt(brw, tt.ipConf, "eids", false, tt.applyDeviceIPScrub)
+			brw.RebuildRequest()
+
+			assert.Equal(t, tt.wantIPv4, brw.Device.IP)
+			assert.Equal(t, tt.wantIPv6, brw.Device.IPv6)
+			assert.Empty(t, brw.Device.IFA)
+			assert.Empty(t, brw.Device.DIDMD5)
+			assert.Empty(t, brw.User.BuyerUID)
+			if len(brw.User.Ext) > 0 {
+				assert.NotContains(t, string(brw.User.Ext), "eids")
+			}
+			assert.Equal(t, tt.wantGeoLat, *brw.Device.Geo.Lat)
+		})
 	}
 }
