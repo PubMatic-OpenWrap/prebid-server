@@ -786,16 +786,22 @@ func TestGetMobileAppPlatform(t *testing.T) {
 			want:            models.DevicePlatformMobileAppIos,
 		},
 		{
-			name:            "os_ios_with_version",
+			name:            "os_ios_with_version_not_exact_match_uses_ua_fallback",
 			os:              "ios 15.0",
 			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_ios_with_version_ua_iphone_fallback_ios",
+			os:              "ios 15.0",
+			userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15",
 			want:            models.DevicePlatformMobileAppIos,
 		},
 		{
-			name:            "os_ios_trimmed",
+			name:            "os_padded_ios_not_equal_to_ios_without_ua",
 			os:              "  ios  ",
 			userAgentString: "",
-			want:            models.DevicePlatformMobileAppIos,
+			want:            models.DevicePlatformNotDefined,
 		},
 		{
 			name:            "os_android_exact",
@@ -810,9 +816,15 @@ func TestGetMobileAppPlatform(t *testing.T) {
 			want:            models.DevicePlatformMobileAppAndroid,
 		},
 		{
-			name:            "os_android_with_version",
+			name:            "os_android_with_version_not_exact_match_without_ua",
 			os:              "android 10",
 			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_android_with_version_ua_android_fallback",
+			os:              "android 10",
+			userAgentString: "Mozilla/5.0 (Linux; Android 10; Pixel 3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
 			want:            models.DevicePlatformMobileAppAndroid,
 		},
 		{

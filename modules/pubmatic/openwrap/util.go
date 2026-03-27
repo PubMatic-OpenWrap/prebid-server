@@ -187,15 +187,13 @@ func isAndroid(os string, userAgentString string) bool {
 	return false
 }
 
-// getMobileAppPlatform returns iOS or Android for mobile app; for SDK/integration endpoints
-// uses device.os first when valid, else falls back to UA/os in isIos/isAndroid.
-// TODO: Need to add endpoint check for SDK/integration endpoints when we add AMP and CTV endpoint code in modules code.
+// getMobileAppPlatform returns iOS or Android for mobile app traffic.
+// It matches device.os with strings.EqualFold against "ios" or "android" only; otherwise it uses iosUARegex / androidUARegex on the user agent (same patterns as isIos/isAndroid UA checks).
 func getMobileAppPlatform(os, userAgentString string) models.DevicePlatform {
-	osLower := strings.ToLower(strings.TrimSpace(os))
-	if osLower == "ios" || strings.HasPrefix(osLower, "ios ") {
+	if strings.EqualFold(os, "ios") {
 		return models.DevicePlatformMobileAppIos
 	}
-	if osLower == "android" || strings.HasPrefix(osLower, "android ") {
+	if strings.EqualFold(os, "android") {
 		return models.DevicePlatformMobileAppAndroid
 	}
 
