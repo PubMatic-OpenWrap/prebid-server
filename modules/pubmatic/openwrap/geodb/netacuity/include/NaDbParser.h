@@ -1,22 +1,22 @@
 //============================================================================
-// Program     : NetAcuity C++ Embedded API
+// Program     : C++ NetAcuity Embedded API
 // Author      : Digital Envoy
-// Version     : 6.4.1.3
-// Date        : 25-Jun-2019
-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+// Version     : 7.0.0.1
+// Date        : 2023-DEC-08
+// Copyright   : Copyright 2000-2023, Digital Envoy, Inc.  All rights reserved.
 //============================================================================
 
 
 #ifndef NA_DB_PARSER_H_
 #define NA_DB_PARSER_H_
 
-#include "NaDbBaseAccessor.h"
+#include "NaDbAccessor.h"
 
 namespace netacuity {
 
 typedef struct AccessorInfo_struct {
 	AccessorInfo_struct() : accessor(), fieldNameList() {}
-	NaDbBaseAccessor* accessor;
+	NaDbAccessor* accessor;
 	StringList fieldNameList;
 } AccessorInfo;
 
@@ -29,22 +29,22 @@ public:
 	virtual ~NaDbParser();
 
 	/// Load the specified accessor.
-	void loadAccessor( NaDbBaseAccessor &accessor );
+	void loadAccessor( NaDbAccessor &accessor );
 
 	/// Return the accessor loaded for the specified featureCode.
-	const NaDbBaseAccessor* getAccessor( int featureCode ) const;
+	const NaDbAccessor* getAccessor( int featureCode ) const;
 
 	/// Retrieve the mapped response for the specified IPv4 number.
-	ResponseMap queryMappedResponseIpv4( unsigned long ipNum ) const;
+	ResponseMap queryMappedResponseIpv4( u_int32_t ipNum ) const;
 
 	/// Retrieve the mapped response for the specified IPv6 network number.
 	/// The network number is the half of the IPv6 address which contains the most significant-bits.
-	ResponseMap queryMappedResponseIpv6( unsigned long long numNetwork ) const;
+	ResponseMap queryMappedResponseIpv6( u_int64_t numNetwork ) const;
 
 	/// Retrieve the mapped response for the specified IPv6 full network and interface numbers.
 	/// The network number is the half of the IPv6 address which contains the most significant bits.
 	/// The interface number is the half of the IPv6 address which contains the least significant bits.
-	ResponseMap queryMappedResponseIpv6( unsigned long long numNetwork, unsigned long long numInterface ) const;
+	ResponseMap queryMappedResponseIpv6( u_int64_t numNetwork, u_int64_t numInterface ) const;
 
 	/// Retrieve the mapped response for the specified IPv4 address.
 	ResponseMap queryMappedResponseIpv4( in_addr ipv4 ) const;
