@@ -690,6 +690,14 @@ func TestIsIos(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "Android_HiPad_X_UA_should_not_match_iOS",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (Linux; Android 10; HiPad X Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.79 Safari/537.36",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -741,10 +749,178 @@ func TestIsAndroid(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "Android_HiPad_X_UA_should_match_Android",
+			args: args{
+				os:              "",
+				userAgentString: "Mozilla/5.0 (Linux; Android 10; HiPad X Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.79 Safari/537.36",
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := isAndroid(tt.args.os, tt.args.userAgentString)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetMobileAppPlatform(t *testing.T) {
+	tests := []struct {
+		name            string
+		os              string
+		userAgentString string
+		want            models.DevicePlatform
+	}{
+		{
+			name:            "os_ios_exact",
+			os:              "ios",
+			userAgentString: "",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_iOS_case_insensitive",
+			os:              "iOS",
+			userAgentString: "",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_ios_with_version_not_exact_match_uses_ua_fallback",
+			os:              "ios 15.0",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_ios_with_version_ua_iphone_fallback_ios",
+			os:              "ios 15.0",
+			userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_padded_ios_not_equal_to_ios_without_ua",
+			os:              "  ios  ",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_android_exact",
+			os:              "android",
+			userAgentString: "",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "os_Android_case_insensitive",
+			os:              "Android",
+			userAgentString: "",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "os_android_with_version_not_exact_match_without_ua",
+			os:              "android 10",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_android_with_version_ua_android_fallback",
+			os:              "android 10",
+			userAgentString: "Mozilla/5.0 (Linux; Android 10; Pixel 3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "os_ios_without_space_is_invalid_without_ua",
+			os:              "ios17",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_android_without_space_is_invalid_without_ua",
+			os:              "android14",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_empty_ua_ios_fallback",
+			os:              "",
+			userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "ua_ipad_should_be_ios",
+			os:              "",
+			userAgentString: "Mozilla/5.0 (iPad; CPU OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "ua_mobile_safari_darwin_should_be_ios",
+			os:              "",
+			userAgentString: "MobileSafari/602.1 CFNetwork/811.5.4 Darwin/16.7.0",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "ua_outlook_ios_should_be_ios",
+			os:              "",
+			userAgentString: "Outlook-iOS/709.2144270.prod.iphone (3.23.0)",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "ua_iphone_fxios_should_be_ios",
+			os:              "",
+			userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/7.0.4 Mobile/16B91 Safari/605.1.15",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_empty_ua_android_fallback",
+			os:              "",
+			userAgentString: "Mozilla/5.0 (Linux; Android 7.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/59.0.3029.83 Mobile Safari/537.36",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "hipad_max_android_ua_should_be_android",
+			os:              "",
+			userAgentString: "Mozilla/5.0 (Linux; Android 12; HiPad Max Build/SKQ1.220119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.120 Safari/537.36",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "ua_partial_word_hipad_without_android_should_not_be_ios",
+			os:              "Android",
+			userAgentString: "Mozilla/5.0 (Linux; HiPad Max Build/SKQ1.220119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/145.0.7632.120 Safari/537.36",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+		{
+			name:            "ua_partial_word_myiphoneapp_should_not_be_ios",
+			os:              "ios",
+			userAgentString: "MyIphoneApp/1.0 (custom agent)",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_invalid_ua_empty_not_defined",
+			os:              "windows",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_empty_ua_empty_not_defined",
+			os:              "",
+			userAgentString: "",
+			want:            models.DevicePlatformNotDefined,
+		},
+		{
+			name:            "os_ios_overrides_android_ua",
+			os:              "ios",
+			userAgentString: "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36",
+			want:            models.DevicePlatformMobileAppIos,
+		},
+		{
+			name:            "os_android_overrides_ios_ua",
+			os:              "android",
+			userAgentString: "Mozilla/5.0 (iPhone; CPU iPhone OS 12_1 like Mac OS X) AppleWebKit/605.1.15",
+			want:            models.DevicePlatformMobileAppAndroid,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getMobileAppPlatform(tt.os, tt.userAgentString)
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -3638,7 +3638,7 @@ func TestValidateBidders(t *testing.T) {
 	}
 }
 
-func TestIOS14EndToEnd(t *testing.T) {
+func TestIOS14_2AndGreaterEndToEnd(t *testing.T) {
 	exchange := &nobidExchange{}
 
 	endpoint, _ := NewEndpoint(
@@ -3658,7 +3658,7 @@ func TestIOS14EndToEnd(t *testing.T) {
 		nil,
 	)
 
-	httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "app-ios140-no-ifa.json")))
+	httpReq := httptest.NewRequest("POST", "/openrtb2/auction", strings.NewReader(validRequest(t, "app-ios142-atts-denied.json")))
 
 	endpoint(httptest.NewRecorder(), httpReq, nil)
 
@@ -3667,8 +3667,8 @@ func TestIOS14EndToEnd(t *testing.T) {
 		t.FailNow()
 	}
 
-	var lmtOne int8 = 1
-	assert.Equal(t, &lmtOne, result.Device.Lmt)
+	// iOS 14.2+: ModifyForIOS maps device.ext.atts (here denied=2) to lmt=1 (privacy/lmt/ios.go).
+	assert.Equal(t, openrtb2.Int8Ptr(1), result.Device.Lmt)
 }
 
 func TestAuctionWarnings(t *testing.T) {

@@ -385,7 +385,7 @@ func (rs *requestSplitter) applyPrivacy(reqWrapper *openrtb_ext.RequestWrapper, 
 		}
 
 		if ccpaEnforcer.ShouldEnforce(bidderName) {
-			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false)
+			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, true)
 			buyerUIDRemoved = true
 		}
 	}
@@ -401,12 +401,19 @@ func (rs *requestSplitter) applyPrivacy(reqWrapper *openrtb_ext.RequestWrapper, 
 			privacy.ScrubGeoAndDeviceIP(reqWrapper, ipConf)
 		}
 		if ccpaEnforcer.ShouldEnforce(bidderName) {
-			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false)
+			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, true)
 		}
 	}
 
-	if lmt || coppa {
-		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", coppa)
+	// COPPA: full scrub including device IP.
+	// LMT: for app traffic only, when device.os is iOS or Android, preserve IP; otherwise mask IP (incl. site / non-mobile).
+	if coppa {
+		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", true, true)
+	} else if lmt {
+		isMobileAppOS := reqWrapper.App != nil && reqWrapper.Device != nil &&
+			(strings.EqualFold(reqWrapper.Device.OS, "ios") || strings.EqualFold(reqWrapper.Device.OS, "android"))
+		scrubDeviceIP := !isMobileAppOS
+		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, scrubDeviceIP)
 	}
 
 	passTIDAllowed := auctionReq.Activities.Allow(privacy.ActivityTransmitTIDs, scope, privacy.NewRequestFromBidRequest(*reqWrapper))

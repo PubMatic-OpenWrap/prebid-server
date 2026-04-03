@@ -97,10 +97,8 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 		if bidRequest != nil && bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 			os = bidRequest.Device.OS
 		}
-		if isIos(os, userAgentString) {
-			return models.DevicePlatformMobileAppIos
-		} else if isAndroid(os, userAgentString) {
-			return models.DevicePlatformMobileAppAndroid
+		if platform := getMobileAppPlatform(os, userAgentString); platform != models.DevicePlatformNotDefined {
+			return platform
 		}
 
 	case models.PLATFORM_DISPLAY:
@@ -149,7 +147,6 @@ func getDevicePlatform(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) 
 			if bidRequest.Device != nil && len(bidRequest.Device.OS) != 0 {
 				os = bidRequest.Device.OS
 			}
-
 			if isIos(os, userAgentString) {
 				return models.DevicePlatformMobileAppIos
 			} else if isAndroid(os, userAgentString) {
@@ -188,6 +185,25 @@ func isAndroid(os string, userAgentString string) bool {
 		return true
 	}
 	return false
+}
+
+// getMobileAppPlatform returns iOS or Android for mobile app traffic.
+// It matches device.os with strings.EqualFold against "ios" or "android" only; otherwise it uses iosUARegex / androidUARegex on the user agent (same patterns as isIos/isAndroid UA checks).
+func getMobileAppPlatform(os, userAgentString string) models.DevicePlatform {
+	if strings.EqualFold(os, "ios") {
+		return models.DevicePlatformMobileAppIos
+	}
+	if strings.EqualFold(os, "android") {
+		return models.DevicePlatformMobileAppAndroid
+	}
+
+	if iosUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return models.DevicePlatformMobileAppIos
+	}
+	if androidUARegex.Match([]byte(strings.ToLower(userAgentString))) {
+		return models.DevicePlatformMobileAppAndroid
+	}
+	return models.DevicePlatformNotDefined
 }
 
 // GetIntArray converts interface to int array if it is compatible
