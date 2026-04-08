@@ -101,6 +101,8 @@ type Timeout struct {
 	MinTimeout  int64
 	HBTimeout   int64
 	PrebidDelta int64
+	// MaxServerSideBiddersPerImp limits how many server-side bidders are processed per impression (0 = no limit). Use to find threshold for staying under hook timeout and reducing validation errors.
+	MaxServerSideBiddersPerImp int `mapstructure:"max_server_side_bidders_per_imp"`
 }
 
 type Tracker struct {
