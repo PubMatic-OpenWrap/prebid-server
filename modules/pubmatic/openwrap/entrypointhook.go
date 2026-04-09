@@ -47,7 +47,6 @@ func (m OpenWrap) handleEntrypointHook(
 
 	rCtx := models.RequestCtx{}
 	var endpoint string
-	var pubid int
 	var requestExtWrapper models.RequestExtWrapper
 	defer func() {
 		if result.Reject {
@@ -110,6 +109,30 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-unity-level-play-request")
+	}
+
+	// Publisher id from raw body after any SDK merge (e.g. Google SDK injects app.publisher.id from signal).
+	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
+	if len(errs) > 0 {
+		result.Reject = true
+		result.NbrCode = int(nbr.InvalidPublisherID)
+		result.Errors = append(result.Errors, errs[0].Error())
+		return result, errs[0]
+	}
+	if endpoint == models.EndpointAPS {
+		var errAps error
+		payload.Body, errAps = enrichApsRequest(payload.Body, m.cache, m.metricEngine, pubIdStr)
+		if errAps != nil {
+			result.Reject = true
+			glog.Errorf("aps_slot_mapping: %v", errAps)
+			result.NbrCode = int(nbr.APSSlotUUIDNotMapped)
+			result.Errors = append(result.Errors, errAps.Error())
+			return result, errAps
+		}
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-aps-request")
 	}
 
 	// init default for all modules
@@ -188,18 +211,6 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.LoggerImpressionID = uuid.NewV4().String()
 	}
 
-	// temp, for AMP, etc
-	if pubid != 0 {
-		rCtx.PubID = pubid
-	}
-
-	pubIdStr, _, _, errs := getAccountIdFromRawRequest(false, nil, payload.Body)
-	if len(errs) > 0 {
-		result.NbrCode = int(nbr.InvalidPublisherID)
-		result.Errors = append(result.Errors, errs[0].Error())
-		return result, errs[0]
-	}
-
 	rCtx.PubID, err = strconv.Atoi(pubIdStr)
 	if err != nil {
 		result.NbrCode = int(nbr.InvalidPublisherID)
@@ -261,6 +272,8 @@ func GetEndpoint(path, source string, agent string) string {
 				return models.EndpointGoogleSDK
 			case models.UnityLevelPlayAgent:
 				return models.EndpointUnityLevelPlay
+			case models.ApsAgent:
+				return models.EndpointAPS
 			}
 			return models.EndpointV25
 		default:
