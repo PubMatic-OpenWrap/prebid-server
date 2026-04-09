@@ -16,7 +16,7 @@ import (
 
 // apsOwMappingSelectBySlot is the cache-miss single-row query; only the UUID argument varies per request.
 // Must match the table/columns used by Queries.GetApsOwMapping (e.g. wrapper_aps_adunit_mapping).
-const apsOwMappingSelectBySlot = `SELECT aps_slot_uuid, CAST(ad_unit_id AS CHAR), profile_id FROM wrapper_aps_adunit_mapping WHERE aps_slot_uuid = ?`
+const apsOwMappingSelectBySlot = `SELECT aps_slot_uuid, ad_unit_id, profile_id FROM wrapper_aps_adunit_mapping WHERE aps_slot_uuid = ?`
 
 // ApsOwMappingEntry maps an APS slot UUID to OpenWrap ad unit and profile identifiers.
 type ApsOwMappingEntry struct {
