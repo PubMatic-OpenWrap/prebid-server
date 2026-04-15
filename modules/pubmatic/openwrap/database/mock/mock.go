@@ -186,6 +186,22 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMappings", reflect.TypeOf((*MockDatabase)(nil).GetMappings), arg0, arg1)
 }
 
+// GetApsOwMapping mocks base method.
+func (m *MockDatabase) GetApsOwMapping(arg0 string) (string, int, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApsOwMapping", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
+}
+
+// GetApsOwMapping indicates an expected call of GetApsOwMapping.
+func (mr *MockDatabaseMockRecorder) GetApsOwMapping(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApsOwMapping", reflect.TypeOf((*MockDatabase)(nil).GetApsOwMapping), arg0)
+}
+
 // GetPerformanceDSPs mocks base method.
 func (m *MockDatabase) GetPerformanceDSPs() (map[int]struct{}, error) {
 	m.ctrl.T.Helper()

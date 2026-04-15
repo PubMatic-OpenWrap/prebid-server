@@ -110,6 +110,9 @@ type Metrics struct {
 
 	//geo lookup
 	geoLookUpFailure *prometheus.CounterVec
+
+	// APS (Amazon Publisher Services) slot → OW mapping
+	apsSlotMappingRejects *prometheus.CounterVec
 }
 
 const (
@@ -135,6 +138,8 @@ const (
 	adapterCodeLabel   = "adapter_code"
 	errorCodeLabel     = "error_code"
 	countryLabel       = "country"
+	apsReasonLabel     = "reason"
+	apsSlotUUIDLabel   = "slot_uuid"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
@@ -443,6 +448,11 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"geo_lookup_fail",
 		"Count of geo lookup failures",
 		[]string{endpointLabel})
+
+	metrics.apsSlotMappingRejects = newCounter(cfg, promRegistry,
+		"aps_slot_mapping_rejects",
+		"Count of APS slot UUID mapping rejects.",
+		[]string{pubIDLabel, apsSlotUUIDLabel, apsReasonLabel})
 
 	newSSHBMetrics(&metrics, cfg, promRegistry)
 
@@ -832,5 +842,13 @@ func (m *Metrics) RecordEndpointResponseSize(endpoint string, bodySize float64) 
 func (m *Metrics) RecordGeoLookupFailure(endpoint string) {
 	m.geoLookUpFailure.With(prometheus.Labels{
 		endpointLabel: endpoint,
+	}).Inc()
+}
+
+func (m *Metrics) RecordAPSSlotMappingReject(publisherID, slotUUID, reason string) {
+	m.apsSlotMappingRejects.With(prometheus.Labels{
+		pubIDLabel:       publisherID,
+		apsSlotUUIDLabel: slotUUID,
+		apsReasonLabel:   reason,
 	}).Inc()
 }

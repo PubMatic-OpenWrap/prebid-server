@@ -23,6 +23,8 @@ type Database interface {
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 	GetLatestCountryPartnerFilter() map[string]map[string]struct{}
+	// GetApsOwMapping resolves APS slot UUID (imp.tagid) to OW ad unit id and profile id (cache first; on miss single-row query in mysql package — see mysql.ApsOwMappingDB).
+	GetApsOwMapping(slotUUID string) (adUnitID string, profileID int, found bool)
 	GetPerformanceDSPs() (map[int]struct{}, error)
 	GetInViewEnabledPublishers() (map[int]struct{}, error)
 }
