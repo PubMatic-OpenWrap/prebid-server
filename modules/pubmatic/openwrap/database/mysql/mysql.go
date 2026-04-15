@@ -47,3 +47,11 @@ func New(conn *sql.DB, cfg config.Database, cache config.Cache) *mySqlDB {
 		})
 	return db
 }
+
+// Shutdown stops background work owned by this DB handle (APS OW mapping refresh ticker).
+func (db *mySqlDB) Shutdown() {
+	if db == nil || db.apsOwMappingDB == nil {
+		return
+	}
+	db.apsOwMappingDB.Stop()
+}

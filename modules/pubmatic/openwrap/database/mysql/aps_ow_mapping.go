@@ -33,6 +33,8 @@ type ApsOwMappingDB struct {
 	// reloadMu serializes full refresh (query+Store) with per-slot merge so a stale full snapshot cannot
 	// overwrite a merge that completed while the full query was in flight. Also serializes cache-miss loads.
 	reloadMu sync.Mutex
+	stopCh   chan struct{}
+	stopOnce sync.Once
 }
 
 func NewApsOwMappingDB(db *sql.DB, refreshInterval time.Duration, query string, maxDbContextTimeout time.Duration) (*ApsOwMappingDB, error) {
@@ -49,6 +51,7 @@ func NewApsOwMappingDB(db *sql.DB, refreshInterval time.Duration, query string, 
 		refreshInterval:     refreshInterval * time.Hour,
 		query:               q,
 		MaxDbContextTimeout: maxDbContextTimeout * time.Millisecond,
+		stopCh:              make(chan struct{}),
 	}
 
 	if err := m.RefreshCache(); err != nil {
@@ -76,6 +79,9 @@ func (a *ApsOwMappingDB) RefreshCache() error {
 		}
 		a.cache.Store(data)
 		a.reloadMu.Unlock()
+		if glog.V(models.LogLevelDebug) {
+			glog.Infof("APS-OW mapping cache refreshed: %d entries", len(data))
+		}
 		return nil
 	}
 
@@ -158,15 +164,35 @@ func (a *ApsOwMappingDB) mergeEntryIntoCache(slotUUID string, entry ApsOwMapping
 }
 
 func (a *ApsOwMappingDB) ScheduleRefresh() {
+	if a == nil || a.stopCh == nil {
+		return
+	}
 	go func() {
 		ticker := time.NewTicker(a.refreshInterval)
 		defer ticker.Stop()
-		for range ticker.C {
-			if err := a.RefreshCache(); err != nil {
-				glog.Errorf("scheduled APS OW mapping cache refresh failed: %v", err)
+		for {
+			select {
+			case <-ticker.C:
+				if err := a.RefreshCache(); err != nil {
+					glog.Errorf("scheduled APS OW mapping cache refresh failed: %v", err)
+				}
+			case <-a.stopCh:
+				return
 			}
 		}
 	}()
+}
+
+// Stop ends the background refresh goroutine started by ScheduleRefresh (safe to call more than once).
+func (a *ApsOwMappingDB) Stop() {
+	if a == nil {
+		return
+	}
+	a.stopOnce.Do(func() {
+		if a.stopCh != nil {
+			close(a.stopCh)
+		}
+	})
 }
 
 func (a *ApsOwMappingDB) Lookup(slotUUID string) (adUnitID string, profileID int, found bool) {
