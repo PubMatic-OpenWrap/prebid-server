@@ -99,7 +99,7 @@ func (rb *responseBuilder) setPrebidBidderResponse(bidderResponseBytes json.RawM
 // Returns the BidderResponse and any error encountered during the conversion.
 func (rb *responseBuilder) buildAdapterResponse() (resp *adapters.BidderResponse, err error) {
 	var adapterResponeBytes json.RawMessage
-	adapterResponeBytes, err = jsonutil.Marshal(rb.adapterRespone)
+	adapterResponeBytes, err = json.Marshal(rb.adapterRespone)
 	if err != nil {
 		return nil, util.NewBadServerResponseError("%s", err.Error())
 	}
