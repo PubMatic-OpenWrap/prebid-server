@@ -700,6 +700,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
 		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
+
+		// Add ad attributes to OWSDK extension for SDK endpoints
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+			m.addAdAttributesToOWSDK(payload.BidRequest, &imp, impCtx)
+		}
+
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
 
