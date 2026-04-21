@@ -648,6 +648,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
+		// Preserve client ext.owsdk (e.g. ctaoverlay) before stripping for marshal; merged back with server adattributes below.
+		incomingOWSDK := impExt.OWSDK
 		isCTAOverlayRequest := impExt.OWSDK != nil && impExt.OWSDK["ctaoverlay"] == float64(1)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
@@ -700,6 +702,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
 		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
+
+		// Merge client ext.owsdk + server adattributes into NewExt (what applyImpChanges applies to the outgoing request).
+		// Mutating imp.Ext here is lost: imp is a loop copy and applyImpChanges overwrites imp.Ext from NewExt.
+		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+			mergedExt, mergeErr := m.mergeOWSDKAdAttributesIntoImpExt(impCtx.NewExt, payload.BidRequest, impCtx, incomingOWSDK)
+			if mergeErr != nil {
+				glog.Errorf("merge OWSDK into imp.ext imp=%s: %v", imp.ID, mergeErr)
+			} else {
+				impCtx.NewExt = mergedExt
+			}
+		}
+
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
 
