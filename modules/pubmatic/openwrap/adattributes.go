@@ -83,66 +83,72 @@ var UnifiedFeatureMatrix = []FeatureConfig{
 	{OS: OSiOS, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatMRECVideoDisplay, Attributes: []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, CTAOverlay, MRAIDAppStatus}},
 }
 
-// addAdAttributesToOWSDK adds ad attributes to the OWSDK extension based on OS, SDK version, and ad format
-func (m *OpenWrap) addAdAttributesToOWSDK(bidRequest *openrtb2.BidRequest, imp *openrtb2.Imp, impCtx models.ImpCtx) {
-	// Skip if no device information
+// buildOWSDKAdAttributesMap returns server-side ext.owsdk fields (e.g. adattributes) from device, SDK version, and format.
+// Returns nil if nothing should be added.
+func buildOWSDKAdAttributesMap(bidRequest *openrtb2.BidRequest, impCtx models.ImpCtx) map[string]any {
 	if bidRequest.Device == nil {
-		return
+		return nil
 	}
-
-	// Determine OS
 	os := DetermineOS(bidRequest.Device.OS)
 	if os == "" {
-		return // Unknown OS
+		return nil
 	}
-
-	// Get SDK version from display manager version
 	sdkVersion := impCtx.DisplayManagerVer
 	if sdkVersion == "" {
-		return // No SDK version available
+		return nil
 	}
-
-	// Determine ad format
 	adFormat := DetermineAdFormat(impCtx)
-
-	// Get supported ad attributes
 	supportedAttributes := GetSupportedAdAttributes(os, sdkVersion, adFormat)
 	if len(supportedAttributes) == 0 {
-		return // No supported attributes
+		return nil
 	}
+	return CreateOWSDKExtension(supportedAttributes)
+}
 
-	// Create OWSDK extension
-	owsdkExt := CreateOWSDKExtension(supportedAttributes)
+// mergeOWSDKAdAttributesIntoImpExt merges client ext.owsdk (e.g. ctaoverlay) with server-computed adattributes into
+// the full imp.ext JSON. clientOWSDK is the incoming request's ext.owsdk before it was stripped for NewExt.
+func (m *OpenWrap) mergeOWSDKAdAttributesIntoImpExt(extJSON json.RawMessage, bidRequest *openrtb2.BidRequest, impCtx models.ImpCtx, clientOWSDK map[string]any) (json.RawMessage, error) {
+	srv := buildOWSDKAdAttributesMap(bidRequest, impCtx)
+	if len(clientOWSDK) == 0 && (srv == nil || len(srv) == 0) {
+		return extJSON, nil
+	}
+	var extMap map[string]json.RawMessage
+	if len(extJSON) == 0 {
+		extMap = make(map[string]json.RawMessage)
+	} else if err := json.Unmarshal(extJSON, &extMap); err != nil {
+		extMap = make(map[string]json.RawMessage)
+	}
+	owsdkOut := make(map[string]any)
+	for k, v := range clientOWSDK {
+		owsdkOut[k] = v
+	}
+	if srv != nil {
+		for k, v := range srv {
+			owsdkOut[k] = v
+		}
+	}
+	if len(owsdkOut) == 0 {
+		return extJSON, nil
+	}
+	owsdkBytes, err := json.Marshal(owsdkOut)
+	if err != nil {
+		return extJSON, err
+	}
+	extMap["owsdk"] = owsdkBytes
+	return json.Marshal(extMap)
+}
 
-	// Add OWSDK extension to impression
+// addAdAttributesToOWSDK adds ad attributes to the OWSDK extension based on OS, SDK version, and ad format
+func (m *OpenWrap) addAdAttributesToOWSDK(bidRequest *openrtb2.BidRequest, imp *openrtb2.Imp, impCtx models.ImpCtx) {
 	if imp.Ext == nil {
 		imp.Ext = json.RawMessage("{}")
 	}
-
-	// Parse existing extension
-	var extMap map[string]json.RawMessage
-	if err := json.Unmarshal(imp.Ext, &extMap); err != nil {
-		extMap = make(map[string]json.RawMessage)
-	}
-
-	// Marshal OWSDK extension
-	owsdkBytes, err := json.Marshal(owsdkExt)
+	out, err := m.mergeOWSDKAdAttributesIntoImpExt(imp.Ext, bidRequest, impCtx, nil)
 	if err != nil {
-		glog.Errorf("[owsdk_extension_marshal_failed][ImpID]: %s [Error]: %s", imp.ID, err.Error())
+		glog.Errorf("[owsdk_merge_imp_ext][ImpID]: %s [Error]: %s", imp.ID, err.Error())
 		return
 	}
-
-	// Add/update OWSDK extension
-	extMap["owsdk"] = owsdkBytes
-
-	// Marshal back to impression extension
-	updatedExt, err := json.Marshal(extMap)
-	if err != nil {
-		glog.Errorf("[impression_extension_marshal_failed][ImpID]: %s [Error]: %s", imp.ID, err.Error())
-		return
-	}
-
-	imp.Ext = updatedExt
+	imp.Ext = out
 }
 
 // GetSupportedAdAttributes returns list of supported ad attributes based on OS, SDK version, and ad format
