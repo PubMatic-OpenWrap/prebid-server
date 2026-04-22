@@ -124,6 +124,7 @@ type RequestCtx struct {
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
+	APS                             APS
 	VastUnWrap                      VastUnWrap
 	PerformanceDSPs                 map[int]struct{}
 	InViewEnabledPublishers         map[int]struct{}
@@ -148,6 +149,9 @@ type GoogleSDK struct {
 }
 
 type UnityLevelPlay struct {
+	Reject bool
+}
+type APS struct {
 	Reject bool
 }
 

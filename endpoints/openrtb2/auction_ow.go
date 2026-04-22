@@ -80,7 +80,7 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		if updatedExt, err := jsonparser.Set([]byte(bidResponse.Ext), []byte(strconv.Quote(owlogger)), "owlogger"); err == nil {
 			bidResponse.Ext = updatedExt
 		}
-	} else if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
+	} else if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay || rCtx.Endpoint == models.EndpointAPS {
 		bidResponse.Ext = nil
 		if rCtx.AppLovinMax.Reject || rCtx.UnityLevelPlay.Reject {
 			w.WriteHeader(http.StatusNoContent)
