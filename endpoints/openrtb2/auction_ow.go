@@ -87,7 +87,7 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 		}
 	}
 
-	if rCtx.WakandaDebug.IsEnable() {
+	if rCtx.WakandaDebug != nil && rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPResponseWriter(w)
 	}
 }
@@ -149,4 +149,12 @@ func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.A
 		Ext: ext,
 	}
 	return rCtx.GoogleSDK.RejectedBidResponse
+}
+
+func isAPSIntegration(ao analytics.AuctionObject) bool {
+	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
+	if rCtx != nil && rCtx.Endpoint == models.EndpointAPS {
+		return true
+	}
+	return false
 }

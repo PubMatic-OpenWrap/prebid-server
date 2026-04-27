@@ -1055,3 +1055,280 @@ func normalizeSeatNonBidBuilder(sb *openrtb_ext.SeatNonBidBuilder) {
 		})
 	}
 }
+
+func TestIsAPSIntegrationFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		ao       analytics.AuctionObject
+		expected bool
+	}{
+		{
+			name: "APS endpoint should return true",
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointAPS,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Non-APS endpoint should return false",
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointWebS2S,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name:     "Empty AuctionObject should return false",
+			ao:       analytics.AuctionObject{},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isAPSIntegration(tt.ao)
+			assert.Equal(t, tt.expected, result, tt.name)
+		})
+	}
+}
+
+func TestUpdateResponseExtOW_APSSpecific(t *testing.T) {
+	tests := []struct {
+		name           string
+		bidResponse    *openrtb2.BidResponse
+		ao             analytics.AuctionObject
+		expectedStatus int
+		expectedExt    []byte
+		description    string
+	}{
+		{
+			name: "APS endpoint with non-rejected response should not set status",
+			bidResponse: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: []byte(`{"key": "value"}`),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointAPS,
+																	APS:      models.APS{Reject: false},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedStatus: http.StatusOK, // Default status
+			expectedExt:    nil,           // Ext should be nil for APS
+			description:    "APS endpoint should clear Ext and not set reject status when not rejected",
+		},
+		{
+			name: "APS endpoint with rejected response should return 200 OK",
+			bidResponse: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: []byte(`{"key": "value"}`),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointAPS,
+																	APS:      models.APS{Reject: true},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedStatus: http.StatusOK,
+			expectedExt:    nil,
+			description:    "APS endpoint should return 200 OK when APS.Reject is true",
+		},
+		{
+			name: "APS endpoint with NBR should return 200 OK",
+			bidResponse: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: []byte(`{"key": "value"}`),
+				NBR: openrtb3.NoBidUnknownError.Ptr(),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointAPS,
+																	APS:      models.APS{Reject: false},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedStatus: http.StatusOK,
+			expectedExt:    nil,
+			description:    "APS endpoint with NBR should return 200 OK and clear Ext",
+		},
+		{
+			name: "Non-SDK endpoint should not be affected by APS logic",
+			bidResponse: &openrtb2.BidResponse{
+				ID:  "test-id",
+				Ext: []byte(`{"key": "value"}`),
+			},
+			ao: analytics.AuctionObject{
+				HookExecutionOutcome: []hookexecution.StageOutcome{
+					{
+						Groups: []hookexecution.GroupOutcome{
+							{
+								InvocationResults: []hookexecution.HookOutcome{
+									{
+										AnalyticsTags: hookanalytics.Analytics{
+											Activities: []hookanalytics.Activity{
+												{
+													Results: []hookanalytics.Result{
+														{
+															Values: map[string]interface{}{
+																"request-ctx": &models.RequestCtx{
+																	Endpoint: models.EndpointWebS2S,
+																	APS:      models.APS{Reject: true},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedStatus: http.StatusOK,
+			expectedExt:    []byte(`{"key": "value"}`),
+			description:    "Non-SDK endpoints should not be affected by APS rejection logic",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			UpdateResponseExtOW(w, tt.bidResponse, tt.ao)
+
+			// Check status code
+			assert.Equal(t, tt.expectedStatus, w.Code, tt.description)
+
+			// Check Ext field
+			if tt.expectedExt == nil {
+				assert.Nil(t, tt.bidResponse.Ext, tt.description)
+			} else {
+				assert.Equal(t, tt.expectedExt, []byte(tt.bidResponse.Ext), tt.description)
+			}
+		})
+	}
+}
