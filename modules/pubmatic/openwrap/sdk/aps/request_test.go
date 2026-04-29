@@ -138,19 +138,19 @@ func TestModifyBanner(t *testing.T) {
 		expected *openrtb2.Banner
 	}{
 		{
-			name:     "nil request is a no-op",
+			name:     "nil_request_is_a_no_op",
 			request:  nil,
 			signal:   &openrtb2.Banner{API: []adcom1.APIFramework{5}},
 			expected: nil,
 		},
 		{
-			name:     "nil signal is a no-op",
+			name:     "nil_signal_is_a_no_op",
 			request:  &openrtb2.Banner{W: ptrutil.ToPtr[int64](1)},
 			signal:   nil,
 			expected: &openrtb2.Banner{W: ptrutil.ToPtr[int64](1)},
 		},
 		{
-			name:    "copies API frameworks from signal",
+			name:    "copies_api_frameworks_from_signal",
 			request: &openrtb2.Banner{},
 			signal:  &openrtb2.Banner{API: []adcom1.APIFramework{7}},
 			expected: &openrtb2.Banner{
@@ -175,19 +175,19 @@ func TestUpdateImpExtension(t *testing.T) {
 		expectedResponse string
 	}{
 		{
-			name:             "nil signal returns request ext unchanged",
+			name:             "nil_signal_returns_request_ext_unchanged",
 			reqExt:           []byte(`{"prebid":1}`),
 			sigExt:           nil,
 			expectedResponse: `{"prebid":1}`,
 		},
 		{
-			name:             "empty request ext receives skadn and owsdk from signal",
+			name:             "empty_request_ext_receives_skadn_and_owsdk_from_signal",
 			reqExt:           nil,
 			sigExt:           []byte(`{"skadn":{"version":"2"},"owsdk":{"a":1}}`),
 			expectedResponse: `{"skadn":{"version":"2"},"owsdk":{"a":1}}`,
 		},
 		{
-			name:             "merges skadn paths and owsdk into existing ext",
+			name:             "merges_skadn_paths_and_owsdk_into_existing_ext",
 			reqExt:           []byte(`{"foo":1}`),
 			sigExt:           []byte(`{"skadn":{"skoverlay":true,"productpage":7},"owsdk":{"k":2}}`),
 			expectedResponse: `{"foo":1,"owsdk":{"k":2},"skadn":{"productpage":7,"skoverlay":true}}`,
@@ -210,13 +210,13 @@ func TestUpdateRegs(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "copies COPPA and reg ext paths from signal",
+			name:     "copies_coppa_and_reg_ext_paths_from_signal",
 			req:      &openrtb2.BidRequest{},
 			sig:      &openrtb2.Regs{COPPA: 1, Ext: json.RawMessage(`{"gdpr":1,"gpp":"x"}`)},
 			expected: `{"coppa":1,"ext":{"gdpr":1,"gpp":"x"}}`,
 		},
 		{
-			name: "nil signal leaves request unchanged",
+			name: "nil_signal_leaves_request_unchanged",
 			req: &openrtb2.BidRequest{
 				Regs: &openrtb2.Regs{Ext: json.RawMessage(`{"keep":true}`)},
 			},
@@ -237,113 +237,737 @@ func TestUpdateRegs(t *testing.T) {
 }
 
 func TestUpdateApp(t *testing.T) {
-	req := &openrtb2.BidRequest{App: &openrtb2.App{Bundle: "b"}}
-	sig := &openrtb2.App{
-		Domain: "d.example",
-		Cat:    []string{"IAB1"},
-		Name:   "App",
-		Ver:    "1.0",
+	tests := []struct {
+		name     string
+		request  *openrtb2.BidRequest
+		signal   *openrtb2.App
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name:     "nil_signal_app",
+			request:  &openrtb2.BidRequest{App: &openrtb2.App{Name: "test"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{Name: "test"}},
+		},
+		{
+			name:     "nil_request_app",
+			request:  &openrtb2.BidRequest{},
+			signal:   &openrtb2.App{Name: "test"},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{Name: "test"}},
+		},
+		{
+			name:    "copy_app_fields_from_signal",
+			request: &openrtb2.BidRequest{App: &openrtb2.App{}},
+			signal: &openrtb2.App{
+				Domain:   "example.com",
+				Cat:      []string{"IAB1"},
+				Paid:     ptrutil.ToPtr(int8(1)),
+				Keywords: "test,app",
+				Name:     "test-app",
+			},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain:   "example.com",
+				Cat:      []string{"IAB1"},
+				Paid:     ptrutil.ToPtr(int8(1)),
+				Keywords: "test,app",
+				Name:     "test-app",
+			}},
+		},
+		{
+			name: "empty_signal_fields_not_copied",
+			request: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain:   "example.com",
+				Cat:      []string{"IAB1"},
+				Keywords: "test,app",
+				Name:     "test-app",
+			}},
+			signal: &openrtb2.App{
+				Domain:   "",
+				Cat:      []string{},
+				Keywords: "",
+				Name:     "",
+			},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain:   "example.com",
+				Cat:      []string{"IAB1"},
+				Keywords: "test,app",
+				Name:     "test-app",
+			}},
+		},
+		{
+			name: "partial_signal_fields_copied",
+			request: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain: "example.com",
+				Cat:    []string{"IAB1"},
+			}},
+			signal: &openrtb2.App{
+				Keywords: "test,app",
+				Name:     "test-app",
+			},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain:   "example.com",
+				Cat:      []string{"IAB1"},
+				Keywords: "test,app",
+				Name:     "test-app",
+			}},
+		},
+		{
+			name: "ver_copied_from_signal_when_non_empty",
+			request: &openrtb2.BidRequest{App: &openrtb2.App{
+				Name: "my-app",
+			}},
+			signal: &openrtb2.App{
+				Ver: "3.2.1",
+			},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{
+				Name: "my-app",
+				Ver:  "3.2.1",
+			}},
+		},
+		{
+			name: "signal_domain_ignored_when_request_already_has_domain",
+			request: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain: "keep.example",
+				Bundle: "com.keep",
+			}},
+			signal: &openrtb2.App{
+				Domain: "other.example",
+				Name:   "from-signal",
+			},
+			expected: &openrtb2.BidRequest{App: &openrtb2.App{
+				Domain: "keep.example",
+				Bundle: "com.keep",
+				Name:   "from-signal",
+			}},
+		},
 	}
-	updateApp(req, sig)
 
-	b, err := json.Marshal(req.App)
-	require.NoError(t, err)
-	assert.JSONEq(t, `{"bundle":"b","cat":["IAB1"],"domain":"d.example","name":"App","ver":"1.0"}`, string(b))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateApp(tt.request, tt.signal)
+
+			expectedJSON, err := json.Marshal(tt.expected)
+			require.NoError(t, err)
+
+			actualJSON, err := json.Marshal(tt.request)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
 }
 
 func TestUpdateDevice(t *testing.T) {
-	req := &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "a", Ext: json.RawMessage(`{}`)}}
-	sig := &openrtb2.Device{
-		OS:  "ios",
-		Ext: json.RawMessage(`{"atts":3}`),
+	tests := []struct {
+		name     string
+		request  *openrtb2.BidRequest
+		signal   *openrtb2.Device
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name:     "nil_signal_device",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+		},
+		{
+			name:     "nil_request_device",
+			request:  &openrtb2.BidRequest{},
+			signal:   &openrtb2.Device{UA: "test-ua"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+		},
+		{
+			name:     "signal_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   &openrtb2.Device{IP: "127.0.0.1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+		},
+		{
+			name:     "request_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+		},
+		{
+			name:     "both_request_and_signal_has_device_ip",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.1"}},
+			signal:   &openrtb2.Device{IP: "127.0.0.2"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IP: "127.0.0.2"}},
+		},
+		{
+			name:     "signal_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   &openrtb2.Device{IPv6: "2001:db8::1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::1"}},
+		},
+		{
+			name:     "request_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+		},
+		{
+			name:     "both_request_and_signal_has_device_ipv6",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::2"}},
+			signal:   &openrtb2.Device{IPv6: "2001:db8::1"},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", IPv6: "2001:db8::1"}},
+		},
+		{
+			name: "geo_lat_lon_present_in_request_keep_coupled_fields_from_request",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(1.1)),
+				Lon:      ptrutil.ToPtr(float64(2.2)),
+				Type:     3,
+				Accuracy: 10,
+				LastFix:  123,
+			}}},
+			signal: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+				Country:  "US",
+			}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(1.1)),
+				Lon:      ptrutil.ToPtr(float64(2.2)),
+				Type:     3,
+				Accuracy: 10,
+				LastFix:  123,
+				Country:  "US",
+			}}},
+		},
+		{
+			name: "geo_lat_lon_missing_in_request_copy_coupled_fields_from_signal",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat: nil,
+				Lon: ptrutil.ToPtr(float64(2.2)),
+			}}},
+			signal: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+			}},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{Geo: &openrtb2.Geo{
+				Lat:      ptrutil.ToPtr(float64(9.9)),
+				Lon:      ptrutil.ToPtr(float64(8.8)),
+				Type:     1,
+				Accuracy: 99,
+				LastFix:  999,
+			}}},
+		},
+		{
+			name:    "copy_all_device_fields",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{}},
+			signal: &openrtb2.Device{
+				UA:             "test-ua",
+				Geo:            &openrtb2.Geo{Country: "US"},
+				Carrier:        "test-carrier",
+				Language:       "en",
+				HWV:            "1.0",
+				MCCMNC:         "123",
+				Make:           "test-make",
+				Model:          "test-model",
+				OS:             "test-os",
+				OSV:            "1.0",
+				JS:             ptrutil.ToPtr(int8(1)),
+				DeviceType:     adcom1.DeviceType(1),
+				Lmt:            ptrutil.ToPtr(int8(1)),
+				ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(1)),
+				W:              320,
+				H:              480,
+				PxRatio:        2.0,
+				IFA:            "test-ifa",
+				Ext:            json.RawMessage(`{"atts":1}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:             "test-ua",
+				Geo:            &openrtb2.Geo{Country: "US"},
+				Carrier:        "test-carrier",
+				Language:       "en",
+				HWV:            "1.0",
+				MCCMNC:         "123",
+				Make:           "test-make",
+				Model:          "test-model",
+				JS:             ptrutil.ToPtr(int8(1)),
+				DeviceType:     adcom1.DeviceType(1),
+				Lmt:            ptrutil.ToPtr(int8(1)),
+				ConnectionType: ptrutil.ToPtr(adcom1.ConnectionType(1)),
+				OS:             "test-os",
+				OSV:            "1.0",
+				W:              320,
+				H:              480,
+				PxRatio:        2.0,
+				IFA:            "test-ifa",
+				Ext:            json.RawMessage(`{"atts":1}`),
+			}},
+		},
+		{
+			name: "empty_signal_fields_not_copied",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:       "test-ua",
+				Language: "en",
+				Make:     "test-make",
+				Model:    "test-model",
+			}},
+			signal: &openrtb2.Device{
+				UA:       "",
+				Language: "",
+				Make:     "",
+				Model:    "",
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:       "test-ua",
+				Language: "en",
+				Make:     "test-make",
+				Model:    "test-model",
+			}},
+		},
+		{
+			name: "partial_signal_fields_copied",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:       "test-ua",
+				Language: "en",
+			}},
+			signal: &openrtb2.Device{
+				Make:  "test-make",
+				Model: "test-model",
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:       "test-ua",
+				Language: "en",
+				Make:     "test-make",
+				Model:    "test-model",
+			}},
+		},
+		{
+			name: "signal_has_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA: "test-ua",
+			}},
+			signal: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			}},
+		},
+		{
+			name: "request_has_ifv_signal_does_not",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Make: "test-make",
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:   "test-ua",
+				Make: "test-make",
+				Ext:  json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+		},
+		{
+			name: "both_request_and_signal_have_ifv_signal_wins",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":"SIGNAL-IFV-VALUE"}`),
+			}},
+		},
+		{
+			name: "signal_has_empty_ifv_overwrites_request_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":"REQUEST-IFV-VALUE"}`),
+			}},
+			signal: &openrtb2.Device{
+				Ext: json.RawMessage(`{"ifv":""}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"ifv":""}`),
+			}},
+		},
+		{
+			name: "signal_has_both_atts_and_ifv",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA: "test-ua",
+			}},
+			signal: &openrtb2.Device{
+				Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{
+				UA:  "test-ua",
+				Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
+			}},
+		},
 	}
-	updateDevice(req, sig)
 
-	b, err := json.Marshal(req.Device)
-	require.NoError(t, err)
-	assert.JSONEq(t, `{"ua":"a","os":"ios","ext":{"atts":3}}`, string(b))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateDevice(tt.request, tt.signal)
+
+			expectedJSON, err := json.Marshal(tt.expected)
+			require.NoError(t, err)
+
+			actualJSON, err := json.Marshal(tt.request)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
 }
 
 func TestUpdateUser(t *testing.T) {
-	req := &openrtb2.BidRequest{User: &openrtb2.User{BuyerUID: "keep", Ext: json.RawMessage(`{}`)}}
-	sig := &openrtb2.User{
-		Yob:      1990,
-		Gender:   "M",
-		Keywords: "k",
-		Ext:      json.RawMessage(`{"sessionduration":120}`),
+	tests := []struct {
+		name     string
+		request  *openrtb2.BidRequest
+		signal   *openrtb2.User
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name:     "nil_signal_user",
+			request:  &openrtb2.BidRequest{User: &openrtb2.User{Yob: 2000}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{Yob: 2000}},
+		},
+		{
+			name:     "nil_request_user",
+			request:  &openrtb2.BidRequest{},
+			signal:   &openrtb2.User{Yob: 2000},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{Yob: 2000}},
+		},
+		{
+			name:    "copy_user_fields_and_ext_paths_from_signal",
+			request: &openrtb2.BidRequest{User: &openrtb2.User{}},
+			signal: &openrtb2.User{
+				Data:     []openrtb2.Data{{ID: "1"}},
+				Yob:      2000,
+				Gender:   "M",
+				Keywords: "test,user",
+				Ext:      json.RawMessage(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}]}`),
+			},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{
+				Data:     []openrtb2.Data{{ID: "1"}},
+				Yob:      2000,
+				Gender:   "M",
+				Keywords: "test,user",
+				Ext:      json.RawMessage(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}]}`),
+			}},
+		},
+		{
+			name: "empty_signal_fields_not_copied",
+			request: &openrtb2.BidRequest{User: &openrtb2.User{
+				Yob:      2000,
+				Gender:   "M",
+				Keywords: "test,user",
+			}},
+			signal: &openrtb2.User{
+				Yob:      0,
+				Gender:   "",
+				Keywords: "",
+			},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{
+				Yob:      2000,
+				Gender:   "M",
+				Keywords: "test,user",
+			}},
+		},
+		{
+			name: "partial_signal_fields_copied",
+			request: &openrtb2.BidRequest{User: &openrtb2.User{
+				Yob:    2000,
+				Gender: "M",
+			}},
+			signal: &openrtb2.User{
+				Keywords: "test,user",
+				Ext:      json.RawMessage(`{"sessionduration":300}`),
+			},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{
+				Yob:      2000,
+				Gender:   "M",
+				Keywords: "test,user",
+				Ext:      json.RawMessage(`{"sessionduration":300}`),
+			}},
+		},
+		{
+			name: "buyeruid_on_request_preserved",
+			request: &openrtb2.BidRequest{User: &openrtb2.User{
+				BuyerUID: "keep-token",
+				Yob:      1990,
+			}},
+			signal: &openrtb2.User{
+				Yob:      2000,
+				Gender:   "F",
+				Keywords: "kw",
+			},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{
+				BuyerUID: "keep-token",
+				Yob:      2000,
+				Gender:   "F",
+				Keywords: "kw",
+			}},
+		},
 	}
-	updateUser(req, sig)
 
-	b, err := json.Marshal(req.User)
-	require.NoError(t, err)
-	assert.JSONEq(t, `{"buyeruid":"keep","yob":1990,"gender":"M","keywords":"k","ext":{"sessionduration":120}}`, string(b))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateUser(tt.request, tt.signal)
+
+			expectedJSON, err := json.Marshal(tt.expected)
+			require.NoError(t, err)
+
+			actualJSON, err := json.Marshal(tt.request)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
 }
 
 func TestUpdateSource(t *testing.T) {
-	req := &openrtb2.BidRequest{}
-	sig := &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"p","omidpv":"v"}`)}
-	updateSource(req, sig)
+	tests := []struct {
+		name     string
+		request  *openrtb2.BidRequest
+		signal   *openrtb2.Source
+		expected *openrtb2.BidRequest
+	}{
+		{
+			name:     "nil_signal_source",
+			request:  &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1}`)}},
+			signal:   nil,
+			expected: &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1}`)}},
+		},
+		{
+			name:     "nil_request_source",
+			request:  &openrtb2.BidRequest{},
+			signal:   &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"test","omidpv":"1.0"}`)},
+			expected: &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"test","omidpv":"1.0"}`)}},
+		},
+		{
+			name:     "merge_omidpn_and_omidpv_into_existing_source.ext",
+			request:  &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1}`)}},
+			signal:   &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"test","omidpv":"1.0"}`)},
+			expected: &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1,"omidpn":"test","omidpv":"1.0"}`)}},
+		},
+		{
+			name:     "partial_omid_fields_copied",
+			request:  &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1}`)}},
+			signal:   &openrtb2.Source{Ext: json.RawMessage(`{"omidpn":"test"}`)},
+			expected: &openrtb2.BidRequest{Source: &openrtb2.Source{Ext: json.RawMessage(`{"existingfield":1,"omidpn":"test"}`)}},
+		},
+	}
 
-	require.NotNil(t, req.Source)
-	b, err := json.Marshal(req.Source)
-	require.NoError(t, err)
-	assert.JSONEq(t, `{"ext":{"omidpn":"p","omidpv":"v"}}`, string(b))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updateSource(tt.request, tt.signal)
+
+			expectedJSON, err := json.Marshal(tt.expected)
+			require.NoError(t, err)
+
+			actualJSON, err := json.Marshal(tt.request)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
 }
 
 func TestUpdateImpression(t *testing.T) {
+	reqImpExt := json.RawMessage(`{"prebid":1}`)
+	sigImpExt := json.RawMessage(`{"skadn":{"versions":["3.0"]},"owsdk":{"a":1}}`)
+	mergedImpExt := json.RawMessage(updateImpExtension(reqImpExt, sigImpExt))
+
 	tests := []struct {
-		name     string
-		req      *openrtb2.BidRequest
-		sig      []openrtb2.Imp
-		expected string
+		name       string
+		request    *openrtb2.BidRequest
+		signalImps []openrtb2.Imp
+		expected   *openrtb2.BidRequest
 	}{
 		{
-			name: "merges first signal imp into first request imp",
-			req: &openrtb2.BidRequest{
+			name:       "empty_request_imp_array",
+			request:    &openrtb2.BidRequest{},
+			signalImps: []openrtb2.Imp{{ID: "1"}},
+			expected:   &openrtb2.BidRequest{},
+		},
+		{
+			name: "empty_signal_imp_array",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1"}},
+			},
+			signalImps: []openrtb2.Imp{},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1"}},
+			},
+		},
+		{
+			name: "copy_display_manager_version_and_clickbrowser",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1"}},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ID:                "1",
+					DisplayManager:    "unity",
+					DisplayManagerVer: "1.0",
+					ClickBrowser:      ptrutil.ToPtr(int8(1)),
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:                "1",
+						DisplayManager:    "unity",
+						DisplayManagerVer: "1.0",
+						ClickBrowser:      ptrutil.ToPtr(int8(1)),
+					},
+				},
+			},
+		},
+		{
+			name: "copies_instl_from_signal_aps_always_assigns_imp[0].instl",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1"}},
+			},
+			signalImps: []openrtb2.Imp{
+				{ID: "1", Instl: 1},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1", Instl: 1}},
+			},
+		},
+		{
+			name: "video_object_replaced_from_signal_when_signal_has_video",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "1",
+						Video: &openrtb2.Video{
+							Ext: json.RawMessage(`{"reward":0}`),
+						},
+					},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ID: "1",
+					Video: &openrtb2.Video{
+						MIMEs: []string{"video/mp4"},
+					},
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID: "1",
+						Video: &openrtb2.Video{
+							MIMEs: []string{"video/mp4"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "banner_api_merged_from_signal_via_modifyBanner",
+			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{{
 					ID:     "i1",
 					TagID:  "t",
 					Banner: &openrtb2.Banner{W: ptrutil.ToPtr[int64](300)},
 				}},
 			},
-			sig: []openrtb2.Imp{{
-				Instl:             1,
-				DisplayManager:    "PubMatic",
-				DisplayManagerVer: "4.0",
-				Video:             &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+			signalImps: []openrtb2.Imp{{
+				ID: "1",
+				Banner: &openrtb2.Banner{
+					API: []adcom1.APIFramework{7},
+				},
 			}},
-			expected: `{"id":"i1","tagid":"t","banner":{"w":300},"instl":1,"displaymanager":"PubMatic","displaymanagerver":"4.0","video":{"mimes":["video/mp4"]}}`,
-		},
-		{
-			name: "nil signal imps leaves request unchanged",
-			req: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{{ID: "a"}},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "i1",
+					TagID: "t",
+					Banner: &openrtb2.Banner{
+						W:   ptrutil.ToPtr[int64](300),
+						API: []adcom1.APIFramework{7},
+					},
+				}},
 			},
-			sig:      nil,
-			expected: `{"id":"a"}`,
 		},
 		{
-			name:     "empty request imps returns early",
-			req:      &openrtb2.BidRequest{},
-			sig:      []openrtb2.Imp{{ID: "x"}},
-			expected: "null",
+			name: "imp_ext_merged_via_updateImpExtension",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:  "1",
+						Ext: reqImpExt,
+					},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ID:  "1",
+					Ext: sigImpExt,
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:  "1",
+						Ext: mergedImpExt,
+					},
+				},
+			},
+		},
+		{
+			name: "only_first_impression_is_merged_second_impression_unchanged",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{ID: "a"},
+					{ID: "b", TagID: "keep"},
+				},
+			},
+			signalImps: []openrtb2.Imp{
+				{
+					ID:                "s1",
+					DisplayManager:    "dm",
+					DisplayManagerVer: "2",
+				},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{
+					{
+						ID:                "a",
+						DisplayManager:    "dm",
+						DisplayManagerVer: "2",
+					},
+					{ID: "b", TagID: "keep"},
+				},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateImpression(tt.req, tt.sig)
-			var impJSON string
-			if tt.req.Imp == nil {
-				impJSON = "null"
-			} else if len(tt.req.Imp) == 0 {
-				impJSON = "[]"
-			} else {
-				b, err := json.Marshal(tt.req.Imp[0])
-				require.NoError(t, err)
-				impJSON = string(b)
-			}
-			assert.JSONEq(t, tt.expected, impJSON)
+			updateImpression(tt.request, tt.signalImps)
+
+			expectedJSON, err := json.Marshal(tt.expected)
+			require.NoError(t, err)
+
+			actualJSON, err := json.Marshal(tt.request)
+			require.NoError(t, err)
+
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
 		})
 	}
 }
