@@ -2,15 +2,17 @@ package aps
 
 import (
 	"encoding/base64"
-	"encoding/json"
 
 	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
+
+var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Aps struct {
 	metricsEngine metrics.MetricsEngine
@@ -28,7 +30,7 @@ func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.Request
 		return requestBody
 	}
 	request := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(requestBody, request); err != nil {
+	if err := jsoniterator.Unmarshal(requestBody, request); err != nil {
 		return requestBody
 	}
 	// modify request with static data
@@ -45,7 +47,7 @@ func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.Request
 
 	// modify request with signal data
 	a.modifyRequestWithSignalData(request)
-	modifiedRequest, err := json.Marshal(request)
+	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
 		return requestBody
 	}
@@ -58,10 +60,10 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 
 	if len(request.Imp) > 0 {
-		// Set rwdd as 1 when video.ext.reward is 1
+		// Set rwdd as 1 when video.ext.videotype is rewarded
 		if request.Imp[0].Video != nil && request.Imp[0].Video.Ext != nil {
-			reward, err := jsonparser.GetInt(request.Imp[0].Video.Ext, "reward")
-			if reward == 1 && err == nil {
+			reward, err := jsonparser.GetString(request.Imp[0].Video.Ext, "videotype")
+			if reward == "rewarded" && err == nil {
 				request.Imp[0].Rwdd = 1
 				// remove banner
 				request.Imp[0].Banner = nil
@@ -79,7 +81,6 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 
 	if request.App != nil {
-		// delete app.ext.sessionDepth
 		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
 	}
 }
@@ -103,7 +104,7 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 	}
 
 	var signalRequest *openrtb2.BidRequest
-	if err := json.Unmarshal(signalData, &signalRequest); err != nil || signalRequest == nil {
+	if err := jsoniterator.Unmarshal(signalData, &signalRequest); err != nil || signalRequest == nil {
 		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
 		return
 	}
