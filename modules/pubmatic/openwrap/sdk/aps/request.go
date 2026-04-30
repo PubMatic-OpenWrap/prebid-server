@@ -3,6 +3,7 @@ package aps
 import (
 	"github.com/buger/jsonparser"
 	jsoniter "github.com/json-iterator/go"
+	adcom1 "github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -78,9 +79,6 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		request.Imp[0].Video = nil
 	}
 
-	if request.App != nil {
-		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
-	}
 }
 
 func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
@@ -146,8 +144,19 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
 	// modify video
+	// check which to keep
+	// Update video (replace entire video object from signal except battr)
+	var battrVideo []adcom1.CreativeAttribute
+	if request.Imp[0].Video != nil && len(request.Imp[0].Video.BAttr) > 0 {
+		battrVideo = make([]adcom1.CreativeAttribute, len(request.Imp[0].Video.BAttr))
+		copy(battrVideo, request.Imp[0].Video.BAttr)
+	}
+
 	if signalImps[0].Video != nil {
 		request.Imp[0].Video = signalImps[0].Video
+		if len(battrVideo) > 0 {
+			request.Imp[0].Video.BAttr = battrVideo
+		}
 	}
 
 	// modify ext

@@ -68,11 +68,6 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","secure":1,"rwdd":1}],"app":{"publisher":{"id":"pub"}}}`),
 		},
 		{
-			name:             "removes_app.ext.sessionDepth",
-			requestBody:      []byte(`{"id":"x","imp":[{"id":"i","tagid":"t"}],"app":{"ext":{"sessionDepth":3},"publisher":{"id":"p"}}}`),
-			expectedResponse: []byte(`{"id":"x","imp":[{"id":"i","tagid":"t","secure":1}],"app":{"publisher":{"id":"p"},"ext":{}}}`),
-		},
-		{
 			name:        "missing_signal_records_metric",
 			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t"}],"app":{"publisher":{"id":"pub-1"}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":42}}}}},"user":{"buyeruid":""}}`),
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
