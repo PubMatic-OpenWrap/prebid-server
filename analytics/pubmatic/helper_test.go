@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
 	mock_mhttp "github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp/mock"
@@ -505,6 +506,189 @@ func TestRestoreBidResponse(t *testing.T) {
 					},
 				},
 				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
+			},
+		},
+		{
+			name: "APS endpoint with reject should return early",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-reject",
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: true,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-reject",
+			},
+		},
+		{
+			name: "APS endpoint with NBR should return early",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:  "test-aps-nbr",
+						NBR: ptrutil.ToPtr(openrtb3.NoBidUnknownError),
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "test-aps-nbr",
+				NBR: ptrutil.ToPtr(openrtb3.NoBidUnknownError),
+			},
+		},
+		{
+			name: "APS endpoint with empty seatbid should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:      "test-aps-empty",
+						SeatBid: []openrtb2.SeatBid{},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:      "test-aps-empty",
+				SeatBid: []openrtb2.SeatBid{},
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
+			name: "APS endpoint with empty bid should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-empty-bid",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid:  []openrtb2.Bid{},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-empty-bid",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid:  []openrtb2.Bid{},
+					},
+				},
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
+			name: "APS endpoint with invalid AdM should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-invalid-adm",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   "invalid json",
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-invalid-adm",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-1",
+								ImpID: "imp-1",
+								AdM:   "invalid json",
+							},
+						},
+					},
+				},
+			},
+			wantErr: "invalid character 'i' looking for beginning of value",
+		},
+		{
+			name: "APS endpoint with valid compressed response should restore successfully",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-success",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   `{"id":"restored-response","seatbid":[{"bid":[{"id":"restored-bid","impid":"imp-1","price":2.5,"adm":"<ad>restored ad</ad>"}]}],"cur":"USD"}`,
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "restored-response",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "restored-bid",
+								ImpID: "imp-1",
+								Price: 2.5,
+								AdM:   "<ad>restored ad</ad>",
+							},
+						},
+					},
+				},
+				Cur: "USD",
 			},
 		},
 	}

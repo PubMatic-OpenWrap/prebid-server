@@ -87,7 +87,7 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 		return nil
 	}
 
-	if rctx.AppLovinMax.Reject || rctx.GoogleSDK.Reject || rctx.UnityLevelPlay.Reject {
+	if rctx.AppLovinMax.Reject || rctx.GoogleSDK.Reject || rctx.UnityLevelPlay.Reject || rctx.APS.Reject {
 		return nil
 	}
 
@@ -122,7 +122,7 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 		}
 	}
 
-	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+	if rctx.Endpoint == models.EndpointUnityLevelPlay || rctx.Endpoint == models.EndpointAPS {
 		if err := json.Unmarshal([]byte(ao.Response.SeatBid[0].Bid[0].AdM), orignalResponse); err != nil {
 			return err
 		}
