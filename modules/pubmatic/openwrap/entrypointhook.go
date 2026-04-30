@@ -18,6 +18,7 @@ import (
 	v25 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/aps"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
@@ -119,6 +120,7 @@ func (m OpenWrap) handleEntrypointHook(
 		result.Errors = append(result.Errors, errs[0].Error())
 		return result, errs[0]
 	}
+
 	if endpoint == models.EndpointAPS {
 		var errAps error
 		var nbrCode openrtb3.NoBidReason
@@ -130,6 +132,8 @@ func (m OpenWrap) handleEntrypointHook(
 			result.Errors = append(result.Errors, errAps.Error())
 			return result, errAps
 		}
+		aps := aps.NewAPS(m.metricEngine)
+		payload.Body = aps.ModifyRequestWithAPSParams(payload.Body, rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
