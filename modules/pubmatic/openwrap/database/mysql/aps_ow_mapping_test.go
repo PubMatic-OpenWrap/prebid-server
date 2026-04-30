@@ -77,12 +77,15 @@ func TestNew_ApsOwMappingWithCountry(t *testing.T) {
 	assert.NotNil(t, got)
 	assert.NotNil(t, got.countryPartnerFilterDB)
 	assert.NotNil(t, got.apsOwMappingDB)
+	t.Cleanup(func() {
+		got.Shutdown()
+		_ = db.Close()
+	})
 	ad, pid, ok := got.GetApsOwMapping("u1")
 	assert.True(t, ok)
 	assert.Equal(t, "a1", ad)
 	assert.Equal(t, 5, pid)
 	assert.NoError(t, mock.ExpectationsWereMet())
-	_ = db.Close()
 }
 
 func TestMySqlDB_GetApsOwMapping_nil(t *testing.T) {

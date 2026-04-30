@@ -8,9 +8,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	gocache "github.com/patrickmn/go-cache"
-	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 )
 
 // Prometheus label values for metrics.aps_slot_mapping_rejects (reason).
@@ -22,48 +23,23 @@ const (
 
 var apsNegativeCache = gocache.New(negativeCacheTimeout, negativeCacheCleanupInterval)
 
-// setApsRequestExtWrapperProfileID sets req.Ext JSON field ext.prebid.bidderparams.pubmatic.wrapper.profileid (numeric).
-func setApsRequestExtWrapperProfileID(req *openrtb2.BidRequest, profileID int) error {
-	ext := req.Ext
-	if len(ext) == 0 {
-		ext = []byte(`{}`)
-	}
-	newExt, err := jsonparser.Set(ext, []byte(strconv.Itoa(profileID)), "prebid", "bidderparams", "pubmatic", "wrapper", "profileid")
+// setApsWrapperProfileIDOnBody sets ext.prebid.bidderparams.pubmatic.wrapper.profileid on raw request JSON (numeric).
+func setApsWrapperProfileIDOnBody(body []byte, profileID int) ([]byte, error) {
+	out, err := jsonparser.Set(body, []byte(strconv.Itoa(profileID)), "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid")
 	if err != nil {
-		return fmt.Errorf("aps: set request wrapper.profileid: %w", err)
+		return nil, fmt.Errorf("aps: set request wrapper.profileid: %w", err)
 	}
-	req.Ext = newExt
-	return nil
+	return out, nil
 }
 
-// enrichApsRequest replaces imp[0].tagid with the mapped OW ad unit id and sets
-// ext.prebid.bidderparams.pubmatic.wrapper.profileid from that mapping.
-// Only the first impression is modified; any additional imps are left unchanged.
-// publisherID is used for metrics labels when me is non-nil.
-func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine, publisherID string) ([]byte, error) {
-	if owCache == nil {
-		return nil, fmt.Errorf("aps: cache not configured")
-	}
-	req := &openrtb2.BidRequest{}
-	if err := json.Unmarshal(body, req); err != nil {
-		return nil, fmt.Errorf("aps: unmarshal bid request: %w", err)
-	}
-
-	if len(req.Imp) == 0 {
-		return nil, fmt.Errorf("aps: no impressions")
-	}
-
-	imp := &req.Imp[0]
-	slotUUID := imp.TagID
-	if slotUUID == "" {
-		return nil, fmt.Errorf("aps: empty or missing imp[0].tagid")
-	}
-
+// resolveApsSlotMapping resolves imp[0] APS slot UUID (tagid) to OW ad unit id and profile id via owCache.
+// It applies negative caching and reject metrics consistent with enrichApsRequest.
+func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publisherID, slotUUID string) (adUnitID string, profileID int, err error) {
 	if _, hit := apsNegativeCache.Get(slotUUID); hit {
 		if me != nil {
 			me.RecordAPSSlotMappingReject(publisherID, slotUUID, apsMetricReasonUnmappedUUID)
 		}
-		return nil, fmt.Errorf("aps: slot uuid %q found in negative cache", slotUUID)
+		return "", 0, fmt.Errorf("aps: slot uuid %q found in negative cache", slotUUID)
 	}
 
 	adUnitID, profileID, ok := owCache.GetApsOwMapping(slotUUID)
@@ -72,19 +48,43 @@ func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine
 		if me != nil {
 			me.RecordAPSSlotMappingReject(publisherID, slotUUID, apsMetricReasonUnmappedUUID)
 		}
-		return nil, fmt.Errorf("aps: no mapping for slot uuid %q", slotUUID)
+		return "", 0, fmt.Errorf("aps: no mapping for slot uuid %q", slotUUID)
+	}
+	return adUnitID, profileID, nil
+}
+
+// enrichApsRequest replaces imp[0].tagid with the mapped OW ad unit id and sets
+// ext.prebid.bidderparams.pubmatic.wrapper.profileid from that mapping.
+// Only the first impression is modified; any additional imps are left unchanged.
+// publisherID is used for metrics labels when me is non-nil.
+func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine, publisherID string) ([]byte, error, openrtb3.NoBidReason) {
+	if owCache == nil {
+		return nil, fmt.Errorf("aps: cache not configured"), openrtb3.NoBidInvalidRequest
+	}
+	if !json.Valid(body) {
+		return nil, fmt.Errorf("aps: unmarshal bid request: invalid JSON"), openrtb3.NoBidInvalidRequest
+	}
+	if _, _, _, err := jsonparser.Get(body, "imp", "[0]"); err != nil {
+		return nil, fmt.Errorf("aps: no impressions"), openrtb3.NoBidInvalidRequest
+	}
+	slotUUID, err := jsonparser.GetString(body, "imp", "[0]", "tagid")
+	if err != nil || slotUUID == "" {
+		return nil, fmt.Errorf("aps: empty or missing imp[0].tagid"), nbr.InvalidImpressionTagID
 	}
 
-	imp.TagID = adUnitID
-
-	if err := setApsRequestExtWrapperProfileID(req, profileID); err != nil {
-		return nil, err
-	}
-
-	modifiedRequestBody, err := json.Marshal(req)
+	adUnitID, profileID, err := resolveApsSlotMapping(owCache, me, publisherID, slotUUID)
 	if err != nil {
-		return nil, fmt.Errorf("aps: marshal bid request: %w", err)
+		return nil, err, nbr.APSSlotUUIDNotMapped
 	}
 
-	return modifiedRequestBody, nil
+	out, err := jsonparser.Set(body, []byte(strconv.Quote(adUnitID)), "imp", "[0]", "tagid")
+	if err != nil {
+		return nil, fmt.Errorf("aps: set imp[0].tagid: %w", err), openrtb3.NoBidInvalidRequest
+	}
+
+	out, err = setApsWrapperProfileIDOnBody(out, profileID)
+	if err != nil {
+		return nil, err, openrtb3.NoBidInvalidRequest
+	}
+	return out, nil, 0
 }

@@ -49,6 +49,7 @@ type OpenWrap struct {
 	profileMetaData profilemetadata.ProfileMetaData
 	uuidGenerator   uuidutil.UUIDGenerator
 	features        feature.Features
+	shutdown        func()
 }
 
 var ow *OpenWrap
@@ -139,6 +140,9 @@ func initOpenWrap(rawCfg json.RawMessage, moduleDeps moduledeps.ModuleDeps) (Ope
 			profileMetaData: profileMetaData,
 			uuidGenerator:   uuidutil.UUIDRandomGenerator{},
 			features:        features,
+			shutdown: func() {
+				sqlDB.Shutdown()
+			},
 		}
 	})
 
