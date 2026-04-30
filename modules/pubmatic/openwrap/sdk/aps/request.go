@@ -1,8 +1,6 @@
 package aps
 
 import (
-	"encoding/base64"
-
 	"github.com/buger/jsonparser"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -96,15 +94,8 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 		return
 	}
 
-	// decode token
-	signalData, err := base64.StdEncoding.DecodeString(signal)
-	if err != nil {
-		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
-		return
-	}
-
 	var signalRequest *openrtb2.BidRequest
-	if err := jsoniterator.Unmarshal(signalData, &signalRequest); err != nil || signalRequest == nil {
+	if err := jsoniterator.Unmarshal([]byte(signal), &signalRequest); err != nil || signalRequest == nil {
 		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
 		return
 	}

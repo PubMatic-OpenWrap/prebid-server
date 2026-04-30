@@ -1,7 +1,6 @@
 package aps
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -36,8 +35,8 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 		Device: &openrtb2.Device{UA: "Mozilla"},
 		App:    &openrtb2.App{Name: "SignalApp"},
 	}
-	validSig := mustEncodeSignalBidRequest(t, signalBR)
-	badSignal := base64.StdEncoding.EncodeToString([]byte(`not-json`))
+	validSig := mustMarshalSignalBidRequest(t, signalBR)
+	badSignal := "not-json"
 
 	tests := []struct {
 		name             string
@@ -80,14 +79,6 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 				m.EXPECT().RecordSignalDataStatus("pub-1", "42", models.MissingSignal)
 			},
 			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t","secure":1}],"app":{"publisher":{"id":"pub-1"}},"user":{},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":42}}}}}}`),
-		},
-		{
-			name:        "invalid_base64_signal_records_metric",
-			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t"}],"app":{"publisher":{"id":"p"}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":9}}}}},"user":{"buyeruid":"@@@not-base64@@@"}}`),
-			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
-				m.EXPECT().RecordSignalDataStatus("p", "9", models.InvalidSignal)
-			},
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t","secure":1}],"app":{"publisher":{"id":"p"}},"user":{"buyeruid":"@@@not-base64@@@"},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":9}}}}}}`),
 		},
 		{
 			name:        "invalid_json_inside_signal_records_metric",
@@ -972,9 +963,9 @@ func TestUpdateImpression(t *testing.T) {
 	}
 }
 
-func mustEncodeSignalBidRequest(t *testing.T, br *openrtb2.BidRequest) string {
+func mustMarshalSignalBidRequest(t *testing.T, br *openrtb2.BidRequest) string {
 	t.Helper()
 	b, err := json.Marshal(br)
 	require.NoError(t, err)
-	return base64.StdEncoding.EncodeToString(b)
+	return string(b)
 }
