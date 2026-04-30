@@ -82,9 +82,13 @@ type Queries struct {
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 	GetCountryPartnerFilteringData    string
-	GetPerformanceDSPQuery            string
-	GetInViewEnabledPublishersQuery   string
-	GetAllDspFscAndActPcntQuery       string
+	// GetApsOwMapping must return three columns in order: APS slot UUID, OW ad unit id (string), OW profile id (see mysql.ApsOwMappingDB).
+	// Example: SELECT aps_slot_uuid, CAST(ad_unit_id AS CHAR), profile_id FROM wrapper_aps_adunit_mapping
+	// Cache miss uses the same table/columns in mysql.aps_ow_mapping.go (apsOwMappingSelectBySlot).
+	GetApsOwMapping                 string
+	GetPerformanceDSPQuery          string
+	GetInViewEnabledPublishersQuery string
+	GetAllDspFscAndActPcntQuery     string
 }
 
 type Cache struct {
@@ -94,6 +98,7 @@ type Cache struct {
 	VASTTagCacheExpiry                  int // in seconds
 	ProfileMetaDataCacheExpiry          int // in seconds
 	CountryPartnerFilterRefreshInterval time.Duration
+	ApsOwMappingRefreshInterval         time.Duration
 }
 
 type Timeout struct {

@@ -27,6 +27,8 @@ type Cache interface {
 	GetInViewEnabledPublishers() (map[int]struct{}, error)
 
 	GetThrottlePartnersWithCriteria(country string) (map[string]struct{}, error)
+	// GetApsOwMapping resolves APS slot UUID to OW ad unit id and profile id: in-memory cache first, then fixed per-slot SQL on miss (see mysql.ApsOwMappingDB).
+	GetApsOwMapping(slotUUID string) (adUnitID string, profileID int, found bool)
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 }
