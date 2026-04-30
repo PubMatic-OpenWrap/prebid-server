@@ -5,8 +5,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/golang/mock/gomock"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,6 +26,7 @@ func TestEnrichApsRequest(t *testing.T) {
 		cacheNil    bool
 		setupMock   func(m *mock_cache.MockCache)
 		wantErr     bool
+		wantNBR     openrtb3.NoBidReason
 		checkOut    func(t *testing.T, out []byte)
 	}{
 		{
@@ -33,6 +36,7 @@ func TestEnrichApsRequest(t *testing.T) {
 			setupMock: func(m *mock_cache.MockCache) {
 				m.EXPECT().GetApsOwMapping(uuid1).Return("ow-ad-unit-1", 10042, true)
 			},
+			wantNBR: 0,
 			checkOut: func(t *testing.T, out []byte) {
 				assert.Equal(t, "ow-ad-unit-1", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
 				assert.Equal(t, int64(10042), apsTestJSONInt64(t, out, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"))
@@ -45,6 +49,7 @@ func TestEnrichApsRequest(t *testing.T) {
 			setupMock: func(m *mock_cache.MockCache) {
 				m.EXPECT().GetApsOwMapping(uuidA).Return("ow-a", 10042, true)
 			},
+			wantNBR: 0,
 			checkOut: func(t *testing.T, out []byte) {
 				assert.Equal(t, "ow-a", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
 				assert.Equal(t, uuidB, apsTestJSONString(t, out, "imp", "[1]", "tagid"))
@@ -57,6 +62,7 @@ func TestEnrichApsRequest(t *testing.T) {
 			publisherID: "1",
 			setupMock:   func(m *mock_cache.MockCache) { m.EXPECT().GetApsOwMapping(unmapped).Return("", 0, false) },
 			wantErr:     true,
+			wantNBR:     nbr.APSSlotUUIDNotMapped,
 		},
 		{
 			name:        "err_non_uuid_tagid_unmapped",
@@ -64,6 +70,7 @@ func TestEnrichApsRequest(t *testing.T) {
 			publisherID: "1",
 			setupMock:   func(m *mock_cache.MockCache) { m.EXPECT().GetApsOwMapping("unknown-uuid").Return("", 0, false) },
 			wantErr:     true,
+			wantNBR:     nbr.APSSlotUUIDNotMapped,
 		},
 		{
 			name:        "err_nil_cache",
@@ -71,24 +78,28 @@ func TestEnrichApsRequest(t *testing.T) {
 			publisherID: "0",
 			cacheNil:    true,
 			wantErr:     true,
+			wantNBR:     openrtb3.NoBidInvalidRequest,
 		},
 		{
 			name:        "err_no_impressions",
 			body:        []byte(`{"imp":[]}`),
 			publisherID: "1",
 			wantErr:     true,
+			wantNBR:     openrtb3.NoBidInvalidRequest,
 		},
 		{
 			name:        "err_empty_tagid",
 			body:        []byte(`{"imp":[{"id":"1","tagid":""}]}`),
 			publisherID: "1",
 			wantErr:     true,
+			wantNBR:     nbr.InvalidImpressionTagID,
 		},
 		{
 			name:        "err_invalid_json",
 			body:        []byte(`not json`),
 			publisherID: "1",
 			wantErr:     true,
+			wantNBR:     openrtb3.NoBidInvalidRequest,
 		},
 	}
 
@@ -107,8 +118,9 @@ func TestEnrichApsRequest(t *testing.T) {
 				owCache = m
 			}
 
-			out, err := enrichApsRequest(tt.body, owCache, nil, tt.publisherID)
+			out, err, gotNBR := enrichApsRequest(tt.body, owCache, nil, tt.publisherID)
 
+			assert.Equal(t, tt.wantNBR, gotNBR, "NoBidReason (3rd return)")
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

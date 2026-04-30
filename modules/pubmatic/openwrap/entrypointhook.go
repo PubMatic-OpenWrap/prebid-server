@@ -121,11 +121,12 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 	if endpoint == models.EndpointAPS {
 		var errAps error
-		payload.Body, errAps = enrichApsRequest(payload.Body, m.cache, m.metricEngine, pubIdStr)
+		var nbrCode openrtb3.NoBidReason
+		payload.Body, errAps, nbrCode = enrichApsRequest(payload.Body, m.cache, m.metricEngine, pubIdStr)
 		if errAps != nil {
 			result.Reject = true
 			glog.Errorf("aps_slot_mapping: %v", errAps)
-			result.NbrCode = int(nbr.APSSlotUUIDNotMapped)
+			result.NbrCode = int(nbrCode)
 			result.Errors = append(result.Errors, errAps.Error())
 			return result, errAps
 		}
