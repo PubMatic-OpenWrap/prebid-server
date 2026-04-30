@@ -59,7 +59,7 @@ func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publis
 // publisherID is used for metrics labels when me is non-nil.
 func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine, publisherID string) ([]byte, error, openrtb3.NoBidReason) {
 	if owCache == nil {
-		return nil, fmt.Errorf("aps: cache not configured"), openrtb3.NoBidInvalidRequest
+		return nil, fmt.Errorf("aps: cache not configured"), nbr.InternalError
 	}
 	if !json.Valid(body) {
 		return nil, fmt.Errorf("aps: unmarshal bid request: invalid JSON"), openrtb3.NoBidInvalidRequest

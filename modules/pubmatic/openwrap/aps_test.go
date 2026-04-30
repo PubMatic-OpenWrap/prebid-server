@@ -78,7 +78,7 @@ func TestEnrichApsRequest(t *testing.T) {
 			publisherID: "0",
 			cacheNil:    true,
 			wantErr:     true,
-			wantNBR:     openrtb3.NoBidInvalidRequest,
+			wantNBR:     nbr.InternalError,
 		},
 		{
 			name:        "err_no_impressions",
