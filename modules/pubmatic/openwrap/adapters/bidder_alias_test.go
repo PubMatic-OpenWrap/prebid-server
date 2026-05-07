@@ -20,6 +20,7 @@ func TestAlias(t *testing.T) {
 		models.BidderAdsYieldAlias:          string(openrtb_ext.BidderLimelightDigital),
 		models.BidderIionadsAlias:           string(openrtb_ext.BidderLimelightDigital),
 		models.BidderRobustAppsAlias:        string(openrtb_ext.BidderXeworks),
+		models.BidderMagniteAlias:           string(openrtb_ext.BidderRubicon),
 	}
 	assert.Equal(t, expected, Alias())
 }

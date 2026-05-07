@@ -21,6 +21,7 @@ const (
 	BidderAdsYieldAlias          = "adsyield"
 	BidderIionadsAlias           = "iionads"
 	BidderRobustAppsAlias        = "robustApps"
+	BidderMagniteAlias           = "magnite"
 )
 
 const (
