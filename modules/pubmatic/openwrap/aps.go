@@ -34,23 +34,23 @@ func setApsWrapperProfileIDOnBody(body []byte, profileID int) ([]byte, error) {
 
 // resolveApsSlotMapping resolves imp[0] APS slot UUID (tagid) to OW ad unit id and profile id via owCache.
 // It applies negative caching and reject metrics consistent with enrichApsRequest.
-func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publisherID, slotUUID string) (adUnitID string, profileID int, err error) {
+func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publisherID, slotUUID string) (adUnitID, adUnitName string, profileID int, err error) {
 	if _, hit := apsNegativeCache.Get(slotUUID); hit {
 		if me != nil {
 			me.RecordAPSSlotMappingReject(publisherID, slotUUID, apsMetricReasonUnmappedUUID)
 		}
-		return "", 0, fmt.Errorf("aps: slot uuid %q found in negative cache", slotUUID)
+		return "", "", 0, fmt.Errorf("aps: slot uuid %q found in negative cache", slotUUID)
 	}
 
-	adUnitID, profileID, ok := owCache.GetApsOwMapping(slotUUID)
+	adUnitID, adUnitName, profileID, ok := owCache.GetApsOwMapping(slotUUID)
 	if !ok {
 		apsNegativeCache.Set(slotUUID, struct{}{}, negativeCacheTimeout)
 		if me != nil {
 			me.RecordAPSSlotMappingReject(publisherID, slotUUID, apsMetricReasonUnmappedUUID)
 		}
-		return "", 0, fmt.Errorf("aps: no mapping for slot uuid %q", slotUUID)
+		return "", "", 0, fmt.Errorf("aps: no mapping for slot uuid %q", slotUUID)
 	}
-	return adUnitID, profileID, nil
+	return adUnitID, adUnitName, profileID, nil
 }
 
 // enrichApsRequest replaces imp[0].tagid with the mapped OW ad unit id and sets
@@ -72,12 +72,12 @@ func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine
 		return nil, fmt.Errorf("aps: empty or missing imp[0].tagid"), nbr.InvalidImpressionTagID
 	}
 
-	adUnitID, profileID, err := resolveApsSlotMapping(owCache, me, publisherID, slotUUID)
+	_, adUnitName, profileID, err := resolveApsSlotMapping(owCache, me, publisherID, slotUUID)
 	if err != nil {
 		return nil, err, nbr.APSSlotUUIDNotMapped
 	}
 
-	out, err := jsonparser.Set(body, []byte(strconv.Quote(adUnitID)), "imp", "[0]", "tagid")
+	out, err := jsonparser.Set(body, []byte(strconv.Quote(adUnitName)), "imp", "[0]", "tagid")
 	if err != nil {
 		return nil, fmt.Errorf("aps: set imp[0].tagid: %w", err), openrtb3.NoBidInvalidRequest
 	}

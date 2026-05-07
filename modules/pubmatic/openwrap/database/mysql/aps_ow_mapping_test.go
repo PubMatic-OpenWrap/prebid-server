@@ -15,14 +15,14 @@ func TestApsOwMappingDB_getApsOwMappingData(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT slot, adunit, prof").
-		WillReturnRows(sqlmock.NewRows([]string{"slot", "adunit", "prof"}).
-			AddRow("uuid-1", "ad-1", 10).
-			AddRow("uuid-2", "ad-2", 20))
+	mock.ExpectQuery("SELECT slot, adunit, adunit_name, prof").
+		WillReturnRows(sqlmock.NewRows([]string{"slot", "adunit", "adunit_name", "prof"}).
+			AddRow("uuid-1", "ad-1", "ad-1-name", 10).
+			AddRow("uuid-2", "ad-2", "ad-2-name", 20))
 
 	a := &ApsOwMappingDB{
 		db:                  db,
-		query:               "SELECT slot, adunit, prof FROM aps_ow_mapping",
+		query:               "SELECT slot, adunit, adunit_name, prof FROM aps_ow_mapping",
 		MaxDbContextTimeout: 500 * time.Millisecond,
 	}
 
@@ -37,15 +37,16 @@ func TestApsOwMappingDB_getApsOwMappingData(t *testing.T) {
 func TestApsOwMappingDB_Lookup(t *testing.T) {
 	var a ApsOwMappingDB
 	a.cache.Store(map[string]ApsOwMappingEntry{
-		"slot": {AdUnitID: "au", ProfileID: 99},
+		"slot": {AdUnitID: "au", AdUnitName: "au-name", ProfileID: 99},
 	})
-	ad, pid, ok := a.Lookup("slot")
+	ad, adName, pid, ok := a.Lookup("slot")
 	assert.True(t, ok)
 	assert.Equal(t, "au", ad)
+	assert.Equal(t, "au-name", adName)
 	assert.Equal(t, 99, pid)
-	_, _, ok = a.Lookup("")
+	_, _, _, ok = a.Lookup("")
 	assert.False(t, ok)
-	_, _, ok = a.Lookup("nope")
+	_, _, _, ok = a.Lookup("nope")
 	assert.False(t, ok)
 }
 
@@ -58,16 +59,16 @@ func TestNew_ApsOwMappingWithCountry(t *testing.T) {
 	mock.ExpectQuery("SELECT country, value FROM wrapper_metrics WHERE feature_id=1").
 		WillReturnRows(sqlmock.NewRows([]string{"country", "value"}).
 			AddRow("US", "partnerA"))
-	mock.ExpectQuery("SELECT aps_slot_uuid, ad_unit_id, profile_id FROM wrapper_aps_adunit_mapping").
-		WillReturnRows(sqlmock.NewRows([]string{"aps_slot_uuid", "ad_unit_id", "profile_id"}).
-			AddRow("u1", "a1", 5))
+	mock.ExpectQuery("SELECT aps_slot_uuid, ad_unit_id, ad_unit_name, profile_id FROM wrapper_aps_adunit_mapping").
+		WillReturnRows(sqlmock.NewRows([]string{"aps_slot_uuid", "ad_unit_id", "ad_unit_name", "profile_id"}).
+			AddRow("u1", "a1", "a1-name", 5))
 
 	got := New(db, config.Database{
 		CountryPartnerFilterMaxDbContextTimeout: 1,
 		MaxDbContextTimeout:                     500, // ms; required for NewApsOwMappingDB (0 => immediate context deadline)
 		Queries: config.Queries{
 			GetCountryPartnerFilteringData: "SELECT country, value FROM wrapper_metrics WHERE feature_id=1",
-			GetApsOwMapping:                "SELECT aps_slot_uuid, ad_unit_id, profile_id FROM wrapper_aps_adunit_mapping",
+			GetApsOwMapping:                "SELECT aps_slot_uuid, ad_unit_id, ad_unit_name, profile_id FROM wrapper_aps_adunit_mapping",
 		},
 	}, config.Cache{
 		CountryPartnerFilterRefreshInterval: 1,
@@ -81,17 +82,19 @@ func TestNew_ApsOwMappingWithCountry(t *testing.T) {
 		got.Shutdown()
 		_ = db.Close()
 	})
-	ad, pid, ok := got.GetApsOwMapping("u1")
+	ad, adName, pid, ok := got.GetApsOwMapping("u1")
 	assert.True(t, ok)
 	assert.Equal(t, "a1", ad)
+	assert.Equal(t, "a1-name", adName)
 	assert.Equal(t, 5, pid)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestMySqlDB_GetApsOwMapping_nil(t *testing.T) {
 	var db *mySqlDB
-	ad, pid, ok := db.GetApsOwMapping("x")
+	ad, adName, pid, ok := db.GetApsOwMapping("x")
 	assert.False(t, ok)
 	assert.Equal(t, "", ad)
+	assert.Equal(t, "", adName)
 	assert.Equal(t, 0, pid)
 }

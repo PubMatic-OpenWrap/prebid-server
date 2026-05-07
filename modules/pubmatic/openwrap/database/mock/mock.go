@@ -187,13 +187,14 @@ func (mr *MockDatabaseMockRecorder) GetMappings(arg0, arg1 interface{}) *gomock.
 }
 
 // GetApsOwMapping mocks base method.
-func (m *MockDatabase) GetApsOwMapping(arg0 string) (string, int, bool) {
+func (m *MockDatabase) GetApsOwMapping(arg0 string) (string, string, int, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetApsOwMapping", arg0)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(bool)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(bool)
+	return ret0, ret1, ret2, ret3
 }
 
 // GetApsOwMapping indicates an expected call of GetApsOwMapping.
