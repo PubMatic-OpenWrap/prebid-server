@@ -34,11 +34,11 @@ func TestEnrichApsRequest(t *testing.T) {
 			body:        []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"` + uuid1 + `","banner":{"w":300,"h":250}}],"app":{"publisher":{"id":"1"}}}`),
 			publisherID: "1",
 			setupMock: func(m *mock_cache.MockCache) {
-				m.EXPECT().GetApsOwMapping(uuid1).Return("ow-ad-unit-1", 10042, true)
+				m.EXPECT().GetApsOwMapping(uuid1).Return("ow-ad-unit-name-1", 10042, true)
 			},
 			wantNBR: 0,
 			checkOut: func(t *testing.T, out []byte) {
-				assert.Equal(t, "ow-ad-unit-1", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
+				assert.Equal(t, "ow-ad-unit-name-1", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
 				assert.Equal(t, int64(10042), apsTestJSONInt64(t, out, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"))
 			},
 		},
@@ -47,11 +47,11 @@ func TestEnrichApsRequest(t *testing.T) {
 			body:        []byte(`{"id":"r2","imp":[{"id":"1","tagid":"` + uuidA + `"},{"id":"2","tagid":"` + uuidB + `"}],"app":{"publisher":{"id":"1"}}}`),
 			publisherID: "1",
 			setupMock: func(m *mock_cache.MockCache) {
-				m.EXPECT().GetApsOwMapping(uuidA).Return("ow-a", 10042, true)
+				m.EXPECT().GetApsOwMapping(uuidA).Return("ow-a-name", 10042, true)
 			},
 			wantNBR: 0,
 			checkOut: func(t *testing.T, out []byte) {
-				assert.Equal(t, "ow-a", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
+				assert.Equal(t, "ow-a-name", apsTestJSONString(t, out, "imp", "[0]", "tagid"))
 				assert.Equal(t, uuidB, apsTestJSONString(t, out, "imp", "[1]", "tagid"))
 				assert.Equal(t, int64(10042), apsTestJSONInt64(t, out, "ext", "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"))
 			},

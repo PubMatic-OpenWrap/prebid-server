@@ -32,9 +32,9 @@ func setApsWrapperProfileIDOnBody(body []byte, profileID int) ([]byte, error) {
 	return out, nil
 }
 
-// resolveApsSlotMapping resolves imp[0] APS slot UUID (tagid) to OW ad unit id and profile id via owCache.
+// resolveApsSlotMapping resolves imp[0] APS slot UUID (tagid) to OW ad unit name and profile id via owCache.
 // It applies negative caching and reject metrics consistent with enrichApsRequest.
-func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publisherID, slotUUID string) (adUnitID string, profileID int, err error) {
+func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publisherID, slotUUID string) (adUnitName string, profileID int, err error) {
 	if _, hit := apsNegativeCache.Get(slotUUID); hit {
 		if me != nil {
 			me.RecordAPSSlotMappingReject(publisherID, slotUUID, apsMetricReasonUnmappedUUID)
@@ -42,7 +42,7 @@ func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publis
 		return "", 0, fmt.Errorf("aps: slot uuid %q found in negative cache", slotUUID)
 	}
 
-	adUnitID, profileID, ok := owCache.GetApsOwMapping(slotUUID)
+	adUnitName, profileID, ok := owCache.GetApsOwMapping(slotUUID)
 	if !ok {
 		apsNegativeCache.Set(slotUUID, struct{}{}, negativeCacheTimeout)
 		if me != nil {
@@ -50,10 +50,10 @@ func resolveApsSlotMapping(owCache cache.Cache, me metrics.MetricsEngine, publis
 		}
 		return "", 0, fmt.Errorf("aps: no mapping for slot uuid %q", slotUUID)
 	}
-	return adUnitID, profileID, nil
+	return adUnitName, profileID, nil
 }
 
-// enrichApsRequest replaces imp[0].tagid with the mapped OW ad unit id and sets
+// enrichApsRequest replaces imp[0].tagid with the mapped OW ad unit name and sets
 // ext.prebid.bidderparams.pubmatic.wrapper.profileid from that mapping.
 // Only the first impression is modified; any additional imps are left unchanged.
 // publisherID is used for metrics labels when me is non-nil.
@@ -72,12 +72,12 @@ func enrichApsRequest(body []byte, owCache cache.Cache, me metrics.MetricsEngine
 		return nil, fmt.Errorf("aps: empty or missing imp[0].tagid"), nbr.InvalidImpressionTagID
 	}
 
-	adUnitID, profileID, err := resolveApsSlotMapping(owCache, me, publisherID, slotUUID)
+	adUnitName, profileID, err := resolveApsSlotMapping(owCache, me, publisherID, slotUUID)
 	if err != nil {
 		return nil, err, nbr.APSSlotUUIDNotMapped
 	}
 
-	out, err := jsonparser.Set(body, []byte(strconv.Quote(adUnitID)), "imp", "[0]", "tagid")
+	out, err := jsonparser.Set(body, []byte(strconv.Quote(adUnitName)), "imp", "[0]", "tagid")
 	if err != nil {
 		return nil, fmt.Errorf("aps: set imp[0].tagid: %w", err), openrtb3.NoBidInvalidRequest
 	}

@@ -14,14 +14,10 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
-// apsOwMappingSelectBySlot is the cache-miss single-row query; only the UUID argument varies per request.
-// Must match the table/columns used by Queries.GetApsOwMapping (e.g. wrapper_aps_adunit_mapping).
-const apsOwMappingSelectBySlot = `SELECT aps_slot_uuid, ad_unit_id, profile_id FROM wrapper_aps_adunit_mapping WHERE aps_slot_uuid = ?`
-
-// ApsOwMappingEntry maps an APS slot UUID to OpenWrap ad unit and profile identifiers.
+// ApsOwMappingEntry maps an APS slot UUID to OpenWrap ad unit name and profile id.
 type ApsOwMappingEntry struct {
-	AdUnitID  string
-	ProfileID int
+	AdUnitName string
+	ProfileID  int
 }
 
 type ApsOwMappingDB struct {
@@ -29,6 +25,7 @@ type ApsOwMappingDB struct {
 	refreshInterval     time.Duration
 	cache               atomic.Value
 	query               string
+	slotQuery           string
 	MaxDbContextTimeout time.Duration
 	// reloadMu serializes full refresh (query+Store) with per-slot merge so a stale full snapshot cannot
 	// overwrite a merge that completed while the full query was in flight. Also serializes cache-miss loads.
@@ -37,19 +34,24 @@ type ApsOwMappingDB struct {
 	stopOnce sync.Once
 }
 
-func NewApsOwMappingDB(db *sql.DB, refreshInterval time.Duration, query string, maxDbContextTimeout time.Duration) (*ApsOwMappingDB, error) {
+func NewApsOwMappingDB(db *sql.DB, refreshInterval time.Duration, bulkQuery, slotQuery string, maxDbContextTimeout time.Duration) (*ApsOwMappingDB, error) {
 	if db == nil {
 		return nil, errors.New("database connection is required")
 	}
-	q := strings.TrimSpace(query)
+	q := strings.TrimSpace(bulkQuery)
 	if q == "" {
 		return nil, errors.New("aps OW mapping query is required")
+	}
+	sq := strings.TrimSpace(slotQuery)
+	if sq == "" {
+		return nil, errors.New("aps OW mapping by-slot query is required")
 	}
 
 	m := &ApsOwMappingDB{
 		db:                  db,
 		refreshInterval:     refreshInterval * time.Hour,
 		query:               q,
+		slotQuery:           sq,
 		MaxDbContextTimeout: maxDbContextTimeout * time.Millisecond,
 		stopCh:              make(chan struct{}),
 	}
@@ -102,9 +104,9 @@ func (a *ApsOwMappingDB) getApsOwMappingData() (map[string]ApsOwMappingEntry, er
 
 	out := make(map[string]ApsOwMappingEntry)
 	for rows.Next() {
-		var slotUUID, adUnitID string
+		var slotUUID, adUnitName string
 		var profileID int64
-		if err := rows.Scan(&slotUUID, &adUnitID, &profileID); err != nil {
+		if err := rows.Scan(&slotUUID, &adUnitName, &profileID); err != nil {
 			glog.Errorf("APS OW mapping row scan error: %v", err)
 			continue
 		}
@@ -113,8 +115,8 @@ func (a *ApsOwMappingDB) getApsOwMappingData() (map[string]ApsOwMappingEntry, er
 			continue
 		}
 		out[slotUUID] = ApsOwMappingEntry{
-			AdUnitID:  strings.TrimSpace(adUnitID),
-			ProfileID: int(profileID),
+			AdUnitName: strings.TrimSpace(adUnitName),
+			ProfileID:  int(profileID),
 		}
 	}
 
@@ -122,17 +124,17 @@ func (a *ApsOwMappingDB) getApsOwMappingData() (map[string]ApsOwMappingEntry, er
 }
 
 func validApsOwMappingEntry(e ApsOwMappingEntry) bool {
-	return e.AdUnitID != "" && e.ProfileID > 0
+	return e.AdUnitName != "" && e.ProfileID > 0
 }
 
-// getApsOwMappingSingle loads one row for slotUUID using apsOwMappingSelectBySlot.
+// getApsOwMappingSingle loads one row for slotUUID using the configured per-slot query (Queries.GetApsOwMappingBySlot).
 func (a *ApsOwMappingDB) getApsOwMappingSingle(slotUUID string) (ApsOwMappingEntry, bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), a.MaxDbContextTimeout)
 	defer cancel()
 
-	var slot, adUnitID string
+	var slot, adUnitName string
 	var profileID int64
-	err := a.db.QueryRowContext(ctx, apsOwMappingSelectBySlot, slotUUID).Scan(&slot, &adUnitID, &profileID)
+	err := a.db.QueryRowContext(ctx, a.slotQuery, slotUUID).Scan(&slot, &adUnitName, &profileID)
 	if err == sql.ErrNoRows {
 		return ApsOwMappingEntry{}, false, nil
 	}
@@ -144,8 +146,8 @@ func (a *ApsOwMappingDB) getApsOwMappingSingle(slotUUID string) (ApsOwMappingEnt
 		return ApsOwMappingEntry{}, false, nil
 	}
 	return ApsOwMappingEntry{
-		AdUnitID:  strings.TrimSpace(adUnitID),
-		ProfileID: int(profileID),
+		AdUnitName: strings.TrimSpace(adUnitName),
+		ProfileID:  int(profileID),
 	}, true, nil
 }
 
@@ -195,7 +197,7 @@ func (a *ApsOwMappingDB) Stop() {
 	})
 }
 
-func (a *ApsOwMappingDB) Lookup(slotUUID string) (adUnitID string, profileID int, found bool) {
+func (a *ApsOwMappingDB) Lookup(slotUUID string) (adUnitName string, profileID int, found bool) {
 	if slotUUID == "" {
 		return "", 0, false
 	}
@@ -208,15 +210,15 @@ func (a *ApsOwMappingDB) Lookup(slotUUID string) (adUnitID string, profileID int
 	if !ok || !validApsOwMappingEntry(e) {
 		return "", 0, false
 	}
-	return e.AdUnitID, e.ProfileID, true
+	return e.AdUnitName, e.ProfileID, true
 }
 
 // lookupOrLoadSingleRow checks the in-memory cache first. Full table load happens only in RefreshCache (startup
-// and scheduled ticker). On miss, apsOwMappingSelectBySlot loads that UUID from the DB and merges into the map;
+// and scheduled ticker). On miss, the configured per-slot query loads that UUID from the DB and merges into the map;
 // on error or unknown UUID the map is unchanged.
-func (a *ApsOwMappingDB) lookupOrLoadSingleRow(slotUUID string) (adUnitID string, profileID int, found bool) {
-	if adUnitID, profileID, found = a.Lookup(slotUUID); found {
-		return adUnitID, profileID, true
+func (a *ApsOwMappingDB) lookupOrLoadSingleRow(slotUUID string) (adUnitName string, profileID int, found bool) {
+	if adUnitName, profileID, found = a.Lookup(slotUUID); found {
+		return adUnitName, profileID, true
 	}
 	if slotUUID == "" {
 		return "", 0, false
@@ -225,8 +227,8 @@ func (a *ApsOwMappingDB) lookupOrLoadSingleRow(slotUUID string) (adUnitID string
 	a.reloadMu.Lock()
 	defer a.reloadMu.Unlock()
 
-	if adUnitID, profileID, found = a.Lookup(slotUUID); found {
-		return adUnitID, profileID, true
+	if adUnitName, profileID, found = a.Lookup(slotUUID); found {
+		return adUnitName, profileID, true
 	}
 
 	entry, rowOk, err := a.getApsOwMappingSingle(slotUUID)
@@ -238,10 +240,10 @@ func (a *ApsOwMappingDB) lookupOrLoadSingleRow(slotUUID string) (adUnitID string
 		return "", 0, false
 	}
 	a.mergeEntryIntoCache(slotUUID, entry)
-	return entry.AdUnitID, entry.ProfileID, true
+	return entry.AdUnitName, entry.ProfileID, true
 }
 
-func (db *mySqlDB) GetApsOwMapping(slotUUID string) (adUnitID string, profileID int, found bool) {
+func (db *mySqlDB) GetApsOwMapping(slotUUID string) (adUnitName string, profileID int, found bool) {
 	if db == nil || db.apsOwMappingDB == nil {
 		return "", 0, false
 	}

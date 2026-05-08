@@ -82,10 +82,11 @@ type Queries struct {
 	GetBannerSizesQuery               string
 	GetProfileAdUnitMultiFloors       string
 	GetCountryPartnerFilteringData    string
-	// GetApsOwMapping must return three columns in order: APS slot UUID, OW ad unit id (string), OW profile id (see mysql.ApsOwMappingDB).
-	// Example: SELECT aps_slot_uuid, CAST(ad_unit_id AS CHAR), profile_id FROM wrapper_aps_adunit_mapping
-	// Cache miss uses the same table/columns in mysql.aps_ow_mapping.go (apsOwMappingSelectBySlot).
-	GetApsOwMapping                 string
+	// GetApsOwMapping bulk-load SQL must return columns: APS slot UUID, OW ad unit name, profile id (see mysql.ApsOwMappingDB).
+	// Example: SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_adunit_mapping (join for name resolution as needed).
+	GetApsOwMapping string
+	// GetApsOwMappingBySlot is required when GetApsOwMapping is set: cache-miss single-row SQL with the same three columns as GetApsOwMapping and exactly one "?" for the APS slot UUID.
+	GetApsOwMappingBySlot           string
 	GetPerformanceDSPQuery          string
 	GetInViewEnabledPublishersQuery string
 	GetAllDspFscAndActPcntQuery     string

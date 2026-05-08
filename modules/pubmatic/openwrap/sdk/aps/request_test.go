@@ -86,7 +86,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 		{
 			name:             "valid_signal_merges_impression_app_and_device_from_signal",
 			requestBody:      []byte(fmt.Sprintf(`{"id":"base","imp":[{"id":"i1","tagid":"t1","ext":{}}],"app":{"publisher":{"id":"pubx"}},"device":{"ua":"orig"},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100}}}}},"user":{"buyeruid":%q}}`, validSig)),
-			expectedResponse: []byte(fmt.Sprintf(`{"id":"base","imp":[{"id":"i1","displaymanager":"dm","displaymanagerver":"2.0.0","instl":1,"tagid":"t1","secure":1,"ext":{"skadn":{"versions":["v1"]},"owsdk":{"x":1}}}],"app":{"name":"SignalApp","publisher":{"id":"pubx"}},"device":{"ua":"Mozilla"},"user":{"buyeruid":%q},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100}}}}}}`, validSig)),
+			expectedResponse: []byte(`{"id":"base","imp":[{"id":"i1","displaymanager":"dm","displaymanagerver":"2.0.0","instl":1,"tagid":"t1","secure":1,"ext":{"skadn":{"versions":["v1"]},"owsdk":{"x":1}}}],"app":{"name":"SignalApp","publisher":{"id":"pubx"}},"device":{"ua":"Mozilla"},"user":{},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100}}}}}}`),
 		},
 	}
 
