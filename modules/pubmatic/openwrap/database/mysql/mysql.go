@@ -36,7 +36,8 @@ func New(conn *sql.DB, cfg config.Database, cache config.Cache) *mySqlDB {
 				if ri <= 0 {
 					ri = 1
 				}
-				if a, err := NewApsOwMappingDB(conn, time.Duration(ri), q, time.Duration(cfg.MaxDbContextTimeout)); err != nil {
+				slotQ := cfg.Queries.GetApsOwMappingBySlot
+				if a, err := NewApsOwMappingDB(conn, time.Duration(ri), q, slotQ, time.Duration(cfg.MaxDbContextTimeout)); err != nil {
 					glog.Errorf("APS OW mapping cache init failed: %v", err)
 				} else {
 					aps = a
