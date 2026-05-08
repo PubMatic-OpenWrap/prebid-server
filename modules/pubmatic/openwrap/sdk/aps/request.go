@@ -108,6 +108,10 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 	// Request Ext
 	request.Ext, _ = sdkutils.CopyPath(signalRequest.Ext, request.Ext, "wrapper", "clientconfig")
 
+	// Embedded signal lives in buyeruid; merged device/app/imp/user/source/regs stay—do not forward raw JSON to partners.
+	if request.User != nil {
+		request.User.BuyerUID = ""
+	}
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
