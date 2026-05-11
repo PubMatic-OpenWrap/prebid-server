@@ -1,8 +1,12 @@
 package pubmatic
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -81,7 +85,21 @@ var send = func(rCtx *models.RequestCtx, url string, headers http.Header, mhc mh
 	// TODO: this will increment HB specific metric (ow_pbs_sshb_*), verify labels
 }
 
-// RestoreBidResponse restores the original bid response for AppLovinMax from the signal data
+// decodeAPSAdmGzipBase64 reverses APS bid.adm encoding (gzip + base64.StdEncoding) from sdk/aps.ApplyAPSResponse.
+func decodeAPSAdmGzipBase64(adm string) ([]byte, error) {
+	raw, err := base64.StdEncoding.DecodeString(adm)
+	if err != nil {
+		return nil, err
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+	return io.ReadAll(zr)
+}
+
+// RestoreBidResponse restores the original bid response for AppLovinMax / APS / other SDK paths from wrapper signal or compressed adm.
 func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) error {
 	if !sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		return nil
@@ -122,12 +140,21 @@ func RestoreBidResponse(rctx *models.RequestCtx, ao analytics.AuctionObject) err
 		}
 	}
 
-	if rctx.Endpoint == models.EndpointUnityLevelPlay || rctx.Endpoint == models.EndpointAPS {
+	if rctx.Endpoint == models.EndpointUnityLevelPlay {
 		if err := json.Unmarshal([]byte(ao.Response.SeatBid[0].Bid[0].AdM), orignalResponse); err != nil {
 			return err
 		}
 	}
 
+	if rctx.Endpoint == models.EndpointAPS {
+		payload, err := decodeAPSAdmGzipBase64(ao.Response.SeatBid[0].Bid[0].AdM)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(payload, orignalResponse); err != nil {
+			return err
+		}
+	}
 	*ao.Response = *orignalResponse
 	return nil
 }
