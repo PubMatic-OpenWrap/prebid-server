@@ -13,6 +13,17 @@ import (
 
 type ExtRequestORTB map[string]interface{}
 
+// Standard banner formats substituted when an incoming request uses the 100x100 placeholder in imp.banner.format.
+var openWrapStandardBannerFormats = []openrtb2.Format{
+	{W: 300, H: 250},
+	{W: 728, H: 90},
+	{W: 160, H: 600},
+	{W: 300, H: 600},
+	{W: 970, H: 250},
+	{W: 970, H: 90},
+	{W: 336, H: 280},
+}
+
 func GetRequestExtORTB(prebidExt *openrtb_ext.ExtOWRequest) (*ExtRequestORTB, bool, error) {
 	var requestExt *ExtRequestORTB
 	var mapExt map[string]interface{}
@@ -213,6 +224,15 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			}
 		} else {
 			request.Imp[i].Ext = nil
+		}
+
+		if request.Imp[i].Banner != nil {
+			for _, f := range request.Imp[i].Banner.Format {
+				if f.W == 100 && f.H == 100 {
+					request.Imp[i].Banner.Format = append([]openrtb2.Format(nil), openWrapStandardBannerFormats...)
+					break
+				}
+			}
 		}
 
 		// Create the Native object and fill with the desired JSON string.
