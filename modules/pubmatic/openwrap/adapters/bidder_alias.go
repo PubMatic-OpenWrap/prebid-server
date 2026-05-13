@@ -21,6 +21,7 @@ func Alias() map[string]string {
 		models.BidderAdsYieldAlias:          string(openrtb_ext.BidderLimelightDigital),
 		models.BidderIionadsAlias:           string(openrtb_ext.BidderLimelightDigital),
 		models.BidderRobustAppsAlias:        string(openrtb_ext.BidderXeworks),
+		models.BidderTtdAlias:               string(openrtb_ext.BidderTheTradeDesk),
 	}
 }
 
@@ -53,6 +54,8 @@ func ResolveOWBidder(bidderName string) string {
 		coreBidderName = string(openrtb_ext.BidderLimelightDigital)
 	case models.BidderRobustAppsAlias:
 		coreBidderName = string(openrtb_ext.BidderXeworks)
+	case models.BidderTtdAlias:
+		coreBidderName = string(openrtb_ext.BidderTheTradeDesk)
 	}
 	return coreBidderName
 }
