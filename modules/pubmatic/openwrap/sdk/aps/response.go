@@ -49,7 +49,7 @@ func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
 
 	bid := bidResponse.SeatBid[0].Bid[0]
 	bid.AdM = string(compressedResponse)
-	bid.Ext = nil
+
 	return []openrtb2.Bid{bid}
 }
 

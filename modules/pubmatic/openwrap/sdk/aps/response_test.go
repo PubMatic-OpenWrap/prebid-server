@@ -205,12 +205,13 @@ func TestApplyAPSResponse(t *testing.T) {
 								ID:    "bid-1",
 								ImpID: "imp-1",
 								AdM:   "", // Will be set to compressed response
+								Ext:   json.RawMessage(`{"custom": "data"}`),
 							},
 						},
 					},
 				},
 			},
-			description: "Valid APS request should compress response and transform structure",
+			description: "Valid APS request should compress response and transform structure; bid Ext is preserved",
 		},
 	}
 
@@ -230,7 +231,7 @@ func TestApplyAPSResponse(t *testing.T) {
 				assert.Len(t, result.SeatBid[0].Bid, 1)
 				assert.Equal(t, tt.expected.SeatBid[0].Bid[0].ID, result.SeatBid[0].Bid[0].ID)
 				assert.NotEmpty(t, result.SeatBid[0].Bid[0].AdM, "AdM should contain compressed data")
-				assert.Nil(t, result.SeatBid[0].Bid[0].Ext, "Ext should be nil")
+				assert.JSONEq(t, `{"custom": "data"}`, string(result.SeatBid[0].Bid[0].Ext))
 			} else {
 				// For all other cases, the response should remain unchanged
 				assert.Equal(t, &originalResponse, result, tt.description)
@@ -273,7 +274,7 @@ func TestApplyAPSResponse_AdmRoundTrip(t *testing.T) {
 	assert.Equal(t, "resp-outer", out.ID)
 	assert.Equal(t, "bid-inner", out.BidID)
 	assert.Equal(t, "EUR", out.Cur)
-	assert.Nil(t, out.SeatBid[0].Bid[0].Ext)
+	assert.JSONEq(t, `{"x":1}`, string(out.SeatBid[0].Bid[0].Ext))
 
 	adm := out.SeatBid[0].Bid[0].AdM
 	raw, err := base64.StdEncoding.DecodeString(adm)
@@ -362,7 +363,7 @@ func TestGetBids(t *testing.T) {
 				},
 			},
 			expectedLen: 1,
-			description: "Complex AdM should be compressed and Ext should be nil",
+			description: "Complex AdM should be compressed; bid Ext is preserved",
 		},
 	}
 
@@ -377,7 +378,7 @@ func TestGetBids(t *testing.T) {
 				if len(result) > 0 {
 					assert.Equal(t, tt.bidResponse.SeatBid[0].Bid[0].ID, result[0].ID)
 					assert.NotEmpty(t, result[0].AdM, "AdM should contain compressed data")
-					assert.Nil(t, result[0].Ext, "Ext should be nil")
+					assert.Equal(t, tt.bidResponse.SeatBid[0].Bid[0].Ext, result[0].Ext, "Ext should be preserved from source bid")
 				}
 			}
 		})
