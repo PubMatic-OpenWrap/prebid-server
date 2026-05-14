@@ -586,6 +586,13 @@ func (me *MultiMetricsEngine) RecordGeoLookupFailure(endpoint string) {
 	}
 }
 
+// RecordAPSSlotMappingReject across all engines
+func (me *MultiMetricsEngine) RecordAPSSlotMappingReject(publisherID, slotUUID, reason string) {
+	for _, thisME := range *me {
+		thisME.RecordAPSSlotMappingReject(publisherID, slotUUID, reason)
+	}
+}
+
 // RecordRequestWithSchainABTestEnabled record request with schain removed
 func (me *MultiMetricsEngine) RecordRequestWithSchainABTestEnabled() {
 	for _, thisME := range *me {

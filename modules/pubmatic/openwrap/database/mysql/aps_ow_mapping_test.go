@@ -1,0 +1,124 @@
+package mysql
+
+import (
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestApsOwMappingDB_getApsOwMappingData(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT slot, adunit_name, prof").
+		WillReturnRows(sqlmock.NewRows([]string{"slot", "adunit_name", "prof"}).
+			AddRow("uuid-1", "ad-1-name", 10).
+			AddRow("uuid-2", "ad-2-name", 20))
+
+	a := &ApsOwMappingDB{
+		db:                  db,
+		query:               "SELECT slot, adunit_name, prof FROM aps_ow_mapping",
+		MaxDbContextTimeout: 500 * time.Millisecond,
+	}
+
+	got, err := a.getApsOwMappingData()
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	assert.Equal(t, "ad-1-name", got["uuid-1"].AdUnitName)
+	assert.Equal(t, 10, got["uuid-1"].ProfileID)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestApsOwMappingDB_Lookup(t *testing.T) {
+	var a ApsOwMappingDB
+	a.cache.Store(map[string]ApsOwMappingEntry{
+		"slot": {AdUnitName: "au-name", ProfileID: 99},
+	})
+	adName, pid, ok := a.Lookup("slot")
+	assert.True(t, ok)
+	assert.Equal(t, "au-name", adName)
+	assert.Equal(t, 99, pid)
+	_, _, ok = a.Lookup("")
+	assert.False(t, ok)
+	_, _, ok = a.Lookup("nope")
+	assert.False(t, ok)
+}
+
+func TestNew_ApsOwMappingWithCountry(t *testing.T) {
+	dbOnceReset()
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	// Two columns only: CountryPartnerFilterDB scans (country, featureValue) — matches getCountryPartnerFilteringData.
+	mock.ExpectQuery("SELECT country, value FROM wrapper_metrics WHERE feature_id=1").
+		WillReturnRows(sqlmock.NewRows([]string{"country", "value"}).
+			AddRow("US", "partnerA"))
+	mock.ExpectQuery("SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_adunit_mapping").
+		WillReturnRows(sqlmock.NewRows([]string{"aps_slot_uuid", "ad_unit_name", "profile_id"}).
+			AddRow("u1", "a1-name", 5))
+
+	got := New(db, config.Database{
+		CountryPartnerFilterMaxDbContextTimeout: 1,
+		MaxDbContextTimeout:                     500, // ms; required for NewApsOwMappingDB (0 => immediate context deadline)
+		Queries: config.Queries{
+			GetCountryPartnerFilteringData: "SELECT country, value FROM wrapper_metrics WHERE feature_id=1",
+			GetApsOwMapping:                "SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_adunit_mapping",
+			GetApsOwMappingBySlot:          "SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_slot WHERE aps_slot_uuid = ?",
+		},
+	}, config.Cache{
+		CountryPartnerFilterRefreshInterval: 1,
+		ApsOwMappingRefreshInterval:         1,
+	})
+
+	assert.NotNil(t, got)
+	assert.NotNil(t, got.countryPartnerFilterDB)
+	assert.NotNil(t, got.apsOwMappingDB)
+	t.Cleanup(func() {
+		got.Shutdown()
+		_ = db.Close()
+	})
+	adName, pid, ok := got.GetApsOwMapping("u1")
+	assert.True(t, ok)
+	assert.Equal(t, "a1-name", adName)
+	assert.Equal(t, 5, pid)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestMySqlDB_GetApsOwMapping_nil(t *testing.T) {
+	var db *mySqlDB
+	adName, pid, ok := db.GetApsOwMapping("x")
+	assert.False(t, ok)
+	assert.Equal(t, "", adName)
+	assert.Equal(t, 0, pid)
+}
+
+func TestApsOwMappingDB_cacheMissUsesConfiguredSlotQuery(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	bulk := "SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_bulk"
+	slot := "SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_slot_lookup WHERE aps_slot_uuid = ?"
+
+	mock.ExpectQuery("SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_aps_bulk").
+		WillReturnRows(sqlmock.NewRows([]string{"aps_slot_uuid", "ad_unit_name", "profile_id"}))
+	mock.ExpectQuery("SELECT aps_slot_uuid, ad_unit_name, profile_id FROM wrapper_slot_lookup WHERE aps_slot_uuid = \\?").
+		WithArgs("missing-slot").
+		WillReturnRows(sqlmock.NewRows([]string{"aps_slot_uuid", "ad_unit_name", "profile_id"}).
+			AddRow("missing-slot", "resolved-name", 42))
+
+	a, err := NewApsOwMappingDB(db, 1, bulk, slot, 500*time.Millisecond)
+	require.NoError(t, err)
+	defer a.Stop()
+
+	adName, pid, ok := a.lookupOrLoadSingleRow("missing-slot")
+	assert.True(t, ok)
+	assert.Equal(t, "resolved-name", adName)
+	assert.Equal(t, 42, pid)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

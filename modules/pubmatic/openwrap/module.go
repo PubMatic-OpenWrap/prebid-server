@@ -15,6 +15,14 @@ func Builder(rawCfg json.RawMessage, deps moduledeps.ModuleDeps) (interface{}, e
 	return initOpenWrap(rawCfg, deps)
 }
 
+// Shutdown stops background goroutines owned by OpenWrap (e.g. APS OW mapping DB refresh ticker).
+func (m OpenWrap) Shutdown() error {
+	if m.shutdown != nil {
+		m.shutdown()
+	}
+	return nil
+}
+
 // temporary openwrap changes to support non-pbs apis like openrtb/2.5, openrtb/amp, etc
 // temporary openwrap changes to support non-ortb fields like request.ext.wrapper
 func (m OpenWrap) HandleEntrypointHook(

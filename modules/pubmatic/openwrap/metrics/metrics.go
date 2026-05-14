@@ -100,6 +100,9 @@ type MetricsEngine interface {
 	RecordEndpointResponseSize(endpoint string, bodySize float64)
 	RecordGeoLookupFailure(endpoint string)
 
+	// APS slot UUID → OW mapping rejects (reason: negative_cache_hit | unmapped_uuid | malformed_uuid).
+	RecordAPSSlotMappingReject(publisherID, slotUUID, reason string)
+
 	//IBV metric
 	RecordIBVRequest(pubId, profId string)
 	RecordPartnerThrottledRequests(publisher, bidder, featureID string)

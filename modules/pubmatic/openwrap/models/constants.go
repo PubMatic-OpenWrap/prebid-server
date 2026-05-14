@@ -497,6 +497,7 @@ const (
 	EndpointAppLovinMax    = "applovinmax"
 	EndpointGoogleSDK      = "googlesdk"
 	EndpointUnityLevelPlay = "ulevelplay"
+	EndpointAPS            = "aps"
 	EndpointGeo            = "geo"
 	EndpointInvalid        = "invalid"
 
@@ -641,6 +642,7 @@ const (
 	AppLovinMaxAgent          = "max"
 	GoogleSDKAgent            = "googlesdk"
 	UnityLevelPlayAgent       = "ulevelplay"
+	ApsAgent                  = "aps"
 	TypeRewarded              = "rewarded"
 	SignalData                = "signaldata"
 	OwSspBurl                 = "owsspburl"

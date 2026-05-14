@@ -16,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/aps"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
@@ -389,6 +390,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
 	rctx.GoogleSDK.Reject = googlesdk.SetGoogleSDKResponseReject(rctx, payload.BidResponse)
 	rctx.UnityLevelPlay.Reject = unitylevelplay.SetUnityLevelPlayResponseReject(rctx, payload.BidResponse)
+	rctx.APS.Reject = aps.SetAPSResponseReject(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
@@ -435,6 +437,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		resetBidIdtoOriginal(ap.BidResponse)
 
 		ap.BidResponse = unitylevelplay.ApplyUnityLevelPlayResponse(rctx, ap.BidResponse)
+		ap.BidResponse = aps.ApplyAPSResponse(rctx, ap.BidResponse)
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)
 		}
