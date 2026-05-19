@@ -307,6 +307,8 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
 						Price: bidResponse.SeatBid[0].Bid[0].Price,
 						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						NURL:  bidResponse.SeatBid[0].Bid[0].NURL,
+						LURL:  bidResponse.SeatBid[0].Bid[0].LURL,
 						Ext:   json.RawMessage(signaldata),
 					},
 				},
