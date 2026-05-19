@@ -93,6 +93,18 @@ func getScriptContent(adm string) string {
 	return ""
 }
 
+// stripSurroundingQuotes removes one matching pair of outer " or ' quotes.
+func stripSurroundingQuotes(s string) string {
+	if len(s) < 2 {
+		return s
+	}
+	first, last := s[0], s[len(s)-1]
+	if (first == '"' && last == '"') || (first == '\'' && last == '\'') {
+		return s[1 : len(s)-1]
+	}
+	return s
+}
+
 // Function to extract creativeId and clickurl from script content
 func parseScriptContent(script string) (string, string) {
 	// Regex to match creativeId value (numeric or macro)
@@ -119,6 +131,8 @@ func parseScriptContent(script string) (string, string) {
 		clickurl = strings.TrimSpace(match[1])
 	}
 
+	creativeId = stripSurroundingQuotes(creativeId)
+	clickurl = stripSurroundingQuotes(clickurl)
 	return creativeId, clickurl
 }
 
