@@ -3,6 +3,7 @@ package aps
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -45,6 +46,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 		expectedError    bool
 		expectNilBody    bool
 		metricsSetup     func(*mock_metrics.MockMetricsEngine)
+		signalBR         *openrtb2.BidRequest
 	}{
 		{
 			name:             "empty_request_body",
@@ -58,14 +60,14 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			expectedError:    true,
 		},
 		{
-			name:             "static_data_sets_secure_clears_native_and_video_on_imp[0]",
+			name:             "static_data_sets_secure_clears_native_on_imp[0]",
 			requestBody:      []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","secure":0,"banner":{"w":300,"h":250},"video":{"mimes":["video/mp4"]},"native":{"request":"n"}}],"app":{"publisher":{"id":"pub-9"}}}`),
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","banner":{"w":300,"h":250},"tagid":"t1","secure":1}],"app":{"publisher":{"id":"pub-9"}}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","banner":{"w":300,"h":250},"video":{"mimes":["video/mp4"]},"tagid":"t1","secure":1}],"app":{"publisher":{"id":"pub-9"}}}`),
 		},
 		{
 			name:             "reward_video_sets_rwdd_drops_banner_when_video.ext.videotype_is_rewarded",
 			requestBody:      []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":1,"h":1},"video":{"ext":{"videotype":"rewarded"}}}],"app":{"publisher":{"id":"pub"}}}`),
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","secure":1,"rwdd":1}],"app":{"publisher":{"id":"pub"}}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","video":{"ext":{"videotype":"rewarded"},"mimes":null},"secure":1,"rwdd":1}],"app":{"publisher":{"id":"pub"}}}`),
 		},
 		{
 			name:        "missing_signal_records_metric",
@@ -88,6 +90,20 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			requestBody:      []byte(fmt.Sprintf(`{"id":"base","imp":[{"id":"i1","tagid":"t1","ext":{}}],"app":{"publisher":{"id":"pubx"}},"device":{"ua":"orig"},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100}}}}},"user":{"buyeruid":%q}}`, validSig)),
 			expectedResponse: []byte(`{"id":"base","imp":[{"id":"i1","displaymanager":"dm","displaymanagerver":"2.0.0","instl":1,"tagid":"t1","secure":1,"ext":{"skadn":{"versions":["v1"]},"owsdk":{"x":1}}}],"app":{"name":"SignalApp","publisher":{"id":"pubx"}},"device":{"ua":"Mozilla"},"user":{},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":100}}}}}}`),
 		},
+		{
+			name:        "video_battr_preserved_when_signal_has_video",
+			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","video":{"battr":[1,2],"mimes":["video/mp4"]}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`),
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "si1",
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4", "video/webm"}},
+					Instl: 1,
+				}},
+				Device: &openrtb2.Device{UA: "Mozilla"},
+				App:    &openrtb2.App{Name: "SignalApp"},
+			},
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","video":{"battr":[1,2],"mimes":["video/mp4","video/webm"]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+		},
 	}
 
 	for _, tt := range tests {
@@ -100,8 +116,19 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 				tt.metricsSetup(mockMetrics)
 			}
 
+			sig := validSig
+			if tt.signalBR != nil {
+				sig = mustMarshalSignalBidRequest(t, tt.signalBR)
+			}
+
+			// Inject signal into request body
+			requestBody := tt.requestBody
+			if requestBody != nil && strings.Contains(string(requestBody), "%q") {
+				requestBody = []byte(fmt.Sprintf(string(requestBody), sig))
+			}
+
 			a := NewAPS(mockMetrics)
-			response := a.ModifyRequestWithAPSParams(tt.requestBody, rctx)
+			response := a.ModifyRequestWithAPSParams(requestBody, rctx)
 			if tt.expectedError {
 				assert.Equal(t, tt.expectedResponse, response)
 				return

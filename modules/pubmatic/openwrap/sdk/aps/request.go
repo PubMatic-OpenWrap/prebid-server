@@ -75,8 +75,6 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		// Remove native from request
 		request.Imp[0].Native = nil
 
-		// Remove video from request
-		request.Imp[0].Video = nil
 	}
 
 }
@@ -148,7 +146,6 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
 	// modify video
-	// check which to keep
 	// Update video (replace entire video object from signal except battr)
 	var battrVideo []adcom1.CreativeAttribute
 	if request.Imp[0].Video != nil && len(request.Imp[0].Video.BAttr) > 0 {
@@ -157,6 +154,7 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	}
 
 	if signalImps[0].Video != nil {
+		//setting complete video object from signal, except video.battr
 		request.Imp[0].Video = signalImps[0].Video
 		if len(battrVideo) > 0 {
 			request.Imp[0].Video.BAttr = battrVideo
