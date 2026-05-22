@@ -37,4 +37,5 @@ const (
 	MissingOWRedirectURL           openrtb3.NoBidReason = 619
 	ResponseRejectedDSA            openrtb3.NoBidReason = 620 // Response Rejected - DSA
 	ResponseRejectedMissingParam   openrtb3.NoBidReason = 621 // Response rejected due to missing required parameter
+	APSSlotUUIDNotMapped           openrtb3.NoBidReason = 622 // APS entrypoint: slot UUID not mapped to OW ad unit / profile
 )

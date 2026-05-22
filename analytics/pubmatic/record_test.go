@@ -27,6 +27,21 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeSDK,
 		},
 		{
+			name:            "googlesdk",
+			endpoint:        models.EndpointGoogleSDK,
+			integrationType: models.TypeSDK,
+		},
+		{
+			name:            "ulevelplay",
+			endpoint:        models.EndpointUnityLevelPlay,
+			integrationType: models.TypeSDK,
+		},
+		{
+			name:            "aps",
+			endpoint:        models.EndpointAPS,
+			integrationType: models.TypeSDK,
+		},
+		{
 			name:            "amp",
 			endpoint:        models.EndpointAMP,
 			integrationType: models.TypeAmp,
