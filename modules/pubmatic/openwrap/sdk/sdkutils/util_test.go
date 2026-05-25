@@ -716,3 +716,77 @@ func TestIsGoogleSDKResponseRejected(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSdkIntegration(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		// SDK Integration endpoints - should return true
+		{
+			name:     "AppLovinMax endpoint should be SDK integration",
+			endpoint: models.EndpointAppLovinMax,
+			expected: true,
+		},
+		{
+			name:     "UnityLevelPlay endpoint should be SDK integration",
+			endpoint: models.EndpointUnityLevelPlay,
+			expected: true,
+		},
+		{
+			name:     "GoogleSDK endpoint should be SDK integration",
+			endpoint: models.EndpointGoogleSDK,
+			expected: true,
+		},
+		{
+			name:     "APS endpoint should be SDK integration",
+			endpoint: models.EndpointAPS,
+			expected: true,
+		},
+
+		// Non-SDK endpoints - should return false
+		{
+			name:     "WebS2S endpoint should not be SDK integration",
+			endpoint: models.EndpointWebS2S,
+			expected: false,
+		},
+		{
+			name:     "Empty string should not be SDK integration",
+			endpoint: "",
+			expected: false,
+		},
+		{
+			name:     "Unknown endpoint should not be SDK integration",
+			endpoint: "unknown-endpoint",
+			expected: false,
+		},
+		{
+			name:     "Case-sensitive endpoint check - lowercase APS should match",
+			endpoint: "aps",
+			expected: true,
+		},
+		{
+			name:     "Case-sensitive endpoint check - mixed case should not match",
+			endpoint: "AppLovinMax",
+			expected: false,
+		},
+		{
+			name:     "Partial endpoint match should not be considered SDK integration",
+			endpoint: models.EndpointAppLovinMax + "-extra",
+			expected: false,
+		},
+		{
+			name:     "Endpoint with whitespace should not be SDK integration",
+			endpoint: " " + models.EndpointGoogleSDK + " ",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsSdkIntegration(tt.endpoint)
+			assert.Equal(t, tt.expected, result, "IsSdkIntegration(%q) should return %v", tt.endpoint, tt.expected)
+		})
+	}
+}
