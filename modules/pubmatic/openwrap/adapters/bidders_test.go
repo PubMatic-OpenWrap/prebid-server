@@ -3690,3 +3690,93 @@ func TestBuilderMSFT(t *testing.T) {
 		})
 	}
 }
+
+func TestPrepareBidParamJSONForPartnerTaboola(t *testing.T) {
+
+	type args struct {
+		width       *int64
+		height      *int64
+		fieldMap    map[string]interface{}
+		slotKey     string
+		adapterName string
+		bidderCode  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name: "tagid_and_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagid":       "slot-a",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagid":"slot-a"}`),
+			wantErr: false,
+		},
+		{
+			name: "tagId_and_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-b",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-b"}`),
+			wantErr: false,
+		},
+		{
+			name: "both_tag_keys_prefers_tagId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagid":       "deprecated",
+					"tagId":       "preferred",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"preferred"}`),
+			wantErr: false,
+		},
+		{
+			name: "missing_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"tagId": "slot",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "missing_tag",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, tt.args.bidderCode, nil)
+			assert.Equal(t, tt.wantErr, err != nil)
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
