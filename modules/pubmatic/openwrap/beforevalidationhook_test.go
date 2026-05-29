@@ -3878,7 +3878,7 @@ func TestGetDomainFromUrl(t *testing.T) {
 func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	type args struct {
 		bidderParams json.RawMessage
-		cookie       string
+		cookies      []string
 		loggerID     string
 		bidderCode   string
 		sendBurl     bool
@@ -3900,19 +3900,29 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "nil_cookies_same_as_empty_no_cookie_key",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
+				cookies:      nil,
+				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
+				bidderCode:   "pubmatic",
+			},
+			want: json.RawMessage(`{"pubmatic":{"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+		},
+		{
 			name: "empty_loggerID",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "test_cookie",
+				cookies:      []string{"test_cookie"},
 				bidderCode:   "pubmatic",
 			},
-			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","wiid":""}}`),
+			want: json.RawMessage(`{"pubmatic":{"Cookie":["test_cookie"],"wiid":""}}`),
 		},
 		{
 			name: "both_cookie_and_loogerID_are_empty",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "",
+				cookies:      []string{},
 				loggerID:     "",
 				bidderCode:   "pubmatic",
 			},
@@ -3922,28 +3932,48 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 			name: "both_cookie_and_loogerID_are_present",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "test_cookie",
+				cookies:      []string{"test_cookie"},
 				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
 				bidderCode:   "pubmatic",
 			},
-			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+			want: json.RawMessage(`{"pubmatic":{"Cookie":["test_cookie"],"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+		},
+		{
+			name: "multiple_cookies_sets_cookie_slice_on_bidder",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1"}}`),
+				cookies:      []string{"KADUSERCOOKIE=abc", "other=1"},
+				loggerID:     "wid-1",
+				bidderCode:   "pubmatic",
+			},
+			want: json.RawMessage(`{"pubmatic":{"Cookie":["KADUSERCOOKIE=abc","other=1"],"wiid":"wid-1"}}`),
+		},
+		{
+			name: "cookies_applied_under_custom_bidder_code",
+			args: args{
+				bidderParams: json.RawMessage(`{"pubmatic_alias":{"legacy":true}}`),
+				cookies:      []string{"session=abc"},
+				loggerID:     "lid-2",
+				bidderCode:   "pubmatic_alias",
+			},
+			want: json.RawMessage(`{"pubmatic_alias":{"Cookie":["session=abc"],"wiid":"lid-2"}}`),
 		},
 		{
 			name: "sendburl is true and both cookie and loggerID are present",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "test_cookie",
+				cookies:      []string{"test_cookie"},
 				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
 				bidderCode:   "pubmatic",
 				sendBurl:     true,
 			},
-			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","sendburl":true,"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+			want: json.RawMessage(`{"pubmatic":{"Cookie":["test_cookie"],"sendburl":true,"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
 		},
 		{
 			name: "sendburl is true and both cookie and loggerID are empty",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "",
+				cookies:      []string{},
 				loggerID:     "",
 				bidderCode:   "pubmatic",
 				sendBurl:     true,
@@ -3954,23 +3984,22 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 			name: "sendburl is false and both cookie and loggerID are present",
 			args: args{
 				bidderParams: json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1","adSlot":"38519891"}}`),
-				cookie:       "test_cookie",
+				cookies:      []string{"test_cookie"},
 				loggerID:     "b441a46e-8c1f-428b-9c29-44e2a408a954",
 				bidderCode:   "pubmatic",
 				sendBurl:     false,
 			},
-			want: json.RawMessage(`{"pubmatic":{"Cookie":"test_cookie","wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
+			want: json.RawMessage(`{"pubmatic":{"Cookie":["test_cookie"],"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookie, tt.args.loggerID, tt.args.bidderCode, tt.args.sendBurl)
+			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookies, tt.args.loggerID, tt.args.bidderCode, tt.args.sendBurl)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return
 			}
-			assert.Equal(t, tt.want, got)
-
+			assert.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }
