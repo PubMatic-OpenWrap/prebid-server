@@ -205,6 +205,10 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.ImpAdPodConfig = make(map[string][]models.PodConfig)
 	}
 
+	if payload.Request.Header["Cookie"] != nil {
+		rCtx.Cookies = payload.Request.Header["Cookie"]
+	}
+
 	// only http.ErrNoCookie is returned, we can ignore it
 	rCtx.UidCookie, _ = payload.Request.Cookie(models.UidCookieName)
 	rCtx.KADUSERCookie, _ = payload.Request.Cookie(models.KADUSERCOOKIE)
