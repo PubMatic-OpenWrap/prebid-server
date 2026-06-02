@@ -3690,3 +3690,252 @@ func TestBuilderMSFT(t *testing.T) {
 		})
 	}
 }
+
+func TestPrepareBidParamJSONForPartnerTaboola(t *testing.T) {
+
+	type args struct {
+		width       *int64
+		height      *int64
+		fieldMap    map[string]interface{}
+		slotKey     string
+		adapterName string
+		bidderCode  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    json.RawMessage
+		wantErr bool
+	}{
+		{
+			name: "tagid_and_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagid":       "slot-a",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagid":"slot-a"}`),
+			wantErr: false,
+		},
+		{
+			name: "tagId_and_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-b",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-b"}`),
+			wantErr: false,
+		},
+		{
+			name: "both_tag_keys_prefers_tagId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagid":       "deprecated",
+					"tagId":       "preferred",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"preferred"}`),
+			wantErr: false,
+		},
+		{
+			name: "missing_publisherId",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"tagId": "slot",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "missing_tag",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "publisherDomain_parameter",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId":     "1",
+					"tagId":           "slot-a",
+					"publisherDomain": "example.com",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","publisherDomain":"example.com"}`),
+			wantErr: false,
+		},
+		{
+			name: "bidfloor_parameter",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"bidfloor":    0.5,
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","bidfloor":0.5}`),
+			wantErr: false,
+		},
+		{
+			name: "bcat_blocked_categories_array",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"bcat":        []string{"IAB1", "IAB2"},
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","bcat":["IAB1","IAB2"]}`),
+			wantErr: false,
+		},
+		{
+			name: "badv_blocked_advertisers_array",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"badv":        []string{"blocked1.com", "blocked2.com"},
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","badv":["blocked1.com","blocked2.com"]}`),
+			wantErr: false,
+		},
+		{
+			name: "pageType_parameter",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"pageType":    "article",
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","pageType":"article"}`),
+			wantErr: false,
+		},
+		{
+			name: "position_parameter",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"position":    1,
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","position":1}`),
+			wantErr: false,
+		},
+		{
+			name: "all_optional_parameters_combined",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId":     "1",
+					"tagId":           "slot-a",
+					"publisherDomain": "example.com",
+					"bidfloor":        0.5,
+					"bcat":            []string{"IAB1", "IAB2"},
+					"badv":            []string{"blocked1.com", "blocked2.com"},
+					"pageType":        "article",
+					"position":        1,
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","publisherDomain":"example.com","bidfloor":0.5,"bcat":["IAB1","IAB2"],"badv":["blocked1.com","blocked2.com"],"pageType":"article","position":1}`),
+			wantErr: false,
+		},
+		{
+			name: "bcat_empty_array",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"bcat":        []string{},
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","bcat":[]}`),
+			wantErr: false,
+		},
+		{
+			name: "badv_empty_array",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"badv":        []string{},
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","badv":[]}`),
+			wantErr: false,
+		},
+		{
+			name: "bidfloor_zero_value",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"bidfloor":    0,
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","bidfloor":0}`),
+			wantErr: false,
+		},
+		{
+			name: "position_negative_value",
+			args: args{
+				fieldMap: map[string]interface{}{
+					"publisherId": "1",
+					"tagId":       "slot-a",
+					"position":    -1,
+				},
+				adapterName: string(openrtb_ext.BidderTaboola),
+				bidderCode:  string(openrtb_ext.BidderTaboola),
+			},
+			want:    json.RawMessage(`{"publisherId":"1","tagId":"slot-a","position":-1}`),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := PrepareBidParamJSONForPartner(tt.args.width, tt.args.height, tt.args.fieldMap, tt.args.slotKey, tt.args.adapterName, tt.args.bidderCode, nil)
+			assert.Equal(t, tt.wantErr, err != nil)
+			AssertJSON(t, tt.want, got)
+		})
+	}
+}
