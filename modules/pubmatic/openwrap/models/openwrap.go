@@ -48,7 +48,7 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	Cookies         string
+	Cookies         []string
 	UidCookie       *http.Cookie
 	KADUSERCookie   *http.Cookie
 	ParsedUidCookie *usersync.Cookie

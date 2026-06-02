@@ -1129,7 +1129,7 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 

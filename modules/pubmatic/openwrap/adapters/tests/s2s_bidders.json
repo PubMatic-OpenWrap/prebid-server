@@ -211,6 +211,23 @@
                 "placementId": "0"
             }
         }
+    },
+    {
+        "name": "taboola_json_anyOf - publisherId-and-tagId/tagid",
+        "args" : {
+            "adapterName": "taboola",
+            "requestJSON": {
+                "publisherId": "123456",
+                "tagId": "abcdefg",
+                "tagid": "deprecated"
+            }
+        },
+        "want": {
+            "expectedJSON": {
+                "publisherId": "123456",
+                "tagId": "abcdefg"
+            }
+        }
     }
 
 ]
