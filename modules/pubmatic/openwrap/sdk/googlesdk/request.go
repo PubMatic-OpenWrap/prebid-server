@@ -403,8 +403,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	}
 
 	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
-
-	request.Device.Ext = sdkutils.CopyIFV(signalDevice.Ext, request.Device.Ext)
+	request.Device.Ext = sdkutils.MergeDeviceExtFromSignal(signalDevice.Ext, request.Device.Ext)
 }
 
 func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
@@ -431,6 +430,8 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if len(request.App.StoreURL) == 0 {
 		request.App.StoreURL = signalApp.StoreURL
 	}
+
+	request.App.Ext = sdkutils.MergeAppExtFromSignal(signalApp.Ext, request.App.Ext)
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
@@ -486,6 +487,7 @@ func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 
 	// Update banner
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
+	sdkutils.MergeImpLTVFieldsFromSignal(&request.Imp[0], &signalImps[0])
 
 	// Update video (replace entire video object from signal except battr)
 	var battrVideo []adcom1.CreativeAttribute

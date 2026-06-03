@@ -77,6 +77,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	maxImps[0].Native = signalImps[0].Native
 
 	maxImps[0].Ext = setIfKeysExists(signalImp.Ext, maxImps[0].Ext, "reward", "skadn", "gpid", "owsdk")
+	sdkutils.MergeImpLTVFieldsFromSignal(&maxImps[0], &signalImp)
 }
 
 func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest) {
@@ -85,8 +86,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 	}
 
 	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
-
-	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts", "ifv")
+	maxRequest.Device.Ext = sdkutils.MergeDeviceExtFromSignal(signalDevice.Ext, maxRequest.Device.Ext)
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
@@ -113,6 +113,8 @@ func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
 	if len(maxRequest.App.StoreURL) == 0 {
 		maxRequest.App.StoreURL = signalApp.StoreURL
 	}
+
+	maxRequest.App.Ext = sdkutils.MergeAppExtFromSignal(signalApp.Ext, maxRequest.App.Ext)
 }
 
 func updateRegs(signalRegs *openrtb2.Regs, maxRequest *openrtb2.BidRequest) {
@@ -175,32 +177,7 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {
-	newTarget := target
-	if len(keys) > 0 && len(newTarget) == 0 {
-		newTarget = []byte(`{}`)
-	}
-
-	for _, key := range keys {
-		field, dataType, _, err := jsonparser.Get(source, key)
-		if err != nil {
-			continue
-		}
-
-		if dataType == jsonparser.String {
-			quotedStr := strconv.Quote(string(field))
-			field = []byte(quotedStr)
-		}
-
-		newTarget, err = jsonparser.Set(newTarget, field, key)
-		if err != nil {
-			return target
-		}
-	}
-
-	if len(newTarget) == 2 {
-		return target
-	}
-	return newTarget
+	return sdkutils.CopyExtKeys(source, target, keys...)
 }
 
 func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidRequest) {

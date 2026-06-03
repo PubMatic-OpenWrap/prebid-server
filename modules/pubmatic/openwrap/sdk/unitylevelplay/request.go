@@ -135,10 +135,13 @@ func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner)
 		return
 	}
 
+	if len(signalBanner.MIMEs) > 0 {
+		requestBanner.MIMEs = signalBanner.MIMEs
+	}
+
 	if signalBanner.API != nil {
 		requestBanner.API = signalBanner.API
 	}
-
 }
 
 func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
@@ -165,6 +168,7 @@ func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 
 	// modify banner
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
+	sdkutils.MergeImpLTVFieldsFromSignal(&request.Imp[0], &signalImps[0])
 
 	// modify video
 	if signalImps[0].Video != nil {
@@ -259,6 +263,8 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if len(request.App.StoreURL) == 0 {
 		request.App.StoreURL = signalApp.StoreURL
 	}
+
+	request.App.Ext = sdkutils.MergeAppExtFromSignal(signalApp.Ext, request.App.Ext)
 }
 
 func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
@@ -267,9 +273,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	}
 
 	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
-
-	request.Device.Ext, _ = sdkutils.CopyPath(signalDevice.Ext, request.Device.Ext, "atts")
-	request.Device.Ext = sdkutils.CopyIFV(signalDevice.Ext, request.Device.Ext)
+	request.Device.Ext = sdkutils.MergeDeviceExtFromSignal(signalDevice.Ext, request.Device.Ext)
 }
 
 func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
