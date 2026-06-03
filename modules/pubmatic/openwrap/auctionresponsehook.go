@@ -23,6 +23,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(
@@ -131,6 +132,10 @@ func (m OpenWrap) handleAuctionResponseHook(
 			mbmfv, err := jsonparser.GetFloat(bid.Ext, models.MultiBidMultiFloorValue)
 			if err == nil && mbmfv > 0 {
 				bidExt.MultiBidMultiFloorValue = mbmfv
+			}
+
+			if n, err := jsonparser.GetInt(bid.Ext, models.BidExtBidExpEnf); err == nil {
+				bidExt.BidExpEnf = ptrutil.ToPtr(int(n))
 			}
 
 			if bidExt.InBannerVideo {
@@ -288,10 +293,12 @@ func (m OpenWrap) handleAuctionResponseHook(
 			if impCtx.BidCtx == nil {
 				impCtx.BidCtx = make(map[string]models.BidCtx)
 			}
+			omitTrackerBidExp := models.OmitTrackerBidExp(rctx, bidExt.BidExpEnf)
 			impCtx.BidCtx[bid.ID] = models.BidCtx{
-				BidExt: *bidExt,
-				EG:     eg,
-				EN:     en,
+				BidExt:                *bidExt,
+				EG:                    eg,
+				EN:                    en,
+				OmitBidExpFromTracker: omitTrackerBidExp,
 			}
 			rctx.ImpBidCtx[impId] = impCtx
 		}
@@ -396,6 +403,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
 			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 			var err error
+			applyBidExpAndBidExtFromCtx(rctx, ap.BidResponse)
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 			if err == nil {
 				resetBidIdtoOriginal(ap.BidResponse)
@@ -495,6 +503,14 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 	}
 
 	// update bid ext and other details
+	applyBidExpAndBidExtFromCtx(rctx, bidResponse)
+
+	return bidResponse, nil
+}
+
+// applyBidExpAndBidExtFromCtx sets bid.ext from OW BidCtx and preserves partner bid.exp on the response,
+// except when OmitBidExpFromTracker (bidexp_enf==0 and Google SDK sub-integration 14 or 16): then bid.exp is cleared and bidexp_enf is stripped from bid.ext (bexp/bexpef are not added to the impression tracker).
+func applyBidExpAndBidExtFromCtx(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) {
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
 			impId := bid.ImpID
@@ -511,11 +527,14 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 				continue
 			}
 
-			bidResponse.SeatBid[i].Bid[j].Ext, _ = json.Marshal(bidCtx.BidExt)
+			bidExtOut := bidCtx.BidExt
+			if bidCtx.OmitBidExpFromTracker {
+				bidResponse.SeatBid[i].Bid[j].Exp = 0
+				bidExtOut.BidExpEnf = nil
+			}
+			bidResponse.SeatBid[i].Bid[j].Ext, _ = json.Marshal(bidExtOut)
 		}
 	}
-
-	return bidResponse, nil
 }
 
 func getPlatformName(platform string) string {

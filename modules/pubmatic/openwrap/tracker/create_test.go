@@ -1266,3 +1266,28 @@ func TestCreateTrackers(t *testing.T) {
 		})
 	}
 }
+
+func TestConstructTrackerURL_IncludesBexpAndBexpef(t *testing.T) {
+	enf := 1
+	u := constructTrackerURL(models.RequestCtx{
+		TrackerEndpoint: "//t.pubmatic.com/wt",
+		Platform:        models.PLATFORM_APP,
+	}, models.Tracker{
+		PubID:       1,
+		PageURL:     "p",
+		IID:         "i",
+		ProfileID:   "2",
+		VersionID:   "3",
+		SlotID:      "s",
+		Adunit:      "a",
+		Platform:    1,
+		Origin:      "o",
+		BidExp:      300,
+		BidExpEnf:   &enf,
+		PartnerInfo: models.Partner{PartnerID: "1", BidderCode: "bc", BidID: "b", OrigBidID: "b", GrossECPM: 1, NetECPM: 1, KGPV: "k", Adformat: "banner", AdSize: "1x1", ServerSide: 1},
+	})
+	decoded, err := url.QueryUnescape(u)
+	assert.NoError(t, err)
+	assert.Contains(t, decoded, "bexp=300")
+	assert.Contains(t, decoded, "bexpef=1")
+}

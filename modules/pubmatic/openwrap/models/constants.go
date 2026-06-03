@@ -411,6 +411,11 @@ const (
 	AppPlatformKey        = "appPlatform"
 	IntegrationPathKey    = "integrationPath"
 	SubIntegrationPathKey = "subIntegrationPath"
+	// SubIntegrationPathAdMobSDKBidding is the profile subIntegrationPath value for AdMob SDK Bidding mediation.
+	SubIntegrationPathAdMobSDKBidding = "AdMob - SDK Bidding"
+	// AppSubIntegrationPathIDAdMobSDKBidding is the app_sub_integration_path id for SubIntegrationPathAdMobSDKBidding (must match PubMatic DB).
+	AppSubIntegrationPathIDAdMobSDKBidding           = 16
+	AppSubIntegrationPathIDGoogleAdManagerSDKBidding = 14
 
 	//constants for SDK features
 	CTAOVERLAY = "ctaoverlay"
@@ -500,6 +505,10 @@ const (
 	EndpointAPS            = "aps"
 	EndpointGeo            = "geo"
 	EndpointInvalid        = "invalid"
+
+	// ImpExtGoogleSDKIntegrationKey is set on imp.ext for Google mediation traffic so SSPs can distinguish integration type.
+	ImpExtGoogleSDKIntegrationKey   = "ow_sdk_integration"
+	ImpExtGoogleSDKIntegrationValue = "google_mediation"
 
 	Openwrap        = "openwrap"
 	ImpTypeBanner   = "banner"
@@ -651,6 +660,7 @@ const (
 	AppStoreUrl               = "appStoreUrl"
 	SendBurl                  = "sendburl"
 	MultiBidMultiFloorValue   = "mbmfv"
+	BidExtBidExpEnf           = "bidexp_enf"
 	ProcessingTime            = "processing_time_ms"
 	AdUnitFormatInstl         = "instl"
 	AdUnitFormatBanner        = "banner"
