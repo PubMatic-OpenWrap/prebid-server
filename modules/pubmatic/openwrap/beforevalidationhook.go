@@ -757,7 +757,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
 	if rCtx.AppSubIntegrationPath != nil && *rCtx.AppSubIntegrationPath >= 0 {
-		requestExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(*rCtx.AppSubIntegrationPath)
+		requestExt.Wrapper = &models.RequestExtWrapper{
+			SdkSubIntegrationPath: ptrutil.ToPtr(*rCtx.AppSubIntegrationPath),
+		}
 	}
 
 	// if rCtx.Debug {
