@@ -33,8 +33,8 @@ type BidExt struct {
 	ClickTrackers           []string              `json:"clicktrackers,omitempty"`
 	OWSDK                   map[string]any        `json:"owsdk,omitempty"`
 	Act                     int                   `json:"act,omitempty"`
-	// BidExpEnf is bid.ext.bidexp_enf (mirrored on impression tracker as bexpef unless OmitBidExpFromTracker strips it).
-	BidExpEnf *int `json:"bidexp_enf,omitempty"`
+	// BidExpEnf is bid.ext.bidexp_enf (0 if absent; mirrored on impression tracker as bexpef when 1 unless OmitBidExpFromTracker strips it).
+	BidExpEnf int `json:"bidexp_enf,omitempty"`
 }
 
 type AdpodBidExt struct {

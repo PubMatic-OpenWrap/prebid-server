@@ -23,7 +23,6 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/tracker"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 func (m OpenWrap) handleAuctionResponseHook(
@@ -135,7 +134,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 			}
 
 			if n, err := jsonparser.GetInt(bid.Ext, models.BidExtBidExpEnf); err == nil {
-				bidExt.BidExpEnf = ptrutil.ToPtr(int(n))
+				bidExt.BidExpEnf = int(n)
 			}
 
 			if bidExt.InBannerVideo {
@@ -509,7 +508,8 @@ func (m *OpenWrap) updateORTBV25Response(rctx models.RequestCtx, bidResponse *op
 }
 
 // applyBidExpAndBidExtFromCtx sets bid.ext from OW BidCtx and preserves partner bid.exp on the response,
-// except when OmitBidExpFromTracker (bidexp_enf==0 and Google SDK sub-integration 14 or 16): then bid.exp is cleared and bidexp_enf is stripped from bid.ext (bexp/bexpef are not added to the impression tracker).
+// except when OmitBidExpFromTracker (no bid.ext.bidexp_enf=1 on the bid, for Google SDK sub-integration 14 or 16):
+// then bid.exp is cleared and bidexp_enf is stripped from bid.ext (bexp/bexpef are not added to the impression tracker).
 func applyBidExpAndBidExtFromCtx(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) {
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
@@ -530,7 +530,7 @@ func applyBidExpAndBidExtFromCtx(rctx models.RequestCtx, bidResponse *openrtb2.B
 			bidExtOut := bidCtx.BidExt
 			if bidCtx.OmitBidExpFromTracker {
 				bidResponse.SeatBid[i].Bid[j].Exp = 0
-				bidExtOut.BidExpEnf = nil
+				bidExtOut.BidExpEnf = 0
 			}
 			bidResponse.SeatBid[i].Bid[j].Ext, _ = json.Marshal(bidExtOut)
 		}

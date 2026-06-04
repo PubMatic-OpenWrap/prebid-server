@@ -5796,59 +5796,15 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 			if tt.want.doMutate {
 				mutations := got.ChangeSet.Mutations()
 				assert.NotEmpty(t, mutations, tt.name)
-				var appSub *int
-				if rctx, ok := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx); ok {
-					appSub = rctx.AppSubIntegrationPath
-				}
-				wantBR := patchExpectedBidRequestWithReqExtWrapper(tt.want.bidRequest, appSub)
 				for _, mut := range mutations {
 					result, err := mut.Apply(tt.args.payload)
 					assert.Nil(t, err, tt.name)
 					gotBidRequest, _ := json.Marshal(result.BidRequest)
-					assert.JSONEq(t, string(wantBR), string(gotBidRequest), "mismatched BidRequest in %s", tt.name)
+					assert.JSONEq(t, string(tt.want.bidRequest), string(gotBidRequest), "mismatched BidRequest in %s", tt.name)
 				}
 			}
 		})
 	}
-}
-
-// patchExpectedBidRequestWithReqExtWrapper merges ext.wrapper.sdksubintegration into the expected
-// bid request when AppSubIntegrationPath is resolved (>= 0), matching beforevalidationhook output.
-func patchExpectedBidRequestWithReqExtWrapper(raw json.RawMessage, appSubIntegrationPath *int) json.RawMessage {
-	if appSubIntegrationPath == nil || *appSubIntegrationPath < 0 {
-		return raw
-	}
-	var br openrtb2.BidRequest
-	if err := json.Unmarshal(raw, &br); err != nil {
-		return raw
-	}
-	if br.Ext == nil {
-		return raw
-	}
-	var extMap map[string]json.RawMessage
-	if err := json.Unmarshal(br.Ext, &extMap); err != nil {
-		return raw
-	}
-	var w models.RequestExtWrapper
-	if wrapperRaw, ok := extMap["wrapper"]; ok {
-		_ = json.Unmarshal(wrapperRaw, &w)
-	}
-	w.SdkSubIntegrationPath = ptrutil.ToPtr(*appSubIntegrationPath)
-	wb, err := json.Marshal(w)
-	if err != nil {
-		return raw
-	}
-	extMap["wrapper"] = wb
-	newExt, err := json.Marshal(extMap)
-	if err != nil {
-		return raw
-	}
-	br.Ext = newExt
-	out, err := json.Marshal(br)
-	if err != nil {
-		return raw
-	}
-	return json.RawMessage(out)
 }
 
 func TestCurrencyConverion(t *testing.T) {

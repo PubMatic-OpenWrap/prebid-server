@@ -222,9 +222,8 @@ func createTrackers(rctx models.RequestCtx, trackers map[string]models.OWTracker
 						if bid.Exp > 0 {
 							tracker.BidExp = bid.Exp
 						}
-						if bc.BidExpEnf != nil {
-							v := *bc.BidExpEnf
-							tracker.BidExpEnf = &v
+						if bc.BidExpEnf == 1 {
+							tracker.BidExpEnf = 1
 						}
 					}
 				}
@@ -370,8 +369,8 @@ func constructTrackerURL(rctx models.RequestCtx, tracker models.Tracker) string 
 	if tracker.BidExp > 0 {
 		v.Set(models.TRKBidExp, strconv.FormatInt(tracker.BidExp, 10))
 	}
-	if tracker.BidExpEnf != nil {
-		v.Set(models.TRKBidExpEnf, strconv.Itoa(*tracker.BidExpEnf))
+	if tracker.BidExpEnf == 1 {
+		v.Set(models.TRKBidExpEnf, strconv.Itoa(tracker.BidExpEnf))
 	}
 
 	queryString := v.Encode()
