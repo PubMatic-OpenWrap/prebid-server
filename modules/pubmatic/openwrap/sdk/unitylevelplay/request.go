@@ -274,6 +274,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 
 	request.Device = sdkutils.MergeDevice(request.Device, signalDevice)
 	request.Device.Ext = sdkutils.MergeDeviceExtFromSignal(signalDevice.Ext, request.Device.Ext)
+	request.Device.Ext, _ = sdkutils.CopyPath(signalDevice.Ext, request.Device.Ext, "atts")
 }
 
 func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {

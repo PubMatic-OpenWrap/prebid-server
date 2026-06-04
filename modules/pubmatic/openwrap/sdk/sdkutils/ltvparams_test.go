@@ -14,12 +14,11 @@ func TestMergeDeviceExtFromSignal(t *testing.T) {
 		"pbtime":1710000001000,
 		"diskspace":18201.5,
 		"totaldisk":64000,
-		"inputlaunguage":["en","fr"],
+		"inputlanguage":["en","fr"],
 		"charging":1,
 		"batterylevel":0.85,
 		"totalmem":8589934592,
 		"dnh":"abc123",
-		"sua":{"browsers":[{"brand":"Chrome","version":["120"]}]},
 		"ringmute":0,
 		"darkmode":1,
 		"bluetooth":0,
@@ -27,7 +26,6 @@ func TestMergeDeviceExtFromSignal(t *testing.T) {
 		"dnd":0,
 		"headset":1,
 		"screenbright":0.75,
-		"atts":3,
 		"ifv":"SIGNAL-IFV"
 	}`)
 
@@ -58,21 +56,14 @@ func TestMergeAppExtFromSignal(t *testing.T) {
 func TestMergeImpLTVFieldsFromSignal(t *testing.T) {
 	dst := &openrtb2.Imp{
 		Rwdd: 0,
-		Banner: &openrtb2.Banner{
-			MIMEs: []string{"image/jpeg"},
-		},
 	}
 	src := &openrtb2.Imp{
 		Rwdd: 1,
-		Banner: &openrtb2.Banner{
-			MIMEs: []string{"image/png", "image/gif"},
-		},
 	}
 
 	MergeImpLTVFieldsFromSignal(dst, src)
 
 	assert.Equal(t, int8(1), dst.Rwdd)
-	assert.Equal(t, []string{"image/png", "image/gif"}, dst.Banner.MIMEs)
 }
 
 func TestMergeDeviceCopiesPPI(t *testing.T) {

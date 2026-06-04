@@ -7,19 +7,19 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
-// DeviceExtSignalKeys lists device.ext keys copied from OW SDK signal into the bid request.
+// DeviceExtSignalKeys lists LTV-related device.ext keys copied from OW SDK signal into the bid request.
+// device.ext.ifv is merged via CopyIFV inside MergeDeviceExtFromSignal.
+// device.ext.atts is not merged here: only integrations that historically copied it (e.g. AppLovin Max, Unity, APS) call CopyPath separately.
 var DeviceExtSignalKeys = []string{
-	"atts",
 	"boottime",
 	"pbtime",
 	"diskspace",
 	"totaldisk",
-	"inputlaunguage",
+	"inputlanguage",
 	"charging",
 	"batterylevel",
 	"totalmem",
 	"dnh",
-	"sua",
 	"ringmute",
 	"darkmode",
 	"bluetooth",
@@ -65,7 +65,8 @@ func CopyExtKeys(source, target []byte, keys ...string) []byte {
 	return newTarget
 }
 
-// MergeDeviceExtFromSignal copies OW SDK signal device.ext params into the request.
+// MergeDeviceExtFromSignal copies OW SDK signal device.ext LTV keys into the request and merges ifv.
+// Callers that should copy device.ext.atts from the signal (not Google SDK) must use CopyPath separately.
 func MergeDeviceExtFromSignal(source, target []byte) []byte {
 	target = CopyExtKeys(source, target, DeviceExtSignalKeys...)
 	return CopyIFV(source, target)
@@ -76,7 +77,8 @@ func MergeAppExtFromSignal(source, target []byte) []byte {
 	return CopyExtKeys(source, target, AppExtSignalKeys...)
 }
 
-// MergeImpLTVFieldsFromSignal copies imp-level LTV params from signal into the request impression.
+// MergeImpLTVFieldsFromSignal copies imp.rwdd from the OW SDK signal into the request impression.
+// imp.banner.mimes are merged in each integration's modifyBanner (or AppLovin equivalent), not here, to avoid duplicate work.
 func MergeImpLTVFieldsFromSignal(dst, src *openrtb2.Imp) {
 	if dst == nil || src == nil {
 		return
@@ -84,9 +86,5 @@ func MergeImpLTVFieldsFromSignal(dst, src *openrtb2.Imp) {
 
 	if src.Rwdd != 0 {
 		dst.Rwdd = src.Rwdd
-	}
-
-	if src.Banner != nil && dst.Banner != nil && len(src.Banner.MIMEs) > 0 {
-		dst.Banner.MIMEs = src.Banner.MIMEs
 	}
 }

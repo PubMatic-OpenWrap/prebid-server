@@ -170,6 +170,15 @@ func TestModifyBanner(t *testing.T) {
 				API: []adcom1.APIFramework{7},
 			},
 		},
+		{
+			name:    "copies_mimes_from_signal_when_non_empty",
+			request: &openrtb2.Banner{W: ptrutil.ToPtr[int64](320)},
+			signal:  &openrtb2.Banner{MIMEs: []string{"image/jpeg", "image/png"}},
+			expected: &openrtb2.Banner{
+				W:     ptrutil.ToPtr[int64](320),
+				MIMEs: []string{"image/jpeg", "image/png"},
+			},
+		},
 	}
 
 	for _, tt := range tests {

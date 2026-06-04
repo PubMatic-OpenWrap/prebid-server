@@ -63,6 +63,9 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	}
 
 	if maxImps[0].Banner != nil {
+		if signalImp.Banner != nil && len(signalImp.Banner.MIMEs) > 0 {
+			maxImps[0].Banner.MIMEs = signalImp.Banner.MIMEs
+		}
 		if signalImp.Banner != nil && len(signalImp.Banner.API) > 0 {
 			maxImps[0].Banner.API = signalImp.Banner.API
 		}
@@ -87,6 +90,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 
 	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
 	maxRequest.Device.Ext = sdkutils.MergeDeviceExtFromSignal(signalDevice.Ext, maxRequest.Device.Ext)
+	maxRequest.Device.Ext, _ = sdkutils.CopyPath(signalDevice.Ext, maxRequest.Device.Ext, "atts")
 }
 
 func updateApp(signalApp *openrtb2.App, maxRequest *openrtb2.BidRequest) {
