@@ -756,11 +756,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
 	requestExt.Wrapper = nil
 	requestExt.Bidder = nil
-	if rCtx.AppSubIntegrationPath != nil && *rCtx.AppSubIntegrationPath >= 0 {
-		requestExt.Wrapper = &models.RequestExtWrapper{
-			SdkSubIntegrationPath: ptrutil.ToPtr(*rCtx.AppSubIntegrationPath),
-		}
-	}
 
 	// if rCtx.Debug {
 	// 	newImp, _ := json.Marshal(rCtx.ImpBidCtx)

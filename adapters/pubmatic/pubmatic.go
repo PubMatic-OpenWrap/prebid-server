@@ -59,6 +59,9 @@ type pubmaticWrapperExt struct {
 	BidderCode string `json:"biddercode,omitempty"`
 
 	WrapperImpID string `json:"wiid,omitempty"`
+
+	// SdkSubIntegrationPath is copied from imp.ext PubMatic wrapper (WrapExt) when building the partner ext.
+	SdkSubIntegrationPath *int `json:"sdksubintegration,omitempty"`
 }
 
 type pubmaticBidExtVideo struct {
@@ -157,6 +160,10 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 				if wrapperExt.WrapperImpID == "" {
 					wrapperExt.WrapperImpID = wrapperExtFromImp.WrapperImpID
+				}
+				if wrapperExt.SdkSubIntegrationPath == nil && wrapperExtFromImp.SdkSubIntegrationPath != nil {
+					v := *wrapperExtFromImp.SdkSubIntegrationPath
+					wrapperExt.SdkSubIntegrationPath = &v
 				}
 
 				if wrapperExt != nil && wrapperExt.ProfileID != 0 && wrapperExt.VersionID != 0 {
