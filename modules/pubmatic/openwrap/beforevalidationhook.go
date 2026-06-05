@@ -741,13 +741,13 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl)
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
 			}
 		}
 	}
@@ -1129,12 +1129,16 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
+// sdkSubIntegration is merged into ext.prebid.bidderparams.<bidderCode> (same object as wiid) so the adapter can read it like other OW bidderparams fields.
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
 	bidderParamsMap[bidderCode] = map[string]interface{}{
 		models.WrapperLoggerImpID: loggerID,
+	}
+	if sdkSubIntegration != nil && *sdkSubIntegration >= 0 {
+		bidderParamsMap[bidderCode]["sdksubintegration"] = *sdkSubIntegration
 	}
 
 	if len(cookie) != 0 {

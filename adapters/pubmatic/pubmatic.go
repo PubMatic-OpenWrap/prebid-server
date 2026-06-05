@@ -60,7 +60,7 @@ type pubmaticWrapperExt struct {
 
 	WrapperImpID string `json:"wiid,omitempty"`
 
-	// SdkSubIntegrationPath is copied from imp.ext PubMatic wrapper (WrapExt) when building the partner ext.
+	// SdkSubIntegrationPath is set from ext.prebid.bidderparams (OpenWrap OW patch on pubmatic) when building the partner ext.
 	SdkSubIntegrationPath *int `json:"sdksubintegration,omitempty"`
 }
 
@@ -106,6 +106,7 @@ const (
 	gpIdKey                  = "gpid"
 	pmZoneIDRequestParamName = "pmzoneid"
 	sendBurlKey              = "sendburl"
+	sdkSubIntegrationKey     = "sdksubintegration"
 	owSDKKey                 = "owsdk"
 )
 
@@ -160,10 +161,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 				if wrapperExt.WrapperImpID == "" {
 					wrapperExt.WrapperImpID = wrapperExtFromImp.WrapperImpID
-				}
-				if wrapperExt.SdkSubIntegrationPath == nil && wrapperExtFromImp.SdkSubIntegrationPath != nil {
-					v := *wrapperExtFromImp.SdkSubIntegrationPath
-					wrapperExt.SdkSubIntegrationPath = &v
 				}
 
 				if wrapperExt != nil && wrapperExt.ProfileID != 0 && wrapperExt.VersionID != 0 {
@@ -548,11 +545,16 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	}
 
 	// OW patch -start-
+	if pmReqExt.Wrapper == nil {
+		pmReqExt.Wrapper = &pubmaticWrapperExt{}
+	}
 	if wiid, ok := reqExtBidderParams["wiid"]; ok {
-		if pmReqExt.Wrapper == nil {
-			pmReqExt.Wrapper = &pubmaticWrapperExt{}
-		}
 		pmReqExt.Wrapper.WrapperImpID, _ = strconv.Unquote(string(wiid))
+	}
+	if sdkSubIntegration, ok := reqExtBidderParams[sdkSubIntegrationKey]; ok {
+		if n, err := strconv.Atoi(string(sdkSubIntegration)); err == nil {
+			pmReqExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(int(n))
+		}
 	}
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
 		err = json.Unmarshal(wrapperObj, &cookies)

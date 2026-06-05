@@ -1984,25 +1984,6 @@ func TestGetPubMaticWrapperExt(t *testing.T) {
 			},
 			want: json.RawMessage(`{"version":1,"profile":1234}`),
 		},
-		{
-			name: "pubmatic partner includes sdksubintegration when AppSubIntegrationPath set",
-			args: args{
-				partnerID: 1,
-				rctx: models.RequestCtx{
-					PartnerConfigMap: map[int]map[string]string{
-						1: {
-							models.PREBID_PARTNER_NAME: "pubmatic",
-							models.BidderCode:          "pubmatic",
-						},
-					},
-					DisplayID:             2,
-					ProfileID:             99,
-					PubIDStr:              "1",
-					AppSubIntegrationPath: ptrutil.ToPtr(16),
-				},
-			},
-			want: json.RawMessage(`{"version":2,"profile":99,"sdksubintegration":16}`),
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

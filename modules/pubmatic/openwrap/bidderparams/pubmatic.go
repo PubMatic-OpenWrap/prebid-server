@@ -3,9 +3,7 @@ package bidderparams
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
-	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -165,11 +163,5 @@ func getPubMaticWrapperExt(rctx models.RequestCtx, partnerID int) json.RawMessag
 			return nil
 		}
 	}
-	out := []byte(wrapExt)
-	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 && len(out) > 0 {
-		if b, err := jsonparser.Set(out, []byte(strconv.Itoa(*rctx.AppSubIntegrationPath)), "sdksubintegration"); err == nil {
-			out = b
-		}
-	}
-	return json.RawMessage(out)
+	return json.RawMessage(wrapExt)
 }
