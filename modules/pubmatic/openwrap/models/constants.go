@@ -505,17 +505,12 @@ const (
 	EndpointAPS            = "aps"
 	EndpointGeo            = "geo"
 	EndpointInvalid        = "invalid"
-
-	// ImpExtGoogleSDKIntegrationKey is set on imp.ext for Google mediation traffic so SSPs can distinguish integration type.
-	ImpExtGoogleSDKIntegrationKey   = "ow_sdk_integration"
-	ImpExtGoogleSDKIntegrationValue = "google_mediation"
-
-	Openwrap        = "openwrap"
-	ImpTypeBanner   = "banner"
-	ImpTypeVideo    = "video"
-	ImpTypeNative   = "native"
-	ContentTypeSite = "site"
-	ContentTypeApp  = "app"
+	Openwrap               = "openwrap"
+	ImpTypeBanner          = "banner"
+	ImpTypeVideo           = "video"
+	ImpTypeNative          = "native"
+	ContentTypeSite        = "site"
+	ContentTypeApp         = "app"
 )
 
 const (
