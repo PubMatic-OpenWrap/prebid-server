@@ -505,8 +505,11 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 		}
 	}
 
+	// Single read of bidderparams "wrapper" for unmarshal below and OW sdksubintegration patch.
+	wrapperObj := reqExtBidderParams["wrapper"]
+
 	//get request ext bidder params
-	if wrapperObj, present := reqExtBidderParams["wrapper"]; present && len(wrapperObj) != 0 {
+	if len(wrapperObj) > 0 {
 		wrpExt := &pubmaticWrapperExt{}
 		err = jsonutil.Unmarshal(wrapperObj, wrpExt)
 		if err != nil {
@@ -545,22 +548,17 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	}
 
 	// OW patch -start-
-	if pmReqExt.Wrapper == nil {
-		pmReqExt.Wrapper = &pubmaticWrapperExt{}
-	}
 	if wiid, ok := reqExtBidderParams["wiid"]; ok {
 		pmReqExt.Wrapper.WrapperImpID, _ = strconv.Unquote(string(wiid))
 	}
 	// OpenWrap puts sdksubintegration only under bidderparams.wrapper (per-bidder filtered object).
-	if pmReqExt.Wrapper.SdkSubIntegrationPath == nil {
-		if wrapRaw, ok := reqExtBidderParams["wrapper"]; ok && len(wrapRaw) > 0 {
-			if n, err := jsonparser.GetInt(wrapRaw, sdkSubIntegrationKey); err == nil {
-				pmReqExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(int(n))
-			}
+	if pmReqExt.Wrapper.SdkSubIntegrationPath == nil && len(wrapperObj) > 0 {
+		if n, err := jsonparser.GetInt(wrapperObj, sdkSubIntegrationKey); err == nil {
+			pmReqExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(int(n))
 		}
 	}
-	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {
-		err = json.Unmarshal(wrapperObj, &cookies)
+	if cookieRaw, present := reqExtBidderParams["Cookie"]; present && len(cookieRaw) != 0 {
+		err = json.Unmarshal(cookieRaw, &cookies)
 	}
 	if sendBurl, ok := reqExtBidderParams[sendBurlKey]; ok {
 		pmReqExt.SendBurl, _ = strconv.ParseBool(string(sendBurl))

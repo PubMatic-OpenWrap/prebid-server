@@ -1129,7 +1129,9 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-// sdkSubIntegration is merged into ext.prebid.bidderparams.<bidderCode>.wrapper.sdksubintegration (wiid and other fields unchanged).
+// Rebuilds ext.prebid.bidderparams.<bidderCode> for OW: replaces the whole bidder object (only wiid, optional wrapper, Cookie, sendburl).
+// Incoming keys for that bidder are not preserved. Profile and version are not carried on request ext here; they live on
+// imp.ext.prebid.bidder.pubmatic.wrapper (WrapExt). So bidderparams.wrapper is only created to hold sdksubintegration for the adapter, not a merge of a full client wrapper.
 func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
@@ -1138,6 +1140,7 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie [
 		models.WrapperLoggerImpID: loggerID,
 	}
 	if sdkSubIntegration != nil && *sdkSubIntegration >= 0 {
+		// Minimal wrapper on bidderparams only (see function comment); not a merge with client request ext.
 		bidderParamsMap[bidderCode]["wrapper"] = map[string]interface{}{
 			"sdksubintegration": *sdkSubIntegration,
 		}
