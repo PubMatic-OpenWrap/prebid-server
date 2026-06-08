@@ -1129,7 +1129,7 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-// sdkSubIntegration is merged into ext.prebid.bidderparams.<bidderCode> (same object as wiid) so the adapter can read it like other OW bidderparams fields.
+// sdkSubIntegration is merged into ext.prebid.bidderparams.<bidderCode>.wrapper.sdksubintegration (wiid and other fields unchanged).
 func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
@@ -1138,7 +1138,9 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie [
 		models.WrapperLoggerImpID: loggerID,
 	}
 	if sdkSubIntegration != nil && *sdkSubIntegration >= 0 {
-		bidderParamsMap[bidderCode]["sdksubintegration"] = *sdkSubIntegration
+		bidderParamsMap[bidderCode]["wrapper"] = map[string]interface{}{
+			"sdksubintegration": *sdkSubIntegration,
+		}
 	}
 
 	if len(cookie) != 0 {

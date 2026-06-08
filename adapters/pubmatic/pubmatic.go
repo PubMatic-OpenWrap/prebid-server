@@ -551,9 +551,12 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	if wiid, ok := reqExtBidderParams["wiid"]; ok {
 		pmReqExt.Wrapper.WrapperImpID, _ = strconv.Unquote(string(wiid))
 	}
-	if sdkSubIntegration, ok := reqExtBidderParams[sdkSubIntegrationKey]; ok {
-		if n, err := strconv.Atoi(string(sdkSubIntegration)); err == nil {
-			pmReqExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(int(n))
+	// OpenWrap puts sdksubintegration only under bidderparams.wrapper (per-bidder filtered object).
+	if pmReqExt.Wrapper.SdkSubIntegrationPath == nil {
+		if wrapRaw, ok := reqExtBidderParams["wrapper"]; ok && len(wrapRaw) > 0 {
+			if n, err := jsonparser.GetInt(wrapRaw, sdkSubIntegrationKey); err == nil {
+				pmReqExt.Wrapper.SdkSubIntegrationPath = ptrutil.ToPtr(int(n))
+			}
 		}
 	}
 	if wrapperObj, present := reqExtBidderParams["Cookie"]; present && len(wrapperObj) != 0 {

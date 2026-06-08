@@ -435,10 +435,10 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "OW_prebid_bidderparams_sdksubintegration",
+			name: "OW_prebid_bidderparams_sdksubintegration_under_wrapper",
 			args: args{
 				request: &openrtb2.BidRequest{
-					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"sdksubintegration":7,"wrapper":{"profile":1,"version":2}}}}`),
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wrapper":{"profile":1,"version":2,"sdksubintegration":7}}}}`),
 				},
 			},
 			expectedReqExt: extRequestAdServer{
@@ -447,11 +447,10 @@ func TestExtractPubmaticExtFromRequest(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "OW_prebid_bidderparams_flat_sdksubintegration_like_exchange_filtered",
+			name: "OW_prebid_bidderparams_nested_wrapper_sdksubintegration_like_exchange_filtered",
 			args: args{
 				request: &openrtb2.BidRequest{
-					// Matches exchange.buildRequestExtForBidder: only this bidder's object (no nested "pubmatic", no sibling wrapper).
-					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wiid":"wid-1","sdksubintegration":8}}}`),
+					Ext: json.RawMessage(`{"prebid":{"bidderparams":{"wiid":"wid-1","wrapper":{"sdksubintegration":8}}}}`),
 				},
 			},
 			expectedReqExt: extRequestAdServer{

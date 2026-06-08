@@ -4000,7 +4000,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 				bidderCode:        "pubmatic",
 				sdkSubIntegration: ptrutil.ToPtr(16),
 			},
-			want: json.RawMessage(`{"pubmatic":{"sdksubintegration":16,"wiid":"wid-sdk"}}`),
+			want: json.RawMessage(`{"pubmatic":{"wiid":"wid-sdk","wrapper":{"sdksubintegration":16}}}`),
 		},
 	}
 	for _, tt := range tests {
