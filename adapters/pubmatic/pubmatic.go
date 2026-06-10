@@ -13,6 +13,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/config"
 	"github.com/prebid/prebid-server/v3/errortypes"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
@@ -117,6 +118,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if request.App != nil && request.App.Ext != nil {
 		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
 	}
+
+	applyEdsFromBidderParams(request)
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
 	if err != nil {
@@ -556,6 +559,23 @@ func extractPubmaticExtFromRequest(request *openrtb2.BidRequest) (extRequestAdSe
 	// OW patch -end-
 
 	return pmReqExt, cookies, nil
+}
+
+func applyEdsFromBidderParams(request *openrtb2.BidRequest) {
+	if request == nil || len(request.Ext) == 0 {
+		return
+	}
+
+	reqExt := &openrtb_ext.ExtRequest{}
+	if err := jsonutil.Unmarshal(request.Ext, &reqExt); err != nil {
+		return
+	}
+	if reqExt.Prebid.BidderParams == nil {
+		return
+	}
+
+	resolved := eds.ExtractFromBidderParams(reqExt.Prebid.BidderParams)
+	eds.ApplyToRequest(request, resolved)
 }
 
 func getAlternateBidderCodesFromRequestExt(reqExt *openrtb_ext.ExtRequest) []string {

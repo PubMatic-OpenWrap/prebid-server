@@ -26,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -764,6 +765,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
+	resolvedEds := eds.MergeGapFill(rCtx.EdsParams, eds.Resolve(eds.Sources{Request: payload.BidRequest}))
+	pubmaticBidderCodes := pubmaticBidderCodesForEds(rCtx)
+	if !resolvedEds.IsEmpty() && len(pubmaticBidderCodes) > 0 {
+		requestExt.Prebid.BidderParams, _ = eds.InjectIntoBidderParams(requestExt.Prebid.BidderParams, resolvedEds, pubmaticBidderCodes...)
+	}
+
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
@@ -798,6 +805,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
+
+		eds.StripFromRequest(ep.BidRequest, resolvedEds)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
@@ -1129,6 +1138,23 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
+func pubmaticBidderCodesForEds(rCtx models.RequestCtx) []string {
+	codes := make([]string, 0, 1+len(rCtx.Aliases))
+	if _, throttled := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !throttled {
+		codes = append(codes, string(openrtb_ext.BidderPubmatic))
+	}
+	for bidderCode, coreBidder := range rCtx.Aliases {
+		if coreBidder != string(openrtb_ext.BidderPubmatic) {
+			continue
+		}
+		if _, throttled := rCtx.AdapterThrottleMap[bidderCode]; throttled {
+			continue
+		}
+		codes = append(codes, bidderCode)
+	}
+	return codes
+}
+
 func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
