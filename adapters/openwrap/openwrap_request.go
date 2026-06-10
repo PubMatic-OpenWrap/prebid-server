@@ -148,7 +148,7 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 						}
 					}
 					// Delete site.ext before sending to SSP
-					request.Site.Ext = nil
+					//request.Site.Ext = nil
 				}
 			}
 		}
@@ -313,6 +313,10 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	} else {
 		// Use regular endpoint when sspreq is false or not present
 		endpoint = a.endpoint
+	}
+
+	if request.Site != nil && request.Site.Publisher != nil && request.Site.Publisher.ID == "166503" {
+		endpoint = "http://127.0.0.1:8001/TestCommerce"
 	}
 
 	return []*adapters.RequestData{{

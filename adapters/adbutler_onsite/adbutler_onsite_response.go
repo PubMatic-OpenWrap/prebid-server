@@ -199,16 +199,16 @@ func (a *AdButlerOnsiteAdapter) GetBidderResponse(request *openrtb2.BidRequest, 
 			creativeURL = CreativeId_KEY + adButlerBid.BannerID + Ampersand + CampaignId_KEY + campaignId
 
 			if adButlerBid.EligibleURL != "" {
-				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.EligibleURL) + TRK_URL_END_TAG
 			} else if adButlerBid.AccupixelURL != "" {
-				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL)
+				nURL = creativeURL + Ampersand + IMP_KEY + adapters.EncodeURL(adButlerBid.AccupixelURL) + TRK_URL_END_TAG
 			}
 
 			if adButlerBid.ViewableURL != "" {
-				viewURL = creativeURL + Ampersand + VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL)
+				viewURL = creativeURL + Ampersand + VIEW_KEY + adapters.EncodeURL(adButlerBid.ViewableURL) + TRK_URL_END_TAG
 			}
 			if adButlerBid.RedirectURL != "" {
-				clickURL = creativeURL + Ampersand + CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL)
+				clickURL = creativeURL + Ampersand + CLICK_KEY + adapters.EncodeURL(adButlerBid.RedirectURL) + TRK_URL_END_TAG
 			}
 
 			bidExt := &openrtb_ext.ExtBidCMOnsite{
