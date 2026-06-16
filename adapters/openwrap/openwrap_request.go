@@ -11,6 +11,12 @@ import (
 	"github.com/prebid/prebid-server/openrtb_ext"
 )
 
+// osmosSSPPublisherID is the site/app publisher ID routed to the Osmos SSP test commerce endpoint.
+const osmosSSPPublisherID = "167817"
+
+// mockerEndpoint is the local commerce test URL used when routing Osmos SSP publisher traffic.
+const mockerEndpoint = "http://127.0.0.1:8001/TestCommerce"
+
 type ExtRequestORTB map[string]interface{}
 
 // Standard banner formats substituted when an incoming request uses the 100x100 placeholder in imp.banner.format.
@@ -303,20 +309,23 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	var endpoint string
+
 	if isSSPReq {
-		// Use SSP endpoint when sspreq is true
-		if queryParams != "" {
-			endpoint = a.sspEndpoint + "?" + queryParams
-		} else {
-			endpoint = a.sspEndpoint
-		}
+		endpoint = a.sspEndpoint
 	} else {
-		// Use regular endpoint when sspreq is false or not present
 		endpoint = a.endpoint
 	}
 
-	if request.Site != nil && request.Site.Publisher != nil && request.Site.Publisher.ID == "166503" {
-		endpoint = "http://127.0.0.1:8001/TestCommerce"
+	if request.Site != nil && request.Site.Publisher != nil && request.Site.Publisher.ID == osmosSSPPublisherID {
+		endpoint = mockerEndpoint
+	}
+
+	if request.App != nil && request.App.Publisher != nil && request.App.Publisher.ID == osmosSSPPublisherID {
+		endpoint = mockerEndpoint
+	}
+
+	if queryParams != "" {
+		endpoint = endpoint + "?" + queryParams
 	}
 
 	return []*adapters.RequestData{{
