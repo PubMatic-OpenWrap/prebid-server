@@ -2410,7 +2410,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 		setup func()
 	}{
 		{
-			name: "endpoint is not of applovinmax",
+			name: "endpoint is not an SDK bidding path endpoint",
 			args: args{
 				rctx: models.RequestCtx{
 					Endpoint: models.EndpointV25,
@@ -2418,6 +2418,35 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 			want:  nil,
 			setup: func() {},
+		},
+		{
+			name: "googlesdk endpoint runs MBMF gating",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointGoogleSDK,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID: "adunit",
+					Instl: 1,
+				},
+			},
+			want: &models.MultiFloors{IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3},
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(nil)
+				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(&models.MultiFloors{
+					IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3,
+				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointGoogleSDK, "5890", models.MBMFSuccess)
+			},
 		},
 		{
 			name: "publisher is not enabled for multi floors",
@@ -2648,8 +2677,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
-				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(nil)
-				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatNotFound)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitDisabled)
 			},
 		},
 		{
@@ -2708,8 +2736,7 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(map[string]*models.MultiFloors{})
-				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatBanner).Return(nil)
-				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitFormatNotFound)
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFAdUnitDisabled)
 			},
 		},
 		{
