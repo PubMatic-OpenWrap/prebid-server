@@ -5,16 +5,17 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
-func TestGetSupportedAdAttributes(t *testing.T) {
+func TestGetSupportedAdAttributeWireIDs(t *testing.T) {
 	tests := []struct {
 		name        string
 		os          OS
 		sdkVersion  string
 		adFormat    AdFormat
-		expected    []AdAttribute
+		expected    []int
 		description string
 	}{
 		{
@@ -30,39 +31,63 @@ func TestGetSupportedAdAttributes(t *testing.T) {
 			os:          OSAndroid,
 			sdkVersion:  "4.1.0",
 			adFormat:    AdFormatInterstitialDisplay,
-			expected:    []AdAttribute{EngageToCloseInstl},
+			expected:    []int{AdAttrWireEngageToClose},
 			description: "Basic support for interstitial display",
+		},
+		{
+			name:        "Android 4.3.0 - interstitial display (no matrix row after 4.2)",
+			os:          OSAndroid,
+			sdkVersion:  "4.3.0",
+			adFormat:    AdFormatInterstitialDisplay,
+			expected:    nil,
+			description: "Interstitial display only supported on Android 4.1.0–4.2.0 per spec",
 		},
 		{
 			name:        "Android 4.3.0 - rewarded video",
 			os:          OSAndroid,
 			sdkVersion:  "4.3.0",
 			adFormat:    AdFormatRewardedVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd},
-			description: "Support for rewarded video added",
+			expected:    []int{AdAttrWireEngageToClose},
+			description: "Rewarded video at 4.3.0",
+		},
+		{
+			name:        "Android 4.5.0 - banner display",
+			os:          OSAndroid,
+			sdkVersion:  "4.5.0",
+			adFormat:    AdFormatBannerDisplay,
+			expected:    []int{AdAttrWireEngageToClose},
+			description: "Android 4.1.0–4.8.0 banner display",
+		},
+		{
+			name:        "Android 4.9.0 - MREC display + video",
+			os:          OSAndroid,
+			sdkVersion:  "4.9.0",
+			adFormat:    AdFormatMRECVideoDisplay,
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay},
+			description: "Android 4.9–5.0 MREC: engage to close + CTA overlay",
 		},
 		{
 			name:        "Android 4.5.0 - true double end card",
 			os:          OSAndroid,
 			sdkVersion:  "4.5.0",
 			adFormat:    AdFormatInterstitialDisplayVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard},
-			description: "True double end card support added",
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard},
+			description: "True double end card support",
 		},
 		{
 			name:        "Android 4.9.0 - CTA overlay",
 			os:          OSAndroid,
 			sdkVersion:  "4.9.0",
 			adFormat:    AdFormatInterstitialDisplayVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard, CTAOverlay},
-			description: "CTA overlay support added",
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay},
+			description: "CTA overlay support",
 		},
 		{
 			name:        "Android 5.1.0 - interstitial display + video",
 			os:          OSAndroid,
 			sdkVersion:  "5.1.0",
 			adFormat:    AdFormatInterstitialDisplayVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard, CTAOverlay, MRAIDAppStatus},
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
 			description: "Interstitial display + video combination",
 		},
 		{
@@ -70,66 +95,63 @@ func TestGetSupportedAdAttributes(t *testing.T) {
 			os:          OSAndroid,
 			sdkVersion:  "5.1.0",
 			adFormat:    AdFormatMRECVideoDisplay,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard, CTAOverlay, MRAIDAppStatus},
-			description: "MREC display + video combination",
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
+			description: "Android 5.1+ MREC: no true double end card on wire list",
 		},
 		{
-			name:        "Android 5.1.0 - full support",
+			name:        "Android 5.1.0 - banner display",
 			os:          OSAndroid,
 			sdkVersion:  "5.1.0",
-			adFormat:    AdFormatInterstitialDisplayVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard, CTAOverlay, MRAIDAppStatus},
-			description: "Full feature support",
-		},
-		{
-			name:        "Android 5.1.0 - MREC display + video",
-			os:          OSAndroid,
-			sdkVersion:  "5.1.0",
-			adFormat:    AdFormatMRECVideoDisplay,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, TrueDoubleEndCard, CTAOverlay, MRAIDAppStatus},
-			description: "MREC display + video combination",
+			adFormat:    AdFormatBannerDisplay,
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireMRAIDAppStatus},
+			description: "Android 5.1+ banner: engage to close + MRAID app status",
 		},
 		{
 			name:        "iOS 5.1.0 - interstitial display + video",
 			os:          OSiOS,
 			sdkVersion:  "5.1.0",
 			adFormat:    AdFormatInterstitialDisplayVideo,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, CTAOverlay, MRAIDAppStatus},
-			description: "iOS interstitial display + video combination (no true double end card)",
+			expected:    []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
+			description: "iOS interstitial display + video (no true double end card in matrix)",
 		},
 		{
 			name:        "iOS 5.1.0 - MREC display + video",
 			os:          OSiOS,
 			sdkVersion:  "5.1.0",
 			adFormat:    AdFormatMRECVideoDisplay,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, CTAOverlay, MRAIDAppStatus},
-			description: "iOS MREC display + video combination",
+			expected:    []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
+			description: "iOS 5.1+ MREC: CTA overlay + MRAID only",
 		},
 		{
-			name:        "iOS 5.1.0 - MREC display + video",
+			name:        "iOS 5.1.0 - banner display",
 			os:          OSiOS,
 			sdkVersion:  "5.1.0",
-			adFormat:    AdFormatMRECVideoDisplay,
-			expected:    []AdAttribute{EngageToCloseInstl, EngageToCloseInstlRwd, CTAOverlay, MRAIDAppStatus},
-			description: "iOS MREC display + video should include all features",
+			adFormat:    AdFormatBannerDisplay,
+			expected:    []int{AdAttrWireMRAIDAppStatus},
+			description: "iOS 5.1+ banner: MRAID app status only",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GetSupportedAdAttributes(tt.os, tt.sdkVersion, tt.adFormat)
-			if len(result) != len(tt.expected) {
-				t.Errorf("Expected %d attributes, got %d", len(tt.expected), len(result))
-				return
-			}
-
-			for i, attr := range result {
-				if i >= len(tt.expected) || attr != tt.expected[i] {
-					t.Errorf("Expected attribute at position %d to be %v, got %v", i, tt.expected[i], attr)
-				}
+			result := GetSupportedAdAttributeWireIDs(tt.os, tt.sdkVersion, tt.adFormat)
+			if !intSliceEqual(result, tt.expected) {
+				t.Errorf("Expected %v, got %v (%s)", tt.expected, result, tt.description)
 			}
 		})
 	}
+}
+
+func intSliceEqual(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestDetermineAdFormat(t *testing.T) {
@@ -148,13 +170,13 @@ func TestDetermineAdFormat(t *testing.T) {
 			expected: AdFormatRewardedVideo,
 		},
 		{
-			name: "rewarded display (instl + rwdd)",
+			name: "rewarded flag without video — not classified as rewarded video",
 			impCtx: models.ImpCtx{
 				IsRewardInventory: ptrutil.ToPtr(int8(1)),
 				Instl:             1,
 				Video:             nil,
 			},
-			expected: AdFormatInterstitialDisplay,
+			expected: "",
 		},
 		{
 			name: "interstitial display + video (instl = 1 + video + banner)",
@@ -166,6 +188,22 @@ func TestDetermineAdFormat(t *testing.T) {
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
 			},
 			expected: AdFormatInterstitialDisplayVideo,
+		},
+		{
+			name: "interstitial display only when ad unit disabled video (still on imp until mutation)",
+			impCtx: models.ImpCtx{
+				IsRewardInventory: ptrutil.ToPtr(int8(0)),
+				Instl:             1,
+				Video:             &openrtb2.Video{},
+				IsBanner:          true,
+				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
+				VideoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{Enabled: ptrutil.ToPtr(false)},
+					},
+				},
+			},
+			expected: AdFormatInterstitialDisplay,
 		},
 		{
 			name: "interstitial display (instl = 1 + display)",
@@ -188,6 +226,33 @@ func TestDetermineAdFormat(t *testing.T) {
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
 			expected: AdFormatMRECVideoDisplay,
+		},
+		{
+			name: "MREC banner display only when ad unit disabled video",
+			impCtx: models.ImpCtx{
+				IsRewardInventory: ptrutil.ToPtr(int8(0)),
+				Instl:             0,
+				Video:             &openrtb2.Video{},
+				IsBanner:          true,
+				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+				VideoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{Enabled: ptrutil.ToPtr(false)},
+					},
+				},
+			},
+			expected: AdFormatBannerDisplay,
+		},
+		{
+			name: "banner display (instl = 0 + leaderboard, no video)",
+			impCtx: models.ImpCtx{
+				IsRewardInventory: ptrutil.ToPtr(int8(0)),
+				Instl:             0,
+				Video:             nil,
+				IsBanner:          true,
+				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
+			},
+			expected: AdFormatBannerDisplay,
 		},
 		{
 			name: "default (no match)",
@@ -261,34 +326,48 @@ func TestDetermineOS(t *testing.T) {
 
 func TestCreateOWSDKExtension(t *testing.T) {
 	tests := []struct {
-		name       string
-		attributes []AdAttribute
-		expected   map[string]any
+		name     string
+		wireIDs  []int
+		expected map[string]any
 	}{
 		{
-			name:       "no attributes",
-			attributes: []AdAttribute{},
-			expected:   map[string]any{},
+			name:     "no ids",
+			wireIDs:  []int{},
+			expected: map[string]any{},
 		},
 		{
-			name:       "single attribute",
-			attributes: []AdAttribute{CTAOverlay},
+			name:    "single id",
+			wireIDs: []int{AdAttrWireCTAOverlay},
 			expected: map[string]any{
-				"adattributes": []string{"cta_overlay"},
+				"adattributes": []int{AdAttrWireCTAOverlay},
 			},
 		},
 		{
-			name:       "multiple attributes with mraid status",
-			attributes: []AdAttribute{EngageToCloseInstl, CTAOverlay, MRAIDAppStatus},
+			name:    "dedupe and sort",
+			wireIDs: []int{3, 1, 1, 3},
 			expected: map[string]any{
-				"adattributes": []string{"eng_to_close_instl", "cta_overlay", "mraid_app_status"},
+				"adattributes": []int{1, 3},
+			},
+		},
+		{
+			name:    "skips non-positive ids",
+			wireIDs: []int{0, -1, 4, 3},
+			expected: map[string]any{
+				"adattributes": []int{3, 4},
+			},
+		},
+		{
+			name:    "multiple ids sorted",
+			wireIDs: []int{4, 1, 3},
+			expected: map[string]any{
+				"adattributes": []int{1, 3, 4},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CreateOWSDKExtension(tt.attributes)
+			result := CreateOWSDKExtension(tt.wireIDs)
 
 			if len(result) != len(tt.expected) {
 				t.Errorf("Expected %d keys, got %d", len(tt.expected), len(result))
@@ -299,16 +378,19 @@ func TestCreateOWSDKExtension(t *testing.T) {
 				if actualValue, exists := result[key]; !exists {
 					t.Errorf("Expected key %s not found", key)
 				} else {
-					// Compare string slices for adattributes
 					if key == "adattributes" {
-						expectedSlice := expectedValue.([]string)
-						actualSlice := actualValue.([]string)
+						expectedSlice := expectedValue.([]int)
+						actualSlice, ok := actualValue.([]int)
+						if !ok {
+							t.Errorf("adattributes: expected []int, got %T", actualValue)
+							continue
+						}
 						if len(expectedSlice) != len(actualSlice) {
 							t.Errorf("Expected %d attributes, got %d", len(expectedSlice), len(actualSlice))
 						} else {
-							for i, attr := range expectedSlice {
-								if actualSlice[i] != attr {
-									t.Errorf("Expected attribute %s at position %d, got %s", attr, i, actualSlice[i])
+							for i, id := range expectedSlice {
+								if actualSlice[i] != id {
+									t.Errorf("Expected id %d at position %d, got %d", id, i, actualSlice[i])
 								}
 							}
 						}

@@ -706,7 +706,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		// Merge client ext.owsdk + server adattributes into NewExt (what applyImpChanges applies to the outgoing request).
 		// Mutating imp.Ext here is lost: imp is a loop copy and applyImpChanges overwrites imp.Ext from NewExt.
 		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
-			mergedExt, mergeErr := m.mergeOWSDKAdAttributesIntoImpExt(impCtx.NewExt, payload.BidRequest, impCtx, incomingOWSDK)
+			mergedExt, mergeErr := m.mergeOWSDKAdAttributesIntoImpExt(impCtx.NewExt, impCtx, incomingOWSDK, payload.BidRequest.Device.OS)
 			if mergeErr != nil {
 				glog.Errorf("merge OWSDK into imp.ext imp=%s: %v", imp.ID, mergeErr)
 			} else {

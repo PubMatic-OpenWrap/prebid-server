@@ -10,37 +10,48 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Helper function to validate OWSDK presence and content
-func validateOWSDK(t *testing.T, owsdkRaw json.RawMessage, expectedAttrs []string) {
+// Helper function to validate OWSDK presence and content (adattributes = numeric wire IDs).
+func validateOWSDK(t *testing.T, owsdkRaw json.RawMessage, expectedIDs []int) {
 	var owsdk map[string]any
 	if err := json.Unmarshal(owsdkRaw, &owsdk); err != nil {
 		t.Fatalf("Failed to unmarshal OWSDK extension: %v", err)
 	}
 
-	// Validate adattributes
 	if adAttrs, ok := owsdk["adattributes"]; ok {
 		adAttrsSlice, ok := adAttrs.([]interface{})
 		if !ok {
 			t.Errorf("Expected adattributes to be a slice")
 			return
 		}
-		assert.Equal(t, len(expectedAttrs), len(adAttrsSlice), "Attribute count mismatch")
+		got := make([]int, 0, len(adAttrsSlice))
+		for _, v := range adAttrsSlice {
+			switch n := v.(type) {
+			case float64:
+				got = append(got, int(n))
+			case int:
+				got = append(got, n)
+			case int64:
+				got = append(got, int(n))
+			default:
+				t.Fatalf("unexpected adattributes element type %T", v)
+			}
+		}
+		assert.Equal(t, expectedIDs, got, "adattributes wire IDs mismatch")
 	} else {
 		t.Errorf("Expected adattributes in OWSDK extension")
 	}
-
 }
 
-func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
+func TestMergeOWSDKAdAttributesIntoImpExt_Integration(t *testing.T) {
 	ow := &OpenWrap{}
 
 	tests := []struct {
-		name          string
-		bidRequest    *openrtb2.BidRequest
-		imp           *openrtb2.Imp
-		impCtx        models.ImpCtx
-		expectedAttrs []string
-		expectOWSDK   bool
+		name            string
+		bidRequest      *openrtb2.BidRequest
+		imp             *openrtb2.Imp
+		impCtx          models.ImpCtx
+		expectedAttrIDs []int
+		expectOWSDK     bool
 	}{
 		{
 			name: "Android_5.1.0 - interstitial_video + display",
@@ -62,8 +73,8 @@ func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
 				Video:             &openrtb2.Video{MinDuration: 10, MaxDuration: 10},
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
-			expectedAttrs: []string{"eng_to_close_instl", "eng_to_close_instl_rwd", "true_dbl_endcard", "cta_overlay", "mraid_app_status"},
-			expectOWSDK:   true,
+			expectedAttrIDs: []int{1, 2, 3, 4},
+			expectOWSDK:     true,
 		},
 		{
 			name: "iOS_4.9.0 - MREC_display + video",
@@ -85,8 +96,8 @@ func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
 				Video:             &openrtb2.Video{MinDuration: 10, MaxDuration: 10},
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
-			expectedAttrs: []string{"eng_to_close_instl", "eng_to_close_instl_rwd", "cta_overlay"},
-			expectOWSDK:   true,
+			expectedAttrIDs: []int{3},
+			expectOWSDK:     true,
 		},
 		{
 			name: "Android_4.0.0 - below_minimum_version",
@@ -106,8 +117,8 @@ func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
 				Instl:             1,
 				Video:             &openrtb2.Video{},
 			},
-			expectedAttrs: nil,
-			expectOWSDK:   false,
+			expectedAttrIDs: nil,
+			expectOWSDK:     false,
 		},
 		{
 			name: "Unknown_OS",
@@ -127,15 +138,26 @@ func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
 				Instl:             1,
 				Video:             &openrtb2.Video{},
 			},
-			expectedAttrs: nil,
-			expectOWSDK:   false,
+			expectedAttrIDs: nil,
+			expectOWSDK:     false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Call the method
-			ow.addAdAttributesToOWSDK(tt.bidRequest, tt.imp, tt.impCtx)
+			ext := tt.imp.Ext
+			if len(ext) == 0 {
+				ext = json.RawMessage("{}")
+			}
+			deviceOS := ""
+			if tt.bidRequest != nil && tt.bidRequest.Device != nil {
+				deviceOS = tt.bidRequest.Device.OS
+			}
+			out, err := ow.mergeOWSDKAdAttributesIntoImpExt(ext, tt.impCtx, nil, deviceOS)
+			if err != nil {
+				t.Fatalf("mergeOWSDKAdAttributesIntoImpExt: %v", err)
+			}
+			tt.imp.Ext = out
 
 			// Parse the impression extension
 			var extMap map[string]json.RawMessage
@@ -147,7 +169,7 @@ func TestAddAdAttributesToOWSDK_Integration(t *testing.T) {
 			owsdkRaw, exists := extMap["owsdk"]
 			if tt.expectOWSDK {
 				assert.True(t, exists, "Expected OWSDK extension to be present")
-				validateOWSDK(t, owsdkRaw, tt.expectedAttrs)
+				validateOWSDK(t, owsdkRaw, tt.expectedAttrIDs)
 			} else {
 				assert.False(t, exists, "Expected OWSDK extension to be absent")
 			}
