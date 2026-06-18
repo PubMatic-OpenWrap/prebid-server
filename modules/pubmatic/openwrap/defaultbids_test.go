@@ -197,6 +197,83 @@ func TestOpenWrap_addDefaultBids(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "one_bidder_in_SeatBid_two_in_DroppedBids_only_remaining_bidder_gets_default",
+			fields: fields{
+				metricEngine:  mockEngine,
+				uuidGenerator: TestUUIDGenerator{},
+			},
+			args: args{
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PrebidBidderCode: "pubmatic",
+								},
+								"openx": {
+									PrebidBidderCode: "openx",
+								},
+								"appnexus": {
+									PrebidBidderCode: "appnexus",
+								},
+								"rubicon": {
+									PrebidBidderCode: "rubicon",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{},
+						},
+					},
+					DroppedBids: map[string][]openrtb2.Bid{
+						"openx": {
+							{
+								ID:    "openx-dropped-1",
+								ImpID: "imp-1",
+								Price: 0.5,
+							},
+						},
+						"appnexus": {
+							{
+								ID:    "appnexus-dropped-1",
+								ImpID: "imp-1",
+								Price: 0.4,
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "bid-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{
+									ID:    "pubmatic-winning-1",
+									ImpID: "imp-1",
+									Price: 2.0,
+								},
+							},
+						},
+					},
+				},
+				bidResponseExt: openrtb_ext.ExtBidResponse{},
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordPartnerResponseErrors(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			},
+			want: map[string]map[string][]openrtb2.Bid{
+				"imp-1": {
+					"rubicon": {
+						{
+							ID:    "30470a14-2949-4110-abce-b62d57304ad5",
+							ImpID: "imp-1",
+							Ext:   []byte(`{}`),
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -749,6 +826,146 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 				uuidGenerator:   tt.fields.uuidGenerator,
 			}
 			got := m.addDefaultBidsForMultiFloorsConfig(tt.args.rctx, tt.args.bidResponse, tt.args.bidResponseExt)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestOpenWrap_applyDefaultBids(t *testing.T) {
+	m := &OpenWrap{}
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want *openrtb2.BidResponse
+	}{
+		{
+			name: "sendAllBids_true_appends_SeatBid_for_default_bids_when_no_matching_seat",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: true,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"openx": {
+								{ID: "def-openx-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "resp-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+						},
+					},
+					{
+						Seat: "openx",
+						Bid: []openrtb2.Bid{
+							{ID: "def-openx-1", ImpID: "imp-1", Price: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_does_not_append_new_seat_for_remaining_DefaultBids",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"openx": {
+								{ID: "def-openx-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "resp-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_true_merges_DefaultBids_into_existing_SeatBid_same_seat",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: true,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"openx": {
+								{ID: "def-openx-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "resp-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "openx",
+							Bid: []openrtb2.Bid{
+								{ID: "win-openx-1", ImpID: "imp-1", Price: 1.2},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "openx",
+						Bid: []openrtb2.Bid{
+							{ID: "win-openx-1", ImpID: "imp-1", Price: 1.2},
+							{ID: "def-openx-1", ImpID: "imp-1", Price: 0},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			br := tt.args.bidResponse
+			got, err := m.applyDefaultBids(tt.args.rctx, br)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}

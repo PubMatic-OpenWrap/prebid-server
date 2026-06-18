@@ -347,12 +347,15 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 	}
 
 	// no-seat case
-	for _, noSeatBid := range rctx.DefaultBids {
-		for seat, bids := range noSeatBid {
-			bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
-				Bid:  bids,
-				Seat: seat,
-			})
+	// if sendallbids is true, add defaultbids to response.seatbid, else dont add defaultbids
+	if rctx.SendAllBids {
+		for _, noSeatBid := range rctx.DefaultBids {
+			for seat, bids := range noSeatBid {
+				bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
+					Bid:  bids,
+					Seat: seat,
+				})
+			}
 		}
 	}
 
