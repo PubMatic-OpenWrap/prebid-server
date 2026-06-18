@@ -296,6 +296,25 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 		}
 	}
 
+	// When sendAllBids is false, default bids are not merged into SeatBid; still log them unless the same
+	// imp+seat is already represented as a seat-non-bid (rejectedBids), to avoid duplicate partner rows.
+	if !rCtx.SendAllBids && rCtx.DefaultBids != nil {
+		for impID := range rCtx.DefaultBids {
+			for seat := range rCtx.DefaultBids[impID] {
+				bids := rCtx.DefaultBids[impID][seat]
+				for i := range bids {
+					bid := &rCtx.DefaultBids[impID][seat][i]
+					if _, ok := rejectedBids[seat]; ok {
+						if _, ok := rejectedBids[seat][bid.ImpID]; ok {
+							continue
+						}
+					}
+					loggerSeat[seat] = append(loggerSeat[seat], bidWrapper{Bid: bid})
+				}
+			}
+		}
+	}
+
 	// include bids that got dropped from ao.SeatBid by pubmatic ow module. Ex. sendAllBids=false
 	// in future, this dropped bids should be part of ao.SeatNonBid object
 	for seat, Bids := range rCtx.DroppedBids {
