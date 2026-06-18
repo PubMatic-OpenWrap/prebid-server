@@ -1601,6 +1601,346 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			},
 			partners: map[string][]PartnerRecord{},
 		},
+		{
+			name: "sendAllBids_false_SeatBid_winner_plus_DefaultBids_from_rCtx_logged",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-winner",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					SendAllBids: false,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"appnexus": {
+								{
+									ID:    "default-uuid-1",
+									ImpID: "imp1",
+									Price: 0,
+									W:     0,
+									H:     0,
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							IsBanner: true,
+							TagID:    "adunit_1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PartnerID:        100,
+									PrebidBidderCode: "pubmatic",
+									KGP:              "pmkgp",
+								},
+								"appnexus": {
+									PartnerID:        501,
+									PrebidBidderCode: "appnexus",
+									KGP:              "kgp1",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-winner": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+									},
+								},
+								"default-uuid-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						100: {models.REVSHARE: "0"},
+						501: {models.REVSHARE: "0"},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-winner",
+						OrigBidID:   "bid-id-winner",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						Adformat:         models.Banner,
+						BidID:            "default-uuid-1",
+						OrigBidID:        "default-uuid-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						NetECPM:          0,
+						GrossECPM:        0,
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_DefaultBids_skipped_when_same_seat_imp_in_SeatNonBid",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-winner",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{
+						{
+							Seat: "appnexus",
+							NonBid: []openrtb_ext.NonBid{
+								{
+									ImpId:      "imp1",
+									StatusCode: int(exchange.ResponseRejectedBelowFloor),
+									Ext: openrtb_ext.ExtNonBid{
+										Prebid: openrtb_ext.ExtNonBidPrebid{
+											Bid: openrtb_ext.ExtNonBidPrebidBid{
+												ID: "nbid-1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				rCtx: &models.RequestCtx{
+					SendAllBids: false,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"appnexus": {
+								{
+									ID:    "default-uuid-1",
+									ImpID: "imp1",
+									Price: 0,
+									W:     0,
+									H:     0,
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							IsBanner: true,
+							TagID:    "adunit_1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PartnerID:        100,
+									PrebidBidderCode: "pubmatic",
+									KGP:              "pmkgp",
+								},
+								"appnexus": {
+									PartnerID:        501,
+									PrebidBidderCode: "appnexus",
+									KGP:              "kgp1",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-winner": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+									},
+								},
+								"default-uuid-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						100: {models.REVSHARE: "0"},
+						501: {models.REVSHARE: "0"},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-winner",
+						OrigBidID:   "bid-id-winner",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						Adformat:         models.Banner,
+						BidID:            "nbid-1",
+						OrigBidID:        "nbid-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						Nbr:              exchange.ResponseRejectedBelowFloor.Ptr(),
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_true_SeatBid_has_winner_and_other_bid_DefaultBids_map_not_appended_by_logger",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-winner",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "default-uuid-1",
+										ImpID: "imp1",
+										Price: 0,
+										W:     0,
+										H:     0,
+									},
+								},
+								Seat: "appnexus",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					SendAllBids: true,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp1": {
+							"appnexus": {
+								{
+									ID:    "default-uuid-1",
+									ImpID: "imp1",
+									Price: 0,
+									W:     0,
+									H:     0,
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							IsBanner: true,
+							TagID:    "adunit_1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PartnerID:        100,
+									PrebidBidderCode: "pubmatic",
+									KGP:              "pmkgp",
+								},
+								"appnexus": {
+									PartnerID:        501,
+									PrebidBidderCode: "appnexus",
+									KGP:              "kgp1",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-winner": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+									},
+								},
+								"default-uuid-1": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						100: {models.REVSHARE: "0"},
+						501: {models.REVSHARE: "0"},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-winner",
+						OrigBidID:   "bid-id-winner",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						Adformat:         models.Banner,
+						BidID:            "default-uuid-1",
+						OrigBidID:        "default-uuid-1",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						NetECPM:          0,
+						GrossECPM:        0,
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1608,8 +1948,8 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			assert.Equal(t, len(tt.partners), len(partners), tt.name)
 			for ind := range partners {
 				// ignore order of elements in slice while comparison
-				if !assert.ElementsMatch(t, partners[ind], tt.partners[ind], tt.name) {
-					assert.Equal(t, partners[ind], tt.partners[ind], tt.name)
+				if !assert.ElementsMatch(t, tt.partners[ind], partners[ind], tt.name) {
+					assert.Equal(t, tt.partners[ind], partners[ind], tt.name)
 				}
 			}
 		})
