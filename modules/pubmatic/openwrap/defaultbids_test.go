@@ -260,6 +260,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			args: args{
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 					MultiFloors: nil,
 				},
@@ -273,7 +274,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			name: "mulit-floors config have three floors and no bids in the response",
 			args: args{
 				rctx: &models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{
 						"test-impID-1": {
 							"pubmatic": {
@@ -333,7 +335,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			name: "mulit-floors config do not have adunit configured and no bids in the response",
 			args: args{
 				rctx: &models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{
 						"test-impID-1": {
 							"pubmatic": {
@@ -384,7 +387,8 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			name: "mulit-floors config have adunit configured but no floor in config and no bids in the response",
 			args: args{
 				rctx: &models.RequestCtx{
-					Endpoint: models.EndpointAppLovinMax,
+					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{
 						"test-impID-1": {
 							"pubmatic": {
@@ -436,6 +440,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			args: args{
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 					MultiFloors: map[string]*models.MultiFloors{
 						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
@@ -501,6 +506,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			args: args{
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 					MultiFloors: map[string]*models.MultiFloors{
 						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
@@ -576,6 +582,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			args: args{
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 					MultiFloors: map[string]*models.MultiFloors{
 						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
@@ -671,6 +678,7 @@ func TestOpenWrap_addDefaultBidsForMultiFloorsConfig(t *testing.T) {
 			args: args{
 				rctx: &models.RequestCtx{
 					Endpoint:    models.EndpointAppLovinMax,
+					SendAllBids: true,
 					DefaultBids: map[string]map[string][]openrtb2.Bid{},
 					MultiFloors: map[string]*models.MultiFloors{
 						"test-impID-1": {Tier1: 1.1, Tier2: 2.1, Tier3: 3.1},
