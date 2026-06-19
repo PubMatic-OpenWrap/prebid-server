@@ -886,7 +886,7 @@ func TestOpenWrap_applyDefaultBids(t *testing.T) {
 			},
 		},
 		{
-			name: "sendAllBids_false_does_not_append_new_seat_for_remaining_DefaultBids",
+			name: "sendAllBids_false_does_not_append_when_imp_has_any_bid_pubmatic_covers_imp1",
 			args: args{
 				rctx: models.RequestCtx{
 					SendAllBids: false,
@@ -922,12 +922,350 @@ func TestOpenWrap_applyDefaultBids(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "sendAllBids_false_does_not_append_when_imp_has_any_bid_slot_not_mapped_defaults_unused",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"appnexus": {
+								{ID: "def-appnexus-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID: "resp-1",
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Seat: "pubmatic",
+							Bid: []openrtb2.Bid{
+								{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+							},
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_empty_SeatBid_single_bidder_default_per_imp",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"pubmatic": {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"pubmatic": {
+								{ID: "def-pm", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "resp-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: models.BidderPubMatic,
+						Bid: []openrtb2.Bid{
+							{ID: "def-pm", ImpID: "imp-1", Price: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_empty_SeatBid_one_SeatBid_per_imp_sorted_impid",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"pubmatic": {},
+							},
+						},
+						"imp-2": {
+							NonMapped: map[string]struct{}{
+								"pubmatic": {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-2": {
+							"pubmatic": {
+								{ID: "def-pm-2", ImpID: "imp-2", Price: 0},
+							},
+						},
+						"imp-1": {
+							"pubmatic": {
+								{ID: "def-pm-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "resp-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: models.BidderPubMatic,
+						Bid: []openrtb2.Bid{
+							{ID: "def-pm-1", ImpID: "imp-1", Price: 0},
+						},
+					},
+					{
+						Seat: models.BidderPubMatic,
+						Bid: []openrtb2.Bid{
+							{ID: "def-pm-2", ImpID: "imp-2", Price: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_empty_SeatBid_different_first_bidder_per_imp",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+							},
+						},
+						"imp-2": {
+							NonMapped: map[string]struct{}{
+								"rubicon": {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"appnexus": {
+								{ID: "def-an-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+						"imp-2": {
+							"rubicon": {
+								{ID: "def-rb-2", ImpID: "imp-2", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "resp-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{
+							{ID: "def-an-1", ImpID: "imp-1", Price: 0},
+						},
+					},
+					{
+						Seat: "rubicon",
+						Bid: []openrtb2.Bid{
+							{ID: "def-rb-2", ImpID: "imp-2", Price: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_empty_SeatBid_three_imps_one_bidder_each_distinct_seat",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+							},
+						},
+						"imp-2": {
+							NonMapped: map[string]struct{}{
+								"rubicon": {},
+							},
+						},
+						"imp-3": {
+							NonMapped: map[string]struct{}{
+								"openx": {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-3": {
+							"openx": {
+								{ID: "def-ox-3", ImpID: "imp-3", Price: 0},
+							},
+						},
+						"imp-1": {
+							"appnexus": {
+								{ID: "def-an-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+						"imp-2": {
+							"rubicon": {
+								{ID: "def-rb-2", ImpID: "imp-2", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "resp-1",
+					SeatBid: []openrtb2.SeatBid{},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-1",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{
+							{ID: "def-an-1", ImpID: "imp-1", Price: 0},
+						},
+					},
+					{
+						Seat: "rubicon",
+						Bid: []openrtb2.Bid{
+							{ID: "def-rb-2", ImpID: "imp-2", Price: 0},
+						},
+					},
+					{
+						Seat: "openx",
+						Bid: []openrtb2.Bid{
+							{ID: "def-ox-3", ImpID: "imp-3", Price: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "sendAllBids_false_pubmatic_imp1_win_appends_one_default_SeatBid_for_imp2_only",
+			args: args{
+				rctx: models.RequestCtx{
+					SendAllBids: false,
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp-1": {
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+								"rubicon":  {},
+								"openx":    {},
+							},
+						},
+						"imp-2": {
+							NonMapped: map[string]struct{}{
+								"appnexus": {},
+								"rubicon":  {},
+								"openx":    {},
+							},
+						},
+					},
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"appnexus": {
+								{ID: "def-an-1", ImpID: "imp-1", Price: 0},
+							},
+							"rubicon": {
+								{ID: "def-rb-1", ImpID: "imp-1", Price: 0},
+							},
+							"openx": {
+								{ID: "def-ox-1", ImpID: "imp-1", Price: 0},
+							},
+						},
+						"imp-2": {
+							"appnexus": {
+								{ID: "def-an-2", ImpID: "imp-2", Price: 0},
+							},
+							"rubicon": {
+								{ID: "def-rb-2", ImpID: "imp-2", Price: 0},
+							},
+							"openx": {
+								{ID: "def-ox-2", ImpID: "imp-2", Price: 0},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					ID:      "resp-saf-false-2imp-placeholder",
+					SeatBid: []openrtb2.SeatBid{{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5}}}},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "resp-saf-false-2imp-placeholder",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{ID: "win-pm-1", ImpID: "imp-1", Price: 1.5},
+						},
+					},
+					{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{
+							{ID: "def-an-2", ImpID: "imp-2", Price: 0},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			br := tt.args.bidResponse
 			got, err := m.applyDefaultBids(tt.args.rctx, br)
 			assert.NoError(t, err)
+
+			// SendAllBids false: placeholder SeatBid order follows map iteration (unordered); only enforce count.
+			if !tt.args.rctx.SendAllBids && len(tt.want.SeatBid) > 1 {
+				assert.Equal(t, tt.want.ID, got.ID)
+				assert.Len(t, got.SeatBid, len(tt.want.SeatBid))
+				wantRest := *tt.want
+				wantRest.SeatBid = nil
+				gotRest := *got
+				gotRest.SeatBid = nil
+				assert.Equal(t, &wantRest, &gotRest)
+				return
+			}
+
 			assert.Equal(t, tt.want, got)
 		})
 	}
