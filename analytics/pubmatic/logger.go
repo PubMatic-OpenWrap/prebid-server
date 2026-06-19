@@ -260,6 +260,7 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 	ipr := make(map[string][]PartnerRecord)
 
 	rejectedBids := map[string]map[string]struct{}{}
+	defaultBidsInSeatBid := make(map[string]map[string]struct{})
 	loggerSeat := make(map[string][]bidWrapper)
 
 	// currently, ao.SeatNonBid will contain the bids that got rejected in the prebid core
@@ -291,6 +292,11 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 						continue
 					}
 				}
+
+				if _, ok := defaultBidsInSeatBid[seatBid.Seat]; !ok {
+					defaultBidsInSeatBid[seatBid.Seat] = make(map[string]struct{})
+				}
+				defaultBidsInSeatBid[seatBid.Seat][bid.ImpID] = struct{}{}
 			}
 			loggerSeat[seatBid.Seat] = append(loggerSeat[seatBid.Seat], bidWrapper{Bid: &ao.Response.SeatBid[seatIndex].Bid[bidIndex]})
 		}
@@ -304,6 +310,15 @@ func getPartnerRecordsByImp(ao analytics.AuctionObject, rCtx *models.RequestCtx)
 				bids := rCtx.DefaultBids[impID][seat]
 				for i := range bids {
 					bid := &rCtx.DefaultBids[impID][seat][i]
+
+					// Skip if this default bid was already logged from SeatBid
+					if seatDefaults, ok := defaultBidsInSeatBid[seat]; ok {
+						if _, exists := seatDefaults[bid.ImpID]; exists {
+							continue
+						}
+					}
+
+					// Existing check
 					if _, ok := rejectedBids[seat]; ok {
 						if _, ok := rejectedBids[seat][bid.ImpID]; ok {
 							continue
