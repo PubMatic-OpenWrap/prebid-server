@@ -136,6 +136,9 @@ func ApplyToRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 	if len(resolved.Device) > 0 {
 		if req.Device == nil {
 			req.Device = &openrtb2.Device{}
+		} else {
+			deviceCopy := *req.Device
+			req.Device = &deviceCopy
 		}
 		req.Device.Ext = mergeExtJSON(req.Device.Ext, resolved.Device, true)
 	}
@@ -143,9 +146,31 @@ func ApplyToRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 	if len(resolved.App) > 0 {
 		if req.App == nil {
 			req.App = &openrtb2.App{}
+		} else {
+			appCopy := *req.App
+			req.App = &appCopy
 		}
 		req.App.Ext = mergeExtJSON(req.App.Ext, resolved.App, true)
 	}
+
+	if len(resolved.Imp) == 0 {
+		return
+	}
+
+	impNeedsCopy := false
+	for i := range req.Imp {
+		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok && len(resolvedExt) > 0 {
+			impNeedsCopy = true
+			break
+		}
+	}
+	if !impNeedsCopy {
+		return
+	}
+
+	newImps := make([]openrtb2.Imp, len(req.Imp))
+	copy(newImps, req.Imp)
+	req.Imp = newImps
 
 	for i := range req.Imp {
 		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok && len(resolvedExt) > 0 {
