@@ -1706,6 +1706,166 @@ func TestGetPartnerRecordsByImpForDefaultBids(t *testing.T) {
 			},
 		},
 		{
+			name: "sendAllBids_false_placeholder_imp2_only_deduped_against_DefaultBids_imp1_has_winner",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						Cur: "USD",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-id-winner",
+										ImpID: "imp1",
+										Price: 10,
+									},
+								},
+								Seat: "pubmatic",
+							},
+							{
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "default-uuid-an",
+										ImpID: "imp2",
+										Price: 0,
+										W:     0,
+										H:     0,
+									},
+								},
+								Seat: "appnexus",
+							},
+						},
+					},
+					SeatNonBid: []openrtb_ext.SeatNonBid{},
+				},
+				rCtx: &models.RequestCtx{
+					SendAllBids: false,
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp2": {
+							"appnexus": {
+								{
+									ID:    "default-uuid-an",
+									ImpID: "imp2",
+									Price: 0,
+									W:     0,
+									H:     0,
+								},
+							},
+							"rubicon": {
+								{
+									ID:    "default-uuid-rb",
+									ImpID: "imp2",
+									Price: 0,
+									W:     0,
+									H:     0,
+								},
+							},
+						},
+					},
+					ImpBidCtx: map[string]models.ImpCtx{
+						"imp1": {
+							IsBanner: true,
+							TagID:    "adunit_1",
+							Bidders: map[string]models.PartnerData{
+								"pubmatic": {
+									PartnerID:        100,
+									PrebidBidderCode: "pubmatic",
+									KGP:              "pmkgp",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{
+								"bid-id-winner": {
+									BidExt: models.BidExt{
+										ExtBid:         openrtb_ext.ExtBid{},
+										OriginalBidCPM: 10,
+									},
+								},
+							},
+						},
+						"imp2": {
+							IsBanner: true,
+							TagID:    "adunit_2",
+							Bidders: map[string]models.PartnerData{
+								"appnexus": {
+									PartnerID:        501,
+									PrebidBidderCode: "appnexus",
+									KGP:              "kgp1",
+								},
+								"rubicon": {
+									PartnerID:        502,
+									PrebidBidderCode: "rubicon",
+									KGP:              "kgp2",
+								},
+							},
+							BidCtx: map[string]models.BidCtx{
+								"default-uuid-an": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+								"default-uuid-rb": {
+									BidExt: models.BidExt{
+										ExtBid: openrtb_ext.ExtBid{},
+									},
+								},
+							},
+						},
+					},
+					PartnerConfigMap: map[int]map[string]string{
+						100: {models.REVSHARE: "0"},
+						501: {models.REVSHARE: "0"},
+						502: {models.REVSHARE: "0"},
+					},
+				},
+			},
+			partners: map[string][]PartnerRecord{
+				"imp1": {
+					{
+						PartnerID:   "pubmatic",
+						BidderCode:  "pubmatic",
+						PartnerSize: "0x0",
+						BidID:       "bid-id-winner",
+						OrigBidID:   "bid-id-winner",
+						DealID:      "-1",
+						ServerSide:  1,
+						OriginalCur: "USD",
+						NetECPM:     10,
+						GrossECPM:   10,
+					},
+				},
+				"imp2": {
+					{
+						PartnerID:        "appnexus",
+						BidderCode:       "appnexus",
+						PartnerSize:      "0x0",
+						Adformat:         models.Banner,
+						BidID:            "default-uuid-an",
+						OrigBidID:        "default-uuid-an",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						NetECPM:          0,
+						GrossECPM:        0,
+						DefaultBidStatus: 1,
+					},
+					{
+						PartnerID:        "rubicon",
+						BidderCode:       "rubicon",
+						PartnerSize:      "0x0",
+						Adformat:         models.Banner,
+						BidID:            "default-uuid-rb",
+						OrigBidID:        "default-uuid-rb",
+						DealID:           "-1",
+						ServerSide:       1,
+						OriginalCur:      "USD",
+						NetECPM:          0,
+						GrossECPM:        0,
+						DefaultBidStatus: 1,
+					},
+				},
+			},
+		},
+		{
 			name: "sendAllBids_false_DefaultBids_skipped_when_same_seat_imp_in_SeatNonBid",
 			args: args{
 				ao: analytics.AuctionObject{

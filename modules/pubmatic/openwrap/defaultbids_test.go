@@ -1254,19 +1254,171 @@ func TestOpenWrap_applyDefaultBids(t *testing.T) {
 			got, err := m.applyDefaultBids(tt.args.rctx, br)
 			assert.NoError(t, err)
 
-			// SendAllBids false: placeholder SeatBid order follows map iteration (unordered); only enforce count.
-			if !tt.args.rctx.SendAllBids && len(tt.want.SeatBid) > 1 {
-				assert.Equal(t, tt.want.ID, got.ID)
-				assert.Len(t, got.SeatBid, len(tt.want.SeatBid))
-				wantRest := *tt.want
-				wantRest.SeatBid = nil
-				gotRest := *got
-				gotRest.SeatBid = nil
-				assert.Equal(t, &wantRest, &gotRest)
+			if !tt.args.rctx.SendAllBids {
+				assert.ElementsMatch(t, tt.want.SeatBid, got.SeatBid)
 				return
 			}
-
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestAppendDefaultSeatBids(t *testing.T) {
+	type args struct {
+		rctx models.RequestCtx
+		resp openrtb2.BidResponse
+	}
+	tests := []struct {
+		name string
+		args args
+		want openrtb2.BidResponse
+	}{
+		{
+			name: "empty_DefaultBids_noop",
+			args: args{
+				rctx: models.RequestCtx{},
+				resp: openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "w", ImpID: "imp-1", Price: 1}}}},
+				},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "w", ImpID: "imp-1", Price: 1}}}},
+			},
+		},
+		{
+			name: "adds_one_placeholder_when_SeatBid_empty",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {"pubmatic": {{ID: "def-pm", ImpID: "imp-1", Price: 0, W: 0, H: 0}}},
+					},
+				},
+				resp: openrtb2.BidResponse{SeatBid: []openrtb2.SeatBid{}},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid:  []openrtb2.Bid{{ID: "def-pm", ImpID: "imp-1", Price: 0, W: 0, H: 0}},
+					},
+				},
+			},
+		},
+		{
+			name: "skips_impression_that_already_has_bid_in_SeatBid",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {"openx": {{ID: "def-ox", ImpID: "imp-1", Price: 0, W: 0, H: 0}}},
+					},
+				},
+				resp: openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "win", ImpID: "imp-1", Price: 2}}},
+					},
+				},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "win", ImpID: "imp-1", Price: 2}}},
+				},
+			},
+		},
+		{
+			name: "placeholder_only_for_imp_without_bid_multi_imp_DefaultBids",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {"openx": {{ID: "def-ox-1", ImpID: "imp-1", Price: 0, W: 0, H: 0}}},
+						"imp-2": {"appnexus": {{ID: "def-an-2", ImpID: "imp-2", Price: 0, W: 0, H: 0}}},
+					},
+				},
+				resp: openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "win-1", ImpID: "imp-1", Price: 1.5}}},
+					},
+				},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{Seat: "pubmatic", Bid: []openrtb2.Bid{{ID: "win-1", ImpID: "imp-1", Price: 1.5}}},
+					{
+						Seat: "appnexus",
+						Bid:  []openrtb2.Bid{{ID: "def-an-2", ImpID: "imp-2", Price: 0, W: 0, H: 0}},
+					},
+				},
+			},
+		},
+		{
+			name: "appends_only_bids0_for_chosen_seat",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {"pubmatic": {
+							{ID: "def-a", ImpID: "imp-1", Price: 0, W: 0, H: 0},
+							{ID: "def-b", ImpID: "imp-1", Price: 0, W: 0, H: 0},
+						}},
+					},
+				},
+				resp: openrtb2.BidResponse{SeatBid: []openrtb2.SeatBid{}},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid:  []openrtb2.Bid{{ID: "def-a", ImpID: "imp-1", Price: 0, W: 0, H: 0}},
+					},
+				},
+			},
+		},
+		{
+			name: "nil_inner_map_no_panic_skips_imp",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": nil,
+						"imp-2": {"z": {{ID: "d2", ImpID: "imp-2", Price: 0, W: 0, H: 0}}},
+					},
+				},
+				resp: openrtb2.BidResponse{SeatBid: []openrtb2.SeatBid{}},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "z",
+						Bid:  []openrtb2.Bid{{ID: "d2", ImpID: "imp-2", Price: 0, W: 0, H: 0}},
+					},
+				},
+			},
+		},
+		{
+			name: "skips_seat_with_empty_bid_slice",
+			args: args{
+				rctx: models.RequestCtx{
+					DefaultBids: map[string]map[string][]openrtb2.Bid{
+						"imp-1": {
+							"ghost": {},
+							"openx": {{ID: "def-ox", ImpID: "imp-1", Price: 0, W: 0, H: 0}},
+						},
+					},
+				},
+				resp: openrtb2.BidResponse{SeatBid: []openrtb2.SeatBid{}},
+			},
+			want: openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "openx",
+						Bid:  []openrtb2.Bid{{ID: "def-ox", ImpID: "imp-1", Price: 0, W: 0, H: 0}},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appendDefaultSeatBids(tt.args.rctx, &tt.args.resp)
+			assert.Equal(t, tt.want, tt.args.resp)
 		})
 	}
 }
