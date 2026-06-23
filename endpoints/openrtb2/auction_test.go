@@ -1539,7 +1539,7 @@ func TestMergeBidderParamsImpExtPrebid(t *testing.T) {
 	for _, test := range testCases {
 		impExt := openrtb_ext.CreateImpExtForTesting(map[string]json.RawMessage{}, test.givenImpExtPrebid)
 
-		err := mergeBidderParamsImpExtPrebid(&impExt, test.givenReqExtParams)
+		err := mergeBidderParamsImpExtPrebid(&impExt, test.givenReqExtParams, "test-imp-id")
 
 		// errors are only possible from the marshal operation, which is not testable
 		assert.NoError(t, err, test.description+":err")
