@@ -29,59 +29,51 @@ var ignoreKeys = map[string]bool{
 	models.BidderFilters:        true,
 }
 
-func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
-	var slotMap map[string]models.SlotMapping
-	var slotMappingInfo models.SlotMappingInfo
-
-	//don't read mappings from cache in case of test=2
-	if !(rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic) {
-		slotMap = cache.GetMappingsFromCacheV25(rctx, partnerID)
-		if slotMap == nil {
-			return nil, nil, models.SlotMappingInfo{}, nil
-		}
-		slotMappingInfo = cache.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
-		if len(slotMappingInfo.OrderedSlotList) == 0 {
-			return nil, nil, models.SlotMappingInfo{}, nil
-		}
-	}
-
+func getSlotsAndHW(imp openrtb2.Imp, impExt models.ImpExtension, rctx models.RequestCtx, partnerID int) ([]string, [][2]int64) {
 	var hw [][2]int64
 	if imp.Banner != nil {
 		if imp.Banner.W != nil && imp.Banner.H != nil {
 			hw = append(hw, [2]int64{*imp.Banner.H, *imp.Banner.W})
 		}
-
 		for _, format := range imp.Banner.Format {
 			hw = append(hw, [2]int64{format.H, format.W})
 		}
 	}
-
 	if imp.Video != nil {
 		hw = append(hw, [2]int64{0, 0})
 	}
-
 	if imp.Native != nil {
 		hw = append(hw, [2]int64{1, 1})
 	}
-
 	kgp := rctx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN]
-
 	var div string
 	if impExt.Wrapper != nil {
 		div = impExt.Wrapper.Div
 	}
-
 	var slots []string
 	for _, format := range hw {
-		// TODO fix the param sequence. make it consistent. HxW
 		slot := models.GenerateSlotName(format[0], format[1], kgp, imp.TagID, div, rctx.Source)
 		if slot != "" {
 			slots = append(slots, slot)
-			// NYC_TODO: break at i=0 for pubmatic?
 		}
 	}
+	return slots, hw
+}
 
-	// NYC_TODO wh is returned temporarily
+func getSlotMeta(rctx models.RequestCtx, cache cache.Cache, bidRequest openrtb2.BidRequest, imp openrtb2.Imp, impExt models.ImpExtension, partnerID int) ([]string, map[string]models.SlotMapping, models.SlotMappingInfo, [][2]int64) {
+	if rctx.IsTestRequest == models.TestValueTwo && rctx.PartnerConfigMap[partnerID][models.BidderCode] == models.BidderPubMatic {
+		slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
+		return slots, nil, models.SlotMappingInfo{}, hw
+	}
+	slotMap := cache.GetMappingsFromCacheV25(rctx, partnerID)
+	if slotMap == nil {
+		return nil, nil, models.SlotMappingInfo{}, nil
+	}
+	slotMappingInfo := cache.GetSlotToHashValueMapFromCacheV25(rctx, partnerID)
+	if len(slotMappingInfo.OrderedSlotList) == 0 {
+		return nil, nil, models.SlotMappingInfo{}, nil
+	}
+	slots, hw := getSlotsAndHW(imp, impExt, rctx, partnerID)
 	return slots, slotMap, slotMappingInfo, hw
 }
 
