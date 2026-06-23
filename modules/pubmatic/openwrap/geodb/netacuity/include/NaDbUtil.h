@@ -1,9 +1,9 @@
 //============================================================================
-// Program     : NetAcuity C++ Embedded API
+// Program     : C++ NetAcuity Embedded API
 // Author      : Digital Envoy
-// Version     : 6.4.1.3
-// Date        : 25-Jun-2019
-// Copyright   : Copyright 2000-2019, Digital Envoy, Inc.  All rights reserved.
+// Version     : 7.0.0.1
+// Date        : 2023-DEC-08
+// Copyright   : Copyright 2000-2023, Digital Envoy, Inc.  All rights reserved.
 //============================================================================
 
 
@@ -24,17 +24,15 @@
 namespace netacuity {
 
 
-	unsigned long getIpv4Num( in_addr ipv4 );
+	u_int32_t getIpv4Num( in_addr ipv4 );
 
-	unsigned long long getIpv6NetworkNum( in6_addr ipv6 );
+	u_int64_t getIpv6NetworkNum( in6_addr ipv6 );
 
-	unsigned long long getIpv6InterfaceNum( in6_addr ipv6 );
+	u_int64_t getIpv6InterfaceNum( in6_addr ipv6 );
 
 	std::string toString( StringList list );
 
 	std::string toString( ResponseMap map );
-
-	std::string getString( const char* message, long long value );
 
 	std::string getFieldValue( const ResponseMap &responseMap, const std::string &fieldName );
 
