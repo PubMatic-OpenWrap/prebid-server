@@ -303,11 +303,6 @@ func (a *OpenWrapAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 
 	// Determine which endpoint to use based on sspreq
-
-	if request.Site.Publisher.ID == "166503" {
-		isSSPReq = true
-	}
-
 	var endpoint string
 
 	if isSSPReq {
