@@ -122,7 +122,7 @@ func StripFromRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok {
 			req.Imp[i].Ext = stripObjectExt(req.Imp[i].Ext, resolvedExt)
 		} else {
-			req.Imp[i].Ext = jsonparser.Delete(req.Imp[i].Ext, "eds")
+			req.Imp[i].Ext = nilIfEmptyExt(jsonparser.Delete(req.Imp[i].Ext, "eds"))
 		}
 	}
 }
@@ -288,15 +288,26 @@ func stripObjectExt(ext []byte, resolvedExt json.RawMessage) []byte {
 
 	ext = jsonparser.Delete(ext, "eds")
 	if len(resolvedExt) == 0 {
-		return ext
+		return nilIfEmptyExt(ext)
 	}
 
 	var resolved map[string]json.RawMessage
 	if err := json.Unmarshal(resolvedExt, &resolved); err != nil {
-		return ext
+		return nilIfEmptyExt(ext)
 	}
 	for key := range resolved {
 		ext = jsonparser.Delete(ext, key)
+	}
+	return nilIfEmptyExt(ext)
+}
+
+func nilIfEmptyExt(ext []byte) []byte {
+	if len(ext) == 0 {
+		return nil
+	}
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(ext, &keys); err != nil || len(keys) == 0 {
+		return nil
 	}
 	return ext
 }

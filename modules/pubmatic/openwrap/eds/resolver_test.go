@@ -103,6 +103,28 @@ func TestStripFromRequest(t *testing.T) {
 	assert.JSONEq(t, `{"prebid":{}}`, string(req.Imp[0].Ext))
 }
 
+func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
+	req := &openrtb2.BidRequest{
+		App: &openrtb2.App{
+			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001}`),
+		},
+		Imp: []openrtb2.Imp{{
+			ID:  "1",
+			Ext: json.RawMessage(`{"eds":{"custom":"value"},"custom":"value"}`),
+		}},
+	}
+
+	StripFromRequest(req, models.ResolvedEds{
+		App: json.RawMessage(`{"install_time":1710000000001}`),
+		Imp: map[string]json.RawMessage{
+			"1": json.RawMessage(`{"custom":"value"}`),
+		},
+	})
+
+	assert.Nil(t, req.App.Ext)
+	assert.Nil(t, req.Imp[0].Ext)
+}
+
 func TestApplyToRequest(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		Device: &openrtb2.Device{Ext: json.RawMessage(`{"atts":1}`)},
