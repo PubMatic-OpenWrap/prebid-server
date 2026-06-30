@@ -17,7 +17,7 @@ type Sources struct {
 	Request *openrtb2.BidRequest
 }
 
-// Resolve flattens ext.eds from signal and/or request into PubMatic-only ext objects.
+// Resolve flattens device and app ext.eds from signal and/or request into PubMatic-only ext objects.
 // When both are present, signal values take priority and request fills missing keys.
 func Resolve(src Sources) models.ResolvedEds {
 	var resolved models.ResolvedEds
@@ -48,7 +48,6 @@ func MergeGapFill(base, overlay models.ResolvedEds) models.ResolvedEds {
 
 	base.Device = mergeExtJSON(base.Device, overlay.Device, false)
 	base.App = mergeExtJSON(base.App, overlay.App, false)
-	base.Imp = mergeImpExtMaps(base.Imp, overlay.Imp, false)
 
 	return base
 }
@@ -118,13 +117,6 @@ func StripFromRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 	if req.App != nil {
 		req.App.Ext = stripObjectExt(req.App.Ext, resolved.App)
 	}
-	for i := range req.Imp {
-		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok {
-			req.Imp[i].Ext = stripObjectExt(req.Imp[i].Ext, resolvedExt)
-		} else {
-			req.Imp[i].Ext = nilIfEmptyExt(jsonparser.Delete(req.Imp[i].Ext, "eds"))
-		}
-	}
 }
 
 // ApplyToRequest merges resolved flat ext keys onto the bid request.
@@ -152,31 +144,6 @@ func ApplyToRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 		}
 		req.App.Ext = mergeExtJSON(req.App.Ext, resolved.App, true)
 	}
-
-	if len(resolved.Imp) == 0 {
-		return
-	}
-
-	impNeedsCopy := false
-	for i := range req.Imp {
-		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok && len(resolvedExt) > 0 {
-			impNeedsCopy = true
-			break
-		}
-	}
-	if !impNeedsCopy {
-		return
-	}
-
-	newImps := make([]openrtb2.Imp, len(req.Imp))
-	copy(newImps, req.Imp)
-	req.Imp = newImps
-
-	for i := range req.Imp {
-		if resolvedExt, ok := resolved.Imp[req.Imp[i].ID]; ok && len(resolvedExt) > 0 {
-			req.Imp[i].Ext = mergeExtJSON(req.Imp[i].Ext, resolvedExt, true)
-		}
-	}
 }
 
 func resolveFromBidRequest(req *openrtb2.BidRequest) models.ResolvedEds {
@@ -184,24 +151,13 @@ func resolveFromBidRequest(req *openrtb2.BidRequest) models.ResolvedEds {
 		return models.ResolvedEds{}
 	}
 
-	resolved := models.ResolvedEds{
-		Imp: make(map[string]json.RawMessage),
-	}
+	resolved := models.ResolvedEds{}
 
 	if req.Device != nil {
 		resolved.Device = flattenEdsObject(req.Device.Ext)
 	}
 	if req.App != nil {
 		resolved.App = flattenEdsObject(req.App.Ext)
-	}
-	for _, imp := range req.Imp {
-		if ext := flattenEdsObject(imp.Ext); len(ext) > 0 {
-			resolved.Imp[imp.ID] = ext
-		}
-	}
-
-	if len(resolved.Imp) == 0 {
-		resolved.Imp = nil
 	}
 
 	return resolved
@@ -266,19 +222,6 @@ func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessa
 		return base
 	}
 	return out
-}
-
-func mergeImpExtMaps(base, overlay map[string]json.RawMessage, overlayWins bool) map[string]json.RawMessage {
-	if len(overlay) == 0 {
-		return base
-	}
-	if base == nil {
-		base = make(map[string]json.RawMessage, len(overlay))
-	}
-	for impID, overlayExt := range overlay {
-		base[impID] = mergeExtJSON(base[impID], overlayExt, overlayWins)
-	}
-	return base
 }
 
 func stripObjectExt(ext []byte, resolvedExt json.RawMessage) []byte {

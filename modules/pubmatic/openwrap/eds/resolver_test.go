@@ -82,25 +82,15 @@ func TestStripFromRequest(t *testing.T) {
 		App: &openrtb2.App{
 			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001,"orientation":1}`),
 		},
-		Imp: []openrtb2.Imp{{
-			ID:  "1",
-			Ext: json.RawMessage(`{"eds":{"custom":"value"},"custom":"value","prebid":{}}`),
-		}},
 	}
 
-	resolved := models.ResolvedEds{
+	StripFromRequest(req, models.ResolvedEds{
 		Device: json.RawMessage(`{"boottime":1710000000000}`),
 		App:    json.RawMessage(`{"install_time":1710000000001}`),
-		Imp: map[string]json.RawMessage{
-			"1": json.RawMessage(`{"custom":"value"}`),
-		},
-	}
-
-	StripFromRequest(req, resolved)
+	})
 
 	assert.JSONEq(t, `{"atts":1}`, string(req.Device.Ext))
 	assert.JSONEq(t, `{"orientation":1}`, string(req.App.Ext))
-	assert.JSONEq(t, `{"prebid":{}}`, string(req.Imp[0].Ext))
 }
 
 func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
@@ -108,44 +98,35 @@ func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 		App: &openrtb2.App{
 			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001}`),
 		},
-		Imp: []openrtb2.Imp{{
-			ID:  "1",
-			Ext: json.RawMessage(`{"eds":{"custom":"value"},"custom":"value"}`),
-		}},
 	}
 
 	StripFromRequest(req, models.ResolvedEds{
 		App: json.RawMessage(`{"install_time":1710000000001}`),
-		Imp: map[string]json.RawMessage{
-			"1": json.RawMessage(`{"custom":"value"}`),
-		},
 	})
 
 	assert.Nil(t, req.App.Ext)
-	assert.Nil(t, req.Imp[0].Ext)
 }
 
 func TestApplyToRequest(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		Device: &openrtb2.Device{Ext: json.RawMessage(`{"atts":1}`)},
-		Imp:    []openrtb2.Imp{{ID: "1", Ext: json.RawMessage(`{"prebid":{}}`)}},
+		App:    &openrtb2.App{Ext: json.RawMessage(`{"orientation":1}`)},
 	}
 	resolved := models.ResolvedEds{
 		Device: json.RawMessage(`{"boottime":1710000000000}`),
-		Imp: map[string]json.RawMessage{
-			"1": json.RawMessage(`{"custom":"value"}`),
-		},
+		App:    json.RawMessage(`{"install_time":1710000000001}`),
 	}
 
 	ApplyToRequest(req, resolved)
 
 	assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
-	assert.JSONEq(t, `{"prebid":{},"custom":"value"}`, string(req.Imp[0].Ext))
+	assert.JSONEq(t, `{"orientation":1,"install_time":1710000000001}`, string(req.App.Ext))
 }
 
 func TestInjectAndExtractBidderParamsEds(t *testing.T) {
 	resolved := models.ResolvedEds{
 		Device: json.RawMessage(`{"boottime":1710000000000}`),
+		App:    json.RawMessage(`{"install_time":1710000000001}`),
 	}
 
 	injected, err := InjectIntoBidderParams(nil, resolved, "pubmatic")
@@ -159,6 +140,7 @@ func TestInjectAndExtractBidderParamsEds(t *testing.T) {
 	assert.NoError(t, err)
 	extracted := ExtractFromBidderParams(flatParams)
 	assert.JSONEq(t, string(resolved.Device), string(extracted.Device))
+	assert.JSONEq(t, string(resolved.App), string(extracted.App))
 }
 
 func TestParseAPSSignal(t *testing.T) {
