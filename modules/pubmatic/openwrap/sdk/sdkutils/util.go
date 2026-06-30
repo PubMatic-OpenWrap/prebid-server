@@ -205,7 +205,7 @@ func CopyIFV(source, target []byte) []byte {
 }
 
 func IsSdkIntegration(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointAPS
 }
 
 func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {

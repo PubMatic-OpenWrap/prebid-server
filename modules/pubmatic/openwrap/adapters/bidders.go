@@ -953,3 +953,56 @@ func builderMSFT(params BidderParameters) (json.RawMessage, error) {
 
 	return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"placement_id", "inv_code", "member"})
 }
+
+// builderTaboola builds bidder JSON for Taboola. The static schema uses oneOf:
+//
+//	required ["tagid","publisherId"] OR required ["tagId","publisherId"]
+//
+// publisherId is always required; at least one of tagid / tagId must be present.
+// If both tag keys are set, only tagId is emitted (preferred per bidder-params description).
+func builderTaboola(params BidderParameters) (json.RawMessage, error) {
+	publisherID, hasPublisher := getString(params.FieldMap["publisherId"])
+	if !hasPublisher || publisherID == "" {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"publisherId"})
+	}
+
+	tagid, _ := getString(params.FieldMap["tagid"])
+	tagID, _ := getString(params.FieldMap["tagId"])
+	if tagid == "" && tagID == "" {
+		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, []string{"tagid", "tagId"})
+	}
+	jsonStr := bytes.Buffer{}
+	jsonStr.WriteByte('{')
+	fmt.Fprintf(&jsonStr, `"publisherId":"%s"`, publisherID)
+	if tagID != "" {
+		fmt.Fprintf(&jsonStr, `,"tagId":"%s"`, tagID)
+	} else {
+		fmt.Fprintf(&jsonStr, `,"tagid":"%s"`, tagid)
+	}
+
+	if v, ok := getString(params.FieldMap["publisherDomain"]); ok && v != "" {
+		fmt.Fprintf(&jsonStr, `,"publisherDomain":"%s"`, v)
+	}
+	if v, ok := getFloat64(params.FieldMap["bidfloor"]); ok {
+		fmt.Fprintf(&jsonStr, `,"bidfloor":%g`, v)
+	}
+	if v, ok := params.FieldMap["bcat"]; ok && v != nil {
+		if b, err := json.Marshal(v); err == nil {
+			fmt.Fprintf(&jsonStr, `,"bcat":%s`, string(b))
+		}
+	}
+	if v, ok := params.FieldMap["badv"]; ok && v != nil {
+		if b, err := json.Marshal(v); err == nil {
+			fmt.Fprintf(&jsonStr, `,"badv":%s`, string(b))
+		}
+	}
+	if v, ok := getString(params.FieldMap["pageType"]); ok && v != "" {
+		fmt.Fprintf(&jsonStr, `,"pageType":"%s"`, v)
+	}
+	if v, ok := getInt(params.FieldMap["position"]); ok {
+		fmt.Fprintf(&jsonStr, `,"position":%d`, v)
+	}
+	jsonStr.WriteByte('}')
+
+	return jsonStr.Bytes(), nil
+}

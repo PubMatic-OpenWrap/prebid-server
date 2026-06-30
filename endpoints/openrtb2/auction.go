@@ -407,7 +407,9 @@ func sendAuctionResponse(
 			logger.Errorf("%v", err)
 			ao.Errors = append(ao.Errors, err)
 		} else {
-			response.Ext = ext
+			if !isAPSIntegration(ao) {
+				response.Ext = ext
+			}
 		}
 
 		if len(warns) > 0 {

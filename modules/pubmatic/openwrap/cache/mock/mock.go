@@ -289,6 +289,22 @@ func (mr *MockCacheMockRecorder) GetThrottlePartnersWithCriteria(arg0 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThrottlePartnersWithCriteria", reflect.TypeOf((*MockCache)(nil).GetThrottlePartnersWithCriteria), arg0)
 }
 
+// GetApsOwMapping mocks base method.
+func (m *MockCache) GetApsOwMapping(arg0 string) (string, int, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApsOwMapping", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
+}
+
+// GetApsOwMapping indicates an expected call of GetApsOwMapping.
+func (mr *MockCacheMockRecorder) GetApsOwMapping(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApsOwMapping", reflect.TypeOf((*MockCache)(nil).GetApsOwMapping), arg0)
+}
+
 // Set mocks base method.
 func (m *MockCache) Set(arg0 string, arg1 interface{}) {
 	m.ctrl.T.Helper()

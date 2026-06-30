@@ -335,6 +335,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordGeoLookupFailure(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordGeoLookupFailure", reflect.TypeOf((*MockMetricsEngine)(nil).RecordGeoLookupFailure), arg0)
 }
 
+// RecordAPSSlotMappingReject mocks base method.
+func (m *MockMetricsEngine) RecordAPSSlotMappingReject(arg0, arg1, arg2 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordAPSSlotMappingReject", arg0, arg1, arg2)
+}
+
+// RecordAPSSlotMappingReject indicates an expected call of RecordAPSSlotMappingReject.
+func (mr *MockMetricsEngineMockRecorder) RecordAPSSlotMappingReject(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordAPSSlotMappingReject", reflect.TypeOf((*MockMetricsEngine)(nil).RecordAPSSlotMappingReject), arg0, arg1, arg2)
+}
+
 // RecordGetProfileDataTime mocks base method.
 func (m *MockMetricsEngine) RecordGetProfileDataTime(arg0 time.Duration) {
 	m.ctrl.T.Helper()

@@ -1,6 +1,9 @@
 package pubmatic
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -8,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/analytics"
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
 	mock_mhttp "github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp/mock"
@@ -18,7 +22,19 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// gzipBase64APSAdm matches sdk/aps.compressResponse output for use in tests.
+func gzipBase64APSAdm(t *testing.T, jsonPayload string) string {
+	t.Helper()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	_, err := gz.Write([]byte(jsonPayload))
+	require.NoError(t, err)
+	require.NoError(t, gz.Close())
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
+}
 
 func TestPrepareLoggerURL(t *testing.T) {
 	type args struct {
@@ -229,6 +245,11 @@ func TestSendMethod(t *testing.T) {
 }
 
 func TestRestoreBidResponse(t *testing.T) {
+	apsInnerJSON := `{"id":"restored-response","seatbid":[{"bid":[{"id":"restored-bid","impid":"imp-1","price":2.5,"adm":"<ad>restored ad</ad>"}]}],"cur":"USD"}`
+	apsValidAdM := gzipBase64APSAdm(t, apsInnerJSON)
+	apsTruncatedJSONAdM := gzipBase64APSAdm(t, `{`)
+	nonSdkCompressedAdM := gzipBase64APSAdm(t, `{"id":"test"}`)
+
 	type args struct {
 		ao   analytics.AuctionObject
 		rctx *models.RequestCtx
@@ -505,6 +526,352 @@ func TestRestoreBidResponse(t *testing.T) {
 					},
 				},
 				Ext: json.RawMessage(`{"matchedimpression":{"appnexus":50,"pubmatic":50}}`),
+			},
+		},
+		{
+			name: "APS endpoint with reject should return early",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-reject",
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: true,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-reject",
+			},
+		},
+		{
+			name: "APS endpoint with NBR should return early",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:  "test-aps-nbr",
+						NBR: ptrutil.ToPtr(openrtb3.NoBidUnknownError),
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:  "test-aps-nbr",
+				NBR: ptrutil.ToPtr(openrtb3.NoBidUnknownError),
+			},
+		},
+		{
+			name: "APS endpoint with empty seatbid should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID:      "test-aps-empty",
+						SeatBid: []openrtb2.SeatBid{},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID:      "test-aps-empty",
+				SeatBid: []openrtb2.SeatBid{},
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
+			name: "APS endpoint with empty bid should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-empty-bid",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid:  []openrtb2.Bid{},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-empty-bid",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid:  []openrtb2.Bid{},
+					},
+				},
+			},
+			wantErr: "seatbid or bid not found in the response",
+		},
+		{
+			name: "APS endpoint with invalid AdM should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-invalid-adm",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   apsTruncatedJSONAdM,
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-aps-invalid-adm",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-1",
+								ImpID: "imp-1",
+								AdM:   apsTruncatedJSONAdM,
+							},
+						},
+					},
+				},
+			},
+			wantErr: "unexpected end of JSON input",
+		},
+		{
+			name: "APS endpoint with valid compressed response should restore successfully",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-aps-success",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   apsValidAdM,
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "restored-response",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "restored-bid",
+								ImpID: "imp-1",
+								Price: 2.5,
+								AdM:   "<ad>restored ad</ad>",
+							},
+						},
+					},
+				},
+				Cur: "USD",
+			},
+		},
+		{
+			name: "decodeAPSAdmGzipBase64 with valid gzip+base64 should decode successfully",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-decode-success",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   gzipBase64APSAdm(t, `{"id":"test","data":"value"}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			// RestoreBidResponse replaces ao.Response with the inner unmarshaled bid response.
+			want: &openrtb2.BidResponse{
+				ID: "test",
+			},
+		},
+		{
+			name: "decodeAPSAdmGzipBase64 with invalid base64 should return error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-decode-invalid",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   "invalid-base64!!",
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-decode-invalid",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-1",
+								ImpID: "imp-1",
+								AdM:   "invalid-base64!!",
+							},
+						},
+					},
+				},
+			},
+			wantErr: "illegal base64 data at input byte 7",
+		},
+		{
+			name: "decodeAPSAdmGzipBase64 with invalid gzip payload returns gzip error",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-decode-fallback",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   base64.StdEncoding.EncodeToString([]byte("not gzip contents")),
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-decode-fallback",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-1",
+								ImpID: "imp-1",
+								AdM:   base64.StdEncoding.EncodeToString([]byte("not gzip contents")),
+							},
+						},
+					},
+				},
+			},
+			wantErr: "gzip: invalid header",
+		},
+		{
+			name: "decodeAPSAdmGzipBase64 with non-APS endpoint does not modify response",
+			args: args{
+				ao: analytics.AuctionObject{
+					Response: &openrtb2.BidResponse{
+						ID: "test-decode-non-aps",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid-1",
+										ImpID: "imp-1",
+										AdM:   nonSdkCompressedAdM,
+									},
+								},
+							},
+						},
+					},
+				},
+				rctx: &models.RequestCtx{
+					Endpoint: models.EndpointV25,
+					APS: models.APS{
+						Reject: false,
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				ID: "test-decode-non-aps",
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{
+							{
+								ID:    "bid-1",
+								ImpID: "imp-1",
+								AdM:   nonSdkCompressedAdM,
+							},
+						},
+					},
+				},
 			},
 		},
 	}

@@ -335,6 +335,9 @@ func getPubmaticErrorCode(standardNBR openrtb3.NoBidReason) int {
 
 	case nbr.RequestBlockedGeoFiltered:
 		return int(nbr.RequestBlockedGeoFiltered)
+
+	case nbr.APSSlotUUIDNotMapped:
+		return 18 // ErrBadRequest — APS slot UUID not mapped to OW ad unit / profile
 	}
 
 	return -1

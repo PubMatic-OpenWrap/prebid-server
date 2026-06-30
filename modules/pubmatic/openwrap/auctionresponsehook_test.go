@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/openrtb/v20/openrtb3"
 	"github.com/prebid/prebid-server/v3/hooks/hookstage"
 	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
@@ -2630,6 +2631,268 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 				return
 			}
 			assert.Equal(t, tt.want.result.DebugMessages, hookResult.DebugMessages, tt.name)
+		})
+	}
+}
+
+func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockFeature := mock_feature.NewMockFeature(ctrl)
+	mockCache := mock_cache.NewMockCache(ctrl)
+	mockMetrics := mock_metrics.NewMockMetricsEngine(ctrl)
+
+	module := OpenWrap{
+		pubFeatures:  mockFeature,
+		cache:        mockCache,
+		metricEngine: mockMetrics,
+	}
+
+	type args struct {
+		ctx       context.Context
+		moduleCtx hookstage.ModuleInvocationContext
+		payload   hookstage.AuctionResponsePayload
+	}
+	tests := []struct {
+		name             string
+		args             args
+		wantAPSReject    bool
+		wantDebugMessage bool
+	}{
+		{
+			name: "APS endpoint with valid bids should not set reject",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointAPS,
+							APS:      models.APS{Reject: false},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID: "test-response",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid1",
+										ImpID: "imp1",
+										Price: 1.5,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAPSReject:    false,
+			wantDebugMessage: false,
+		},
+		{
+			name: "APS endpoint with NBR should set reject",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointAPS,
+							APS:      models.APS{Reject: false},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID:  "test-response",
+						NBR: ptrutil.ToPtr(openrtb3.NoBidUnknownError),
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid:  []openrtb2.Bid{},
+							},
+						},
+					},
+				},
+			},
+			wantAPSReject:    true,
+			wantDebugMessage: false,
+		},
+		{
+			name: "APS endpoint with empty bids should set reject",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointAPS,
+							APS:      models.APS{Reject: false},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID: "test-response",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid:  []openrtb2.Bid{},
+							},
+						},
+					},
+				},
+			},
+			wantAPSReject:    true,
+			wantDebugMessage: false,
+		},
+		{
+			name: "APS endpoint with no seat bids should set reject",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointAPS,
+							APS:      models.APS{Reject: false},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID:      "test-response",
+						SeatBid: []openrtb2.SeatBid{},
+					},
+				},
+			},
+			wantAPSReject:    true,
+			wantDebugMessage: false,
+		},
+		{
+			name: "Non-APS endpoint should not be affected by APS logic",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointWebS2S,
+							APS:      models.APS{Reject: false},
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID: "test-response",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid1",
+										ImpID: "imp1",
+										Price: 1.5,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAPSReject:    false,
+			wantDebugMessage: false,
+		},
+		{
+			name: "APS endpoint with debug enabled should include debug message",
+			args: args{
+				moduleCtx: hookstage.ModuleInvocationContext{
+					ModuleContext: hookstage.ModuleContext{
+						"rctx": models.RequestCtx{
+							StartTime: time.Now().UnixMilli(),
+							ImpBidCtx: map[string]models.ImpCtx{
+								"imp1": {},
+							},
+							PubIDStr: "5890",
+							Endpoint: models.EndpointAPS,
+							APS:      models.APS{Reject: false},
+							Debug:    true,
+						},
+					},
+				},
+				payload: hookstage.AuctionResponsePayload{
+					BidResponse: &openrtb2.BidResponse{
+						ID: "test-response",
+						SeatBid: []openrtb2.SeatBid{
+							{
+								Seat: "pubmatic",
+								Bid: []openrtb2.Bid{
+									{
+										ID:    "bid1",
+										ImpID: "imp1",
+										Price: 1.5,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAPSReject:    false,
+			wantDebugMessage: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock expectations
+			mockMetrics.EXPECT().RecordPlatformPublisherPartnerResponseStats(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockMetrics.EXPECT().RecordPublisherResponseTimeStats(gomock.Any(), gomock.Any()).AnyTimes()
+			mockFeature.EXPECT().GetImpCountingMethodEnabledBidders().Return(map[string]struct{}{}).AnyTimes()
+			mockFeature.EXPECT().GetEnabledPerformanceDSPs().Return(map[int]struct{}{}).AnyTimes()
+			mockFeature.EXPECT().GetInViewEnabledPublishers().Return(map[int]struct{}{}).AnyTimes()
+			mockFeature.EXPECT().IsFscApplicable(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+			mockMetrics.EXPECT().RecordNobidErrPrebidServerResponse(gomock.Any()).AnyTimes()
+
+			result, err := module.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
+
+			assert.NoError(t, err, tt.name)
+			assert.NotNil(t, result, tt.name)
+
+			// Check that APS reject flag is set correctly in the updated rctx
+			updatedRctx := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			assert.Equal(t, tt.wantAPSReject, updatedRctx.APS.Reject, tt.name)
+
+			// Check debug message presence
+			if tt.wantDebugMessage {
+				assert.NotEmpty(t, result.DebugMessages, tt.name)
+			} else {
+				assert.Empty(t, result.DebugMessages, tt.name)
+			}
+
+			// Verify analytics tags contain request-ctx
+			assert.NotNil(t, result.AnalyticsTags, tt.name)
+			assert.Len(t, result.AnalyticsTags.Activities, 1, tt.name)
+			assert.Equal(t, "openwrap_request_ctx", result.AnalyticsTags.Activities[0].Name, tt.name)
 		})
 	}
 }

@@ -1,11 +1,9 @@
-package unitylevelplay
+package aps
 
 import (
-	"encoding/base64"
-
 	"github.com/buger/jsonparser"
-	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
+	adcom1 "github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -15,119 +13,103 @@ import (
 
 var jsoniterator = jsoniter.ConfigCompatibleWithStandardLibrary
 
-type LevelPlay struct {
+type Aps struct {
 	metricsEngine metrics.MetricsEngine
 	publisherId   string
 	profileId     string
 }
 
-func NewLevelPlay(metricsEngine metrics.MetricsEngine) *LevelPlay {
-	return &LevelPlay{
+func NewAPS(metricsEngine metrics.MetricsEngine) *Aps {
+	return &Aps{
 		metricsEngine: metricsEngine,
 	}
 }
-
-func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []byte {
+func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.RequestCtx) []byte {
 	if len(requestBody) == 0 {
-		return nil
-	}
-
-	request := &openrtb2.BidRequest{}
-	if err := jsoniterator.Unmarshal(requestBody, request); err != nil {
-		glog.Errorf("[UnityLevelPlay] [Error]: failed to unmarshal request body with error %v and request body %s", err, string(requestBody))
 		return requestBody
 	}
-
+	request := &openrtb2.BidRequest{}
+	if err := jsoniterator.Unmarshal(requestBody, request); err != nil {
+		return requestBody
+	}
 	// modify request with static data
-	l.modifyRequestWithStaticData(request)
-
+	a.modifyRequestWithStaticData(request)
 	// Set publisher id
 	if request.App != nil && request.App.Publisher != nil {
-		l.publisherId = request.App.Publisher.ID
+		a.publisherId = request.App.Publisher.ID
 	}
 
 	// Set profile id
 	if profileID, _, _, _ := jsonparser.Get(request.Ext, "prebid", "bidderparams", "pubmatic", "wrapper", "profileid"); profileID != nil {
-		l.profileId = string(profileID)
+		a.profileId = string(profileID)
 	}
 
 	// modify request with signal data
-	l.modifyRequestWithSignalData(request)
-
+	a.modifyRequestWithSignalData(request)
 	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
 		return requestBody
 	}
-
 	return modifiedRequest
 }
 
-func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
+func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	if request == nil {
 		return
 	}
 
 	if len(request.Imp) > 0 {
-		// Set imp.instl and imp.rwdd as 1 when video.ext.reward is 1
+		// Set rwdd as 1 when video.ext.videotype is rewarded
 		if request.Imp[0].Video != nil && request.Imp[0].Video.Ext != nil {
-			reward, err := jsonparser.GetInt(request.Imp[0].Video.Ext, "reward")
-			if reward == 1 && err == nil {
-				request.Imp[0].Instl = 1
+			reward, err := jsonparser.GetString(request.Imp[0].Video.Ext, "videotype")
+			if reward == "rewarded" && err == nil {
 				request.Imp[0].Rwdd = 1
 				// remove banner
 				request.Imp[0].Banner = nil
 			}
 		}
 
-		// Set imp.secure as 1
+		// Always set secure to 1
 		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
 		// Remove native from request
 		request.Imp[0].Native = nil
 
-		// Remove video from request
-		request.Imp[0].Video = nil
 	}
 
-	if request.App != nil {
-		// delete app.ext.sessionDepth
-		request.App.Ext = jsonparser.Delete(request.App.Ext, "sessionDepth")
-	}
 }
 
-func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
-	if request == nil || request.App == nil || request.App.Ext == nil {
+func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
+	if request == nil || request.User == nil {
 		return
 	}
 
-	token, err := jsonparser.GetString(request.App.Ext, "token")
-	if token == "" || err != nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.MissingSignal)
+	signal := request.User.BuyerUID
+	if signal == "" {
+		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.MissingSignal)
 		return
 	}
 
-	// decode token
-	signalData, err := base64.StdEncoding.DecodeString(token)
-	if err != nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
+	var signalRequest *openrtb2.BidRequest
+	if err := jsoniterator.Unmarshal([]byte(signal), &signalRequest); err != nil || signalRequest == nil {
+		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
 		return
 	}
 
-	var signal *openrtb2.BidRequest
-	if err := jsoniterator.Unmarshal(signalData, &signal); err != nil || signal == nil {
-		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
-		return
-	}
-
-	modifyImpression(request, signal.Imp)
-	modifyRegs(request, signal.Regs)
-	modifyApp(request, signal.App)
-	modifyDevice(request, signal.Device)
-	modifyUser(request, signal.User)
-	modifySource(request, signal.Source)
+	updateImpression(request, signalRequest.Imp)
+	updateRegs(request, signalRequest.Regs)
+	updateApp(request, signalRequest.App)
+	updateDevice(request, signalRequest.Device)
+	updateUser(request, signalRequest.User)
+	updateSource(request, signalRequest.Source)
 
 	// Request Ext
-	request.Ext, _ = sdkutils.CopyPath(signal.Ext, request.Ext, "wrapper", "clientconfig")
+	request.Ext, _ = sdkutils.CopyPath(signalRequest.Ext, request.Ext, "wrapper", "clientconfig")
+
+	// Embedded signal lives in buyeruid; merged device/app/imp/user/source/regs stay—do not forward raw JSON to partners.
+	if request.User != nil {
+		request.User.BuyerUID = ""
+	}
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
@@ -141,15 +123,12 @@ func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner)
 
 }
 
-func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
+func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	if len(request.Imp) == 0 || len(signalImps) == 0 {
 		return
 	}
 
-	// read secure from signal
-	if signalImps[0].Secure != nil {
-		request.Imp[0].Secure = signalImps[0].Secure
-	}
+	request.Imp[0].Instl = signalImps[0].Instl
 
 	if signalImps[0].Exp > 0 {
 		request.Imp[0].Exp = signalImps[0].Exp
@@ -171,21 +150,26 @@ func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
 	modifyBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
 	// modify video
-	if signalImps[0].Video != nil {
-		request.Imp[0].Video = signalImps[0].Video
+	// Update video (replace entire video object from signal except battr)
+	var battrVideo []adcom1.CreativeAttribute
+	if request.Imp[0].Video != nil && len(request.Imp[0].Video.BAttr) > 0 {
+		battrVideo = make([]adcom1.CreativeAttribute, len(request.Imp[0].Video.BAttr))
+		copy(battrVideo, request.Imp[0].Video.BAttr)
 	}
 
-	// modify native
-	request.Imp[0].Native = nil
-	if signalImps[0].Native != nil {
-		request.Imp[0].Native = signalImps[0].Native
+	if signalImps[0].Video != nil {
+		//setting complete video object from signal, except video.battr
+		request.Imp[0].Video = signalImps[0].Video
+		if len(battrVideo) > 0 {
+			request.Imp[0].Video.BAttr = battrVideo
+		}
 	}
 
 	// modify ext
-	request.Imp[0].Ext = modifyImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
+	request.Imp[0].Ext = updateImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
 }
 
-func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
+func updateImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	if signalImpExt == nil {
 		return requestImpExt
 	}
@@ -198,14 +182,12 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "version")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
-	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skadnetids")
-	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "gpid")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "owsdk")
 
 	return requestImpExt
 }
 
-func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
+func updateRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 	if signalRegs == nil {
 		return
 	}
@@ -227,7 +209,7 @@ func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
 }
 
-func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
+func updateApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if signalApp == nil {
 		return
 	}
@@ -236,7 +218,7 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 		request.App = &openrtb2.App{}
 	}
 
-	if len(signalApp.Domain) > 0 {
+	if len(request.App.Domain) == 0 && len(signalApp.Domain) > 0 {
 		request.App.Domain = signalApp.Domain
 	}
 
@@ -265,7 +247,7 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	}
 }
 
-func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
+func updateDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	if signalDevice == nil {
 		return
 	}
@@ -276,7 +258,7 @@ func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
 	request.Device.Ext = sdkutils.CopyIFV(signalDevice.Ext, request.Device.Ext)
 }
 
-func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
+func updateUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 	if signalUser == nil {
 		return
 	}
@@ -307,7 +289,7 @@ func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "eids")
 }
 
-func modifySource(request *openrtb2.BidRequest, signalSource *openrtb2.Source) {
+func updateSource(request *openrtb2.BidRequest, signalSource *openrtb2.Source) {
 	if signalSource == nil {
 		return
 	}

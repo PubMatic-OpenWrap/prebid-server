@@ -68,6 +68,7 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderMicrosoft):      builderMSFT,
 		string(openrtb_ext.BidderPlaydigo):       builderPlaydigo,
 		string(openrtb_ext.BidderEdge226):        builderEdge226,
+		string(openrtb_ext.BidderTaboola):        builderTaboola,
 	}
 }
 

@@ -152,6 +152,22 @@ func TestUpdateImpression(t *testing.T) {
 			},
 			want: []openrtb2.Imp{{Native: nil}},
 		},
+		{
+			name: "signalImp_exp_overwrites_maxImp_exp",
+			args: args{
+				signalImps: []openrtb2.Imp{{Exp: 3600}},
+				maxImps:    []openrtb2.Imp{{Exp: 120}},
+			},
+			want: []openrtb2.Imp{{Exp: 3600}},
+		},
+		{
+			name: "signalImp_exp_zero_keeps_maxImp_exp",
+			args: args{
+				signalImps: []openrtb2.Imp{{Exp: 0}},
+				maxImps:    []openrtb2.Imp{{Exp: 120}},
+			},
+			want: []openrtb2.Imp{{Exp: 120}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1308,6 +1324,8 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 									Price: 1.0,
 									AdM:   "<img src=\"http://example.com\"></img>",
 									BURL:  "http://example.com",
+									NURL:  "https://win.example/nurl",
+									LURL:  "https://loss.example/lurl",
 									Ext:   json.RawMessage(`{"key":"value"}`),
 								},
 							},
@@ -1329,7 +1347,9 @@ func TestApplyMaxAppLovinResponse(t *testing.T) {
 								ImpID: "789",
 								Price: 1.0,
 								BURL:  "http://example.com",
-								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"burl\":\"http://example.com\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
+								NURL:  "https://win.example/nurl",
+								LURL:  "https://loss.example/lurl",
+								Ext:   json.RawMessage(`{"signaldata":"{\"id\":\"123\",\"seatbid\":[{\"bid\":[{\"id\":\"456\",\"impid\":\"789\",\"price\":1,\"nurl\":\"https://win.example/nurl\",\"burl\":\"http://example.com\",\"lurl\":\"https://loss.example/lurl\",\"adm\":\"\\u003cimg src=\\\"http://example.com\\\"\\u003e\\u003c/img\\u003e\",\"ext\":{\"key\":\"value\"}}],\"seat\":\"pubmatic\"}],\"cur\":\"USD\",\"ext\":{\"key\":\"value\"}}"}`),
 							},
 						},
 					},

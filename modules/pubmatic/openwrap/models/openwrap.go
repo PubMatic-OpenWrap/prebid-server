@@ -48,7 +48,7 @@ type RequestCtx struct {
 
 	TrackerEndpoint, VideoErrorTrackerEndpoint string
 
-	Cookies         string
+	Cookies         []string
 	UidCookie       *http.Cookie
 	KADUSERCookie   *http.Cookie
 	ParsedUidCookie *usersync.Cookie
@@ -124,6 +124,7 @@ type RequestCtx struct {
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
+	APS                             APS
 	VastUnWrap                      VastUnWrap
 	PerformanceDSPs                 map[int]struct{}
 	InViewEnabledPublishers         map[int]struct{}
@@ -148,6 +149,9 @@ type GoogleSDK struct {
 }
 
 type UnityLevelPlay struct {
+	Reject bool
+}
+type APS struct {
 	Reject bool
 }
 
@@ -243,6 +247,8 @@ type BidCtx struct {
 	EG float64
 	// EN gross net in USD for tracker and logger
 	EN float64
+	// OmitBidExpFromTracker when true, impression tracker omits bexp/bexpef; response may strip bid.exp per auction response hook.
+	OmitBidExpFromTracker bool
 }
 
 type AdUnitCtx struct {

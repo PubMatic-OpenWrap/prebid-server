@@ -46,6 +46,11 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	}
 
 	signalImp := signalImps[0]
+
+	if signalImp.Exp > 0 {
+		maxImps[0].Exp = signalImp.Exp
+	}
+
 	if signalImp.DisplayManager != "" {
 		maxImps[0].DisplayManager = signalImp.DisplayManager
 	}
@@ -57,7 +62,6 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	if signalImp.ClickBrowser != nil {
 		maxImps[0].ClickBrowser = signalImp.ClickBrowser
 	}
-
 	if signalImp.Video != nil {
 		maxImps[0].Video = signalImp.Video
 	}
@@ -307,6 +311,8 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 						ImpID: bidResponse.SeatBid[0].Bid[0].ImpID,
 						Price: bidResponse.SeatBid[0].Bid[0].Price,
 						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
+						NURL:  bidResponse.SeatBid[0].Bid[0].NURL,
+						LURL:  bidResponse.SeatBid[0].Bid[0].LURL,
 						Ext:   json.RawMessage(signaldata),
 					},
 				},
