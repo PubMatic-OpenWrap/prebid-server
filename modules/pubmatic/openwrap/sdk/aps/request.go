@@ -45,11 +45,19 @@ func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.Request
 	}
 
 	// modify request with signal data
-	a.modifyRequestWithSignalData(request)
+	hasSignal := a.modifyRequestWithSignalData(request)
+
+	tagID := ""
+	if len(request.Imp) > 0 {
+		tagID = request.Imp[0].TagID
+	}
+
 	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
 		return requestBody
 	}
+
+	LogModifiedRequest(rctx, request.ID, a.publisherId, a.profileId, hasSignal, tagID, modifiedRequest)
 	return modifiedRequest
 }
 
@@ -79,21 +87,21 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 
 }
 
-func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
+func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) bool {
 	if request == nil || request.User == nil {
-		return
+		return false
 	}
 
 	signal := request.User.BuyerUID
 	if signal == "" {
 		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.MissingSignal)
-		return
+		return false
 	}
 
 	var signalRequest *openrtb2.BidRequest
 	if err := jsoniterator.Unmarshal([]byte(signal), &signalRequest); err != nil || signalRequest == nil {
 		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
-		return
+		return false
 	}
 
 	updateImpression(request, signalRequest.Imp)
@@ -110,6 +118,7 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 	if request.User != nil {
 		request.User.BuyerUID = ""
 	}
+	return true
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {

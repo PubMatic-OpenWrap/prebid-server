@@ -41,6 +41,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 
 	bids, ok := customizeBid(rctx, bidResponse)
 	if !ok {
+		LogTransformedResponse(rctx, bidResponse)
 		return bidResponse
 	}
 
@@ -54,6 +55,7 @@ func ApplyGoogleSDKResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRes
 			},
 		},
 	}
+	LogTransformedResponse(rctx, bidResponse)
 	return bidResponse
 }
 
@@ -77,6 +79,7 @@ func customizeBid(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) ([]
 			bidResponse.NBR = new(openrtb3.NoBidReason)
 		}
 		*bidResponse.NBR = nbr.ResponseRejectedMissingParam
+		LogCustomizeBidRejected(rctx, bidResponse, "missing_click_through_url")
 		return nil, false
 	}
 

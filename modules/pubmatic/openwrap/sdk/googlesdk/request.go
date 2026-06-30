@@ -197,9 +197,12 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
+	reqID := sdkRequest.ID
+
 	// Get wrapper data
 	wrapperData, err := getWrapperData(requestBody)
 	if err != nil {
+		LogRequestMappingFailed(reqID, err, requestBody)
 		return requestBody
 	}
 
@@ -227,6 +230,7 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 		return requestBody
 	}
 
+	LogModifiedRequest(rctx, reqID, wrapperData, signalData != nil, modifiedRequest)
 	return modifiedRequest
 }
 

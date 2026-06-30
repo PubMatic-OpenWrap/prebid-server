@@ -17,6 +17,7 @@ func ApplyAPSResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse)
 
 	bids := getBids(bidResponse)
 	if len(bids) == 0 {
+		LogTransformedResponse(rctx, bidResponse)
 		return bidResponse
 	}
 
@@ -31,6 +32,7 @@ func ApplyAPSResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse)
 		},
 	}
 
+	LogTransformedResponse(rctx, bidResponse)
 	return bidResponse
 }
 

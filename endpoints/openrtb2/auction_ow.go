@@ -15,6 +15,8 @@ import (
 	"github.com/prebid/prebid-server/v3/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/aps"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
@@ -59,6 +61,10 @@ func UpdateResponseExtOW(w http.ResponseWriter, bidResponse *openrtb2.BidRespons
 	rCtx := pubmatic.GetRequestCtx(ao.HookExecutionOutcome)
 	if rCtx == nil {
 		return
+	}
+
+	if rCtx.Endpoint == models.EndpointAPS {
+		aps.LogFinalResponse(*rCtx, bidResponse, rCtx.APS.Reject)
 	}
 
 	//Send owlogger in response only in case of debug mode
@@ -125,8 +131,11 @@ func getGoogleSDKRejectedResponse(response *openrtb2.BidResponse, ao analytics.A
 	}
 
 	if !rCtx.GoogleSDK.Reject && response.NBR == nil {
+		googlesdk.LogFinalResponse(*rCtx, response, false)
 		return response
 	}
+
+	googlesdk.LogFinalResponse(*rCtx, response, true)
 
 	ext := []byte("{}")
 	if rCtx.Debug {

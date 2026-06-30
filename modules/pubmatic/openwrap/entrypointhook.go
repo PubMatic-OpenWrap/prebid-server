@@ -126,6 +126,8 @@ func (m OpenWrap) handleEntrypointHook(
 		var nbrCode openrtb3.NoBidReason
 		payload.Body, errAps, nbrCode = enrichApsRequest(payload.Body, m.cache, m.metricEngine, pubIdStr)
 		if errAps != nil {
+			reqID, _ := jsonparser.GetString(payload.Body, "id")
+			aps.LogSlotMappingFailed(reqID, pubIdStr, errAps.Error(), payload.Body)
 			result.Reject = true
 			glog.Errorf("aps_slot_mapping: %v", errAps)
 			result.NbrCode = int(nbrCode)

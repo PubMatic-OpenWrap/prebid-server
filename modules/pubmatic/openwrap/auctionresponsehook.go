@@ -394,9 +394,21 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	rctx.AppLovinMax = updateAppLovinMaxResponse(rctx, payload.BidResponse)
+	if rctx.Endpoint == models.EndpointGoogleSDK {
+		googlesdk.LogAuctionResponse(rctx, payload.BidResponse)
+	}
 	rctx.GoogleSDK.Reject = googlesdk.SetGoogleSDKResponseReject(rctx, payload.BidResponse)
+	if rctx.Endpoint == models.EndpointGoogleSDK {
+		googlesdk.LogResponseRejectDecision(rctx, payload.BidResponse, rctx.GoogleSDK.Reject)
+	}
 	rctx.UnityLevelPlay.Reject = unitylevelplay.SetUnityLevelPlayResponseReject(rctx, payload.BidResponse)
+	if rctx.Endpoint == models.EndpointAPS {
+		aps.LogAuctionResponse(rctx, payload.BidResponse)
+	}
 	rctx.APS.Reject = aps.SetAPSResponseReject(rctx, payload.BidResponse)
+	if rctx.Endpoint == models.EndpointAPS {
+		aps.LogResponseRejectDecision(rctx, payload.BidResponse, rctx.APS.Reject)
+	}
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
