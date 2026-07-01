@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v3/exchange"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
@@ -181,8 +182,7 @@ func (m *OpenWrap) addDefaultBids(rctx *models.RequestCtx, bidResponse *openrtb2
 
 func (m *OpenWrap) addDefaultBidsForMultiFloorsConfig(rctx *models.RequestCtx, bidResponse *openrtb2.BidResponse, bidResponseExt openrtb_ext.ExtBidResponse) map[string]map[string][]openrtb2.Bid {
 
-	// MultiBidMultiFloor is only supported for AppLovinMax
-	if rctx.Endpoint != models.EndpointAppLovinMax {
+	if !sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		return rctx.DefaultBids
 	}
 
@@ -347,17 +347,60 @@ func (m *OpenWrap) applyDefaultBids(rctx models.RequestCtx, bidResponse *openrtb
 	}
 
 	// no-seat case
-	for _, noSeatBid := range rctx.DefaultBids {
-		for seat, bids := range noSeatBid {
-			bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
-				Bid:  bids,
-				Seat: seat,
-			})
+	// if sendallbids is true, add defaultbids to response.seatbid, else dont add defaultbids
+	if rctx.SendAllBids {
+		for _, noSeatBid := range rctx.DefaultBids {
+			for seat, bids := range noSeatBid {
+				bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
+					Bid:  bids,
+					Seat: seat,
+				})
+			}
 		}
+	} else {
+		appendDefaultSeatBids(rctx, bidResponse)
 	}
 
 	return bidResponse, nil
 }
+
+// appendDefaultSeatBids (SendAllBids false) appends at most one placeholder SeatBid per DefaultBids
+// impression that has no bid in bidResponse.SeatBid yet: bids[0] for the lexicographically first
+// seat with non-empty bids. Iteration is over rctx.DefaultBids only.
+func appendDefaultSeatBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) {
+	if len(rctx.DefaultBids) == 0 {
+		return
+	}
+
+	impWithBid := make(map[string]struct{}, len(rctx.ImpBidCtx))
+	for _, seatBid := range bidResponse.SeatBid {
+		for _, bid := range seatBid.Bid {
+			impID, _ := models.GetImpressionID(bid.ImpID)
+			impWithBid[impID] = struct{}{}
+		}
+	}
+
+	for impID, noSeatBid := range rctx.DefaultBids {
+		if _, ok := impWithBid[impID]; ok {
+			continue
+		}
+
+		for seat, bids := range noSeatBid {
+			if len(bids) == 0 {
+				continue
+			}
+
+			bidResponse.SeatBid = append(bidResponse.SeatBid, openrtb2.SeatBid{
+				Seat: seat,
+				Bid:  []openrtb2.Bid{bids[0]},
+			})
+
+			impWithBid[impID] = struct{}{}
+			break
+		}
+	}
+}
+
 func (m *OpenWrap) recordErrorStats(rctx models.RequestCtx, bidResponseExt openrtb_ext.ExtBidResponse, bidder string) {
 
 	responseError := models.PartnerErrNoBid
