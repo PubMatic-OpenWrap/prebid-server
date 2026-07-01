@@ -113,14 +113,7 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
-	if requestBanner == nil || signalBanner == nil {
-		return
-	}
-
-	if signalBanner.API != nil {
-		requestBanner.API = signalBanner.API
-	}
-
+	sdkutils.MergeBanner(requestBanner, signalBanner)
 }
 
 func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {

@@ -434,17 +434,7 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
-	if requestBanner == nil || signalBanner == nil {
-		return
-	}
-
-	if len(signalBanner.MIMEs) > 0 {
-		requestBanner.MIMEs = signalBanner.MIMEs
-	}
-
-	if len(signalBanner.API) > 0 {
-		requestBanner.API = signalBanner.API
-	}
+	sdkutils.MergeBanner(requestBanner, signalBanner)
 }
 
 func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {

@@ -97,6 +97,14 @@ func TestUpdateImpression(t *testing.T) {
 			want: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", API: []adcom1.APIFramework{1, 2, 3, 4}}}},
 		},
 		{
+			name: "signalImp banner mimes merged into maxImp banner",
+			args: args{
+				signalImps: []openrtb2.Imp{{Banner: &openrtb2.Banner{MIMEs: []string{"image/jpeg", "image/png"}}}},
+				maxImps:    []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner"}}},
+			},
+			want: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", MIMEs: []string{"image/jpeg", "image/png"}}}},
+		},
+		{
 			name: "maxImp has bannertype rewarded",
 			args: args{
 				signalImps: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "sdk_banner", API: []adcom1.APIFramework{1, 2, 3, 4}}}},

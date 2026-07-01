@@ -374,6 +374,12 @@ func TestModifyBanner(t *testing.T) {
 			signalBanner:   &openrtb2.Banner{API: []adcom1.APIFramework{2}},
 			expectedBanner: &openrtb2.Banner{API: []adcom1.APIFramework{2}},
 		},
+		{
+			name:           "copies mimes from signal",
+			requestBanner:  &openrtb2.Banner{},
+			signalBanner:   &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+			expectedBanner: &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+		},
 	}
 
 	for _, tt := range tests {
