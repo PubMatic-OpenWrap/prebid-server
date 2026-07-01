@@ -125,6 +125,7 @@ type RequestCtx struct {
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
 	APS                             APS
+	EdsParams                       ResolvedEds
 	VastUnWrap                      VastUnWrap
 	PerformanceDSPs                 map[int]struct{}
 	InViewEnabledPublishers         map[int]struct{}

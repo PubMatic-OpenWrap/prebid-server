@@ -232,6 +232,8 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
 
+	rCtx.EdsParams = ResolveAtEntrypoint(endpoint, originalRequestBody)
+
 	result.Reject = false
 
 	if rCtx.IsCTVRequest {

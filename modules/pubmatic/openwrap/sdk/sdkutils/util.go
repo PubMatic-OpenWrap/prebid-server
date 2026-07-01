@@ -96,7 +96,26 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 		dst.ConnectionType = src.ConnectionType
 	}
 
+	if src.PPI > 0 {
+		dst.PPI = src.PPI
+	}
+
 	return dst
+}
+
+// MergeBanner copies banner fields from signal data into the request banner.
+func MergeBanner(dst, src *openrtb2.Banner) {
+	if dst == nil || src == nil {
+		return
+	}
+
+	if len(src.MIMEs) > 0 {
+		dst.MIMEs = src.MIMEs
+	}
+
+	if src.API != nil {
+		dst.API = src.API
+	}
 }
 
 func mergeGeo(dst *openrtb2.Geo, src *openrtb2.Geo) *openrtb2.Geo {

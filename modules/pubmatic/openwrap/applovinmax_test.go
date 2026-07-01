@@ -97,6 +97,14 @@ func TestUpdateImpression(t *testing.T) {
 			want: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", API: []adcom1.APIFramework{1, 2, 3, 4}}}},
 		},
 		{
+			name: "signalImp banner mimes merged into maxImp banner",
+			args: args{
+				signalImps: []openrtb2.Imp{{Banner: &openrtb2.Banner{MIMEs: []string{"image/jpeg", "image/png"}}}},
+				maxImps:    []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner"}}},
+			},
+			want: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "max_banner", MIMEs: []string{"image/jpeg", "image/png"}}}},
+		},
+		{
 			name: "maxImp has bannertype rewarded",
 			args: args{
 				signalImps: []openrtb2.Imp{{Banner: &openrtb2.Banner{ID: "sdk_banner", API: []adcom1.APIFramework{1, 2, 3, 4}}}},
@@ -363,6 +371,22 @@ func TestUpdateDevice(t *testing.T) {
 				maxRequest: &openrtb2.BidRequest{},
 			},
 			want: &openrtb2.Device{Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
+		},
+		{
+			name: "outer_request_ppi_preserved_when_signal_has_different_ppi",
+			args: args{
+				sdkDevice:  &openrtb2.Device{PPI: 320},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{PPI: 440}},
+			},
+			want: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name: "signal_ppi_not_applied_when_outer_request_has_no_ppi",
+			args: args{
+				sdkDevice:  &openrtb2.Device{PPI: 320},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			},
+			want: &openrtb2.Device{UA: "test-ua"},
 		},
 	}
 	for _, tt := range tests {

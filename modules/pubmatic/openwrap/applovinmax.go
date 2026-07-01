@@ -67,9 +67,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	}
 
 	if maxImps[0].Banner != nil {
-		if signalImp.Banner != nil && len(signalImp.Banner.API) > 0 {
-			maxImps[0].Banner.API = signalImp.Banner.API
-		}
+		sdkutils.MergeBanner(maxImps[0].Banner, signalImp.Banner)
 
 		bannertype, err := jsonparser.GetString(maxImps[0].Banner.Ext, "bannertype")
 		if err == nil && bannertype == models.TypeRewarded {
@@ -88,7 +86,13 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
+	outerPPI := int64(0)
+	if maxRequest.Device != nil {
+		outerPPI = maxRequest.Device.PPI
+	}
+
 	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
+	maxRequest.Device.PPI = outerPPI
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts", "ifv")
 }
