@@ -112,14 +112,16 @@ func StripFromRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 	}
 
 	if req.Device != nil {
-		req.Device.Ext = stripObjectExt(req.Device.Ext, resolved.Device)
+		req.Device.Ext = stripObjectExt(req.Device.Ext, stripKeysForObject(req.Device.Ext, resolved.Device))
 	}
 	if req.App != nil {
-		req.App.Ext = stripObjectExt(req.App.Ext, resolved.App)
+		req.App.Ext = stripObjectExt(req.App.Ext, stripKeysForObject(req.App.Ext, resolved.App))
 	}
 }
 
 // ApplyToRequest merges resolved flat ext keys onto the bid request.
+// Device and app are copied first so PBS shallow bidder copies do not leak
+// PubMatic-only ext keys to other bidders.
 func ApplyToRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
 	if req == nil || resolved.IsEmpty() {
 		return
@@ -222,6 +224,13 @@ func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessa
 		return base
 	}
 	return out
+}
+
+func stripKeysForObject(ext []byte, resolvedExt json.RawMessage) json.RawMessage {
+	if fromEds := flattenEdsObject(ext); len(fromEds) > 0 {
+		return mergeExtJSON(resolvedExt, fromEds, true)
+	}
+	return resolvedExt
 }
 
 func stripObjectExt(ext []byte, resolvedExt json.RawMessage) []byte {

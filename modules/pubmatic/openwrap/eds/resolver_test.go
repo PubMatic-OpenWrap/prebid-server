@@ -107,6 +107,47 @@ func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 	assert.Nil(t, req.App.Ext)
 }
 
+func TestApplyToRequestDoesNotMutateSharedObjects(t *testing.T) {
+	sharedDevice := &openrtb2.Device{Ext: json.RawMessage(`{"atts":1}`)}
+	sharedApp := &openrtb2.App{Ext: json.RawMessage(`{"orientation":1}`)}
+
+	req := &openrtb2.BidRequest{
+		Device: sharedDevice,
+		App:    sharedApp,
+	}
+	otherReq := &openrtb2.BidRequest{
+		Device: sharedDevice,
+		App:    sharedApp,
+	}
+
+	resolved := models.ResolvedEds{
+		Device: json.RawMessage(`{"boottime":1710000000000}`),
+		App:    json.RawMessage(`{"install_time":1710000000001}`),
+	}
+
+	ApplyToRequest(req, resolved)
+
+	assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
+	assert.JSONEq(t, `{"orientation":1,"install_time":1710000000001}`, string(req.App.Ext))
+
+	assert.NotSame(t, req.Device, otherReq.Device)
+	assert.NotSame(t, req.App, otherReq.App)
+	assert.JSONEq(t, `{"atts":1}`, string(otherReq.Device.Ext))
+	assert.JSONEq(t, `{"orientation":1}`, string(otherReq.App.Ext))
+}
+
+func TestStripFromRequestUsesExtEdsOnObject(t *testing.T) {
+	req := &openrtb2.BidRequest{
+		App: &openrtb2.App{
+			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001,"orientation":1}`),
+		},
+	}
+
+	StripFromRequest(req, models.ResolvedEds{})
+
+	assert.JSONEq(t, `{"orientation":1}`, string(req.App.Ext))
+}
+
 func TestApplyToRequest(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		Device: &openrtb2.Device{Ext: json.RawMessage(`{"atts":1}`)},

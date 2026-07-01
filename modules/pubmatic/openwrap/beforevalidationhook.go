@@ -806,7 +806,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
-		eds.StripFromRequest(ep.BidRequest, resolvedEds)
+		eds.StripFromRequest(ep.BidRequest, eds.MergeGapFill(resolvedEds, eds.Resolve(eds.Sources{Request: ep.BidRequest})))
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
