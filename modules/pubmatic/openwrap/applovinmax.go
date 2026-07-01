@@ -88,7 +88,13 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 		return
 	}
 
+	outerPPI := int64(0)
+	if maxRequest.Device != nil {
+		outerPPI = maxRequest.Device.PPI
+	}
+
 	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
+	maxRequest.Device.PPI = outerPPI
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts", "ifv")
 }

@@ -1024,6 +1024,16 @@ func TestModifyDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "signal_has_ppi",
+			request: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{UA: "Mozilla/5.0"},
+			},
+			signalDevice: &openrtb2.Device{PPI: 440},
+			expectedResult: &openrtb2.BidRequest{
+				Device: &openrtb2.Device{UA: "Mozilla/5.0", PPI: 440},
+			},
+		},
 	}
 
 	for _, tt := range tests {

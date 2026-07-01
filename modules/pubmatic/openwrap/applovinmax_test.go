@@ -364,6 +364,22 @@ func TestUpdateDevice(t *testing.T) {
 			},
 			want: &openrtb2.Device{Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`)},
 		},
+		{
+			name: "outer_request_ppi_preserved_when_signal_has_different_ppi",
+			args: args{
+				sdkDevice:  &openrtb2.Device{PPI: 320},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{PPI: 440}},
+			},
+			want: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name: "signal_ppi_not_applied_when_outer_request_has_no_ppi",
+			args: args{
+				sdkDevice:  &openrtb2.Device{PPI: 320},
+				maxRequest: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			},
+			want: &openrtb2.Device{UA: "test-ua"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -625,6 +625,12 @@ func TestUpdateDevice(t *testing.T) {
 				Ext: json.RawMessage(`{"atts":3,"ifv":"193DBF06-B1D8-4684-BE35-0FB0770C463C"}`),
 			}},
 		},
+		{
+			name: "signal_has_ppi",
+			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal: &openrtb2.Device{PPI: 440},
+			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", PPI: 440}},
+		},
 	}
 
 	for _, tt := range tests {

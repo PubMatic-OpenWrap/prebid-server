@@ -234,6 +234,24 @@ func TestMergeDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "signal_ppi_copied",
+			dst:      &openrtb2.Device{},
+			src:      &openrtb2.Device{PPI: 440},
+			expected: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name:     "signal_ppi_overwrites_dst_ppi",
+			dst:      &openrtb2.Device{PPI: 320},
+			src:      &openrtb2.Device{PPI: 440},
+			expected: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name:     "zero_signal_ppi_does_not_overwrite_dst_ppi",
+			dst:      &openrtb2.Device{PPI: 320},
+			src:      &openrtb2.Device{},
+			expected: &openrtb2.Device{PPI: 320},
+		},
 	}
 
 	for _, tt := range tests {

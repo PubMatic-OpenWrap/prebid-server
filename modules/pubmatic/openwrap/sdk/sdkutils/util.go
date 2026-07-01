@@ -96,6 +96,10 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 		dst.ConnectionType = src.ConnectionType
 	}
 
+	if src.PPI > 0 {
+		dst.PPI = src.PPI
+	}
+
 	return dst
 }
 
