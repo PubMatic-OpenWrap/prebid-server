@@ -122,6 +122,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
 	}
 
+	// flatten eds object in bidderparams onto device.ext and app.ext
+	// on the outbound PubMatic bid request.
 	applyEdsFromBidderParams(request)
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request)
