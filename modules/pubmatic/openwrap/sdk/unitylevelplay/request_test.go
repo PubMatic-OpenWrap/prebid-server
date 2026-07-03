@@ -1064,14 +1064,14 @@ func TestModifyUser(t *testing.T) {
 				Yob:      2000,
 				Gender:   "M",
 				Keywords: "test,user",
-				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}]}`),
+				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}],"lastadomain":"example.com"}`),
 			},
 			expected: &openrtb2.BidRequest{User: &openrtb2.User{
 				Data:     []openrtb2.Data{{ID: "1"}},
 				Yob:      2000,
 				Gender:   "M",
 				Keywords: "test,user",
-				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}]}`),
+				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}],"lastadomain":"example.com"}`),
 			}},
 		},
 		{

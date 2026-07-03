@@ -649,6 +649,14 @@ func TestUpdateUser(t *testing.T) {
 			want: &openrtb2.User{ID: "maxID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10}`)},
 		},
 		{
+			name: "signalUserExt has lastadomain",
+			args: args{
+				signalUser: &openrtb2.User{ID: "sdkID", Ext: json.RawMessage(`{"lastadomain":"example.com"}`)},
+				maxRequest: &openrtb2.BidRequest{User: &openrtb2.User{ID: "maxID"}},
+			},
+			want: &openrtb2.User{ID: "maxID", Ext: json.RawMessage(`{"lastadomain":"example.com"}`)},
+		},
+		{
 			name: "signalUserExt_has_sessionduration_and_impdepth_with_consent",
 			args: args{
 				signalUser: &openrtb2.User{ID: "sdkID", Yob: 1999, Gender: "M", Keywords: "k1=v2;k2=v2", Ext: json.RawMessage(`{"sessionduration":40,"impdepth":10,"consent":"consent_string"}`)},

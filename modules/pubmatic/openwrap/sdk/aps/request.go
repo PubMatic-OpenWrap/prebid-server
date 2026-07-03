@@ -287,6 +287,7 @@ func updateUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "impdepth")
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "consent")
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "eids")
+	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "lastadomain")
 }
 
 func updateSource(request *openrtb2.BidRequest, signalSource *openrtb2.Source) {

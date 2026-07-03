@@ -1497,11 +1497,11 @@ func TestModifyUser(t *testing.T) {
 				},
 			},
 			signalUser: &openrtb2.User{
-				Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+				Ext: []byte(`{"sessionduration":3600,"impdepth":5,"lastadomain":"example.com"}`),
 			},
 			expectedResult: &openrtb2.BidRequest{
 				User: &openrtb2.User{
-					Ext: []byte(`{"sessionduration":3600,"impdepth":5}`),
+					Ext: []byte(`{"sessionduration":3600,"impdepth":5,"lastadomain":"example.com"}`),
 				},
 			},
 		},

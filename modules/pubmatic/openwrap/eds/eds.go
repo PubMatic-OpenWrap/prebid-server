@@ -30,18 +30,18 @@ func BuildPubmaticEdsBidderParams(bidderParams json.RawMessage, signal, request 
 	return updated, resolved, err
 }
 
-// StripFromRequest removes ext.eds wrappers and resolved flat ext keys
-// from the shared bid request so other bidders do not receive them.
-func StripFromRequest(req *openrtb2.BidRequest, resolved models.ResolvedEds) {
+// StripFromRequest removes device.ext.eds and app.ext.eds from the shared bid request
+// so other bidders do not receive PubMatic-only EDS.
+func StripFromRequest(req *openrtb2.BidRequest) {
 	if req == nil {
 		return
 	}
 
 	if req.Device != nil {
-		req.Device.Ext = stripObjectExt(req.Device.Ext, stripKeysForObject(req.Device.Ext, resolved.Device))
+		req.Device.Ext = jsonparser.Delete(req.Device.Ext, "eds")
 	}
 	if req.App != nil {
-		req.App.Ext = stripObjectExt(req.App.Ext, stripKeysForObject(req.App.Ext, resolved.App))
+		req.App.Ext = jsonparser.Delete(req.App.Ext, "eds")
 	}
 }
 
@@ -83,18 +83,16 @@ func injectIntoBidderParams(bidderParams json.RawMessage, resolved models.Resolv
 	return json.Marshal(paramsMap)
 }
 
-func stripKeysForObject(ext []byte, resolvedExt json.RawMessage) json.RawMessage {
-	if fromEds := nestedObject(ext, "eds"); len(fromEds) > 0 {
-		return mergeExtObjects(resolvedExt, fromEds, true)
-	}
-	return resolvedExt
-}
-
-func stripObjectExt(ext []byte, resolvedExt json.RawMessage) []byte {
+// nestedObject returns the raw JSON value at key when it is a non-empty object.
+func nestedObject(ext []byte, key string) []byte {
 	if len(ext) == 0 {
-		return ext
+		return nil
 	}
 
-	ext = jsonparser.Delete(ext, "eds")
-	return deleteExtKeysFromObject(ext, resolvedExt)
+	value, dataType, _, err := jsonparser.Get(ext, key)
+	if err != nil || dataType != jsonparser.Object || len(value) <= 2 {
+		return nil
+	}
+
+	return value
 }

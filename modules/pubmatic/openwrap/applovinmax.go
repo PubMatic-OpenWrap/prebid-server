@@ -180,8 +180,8 @@ func updateUser(signalUser *openrtb2.User, maxRequest *openrtb2.BidRequest) {
 		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "sessionduration")
 		maxRequest.User.Ext = jsonparser.Delete(maxRequest.User.Ext, "impdepth")
 	}
-	//Pass user.ext.sessionduration and user.ext.impdepth to ow partners in case of ALMAX integration
-	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth")
+	// Pass user.ext from signal to the shared request for all bidders (ALMAX integration).
+	maxRequest.User.Ext = setIfKeysExists(signalUser.Ext, maxRequest.User.Ext, "consent", "eids", "sessionduration", "impdepth", "lastadomain")
 }
 
 func setIfKeysExists(source []byte, target []byte, keys ...string) []byte {

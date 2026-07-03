@@ -112,14 +112,14 @@ func TestBuildPubmaticEdsBidderParams(t *testing.T) {
 func TestStripFromRequest(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		Device: &openrtb2.Device{
-			Ext: json.RawMessage(`{"eds":{"boottime":1710000000000},"boottime":1710000000000,"atts":1}`),
+			Ext: json.RawMessage(`{"eds":{"boottime":1710000000000},"atts":1}`),
 		},
 		App: &openrtb2.App{
-			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001,"orientation":1}`),
+			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"orientation":1}`),
 		},
 	}
 
-	StripFromRequest(req, ResolveEds(nil, req))
+	StripFromRequest(req)
 
 	assert.JSONEq(t, `{"atts":1}`, string(req.Device.Ext))
 	assert.JSONEq(t, `{"orientation":1}`, string(req.App.Ext))
@@ -128,23 +128,11 @@ func TestStripFromRequest(t *testing.T) {
 func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		App: &openrtb2.App{
-			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001}`),
+			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001}}`),
 		},
 	}
 
-	StripFromRequest(req, ResolveEds(nil, req))
+	StripFromRequest(req)
 
-	assert.Nil(t, req.App.Ext)
-}
-
-func TestStripFromRequestUsesExtEdsOnObject(t *testing.T) {
-	req := &openrtb2.BidRequest{
-		App: &openrtb2.App{
-			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001},"install_time":1710000000001,"orientation":1}`),
-		},
-	}
-
-	StripFromRequest(req, ResolveEds(nil, nil))
-
-	assert.JSONEq(t, `{"orientation":1}`, string(req.App.Ext))
+	assert.JSONEq(t, `{}`, string(req.App.Ext))
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
 )
 
 const (
@@ -48,33 +47,20 @@ func (r resolvedEds) isEmpty() bool {
 // applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.{bidder}.eds
 // (per-bidder filtered object passed by the exchange) and merges flat device/app ext keys onto the PubMatic request.
 // Implemented here (not in modules/) to keep the core adapter free of OpenWrap module imports.
-func applyEdsFromBidderParams(request *openrtb2.BidRequest) {
-	if request == nil || len(request.Ext) == 0 {
+func applyEdsFromBidderParams(request *openrtb2.BidRequest, bidderParams map[string]json.RawMessage) {
+	if request == nil {
 		return
 	}
 
-	reqExt := &openrtb_ext.ExtRequest{}
-	if err := jsonutil.Unmarshal(request.Ext, &reqExt); err != nil {
-		return
-	}
-	if reqExt.Prebid.BidderParams == nil {
-		return
-	}
-
-	applyEdsToRequest(request, extractEdsFromBidderParams(reqExt.Prebid.BidderParams))
+	applyEdsToRequest(request, extractEdsFromBidderParams(bidderParams))
 }
 
-func extractEdsFromBidderParams(bidderParams json.RawMessage) resolvedEds {
+func extractEdsFromBidderParams(bidderParams map[string]json.RawMessage) resolvedEds {
 	if len(bidderParams) == 0 {
 		return resolvedEds{}
 	}
 
-	var params map[string]json.RawMessage
-	if err := json.Unmarshal(bidderParams, &params); err != nil {
-		return resolvedEds{}
-	}
-
-	edsRaw, ok := params[bidderParamsEdsKey]
+	edsRaw, ok := bidderParams[bidderParamsEdsKey]
 	if !ok || len(edsRaw) == 0 {
 		return resolvedEds{}
 	}
@@ -120,25 +106,17 @@ func mergeOwExtJSON(base, overlay json.RawMessage) json.RawMessage {
 		return overlay
 	}
 
-	var baseMap map[string]json.RawMessage
-	if err := json.Unmarshal(base, &baseMap); err != nil || len(baseMap) == 0 {
-		return overlay
-	}
+	result := base
+	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, _ jsonparser.ValueType, _ int) error {
+		var err error
+		result, err = jsonparser.Set(result, value, string(key))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
-	var overlayMap map[string]json.RawMessage
-	if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
-		return base
-	}
-
-	for key, val := range overlayMap {
-		baseMap[key] = val
-	}
-
-	out, err := json.Marshal(baseMap)
-	if err != nil {
-		return base
-	}
-	return out
+	return result
 }
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {

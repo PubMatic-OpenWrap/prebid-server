@@ -1142,22 +1142,10 @@ func TestMergeOwExtJSON(t *testing.T) {
 			want:    `{"atts":1,"boottime":1710000000000,"totalmem":8589934592}`,
 		},
 		{
-			name:    "invalid_base_returns_overlay",
-			base:    json.RawMessage(`not-json`),
-			overlay: json.RawMessage(`{"boottime":1710000000000}`),
-			want:    `{"boottime":1710000000000}`,
-		},
-		{
-			name:    "empty_base_object_returns_overlay",
+			name:    "empty_base_object_merges_overlay",
 			base:    json.RawMessage(`{}`),
 			overlay: json.RawMessage(`{"install_time":1710000000001}`),
 			want:    `{"install_time":1710000000001}`,
-		},
-		{
-			name:    "invalid_overlay_returns_base",
-			base:    json.RawMessage(`{"existing":1}`),
-			overlay: json.RawMessage(`not-json`),
-			want:    `{"existing":1}`,
 		},
 	}
 	for _, tt := range tests {
@@ -1200,7 +1188,11 @@ func TestExtractEdsFromBidderParams(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := extractEdsFromBidderParams(tt.bidderParams)
+			var params map[string]json.RawMessage
+			if len(tt.bidderParams) > 0 {
+				_ = json.Unmarshal(tt.bidderParams, &params)
+			}
+			got := extractEdsFromBidderParams(params)
 			if tt.wantDevice == "" {
 				assert.Empty(t, got.Device)
 			} else {
@@ -1259,22 +1251,18 @@ func TestApplyEdsToRequest(t *testing.T) {
 
 func TestApplyEdsFromBidderParams(t *testing.T) {
 	t.Run("nil_request", func(t *testing.T) {
-		applyEdsFromBidderParams(nil)
+		applyEdsFromBidderParams(nil, map[string]json.RawMessage{"eds": json.RawMessage(`{}`)})
 	})
 
-	t.Run("empty_request_ext", func(t *testing.T) {
+	t.Run("nil_bidderparams", func(t *testing.T) {
 		req := &openrtb2.BidRequest{}
-		applyEdsFromBidderParams(req)
+		applyEdsFromBidderParams(req, nil)
 	})
 
-	t.Run("invalid_request_ext", func(t *testing.T) {
-		req := &openrtb2.BidRequest{Ext: json.RawMessage(`not-json`)}
-		applyEdsFromBidderParams(req)
-	})
-
-	t.Run("missing_bidderparams", func(t *testing.T) {
-		req := &openrtb2.BidRequest{Ext: json.RawMessage(`{"prebid":{}}`)}
-		applyEdsFromBidderParams(req)
+	t.Run("missing_eds_key", func(t *testing.T) {
+		req := &openrtb2.BidRequest{Device: &openrtb2.Device{Ext: json.RawMessage(`{"atts":1}`)}}
+		applyEdsFromBidderParams(req, map[string]json.RawMessage{"wiid": json.RawMessage(`"test"`)})
+		assert.JSONEq(t, `{"atts":1}`, string(req.Device.Ext))
 	})
 
 	t.Run("merges_eds_from_bidderparams_onto_request", func(t *testing.T) {
@@ -1285,9 +1273,10 @@ func TestApplyEdsFromBidderParams(t *testing.T) {
 			App: &openrtb2.App{
 				Ext: json.RawMessage(`{"orientation":1}`),
 			},
-			Ext: json.RawMessage(`{"prebid":{"bidderparams":{"eds":{"device":{"boottime":1710000000000},"app":{"install_time":1710000000001}}}}}`),
 		}
-		applyEdsFromBidderParams(req)
+		applyEdsFromBidderParams(req, map[string]json.RawMessage{
+			"eds": json.RawMessage(`{"device":{"boottime":1710000000000},"app":{"install_time":1710000000001}}`),
+		})
 		assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
 		assert.JSONEq(t, `{"install_time":1710000000001,"orientation":1}`, string(req.App.Ext))
 	})
