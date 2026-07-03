@@ -11,9 +11,11 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/adapters"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/jsonutil"
 )
 
 const (
+	bidderParamsEdsKey           = "eds"
 	dsaKey                       = "dsa"
 	transparencyKey              = "transparency"
 	multiFloors                  = "_mf"
@@ -33,6 +35,111 @@ var (
 )
 
 var appLovinMaxImpressionRegex = regexp.MustCompile(appLovinMaxImpressionPattern)
+
+type resolvedEds struct {
+	Device json.RawMessage `json:"device,omitempty"`
+	App    json.RawMessage `json:"app,omitempty"`
+}
+
+func (r resolvedEds) isEmpty() bool {
+	return len(r.Device) == 0 && len(r.App) == 0
+}
+
+// applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.eds
+// (per-bidder filtered object) and merges flat device/app ext keys onto the PubMatic request.
+// Implemented here (not in modules/) to keep the core adapter free of OpenWrap module imports.
+func applyEdsFromBidderParams(request *openrtb2.BidRequest) {
+	if request == nil || len(request.Ext) == 0 {
+		return
+	}
+
+	reqExt := &openrtb_ext.ExtRequest{}
+	if err := jsonutil.Unmarshal(request.Ext, &reqExt); err != nil {
+		return
+	}
+	if reqExt.Prebid.BidderParams == nil {
+		return
+	}
+
+	applyEdsToRequest(request, extractEdsFromBidderParams(reqExt.Prebid.BidderParams))
+}
+
+func extractEdsFromBidderParams(bidderParams json.RawMessage) resolvedEds {
+	if len(bidderParams) == 0 {
+		return resolvedEds{}
+	}
+
+	var params map[string]json.RawMessage
+	if err := json.Unmarshal(bidderParams, &params); err != nil {
+		return resolvedEds{}
+	}
+
+	edsRaw, ok := params[bidderParamsEdsKey]
+	if !ok || len(edsRaw) == 0 {
+		return resolvedEds{}
+	}
+
+	var resolved resolvedEds
+	if err := json.Unmarshal(edsRaw, &resolved); err != nil {
+		return resolvedEds{}
+	}
+	return resolved
+}
+
+func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
+	if req == nil || resolved.isEmpty() {
+		return
+	}
+
+	if len(resolved.Device) > 0 {
+		if req.Device == nil {
+			req.Device = &openrtb2.Device{}
+		} else {
+			deviceCopy := *req.Device
+			req.Device = &deviceCopy
+		}
+		req.Device.Ext = mergeOwExtJSON(req.Device.Ext, resolved.Device)
+	}
+
+	if len(resolved.App) > 0 {
+		if req.App == nil {
+			req.App = &openrtb2.App{}
+		} else {
+			appCopy := *req.App
+			req.App = &appCopy
+		}
+		req.App.Ext = mergeOwExtJSON(req.App.Ext, resolved.App)
+	}
+}
+
+func mergeOwExtJSON(base, overlay json.RawMessage) json.RawMessage {
+	if len(overlay) == 0 {
+		return base
+	}
+	if len(base) == 0 {
+		return overlay
+	}
+
+	var baseMap map[string]json.RawMessage
+	if err := json.Unmarshal(base, &baseMap); err != nil || len(baseMap) == 0 {
+		return overlay
+	}
+
+	var overlayMap map[string]json.RawMessage
+	if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
+		return base
+	}
+
+	for key, val := range overlayMap {
+		baseMap[key] = val
+	}
+
+	out, err := json.Marshal(baseMap)
+	if err != nil {
+		return base
+	}
+	return out
+}
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
 	targets := map[string]string{}

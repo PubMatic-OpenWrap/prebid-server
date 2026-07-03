@@ -88,7 +88,7 @@ func TestModifyRequestWithUnityLevelPlayParams(t *testing.T) {
 			}
 
 			levelPlay := NewLevelPlay(mockMetrics)
-			response := levelPlay.ModifyRequestWithUnityLevelPlayParams(tt.requestBody)
+			response := levelPlay.ModifyRequestWithUnityLevelPlayParams(tt.requestBody, nil)
 
 			if tt.expectedError {
 				assert.Equal(t, tt.expectedResponse, response)
@@ -330,7 +330,7 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 			levelPlay := &LevelPlay{
 				metricsEngine: mockMetrics,
 			}
-			levelPlay.modifyRequestWithSignalData(tt.request)
+			levelPlay.modifyRequestWithSignalData(tt.request, nil)
 
 			if tt.expected == nil {
 				assert.Nil(t, tt.request)

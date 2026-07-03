@@ -1052,7 +1052,7 @@ func TestUpdateAppLovinMaxRequest(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup()
 			}
-			got := updateAppLovinMaxRequest(tt.args.requestBody, tt.args.rctx)
+			got := updateAppLovinMaxRequest(tt.args.requestBody, &tt.args.rctx)
 			if json.Valid(tt.want) && json.Valid(got) {
 				assert.JSONEq(t, string(tt.want), string(got), tt.name)
 			} else {

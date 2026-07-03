@@ -24,7 +24,9 @@ func NewAPS(metricsEngine metrics.MetricsEngine) *Aps {
 		metricsEngine: metricsEngine,
 	}
 }
-func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.RequestCtx) []byte {
+// ModifyRequestWithAPSParams merges APS signal into the request. rctx is a pointer so the decoded
+// signal bid request can be stored on rCtx.SignalRequest for PubMatic-only EDS at before_validation.
+func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx *models.RequestCtx) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
 	}
@@ -45,7 +47,7 @@ func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx models.Request
 	}
 
 	// modify request with signal data
-	a.modifyRequestWithSignalData(request)
+	a.modifyRequestWithSignalData(request, rctx)
 	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
 		return requestBody
@@ -79,7 +81,7 @@ func (a *Aps) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 
 }
 
-func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
+func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx *models.RequestCtx) {
 	if request == nil || request.User == nil {
 		return
 	}
@@ -94,6 +96,11 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 	if err := jsoniterator.Unmarshal([]byte(signal), &signalRequest); err != nil || signalRequest == nil {
 		a.metricsEngine.RecordSignalDataStatus(a.publisherId, a.profileId, models.InvalidSignal)
 		return
+	}
+
+	// Keep decoded signal for EDS; signal ext.eds is not merged onto the shared request ext.
+	if rctx != nil {
+		rctx.SignalRequest = signalRequest
 	}
 
 	updateImpression(request, signalRequest.Imp)

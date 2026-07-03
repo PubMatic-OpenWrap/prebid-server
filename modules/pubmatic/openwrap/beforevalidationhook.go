@@ -765,11 +765,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// 	result.DebugMessages = append(result.DebugMessages, "new request.ext: "+string(newReqExt))
 	// }
 
-	resolvedEds := eds.MergeGapFill(rCtx.EdsParams, eds.Resolve(eds.Sources{Request: payload.BidRequest}))
 	pubmaticBidderCodes := pubmaticBidderCodesForEds(rCtx)
-	if !resolvedEds.IsEmpty() && len(pubmaticBidderCodes) > 0 {
-		requestExt.Prebid.BidderParams, _ = eds.InjectIntoBidderParams(requestExt.Prebid.BidderParams, resolvedEds, pubmaticBidderCodes...)
-	}
+	var resolvedEds models.ResolvedEds
+	requestExt.Prebid.BidderParams, resolvedEds, _ = eds.BuildPubmaticEdsBidderParams(
+		requestExt.Prebid.BidderParams, rCtx.SignalRequest, payload.BidRequest, pubmaticBidderCodes...)
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
 		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
@@ -806,7 +805,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
-		eds.StripFromRequest(ep.BidRequest, eds.MergeGapFill(resolvedEds, eds.Resolve(eds.Sources{Request: ep.BidRequest})))
+		// Strip using resolvedEds from above; EDS must not remain on the shared request for other bidders.
+		eds.StripFromRequest(ep.BidRequest, resolvedEds)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)

@@ -84,7 +84,7 @@ func (m OpenWrap) handleEntrypointHook(
 	if endpoint == models.EndpointAppLovinMax {
 		rCtx.MetricsEngine = m.metricEngine
 		// updating body locally to access updated fields from signal
-		payload.Body = updateAppLovinMaxRequest(payload.Body, rCtx)
+		payload.Body = updateAppLovinMaxRequest(payload.Body, &rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -94,7 +94,7 @@ func (m OpenWrap) handleEntrypointHook(
 	if endpoint == models.EndpointGoogleSDK {
 		rCtx.MetricsEngine = m.metricEngine
 		// Update fields from signal
-		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, rCtx, m.features)
+		payload.Body = googlesdk.ModifyRequestWithGoogleSDKParams(payload.Body, &rCtx, m.features)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -105,7 +105,7 @@ func (m OpenWrap) handleEntrypointHook(
 		rCtx.MetricsEngine = m.metricEngine
 		// Update fields from signal
 		ulp := unitylevelplay.NewLevelPlay(m.metricEngine)
-		payload.Body = ulp.ModifyRequestWithUnityLevelPlayParams(payload.Body)
+		payload.Body = ulp.ModifyRequestWithUnityLevelPlayParams(payload.Body, &rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -133,7 +133,7 @@ func (m OpenWrap) handleEntrypointHook(
 			return result, errAps
 		}
 		aps := aps.NewAPS(m.metricEngine)
-		payload.Body = aps.ModifyRequestWithAPSParams(payload.Body, rCtx)
+		payload.Body = aps.ModifyRequestWithAPSParams(payload.Body, &rCtx)
 		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
 			ep.Body = payload.Body
 			return ep, nil
@@ -231,8 +231,6 @@ func (m OpenWrap) handleEntrypointHook(
 	if rCtx.WakandaDebug.IsEnable() {
 		rCtx.WakandaDebug.SetHTTPRequestData(payload.Request, originalRequestBody)
 	}
-
-	rCtx.EdsParams = ResolveAtEntrypoint(endpoint, originalRequestBody)
 
 	result.Reject = false
 

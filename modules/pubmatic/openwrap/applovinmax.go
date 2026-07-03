@@ -226,9 +226,15 @@ func updateRequestWrapper(signalExt json.RawMessage, maxRequest *openrtb2.BidReq
 	}
 }
 
-func updateAppLovinMaxRequest(requestBody []byte, rctx models.RequestCtx) []byte {
+// updateAppLovinMaxRequest merges Max signal into the request. rctx is a pointer so the decoded
+// signal bid request can be stored on rCtx.SignalRequest for PubMatic-only EDS at before_validation.
+func updateAppLovinMaxRequest(requestBody []byte, rctx *models.RequestCtx) []byte {
 	requestBody, rctx.ProfileIDStr = setProfileID(requestBody)
-	signalData := getSignalData(requestBody, rctx)
+	signalData := getSignalData(requestBody, *rctx)
+	// Keep decoded signal for EDS; signal ext.eds is not merged onto the shared request.
+	if signalData != nil {
+		rctx.SignalRequest = signalData
+	}
 	if signalData == nil {
 		return modifyRequestBody(requestBody)
 	}

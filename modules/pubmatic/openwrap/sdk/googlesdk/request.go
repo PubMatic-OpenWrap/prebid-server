@@ -187,7 +187,9 @@ func getWrapperData(body []byte) (*wrapperData, error) {
 	return wprData, nil
 }
 
-func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx, features feature.Features) []byte {
+// ModifyRequestWithGoogleSDKParams merges Google SDK signal into the request. rctx is a pointer so
+// the decoded signal bid request can be stored on rCtx.SignalRequest for PubMatic-only EDS at before_validation.
+func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx *models.RequestCtx, features feature.Features) []byte {
 	if len(requestBody) == 0 {
 		return requestBody
 	}
@@ -207,7 +209,11 @@ func ModifyRequestWithGoogleSDKParams(requestBody []byte, rctx models.RequestCtx
 	modifyRequestWithStaticData(sdkRequest)
 
 	//Fetch Signal data and modify request
-	signalData := getSignalData(requestBody, rctx, wrapperData)
+	signalData := getSignalData(requestBody, *rctx, wrapperData)
+	// Keep decoded SDK signal for EDS; ext.eds is not merged onto the shared request body.
+	if signalData != nil {
+		rctx.SignalRequest = signalData
+	}
 	modifyRequestWithSignalData(sdkRequest, signalData)
 
 	// Set Publisher Id

@@ -27,7 +27,9 @@ func NewLevelPlay(metricsEngine metrics.MetricsEngine) *LevelPlay {
 	}
 }
 
-func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []byte {
+// ModifyRequestWithUnityLevelPlayParams merges LevelPlay signal into the request. rctx is a pointer so
+// the decoded signal bid request can be stored on rCtx.SignalRequest for PubMatic-only EDS at before_validation.
+func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte, rctx *models.RequestCtx) []byte {
 	if len(requestBody) == 0 {
 		return nil
 	}
@@ -52,7 +54,7 @@ func (l *LevelPlay) ModifyRequestWithUnityLevelPlayParams(requestBody []byte) []
 	}
 
 	// modify request with signal data
-	l.modifyRequestWithSignalData(request)
+	l.modifyRequestWithSignalData(request, rctx)
 
 	modifiedRequest, err := jsoniterator.Marshal(request)
 	if err != nil {
@@ -95,7 +97,7 @@ func (l *LevelPlay) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 }
 
-func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
+func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx *models.RequestCtx) {
 	if request == nil || request.App == nil || request.App.Ext == nil {
 		return
 	}
@@ -117,6 +119,11 @@ func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest) {
 	if err := jsoniterator.Unmarshal(signalData, &signal); err != nil || signal == nil {
 		l.metricsEngine.RecordSignalDataStatus(l.publisherId, l.profileId, models.InvalidSignal)
 		return
+	}
+
+	// Keep decoded signal for EDS; signal ext.eds is not merged onto the shared request ext.
+	if rctx != nil {
+		rctx.SignalRequest = signal
 	}
 
 	modifyImpression(request, signal.Imp)

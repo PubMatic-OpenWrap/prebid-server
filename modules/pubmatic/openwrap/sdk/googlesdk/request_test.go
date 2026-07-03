@@ -1265,7 +1265,7 @@ func TestModifyRequestWithGoogleSDKParams_Privacy(t *testing.T) {
 		}]
 	}`
 
-	result := ModifyRequestWithGoogleSDKParams([]byte(requestBody), models.RequestCtx{MetricsEngine: mockEngine}, nil)
+	result := ModifyRequestWithGoogleSDKParams([]byte(requestBody), &models.RequestCtx{MetricsEngine: mockEngine}, nil)
 
 	modified := &openrtb2.BidRequest{}
 	err = json.Unmarshal(result, modified)
@@ -1869,7 +1869,7 @@ func TestModifyRequestWithGoogleSDKParams(t *testing.T) {
 				tt.setup()
 			}
 
-			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), models.RequestCtx{
+			result := ModifyRequestWithGoogleSDKParams([]byte(tt.requestBody), &models.RequestCtx{
 				MetricsEngine: mockEngine,
 			}, tt.features)
 

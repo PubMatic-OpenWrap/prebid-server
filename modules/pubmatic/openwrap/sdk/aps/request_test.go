@@ -128,7 +128,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			}
 
 			a := NewAPS(mockMetrics)
-			response := a.ModifyRequestWithAPSParams(requestBody, rctx)
+			response := a.ModifyRequestWithAPSParams(requestBody, &rctx)
 			if tt.expectedError {
 				assert.Equal(t, tt.expectedResponse, response)
 				return
