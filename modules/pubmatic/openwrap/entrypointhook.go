@@ -157,6 +157,8 @@ func (m OpenWrap) handleEntrypointHook(
 	}
 
 	requestDebug, _ := jsonparser.GetBoolean(payload.Body, "ext", "prebid", "debug")
+	// SDK entrypoint handlers above decode signal into rCtx.SignalRequest; preserve it across re-init.
+	signalRequest := rCtx.SignalRequest
 	rCtx = models.RequestCtx{
 		StartTime:          time.Now().Unix(),
 		Debug:              queryParams.Get(models.Debug) == "1" || requestDebug,
@@ -197,6 +199,7 @@ func (m OpenWrap) handleEntrypointHook(
 		ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 		GoogleSDK:                       models.GoogleSDK{StartTime: time.Now()},
 	}
+	rCtx.SignalRequest = signalRequest
 
 	if rCtx.IsCTVRequest {
 		// SSAuction will be always 1 for CTV request

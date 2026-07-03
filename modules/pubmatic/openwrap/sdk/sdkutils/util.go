@@ -96,6 +96,8 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 		dst.ConnectionType = src.ConnectionType
 	}
 
+	// UOE-13721 device.ppi: copied from SDK signal when present (APS, Google SDK, LevelPlay).
+	// AppLovin Max overrides after MergeDevice and keeps the outer mediation request PPI.
 	if src.PPI > 0 {
 		dst.PPI = src.PPI
 	}
@@ -103,7 +105,8 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 	return dst
 }
 
-// MergeBanner copies banner fields from signal data into the request banner.
+// MergeBanner copies imp.banner fields from SDK signal into the shared request banner.
+// UOE-13721 imp.banner.mimes and api are taken from signal when non-empty; outer-request values are overwritten.
 func MergeBanner(dst, src *openrtb2.Banner) {
 	if dst == nil || src == nil {
 		return

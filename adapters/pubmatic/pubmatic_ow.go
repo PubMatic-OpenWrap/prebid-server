@@ -45,8 +45,8 @@ func (r resolvedEds) isEmpty() bool {
 	return len(r.Device) == 0 && len(r.App) == 0
 }
 
-// applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.eds
-// (per-bidder filtered object) and merges flat device/app ext keys onto the PubMatic request.
+// applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.{bidder}.eds
+// (per-bidder filtered object passed by the exchange) and merges flat device/app ext keys onto the PubMatic request.
 // Implemented here (not in modules/) to keep the core adapter free of OpenWrap module imports.
 func applyEdsFromBidderParams(request *openrtb2.BidRequest) {
 	if request == nil || len(request.Ext) == 0 {

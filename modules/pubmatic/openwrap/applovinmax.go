@@ -67,6 +67,7 @@ func updateImpression(signalImps []openrtb2.Imp, maxImps []openrtb2.Imp) {
 	}
 
 	if maxImps[0].Banner != nil {
+		// imp.banner.mimes (and api) from signal when present; outer banner object is kept.
 		sdkutils.MergeBanner(maxImps[0].Banner, signalImp.Banner)
 
 		bannertype, err := jsonparser.GetString(maxImps[0].Banner.Ext, "bannertype")
@@ -92,6 +93,7 @@ func updateDevice(signalDevice *openrtb2.Device, maxRequest *openrtb2.BidRequest
 	}
 
 	maxRequest.Device = sdkutils.MergeDevice(maxRequest.Device, signalDevice)
+	// AppLovin Max: device.ppi comes from the outer mediation request, not the embedded signal.
 	maxRequest.Device.PPI = outerPPI
 
 	maxRequest.Device.Ext = setIfKeysExists(signalDevice.Ext, maxRequest.Device.Ext, "atts", "ifv")
