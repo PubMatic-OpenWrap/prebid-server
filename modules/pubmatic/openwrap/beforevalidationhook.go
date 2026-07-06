@@ -742,16 +742,26 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath, rCtx.SignalRequest, payload.BidRequest)
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath, rCtx.SignalRequest, payload.BidRequest)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
 			}
 		}
 	}
+
+	if pubmaticBidderCodes := pubmaticBidderCodesForEds(rCtx); len(pubmaticBidderCodes) > 0 {
+		requestExt.Prebid.BidderParams, _, _ = eds.BuildPubmaticEdsBidderParams(
+			requestExt.Prebid.BidderParams,
+			rCtx.SignalRequest,
+			payload.BidRequest,
+			pubmaticBidderCodes...,
+		)
+	}
+
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
 
 	// similar to impExt, reuse the existing requestExt to avoid additional memory requests
@@ -1132,11 +1142,29 @@ func getDomainFromUrl(pageUrl string) string {
 // 	return uuid.NewV4().String()
 // }
 
+func pubmaticBidderCodesForEds(rCtx models.RequestCtx) []string {
+	codes := make([]string, 0, 1+len(rCtx.Aliases))
+	if _, throttled := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !throttled {
+		codes = append(codes, string(openrtb_ext.BidderPubmatic))
+	}
+	for bidderCode, coreBidder := range rCtx.Aliases {
+		if coreBidder != string(openrtb_ext.BidderPubmatic) {
+			continue
+		}
+		if _, throttled := rCtx.AdapterThrottleMap[bidderCode]; throttled {
+			continue
+		}
+		codes = append(codes, bidderCode)
+	}
+	return codes
+}
+
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-// Rebuilds ext.prebid.bidderparams.<bidderCode> for OW: replaces the whole bidder object (only wiid, optional wrapper, Cookie, sendburl, eds).
+// Rebuilds ext.prebid.bidderparams.<bidderCode> for OW: replaces the whole bidder object (only wiid, optional wrapper, Cookie, sendburl).
 // Incoming keys for that bidder are not preserved. Profile and version are not carried on request ext here; they live on
 // imp.ext.prebid.bidder.pubmatic.wrapper (WrapExt). So bidderparams.wrapper is only created to hold sdksubintegration for the adapter, not a merge of a full client wrapper.
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int, signal, request *openrtb2.BidRequest) (json.RawMessage, error) {
+// EDS is injected separately via eds.BuildPubmaticEdsBidderParams (uses injectIntoBidderParams with pre-marshaled JSON).
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
@@ -1156,10 +1184,6 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie [
 
 	if sendBurl {
 		bidderParamsMap[bidderCode][models.SendBurl] = true
-	}
-
-	if resolved := eds.ResolveEds(signal, request); !resolved.IsEmpty() {
-		bidderParamsMap[bidderCode]["eds"] = resolved
 	}
 
 	return json.Marshal(bidderParamsMap)

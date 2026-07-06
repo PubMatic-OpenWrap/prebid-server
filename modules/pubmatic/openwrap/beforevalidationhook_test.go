@@ -3883,8 +3883,6 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 		bidderCode        string
 		sendBurl          bool
 		sdkSubIntegration *int
-		signal            *openrtb2.BidRequest
-		request           *openrtb2.BidRequest
 	}
 	tests := []struct {
 		name    string
@@ -3995,22 +3993,6 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 			want: json.RawMessage(`{"pubmatic":{"Cookie":["test_cookie"],"wiid":"b441a46e-8c1f-428b-9c29-44e2a408a954"}}`),
 		},
 		{
-			name: "eds_from_signal_on_pubmatic_bidderparams",
-			args: args{
-				loggerID:   "wid-eds",
-				bidderCode: "pubmatic",
-				signal: &openrtb2.BidRequest{
-					Device: &openrtb2.Device{
-						Ext: json.RawMessage(`{"eds":{"boottime":1710000000000}}`),
-					},
-					App: &openrtb2.App{
-						Ext: json.RawMessage(`{"eds":{"install_time":1710000000001}}`),
-					},
-				},
-			},
-			want: json.RawMessage(`{"pubmatic":{"eds":{"device":{"boottime":1710000000000},"app":{"install_time":1710000000001}},"wiid":"wid-eds"}}`),
-		},
-		{
 			name: "sdksubintegration_on_pubmatic_bidderparams_alongside_wiid",
 			args: args{
 				bidderParams:      json.RawMessage(`{"pubmatic":{"pmzoneid":"zone1"}}`),
@@ -4023,7 +4005,7 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookies, tt.args.loggerID, tt.args.bidderCode, tt.args.sendBurl, tt.args.sdkSubIntegration, tt.args.signal, tt.args.request)
+			got, err := updateRequestExtBidderParamsPubmatic(tt.args.bidderParams, tt.args.cookies, tt.args.loggerID, tt.args.bidderCode, tt.args.sendBurl, tt.args.sdkSubIntegration)
 			if (err != nil) != tt.wantErr {
 				assert.Equal(t, tt.wantErr, err != nil)
 				return

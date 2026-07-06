@@ -109,6 +109,27 @@ func TestBuildPubmaticEdsBidderParams(t *testing.T) {
 	assert.JSONEq(t, string(resolved.App), string(edsPayload["app"]))
 }
 
+func TestBuildPubmaticEdsBidderParamsAppOnlyFromRequest(t *testing.T) {
+	request := &openrtb2.BidRequest{
+		App: &openrtb2.App{
+			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001}}`),
+		},
+	}
+
+	baseParams, err := json.Marshal(map[string]map[string]interface{}{
+		"pubmatic": {"wiid": "wid-eds-app"},
+	})
+	assert.NoError(t, err)
+
+	injected, resolved, err := BuildPubmaticEdsBidderParams(baseParams, nil, request, "pubmatic")
+	assert.NoError(t, err)
+	assert.False(t, resolved.IsEmpty())
+
+	var params map[string]map[string]json.RawMessage
+	assert.NoError(t, json.Unmarshal(injected, &params))
+	assert.JSONEq(t, `{"app":{"install_time":1710000000001}}`, string(params["pubmatic"]["eds"]))
+}
+
 func TestStripFromRequest(t *testing.T) {
 	req := &openrtb2.BidRequest{
 		Device: &openrtb2.Device{
