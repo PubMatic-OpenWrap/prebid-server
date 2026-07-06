@@ -157,3 +157,8 @@ func (e *ExtDevice) DeleteIFAType() {
 func (e *ExtDevice) DeleteSessionID() {
 	delete(e.data, ExtDeviceSessionID)
 }
+
+// DeleteEds removes PubMatic-only enrichment data from the cached device.ext map.
+func (e *ExtDevice) DeleteEds() {
+	delete(e.data, "eds")
+}

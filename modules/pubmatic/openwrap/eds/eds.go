@@ -38,11 +38,20 @@ func StripFromRequest(req *openrtb2.BidRequest) {
 	}
 
 	if req.Device != nil {
-		req.Device.Ext = jsonparser.Delete(req.Device.Ext, "eds")
+		req.Device.Ext = nilIfEmptyExt(jsonparser.Delete(req.Device.Ext, "eds"))
 	}
 	if req.App != nil {
-		req.App.Ext = jsonparser.Delete(req.App.Ext, "eds")
+		req.App.Ext = nilIfEmptyExt(jsonparser.Delete(req.App.Ext, "eds"))
 	}
+}
+
+// StripFromDeviceCtx removes cached device.ext.eds so profile/device enrichment does not
+// write EDS back onto the shared request after StripFromRequest.
+func StripFromDeviceCtx(dvc *models.DeviceCtx) {
+	if dvc == nil || dvc.Ext == nil {
+		return
+	}
+	dvc.Ext.DeleteEds()
 }
 
 func resolveEdsFromRequest(req *openrtb2.BidRequest) models.ResolvedEds {
@@ -95,4 +104,15 @@ func nestedObject(ext []byte, key string) []byte {
 	}
 
 	return value
+}
+
+func nilIfEmptyExt(ext []byte) []byte {
+	if len(ext) == 0 {
+		return nil
+	}
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(ext, &keys); err != nil || len(keys) == 0 {
+		return nil
+	}
+	return ext
 }

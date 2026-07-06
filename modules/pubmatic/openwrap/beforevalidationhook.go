@@ -805,13 +805,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 				ep.BidRequest.Source.SChain = nil
 			}
 		}
+		// EDS must not remain on the shared request for other bidders. Strip before profile
+		// enrichment so device.ext is not rewritten from cached DeviceCtx after removal.
+		eds.StripFromRequest(ep.BidRequest)
+		eds.StripFromDeviceCtx(&rctx.DeviceCtx)
+
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
-
-		// EDS must not remain on the shared request for other bidders.
-		eds.StripFromRequest(ep.BidRequest)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)

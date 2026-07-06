@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -155,5 +156,21 @@ func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 
 	StripFromRequest(req)
 
-	assert.JSONEq(t, `{}`, string(req.App.Ext))
+	assert.Nil(t, req.App.Ext)
+}
+
+func TestStripFromDeviceCtx(t *testing.T) {
+	dvc := models.DeviceCtx{
+		Ext: func() *models.ExtDevice {
+			ext := models.NewExtDevice()
+			_ = ext.UnmarshalJSON(json.RawMessage(`{"eds":{"boottime":1},"atts":1}`))
+			return ext
+		}(),
+	}
+
+	StripFromDeviceCtx(&dvc)
+
+	out, err := dvc.Ext.MarshalJSON()
+	assert.NoError(t, err)
+	assert.JSONEq(t, `{"atts":1}`, string(out))
 }
