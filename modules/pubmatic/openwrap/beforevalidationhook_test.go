@@ -4003,9 +4003,12 @@ func TestUpdateRequestExtBidderParamsPubmatic(t *testing.T) {
 					Device: &openrtb2.Device{
 						Ext: json.RawMessage(`{"eds":{"boottime":1710000000000}}`),
 					},
+					App: &openrtb2.App{
+						Ext: json.RawMessage(`{"eds":{"install_time":1710000000001}}`),
+					},
 				},
 			},
-			want: json.RawMessage(`{"pubmatic":{"eds":{"device":{"boottime":1710000000000}},"wiid":"wid-eds"}}`),
+			want: json.RawMessage(`{"pubmatic":{"eds":{"device":{"boottime":1710000000000},"app":{"install_time":1710000000001}},"wiid":"wid-eds"}}`),
 		},
 		{
 			name: "sdksubintegration_on_pubmatic_bidderparams_alongside_wiid",
