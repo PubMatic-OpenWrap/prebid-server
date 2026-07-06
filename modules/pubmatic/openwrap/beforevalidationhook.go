@@ -26,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -742,12 +743,18 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
 		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
+		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+			requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
+		}
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
 				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
+				if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+					requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
+				}
 			}
 		}
 	}
