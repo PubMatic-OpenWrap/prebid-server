@@ -385,7 +385,7 @@ func TestIsEDSBlockedCountry(t *testing.T) {
 
 func TestIsEDSBlockedCountry_noDBEntry(t *testing.T) {
 	fe := &feature{
-		publisherFeature:      map[int]map[int]models.FeatureData{},
+		publisherFeature:    map[int]map[int]models.FeatureData{},
 		edsBlockedCountries: newEDSBlockedCountries(),
 	}
 	fe.updateEDSBlockedCountries()
