@@ -649,7 +649,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// Preserve client ext.owsdk (e.g. ctaoverlay) before stripping for marshal; merged back with server adattributes below.
-		incomingOWSDK := impExt.OWSDK
 		isCTAOverlayRequest := impExt.OWSDK != nil && impExt.OWSDK["ctaoverlay"] == float64(1)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
@@ -702,18 +701,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impCtx.VideoAdUnitCtx = videoAdUnitCtx
 		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
 		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
-
-		// Merge client ext.owsdk + server adattributes into NewExt (what applyImpChanges applies to the outgoing request).
-		// Mutating imp.Ext here is lost: imp is a loop copy and applyImpChanges overwrites imp.Ext from NewExt.
-		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
-			mergedExt, mergeErr := m.mergeOWSDKAdAttributesIntoImpExt(impCtx.NewExt, impCtx, incomingOWSDK, payload.BidRequest.Device.OS)
-			if mergeErr != nil {
-				glog.Errorf("merge OWSDK into imp.ext imp=%s: %v", imp.ID, mergeErr)
-			} else {
-				impCtx.NewExt = mergedExt
-			}
-		}
-
 		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
 
@@ -866,13 +853,17 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 	bidRequest.Source.TID = bidRequest.ID
 
+	deviceOS := ""
+	if bidRequest.Device != nil {
+		deviceOS = bidRequest.Device.OS
+	}
 	for i := 0; i < len(bidRequest.Imp); i++ {
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
-		m.applyImpChanges(rctx, &bidRequest.Imp[i])
+		m.applyImpChanges(rctx, &bidRequest.Imp[i], deviceOS)
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
@@ -962,7 +953,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 }
 
-func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp, deviceOS string) {
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
@@ -980,6 +971,12 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
+
+	// add adattribute support for 2.5 endpoint and sdk integration endpoints only. In future if any other new endpoint migrated to modules code then we need this check here.
+	// if sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
+	if err := ApplyOWSDKFormatLevelAdAttributes(imp, rCtx.ImpBidCtx[imp.ID], deviceOS); err != nil {
+		glog.Errorf("OWSDK format-level adattributes imp=%s: %v", imp.ID, err)
+	}
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {

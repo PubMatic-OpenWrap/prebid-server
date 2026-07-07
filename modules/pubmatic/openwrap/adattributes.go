@@ -2,11 +2,14 @@ package openwrap
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"maps"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
 
@@ -20,16 +23,16 @@ const (
 	AdAttrWireFrcClkBrowser     = 6
 )
 
-// AdFormat represents different types of ad formats
+// AdFormat is a matrix row key: OS + SDK range + slot-specific logical format (Approach 2 request spec).
 type AdFormat string
 
 const (
-	AdFormatBannerDisplay            AdFormat = "banner_display"
-	AdFormatInterstitialDisplay      AdFormat = "interstitial_display"
-	AdFormatInterstitialDisplayVideo AdFormat = "interstitial_display_video"
-	AdFormatInterstitialVideo        AdFormat = "interstitial_video"
-	AdFormatRewardedVideo            AdFormat = "rewarded_video"
-	AdFormatMRECVideoDisplay         AdFormat = "mrec_video_display"
+	AdFormatInterstitialDisplay AdFormat = "interstitial_display" // instl=1 && banner — banner.ext
+	AdFormatInterstitialVideo   AdFormat = "interstitial_video"   // instl=1 && video — video.ext
+	AdFormatRewardedVideo       AdFormat = "rewarded_video"       // reward=1 && video — video.ext
+	AdFormatMRECDisplay         AdFormat = "mrec_display"         // instl=0, banner, MREC size — banner.ext
+	AdFormatMRECVideo           AdFormat = "mrec_video"           // instl=0, video, MREC size — video.ext
+	AdFormatBannerDisplay       AdFormat = "banner_display"       // instl=0, banner, non-MREC — banner.ext
 )
 
 // OS represents the operating system
@@ -43,10 +46,33 @@ const (
 const (
 	MRECWidth  = 300
 	MRECHeight = 250
+
+	// Server injects format-level ext.owsdk.adattributes only for displaymanagerver in [4.1.0, 5.2.0].
+	// SDK 5.2.1+ sends adattributes on the request; OpenWrap does not add them.
+	OWSDKServerAdAttributesMinSDKVersion = "4.1.0"
+	OWSDKServerAdAttributesMaxSDKVersion = "5.2.0"
+)
+
+const (
+	extOWSDKKey     = "owsdk"
+	adAttributesKey = "adattributes"
+)
+
+const (
+	sdk410 = "4.1.0"
+	sdk420 = "4.2.0"
+	sdk430 = "4.3.0"
+	sdk440 = "4.4.0"
+	sdk480 = "4.8.0"
+	sdk490 = "4.9.0"
+	sdk500 = "5.0.0"
+	sdk510 = "5.1.0"
+	sdk520 = "5.2.0"
 )
 
 // FeatureConfig defines supported ext.owsdk adattribute wire IDs for OS, SDK version, and ad format.
-// MaxVersion empty means no upper bound (min inclusive only).
+// MinVersion and MaxVersion are inclusive; MaxVersion empty means no upper bound (min only).
+// 5.2.0 rows use MaxVersion "5.2.0" for exact match; 5.1.0–5.2.0 bands use sdk510–sdk520 range rows.
 type FeatureConfig struct {
 	OS         OS
 	MinVersion string
@@ -55,107 +81,165 @@ type FeatureConfig struct {
 	WireIDs    []int
 }
 
-// UnifiedFeatureMatrix maps OS, SDK version range, and ad format to supported adattribute wire IDs.
-// Order matters: GetSupportedAdAttributeWireIDs returns the first matching row (more specific rows must appear before broader ones).
-var UnifiedFeatureMatrix = []FeatureConfig{
-	// Android — spec: "Supporting OpenWrap SDK versions" (interstitial display = SDK 4.1.0–4.2.0 only; banner/MREC rows per platform).
-	{OS: OSAndroid, MinVersion: "4.1.0", MaxVersion: "4.2.0", AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSAndroid, MinVersion: "4.1.0", MaxVersion: "4.8.0", AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+// unifiedFeatureMatrix maps OS, SDK version range, and slot-specific AdFormat to supported wire IDs.
+// Order matters: GetSupportedAdAttributeWireIDs returns the first match — list newer / narrower version rows before older ones for the same OS+AdFormat.
+var unifiedFeatureMatrix = []FeatureConfig{
+	// --- Android — interstitial display (banner.ext) ---
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
+	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk420, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- Android — interstitial video (video.ext) ---
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
+	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
+	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- Android — rewarded video (video.ext) ---
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
+	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
+	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- Android — MREC display / MREC video ---
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	// Android 4.1.0–4.8.0 MREC display: same [1] as banner display band (spec: non-MREC and MREC banners)
+	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	// --- Android — banner display (non-MREC, instl=0) ---
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	// Android 4.1.0–4.8.0 banner display (non-MREC and MREC banners): banner.ext.adattributes [1]
+	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 
-	{OS: OSAndroid, MinVersion: "4.3.0", MaxVersion: "4.3.0", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSAndroid, MinVersion: "4.3.0", MaxVersion: "4.3.0", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- iOS — interstitial display (banner.ext) ---
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	// iOS 4.1.0–4.8.0 interstitial display (covers 4.1–4.2 and 4.3–4.8 bands): banner.ext [1]
+	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 
-	{OS: OSAndroid, MinVersion: "4.4.0", MaxVersion: "4.8.0", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
-	{OS: OSAndroid, MinVersion: "4.4.0", MaxVersion: "4.8.0", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
-
-	{OS: OSAndroid, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
-	{OS: OSAndroid, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
-	{OS: OSAndroid, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatMRECVideoDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
-
-	{OS: OSAndroid, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSAndroid, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSAndroid, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatMRECVideoDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSAndroid, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireMRAIDAppStatus}},
-
-	// iOS
-	{OS: OSiOS, MinVersion: "4.1.0", MaxVersion: "4.2.0", AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
-
-	{OS: OSiOS, MinVersion: "4.3.0", MaxVersion: "4.8.0", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSiOS, MinVersion: "4.3.0", MaxVersion: "4.8.0", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
-
-	{OS: OSiOS, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
-	{OS: OSiOS, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
-	{OS: OSiOS, MinVersion: "4.9.0", MaxVersion: "5.0.0", AdFormat: AdFormatMRECVideoDisplay, WireIDs: []int{AdAttrWireCTAOverlay}},
-
-	{OS: OSiOS, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatInterstitialDisplayVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSiOS, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSiOS, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatMRECVideoDisplay, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
-	{OS: OSiOS, MinVersion: "5.1.0", MaxVersion: "", AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireMRAIDAppStatus}},
+	// --- iOS — interstitial video ---
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	{OS: OSiOS, MinVersion: sdk430, MaxVersion: sdk480, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- iOS — rewarded video ---
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	{OS: OSiOS, MinVersion: sdk430, MaxVersion: sdk480, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
+	// --- iOS — MREC display / MREC video ---
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireCTAOverlay}},
+	// iOS 4.1.0–4.8.0 MREC display: banner.ext [1] (spec groups with banner display band)
+	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireCTAOverlay}},
+	// --- iOS — banner display (non-MREC) ---
+	// iOS 4.1.0–4.8.0 banner display (non-MREC and MREC banners): banner.ext [1]
+	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireMRAIDAppStatus}},
 }
 
-// buildOWSDKAdAttributesMap returns server-side ext.owsdk fields (e.g. adattributes as numeric wire IDs) from device, SDK version, and format.
-// Returns nil if nothing should be added.
-func buildOWSDKAdAttributesMap(impCtx models.ImpCtx, deviceOS string) map[string]any {
-	if deviceOS == "" {
-		return nil
-	}
-	os := DetermineOS(deviceOS)
-	if os == "" {
-		return nil
-	}
-	sdkVersion := strings.TrimSpace(impCtx.DisplayManagerVer)
+// shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.2.0] inclusive.
+func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	if sdkVersion == "" {
-		return nil
+		return false
 	}
-	adFormat := DetermineAdFormat(impCtx)
-	wireIDs := GetSupportedAdAttributeWireIDs(os, sdkVersion, adFormat)
-	if len(wireIDs) == 0 {
-		return nil
+	if isVersionLessThan(sdkVersion, OWSDKServerAdAttributesMinSDKVersion) {
+		return false
 	}
-	return CreateOWSDKExtension(wireIDs)
+	if isVersionGreaterThan(sdkVersion, OWSDKServerAdAttributesMaxSDKVersion) {
+		return false
+	}
+	return true
 }
 
-// mergeOWSDKAdAttributesIntoImpExt merges client ext.owsdk (e.g. ctaoverlay) with server-computed adattributes (numeric IDs) into
-// the full imp.ext JSON. clientOWSDK is the incoming request's ext.owsdk before it was stripped for NewExt.
-func (m *OpenWrap) mergeOWSDKAdAttributesIntoImpExt(extJSON json.RawMessage, impCtx models.ImpCtx, clientOWSDK map[string]any, deviceOS string) (json.RawMessage, error) {
-	srv := buildOWSDKAdAttributesMap(impCtx, deviceOS)
-	if len(clientOWSDK) == 0 && len(srv) == 0 {
+// mergeOWSDKServerFieldsIntoExtJSON merges server-built owsdk fields (e.g. adattributes) into a format object's ext JSON.
+// Other ext keys are preserved as-is via json.RawMessage.
+func mergeOWSDKServerFieldsIntoExtJSON(extJSON json.RawMessage, serverOWSDK map[string]any) (json.RawMessage, error) {
+	if len(serverOWSDK) == 0 {
 		return extJSON, nil
 	}
-	var extMap map[string]json.RawMessage
-	if len(extJSON) == 0 {
-		extMap = make(map[string]json.RawMessage)
-	} else if err := json.Unmarshal(extJSON, &extMap); err != nil {
-		extMap = make(map[string]json.RawMessage)
-	}
-	owsdkOut := make(map[string]any)
-	for k, v := range clientOWSDK {
-		owsdkOut[k] = v
-	}
-	if srv != nil {
-		for k, v := range srv {
-			owsdkOut[k] = v
+
+	extMap := make(map[string]json.RawMessage)
+	if len(extJSON) > 0 {
+		if err := json.Unmarshal(extJSON, &extMap); err != nil {
+			extMap = make(map[string]json.RawMessage)
 		}
 	}
-	if len(owsdkOut) == 0 {
-		return extJSON, nil
+
+	owsdkOut := make(map[string]any)
+	if raw := extMap[extOWSDKKey]; len(raw) > 0 {
+		_ = json.Unmarshal(raw, &owsdkOut)
 	}
+	maps.Copy(owsdkOut, serverOWSDK)
+
 	owsdkBytes, err := json.Marshal(owsdkOut)
 	if err != nil {
 		return extJSON, err
 	}
-	extMap["owsdk"] = owsdkBytes
+	extMap[extOWSDKKey] = owsdkBytes
 	return json.Marshal(extMap)
 }
 
-// GetSupportedAdAttributeWireIDs returns supported ext.owsdk adattribute wire IDs for OS, SDK version, and ad format.
-func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
-	sdkVersion = strings.TrimSpace(sdkVersion)
-	if sdkVersion == "" || isVersionLessThan(sdkVersion, "4.1.0") {
+// ApplyOWSDKFormatLevelAdAttributes sets imp.banner|video ext.owsdk.adattributes from unifiedFeatureMatrix
+// for displaymanagerver 4.1.0–5.2.0 only. imp.native is skipped.
+func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, deviceOS string) error {
+	if imp == nil {
+		return nil
+	}
+	// adattributes feature is not supported for native
+	if imp.Native != nil && imp.Banner == nil && imp.Video == nil {
 		return nil
 	}
 
-	for _, config := range UnifiedFeatureMatrix {
+	deviceOS = strings.TrimSpace(deviceOS)
+	if deviceOS == "" {
+		return nil
+	}
+	sdkVersion := strings.TrimSpace(impCtx.DisplayManagerVer)
+	if !shouldServerInjectFormatLevelAdAttributes(sdkVersion) {
+		return nil
+	}
+
+	os := DetermineOS(deviceOS)
+	if os == "" {
+		return nil
+	}
+
+	var errs []error
+	applyAdAttributes := func(ext json.RawMessage, format AdFormat) (json.RawMessage, error) {
+		if format == "" {
+			return ext, nil
+		}
+		wireIDs := GetSupportedAdAttributeWireIDs(os, sdkVersion, format)
+		srv := CreateOWSDKExtension(wireIDs)
+		if len(srv) == 0 {
+			return ext, nil
+		}
+		return mergeOWSDKServerFieldsIntoExtJSON(ext, srv)
+	}
+
+	if imp.Banner != nil {
+		if out, err := applyAdAttributes(imp.Banner.Ext, DetermineAdFormatForBanner(impCtx)); err != nil {
+			errs = append(errs, fmt.Errorf("banner: %w", err))
+		} else {
+			imp.Banner.Ext = out
+		}
+	}
+	if imp.Video != nil {
+		if out, err := applyAdAttributes(imp.Video.Ext, DetermineAdFormatForVideo(impCtx)); err != nil {
+			errs = append(errs, fmt.Errorf("video: %w", err))
+		} else {
+			imp.Video.Ext = out
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// GetSupportedAdAttributeWireIDs returns supported ext.owsdk adattribute wire IDs for OS, SDK version, and ad format.
+// Call only after ApplyOWSDKFormatLevelAdAttributes has trimmed and validated displaymanagerver (in [4.1.0, 5.2.0]).
+func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
+	for _, config := range unifiedFeatureMatrix {
 		if config.OS == os &&
 			config.AdFormat == adFormat &&
 			isVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
@@ -192,49 +276,66 @@ func isBannerEffectiveForAdFormat(impCtx models.ImpCtx) bool {
 	return *cfg.Banner.Enabled
 }
 
-// DetermineAdFormat determines the ad format based on impression instl flag and ad unit configuration
-func DetermineAdFormat(impCtx models.ImpCtx) AdFormat {
-	videoOn := isVideoEffectiveForAdFormat(impCtx)
-	bannerOn := isBannerEffectiveForAdFormat(impCtx)
-
-	// Rewarded inventory: only classified as rewarded video when a video object is present (no separate rewarded-display format).
-	if impCtx.IsRewardInventory != nil && *impCtx.IsRewardInventory == 1 {
-		if videoOn {
-			return AdFormatRewardedVideo
-		}
+// isMRECSize implements the request-spec isMRECSize() gate: 300×250 on the effective imp.banner
+// (used for MREC display on the banner object and MREC video when imp.video is present).
+func isMRECSize(impCtx models.ImpCtx) bool {
+	if !isBannerEffectiveForAdFormat(impCtx) || impCtx.Banner == nil {
+		return false
 	}
+	if impCtx.Banner.W == nil || impCtx.Banner.H == nil {
+		return false
+	}
+	return *impCtx.Banner.W == MRECWidth && *impCtx.Banner.H == MRECHeight
+}
 
-	// Check for interstitial (instl = 1)
+func isRewardedVideoRequest(impCtx models.ImpCtx) bool {
+	return impCtx.IsRewardInventory != nil && *impCtx.IsRewardInventory == 1 && isVideoEffectiveForAdFormat(impCtx)
+}
+
+// DetermineAdFormatForVideo maps imp.video to a matrix row (Approach 2 request spec):
+//   - Rewarded video:     reward == 1 && imp.video != nil (effective)
+//   - Interstitial video: instl == 1 && imp.video != nil (effective); evaluated after rewarded
+//   - MREC video:         instl == 0 or absent && imp.video != nil (effective) && isMRECSize()
+func DetermineAdFormatForVideo(impCtx models.ImpCtx) AdFormat {
+	if !isVideoEffectiveForAdFormat(impCtx) {
+		return ""
+	}
+	if isRewardedVideoRequest(impCtx) {
+		return AdFormatRewardedVideo
+	}
 	if impCtx.Instl == 1 {
-		if videoOn && bannerOn {
-			// Interstitial display + video
-			return AdFormatInterstitialDisplayVideo
-		}
-		// check do we need to keep this logic after confirmation with preety
-		if videoOn {
-			return AdFormatInterstitialVideo
-		}
-		if bannerOn {
-			return AdFormatInterstitialDisplay
-		}
+		return AdFormatInterstitialVideo
 	}
-
-	// Check for MREC (300x250) when instl = 0
-	if bannerOn {
-		if impCtx.Banner.W != nil && impCtx.Banner.H != nil {
-			if *impCtx.Banner.W == MRECWidth && *impCtx.Banner.H == MRECHeight {
-				// MREC logic - always return MREC video display when video is present
-				if videoOn {
-					return AdFormatMRECVideoDisplay
-				}
-			}
-		}
-	}
-	// Non-interstitial banner (not 300x250 + video MREC): banner display for matrix / wire IDs.
-	if bannerOn {
-		return AdFormatBannerDisplay
+	// instl is 0 or absent (non-1): non-interstitial inventory
+	if isMRECSize(impCtx) {
+		return AdFormatMRECVideo
 	}
 	return ""
+}
+
+// DetermineAdFormatForBanner maps imp.banner to a matrix row (Approach 2 request spec):
+//   - Interstitial display: instl == 1 && imp.banner != nil (effective)
+//   - MREC display:         instl == 0 or absent && imp.banner != nil (effective) && isMRECSize()
+//   - Banner display:       instl == 0 or absent && imp.banner != nil (effective) && !isMRECSize()
+func DetermineAdFormatForBanner(impCtx models.ImpCtx) AdFormat {
+	if !isBannerEffectiveForAdFormat(impCtx) {
+		return ""
+	}
+	if impCtx.Instl == 1 {
+		return AdFormatInterstitialDisplay
+	}
+	if isMRECSize(impCtx) {
+		return AdFormatMRECDisplay
+	}
+	return AdFormatBannerDisplay
+}
+
+// DetermineAdFormat returns the video-slot matrix key when set, else the banner-slot key (legacy / diagnostics).
+func DetermineAdFormat(impCtx models.ImpCtx) AdFormat {
+	if v := DetermineAdFormatForVideo(impCtx); v != "" {
+		return v
+	}
+	return DetermineAdFormatForBanner(impCtx)
 }
 
 // DetermineOS determines the OS based on device information
@@ -270,6 +371,11 @@ func isVersionLessThan(version1, version2 string) bool {
 	return compareVersions(version1, version2) < 0
 }
 
+// isVersionGreaterThan checks if version1 is greater than version2
+func isVersionGreaterThan(version1, version2 string) bool {
+	return compareVersions(version1, version2) > 0
+}
+
 // isVersionInRange checks if version is within the specified range (inclusive)
 func isVersionInRange(version, minVersion, maxVersion string) bool {
 	// If maxVersion is empty, it means no upper bound
@@ -283,27 +389,23 @@ func isVersionInRange(version, minVersion, maxVersion string) bool {
 // compareVersions compares two dot-separated numeric version strings (e.g. "5.1.0").
 // Non-numeric segments are treated as 0; leading/trailing whitespace is ignored.
 func compareVersions(v1, v2 string) int {
-	v1, v2 = strings.TrimSpace(v1), strings.TrimSpace(v2)
-	v1Parts := strings.Split(v1, ".")
-	v2Parts := strings.Split(v2, ".")
+	p1 := strings.Split(strings.TrimSpace(v1), ".")
+	p2 := strings.Split(strings.TrimSpace(v2), ".")
 
-	maxLen := len(v1Parts)
-	if len(v2Parts) > maxLen {
-		maxLen = len(v2Parts)
-	}
+	for i := 0; i < max(len(p1), len(p2)); i++ {
+		n1, n2 := 0, 0
 
-	for i := 0; i < maxLen; i++ {
-		var v1Num, v2Num int
-		if i < len(v1Parts) {
-			v1Num, _ = strconv.Atoi(v1Parts[i])
+		if i < len(p1) {
+			n1, _ = strconv.Atoi(p1[i])
 		}
-		if i < len(v2Parts) {
-			v2Num, _ = strconv.Atoi(v2Parts[i])
+		if i < len(p2) {
+			n2, _ = strconv.Atoi(p2[i])
 		}
 
-		if v1Num < v2Num {
+		switch {
+		case n1 < n2:
 			return -1
-		} else if v1Num > v2Num {
+		case n1 > n2:
 			return 1
 		}
 	}
@@ -311,33 +413,26 @@ func compareVersions(v1, v2 string) int {
 	return 0
 }
 
-// CreateOWSDKExtension builds ext.owsdk with adattributes: sorted, deduplicated wire IDs (invalid / duplicate IDs dropped).
+// CreateOWSDKExtension builds ext.owsdk with sorted, deduplicated, positive adattribute wire IDs.
 func CreateOWSDKExtension(wireIDs []int) map[string]any {
-	owsdk := make(map[string]any)
 	if len(wireIDs) == 0 {
-		return owsdk
+		return map[string]any{}
 	}
-	work := slices.Clone(wireIDs)
-	write := 0
-	for _, id := range work {
+
+	out := make([]int, 0, len(wireIDs))
+	for _, id := range wireIDs {
 		if id > 0 {
-			work[write] = id
-			write++
+			out = append(out, id)
 		}
 	}
-	if write == 0 {
-		return owsdk
+	if len(out) == 0 {
+		return map[string]any{}
 	}
-	work = work[:write]
-	sort.Ints(work)
-	j := 0
-	for _, id := range work {
-		if j == 0 || id != work[j-1] {
-			work[j] = id
-			j++
-		}
+
+	slices.Sort(out)
+	out = slices.Compact(out)
+
+	return map[string]any{
+		adAttributesKey: out,
 	}
-	work = work[:j]
-	owsdk["adattributes"] = work
-	return owsdk
 }
