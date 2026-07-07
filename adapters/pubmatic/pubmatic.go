@@ -16,6 +16,7 @@ import (
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
@@ -130,9 +131,30 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	}
 	bidderParams, err := unmarshalPubmaticBidderParams(reqExt)
 	if err != nil {
+		if ulpdebug.ShouldTrace(request) {
+			ulpdebug.LogStageErr(ulpdebug.Wiid(request), "pubmatic_unmarshal_bidderparams", err)
+		}
 		return nil, []error{err}
 	}
+	if ulpdebug.ShouldTrace(request) {
+		wiid := ulpdebug.Wiid(request)
+		if eds, ok := bidderParams[bidderParamsEdsKey]; ok {
+			ulpdebug.LogRawBytes(wiid, "pubmatic_make_requests", "bidderparams.eds", eds)
+		} else {
+			ulpdebug.LogNote(wiid, "pubmatic_make_requests", "no eds in per-bidder params")
+		}
+	}
 	applyEdsFromBidderParams(request, bidderParams)
+	if ulpdebug.ShouldTrace(request) {
+		wiid := ulpdebug.Wiid(request)
+		if request.Device != nil {
+			ulpdebug.LogRawBytes(wiid, "pubmatic_make_requests", "device.ext", request.Device.Ext)
+		}
+		if request.App != nil {
+			ulpdebug.LogRawBytes(wiid, "pubmatic_make_requests", "app.ext", request.App.Ext)
+		}
+		ulpdebug.LogStageOK(wiid, "pubmatic_apply_eds")
+	}
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request, reqExt, bidderParams)
 	if err != nil {

@@ -42,6 +42,7 @@ import (
 	"github.com/prebid/prebid-server/v3/usersync"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/maputil"
+	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
@@ -294,13 +295,28 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	responseDebugAllow, accountDebugAllow, debugLog := getDebugInfo(r.BidRequestWrapper.Test, requestExtPrebid, r.Account.DebugAllow, debugLog)
 	upadteOWDebugLog(requestExtPrebid, debugLog)
 
+	trace := ulpdebug.ShouldTrace(r.BidRequestWrapper.BidRequest)
+	wiid := ulpdebug.Wiid(r.BidRequestWrapper.BidRequest)
+	if trace {
+		ulpdebug.LogNote(wiid, "hold_auction", fmt.Sprintf("pre_rebuild debug=%v adServerTargeting=%d priceFloors=%v",
+			responseDebugAllow, len(requestExtPrebid.AdServerTargeting), e.priceFloorEnabled))
+	}
+
 	// save incoming request with stored requests (if applicable) to return in debug logs
 	if responseDebugAllow || len(requestExtPrebid.AdServerTargeting) > 0 {
+		if trace {
+			ulpdebug.LogNote(wiid, "hold_auction", "rebuild_request_debug_path")
+		}
 		if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
+			ulpdebug.LogStageErr(wiid, "hold_auction_rebuild_debug", err)
 			return nil, err
+		}
+		if trace {
+			ulpdebug.LogStageOK(wiid, "hold_auction_rebuild_debug")
 		}
 		resolvedBidReq, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest)
 		if err != nil {
+			ulpdebug.LogStageErr(wiid, "hold_auction_marshal_resolved_bidreq", err)
 			return nil, err
 		}
 		r.ResolvedBidRequest = resolvedBidReq
@@ -333,12 +349,20 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		GDPRInScope: r.GDPREnforced,
 	}
 	if err := dsaWriter.Write(r.BidRequestWrapper); err != nil {
+		ulpdebug.LogStageErr(wiid, "dsa_write", err)
 		return nil, err
 	}
 
 	// rebuild/resync the request in the request wrapper.
+	if trace {
+		ulpdebug.LogNote(wiid, "hold_auction", "rebuild_request_main")
+	}
 	if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
+		ulpdebug.LogStageErr(wiid, "hold_auction_rebuild_main", err)
 		return nil, err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "hold_auction_rebuild_main")
 	}
 
 	// Slice of BidRequests, each a copy of the original cleaned to only contain bidder data for the named bidder

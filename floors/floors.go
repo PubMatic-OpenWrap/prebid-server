@@ -11,6 +11,7 @@ import (
 	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 )
 
 type Price struct {
@@ -292,7 +293,19 @@ func updateFloorsInRequest(bidRequestWrapper *openrtb_ext.RequestWrapper, priceF
 		}
 		prebidExt.Floors = priceFloors
 		requestExt.SetPrebid(prebidExt)
-		bidRequestWrapper.RebuildRequest()
+		if ulpdebug.ShouldTrace(bidRequestWrapper.BidRequest) {
+			wiid := ulpdebug.Wiid(bidRequestWrapper.BidRequest)
+			ulpdebug.LogNote(wiid, "floors_update", "rebuild_request")
+		}
+		if err := bidRequestWrapper.RebuildRequest(); err != nil {
+			if ulpdebug.ShouldTrace(bidRequestWrapper.BidRequest) {
+				ulpdebug.LogStageErr(ulpdebug.Wiid(bidRequestWrapper.BidRequest), "floors_rebuild_request", err)
+			}
+			return
+		}
+		if ulpdebug.ShouldTrace(bidRequestWrapper.BidRequest) {
+			ulpdebug.LogStageOK(ulpdebug.Wiid(bidRequestWrapper.BidRequest), "floors_rebuild_request")
+		}
 	}
 }
 

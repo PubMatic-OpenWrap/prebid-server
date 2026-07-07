@@ -52,6 +52,7 @@ import (
 	"github.com/prebid/prebid-server/v3/util/httputil"
 	"github.com/prebid/prebid-server/v3/util/iputil"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
+	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 	"github.com/prebid/prebid-server/v3/util/uuidutil"
 	"github.com/prebid/prebid-server/v3/version"
 )
@@ -273,6 +274,14 @@ func (deps *endpointDeps) Auction(w http.ResponseWriter, r *http.Request, _ http
 		GDPREnforced:               gdprEnforced,
 	}
 	auctionResponse, err := deps.ex.HoldAuction(ctx, auctionRequest, nil)
+	if ulpdebug.ShouldTrace(req.BidRequest) {
+		wiid := ulpdebug.Wiid(req.BidRequest)
+		if err != nil {
+			ulpdebug.LogStageErr(wiid, "hold_auction", err)
+		} else {
+			ulpdebug.LogStageOK(wiid, "hold_auction")
+		}
+	}
 	defer func() {
 		if !auctionRequest.BidderResponseStartTime.IsZero() {
 			deps.metricsEngine.RecordOverheadTime(metrics.MakeAuctionResponse, time.Since(auctionRequest.BidderResponseStartTime))
@@ -698,21 +707,38 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 		return nil
 	}
 
+	wiid := ulpdebug.Wiid(req.BidRequest)
+	trace := ulpdebug.ShouldTrace(req.BidRequest)
+	if trace {
+		ulpdebug.LogBidderParamsRaw(wiid, "merge_bidderparams_start", bidderParamsJson)
+	}
+
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
 		if err != nil {
 			continue
 		}
 
+		impID := ""
+		if imp.Imp != nil {
+			impID = imp.Imp.ID
+		}
+
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
-		if err := mergeBidderParamsImpExt(impExt, bidderParams); err != nil {
+		if err := mergeBidderParamsImpExt(impExt, bidderParams, wiid, impID, trace, bidderParamsJson); err != nil {
+			ulpdebug.LogStageErr(wiid, "mergeBidderParamsImpExt", err)
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.prebid.bidder.BIDDER level
-		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams); err != nil {
+		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams, wiid, impID, trace, bidderParamsJson); err != nil {
+			ulpdebug.LogStageErr(wiid, "mergeBidderParamsImpExtPrebid", err)
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
+	}
+
+	if trace {
+		ulpdebug.LogStageOK(wiid, "merge_bidderparams")
 	}
 
 	return nil
@@ -721,7 +747,7 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 // mergeBidderParamsImpExt merges bidder parameters in req.ext down to the imp[].ext.BIDDER
 // level, giving priority to imp[].ext.BIDDER in case of a conflict. Unmarshal errors are not
 // expected since the ext json was validated during the bid request unmarshal.
-func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage) error {
+func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage, wiid, impID string, trace bool, bidderParamsParent json.RawMessage) error {
 	extMap := impExt.GetExt()
 	extMapModified := false
 
@@ -745,6 +771,10 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 		modified := false
 		for key, value := range params {
 			if _, present := impExtBidderMap[key]; !present {
+				if trace && key == "eds" {
+					ulpdebug.LogMergeCopy(wiid, "merge_imp_ext", impID, bidder, key, value)
+					ulpdebug.LogNestedSubslice(wiid, "merge_imp_ext", "eds", bidderParamsParent, value)
+				}
 				impExtBidderMap[key] = value
 				modified = true
 			}
@@ -754,6 +784,9 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 			impExtBidderJson, err := jsonutil.Marshal(impExtBidderMap)
 			if err != nil {
 				return fmt.Errorf("error marshalling ext.BIDDER: %s", err.Error())
+			}
+			if trace {
+				ulpdebug.ProbeMarshal(wiid, "merge_imp_ext", "marshal ext."+bidder, impExtBidderMap)
 			}
 			extMap[bidder] = impExtBidderJson
 			extMapModified = true
@@ -769,17 +802,23 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 
 // mergeBidderParamsImpExtPrebid merges bidder parameters in req.ext down to the imp[].ext.prebid.bidder.BIDDER
 // level, giving priority to imp[].ext.prebid.bidder.BIDDER in case of a conflict.
-func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage) error {
+func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[string]map[string]json.RawMessage, wiid, impID string, trace bool, bidderParamsParent json.RawMessage) error {
 	prebid := impExt.GetPrebid()
 	prebidModified := false
 
 	if prebid == nil || len(prebid.Bidder) == 0 {
+		if trace {
+			ulpdebug.LogNote(wiid, "merge_imp_prebid", "skip imp="+impID+" no prebid.bidder")
+		}
 		return nil
 	}
 
 	for bidder, params := range reqExtParams {
 		impExtPrebidBidder, impExtPrebidBidderExists := prebid.Bidder[bidder]
 		if !impExtPrebidBidderExists || impExtPrebidBidder == nil {
+			if trace {
+				ulpdebug.LogNote(wiid, "merge_imp_prebid", "skip imp="+impID+" bidder="+bidder+" not on imp")
+			}
 			continue
 		}
 
@@ -793,8 +832,14 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		modified := false
 		for key, value := range params {
 			if _, present := impExtPrebidBidderMap[key]; !present {
+				if trace && key == "eds" {
+					ulpdebug.LogMergeCopy(wiid, "merge_imp_prebid", impID, bidder, key, value)
+					ulpdebug.LogNestedSubslice(wiid, "merge_imp_prebid", "eds", bidderParamsParent, value)
+				}
 				impExtPrebidBidderMap[key] = value
 				modified = true
+			} else if trace && key == "eds" {
+				ulpdebug.LogNote(wiid, "merge_imp_prebid", "skip imp="+impID+" bidder="+bidder+" eds already present")
 			}
 		}
 
@@ -803,6 +848,9 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 			if err != nil {
 				return fmt.Errorf("error marshalling ext.prebid.bidder.BIDDER: %s", err.Error())
 			}
+			if trace {
+				ulpdebug.ProbeMarshal(wiid, "merge_imp_prebid", "marshal prebid.bidder."+bidder, impExtPrebidBidderMap)
+			}
 			prebid.Bidder[bidder] = impExtPrebidBidderJson
 			prebidModified = true
 		}
@@ -810,6 +858,9 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 
 	if prebidModified {
 		impExt.SetPrebid(prebid)
+		if trace {
+			ulpdebug.LogStageOK(wiid, "merge_imp_prebid imp="+impID)
+		}
 	}
 
 	return nil

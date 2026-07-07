@@ -9,6 +9,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 )
 
 // RequestWrapper wraps the OpenRTB request to provide a storage location for unmarshalled ext fields, so they
@@ -198,32 +199,75 @@ func (rw *RequestWrapper) RebuildRequest() error {
 		return errors.New("Requestwrapper RebuildRequest called on a nil BidRequest")
 	}
 
+	wiid := ulpdebug.Wiid(rw.BidRequest)
+	trace := ulpdebug.ShouldTrace(rw.BidRequest)
+	if trace {
+		ulpdebug.LogNote(wiid, "rebuild_request", "start")
+	}
+
 	if err := rw.rebuildImp(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildImp", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildImp")
 	}
 	if err := rw.rebuildUserExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildUserExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildUserExt")
 	}
 	if err := rw.rebuildDeviceExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildDeviceExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildDeviceExt")
 	}
 	if err := rw.RebuildRequestExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "RebuildRequestExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "RebuildRequestExt")
 	}
 	if err := rw.rebuildAppExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildAppExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildAppExt")
 	}
 	if err := rw.rebuildRegExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildRegExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildRegExt")
 	}
 	if err := rw.rebuildSiteExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildSiteExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildSiteExt")
 	}
 	if err := rw.rebuildDOOHExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildDOOHExt", err)
 		return err
 	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildDOOHExt")
+	}
 	if err := rw.rebuildSourceExt(); err != nil {
+		ulpdebug.LogStageErr(wiid, "rebuildSourceExt", err)
 		return err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "rebuildSourceExt")
+		ulpdebug.LogStageOK(wiid, "rebuild_request")
 	}
 
 	return nil
