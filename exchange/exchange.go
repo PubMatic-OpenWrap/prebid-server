@@ -491,16 +491,16 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 			if responseDebugAllow {
 				if trace {
-					ulpdebug.LogNote(wiid, "hold_auction", "post_floor_enforce_rebuild_ext")
+					ulpdebug.LogNote(wiid, "hold_auction", "post_floor_enforce_rebuild_request")
 				}
-				if err := r.BidRequestWrapper.RebuildRequestExt(); err != nil {
-					ulpdebug.LogStageErr(wiid, "post_floor_enforce_rebuild_ext", err)
+				if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
+					ulpdebug.LogStageErr(wiid, "post_floor_enforce_rebuild_request", err)
 					return nil, err
 				}
 				if trace {
-					ulpdebug.LogStageOK(wiid, "post_floor_enforce_rebuild_ext")
+					ulpdebug.LogStageOK(wiid, "post_floor_enforce_rebuild_request")
 				}
-				resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
+				resolvedBidReq, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest)
 				if err != nil {
 					ulpdebug.LogStageErr(wiid, "post_floor_enforce_marshal_bidrequest", err)
 					return nil, err
