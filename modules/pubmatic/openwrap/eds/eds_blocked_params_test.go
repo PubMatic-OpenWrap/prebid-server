@@ -7,6 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsEmptyJSONObject(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{name: "empty object", input: `{}`, want: true},
+		{name: "outer whitespace", input: `  {}  `, want: true},
+		{name: "has keys", input: `{"boottime":1}`, want: false},
+		{name: "not an object", input: `"value"`, want: false},
+		{name: "array", input: `[]`, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isEmptyJSONObject([]byte(tt.input)))
+		})
+	}
+}
+
 func TestStripEDSTier1ParamsForBlockedCountry(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -112,6 +132,26 @@ func TestStripEDSTier1ParamsForBlockedCountry(t *testing.T) {
 			name:     "strips first_launch_time from app",
 			input:    `{"pubmatic":{"eds":{"app":{"first_launch_time":789,"other":"keep"}}}}`,
 			expected: `{"pubmatic":{"eds":{"app":{"other":"keep"}}}}`,
+		},
+		{
+			name:     "removes already empty device object without iterating blocked keys",
+			input:    `{"pubmatic":{"eds":{"device":{},"app":{"other":"keep"}}}}`,
+			expected: `{"pubmatic":{"eds":{"app":{"other":"keep"}}}}`,
+		},
+		{
+			name:     "removes already empty app object without iterating blocked keys",
+			input:    `{"pubmatic":{"eds":{"device":{"charging":1},"app":{}}}}`,
+			expected: `{"pubmatic":{"eds":{"device":{"charging":1}}}}`,
+		},
+		{
+			name:     "removes already empty device and app objects and then eds",
+			input:    `{"pubmatic":{"eds":{"device":{},"app":{}},"profileid":1}}`,
+			expected: `{"pubmatic":{"profileid":1}}`,
+		},
+		{
+			name:     "removes already empty eds object",
+			input:    `{"pubmatic":{"eds":{},"profileid":1}}`,
+			expected: `{"pubmatic":{"profileid":1}}`,
 		},
 	}
 

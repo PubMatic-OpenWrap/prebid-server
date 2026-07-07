@@ -307,7 +307,7 @@ func GetEndpoint(path, source string, agent string) string {
 }
 
 func getSendBurl(request []byte, endpoint string) bool {
-	if sdkutils.IsSdkIntegration(endpoint) {
+	if sdkutils.IsSdkBiddingEndpoint(endpoint) {
 		return true
 	}
 

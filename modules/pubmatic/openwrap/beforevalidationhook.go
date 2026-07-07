@@ -392,7 +392,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// Add size 300x600 for interstitial banner
-		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && imp.Instl == 1 {
+		if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && imp.Instl == 1 {
 			sdkutils.AddSize300x600ForInterstitialBanner(&imp)
 		}
 
@@ -637,7 +637,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
-		if sdkutils.IsSdkIntegration(rCtx.Endpoint) {
+		if sdkutils.IsSdkBiddingEndpoint(rCtx.Endpoint) {
 			appStoreUrl, isValidAppStoreUrl := getProfileAppStoreUrl(rCtx)
 			if !isValidAppStoreUrl && payload.BidRequest.App != nil && payload.BidRequest.App.StoreURL != "" {
 				appStoreUrl = payload.BidRequest.App.StoreURL
@@ -743,7 +743,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
 		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
-		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+		if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
 			requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
 		}
 	}
@@ -752,7 +752,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
 				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
-				if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+				if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
 					requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
 				}
 			}
@@ -831,7 +831,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.Test = 1
 	}
 
-	if sdkutils.IsSdkIntegration(rctx.Endpoint) && rctx.AppStoreUrl != "" {
+	if sdkutils.IsSdkBiddingEndpoint(rctx.Endpoint) && rctx.AppStoreUrl != "" {
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 

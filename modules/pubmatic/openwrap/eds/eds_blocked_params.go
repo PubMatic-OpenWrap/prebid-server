@@ -43,13 +43,16 @@ func stripEDSParamsAtPath(ext []byte, path []string, keys []string) []byte {
 		return ext
 	}
 
+	if isEmptyJSONObject(objData) {
+		return jsonparser.Delete(ext, path...)
+	}
+
 	modified := ext
 	changed := false
+	keyPath := make([]string, len(path)+1)
+	copy(keyPath, path)
 	for _, key := range keys {
-		if _, _, _, err := jsonparser.Get(objData, key); err != nil {
-			continue
-		}
-		keyPath := append(append([]string{}, path...), key)
+		keyPath[len(path)] = key
 		updated := jsonparser.Delete(modified, keyPath...)
 		if !bytes.Equal(updated, modified) {
 			modified = updated
@@ -69,5 +72,6 @@ func stripEDSParamsAtPath(ext []byte, path []string, keys []string) []byte {
 }
 
 func isEmptyJSONObject(data []byte) bool {
+	data = bytes.TrimSpace(data)
 	return len(data) == 2 && data[0] == '{' && data[1] == '}'
 }
