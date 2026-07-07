@@ -153,7 +153,7 @@ func injectIntoBidderParamsWithDebug(bidderParams json.RawMessage, resolved mode
 	return out, err
 }
 
-// nestedObject returns the raw JSON value at key when it is a non-empty object.
+// nestedObject returns a deep copy of the raw JSON value at key when it is a non-empty object.
 func nestedObject(ext []byte, key string) []byte {
 	if len(ext) == 0 {
 		return nil
@@ -164,7 +164,9 @@ func nestedObject(ext []byte, key string) []byte {
 		return nil
 	}
 
-	return value
+	copied := make([]byte, len(value))
+	copy(copied, value)
+	return copied
 }
 
 func nilIfEmptyExt(ext []byte) []byte {

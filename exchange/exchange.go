@@ -431,6 +431,9 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 		var extraRespInfo extraAuctionResponseInfo
 		adapterBids, adapterExtra, extraRespInfo = e.getAllBids(auctionCtx, bidderRequests, bidAdjustmentFactors, conversions, accountDebugAllow, r.GlobalPrivacyControlHeader, debugLog.DebugOverride, alternateBidderCodes, requestExtLegacy.Prebid.Experiment, r.HookExecutor, r.StartTime, bidAdjustmentRules, r.TmaxAdjustments, responseDebugAllow, liveAdaptersPreferredMediaType, r.Account)
+		if trace {
+			ulpdebug.LogStageOK(wiid, "get_all_bids")
+		}
 		fledge = extraRespInfo.fledge
 		anyBidsReturned = extraRespInfo.bidsFound
 		r.BidderResponseStartTime = extraRespInfo.bidderResponseStartTime
@@ -487,12 +490,23 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 
 			if responseDebugAllow {
+				if trace {
+					ulpdebug.LogNote(wiid, "hold_auction", "post_floor_enforce_rebuild_ext")
+				}
 				if err := r.BidRequestWrapper.RebuildRequestExt(); err != nil {
+					ulpdebug.LogStageErr(wiid, "post_floor_enforce_rebuild_ext", err)
 					return nil, err
+				}
+				if trace {
+					ulpdebug.LogStageOK(wiid, "post_floor_enforce_rebuild_ext")
 				}
 				resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
 				if err != nil {
+					ulpdebug.LogStageErr(wiid, "post_floor_enforce_marshal_bidrequest", err)
 					return nil, err
+				}
+				if trace {
+					ulpdebug.LogStageOK(wiid, "post_floor_enforce_marshal_bidrequest")
 				}
 				r.ResolvedBidRequest = resolvedBidReq
 			}
@@ -627,7 +641,13 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
 	if err != nil {
+		if trace {
+			ulpdebug.LogStageErr(wiid, "encode_bid_response_ext", err)
+		}
 		return nil, err
+	}
+	if trace {
+		ulpdebug.LogStageOK(wiid, "encode_bid_response_ext")
 	}
 
 	return &AuctionResponse{

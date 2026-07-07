@@ -775,7 +775,7 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 					ulpdebug.LogMergeCopy(wiid, "merge_imp_ext", impID, bidder, key, value)
 					ulpdebug.LogNestedSubslice(wiid, "merge_imp_ext", "eds", bidderParamsParent, value)
 				}
-				impExtBidderMap[key] = value
+				impExtBidderMap[key] = ulpdebug.CloneRawMessage(value)
 				modified = true
 			}
 		}
@@ -836,7 +836,7 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 					ulpdebug.LogMergeCopy(wiid, "merge_imp_prebid", impID, bidder, key, value)
 					ulpdebug.LogNestedSubslice(wiid, "merge_imp_prebid", "eds", bidderParamsParent, value)
 				}
-				impExtPrebidBidderMap[key] = value
+				impExtPrebidBidderMap[key] = ulpdebug.CloneRawMessage(value)
 				modified = true
 			} else if trace && key == "eds" {
 				ulpdebug.LogNote(wiid, "merge_imp_prebid", "skip imp="+impID+" bidder="+bidder+" eds already present")

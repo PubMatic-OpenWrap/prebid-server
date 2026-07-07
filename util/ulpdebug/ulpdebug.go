@@ -110,6 +110,16 @@ func LogNestedSubslice(wiid, stage, field string, parentExt, nested []byte) {
 		Prefix, wiid, stage, field, sharesBacking, len(parentExt), len(nested), idx)
 }
 
+// CloneRawMessage returns an owned copy of b, or nil when empty.
+func CloneRawMessage(b json.RawMessage) json.RawMessage {
+	if len(b) == 0 {
+		return nil
+	}
+	copied := make(json.RawMessage, len(b))
+	copy(copied, b)
+	return copied
+}
+
 func truncateForLog(b []byte, max int) string {
 	if len(b) <= max {
 		return string(b)
