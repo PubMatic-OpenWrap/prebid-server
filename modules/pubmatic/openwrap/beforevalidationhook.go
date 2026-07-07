@@ -754,12 +754,24 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	if pubmaticBidderCodes := pubmaticBidderCodesForEds(rCtx); len(pubmaticBidderCodes) > 0 {
-		requestExt.Prebid.BidderParams, _, _ = eds.BuildPubmaticEdsBidderParams(
-			requestExt.Prebid.BidderParams,
-			rCtx.SignalRequest,
-			payload.BidRequest,
-			pubmaticBidderCodes...,
-		)
+		if rCtx.Endpoint == models.EndpointUnityLevelPlay {
+			var edsErr error
+			requestExt.Prebid.BidderParams, _, edsErr = eds.BuildPubmaticEdsBidderParamsWithDebug(
+				requestExt.Prebid.BidderParams,
+				rCtx.SignalRequest,
+				payload.BidRequest,
+				rCtx.LoggerImpressionID,
+				pubmaticBidderCodes...,
+			)
+			eds.LogMarshalError(rCtx.LoggerImpressionID, "before_validation", "BuildPubmaticEdsBidderParams", edsErr)
+		} else {
+			requestExt.Prebid.BidderParams, _, _ = eds.BuildPubmaticEdsBidderParams(
+				requestExt.Prebid.BidderParams,
+				rCtx.SignalRequest,
+				payload.BidRequest,
+				pubmaticBidderCodes...,
+			)
+		}
 	}
 
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
@@ -807,12 +819,38 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 		// EDS must not remain on the shared request for other bidders. Strip before profile
 		// enrichment so device.ext is not rewritten from cached DeviceCtx after removal.
+		if rctx.Endpoint == models.EndpointUnityLevelPlay {
+			if ep.BidRequest.App != nil {
+				eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_pre_strip", "request.app.ext", ep.BidRequest.App.Ext)
+			}
+			if ep.BidRequest.Device != nil {
+				eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_pre_strip", "request.device.ext", ep.BidRequest.Device.Ext)
+			}
+			if rctx.NewReqExt != nil {
+				eds.LogBidderParamsRaw(rctx.LoggerImpressionID, "mutation_pre_strip", rctx.NewReqExt.Prebid.BidderParams)
+			}
+		}
 		eds.StripFromRequest(ep.BidRequest)
 		eds.StripFromDeviceCtx(&rctx.DeviceCtx)
+		if rctx.Endpoint == models.EndpointUnityLevelPlay {
+			if ep.BidRequest.App != nil {
+				eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_post_strip", "request.app.ext", ep.BidRequest.App.Ext)
+			}
+			if ep.BidRequest.Device != nil {
+				eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_post_strip", "request.device.ext", ep.BidRequest.Device.Ext)
+			}
+		}
 
 		ep.BidRequest, err = m.applyProfileChanges(rctx, ep.BidRequest)
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
+		}
+		if rctx.Endpoint == models.EndpointUnityLevelPlay {
+			eds.LogMarshalError(rctx.LoggerImpressionID, "mutation_post_profile", "applyProfileChanges", err)
+			eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_post_profile", "request.ext", ep.BidRequest.Ext)
+			if len(ep.BidRequest.Imp) > 0 {
+				eds.LogRawBytes(rctx.LoggerImpressionID, "mutation_post_profile", "imp.ext", ep.BidRequest.Imp[0].Ext)
+			}
 		}
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
@@ -844,9 +882,10 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 
-	// Remove app.ext.token
-	if rctx.Endpoint == models.EndpointUnityLevelPlay {
+	if rctx.Endpoint == models.EndpointUnityLevelPlay && bidRequest.App != nil {
+		eds.LogRawBytes(rctx.LoggerImpressionID, "apply_profile_pre_token_delete", "app.ext", bidRequest.App.Ext)
 		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
+		eds.LogRawBytes(rctx.LoggerImpressionID, "apply_profile_post_token_delete", "app.ext", bidRequest.App.Ext)
 	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled
@@ -906,7 +945,15 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	var err error
 	var requestExtjson json.RawMessage
 	if rctx.NewReqExt != nil {
+		if rctx.Endpoint == models.EndpointUnityLevelPlay {
+			eds.LogBidderParamsRaw(rctx.LoggerImpressionID, "apply_profile_pre_marshal_newreqext", rctx.NewReqExt.Prebid.BidderParams)
+			eds.ProbeMarshal(rctx.LoggerImpressionID, "apply_profile", "json.Marshal(NewReqExt)", rctx.NewReqExt)
+		}
 		requestExtjson, err = json.Marshal(rctx.NewReqExt)
+		if rctx.Endpoint == models.EndpointUnityLevelPlay {
+			eds.LogMarshalError(rctx.LoggerImpressionID, "apply_profile", "json.Marshal(NewReqExt)", err)
+			eds.LogRawBytes(rctx.LoggerImpressionID, "apply_profile_post_marshal_newreqext", "request.ext", requestExtjson)
+		}
 		bidRequest.Ext = requestExtjson
 	}
 	return bidRequest, err
