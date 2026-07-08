@@ -1439,7 +1439,7 @@ func TestMergeBidderParamsImpExt(t *testing.T) {
 	for _, test := range testCases {
 		impExt := openrtb_ext.CreateImpExtForTesting(test.givenImpExt, nil)
 
-		err := mergeBidderParamsImpExt(&impExt, test.givenReqExtParams, "", "", false, nil)
+		err := mergeBidderParamsImpExt(&impExt, test.givenReqExtParams)
 
 		// errors are only possible from the marshal operation, which is not testable
 		assert.NoError(t, err, test.description+":err")
@@ -1539,7 +1539,7 @@ func TestMergeBidderParamsImpExtPrebid(t *testing.T) {
 	for _, test := range testCases {
 		impExt := openrtb_ext.CreateImpExtForTesting(map[string]json.RawMessage{}, test.givenImpExtPrebid)
 
-		err := mergeBidderParamsImpExtPrebid(&impExt, test.givenReqExtParams, "", "", false, nil)
+		err := mergeBidderParamsImpExtPrebid(&impExt, test.givenReqExtParams)
 
 		// errors are only possible from the marshal operation, which is not testable
 		assert.NoError(t, err, test.description+":err")

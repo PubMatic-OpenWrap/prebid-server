@@ -42,7 +42,6 @@ import (
 	"github.com/prebid/prebid-server/v3/usersync"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
 	"github.com/prebid/prebid-server/v3/util/maputil"
-	"github.com/prebid/prebid-server/v3/util/rawext"
 
 	"github.com/buger/jsonparser"
 	"github.com/gofrs/uuid"
@@ -300,7 +299,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
 			return nil, err
 		}
-		resolvedBidReq, err := marshalResolvedBidRequest(r.BidRequestWrapper.BidRequest)
+		resolvedBidReq, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -464,10 +463,10 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 			}
 
 			if responseDebugAllow {
-				if err := r.BidRequestWrapper.RebuildRequest(); err != nil {
+				if err := r.BidRequestWrapper.RebuildRequestExt(); err != nil {
 					return nil, err
 				}
-				resolvedBidReq, err := marshalResolvedBidRequest(r.BidRequestWrapper.BidRequest)
+				resolvedBidReq, err := json.Marshal(r.BidRequestWrapper.BidRequest)
 				if err != nil {
 					return nil, err
 				}
@@ -601,14 +600,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	// Build the response
 	bidResponse := e.buildBidResponse(ctx, liveAdapters, adapterBids, r.BidRequestWrapper, adapterExtra, auc, bidResponseExt, cacheInstructions.returnCreative, r.ImpExtInfoMap, r.PubID, errs, &seatNonBidBuilder)
 	bidResponse = adservertargeting.Apply(r.BidRequestWrapper, r.ResolvedBidRequest, bidResponse, r.QueryParams, bidResponseExt, r.Account.TruncateTargetAttribute)
-
-	if responseDebugAllow && bidResponseExt.Debug != nil {
-		if freshResolved, err := marshalResolvedBidRequest(r.BidRequestWrapper.BidRequest); err == nil {
-			r.ResolvedBidRequest = freshResolved
-			bidResponseExt.Debug.ResolvedRequest = freshResolved
-		}
-	}
-	sanitizeExtBidResponse(bidResponseExt)
 
 	bidResponse.Ext, err = encodeBidResponseExt(bidResponseExt)
 	if err != nil {
@@ -1091,24 +1082,6 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	return bidResponse
 }
 
-func marshalResolvedBidRequest(bidRequest *openrtb2.BidRequest) (json.RawMessage, error) {
-	if bidRequest == nil {
-		return nil, nil
-	}
-	rawext.NormalizeBidRequestExts(bidRequest)
-	data, err := jsonutil.Marshal(bidRequest)
-	if err != nil {
-		return nil, err
-	}
-	if json.Valid(data) {
-		return rawext.CloneRawMessage(data), nil
-	}
-	if stdData, stdErr := json.Marshal(bidRequest); stdErr == nil && json.Valid(stdData) {
-		return rawext.CloneRawMessage(stdData), nil
-	}
-	return nil, fmt.Errorf("resolved bid request marshal produced invalid json")
-}
-
 func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	enc := json.NewEncoder(buffer)
@@ -1117,58 +1090,6 @@ func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, e
 	err := enc.Encode(bidResponseExt)
 
 	return buffer.Bytes(), err
-}
-
-func cloneFledge(fledge *openrtb_ext.Fledge) *openrtb_ext.Fledge {
-	if fledge == nil || len(fledge.AuctionConfigs) == 0 {
-		return fledge
-	}
-	cloned := &openrtb_ext.Fledge{
-		AuctionConfigs: make([]*openrtb_ext.FledgeAuctionConfig, 0, len(fledge.AuctionConfigs)),
-	}
-	for _, cfg := range fledge.AuctionConfigs {
-		if cfg == nil {
-			continue
-		}
-		cloned.AuctionConfigs = append(cloned.AuctionConfigs, &openrtb_ext.FledgeAuctionConfig{
-			ImpId:   cfg.ImpId,
-			Bidder:  cfg.Bidder,
-			Adapter: cfg.Adapter,
-			Config:  rawext.CloneRawMessage(cfg.Config),
-		})
-	}
-	return cloned
-}
-
-func sanitizeExtBidResponse(ext *openrtb_ext.ExtBidResponse) {
-	if ext == nil {
-		return
-	}
-	sanitize := func(b json.RawMessage) json.RawMessage {
-		if len(b) == 0 {
-			return nil
-		}
-		if json.Valid(b) {
-			return rawext.CloneRawMessage(b)
-		}
-		return nil
-	}
-
-	if ext.Debug != nil {
-		ext.Debug.ResolvedRequest = sanitize(ext.Debug.ResolvedRequest)
-	}
-	if ext.Prebid != nil {
-		ext.Prebid.Passthrough = sanitize(ext.Prebid.Passthrough)
-		ext.Prebid.Modules = sanitize(ext.Prebid.Modules)
-		if ext.Prebid.Fledge != nil {
-			for _, cfg := range ext.Prebid.Fledge.AuctionConfigs {
-				if cfg != nil {
-					cfg.Config = sanitize(cfg.Config)
-				}
-			}
-		}
-	}
-	ext.OwMatchedImpression = sanitize(ext.OwMatchedImpression)
 }
 
 func applyCategoryMapping(ctx context.Context, r *AuctionRequest, targeting openrtb_ext.ExtRequestTargeting, seatBids map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, categoriesFetcher stored_requests.CategoryFetcher, targData *targetData, booleanGenerator deduplicateChanceGenerator, seatNonBidBuilder *openrtb_ext.SeatNonBidBuilder) (map[string]string, map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid, []string, error) {
@@ -1458,7 +1379,7 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 	if debugInfo {
 		bidResponseExt.Debug = &openrtb_ext.ExtResponseDebug{
 			HttpCalls:       make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall),
-			ResolvedRequest: rawext.CloneRawMessage(r.ResolvedBidRequest),
+			ResolvedRequest: r.ResolvedBidRequest,
 		}
 	}
 
@@ -1472,8 +1393,8 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 		fledge != nil {
 		bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{
 			AuctionTimestamp: auctionTimestamp,
-			Passthrough:      rawext.CloneRawMessage(passthrough),
-			Fledge:           cloneFledge(fledge),
+			Passthrough:      passthrough,
+			Fledge:           fledge,
 		}
 	}
 
@@ -1650,7 +1571,7 @@ func makeBidExtJSON(ext json.RawMessage, prebid *openrtb_ext.ExtBidPrebid, impEx
 			}
 			//handler for case where EchoVideoAttrs is true, but video data is not found
 			if len(videoData) > 0 {
-				extMap[openrtb_ext.StoredRequestAttributes] = rawext.CloneRawMessage(videoData)
+				extMap[openrtb_ext.StoredRequestAttributes] = json.RawMessage(videoData)
 			}
 		}
 	}

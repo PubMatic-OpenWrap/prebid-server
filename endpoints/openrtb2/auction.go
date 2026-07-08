@@ -52,7 +52,6 @@ import (
 	"github.com/prebid/prebid-server/v3/util/httputil"
 	"github.com/prebid/prebid-server/v3/util/iputil"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
-	"github.com/prebid/prebid-server/v3/util/rawext"
 	"github.com/prebid/prebid-server/v3/util/uuidutil"
 	"github.com/prebid/prebid-server/v3/version"
 )
@@ -698,11 +697,6 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	if err := jsonutil.Unmarshal(bidderParamsJson, &bidderParams); err != nil {
 		return nil
 	}
-	bidderParams = rawext.CloneBidderParamsMap(bidderParams)
-	if clonedBP, err := jsonutil.Marshal(bidderParams); err == nil {
-		prebid.BidderParams = clonedBP
-		reqExt.SetPrebid(prebid)
-	}
 
 	for i, imp := range req.GetImp() {
 		impExt, err := imp.GetImpExt()
@@ -719,31 +713,9 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams); err != nil {
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
-
-		normalizeImpExtOwnership(impExt)
-	}
-
-	if err := req.RebuildRequest(); err != nil {
-		return fmt.Errorf("rebuild after merge bidder params: %w", err)
 	}
 
 	return nil
-}
-
-func normalizeImpExtOwnership(impExt *openrtb_ext.ImpExt) {
-	extMap := impExt.GetExt()
-	for k, v := range extMap {
-		extMap[k] = rawext.RepairExt(v)
-	}
-	impExt.SetExt(extMap)
-
-	prebid := impExt.GetPrebid()
-	if prebid != nil && len(prebid.Bidder) > 0 {
-		for bidder, raw := range prebid.Bidder {
-			prebid.Bidder[bidder] = rawext.RepairExt(raw)
-		}
-		impExt.SetPrebid(prebid)
-	}
 }
 
 // mergeBidderParamsImpExt merges bidder parameters in req.ext down to the imp[].ext.BIDDER
@@ -773,7 +745,7 @@ func mergeBidderParamsImpExt(impExt *openrtb_ext.ImpExt, reqExtParams map[string
 		modified := false
 		for key, value := range params {
 			if _, present := impExtBidderMap[key]; !present {
-				impExtBidderMap[key] = rawext.CloneRawMessage(value)
+				impExtBidderMap[key] = value
 				modified = true
 			}
 		}
@@ -821,7 +793,7 @@ func mergeBidderParamsImpExtPrebid(impExt *openrtb_ext.ImpExt, reqExtParams map[
 		modified := false
 		for key, value := range params {
 			if _, present := impExtPrebidBidderMap[key]; !present {
-				impExtPrebidBidderMap[key] = rawext.CloneRawMessage(value)
+				impExtPrebidBidderMap[key] = value
 				modified = true
 			}
 		}
