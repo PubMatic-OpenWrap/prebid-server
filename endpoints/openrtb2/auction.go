@@ -706,11 +706,16 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 	if err := jsonutil.Unmarshal(bidderParamsJson, &bidderParams); err != nil {
 		return nil
 	}
+	bidderParams = ulpdebug.CloneBidderParamsMap(bidderParams)
+	if clonedBP, err := jsonutil.Marshal(bidderParams); err == nil {
+		prebid.BidderParams = clonedBP
+		reqExt.SetPrebid(prebid)
+	}
 
 	wiid := ulpdebug.Wiid(req.BidRequest)
 	trace := ulpdebug.ShouldTrace(req.BidRequest)
 	if trace {
-		ulpdebug.LogBidderParamsRaw(wiid, "merge_bidderparams_start", bidderParamsJson)
+		ulpdebug.LogBidderParamsRaw(wiid, "merge_bidderparams_start", prebid.BidderParams)
 	}
 
 	for i, imp := range req.GetImp() {
@@ -725,23 +730,46 @@ func mergeBidderParams(req *openrtb_ext.RequestWrapper) error {
 		}
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.BIDDER level
-		if err := mergeBidderParamsImpExt(impExt, bidderParams, wiid, impID, trace, bidderParamsJson); err != nil {
+		if err := mergeBidderParamsImpExt(impExt, bidderParams, wiid, impID, trace, prebid.BidderParams); err != nil {
 			ulpdebug.LogStageErr(wiid, "mergeBidderParamsImpExt", err)
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
 
 		// merges bidder parameters passed at req.ext level with imp[].ext.prebid.bidder.BIDDER level
-		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams, wiid, impID, trace, bidderParamsJson); err != nil {
+		if err := mergeBidderParamsImpExtPrebid(impExt, bidderParams, wiid, impID, trace, prebid.BidderParams); err != nil {
 			ulpdebug.LogStageErr(wiid, "mergeBidderParamsImpExtPrebid", err)
 			return fmt.Errorf("error processing bidder parameters for imp[%d]: %s", i, err.Error())
 		}
+
+		normalizeImpExtOwnership(impExt)
+	}
+
+	if err := req.RebuildRequest(); err != nil {
+		return fmt.Errorf("rebuild after merge bidder params: %w", err)
 	}
 
 	if trace {
+		ulpdebug.ProbeBidRequestExts(wiid, "merge_bidderparams_post_rebuild", req.BidRequest)
 		ulpdebug.LogStageOK(wiid, "merge_bidderparams")
 	}
 
 	return nil
+}
+
+func normalizeImpExtOwnership(impExt *openrtb_ext.ImpExt) {
+	extMap := impExt.GetExt()
+	for k, v := range extMap {
+		extMap[k] = ulpdebug.RepairExt(v)
+	}
+	impExt.SetExt(extMap)
+
+	prebid := impExt.GetPrebid()
+	if prebid != nil && len(prebid.Bidder) > 0 {
+		for bidder, raw := range prebid.Bidder {
+			prebid.Bidder[bidder] = ulpdebug.RepairExt(raw)
+		}
+		impExt.SetPrebid(prebid)
+	}
 }
 
 // mergeBidderParamsImpExt merges bidder parameters in req.ext down to the imp[].ext.BIDDER

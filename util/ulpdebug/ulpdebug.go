@@ -120,6 +120,90 @@ func CloneRawMessage(b json.RawMessage) json.RawMessage {
 	return copied
 }
 
+// CloneBidderParamsMap returns a deep copy of bidder params so map values are not subslices of request.ext.
+func CloneBidderParamsMap(in map[string]map[string]json.RawMessage) map[string]map[string]json.RawMessage {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]map[string]json.RawMessage, len(in))
+	for bidder, params := range in {
+		cloned := make(map[string]json.RawMessage, len(params))
+		for k, v := range params {
+			cloned[k] = CloneRawMessage(v)
+		}
+		out[bidder] = cloned
+	}
+	return out
+}
+
+// RepairExt returns an owned copy when b is valid JSON, or nil when empty or unrecoverable.
+func RepairExt(b json.RawMessage) json.RawMessage {
+	if len(b) == 0 {
+		return nil
+	}
+	if json.Valid(b) {
+		return CloneRawMessage(b)
+	}
+	compacted := bytes.NewBuffer(make([]byte, 0, len(b)))
+	if err := json.Compact(compacted, b); err == nil && json.Valid(compacted.Bytes()) {
+		return CloneRawMessage(compacted.Bytes())
+	}
+	return nil
+}
+
+// ProbeBidRequestExts logs json validity for every ext field on the bid request.
+func ProbeBidRequestExts(wiid, stage string, req *openrtb2.BidRequest) {
+	if req == nil {
+		return
+	}
+	LogRawBytes(wiid, stage, "request.ext", req.Ext)
+	if req.App != nil {
+		LogRawBytes(wiid, stage, "app.ext", req.App.Ext)
+	}
+	if req.Device != nil {
+		LogRawBytes(wiid, stage, "device.ext", req.Device.Ext)
+	}
+	if req.User != nil {
+		LogRawBytes(wiid, stage, "user.ext", req.User.Ext)
+	}
+	if req.Source != nil {
+		LogRawBytes(wiid, stage, "source.ext", req.Source.Ext)
+	}
+	if req.Regs != nil {
+		LogRawBytes(wiid, stage, "regs.ext", req.Regs.Ext)
+	}
+	for i := range req.Imp {
+		field := fmt.Sprintf("imp[%d].ext id=%s", i, req.Imp[i].ID)
+		LogRawBytes(wiid, stage, field, req.Imp[i].Ext)
+	}
+}
+
+// NormalizeBidRequestExts replaces ext fields with owned copies of valid JSON before marshaling.
+func NormalizeBidRequestExts(req *openrtb2.BidRequest) {
+	if req == nil {
+		return
+	}
+	req.Ext = RepairExt(req.Ext)
+	if req.App != nil {
+		req.App.Ext = RepairExt(req.App.Ext)
+	}
+	if req.Device != nil {
+		req.Device.Ext = RepairExt(req.Device.Ext)
+	}
+	if req.User != nil {
+		req.User.Ext = RepairExt(req.User.Ext)
+	}
+	if req.Source != nil {
+		req.Source.Ext = RepairExt(req.Source.Ext)
+	}
+	if req.Regs != nil {
+		req.Regs.Ext = RepairExt(req.Regs.Ext)
+	}
+	for i := range req.Imp {
+		req.Imp[i].Ext = RepairExt(req.Imp[i].Ext)
+	}
+}
+
 func truncateForLog(b []byte, max int) string {
 	if len(b) <= max {
 		return string(b)

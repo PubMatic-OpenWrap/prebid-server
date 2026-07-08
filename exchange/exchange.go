@@ -314,7 +314,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		if trace {
 			ulpdebug.LogStageOK(wiid, "hold_auction_rebuild_debug")
 		}
-		resolvedBidReq, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest)
+		resolvedBidReq, err := marshalResolvedBidRequest(wiid, "hold_auction_marshal_resolved_bidreq", r.BidRequestWrapper.BidRequest, trace)
 		if err != nil {
 			ulpdebug.LogStageErr(wiid, "hold_auction_marshal_resolved_bidreq", err)
 			return nil, err
@@ -500,7 +500,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 				if trace {
 					ulpdebug.LogStageOK(wiid, "post_floor_enforce_rebuild_request")
 				}
-				resolvedBidReq, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest)
+				resolvedBidReq, err := marshalResolvedBidRequest(wiid, "post_floor_enforce_marshal_bidrequest", r.BidRequestWrapper.BidRequest, trace)
 				if err != nil {
 					ulpdebug.LogStageErr(wiid, "post_floor_enforce_marshal_bidrequest", err)
 					return nil, err
@@ -640,9 +640,9 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 	bidResponse = adservertargeting.Apply(r.BidRequestWrapper, r.ResolvedBidRequest, bidResponse, r.QueryParams, bidResponseExt, r.Account.TruncateTargetAttribute)
 
 	if responseDebugAllow && bidResponseExt.Debug != nil {
-		if freshResolved, err := jsonutil.Marshal(r.BidRequestWrapper.BidRequest); err == nil {
-			r.ResolvedBidRequest = cloneRawMessage(freshResolved)
-			bidResponseExt.Debug.ResolvedRequest = r.ResolvedBidRequest
+		if freshResolved, err := marshalResolvedBidRequest(wiid, "encode_bid_response_ext_refresh_resolved", r.BidRequestWrapper.BidRequest, trace); err == nil {
+			r.ResolvedBidRequest = freshResolved
+			bidResponseExt.Debug.ResolvedRequest = freshResolved
 		} else if trace {
 			ulpdebug.LogStageErr(wiid, "encode_bid_response_ext_refresh_resolved", err)
 		}
@@ -1139,13 +1139,29 @@ func (e *exchange) buildBidResponse(ctx context.Context, liveAdapters []openrtb_
 	return bidResponse
 }
 
-func cloneRawMessage(b json.RawMessage) json.RawMessage {
-	if len(b) == 0 {
-		return nil
+func marshalResolvedBidRequest(wiid, stage string, bidRequest *openrtb2.BidRequest, trace bool) (json.RawMessage, error) {
+	if bidRequest == nil {
+		return nil, nil
 	}
-	copied := make(json.RawMessage, len(b))
-	copy(copied, b)
-	return copied
+	ulpdebug.NormalizeBidRequestExts(bidRequest)
+	if trace {
+		ulpdebug.ProbeBidRequestExts(wiid, stage+"_pre_marshal", bidRequest)
+	}
+	data, err := jsonutil.Marshal(bidRequest)
+	if err != nil {
+		return nil, err
+	}
+	if json.Valid(data) {
+		return ulpdebug.CloneRawMessage(data), nil
+	}
+	if trace {
+		ulpdebug.LogRawBytes(wiid, stage, "marshal_output_invalid", data)
+		ulpdebug.ProbeBidRequestExts(wiid, stage+"_post_marshal_invalid", bidRequest)
+	}
+	if stdData, stdErr := json.Marshal(bidRequest); stdErr == nil && json.Valid(stdData) {
+		return ulpdebug.CloneRawMessage(stdData), nil
+	}
+	return nil, fmt.Errorf("resolved bid request marshal produced invalid json")
 }
 
 func encodeBidResponseExt(bidResponseExt *openrtb_ext.ExtBidResponse) ([]byte, error) {
@@ -1173,7 +1189,7 @@ func cloneFledge(fledge *openrtb_ext.Fledge) *openrtb_ext.Fledge {
 			ImpId:   cfg.ImpId,
 			Bidder:  cfg.Bidder,
 			Adapter: cfg.Adapter,
-			Config:  cloneRawMessage(cfg.Config),
+			Config:  ulpdebug.CloneRawMessage(cfg.Config),
 		})
 	}
 	return cloned
@@ -1210,7 +1226,7 @@ func sanitizeExtBidResponse(ext *openrtb_ext.ExtBidResponse, wiid, stage string,
 			return nil
 		}
 		if json.Valid(b) {
-			return cloneRawMessage(b)
+			return ulpdebug.CloneRawMessage(b)
 		}
 		if trace {
 			ulpdebug.LogRawBytes(wiid, stage, field, b)
@@ -1522,7 +1538,7 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 	if debugInfo {
 		bidResponseExt.Debug = &openrtb_ext.ExtResponseDebug{
 			HttpCalls:       make(map[openrtb_ext.BidderName][]*openrtb_ext.ExtHttpCall),
-			ResolvedRequest: cloneRawMessage(r.ResolvedBidRequest),
+			ResolvedRequest: ulpdebug.CloneRawMessage(r.ResolvedBidRequest),
 		}
 	}
 
@@ -1536,7 +1552,7 @@ func (e *exchange) makeExtBidResponse(adapterBids map[openrtb_ext.BidderName]*en
 		fledge != nil {
 		bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{
 			AuctionTimestamp: auctionTimestamp,
-			Passthrough:      cloneRawMessage(passthrough),
+			Passthrough:      ulpdebug.CloneRawMessage(passthrough),
 			Fledge:           cloneFledge(fledge),
 		}
 	}
@@ -1714,7 +1730,7 @@ func makeBidExtJSON(ext json.RawMessage, prebid *openrtb_ext.ExtBidPrebid, impEx
 			}
 			//handler for case where EchoVideoAttrs is true, but video data is not found
 			if len(videoData) > 0 {
-				extMap[openrtb_ext.StoredRequestAttributes] = cloneRawMessage(videoData)
+				extMap[openrtb_ext.StoredRequestAttributes] = ulpdebug.CloneRawMessage(videoData)
 			}
 		}
 	}
