@@ -24,6 +24,7 @@ func NewAPS(metricsEngine metrics.MetricsEngine) *Aps {
 		metricsEngine: metricsEngine,
 	}
 }
+
 // ModifyRequestWithAPSParams merges APS signal into the request. rctx is a pointer so the decoded
 // signal bid request can be stored on rCtx.SignalRequest for PubMatic-only EDS at before_validation.
 func (a *Aps) ModifyRequestWithAPSParams(requestBody []byte, rctx *models.RequestCtx) []byte {

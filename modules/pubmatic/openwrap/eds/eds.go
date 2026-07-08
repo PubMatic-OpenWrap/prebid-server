@@ -52,6 +52,9 @@ func StripFromDeviceCtx(dvc *models.DeviceCtx) {
 		return
 	}
 	dvc.Ext.DeleteEds()
+	if dvc.Ext.IsEmpty() {
+		dvc.Ext = nil
+	}
 }
 
 func resolveEdsFromRequest(req *openrtb2.BidRequest) models.ResolvedEds {
