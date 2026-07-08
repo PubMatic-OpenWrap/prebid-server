@@ -634,9 +634,9 @@ func TestUpdateDevice(t *testing.T) {
 			}},
 		},
 		{
-			name: "signal_has_ppi",
-			request: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
-			signal: &openrtb2.Device{PPI: 440},
+			name:     "signal_has_ppi",
+			request:  &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua"}},
+			signal:   &openrtb2.Device{PPI: 440},
 			expected: &openrtb2.BidRequest{Device: &openrtb2.Device{UA: "test-ua", PPI: 440}},
 		},
 	}

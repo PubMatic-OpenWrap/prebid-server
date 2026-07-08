@@ -149,6 +149,9 @@ func TestStripFromRequest(t *testing.T) {
 
 func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 	req := &openrtb2.BidRequest{
+		Device: &openrtb2.Device{
+			Ext: json.RawMessage(`{"eds":{"boottime":1710000000000}}`),
+		},
 		App: &openrtb2.App{
 			Ext: json.RawMessage(`{"eds":{"install_time":1710000000001}}`),
 		},
@@ -156,6 +159,7 @@ func TestStripFromRequestRemovesEmptyExt(t *testing.T) {
 
 	StripFromRequest(req)
 
+	assert.Nil(t, req.Device.Ext)
 	assert.Nil(t, req.App.Ext)
 }
 
@@ -173,4 +177,18 @@ func TestStripFromDeviceCtx(t *testing.T) {
 	out, err := dvc.Ext.MarshalJSON()
 	assert.NoError(t, err)
 	assert.JSONEq(t, `{"atts":1}`, string(out))
+}
+
+func TestStripFromDeviceCtxRemovesEmptyExt(t *testing.T) {
+	dvc := models.DeviceCtx{
+		Ext: func() *models.ExtDevice {
+			ext := models.NewExtDevice()
+			_ = ext.UnmarshalJSON(json.RawMessage(`{"eds":{"boottime":1}}`))
+			return ext
+		}(),
+	}
+
+	StripFromDeviceCtx(&dvc)
+
+	assert.Nil(t, dvc.Ext)
 }

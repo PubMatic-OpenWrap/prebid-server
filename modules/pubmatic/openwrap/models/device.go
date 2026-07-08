@@ -162,3 +162,8 @@ func (e *ExtDevice) DeleteSessionID() {
 func (e *ExtDevice) DeleteEds() {
 	delete(e.data, "eds")
 }
+
+// IsEmpty reports whether device.ext has no keys left to marshal onto the request.
+func (e *ExtDevice) IsEmpty() bool {
+	return e == nil || len(e.data) == 0
+}

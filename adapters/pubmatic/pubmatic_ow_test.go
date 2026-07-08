@@ -1180,7 +1180,7 @@ func TestExtractEdsFromBidderParams(t *testing.T) {
 			bidderParams: json.RawMessage(`{"eds":"not-an-object"}`),
 		},
 		{
-			name: "valid_eds_payload",
+			name:         "valid_eds_payload",
 			bidderParams: json.RawMessage(`{"eds":{"device":{"boottime":1710000000000,"totalmem":8589934592},"app":{"install_time":1710000000001}}}`),
 			wantDevice:   `{"boottime":1710000000000,"totalmem":8589934592}`,
 			wantApp:      `{"install_time":1710000000001}`,
