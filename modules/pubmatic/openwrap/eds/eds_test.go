@@ -190,5 +190,5 @@ func TestStripFromDeviceCtxRemovesEmptyExt(t *testing.T) {
 
 	StripFromDeviceCtx(&dvc)
 
-	assert.Nil(t, dvc.Ext)
+	assert.True(t, dvc.Ext.IsEmpty())
 }
