@@ -196,9 +196,7 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 	)
 
 	// rebuild request after modules execution
-	if err := request.RebuildRequest(); err != nil {
-		return nil, extraBidderRespInfo{}, []error{err}
-	}
+	request.RebuildRequest()
 	bidderRequest.BidRequest = request.BidRequest
 
 	//check if real request exists for this bidder or it only has stored responses

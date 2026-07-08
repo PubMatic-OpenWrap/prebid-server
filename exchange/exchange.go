@@ -592,7 +592,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 		if bidResponseExt.Prebid == nil {
 			bidResponseExt.Prebid = &openrtb_ext.ExtResponsePrebid{}
 		}
-		bidResponseExt.Prebid.Floors = rules.DeepCopy()
+		bidResponseExt.Prebid.Floors = rules
 	}
 
 	e.bidValidationEnforcement.SetBannerCreativeMaxSize(r.Account.Validations)
