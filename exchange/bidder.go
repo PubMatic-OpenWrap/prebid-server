@@ -38,7 +38,6 @@ import (
 	"github.com/prebid/prebid-server/v3/metrics"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
 	"github.com/prebid/prebid-server/v3/util/jsonutil"
-	"github.com/prebid/prebid-server/v3/util/ulpdebug"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -197,24 +196,8 @@ func (bidder *BidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 	)
 
 	// rebuild request after modules execution
-	wiid := ulpdebug.Wiid(bidderRequest.BidRequest)
-	traceBidderRebuild := ulpdebug.ShouldTrace(bidderRequest.BidRequest) ||
-		bidderRequest.BidderName == openrtb_ext.BidderPubmatic ||
-		bidderRequest.BidderCoreName == openrtb_ext.BidderPubmatic
-	if traceBidderRebuild {
-		if wiid == "" {
-			wiid = bidderRequest.BidRequest.ID
-		}
-		ulpdebug.LogNote(wiid, "bidder_request", "rebuild bidder="+string(bidderRequest.BidderName))
-	}
 	if err := request.RebuildRequest(); err != nil {
-		if traceBidderRebuild {
-			ulpdebug.LogStageErr(wiid, "bidder_request_rebuild", err)
-		}
 		return nil, extraBidderRespInfo{}, []error{err}
-	}
-	if traceBidderRebuild {
-		ulpdebug.LogStageOK(wiid, "bidder_request_rebuild")
 	}
 	bidderRequest.BidRequest = request.BidRequest
 
