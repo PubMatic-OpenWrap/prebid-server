@@ -70,26 +70,56 @@ func resolveEdsFromRequest(req *openrtb2.BidRequest) models.ResolvedEds {
 }
 
 func injectIntoBidderParams(bidderParams json.RawMessage, resolved models.ResolvedEds, bidderCodes ...string) (json.RawMessage, error) {
-	edsPayload, err := json.Marshal(resolved)
+	edsPayload, err := buildEdsPayload(resolved)
 	if err != nil {
 		return bidderParams, err
 	}
 
-	paramsMap := make(map[string]map[string]json.RawMessage)
-	if len(bidderParams) > 0 {
-		if err := json.Unmarshal(bidderParams, &paramsMap); err != nil {
+	result := cloneJSONBytes(bidderParams)
+	if len(result) == 0 {
+		result = []byte(`{}`)
+	} else if _, _, _, err := jsonparser.Get(result); err != nil {
+		return bidderParams, err
+	}
+
+	edsPayload = cloneJSONBytes(edsPayload)
+	for _, code := range bidderCodes {
+		result, err = jsonparser.Set(result, edsPayload, code, bidderParamsEdsKey)
+		if err != nil {
 			return bidderParams, err
 		}
 	}
 
-	for _, code := range bidderCodes {
-		if paramsMap[code] == nil {
-			paramsMap[code] = make(map[string]json.RawMessage)
+	return result, nil
+}
+
+func buildEdsPayload(resolved models.ResolvedEds) (json.RawMessage, error) {
+	payload := []byte(`{}`)
+	var err error
+
+	if len(resolved.Device) > 0 {
+		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.Device), "device")
+		if err != nil {
+			return nil, err
 		}
-		paramsMap[code][bidderParamsEdsKey] = edsPayload
+	}
+	if len(resolved.App) > 0 {
+		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.App), "app")
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return json.Marshal(paramsMap)
+	return payload, nil
+}
+
+func cloneJSONBytes(b json.RawMessage) json.RawMessage {
+	if len(b) == 0 {
+		return b
+	}
+	copied := make([]byte, len(b))
+	copy(copied, b)
+	return copied
 }
 
 // nestedObject returns a deep copy of the raw JSON value at key when it is a non-empty object.
@@ -103,18 +133,26 @@ func nestedObject(ext []byte, key string) []byte {
 		return nil
 	}
 
-	copied := make([]byte, len(value))
-	copy(copied, value)
-	return copied
+	return cloneJSONBytes(value)
 }
 
 func nilIfEmptyExt(ext []byte) []byte {
 	if len(ext) == 0 {
 		return nil
 	}
-	var keys map[string]json.RawMessage
-	if err := json.Unmarshal(ext, &keys); err != nil || len(keys) == 0 {
+
+	_, dataType, _, err := jsonparser.Get(ext)
+	if err != nil || dataType != jsonparser.Object {
 		return nil
 	}
+
+	hasKeys := false
+	if err := jsonparser.ObjectEach(ext, func(_ []byte, _ []byte, _ jsonparser.ValueType, _ int) error {
+		hasKeys = true
+		return nil
+	}); err != nil || !hasKeys {
+		return nil
+	}
+
 	return ext
 }

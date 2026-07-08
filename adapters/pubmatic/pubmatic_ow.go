@@ -65,11 +65,19 @@ func extractEdsFromBidderParams(bidderParams map[string]json.RawMessage) resolve
 		return resolvedEds{}
 	}
 
-	var resolved resolvedEds
-	if err := json.Unmarshal(edsRaw, &resolved); err != nil {
-		return resolvedEds{}
+	return resolvedEds{
+		Device: edsObjectField(edsRaw, "device"),
+		App:    edsObjectField(edsRaw, "app"),
 	}
-	return resolved
+}
+
+func edsObjectField(edsRaw []byte, key string) json.RawMessage {
+	value, dataType, _, err := jsonparser.Get(edsRaw, key)
+	if err != nil || dataType != jsonparser.Object || isEmptyJSONObject(value) {
+		return nil
+	}
+
+	return cloneJSONBytes(value)
 }
 
 func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
@@ -103,49 +111,54 @@ func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessa
 		return base
 	}
 	if len(base) == 0 {
-		var overlayMap map[string]json.RawMessage
-		if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
-			return overlay
-		}
-		out, err := json.Marshal(overlayMap)
-		if err != nil {
-			return overlay
-		}
-		return out
+		return cloneJSONBytes(overlay)
 	}
 
-	var baseMap map[string]json.RawMessage
-	if err := json.Unmarshal(base, &baseMap); err != nil || len(baseMap) == 0 {
-		var overlayMap map[string]json.RawMessage
-		if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
-			return base
+	if !isJSONObject(base) || isEmptyJSONObject(base) {
+		if !isJSONObject(overlay) {
+			return cloneJSONBytes(base)
 		}
-		out, err := json.Marshal(overlayMap)
-		if err != nil {
-			return base
-		}
-		return out
+		return cloneJSONBytes(overlay)
 	}
 
-	var overlayMap map[string]json.RawMessage
-	if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
-		return base
+	if !isJSONObject(overlay) || isEmptyJSONObject(overlay) {
+		return cloneJSONBytes(base)
 	}
 
-	for key, val := range overlayMap {
+	result := cloneJSONBytes(base)
+	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, _ jsonparser.ValueType, _ int) error {
 		if !overlayWins {
-			if _, exists := baseMap[key]; exists {
-				continue
+			if _, _, _, err := jsonparser.Get(result, string(key)); err == nil {
+				return nil
 			}
 		}
-		baseMap[key] = val
-	}
+		var err error
+		result, err = jsonparser.Set(result, cloneJSONBytes(value), string(key))
+		return err
+	})
 
-	out, err := json.Marshal(baseMap)
-	if err != nil {
-		return base
+	return result
+}
+
+func cloneJSONBytes(b json.RawMessage) json.RawMessage {
+	if len(b) == 0 {
+		return b
 	}
-	return out
+	copied := make([]byte, len(b))
+	copy(copied, b)
+	return copied
+}
+
+func isJSONObject(b []byte) bool {
+	if len(b) == 0 {
+		return false
+	}
+	_, dataType, _, err := jsonparser.Get(b)
+	return err == nil && dataType == jsonparser.Object
+}
+
+func isEmptyJSONObject(b []byte) bool {
+	return !isJSONObject(b) || len(b) <= 2
 }
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
