@@ -1116,7 +1116,7 @@ func TestAddGoogleSDKParamsToBidExt(t *testing.T) {
 	}
 }
 
-func TestMergeOwExtJSON(t *testing.T) {
+func TestMergeExtJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		base    json.RawMessage
@@ -1150,7 +1150,7 @@ func TestMergeOwExtJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := mergeOwExtJSON(tt.base, tt.overlay)
+			got := mergeExtJSON(tt.base, tt.overlay, true)
 			assert.JSONEq(t, tt.want, string(got))
 		})
 	}
@@ -1280,6 +1280,28 @@ func TestApplyEdsFromBidderParams(t *testing.T) {
 		assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
 		assert.JSONEq(t, `{"install_time":1710000000001,"orientation":1}`, string(req.App.Ext))
 	})
+}
+
+func TestApplyEdsSurvivesRequestExtReplacement(t *testing.T) {
+	parent := json.RawMessage(`{"prebid":{"bidderparams":{"pubmatic":{"eds":{"device":{"key":"deviceextraedskey","boottime":123},"app":{"key":1}}}}}}`)
+
+	req := &openrtb2.BidRequest{
+		Ext:    parent,
+		Device: &openrtb2.Device{Ext: json.RawMessage(`{}`)},
+		App:    &openrtb2.App{},
+	}
+	applyEdsFromBidderParams(req, map[string]json.RawMessage{
+		"eds": json.RawMessage(`{"device":{"key":"deviceextraedskey","boottime":123},"app":{"key":1}}`),
+	})
+
+	// Simulate pubmatic MakeRequests replacing request.ext after EDS merge.
+	req.Ext = json.RawMessage(`{"wrapper":{"profile":1}}`)
+	parent[0] = 'X'
+
+	_, err := json.Marshal(req)
+	assert.NoError(t, err)
+	assert.True(t, json.Valid(req.Device.Ext))
+	assert.True(t, json.Valid(req.App.Ext))
 }
 
 //Need to write happy path test cases with nil bidExt

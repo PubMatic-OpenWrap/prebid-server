@@ -84,7 +84,7 @@ func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
 			deviceCopy := *req.Device
 			req.Device = &deviceCopy
 		}
-		req.Device.Ext = mergeOwExtJSON(req.Device.Ext, resolved.Device)
+		req.Device.Ext = mergeExtJSON(req.Device.Ext, resolved.Device, true)
 	}
 
 	if len(resolved.App) > 0 {
@@ -94,29 +94,58 @@ func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
 			appCopy := *req.App
 			req.App = &appCopy
 		}
-		req.App.Ext = mergeOwExtJSON(req.App.Ext, resolved.App)
+		req.App.Ext = mergeExtJSON(req.App.Ext, resolved.App, true)
 	}
 }
 
-func mergeOwExtJSON(base, overlay json.RawMessage) json.RawMessage {
+func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessage {
 	if len(overlay) == 0 {
 		return base
 	}
 	if len(base) == 0 {
-		return overlay
+		var overlayMap map[string]json.RawMessage
+		if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
+			return overlay
+		}
+		out, err := json.Marshal(overlayMap)
+		if err != nil {
+			return overlay
+		}
+		return out
 	}
 
-	result := base
-	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, _ jsonparser.ValueType, _ int) error {
-		var err error
-		result, err = jsonparser.Set(result, value, string(key))
-		if err != nil {
-			return err
+	var baseMap map[string]json.RawMessage
+	if err := json.Unmarshal(base, &baseMap); err != nil || len(baseMap) == 0 {
+		var overlayMap map[string]json.RawMessage
+		if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
+			return base
 		}
-		return nil
-	})
+		out, err := json.Marshal(overlayMap)
+		if err != nil {
+			return base
+		}
+		return out
+	}
 
-	return result
+	var overlayMap map[string]json.RawMessage
+	if err := json.Unmarshal(overlay, &overlayMap); err != nil || len(overlayMap) == 0 {
+		return base
+	}
+
+	for key, val := range overlayMap {
+		if !overlayWins {
+			if _, exists := baseMap[key]; exists {
+				continue
+			}
+		}
+		baseMap[key] = val
+	}
+
+	out, err := json.Marshal(baseMap)
+	if err != nil {
+		return base
+	}
+	return out
 }
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {

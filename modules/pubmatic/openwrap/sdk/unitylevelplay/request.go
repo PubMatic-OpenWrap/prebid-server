@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
@@ -125,14 +124,6 @@ func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, rc
 	// Keep decoded signal for EDS; signal ext.eds is not merged onto the shared request ext.
 	if rctx != nil {
 		rctx.SignalRequest = signal
-		wiid := rctx.LoggerImpressionID
-		if signal.Device != nil {
-			eds.LogRawBytes(wiid, "ulp_entry_signal", "signal.device.ext", signal.Device.Ext)
-		}
-		if signal.App != nil {
-			eds.LogRawBytes(wiid, "ulp_entry_signal", "signal.app.ext", signal.App.Ext)
-		}
-		eds.LogNote(wiid, "ulp_entry_signal", "SignalRequest stored for EDS resolution")
 	}
 
 	modifyImpression(request, signal.Imp)
@@ -144,15 +135,6 @@ func (l *LevelPlay) modifyRequestWithSignalData(request *openrtb2.BidRequest, rc
 
 	// Request Ext
 	request.Ext, _ = sdkutils.CopyPath(signal.Ext, request.Ext, "wrapper", "clientconfig")
-
-	if rctx != nil {
-		wiid := rctx.LoggerImpressionID
-		eds.LogRawBytes(wiid, "ulp_entry_post_merge", "request.app.ext", request.App.Ext)
-		if request.Device != nil {
-			eds.LogRawBytes(wiid, "ulp_entry_post_merge", "request.device.ext", request.Device.Ext)
-		}
-		eds.LogRawBytes(wiid, "ulp_entry_post_merge", "request.ext", request.Ext)
-	}
 }
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
