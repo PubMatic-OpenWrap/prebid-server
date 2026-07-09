@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 const (
 	ExtEDSKey         = "eds"
 	PubmaticBidderKey = "pubmatic"
@@ -23,7 +25,7 @@ var DeviceEDSTier1BlockedParams = []string{
 var AppEDSTier1BlockedParams = []string{
 	"install_time",
 	"first_launch_time",
-import "encoding/json"
+}
 
 // ResolvedEds holds flattened PubMatic-only enrichment parameters carried in
 // ext.prebid.bidderparams.{pubmatic}.eds until the PubMatic adapter merges them.
