@@ -1638,6 +1638,256 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	}
 }
 
+func TestApplyBidExpAndBidExtFromCtx(t *testing.T) {
+	const (
+		bidID = "bid-1"
+		impID = "imp-1"
+	)
+
+	pbsExtWithBidExpEnf := json.RawMessage(`{"appnexus":{"auction_id":8463893022034417000,"bid":4},"origbidcpm":4,"origbidcur":"USD","bidexp_enf":1,"prebid":{"bidid":"23938e1a-6010-43c0-be5f-967e78e87358","meta":{"adaptercode":"appnexus"},"targeting":{"hb_bidder_appnexus":"appnexus","hb_pb_appnexus":"3.60","hb_size_appnexus":"728x90"},"type":"banner"}}`)
+	pbsExtWithoutBidExpEnf := json.RawMessage(`{"appnexus":{"auction_id":8463893022034417000,"bid":4},"origbidcpm":4,"origbidcur":"USD","prebid":{"bidid":"23938e1a-6010-43c0-be5f-967e78e87358","meta":{"adaptercode":"appnexus"},"targeting":{"hb_bidder_appnexus":"appnexus","hb_pb_appnexus":"3.60","hb_size_appnexus":"728x90"},"type":"banner"}}`)
+
+	bidCtxWithOWFields := models.BidCtx{
+		BidExt: models.BidExt{
+			CreativeType:   "banner",
+			NetECPM:        3.6,
+			OriginalBidCPM: 4,
+			OriginalBidCur: "USD",
+			ExtBid: openrtb_ext.ExtBid{
+				Prebid: &openrtb_ext.ExtBidPrebid{
+					Type:  openrtb_ext.BidTypeBanner,
+					BidId: "ow-bidid",
+					Meta:  &openrtb_ext.ExtBidPrebidMeta{AdapterCode: "appnexus"},
+				},
+			},
+		},
+	}
+	owBidExtJSON, err := json.Marshal(bidCtxWithOWFields.BidExt)
+	assert.NoError(t, err)
+
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantExp int64
+		wantExt json.RawMessage
+	}{
+		{
+			name: "webs2s_preserves_pbs_bid_ext_and_strips_bidexp_enf",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: bidCtxWithOWFields,
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: pbsExtWithoutBidExpEnf,
+		},
+		{
+			name: "webs2s_clears_bid_exp_when_omit_bid_exp_from_tracker",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: {
+									BidExt:                bidCtxWithOWFields.BidExt,
+									OmitBidExpFromTracker: true,
+								},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 0,
+			wantExt: pbsExtWithoutBidExpEnf,
+		},
+		{
+			name: "webs2s_empty_ext_unchanged",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointWebS2S,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: bidCtxWithOWFields,
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: nil,
+		},
+		{
+			name: "webs2s_skips_bid_when_bidctx_missing",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointWebS2S,
+					ImpBidCtx: map[string]models.ImpCtx{impID: {}},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: pbsExtWithBidExpEnf,
+		},
+		{
+			name: "webs2s_ctv_resolves_imp_id_from_pod_suffix",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:     models.EndpointWebS2S,
+					IsCTVRequest: true,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: bidCtxWithOWFields,
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID + "::1",
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: pbsExtWithoutBidExpEnf,
+		},
+		{
+			name: "non_webs2s_replaces_bid_ext_from_bidctx",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVideo,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: bidCtxWithOWFields,
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: owBidExtJSON,
+		},
+		{
+			name: "non_webs2s_clears_bid_exp_when_omit_bid_exp_from_tracker",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVideo,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: {
+									BidExt:                bidCtxWithOWFields.BidExt,
+									OmitBidExpFromTracker: true,
+								},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "appnexus",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+							Ext:   pbsExtWithBidExpEnf,
+						}},
+					}},
+				},
+			},
+			wantExp: 0,
+			wantExt: owBidExtJSON,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applyBidExpAndBidExtFromCtx(tt.args.rctx, tt.args.bidResponse)
+			got := tt.args.bidResponse.SeatBid[0].Bid[0]
+			assert.Equal(t, tt.wantExp, got.Exp, tt.name)
+			if tt.wantExt == nil {
+				assert.Nil(t, got.Ext, tt.name)
+				return
+			}
+			assert.JSONEq(t, string(tt.wantExt), string(got.Ext), tt.name)
+		})
+	}
+}
+
 func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
