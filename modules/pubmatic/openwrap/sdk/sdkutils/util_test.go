@@ -234,12 +234,77 @@ func TestMergeDevice(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "signal_ppi_copied",
+			dst:      &openrtb2.Device{},
+			src:      &openrtb2.Device{PPI: 440},
+			expected: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name:     "signal_ppi_overwrites_dst_ppi",
+			dst:      &openrtb2.Device{PPI: 320},
+			src:      &openrtb2.Device{PPI: 440},
+			expected: &openrtb2.Device{PPI: 440},
+		},
+		{
+			name:     "zero_signal_ppi_does_not_overwrite_dst_ppi",
+			dst:      &openrtb2.Device{PPI: 320},
+			src:      &openrtb2.Device{},
+			expected: &openrtb2.Device{PPI: 320},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := MergeDevice(tt.dst, tt.src)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestMergeBanner(t *testing.T) {
+	tests := []struct {
+		name     string
+		dst      *openrtb2.Banner
+		src      *openrtb2.Banner
+		expected *openrtb2.Banner
+	}{
+		{
+			name:     "nil_dst",
+			dst:      nil,
+			src:      &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+			expected: nil,
+		},
+		{
+			name:     "nil_src",
+			dst:      &openrtb2.Banner{},
+			src:      nil,
+			expected: &openrtb2.Banner{},
+		},
+		{
+			name:     "signal_mimes_copied",
+			dst:      &openrtb2.Banner{},
+			src:      &openrtb2.Banner{MIMEs: []string{"image/jpeg", "image/png"}},
+			expected: &openrtb2.Banner{MIMEs: []string{"image/jpeg", "image/png"}},
+		},
+		{
+			name:     "signal_mimes_overwrite_dst_mimes",
+			dst:      &openrtb2.Banner{MIMEs: []string{"image/gif"}},
+			src:      &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+			expected: &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+		},
+		{
+			name:     "empty_signal_mimes_do_not_overwrite_dst",
+			dst:      &openrtb2.Banner{MIMEs: []string{"image/gif"}},
+			src:      &openrtb2.Banner{},
+			expected: &openrtb2.Banner{MIMEs: []string{"image/gif"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			MergeBanner(tt.dst, tt.src)
+			assert.Equal(t, tt.expected, tt.dst)
 		})
 	}
 }
