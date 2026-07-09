@@ -6207,7 +6207,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 			name:     "v25_blocked_country_strips_eds_params",
 			endpoint: models.EndpointV25,
 			setup: func() {
-				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(2)
+				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(1)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -6219,7 +6219,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 			name:     "v25_non_blocked_country_preserves_eds_params",
 			endpoint: models.EndpointV25,
 			setup: func() {
-				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(false).Times(2)
+				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(false).Times(1)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -6231,7 +6231,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 			name:     "google_sdk_blocked_country_strips_eds_params",
 			endpoint: models.EndpointGoogleSDK,
 			setup: func() {
-				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(2)
+				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(1)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},
@@ -6243,7 +6243,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 			name:     "v25_blocked_country_strips_eds_params_pubmatic_alias",
 			endpoint: models.EndpointV25,
 			setup: func() {
-				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(2)
+				mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(true).Times(1)
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 			},

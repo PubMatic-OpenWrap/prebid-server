@@ -687,7 +687,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					gotRctx.LoggerImpressionID = ""
 				}
 				gotRctx.ParsedUidCookie = nil // ignore parsed cookies
-				if sdkutils.IsSdkIntegration(gotRctx.Endpoint) {
+				if sdkutils.IsSdkBiddingEndpoint(gotRctx.Endpoint) {
 					assert.NotNil(t, gotRctx.SignalRequest, "decoded SDK signal must survive rCtx re-init")
 					gotRctx.SignalRequest = nil
 				}

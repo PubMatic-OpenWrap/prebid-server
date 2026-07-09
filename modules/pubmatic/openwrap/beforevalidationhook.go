@@ -743,18 +743,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
 		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
-		if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
-			requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
-		}
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
 				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
-				if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
-					requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
-				}
 			}
 		}
 	}
@@ -766,6 +760,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 			payload.BidRequest,
 			pubmaticBidderCodes...,
 		)
+	}
+
+	if sdkutils.IsSdkEndpoint(rCtx.Endpoint) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+		if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
+			requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
+		}
 	}
 
 	rCtx.GoogleSDK.SDKRenderedAdID = googlesdk.SetSDKRenderedAdID(payload.BidRequest.App, rCtx.Endpoint)
