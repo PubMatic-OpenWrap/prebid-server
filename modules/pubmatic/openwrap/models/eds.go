@@ -17,7 +17,7 @@ var DeviceEDSTier1BlockedParams = []string{
 	"boottime",
 	"diskspace",
 	"totaldisk",
-	"inputlaunguage",
+	"inputlanguage",
 	"totalmem",
 }
 
