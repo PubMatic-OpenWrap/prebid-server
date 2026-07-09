@@ -226,8 +226,13 @@ func CopyIFV(source, target []byte) []byte {
 	return target
 }
 
-func IsSdkIntegration(endpoint string) bool {
+func IsSdkBiddingEndpoint(endpoint string) bool {
 	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointAPS
+}
+
+// IsSdkEndpoint returns true for SDK mediation endpoints and the v25 endpoint.
+func IsSdkEndpoint(endpoint string) bool {
+	return IsSdkBiddingEndpoint(endpoint) || endpoint == models.EndpointV25
 }
 
 func AddSize300x600ForInterstitialBanner(imp *openrtb2.Imp) {

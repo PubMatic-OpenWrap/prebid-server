@@ -782,7 +782,7 @@ func TestIsGoogleSDKResponseRejected(t *testing.T) {
 	}
 }
 
-func TestIsSdkIntegration(t *testing.T) {
+func TestIsSdkBiddingEndpoint(t *testing.T) {
 	tests := []struct {
 		name     string
 		endpoint string
@@ -850,8 +850,28 @@ func TestIsSdkIntegration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := IsSdkIntegration(tt.endpoint)
-			assert.Equal(t, tt.expected, result, "IsSdkIntegration(%q) should return %v", tt.endpoint, tt.expected)
+			result := IsSdkBiddingEndpoint(tt.endpoint)
+			assert.Equal(t, tt.expected, result, "IsSdkBiddingEndpoint(%q) should return %v", tt.endpoint, tt.expected)
+		})
+	}
+}
+
+func TestIsSdkEndpoint(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		expected bool
+	}{
+		{name: "v25 endpoint", endpoint: models.EndpointV25, expected: true},
+		{name: "google sdk endpoint", endpoint: models.EndpointGoogleSDK, expected: true},
+		{name: "applovin max endpoint", endpoint: models.EndpointAppLovinMax, expected: true},
+		{name: "amp endpoint", endpoint: models.EndpointAMP, expected: false},
+		{name: "web s2s endpoint", endpoint: models.EndpointWebS2S, expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsSdkEndpoint(tt.endpoint))
 		})
 	}
 }
