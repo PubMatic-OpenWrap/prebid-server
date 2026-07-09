@@ -625,6 +625,15 @@ func (m OpenWrap) handleBeforeValidationHook(
 		for bidder, meta := range bidderMeta {
 			impExt.Prebid.Bidder[bidder] = meta.Params
 		}
+		if glog.V(models.LogLevelDebug) {
+			for bidder, meta := range bidderMeta {
+				if meta.PrebidBidderCode != string(openrtb_ext.BidderPubmatic) && meta.PrebidBidderCode != string(models.BidderPubMaticSecondaryAlias) {
+					continue
+				}
+				glog.Infof("[multifloors] wiid:[%s] impid:[%s] bidder:[%s] pubmatic_params:[%s]",
+					rCtx.LoggerImpressionID, imp.ID, bidder, string(meta.Params))
+			}
+		}
 		adserverURL := ""
 		if impExt.Wrapper != nil {
 			adserverURL = impExt.Wrapper.AdServerURL

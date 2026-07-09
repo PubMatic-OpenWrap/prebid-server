@@ -18,6 +18,7 @@ import (
 	"github.com/prebid/prebid-server/v3/util/ptrutil"
 
 	"github.com/buger/jsonparser"
+	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
 )
 
@@ -146,6 +147,9 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		if len(floors) > 0 {
 			impFloorsMap[request.Imp[i].ID] = floors
 		}
+		if glog.V(3) {
+			glog.Infof("[multifloors] impid:[%s] floors_from_ext:%v", request.Imp[i].ID, floors)
+		}
 
 		if extractWrapperExtFromImp {
 			if wrapperExtFromImp != nil {
@@ -253,6 +257,9 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 
 	//Build the multi-floor requests if multiple floors are present
 	if len(impFloorsMap) > 0 {
+		if glog.V(3) {
+			glog.Infof("[multifloors] building multi-floor requests for imps:%v", impFloorsMap)
+		}
 		requestData, errData := a.buildMultiFloorRequests(request, impFloorsMap, cookies)
 		if errData != nil {
 			errs = append(errs, errData...)

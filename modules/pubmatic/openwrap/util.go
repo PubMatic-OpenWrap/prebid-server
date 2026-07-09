@@ -639,14 +639,22 @@ func getAdunitFormat(reward *int8, imp openrtb2.Imp) string {
 }
 
 // getMultiFloors returns all adunitlevel multifloors or to be applied adunitformat multifloors for give imp.
-func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openrtb2.Imp) *models.MultiFloors {
+func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openrtb2.Imp) (mf *models.MultiFloors) {
 	if !sdkutils.IsSdkIntegration(rctx.Endpoint) {
 		return nil
 	}
 
 	mbmfStatus := models.MBMFNoEntryFound
+	adunitFormat := ""
 	//call stat at the end of func with updated mbmfStatus
-	defer func() { m.metricEngine.RecordMBMFRequests(rctx.Endpoint, rctx.PubIDStr, mbmfStatus) }()
+	defer func() {
+		m.metricEngine.RecordMBMFRequests(rctx.Endpoint, rctx.PubIDStr, mbmfStatus)
+		if glog.V(models.LogLevelDebug) {
+			glog.Infof("[multifloors] wiid:[%s] impid:[%s] tagid:[%s] endpoint:[%s] pubid:[%s] format:[%s] status:[%d] floors:%v",
+				rctx.LoggerImpressionID, imp.ID, imp.TagID, rctx.Endpoint, rctx.PubIDStr, adunitFormat, mbmfStatus,
+				models.GetMultiFloors(map[string]*models.MultiFloors{imp.ID: mf}, imp.ID))
+		}
+	}()
 
 	// MBMF applies only when the publisher has an explicit MBMF publisher row with is_enabled=1.
 	if !m.pubFeatures.IsMBMFPublisherEnabled(rctx.PubID) {
@@ -660,7 +668,7 @@ func (m OpenWrap) getMultiFloors(rctx models.RequestCtx, reward *int8, imp openr
 		return nil
 	}
 
-	adunitFormat := getAdunitFormat(reward, imp)
+	adunitFormat = getAdunitFormat(reward, imp)
 	if adunitFormat == "" {
 		mbmfStatus = models.MBMFInvalidAdFormat
 		return nil
