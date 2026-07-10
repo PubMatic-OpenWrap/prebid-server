@@ -35,7 +35,7 @@ func TestStripEDSTier1ParamsForBlockedCountry(t *testing.T) {
 	}{
 		{
 			name:     "strips blocked device and app params and keeps allowed fields",
-			input:    `{"pubmatic":{"eds":{"device":{"boottime":123,"charging":1,"diskspace":10.5,"screenbright":0.8,"totaldisk":100,"inputlaunguage":"en","totalmem":2048},"app":{"install_time":456,"first_launch_time":789,"other":"keep"}}}}`,
+			input:    `{"pubmatic":{"eds":{"device":{"boottime":123,"charging":1,"diskspace":10.5,"screenbright":0.8,"totaldisk":100,"inputlanguage":"en","totalmem":2048},"app":{"install_time":456,"first_launch_time":789,"other":"keep"}}}}`,
 			expected: `{"pubmatic":{"eds":{"device":{"charging":1,"screenbright":0.8},"app":{"other":"keep"}}}}`,
 		},
 		{
@@ -70,7 +70,7 @@ func TestStripEDSTier1ParamsForBlockedCountry(t *testing.T) {
 		},
 		{
 			name:     "only blocked device params removes empty device object",
-			input:    `{"pubmatic":{"eds":{"device":{"boottime":1,"diskspace":2,"totaldisk":3,"inputlaunguage":"en","totalmem":4},"app":{"other":"keep"}}}}`,
+			input:    `{"pubmatic":{"eds":{"device":{"boottime":1,"diskspace":2,"totaldisk":3,"inputlanguage":"en","totalmem":4},"app":{"other":"keep"}}}}`,
 			expected: `{"pubmatic":{"eds":{"app":{"other":"keep"}}}}`,
 		},
 		{
@@ -114,8 +114,8 @@ func TestStripEDSTier1ParamsForBlockedCountry(t *testing.T) {
 			expected: `{"pubmatic":{"eds":{"device":{"charging":1}}}}`,
 		},
 		{
-			name:     "strips inputlaunguage from device",
-			input:    `{"pubmatic":{"eds":{"device":{"inputlaunguage":"en","charging":1}}}}`,
+			name:     "strips inputlanguage from device",
+			input:    `{"pubmatic":{"eds":{"device":{"inputlanguage":"en","charging":1}}}}`,
 			expected: `{"pubmatic":{"eds":{"device":{"charging":1}}}}`,
 		},
 		{
