@@ -1638,6 +1638,104 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 	}
 }
 
+func TestApplyBidExpAndBidExtFromCtx(t *testing.T) {
+	const (
+		bidID = "bid-1"
+		impID = "imp-1"
+	)
+
+	bidExt := models.BidExt{
+		CreativeType:   "banner",
+		NetECPM:        3.6,
+		OriginalBidCPM: 4,
+		OriginalBidCur: "USD",
+	}
+	wantExt, err := json.Marshal(bidExt)
+	assert.NoError(t, err)
+
+	type args struct {
+		rctx        models.RequestCtx
+		bidResponse *openrtb2.BidResponse
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		wantExp int64
+		wantExt json.RawMessage
+	}{
+		{
+			name: "clears_bid_exp_when_omit_bid_exp_from_tracker",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVideo,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: {
+									BidExt:                bidExt,
+									OmitBidExpFromTracker: true,
+								},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+						}},
+					}},
+				},
+			},
+			wantExp: 0,
+			wantExt: wantExt,
+		},
+		{
+			name: "preserves_bid_exp_when_not_omitting_from_tracker",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointVideo,
+					ImpBidCtx: map[string]models.ImpCtx{
+						impID: {
+							BidCtx: map[string]models.BidCtx{
+								bidID: {
+									BidExt:                bidExt,
+									OmitBidExpFromTracker: false,
+								},
+							},
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{{
+						Seat: "pubmatic",
+						Bid: []openrtb2.Bid{{
+							ID:    bidID,
+							ImpID: impID,
+							Exp:   300,
+						}},
+					}},
+				},
+			},
+			wantExp: 300,
+			wantExt: wantExt,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applyBidExpAndBidExtFromCtx(tt.args.rctx, tt.args.bidResponse)
+			got := tt.args.bidResponse.SeatBid[0].Bid[0]
+			assert.Equal(t, tt.wantExp, got.Exp, tt.name)
+			assert.JSONEq(t, string(tt.wantExt), string(got.Ext), tt.name)
+		})
+	}
+}
+
 func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCache := mock_cache.NewMockCache(ctrl)
