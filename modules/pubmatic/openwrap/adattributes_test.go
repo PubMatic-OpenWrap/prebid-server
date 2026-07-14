@@ -407,126 +407,6 @@ func TestCompareVersions(t *testing.T) {
 	}
 }
 
-func TestDetermineAdFormat(t *testing.T) {
-	tests := []struct {
-		name     string
-		impCtx   models.ImpCtx
-		expected AdFormat
-	}{
-		{
-			name: "rewarded_video_instl_plus_rwdd",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(1)),
-				Instl:             1,
-				Video:             &openrtb2.Video{},
-			},
-			expected: AdFormatRewardedVideo,
-		},
-		{
-			name: "rewarded_flag_without_video_not_classified_as_rewarded_video",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(1)),
-				Instl:             1,
-				Video:             nil,
-			},
-			expected: "",
-		},
-		{
-			name: "interstitial_plus_video_plus_banner_legacy_DetermineAdFormat_prefers_video_slot",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             1,
-				Video:             &openrtb2.Video{},
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
-			},
-			expected: AdFormatInterstitialVideo,
-		},
-		{
-			name: "interstitial_display_when_ad_unit_disabled_video_video_still_on_imp_until_mutation",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             1,
-				Video:             &openrtb2.Video{},
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
-				VideoAdUnitCtx: models.AdUnitCtx{
-					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-						Video: &adunitconfig.Video{Enabled: ptrutil.ToPtr(false)},
-					},
-				},
-			},
-			expected: AdFormatInterstitialDisplay,
-		},
-		{
-			name: "interstitial_display_when_video_nil_video_not_on_imp",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             1,
-				Video:             nil,
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
-			},
-			expected: AdFormatInterstitialDisplay,
-		},
-		{
-			name: "MREC_video_plus_display_instl_eq_0_plus_300x250_plus_video_plus_banner",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             0,
-				Video:             &openrtb2.Video{},
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
-			},
-			expected: AdFormatMRECVideo,
-		},
-		{
-			name: "MREC_banner_display_only_when_ad_unit_disabled_video",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             0,
-				Video:             &openrtb2.Video{},
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
-				VideoAdUnitCtx: models.AdUnitCtx{
-					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-						Video: &adunitconfig.Video{Enabled: ptrutil.ToPtr(false)},
-					},
-				},
-			},
-			expected: AdFormatMRECDisplay,
-		},
-		{
-			name: "banner_display_instl_eq_0_plus_leaderboard_no_video",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             0,
-				Video:             nil,
-				IsBanner:          true,
-				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
-			},
-			expected: AdFormatBannerDisplay,
-		},
-		{
-			name: "default_no_match",
-			impCtx: models.ImpCtx{
-				IsRewardInventory: ptrutil.ToPtr(int8(0)),
-				Instl:             0,
-				Video:             nil,
-				IsBanner:          false,
-			},
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := DetermineAdFormat(tt.impCtx)
-			assert.Equal(t, tt.expected, got)
-		})
-	}
-}
-
 func TestDetermineAdFormatForVideo(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -570,18 +450,52 @@ func TestDetermineAdFormatForVideo(t *testing.T) {
 		{
 			name: "MREC_video",
 			impCtx: models.ImpCtx{
-				Instl:  0,
-				Video:  &openrtb2.Video{},
-				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+				Instl: 0,
+				Video: &openrtb2.Video{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
 			expected: AdFormatMRECVideo,
 		},
 		{
-			name: "non_interstitial_non_MREC_video",
+			name: "MREC_video_with_MREC_banner_but_non_MREC_video_size",
 			impCtx: models.ImpCtx{
 				Instl:  0,
-				Video:  &openrtb2.Video{},
-				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
+				Video:  &openrtb2.Video{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
+				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+			},
+			expected: "",
+		},
+		{
+			name: "non_interstitial_non_MREC_video",
+			impCtx: models.ImpCtx{
+				Instl: 0,
+				Video: &openrtb2.Video{W: ptrutil.ToPtr(int64(320)), H: ptrutil.ToPtr(int64(50))},
+			},
+			expected: "",
+		},
+		{
+			name: "MREC_video_with_banner_disabled",
+			impCtx: models.ImpCtx{
+				Instl:  0,
+				Video:  &openrtb2.Video{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+				BannerAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Banner: &adunitconfig.Banner{Enabled: ptrutil.ToPtr(false)},
+					},
+				},
+			},
+			expected: AdFormatMRECVideo,
+		},
+		{
+			name: "MREC_video_with_video_disabled",
+			impCtx: models.ImpCtx{
+				Instl: 0,
+				Video: &openrtb2.Video{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
+				VideoAdUnitCtx: models.AdUnitCtx{
+					AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+						Video: &adunitconfig.Video{Enabled: ptrutil.ToPtr(false)},
+					},
+				},
 			},
 			expected: "",
 		},
@@ -747,7 +661,12 @@ func TestCreateOWSDKExtension(t *testing.T) {
 		{
 			name:     "no_ids",
 			wireIDs:  []int{},
-			expected: map[string]any{},
+			expected: nil,
+		},
+		{
+			name:     "all_non_positive_ids",
+			wireIDs:  []int{0, -1},
+			expected: nil,
 		},
 		{
 			name:    "single_id",
@@ -935,13 +854,13 @@ func TestApplyOWSDKFormatLevelAdAttributes(t *testing.T) {
 			imp: &openrtb2.Imp{
 				ID:     "test_imp_2",
 				Instl:  0,
-				Video:  &openrtb2.Video{MinDuration: 10, MaxDuration: 10},
+				Video:  &openrtb2.Video{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250)), MinDuration: 10, MaxDuration: 10},
 				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
 			impCtx: models.ImpCtx{
 				DisplayManagerVer: "4.9.0",
 				Instl:             0,
-				Video:             &openrtb2.Video{MinDuration: 10, MaxDuration: 10},
+				Video:             &openrtb2.Video{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250)), MinDuration: 10, MaxDuration: 10},
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
 			banner: formatExtExpect{inject: true, adAttrs: adAttrMRECDisplayIOS49},

@@ -972,10 +972,10 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp, de
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
 
-	// add adattribute support for 2.5 endpoint and sdk integration endpoints only. In future if any other new endpoint migrated to modules code then we need this check here.
-	// if sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
-	if err := ApplyOWSDKFormatLevelAdAttributes(imp, rCtx.ImpBidCtx[imp.ID], deviceOS); err != nil {
-		glog.Errorf("OWSDK format-level adattributes imp=%s: %v", imp.ID, err)
+	if sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
+		if err := ApplyOWSDKFormatLevelAdAttributes(imp, rCtx.ImpBidCtx[imp.ID], deviceOS); err != nil {
+			glog.Errorf("OWSDK format-level adattributes imp=%s: %v", imp.ID, err)
+		}
 	}
 }
 

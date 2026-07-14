@@ -8,7 +8,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 )
@@ -139,6 +141,40 @@ var unifiedFeatureMatrix = []FeatureConfig{
 	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireMRAIDAppStatus}},
 }
 
+type adAttrMatrixKey struct {
+	os       OS
+	adFormat AdFormat
+}
+
+type adAttrLookupCacheKey struct {
+	os         OS
+	sdkVersion string
+	adFormat   AdFormat
+}
+
+var (
+	// unifiedFeatureMatrixByOSFormat indexes matrix rows by OS + AdFormat
+	// while preserving row order for first-match semantics.
+	unifiedFeatureMatrixByOSFormat map[adAttrMatrixKey][]FeatureConfig
+
+	// supportedAdAttributeWireIDsCache memoizes resolved wire IDs per
+	// (OS, SDK version, AdFormat). Negative lookups are cached as an empty
+	// []int instead of nil so cached values always type-assert to []int.
+	supportedAdAttributeWireIDsCache sync.Map
+)
+
+func init() {
+	unifiedFeatureMatrixByOSFormat = make(map[adAttrMatrixKey][]FeatureConfig, 16)
+
+	for _, config := range unifiedFeatureMatrix {
+		key := adAttrMatrixKey{
+			os:       config.OS,
+			adFormat: config.AdFormat,
+		}
+		unifiedFeatureMatrixByOSFormat[key] = append(unifiedFeatureMatrixByOSFormat[key], config)
+	}
+}
+
 // shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.2.0] inclusive.
 func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	if sdkVersion == "" {
@@ -154,31 +190,49 @@ func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 }
 
 // mergeOWSDKServerFieldsIntoExtJSON merges server-built owsdk fields (e.g. adattributes) into a format object's ext JSON.
-// Other ext keys are preserved as-is via json.RawMessage.
+// serverOWSDK is pre-marshaled once; sibling ext keys are preserved via jsonparser without a full ext map round-trip.
 func mergeOWSDKServerFieldsIntoExtJSON(extJSON json.RawMessage, serverOWSDK map[string]any) (json.RawMessage, error) {
 	if len(serverOWSDK) == 0 {
 		return extJSON, nil
 	}
 
-	extMap := make(map[string]json.RawMessage)
-	if len(extJSON) > 0 {
-		if err := json.Unmarshal(extJSON, &extMap); err != nil {
-			extMap = make(map[string]json.RawMessage)
-		}
-	}
-
-	owsdkOut := make(map[string]any)
-	if raw := extMap[extOWSDKKey]; len(raw) > 0 {
-		_ = json.Unmarshal(raw, &owsdkOut)
-	}
-	maps.Copy(owsdkOut, serverOWSDK)
-
-	owsdkBytes, err := json.Marshal(owsdkOut)
+	serverOWSDKBytes, err := json.Marshal(serverOWSDK)
 	if err != nil {
 		return extJSON, err
 	}
-	extMap[extOWSDKKey] = owsdkBytes
-	return json.Marshal(extMap)
+
+	if len(extJSON) == 0 {
+		return marshalExtOWSDKOnly(serverOWSDKBytes)
+	}
+	if !json.Valid(extJSON) {
+		return marshalExtOWSDKOnly(serverOWSDKBytes)
+	}
+
+	existingOWSDK, _, _, err := jsonparser.Get(extJSON, extOWSDKKey)
+	if err != nil {
+		if errors.Is(err, jsonparser.KeyPathNotFoundError) {
+			return jsonparser.Set(extJSON, serverOWSDKBytes, extOWSDKKey)
+		}
+		return marshalExtOWSDKOnly(serverOWSDKBytes)
+	}
+
+	owsdkOut := make(map[string]any)
+	if len(existingOWSDK) > 0 {
+		_ = json.Unmarshal(existingOWSDK, &owsdkOut)
+	}
+	maps.Copy(owsdkOut, serverOWSDK)
+
+	mergedOWSDKBytes, err := json.Marshal(owsdkOut)
+	if err != nil {
+		return extJSON, err
+	}
+	return jsonparser.Set(extJSON, mergedOWSDKBytes, extOWSDKKey)
+}
+
+func marshalExtOWSDKOnly(owsdkBytes []byte) (json.RawMessage, error) {
+	return json.Marshal(map[string]json.RawMessage{
+		extOWSDKKey: owsdkBytes,
+	})
 }
 
 // ApplyOWSDKFormatLevelAdAttributes sets imp.banner|video ext.owsdk.adattributes from unifiedFeatureMatrix
@@ -212,11 +266,11 @@ func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, 
 			return ext, nil
 		}
 		wireIDs := GetSupportedAdAttributeWireIDs(os, sdkVersion, format)
-		srv := CreateOWSDKExtension(wireIDs)
-		if len(srv) == 0 {
+		serverOWSDK := CreateOWSDKExtension(wireIDs)
+		if len(serverOWSDK) == 0 {
 			return ext, nil
 		}
-		return mergeOWSDKServerFieldsIntoExtJSON(ext, srv)
+		return mergeOWSDKServerFieldsIntoExtJSON(ext, serverOWSDK)
 	}
 
 	if imp.Banner != nil {
@@ -236,14 +290,47 @@ func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, 
 	return errors.Join(errs...)
 }
 
-// GetSupportedAdAttributeWireIDs returns supported ext.owsdk adattribute wire IDs for OS, SDK version, and ad format.
-// Call only after ApplyOWSDKFormatLevelAdAttributes has trimmed and validated displaymanagerver (in [4.1.0, 5.2.0]).
+// GetSupportedAdAttributeWireIDs returns the supported ext.owsdk.adattributes
+// wire IDs for the given OS, SDK version, and ad format.
+//
+// Callers are expected to pass a trimmed and validated SDK version
+// (currently supported range: [4.1.0, 5.2.0]).
 func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
-	for _, config := range unifiedFeatureMatrix {
-		if config.OS == os &&
-			config.AdFormat == adFormat &&
-			isVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
-			return slices.Clone(config.WireIDs)
+	cacheKey := adAttrLookupCacheKey{
+		os:         os,
+		sdkVersion: sdkVersion,
+		adFormat:   adFormat,
+	}
+
+	if cached, ok := supportedAdAttributeWireIDsCache.Load(cacheKey); ok {
+		wireIDs := cached.([]int)
+		if len(wireIDs) == 0 {
+			return nil
+		}
+		return slices.Clone(wireIDs)
+	}
+
+	wireIDs := lookupSupportedAdAttributeWireIDs(os, sdkVersion, adFormat)
+	if wireIDs == nil {
+		supportedAdAttributeWireIDsCache.Store(cacheKey, []int{})
+		return nil
+	}
+
+	stored := slices.Clone(wireIDs)
+	supportedAdAttributeWireIDsCache.Store(cacheKey, stored)
+
+	return slices.Clone(stored)
+}
+
+func lookupSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
+	key := adAttrMatrixKey{
+		os:       os,
+		adFormat: adFormat,
+	}
+
+	for _, config := range unifiedFeatureMatrixByOSFormat[key] {
+		if isVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
+			return config.WireIDs
 		}
 	}
 
@@ -276,26 +363,36 @@ func isBannerEffectiveForAdFormat(impCtx models.ImpCtx) bool {
 	return *cfg.Banner.Enabled
 }
 
-// isMRECSize implements the request-spec isMRECSize() gate: 300×250 on the effective imp.banner
-// (used for MREC display on the banner object and MREC video when imp.video is present).
+// isMRECSize implements the request-spec isMRECSize() gate: 300×250 on imp.banner.
 func isMRECSize(impCtx models.ImpCtx) bool {
-	if !isBannerEffectiveForAdFormat(impCtx) || impCtx.Banner == nil {
-		return false
-	}
-	if impCtx.Banner.W == nil || impCtx.Banner.H == nil {
+	if impCtx.Banner == nil || impCtx.Banner.W == nil || impCtx.Banner.H == nil {
 		return false
 	}
 	return *impCtx.Banner.W == MRECWidth && *impCtx.Banner.H == MRECHeight
 }
 
+// isMRECVideoSize returns true when imp.video is 300×250.
+func isMRECVideoSize(impCtx models.ImpCtx) bool {
+	if impCtx.Video == nil || impCtx.Video.W == nil || impCtx.Video.H == nil {
+		return false
+	}
+	return *impCtx.Video.W == MRECWidth && *impCtx.Video.H == MRECHeight
+}
+
+// isMRECVideo is true when instl is 0 or absent and imp.video is MREC size.
+// Caller must ensure video is effective via isVideoEffectiveForAdFormat.
+func isMRECVideo(impCtx models.ImpCtx) bool {
+	return impCtx.Instl != 1 && isMRECVideoSize(impCtx)
+}
+
 func isRewardedVideoRequest(impCtx models.ImpCtx) bool {
-	return impCtx.IsRewardInventory != nil && *impCtx.IsRewardInventory == 1 && isVideoEffectiveForAdFormat(impCtx)
+	return impCtx.IsRewardInventory != nil && *impCtx.IsRewardInventory == 1
 }
 
 // DetermineAdFormatForVideo maps imp.video to a matrix row (Approach 2 request spec):
 //   - Rewarded video:     reward == 1 && imp.video != nil (effective)
-//   - Interstitial video: instl == 1 && imp.video != nil (effective); evaluated after rewarded
-//   - MREC video:         instl == 0 or absent && imp.video != nil (effective) && isMRECSize()
+//   - Interstitial video: instl == 1 && imp.video != nil (effective)
+//   - MREC video:         isMRECVideo (instl == 0 or absent && imp.video != nil && imp.video is 300×250)
 func DetermineAdFormatForVideo(impCtx models.ImpCtx) AdFormat {
 	if !isVideoEffectiveForAdFormat(impCtx) {
 		return ""
@@ -306,8 +403,7 @@ func DetermineAdFormatForVideo(impCtx models.ImpCtx) AdFormat {
 	if impCtx.Instl == 1 {
 		return AdFormatInterstitialVideo
 	}
-	// instl is 0 or absent (non-1): non-interstitial inventory
-	if isMRECSize(impCtx) {
+	if isMRECVideo(impCtx) {
 		return AdFormatMRECVideo
 	}
 	return ""
@@ -328,14 +424,6 @@ func DetermineAdFormatForBanner(impCtx models.ImpCtx) AdFormat {
 		return AdFormatMRECDisplay
 	}
 	return AdFormatBannerDisplay
-}
-
-// DetermineAdFormat returns the video-slot matrix key when set, else the banner-slot key (legacy / diagnostics).
-func DetermineAdFormat(impCtx models.ImpCtx) AdFormat {
-	if v := DetermineAdFormatForVideo(impCtx); v != "" {
-		return v
-	}
-	return DetermineAdFormatForBanner(impCtx)
 }
 
 // DetermineOS determines the OS based on device information
@@ -416,7 +504,7 @@ func compareVersions(v1, v2 string) int {
 // CreateOWSDKExtension builds ext.owsdk with sorted, deduplicated, positive adattribute wire IDs.
 func CreateOWSDKExtension(wireIDs []int) map[string]any {
 	if len(wireIDs) == 0 {
-		return map[string]any{}
+		return nil
 	}
 
 	out := make([]int, 0, len(wireIDs))
@@ -426,7 +514,7 @@ func CreateOWSDKExtension(wireIDs []int) map[string]any {
 		}
 	}
 	if len(out) == 0 {
-		return map[string]any{}
+		return nil
 	}
 
 	slices.Sort(out)
