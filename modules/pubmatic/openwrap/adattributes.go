@@ -439,21 +439,6 @@ func DetermineOS(deviceOS string) OS {
 	}
 }
 
-//present in util.go: isIos and isAndroid
-// or func isIos(os string, userAgentString string) bool {
-// 	if openRTBDeviceOsIosRegex.Match([]byte(strings.ToLower(os))) || iosUARegex.Match([]byte(strings.ToLower(userAgentString))) {
-// 		return true
-// 	}
-// 	return false
-// }
-
-// func isAndroid(os string, userAgentString string) bool {
-// 	if openRTBDeviceOsAndroidRegex.Match([]byte(strings.ToLower(os))) || androidUARegex.Match([]byte(strings.ToLower(userAgentString))) {
-// 		return true
-// 	}
-// 	return false
-// }
-
 // isVersionLessThan checks if version1 is less than version2
 func isVersionLessThan(version1, version2 string) bool {
 	return compareVersions(version1, version2) < 0
