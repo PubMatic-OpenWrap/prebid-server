@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -152,14 +151,19 @@ type adAttrLookupCacheKey struct {
 	adFormat   AdFormat
 }
 
+type adAttrCacheEntry struct {
+	wireIDs          []int
+	serverOWSDKJSON  []byte // {"adattributes":[...]} for inject / fallback
+	adAttributesJSON []byte // [...] for jsonparser.Set on existing owsdk
+}
+
 var (
 	// unifiedFeatureMatrixByOSFormat indexes matrix rows by OS + AdFormat
 	// while preserving row order for first-match semantics.
 	unifiedFeatureMatrixByOSFormat map[adAttrMatrixKey][]FeatureConfig
 
-	// supportedAdAttributeWireIDsCache memoizes resolved wire IDs per
-	// (OS, SDK version, AdFormat). Negative lookups are cached as an empty
-	// []int instead of nil so cached values always type-assert to []int.
+	// supportedAdAttributeWireIDsCache memoizes wire IDs and pre-marshaled server
+	// owsdk JSON per (OS, SDK version, AdFormat). Negative lookups use empty entry.
 	supportedAdAttributeWireIDsCache sync.Map
 )
 
@@ -189,48 +193,71 @@ func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	return true
 }
 
-// mergeOWSDKServerFieldsIntoExtJSON merges server-built owsdk fields (e.g. adattributes) into a format object's ext JSON.
-// Sibling ext keys are preserved via jsonparser without a full ext map round-trip. json.Valid runs only before
-// jsonparser.Set on the inject path (invalid ext cannot be patched safely); merge paths use jsonparser.Get/Set alone.
-func mergeOWSDKServerFieldsIntoExtJSON(extJSON json.RawMessage, serverOWSDK map[string]any) (json.RawMessage, error) {
-	if len(serverOWSDK) == 0 {
+// mergeOWSDKServerFieldsIntoExtJSON merges pre-marshaled server owsdk JSON into a format object's ext JSON.
+// Sibling ext keys are preserved via jsonparser without a full ext map round-trip. On inject, jsonparser.Set is tried
+// first; if Set fails or the result is not valid JSON, fall back to owsdk-only ext (invalid ext cannot be patched safely).
+func mergeOWSDKServerFieldsIntoExtJSON(extJSON json.RawMessage, serverOWSDKJSON, adAttributesJSON []byte) (json.RawMessage, error) {
+	if len(serverOWSDKJSON) == 0 {
 		return extJSON, nil
 	}
 
 	if len(extJSON) == 0 {
-		serverOWSDKBytes, err := json.Marshal(serverOWSDK)
-		if err != nil {
-			return extJSON, err
-		}
-		return marshalExtOWSDKOnly(serverOWSDKBytes)
+		return marshalExtOWSDKOnly(serverOWSDKJSON)
 	}
 
 	existingOWSDK, _, _, err := jsonparser.Get(extJSON, extOWSDKKey)
 	if err != nil {
-		serverOWSDKBytes, marshalErr := json.Marshal(serverOWSDK)
-		if marshalErr != nil {
-			return extJSON, marshalErr
-		}
 		if errors.Is(err, jsonparser.KeyPathNotFoundError) {
-			if !json.Valid(extJSON) {
-				return marshalExtOWSDKOnly(serverOWSDKBytes)
+			out, setErr := jsonparser.Set(extJSON, serverOWSDKJSON, extOWSDKKey)
+			if setErr != nil || !json.Valid(out) {
+				return marshalExtOWSDKOnly(serverOWSDKJSON)
 			}
-			return jsonparser.Set(extJSON, serverOWSDKBytes, extOWSDKKey)
+			return out, nil
 		}
-		return marshalExtOWSDKOnly(serverOWSDKBytes)
+		return marshalExtOWSDKOnly(serverOWSDKJSON)
 	}
 
-	owsdkOut := make(map[string]any)
-	if len(existingOWSDK) > 0 {
-		_ = json.Unmarshal(existingOWSDK, &owsdkOut)
-	}
-	maps.Copy(owsdkOut, serverOWSDK)
-
-	mergedOWSDKBytes, err := json.Marshal(owsdkOut)
+	mergedOWSDKBytes, err := mergeServerFieldsIntoOWSDKJSON(existingOWSDK, adAttributesJSON)
 	if err != nil {
 		return extJSON, err
 	}
 	return jsonparser.Set(extJSON, mergedOWSDKBytes, extOWSDKKey)
+}
+
+// mergeServerFieldsIntoOWSDKJSON patches adattributes into existing owsdk JSON via jsonparser.Set.
+// Falls back to map merge when Set fails or produces invalid JSON.
+func mergeServerFieldsIntoOWSDKJSON(existingOWSDK []byte, adAttributesJSON []byte) ([]byte, error) {
+	if len(adAttributesJSON) == 0 {
+		if len(existingOWSDK) == 0 {
+			return []byte("{}"), nil
+		}
+		return existingOWSDK, nil
+	}
+
+	owsdkJSON := existingOWSDK
+	if len(owsdkJSON) == 0 {
+		owsdkJSON = []byte("{}")
+	}
+
+	merged, setErr := jsonparser.Set(owsdkJSON, adAttributesJSON, adAttributesKey)
+	if setErr != nil || !json.Valid(merged) {
+		return mergeServerFieldsIntoOWSDKJSONMap(existingOWSDK, adAttributesJSON)
+	}
+	return merged, nil
+}
+
+func mergeServerFieldsIntoOWSDKJSONMap(existingOWSDK []byte, adAttributesJSON []byte) ([]byte, error) {
+	owsdkOut := make(map[string]any)
+	if len(existingOWSDK) > 0 {
+		_ = json.Unmarshal(existingOWSDK, &owsdkOut)
+	}
+	if len(adAttributesJSON) > 0 {
+		var wireIDs []int
+		if err := json.Unmarshal(adAttributesJSON, &wireIDs); err == nil {
+			owsdkOut[adAttributesKey] = wireIDs
+		}
+	}
+	return json.Marshal(owsdkOut)
 }
 
 func marshalExtOWSDKOnly(owsdkBytes []byte) (json.RawMessage, error) {
@@ -269,12 +296,11 @@ func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, 
 		if format == "" {
 			return ext, nil
 		}
-		wireIDs := GetSupportedAdAttributeWireIDs(os, sdkVersion, format)
-		serverOWSDK := CreateOWSDKExtension(wireIDs)
-		if len(serverOWSDK) == 0 {
+		entry := loadAdAttrCacheEntry(os, sdkVersion, format)
+		if len(entry.serverOWSDKJSON) == 0 {
 			return ext, nil
 		}
-		return mergeOWSDKServerFieldsIntoExtJSON(ext, serverOWSDK)
+		return mergeOWSDKServerFieldsIntoExtJSON(ext, entry.serverOWSDKJSON, entry.adAttributesJSON)
 	}
 
 	if imp.Banner != nil {
@@ -300,6 +326,14 @@ func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, 
 // Callers are expected to pass a trimmed and validated SDK version
 // (currently supported range: [4.1.0, 5.2.0]).
 func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
+	entry := loadAdAttrCacheEntry(os, sdkVersion, adFormat)
+	if len(entry.wireIDs) == 0 {
+		return nil
+	}
+	return slices.Clone(entry.wireIDs)
+}
+
+func loadAdAttrCacheEntry(os OS, sdkVersion string, adFormat AdFormat) adAttrCacheEntry {
 	cacheKey := adAttrLookupCacheKey{
 		os:         os,
 		sdkVersion: sdkVersion,
@@ -307,23 +341,32 @@ func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat)
 	}
 
 	if cached, ok := supportedAdAttributeWireIDsCache.Load(cacheKey); ok {
-		wireIDs := cached.([]int)
-		if len(wireIDs) == 0 {
-			return nil
+		return cached.(adAttrCacheEntry)
+	}
+
+	entry := adAttrCacheEntry{}
+	if wireIDs := lookupSupportedAdAttributeWireIDs(os, sdkVersion, adFormat); wireIDs != nil {
+		serverOWSDK := CreateOWSDKExtension(wireIDs)
+		if len(serverOWSDK) > 0 {
+			ids, ok := serverOWSDK[adAttributesKey].([]int)
+			if !ok {
+				return entry
+			}
+			entry.wireIDs = slices.Clone(ids)
+			var err error
+			entry.serverOWSDKJSON, err = json.Marshal(serverOWSDK)
+			if err != nil {
+				return adAttrCacheEntry{}
+			}
+			entry.adAttributesJSON, err = json.Marshal(ids)
+			if err != nil {
+				return adAttrCacheEntry{}
+			}
 		}
-		return slices.Clone(wireIDs)
 	}
 
-	wireIDs := lookupSupportedAdAttributeWireIDs(os, sdkVersion, adFormat)
-	if wireIDs == nil {
-		supportedAdAttributeWireIDsCache.Store(cacheKey, []int{})
-		return nil
-	}
-
-	stored := slices.Clone(wireIDs)
-	supportedAdAttributeWireIDsCache.Store(cacheKey, stored)
-
-	return slices.Clone(stored)
+	actual, _ := supportedAdAttributeWireIDsCache.LoadOrStore(cacheKey, entry)
+	return actual.(adAttrCacheEntry)
 }
 
 func lookupSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {

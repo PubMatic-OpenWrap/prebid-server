@@ -707,6 +707,17 @@ func TestCreateOWSDKExtension(t *testing.T) {
 }
 
 func TestMergeOWSDKServerFieldsIntoExtJSON(t *testing.T) {
+	marshalServerOWSDK := func(serverOWSDK map[string]any) ([]byte, []byte) {
+		if len(serverOWSDK) == 0 {
+			return nil, nil
+		}
+		serverOWSDKJSON, err := json.Marshal(serverOWSDK)
+		assert.NoError(t, err)
+		adAttributesJSON, err := json.Marshal(serverOWSDK[adAttributesKey])
+		assert.NoError(t, err)
+		return serverOWSDKJSON, adAttributesJSON
+	}
+
 	tests := []struct {
 		name        string
 		extJSON     json.RawMessage
@@ -741,7 +752,8 @@ func TestMergeOWSDKServerFieldsIntoExtJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := mergeOWSDKServerFieldsIntoExtJSON(tt.extJSON, tt.serverOWSDK)
+			serverOWSDKJSON, adAttributesJSON := marshalServerOWSDK(tt.serverOWSDK)
+			got, err := mergeOWSDKServerFieldsIntoExtJSON(tt.extJSON, serverOWSDKJSON, adAttributesJSON)
 			assert.NoError(t, err)
 			assert.JSONEq(t, tt.wantJSON, string(got))
 		})
