@@ -190,27 +190,31 @@ func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 }
 
 // mergeOWSDKServerFieldsIntoExtJSON merges server-built owsdk fields (e.g. adattributes) into a format object's ext JSON.
-// serverOWSDK is pre-marshaled once; sibling ext keys are preserved via jsonparser without a full ext map round-trip.
+// Sibling ext keys are preserved via jsonparser without a full ext map round-trip. json.Valid runs only before
+// jsonparser.Set on the inject path (invalid ext cannot be patched safely); merge paths use jsonparser.Get/Set alone.
 func mergeOWSDKServerFieldsIntoExtJSON(extJSON json.RawMessage, serverOWSDK map[string]any) (json.RawMessage, error) {
 	if len(serverOWSDK) == 0 {
 		return extJSON, nil
 	}
 
-	serverOWSDKBytes, err := json.Marshal(serverOWSDK)
-	if err != nil {
-		return extJSON, err
-	}
-
 	if len(extJSON) == 0 {
-		return marshalExtOWSDKOnly(serverOWSDKBytes)
-	}
-	if !json.Valid(extJSON) {
+		serverOWSDKBytes, err := json.Marshal(serverOWSDK)
+		if err != nil {
+			return extJSON, err
+		}
 		return marshalExtOWSDKOnly(serverOWSDKBytes)
 	}
 
 	existingOWSDK, _, _, err := jsonparser.Get(extJSON, extOWSDKKey)
 	if err != nil {
+		serverOWSDKBytes, marshalErr := json.Marshal(serverOWSDK)
+		if marshalErr != nil {
+			return extJSON, marshalErr
+		}
 		if errors.Is(err, jsonparser.KeyPathNotFoundError) {
+			if !json.Valid(extJSON) {
+				return marshalExtOWSDKOnly(serverOWSDKBytes)
+			}
 			return jsonparser.Set(extJSON, serverOWSDKBytes, extOWSDKKey)
 		}
 		return marshalExtOWSDKOnly(serverOWSDKBytes)
