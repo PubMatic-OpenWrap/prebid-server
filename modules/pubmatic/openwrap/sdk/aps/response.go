@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 
+	"github.com/buger/jsonparser"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
@@ -49,6 +50,11 @@ func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
 
 	bid := bidResponse.SeatBid[0].Bid[0]
 	bid.AdM = string(compressedResponse)
+
+	if len(bid.Ext) == 0 {
+		bid.Ext = []byte(`{}`)
+	}
+	bid.Ext, _ = jsonparser.Set(bid.Ext, []byte(`""`), "sdkbridge", "placementId")
 
 	return []openrtb2.Bid{bid}
 }
