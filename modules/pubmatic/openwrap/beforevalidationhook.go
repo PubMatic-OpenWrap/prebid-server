@@ -26,6 +26,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
@@ -741,13 +742,19 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	requestExt.Prebid.AliasGVLIDs = aliasgvlids
 	if _, ok := rCtx.AdapterThrottleMap[string(openrtb_ext.BidderPubmatic)]; !ok {
-		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath)
+		requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, string(openrtb_ext.BidderPubmatic), rCtx.SendBurl, rCtx.AppSubIntegrationPath, rCtx.SignalRequest, payload.BidRequest)
+		if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+			requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
+		}
 	}
 
 	for bidderCode, coreBidder := range rCtx.Aliases {
 		if coreBidder == string(openrtb_ext.BidderPubmatic) {
 			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; !ok {
-				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath)
+				requestExt.Prebid.BidderParams, _ = updateRequestExtBidderParamsPubmatic(requestExt.Prebid.BidderParams, rCtx.Cookies, rCtx.LoggerImpressionID, bidderCode, rCtx.SendBurl, rCtx.AppSubIntegrationPath, rCtx.SignalRequest, payload.BidRequest)
+				if (sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25) && m.pubFeatures.IsEDSBlockedCountry(rCtx.DeviceCtx.DerivedCountryCode) {
+					requestExt.Prebid.BidderParams = eds.StripEDSTier1ParamsForBlockedCountry(requestExt.Prebid.BidderParams)
+				}
 			}
 		}
 	}
@@ -798,6 +805,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		if err != nil {
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
+
+		// EDS must not remain on the shared request for other bidders.
+		eds.StripFromRequest(ep.BidRequest)
 
 		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
 			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
@@ -1129,10 +1139,10 @@ func getDomainFromUrl(pageUrl string) string {
 // }
 
 // NYC: make this generic. Do we need this?. PBS now has auto_gen_source_tid generator. We can make it to wiid for pubmatic adapter in pubmatic.go
-// Rebuilds ext.prebid.bidderparams.<bidderCode> for OW: replaces the whole bidder object (only wiid, optional wrapper, Cookie, sendburl).
+// Rebuilds ext.prebid.bidderparams.<bidderCode> for OW: replaces the whole bidder object (only wiid, optional wrapper, Cookie, sendburl, eds).
 // Incoming keys for that bidder are not preserved. Profile and version are not carried on request ext here; they live on
 // imp.ext.prebid.bidder.pubmatic.wrapper (WrapExt). So bidderparams.wrapper is only created to hold sdksubintegration for the adapter, not a merge of a full client wrapper.
-func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int) (json.RawMessage, error) {
+func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie []string, loggerID, bidderCode string, sendBurl bool, sdkSubIntegration *int, signal, request *openrtb2.BidRequest) (json.RawMessage, error) {
 	bidderParamsMap := make(map[string]map[string]interface{})
 	_ = json.Unmarshal(bidderParams, &bidderParamsMap) // ignore error, incoming might be nil for now but we still have data to put
 
@@ -1152,6 +1162,10 @@ func updateRequestExtBidderParamsPubmatic(bidderParams json.RawMessage, cookie [
 
 	if sendBurl {
 		bidderParamsMap[bidderCode][models.SendBurl] = true
+	}
+
+	if resolved := eds.ResolveEds(signal, request); !resolved.IsEmpty() {
+		bidderParamsMap[bidderCode]["eds"] = resolved
 	}
 
 	return json.Marshal(bidderParamsMap)

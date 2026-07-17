@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	bidderParamsEdsKey           = "eds"
 	dsaKey                       = "dsa"
 	transparencyKey              = "transparency"
 	multiFloors                  = "_mf"
@@ -33,6 +34,90 @@ var (
 )
 
 var appLovinMaxImpressionRegex = regexp.MustCompile(appLovinMaxImpressionPattern)
+
+type resolvedEds struct {
+	Device json.RawMessage `json:"device,omitempty"`
+	App    json.RawMessage `json:"app,omitempty"`
+}
+
+func (r resolvedEds) isEmpty() bool {
+	return len(r.Device) == 0 && len(r.App) == 0
+}
+
+// applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.{bidder}.eds
+// (per-bidder filtered object passed by the exchange) and merges flat device/app ext keys onto the PubMatic request.
+// Implemented here (not in modules/) to keep the core adapter free of OpenWrap module imports.
+func applyEdsFromBidderParams(request *openrtb2.BidRequest, bidderParams map[string]json.RawMessage) {
+	if request == nil {
+		return
+	}
+
+	applyEdsToRequest(request, extractEdsFromBidderParams(bidderParams))
+}
+
+func extractEdsFromBidderParams(bidderParams map[string]json.RawMessage) resolvedEds {
+	if len(bidderParams) == 0 {
+		return resolvedEds{}
+	}
+
+	edsRaw, ok := bidderParams[bidderParamsEdsKey]
+	if !ok || len(edsRaw) == 0 {
+		return resolvedEds{}
+	}
+
+	var resolved resolvedEds
+	if err := json.Unmarshal(edsRaw, &resolved); err != nil {
+		return resolvedEds{}
+	}
+	return resolved
+}
+
+func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
+	if req == nil || resolved.isEmpty() {
+		return
+	}
+
+	if len(resolved.Device) > 0 {
+		if req.Device == nil {
+			req.Device = &openrtb2.Device{}
+		} else {
+			deviceCopy := *req.Device
+			req.Device = &deviceCopy
+		}
+		req.Device.Ext = mergeOwExtJSON(req.Device.Ext, resolved.Device)
+	}
+
+	if len(resolved.App) > 0 {
+		if req.App == nil {
+			req.App = &openrtb2.App{}
+		} else {
+			appCopy := *req.App
+			req.App = &appCopy
+		}
+		req.App.Ext = mergeOwExtJSON(req.App.Ext, resolved.App)
+	}
+}
+
+func mergeOwExtJSON(base, overlay json.RawMessage) json.RawMessage {
+	if len(overlay) == 0 {
+		return base
+	}
+	if len(base) == 0 {
+		return overlay
+	}
+
+	result := base
+	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, _ jsonparser.ValueType, _ int) error {
+		var err error
+		result, err = jsonparser.Set(result, value, string(key))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return result
+}
 
 func getTargetingKeys(bidExt json.RawMessage, bidderName string) map[string]string {
 	targets := map[string]string{}
