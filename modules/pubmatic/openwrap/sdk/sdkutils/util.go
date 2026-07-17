@@ -96,8 +96,7 @@ func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
 		dst.ConnectionType = src.ConnectionType
 	}
 
-	// UOE-13721 device.ppi: copied from SDK signal when present (APS, Google SDK, LevelPlay).
-	// AppLovin Max overrides after MergeDevice and keeps the outer mediation request PPI.
+	// UOE-13721 device.ppi: copied from SDK signal when present.
 	if src.PPI > 0 {
 		dst.PPI = src.PPI
 	}
