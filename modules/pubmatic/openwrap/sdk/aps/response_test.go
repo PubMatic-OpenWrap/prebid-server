@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"strconv"
 	"testing"
 
 	jsoniter "github.com/json-iterator/go"
@@ -302,25 +303,23 @@ func extractBidResponseExt(t *testing.T, decodedBytes []byte) string {
 
 func TestSetBidResponseExtForAdm(t *testing.T) {
 	tests := []struct {
-		name               string
-		bidResponse        *openrtb2.BidResponse
-		publisherID        string
-		profileID          string
-		expectedExt        string
-		verifyIntProfileID bool
-		wantErr            bool
-		description        string
+		name        string
+		bidResponse *openrtb2.BidResponse
+		publisherID string
+		profileID   string
+		expectedExt string
+		wantErr     bool
+		description string
 	}{
 		{
 			name: "sets publisherid as string and profileid as integer",
 			bidResponse: &openrtb2.BidResponse{
 				Ext: json.RawMessage(`{"prebid":{"auctiontimestamp":123}}`),
 			},
-			publisherID:        "5890",
-			profileID:          "1234",
-			expectedExt:        `{"prebid":{"auctiontimestamp":123},"publisherid":"5890","profileid":1234}`,
-			verifyIntProfileID: true,
-			description:        "profileid must be encoded as a JSON number",
+			publisherID: "5890",
+			profileID:   "1234",
+			expectedExt: `{"prebid":{"auctiontimestamp":123},"publisherid":"5890","profileid":1234}`,
+			description: "profileid must be encoded as a JSON number",
 		},
 		{
 			name:        "initializes empty ext before setting fields",
@@ -353,14 +352,20 @@ func TestSetBidResponseExtForAdm(t *testing.T) {
 			require.NoError(t, err, tt.description)
 			assert.JSONEq(t, tt.expectedExt, string(tt.bidResponse.Ext), tt.description)
 
-			if tt.verifyIntProfileID {
-				var ext map[string]any
-				require.NoError(t, json.Unmarshal(tt.bidResponse.Ext, &ext))
-				profileID, ok := ext["profileid"]
-				require.True(t, ok)
-				assert.IsType(t, float64(0), profileID, "profileid must be a JSON number")
-				assert.Equal(t, float64(1234), profileID)
-			}
+			var ext map[string]any
+			require.NoError(t, json.Unmarshal(tt.bidResponse.Ext, &ext))
+
+			publisherID, ok := ext["publisherid"]
+			require.True(t, ok)
+			assert.IsType(t, "", publisherID, "publisherid must be a JSON string")
+			assert.Equal(t, tt.publisherID, publisherID)
+
+			profileID, ok := ext["profileid"]
+			require.True(t, ok)
+			assert.IsType(t, float64(0), profileID, "profileid must be a JSON number")
+			expectedProfileID, parseErr := strconv.Atoi(tt.profileID)
+			require.NoError(t, parseErr)
+			assert.Equal(t, float64(expectedProfileID), profileID)
 		})
 	}
 }
