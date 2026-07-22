@@ -993,7 +993,7 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp, de
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
 
-	if sdkutils.IsSdkIntegration(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
+	if sdkutils.IsSdkEndpoint(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
 		if err := ApplyOWSDKFormatLevelAdAttributes(imp, rCtx.ImpBidCtx[imp.ID], deviceOS); err != nil {
 			glog.Errorf("OWSDK format-level adattributes imp=%s: %v", imp.ID, err)
 		}
