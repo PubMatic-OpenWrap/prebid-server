@@ -48,10 +48,10 @@ const (
 	MRECWidth  = 300
 	MRECHeight = 250
 
-	// Server injects format-level ext.owsdk.adattributes only for displaymanagerver in [4.1.0, 5.2.0].
-	// SDK 5.2.1+ sends adattributes on the request; OpenWrap does not add them.
+	// Server injects format-level ext.owsdk.adattributes only for displaymanagerver in [4.1.0, 5.3.0].
+	// SDK 5.3.1+ sends adattributes on the request; OpenWrap does not add them.
 	OWSDKServerAdAttributesMinSDKVersion = "4.1.0"
-	OWSDKServerAdAttributesMaxSDKVersion = "5.2.0"
+	OWSDKServerAdAttributesMaxSDKVersion = "5.3.0"
 )
 
 const (
@@ -68,12 +68,12 @@ const (
 	sdk490 = "4.9.0"
 	sdk500 = "5.0.0"
 	sdk510 = "5.1.0"
-	sdk520 = "5.2.0"
+	sdk530 = "5.3.0"
 )
 
 // FeatureConfig defines supported ext.owsdk adattribute wire IDs for OS, SDK version, and ad format.
 // MinVersion and MaxVersion are inclusive; MaxVersion empty means no upper bound (min only).
-// 5.2.0 rows use MaxVersion "5.2.0" for exact match; 5.1.0–5.2.0 bands use sdk510–sdk520 range rows.
+// 5.1.0–5.3.0 bands use sdk510–sdk530 range rows.
 type FeatureConfig struct {
 	OS         OS
 	MinVersion string
@@ -86,58 +86,58 @@ type FeatureConfig struct {
 // Order matters: GetSupportedAdAttributeWireIDs returns the first match — list newer / narrower version rows before older ones for the same OS+AdFormat.
 var unifiedFeatureMatrix = []FeatureConfig{
 	// --- Android — interstitial display (banner.ext) ---
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
 	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk420, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 	// --- Android — interstitial video (video.ext) ---
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
 	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
 	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose}},
 	// --- Android — rewarded video (video.ext) ---
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard, AdAttrWireCTAOverlay}},
 	{OS: OSAndroid, MinVersion: sdk440, MaxVersion: sdk480, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireTrueDoubleEndCard}},
 	{OS: OSAndroid, MinVersion: sdk430, MaxVersion: sdk430, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
 	// --- Android — MREC display / MREC video ---
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	// Android 4.1.0–4.8.0 MREC display: same [1] as banner display band (spec: non-MREC and MREC banners)
 	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSAndroid, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	// --- Android — banner display (non-MREC, instl=0) ---
-	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
+	{OS: OSAndroid, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	// Android 4.1.0–4.8.0 banner display (non-MREC and MREC banners): banner.ext.adattributes [1]
 	{OS: OSAndroid, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 
 	// --- iOS — interstitial display (banner.ext) ---
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	// iOS 4.1.0–4.8.0 interstitial display (covers 4.1–4.2 and 4.3–4.8 bands): banner.ext [1]
 	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatInterstitialDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
 
 	// --- iOS — interstitial video ---
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	{OS: OSiOS, MinVersion: sdk430, MaxVersion: sdk480, AdFormat: AdFormatInterstitialVideo, WireIDs: []int{AdAttrWireEngageToClose}},
 	// --- iOS — rewarded video ---
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay}},
 	{OS: OSiOS, MinVersion: sdk430, MaxVersion: sdk480, AdFormat: AdFormatRewardedVideo, WireIDs: []int{AdAttrWireEngageToClose}},
 	// --- iOS — MREC display / MREC video ---
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireCTAOverlay}},
 	// iOS 4.1.0–4.8.0 MREC display: banner.ext [1] (spec groups with banner display band)
 	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatMRECDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus}},
 	{OS: OSiOS, MinVersion: sdk490, MaxVersion: sdk500, AdFormat: AdFormatMRECVideo, WireIDs: []int{AdAttrWireCTAOverlay}},
 	// --- iOS — banner display (non-MREC) ---
 	// iOS 4.1.0–4.8.0 banner display (non-MREC and MREC banners): banner.ext [1]
 	{OS: OSiOS, MinVersion: sdk410, MaxVersion: sdk480, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireEngageToClose}},
-	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk520, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireMRAIDAppStatus}},
+	{OS: OSiOS, MinVersion: sdk510, MaxVersion: sdk530, AdFormat: AdFormatBannerDisplay, WireIDs: []int{AdAttrWireMRAIDAppStatus}},
 }
 
 type adAttrMatrixKey struct {
@@ -179,7 +179,7 @@ func init() {
 	}
 }
 
-// shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.2.0] inclusive.
+// shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.3.0] inclusive.
 func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	if sdkVersion == "" {
 		return false
@@ -267,7 +267,7 @@ func marshalExtOWSDKOnly(owsdkBytes []byte) (json.RawMessage, error) {
 }
 
 // ApplyOWSDKFormatLevelAdAttributes sets imp.banner|video ext.owsdk.adattributes from unifiedFeatureMatrix
-// for displaymanagerver 4.1.0–5.2.0 only. imp.native is skipped.
+// for displaymanagerver 4.1.0–5.3.0 only. imp.native is skipped.
 func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, deviceOS string) error {
 	if imp == nil {
 		return nil
@@ -324,7 +324,7 @@ func ApplyOWSDKFormatLevelAdAttributes(imp *openrtb2.Imp, impCtx models.ImpCtx, 
 // wire IDs for the given OS, SDK version, and ad format.
 //
 // Callers are expected to pass a trimmed and validated SDK version
-// (currently supported range: [4.1.0, 5.2.0]).
+// (currently supported range: [4.1.0, 5.3.0]).
 func GetSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdFormat) []int {
 	entry := loadAdAttrCacheEntry(os, sdkVersion, adFormat)
 	if len(entry.wireIDs) == 0 {

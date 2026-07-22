@@ -230,9 +230,9 @@ func TestGetSupportedAdAttributeWireIDs(t *testing.T) {
 			expected:   []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
 		},
 		{
-			name:       "Android_5.2.0_-_interstitial_display",
+			name:       "Android_5.3.0_-_interstitial_display",
 			os:         OSAndroid,
-			sdkVersion: "5.2.0",
+			sdkVersion: "5.3.0",
 			adFormat:   AdFormatInterstitialDisplay,
 			expected:   []int{AdAttrWireEngageToClose, AdAttrWireCTAOverlay, AdAttrWireMRAIDAppStatus},
 		},
@@ -772,8 +772,9 @@ func TestShouldServerInjectFormatLevelAdAttributes(t *testing.T) {
 		{"5.1.0", true},
 		{"5.1.1", true},
 		{"5.2.0", true},
-		{"5.2.1", false},
-		{"5.3.0", false},
+		{"5.2.1", true},
+		{"5.3.0", true},
+		{"5.3.1", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
@@ -893,7 +894,7 @@ func TestApplyOWSDKFormatLevelAdAttributes(t *testing.T) {
 			},
 		},
 		{
-			name:     "Android_5.2.1_-_SDK_sends_adattributes_server_skips_injection",
+			name:     "Android_5.3.1_-_SDK_sends_adattributes_server_skips_injection",
 			deviceOS: "Android",
 			imp: &openrtb2.Imp{
 				ID:     "test_imp_5",
@@ -902,7 +903,7 @@ func TestApplyOWSDKFormatLevelAdAttributes(t *testing.T) {
 				Banner: &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
 			},
 			impCtx: models.ImpCtx{
-				DisplayManagerVer: "5.2.1",
+				DisplayManagerVer: "5.3.1",
 				Instl:             1,
 				Video:             &openrtb2.Video{MinDuration: 10, MaxDuration: 10},
 				Banner:            &openrtb2.Banner{W: ptrutil.ToPtr(int64(300)), H: ptrutil.ToPtr(int64(250))},
