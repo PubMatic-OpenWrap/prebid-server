@@ -20,6 +20,7 @@ import (
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 const parseUrlFormat = "json"
@@ -169,6 +170,28 @@ func (wlog *WloggerRecord) logProfileMetaData(rctx *models.RequestCtx) {
 	if rctx.AppSubIntegrationPath != nil && *rctx.AppSubIntegrationPath >= 0 {
 		wlog.AppSubIntegrationPath = rctx.AppSubIntegrationPath
 	}
+}
+
+func (wlog *WloggerRecord) logEdsStatus(rCtx *models.RequestCtx, bidRequest *openrtb2.BidRequest) {
+	if rCtx == nil {
+		return
+	}
+
+	req := bidRequest
+	if sdkutils.IsSdkBiddingEndpoint(rCtx.Endpoint) {
+		req = rCtx.SignalRequest
+	}
+
+	if req == nil || len(req.Ext) == 0 {
+		return
+	}
+
+	edsStatus, err := jsonparser.GetInt(req.Ext, "wrapper", "edsstatus")
+	if err != nil {
+		return
+	}
+
+	wlog.Edss = ptrutil.ToPtr(int(edsStatus))
 }
 
 func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {

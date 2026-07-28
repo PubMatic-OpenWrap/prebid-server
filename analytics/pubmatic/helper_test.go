@@ -987,6 +987,79 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 	}
 }
 
+func TestWloggerRecord_logEdsStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		rctx       *models.RequestCtx
+		bidRequest *openrtb2.BidRequest
+		wantEdss   *int
+	}{
+		{
+			name: "edsstatus present in ext.wrapper",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointORTB,
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+			},
+			wantEdss: ptrutil.ToPtr(1),
+		},
+		{
+			name: "edsstatus absent from ext.wrapper",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointORTB,
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
+			},
+			wantEdss: nil,
+		},
+		{
+			name: "sdk bidding uses signal request edsstatus",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointAppLovinMax,
+				SignalRequest: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"wrapper":{"edsstatus":2}}`),
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+			},
+			wantEdss: ptrutil.ToPtr(2),
+		},
+		{
+			name: "sdk bidding ignores main request when signal request is nil",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+			},
+			wantEdss: nil,
+		},
+		{
+			name: "sdk bidding ignores main request when signal request lacks edsstatus",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointUnityLevelPlay,
+				SignalRequest: &openrtb2.BidRequest{
+					Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
+				},
+			},
+			bidRequest: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+			},
+			wantEdss: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wlog := &WloggerRecord{}
+			wlog.logEdsStatus(tt.rctx, tt.bidRequest)
+			assert.Equal(t, tt.wantEdss, wlog.Edss, tt.name)
+		})
+	}
+}
+
 func TestSetWakandaWinningBidFlag(t *testing.T) {
 	type args struct {
 		wakandaDebug wakanda.WakandaDebug
