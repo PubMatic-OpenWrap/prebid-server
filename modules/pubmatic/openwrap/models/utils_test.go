@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -1670,4 +1671,52 @@ func TestGetMultiFloors(t *testing.T) {
 			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
+}
+
+func TestEdsStatusFromRequest(t *testing.T) {
+	tests := []struct {
+		name string
+		req  *openrtb2.BidRequest
+		want *int
+	}{
+		{
+			name: "edsstatus present",
+			req: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+			},
+			want: ptrutil.ToPtr(1),
+		},
+		{
+			name: "edsstatus disabled",
+			req: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":0}}`),
+			},
+			want: ptrutil.ToPtr(0),
+		},
+		{
+			name: "edsstatus unknown",
+			req: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"edsstatus":-1}}`),
+			},
+			want: ptrutil.ToPtr(-1),
+		},
+		{
+			name: "wrapper without edsstatus",
+			req: &openrtb2.BidRequest{
+				Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, EdsStatusFromRequest(tt.req))
+		})
+	}
+}
+
+func TestGetRequestExtWrapperEdsStatus(t *testing.T) {
+	got, err := GetRequestExtWrapper([]byte(`{"ext":{"wrapper":{"profileid":23432,"edsstatus":1}}}`), "ext", "wrapper")
+	assert.NoError(t, err)
+	assert.Equal(t, ptrutil.ToPtr(1), got.EdsStatus)
 }

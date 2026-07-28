@@ -34,6 +34,20 @@ func IsCTVAPIRequest(api string) bool {
 	return api == "/video/json" || api == "/video/vast" || api == "/video/openrtb"
 }
 
+// EdsStatusFromRequest returns ext.wrapper.edsstatus when present on the bid request.
+func EdsStatusFromRequest(req *openrtb2.BidRequest) *int {
+	if req == nil || len(req.Ext) == 0 {
+		return nil
+	}
+
+	edsStatus, err := jsonparser.GetInt(req.Ext, "wrapper", "edsstatus")
+	if err != nil {
+		return nil
+	}
+
+	return ptrutil.ToPtr(int(edsStatus))
+}
+
 func GetRequestExtWrapper(request []byte, wrapperLocation ...string) (RequestExtWrapper, error) {
 	extWrapper := RequestExtWrapper{
 		SSAuctionFlag: -1,

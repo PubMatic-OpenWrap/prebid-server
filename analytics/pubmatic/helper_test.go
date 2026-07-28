@@ -989,72 +989,41 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 
 func TestWloggerRecord_logEdsStatus(t *testing.T) {
 	tests := []struct {
-		name       string
-		rctx       *models.RequestCtx
-		bidRequest *openrtb2.BidRequest
-		wantEdss   *int
+		name     string
+		rctx     *models.RequestCtx
+		wantEdss *int
 	}{
 		{
-			name: "edsstatus present in ext.wrapper",
+			name: "edsstatus set on request ctx",
 			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointORTB,
-			},
-			bidRequest: &openrtb2.BidRequest{
-				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
+				EdsStatus: ptrutil.ToPtr(1),
 			},
 			wantEdss: ptrutil.ToPtr(1),
 		},
 		{
-			name: "edsstatus absent from ext.wrapper",
+			name: "edsstatus disabled",
 			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointORTB,
+				EdsStatus: ptrutil.ToPtr(0),
 			},
-			bidRequest: &openrtb2.BidRequest{
-				Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
-			},
-			wantEdss: nil,
+			wantEdss: ptrutil.ToPtr(0),
 		},
 		{
-			name: "sdk bidding uses signal request edsstatus",
+			name: "edsstatus unknown",
 			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointAppLovinMax,
-				SignalRequest: &openrtb2.BidRequest{
-					Ext: json.RawMessage(`{"wrapper":{"edsstatus":2}}`),
-				},
+				EdsStatus: ptrutil.ToPtr(-1),
 			},
-			bidRequest: &openrtb2.BidRequest{
-				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
-			},
-			wantEdss: ptrutil.ToPtr(2),
+			wantEdss: ptrutil.ToPtr(-1),
 		},
 		{
-			name: "sdk bidding ignores main request when signal request is nil",
-			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointGoogleSDK,
-			},
-			bidRequest: &openrtb2.BidRequest{
-				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
-			},
-			wantEdss: nil,
-		},
-		{
-			name: "sdk bidding ignores main request when signal request lacks edsstatus",
-			rctx: &models.RequestCtx{
-				Endpoint: models.EndpointUnityLevelPlay,
-				SignalRequest: &openrtb2.BidRequest{
-					Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
-				},
-			},
-			bidRequest: &openrtb2.BidRequest{
-				Ext: json.RawMessage(`{"wrapper":{"edsstatus":1}}`),
-			},
+			name: "edsstatus absent from request ctx",
+			rctx: &models.RequestCtx{},
 			wantEdss: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wlog := &WloggerRecord{}
-			wlog.logEdsStatus(tt.rctx, tt.bidRequest)
+			wlog.logEdsStatus(tt.rctx)
 			assert.Equal(t, tt.wantEdss, wlog.Edss, tt.name)
 		})
 	}

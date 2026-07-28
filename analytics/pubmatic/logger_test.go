@@ -6372,18 +6372,17 @@ func TestGetLogAuctionObjectAsURLForEdsStatus(t *testing.T) {
 		want string
 	}{
 		{
-			name: "edsstatus present in request ext.wrapper",
+			name: "edsstatus present on request ctx",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
-						BidRequest: &openrtb2.BidRequest{
-							Ext: json.RawMessage(`{"wrapper":{"edsstatus":3}}`),
-						},
+						BidRequest: &openrtb2.BidRequest{},
 					},
 					Response: &openrtb2.BidResponse{},
 				},
 				rCtx: &models.RequestCtx{
-					PubID: 5890,
+					PubID:     5890,
+					EdsStatus: ptrutil.ToPtr(3),
 				},
 				logInfo:    true,
 				forRespExt: true,
@@ -6391,7 +6390,7 @@ func TestGetLogAuctionObjectAsURLForEdsStatus(t *testing.T) {
 			want: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"edss":3}&pubid=5890`,
 		},
 		{
-			name: "edsstatus absent from request ext.wrapper",
+			name: "edsstatus absent from request ctx",
 			args: args{
 				ao: analytics.AuctionObject{
 					RequestWrapper: &openrtb_ext.RequestWrapper{
