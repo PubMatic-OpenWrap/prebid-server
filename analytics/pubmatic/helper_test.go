@@ -1015,8 +1015,8 @@ func TestWloggerRecord_logEdsStatus(t *testing.T) {
 			wantEdss: ptrutil.ToPtr(-1),
 		},
 		{
-			name: "edsstatus absent from request ctx",
-			rctx: &models.RequestCtx{},
+			name:     "edsstatus absent from request ctx",
+			rctx:     &models.RequestCtx{},
 			wantEdss: nil,
 		},
 	}

@@ -1733,11 +1733,11 @@ func TestResolveEdsStatus(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		fromSignalOnly  bool
-		wrapper         RequestExtWrapper
-		signal          *openrtb2.BidRequest
-		want            *int
+		name           string
+		fromSignalOnly bool
+		wrapper        RequestExtWrapper
+		signal         *openrtb2.BidRequest
+		want           *int
 	}{
 		{
 			name:           "non sdk uses wrapper edsstatus",
