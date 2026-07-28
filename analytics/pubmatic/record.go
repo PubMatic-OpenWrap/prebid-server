@@ -54,7 +54,7 @@ type record struct {
 	AppIntegrationPath    *int             `json:"aip,omitempty"`
 	AppSubIntegrationPath *int             `json:"asip,omitempty"`
 	FloorSkippedFlag      *int             `json:"fskp,omitempty"`
-	Edss                  *int             `json:"edss,omitempty"`
+	EdsStatus             *int             `json:"edss,omitempty"`
 }
 
 // Device struct for storing device information

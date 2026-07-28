@@ -6382,12 +6382,12 @@ func TestGetLogAuctionObjectAsURLForEdsStatus(t *testing.T) {
 				},
 				rCtx: &models.RequestCtx{
 					PubID:     5890,
-					EdsStatus: ptrutil.ToPtr(3),
+					EdsStatus: ptrutil.ToPtr(1),
 				},
 				logInfo:    true,
 				forRespExt: true,
 			},
-			want: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"edss":3}&pubid=5890`,
+			want: ow.cfg.PublicEndpoint + `?json={"pubid":5890,"pid":"0","pdvid":"0","sl":1,"dvc":{},"ft":0,"geo":{},"edss":1}&pubid=5890`,
 		},
 		{
 			name: "edsstatus absent from request ctx",

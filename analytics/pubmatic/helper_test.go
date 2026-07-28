@@ -991,40 +991,40 @@ func TestWloggerRecord_logEdsStatus(t *testing.T) {
 	tests := []struct {
 		name     string
 		rctx     *models.RequestCtx
-		wantEdss *int
+		wantEdsStatus *int
 	}{
 		{
 			name: "edsstatus set on request ctx",
 			rctx: &models.RequestCtx{
 				EdsStatus: ptrutil.ToPtr(1),
 			},
-			wantEdss: ptrutil.ToPtr(1),
+			wantEdsStatus: ptrutil.ToPtr(1),
 		},
 		{
 			name: "edsstatus disabled",
 			rctx: &models.RequestCtx{
 				EdsStatus: ptrutil.ToPtr(0),
 			},
-			wantEdss: ptrutil.ToPtr(0),
+			wantEdsStatus: ptrutil.ToPtr(0),
 		},
 		{
 			name: "edsstatus unknown",
 			rctx: &models.RequestCtx{
 				EdsStatus: ptrutil.ToPtr(-1),
 			},
-			wantEdss: ptrutil.ToPtr(-1),
+			wantEdsStatus: ptrutil.ToPtr(-1),
 		},
 		{
 			name:     "edsstatus absent from request ctx",
 			rctx:     &models.RequestCtx{},
-			wantEdss: nil,
+			wantEdsStatus: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wlog := &WloggerRecord{}
 			wlog.logEdsStatus(tt.rctx)
-			assert.Equal(t, tt.wantEdss, wlog.Edss, tt.name)
+			assert.Equal(t, tt.wantEdsStatus, wlog.EdsStatus, tt.name)
 		})
 	}
 }

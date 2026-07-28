@@ -176,7 +176,7 @@ func (wlog *WloggerRecord) logEdsStatus(rCtx *models.RequestCtx) {
 		return
 	}
 
-	wlog.Edss = rCtx.EdsStatus
+	wlog.EdsStatus = rCtx.EdsStatus
 }
 
 func setWakandaObject(rCtx *models.RequestCtx, ao *analytics.AuctionObject, loggerURL string) {
