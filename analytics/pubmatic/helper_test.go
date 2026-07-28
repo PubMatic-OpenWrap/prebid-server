@@ -989,8 +989,8 @@ func TestWloggerRecord_logProfileMetaData(t *testing.T) {
 
 func TestWloggerRecord_logEdsStatus(t *testing.T) {
 	tests := []struct {
-		name     string
-		rctx     *models.RequestCtx
+		name          string
+		rctx          *models.RequestCtx
 		wantEdsStatus *int
 	}{
 		{
@@ -1015,8 +1015,8 @@ func TestWloggerRecord_logEdsStatus(t *testing.T) {
 			wantEdsStatus: ptrutil.ToPtr(-1),
 		},
 		{
-			name:     "edsstatus absent from request ctx",
-			rctx:     &models.RequestCtx{},
+			name:          "edsstatus absent from request ctx",
+			rctx:          &models.RequestCtx{},
 			wantEdsStatus: nil,
 		},
 	}
