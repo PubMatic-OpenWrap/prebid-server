@@ -48,6 +48,15 @@ func EdsStatusFromRequest(req *openrtb2.BidRequest) *int {
 	return ptrutil.ToPtr(int(edsStatus))
 }
 
+// ResolveEdsStatus returns edsstatus for logging. SDK bidding integrations use signal data only.
+func ResolveEdsStatus(fromSignalOnly bool, wrapper RequestExtWrapper, signal *openrtb2.BidRequest) *int {
+	if fromSignalOnly {
+		return EdsStatusFromRequest(signal)
+	}
+
+	return wrapper.EdsStatus
+}
+
 func GetRequestExtWrapper(request []byte, wrapperLocation ...string) (RequestExtWrapper, error) {
 	extWrapper := RequestExtWrapper{
 		SSAuctionFlag: -1,

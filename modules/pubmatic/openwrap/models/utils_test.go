@@ -1720,3 +1720,57 @@ func TestGetRequestExtWrapperEdsStatus(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ptrutil.ToPtr(1), got.EdsStatus)
 }
+
+func TestResolveEdsStatus(t *testing.T) {
+	wrapperWithEdsStatus := RequestExtWrapper{
+		EdsStatus: ptrutil.ToPtr(1),
+	}
+	signalWithEdsStatus := &openrtb2.BidRequest{
+		Ext: json.RawMessage(`{"wrapper":{"edsstatus":2}}`),
+	}
+	signalWithoutEdsStatus := &openrtb2.BidRequest{
+		Ext: json.RawMessage(`{"wrapper":{"profileid":5890}}`),
+	}
+
+	tests := []struct {
+		name            string
+		fromSignalOnly  bool
+		wrapper         RequestExtWrapper
+		signal          *openrtb2.BidRequest
+		want            *int
+	}{
+		{
+			name:           "non sdk uses wrapper edsstatus",
+			fromSignalOnly: false,
+			wrapper:        wrapperWithEdsStatus,
+			signal:         signalWithEdsStatus,
+			want:           ptrutil.ToPtr(1),
+		},
+		{
+			name:           "sdk uses signal edsstatus",
+			fromSignalOnly: true,
+			wrapper:        wrapperWithEdsStatus,
+			signal:         signalWithEdsStatus,
+			want:           ptrutil.ToPtr(2),
+		},
+		{
+			name:           "sdk ignores wrapper when signal lacks edsstatus",
+			fromSignalOnly: true,
+			wrapper:        wrapperWithEdsStatus,
+			signal:         signalWithoutEdsStatus,
+			want:           nil,
+		},
+		{
+			name:           "sdk ignores wrapper when signal is nil",
+			fromSignalOnly: true,
+			wrapper:        wrapperWithEdsStatus,
+			signal:         nil,
+			want:           nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, ResolveEdsStatus(tt.fromSignalOnly, tt.wrapper, tt.signal))
+		})
+	}
+}
