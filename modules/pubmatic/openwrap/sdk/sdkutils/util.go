@@ -1,6 +1,8 @@
 package sdkutils
 
 import (
+	"strings"
+
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/analytics"
@@ -283,4 +285,8 @@ func IsGoogleSDKResponseRejected(rCtx *models.RequestCtx, ao analytics.AuctionOb
 		return false
 	}
 	return true
+}
+
+func IsIOSDevice(device *openrtb2.Device) bool {
+	return device != nil && strings.EqualFold(device.OS, "ios")
 }
