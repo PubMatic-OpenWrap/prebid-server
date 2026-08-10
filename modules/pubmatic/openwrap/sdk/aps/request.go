@@ -160,7 +160,7 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx *mo
 	// Request Ext
 	request.Ext, _ = sdkutils.CopyPath(signalRequest.Ext, request.Ext, "wrapper", "clientconfig")
 
-	applyAdFormatModifications(request, adFormat, signalRequest.Ext, apsMedia)
+	applyAdFormatModifications(request, adFormat, signalRequest.Ext)
 
 	// Embedded signal lives in buyeruid; merged device/app/imp/user/source/regs stay—do not forward raw JSON to partners.
 	if request.User != nil {
@@ -259,6 +259,7 @@ func captureApsVideoFields(video *openrtb2.Video) *apsVideoFields {
 	if len(video.CompanionAd) > 0 {
 		fields.CompanionAd = make([]openrtb2.Banner, len(video.CompanionAd))
 		for i, companion := range video.CompanionAd {
+			fields.CompanionAd[i].Pos = companion.Pos
 			if len(companion.Format) > 0 {
 				fields.CompanionAd[i].Format = slices.Clone(companion.Format)
 			}
@@ -366,10 +367,10 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, a
 	// modify banner with signal banner
 	sdkutils.MergeBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
-	// Update video (replace entire video object from signal video except APS battr)
+	// Update video (replace entire video object from signal; restore APS w/h/pos/companion and battr)
 	if signalImps[0].Video != nil {
 		request.Imp[0].Video = signalImps[0].Video
-		restoreApsVideoBAttr(request.Imp[0].Video, apsVideo)
+		restoreApsVideoFields(request.Imp[0].Video, apsVideo)
 	}
 
 	request.Imp[0].Ext = updateImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
@@ -388,7 +389,7 @@ func getExtendedSignalForFormat(signalExt []byte, adFormat string) []byte {
 	return extSignal
 }
 
-func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, signalExt []byte, apsMedia apsImpMediaFields) {
+func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, signalExt []byte) {
 	if len(request.Imp) == 0 || adFormat == "" {
 		return
 	}
@@ -407,7 +408,7 @@ func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, s
 		imp.Banner = nil
 		fallthrough
 	case apsAdFormatMrec, apsAdFormatInterstitial:
-		applyVideoFieldsFromExtendedSignal(imp.Video, extSignal, apsMedia.video)
+		applyVideoFieldsFromExtendedSignal(imp.Video, extSignal)
 	default:
 		return
 	}
@@ -472,12 +473,10 @@ func setImpExtFieldFromExtSignal(impExt, extSignal []byte, signalKey string, tar
 	return result
 }
 
-func applyVideoFieldsFromExtendedSignal(video *openrtb2.Video, extSignal []byte, apsVideo *apsVideoFields) {
+func applyVideoFieldsFromExtendedSignal(video *openrtb2.Video, extSignal []byte) {
 	if video == nil {
 		return
 	}
-
-	restoreApsVideoFields(video, apsVideo)
 
 	if placement, err := jsonparser.GetInt(extSignal, "videoplacement"); err == nil {
 		video.Placement = adcom1.VideoPlacementSubtype(placement)
@@ -496,13 +495,6 @@ func applyVideoFieldsFromExtendedSignal(video *openrtb2.Video, extSignal []byte,
 	}
 }
 
-func restoreApsVideoBAttr(video *openrtb2.Video, apsVideo *apsVideoFields) {
-	if video == nil || apsVideo == nil || len(apsVideo.BAttr) == 0 {
-		return
-	}
-	video.BAttr = slices.Clone(apsVideo.BAttr)
-}
-
 func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields) {
 	if video == nil || apsVideo == nil {
 		return
@@ -510,6 +502,11 @@ func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields) {
 
 	video.W = ptrutil.Clone(apsVideo.W)
 	video.H = ptrutil.Clone(apsVideo.H)
+	video.Pos = apsVideo.Pos
+
+	if len(apsVideo.BAttr) > 0 {
+		video.BAttr = slices.Clone(apsVideo.BAttr)
+	}
 
 	if len(apsVideo.CompanionAd) == 0 {
 		return
@@ -520,15 +517,14 @@ func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields) {
 	}
 
 	for i := range apsVideo.CompanionAd {
-		if len(apsVideo.CompanionAd[i].Format) == 0 {
-			continue
-		}
-
 		if i >= len(video.CompanionAd) {
 			video.CompanionAd = append(video.CompanionAd, openrtb2.Banner{})
 		}
 
-		video.CompanionAd[i].Format = slices.Clone(apsVideo.CompanionAd[i].Format)
+		video.CompanionAd[i].Pos = apsVideo.CompanionAd[i].Pos
+		if len(apsVideo.CompanionAd[i].Format) > 0 {
+			video.CompanionAd[i].Format = slices.Clone(apsVideo.CompanionAd[i].Format)
+		}
 	}
 }
 

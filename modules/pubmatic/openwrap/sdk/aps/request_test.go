@@ -147,7 +147,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 				Device: &openrtb2.Device{UA: "Mozilla"},
 				App:    &openrtb2.App{Name: "SignalApp"},
 			},
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":300,"h":250,"format":[{"w":300,"h":250}],"mimes":["image/jpeg","image/png"],"api":[5,6]},"video":{"mimes":["video/mp4","video/webm"]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":300,"h":250,"format":[{"w":300,"h":250}],"mimes":["image/jpeg","image/png"],"api":[5,6]},"video":{"mimes":["video/mp4","video/webm"],"w":300,"h":250,"companionad":[{"format":[{"w":300,"h":250}]}]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
 		},
 		{
 			name:        "interstitial_video_only_applies_video_fields_to_final_banner",
@@ -160,7 +160,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 				Device: &openrtb2.Device{UA: "Mozilla"},
 				App:    &openrtb2.App{Name: "SignalApp"},
 			},
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]},"video":{"mimes":["video/mp4"]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]},"video":{"mimes":["video/mp4"],"w":320,"h":480,"companionad":[{"format":[{"w":320,"h":480}]}]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
 		},
 		{
 			name:        "video_battr_preserved_when_signal_has_video",
@@ -1354,6 +1354,8 @@ func TestUpdateImpressionWithSignalAndApsMedia(t *testing.T) {
 				},
 				Video: &openrtb2.Video{
 					MIMEs: []string{"video/mp4"},
+					W:     ptrutil.ToPtr[int64](300),
+					H:     ptrutil.ToPtr[int64](250),
 				},
 			},
 		},
@@ -1826,12 +1828,14 @@ func TestApplyAdFormatModifications(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.prepSignalImps != nil {
 				updateImpression(tt.request, tt.prepSignalImps, "", tt.apsVideo)
+			} else if tt.apsVideo != nil && len(tt.request.Imp) > 0 && tt.request.Imp[0].Video != nil {
+				restoreApsVideoFields(tt.request.Imp[0].Video, tt.apsVideo)
 			}
 			if tt.prepSignalUser != nil {
 				updateUser(tt.request, tt.prepSignalUser)
 			}
 
-			applyAdFormatModifications(tt.request, tt.adFormat, tt.signalExt, apsImpMediaFields{video: tt.apsVideo})
+			applyAdFormatModifications(tt.request, tt.adFormat, tt.signalExt)
 			assertAdFormatExpected(t, tt.request, tt.expected)
 		})
 	}
