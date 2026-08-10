@@ -28,6 +28,7 @@ func apsFormatDefaultExp(imp *openrtb2.Imp) (int64, bool) {
 }
 
 // setAPSImpExpIfMissing sets imp.exp from APS format defaults when the S2S request omitted it.
+// Call before OWSDK signal merge so format detection uses the original S2S impression object.
 func setAPSImpExpIfMissing(imp *openrtb2.Imp) {
 	if imp == nil {
 		return

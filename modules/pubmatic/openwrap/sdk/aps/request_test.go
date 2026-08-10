@@ -82,6 +82,13 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","exp":600,"banner":{"w":300,"h":250},"secure":1}],"app":{"publisher":{"id":"pub"}},"user":{}}`),
 		},
 		{
+			name: "s2s_banner_without_exp_sets_600_before_signal_adds_video",
+			requestBody: []byte(fmt.Sprintf(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":300,"h":250}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`, mustMarshalSignalBidRequest(t, &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1", Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}}}},
+			}))),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","exp":600,"banner":{"w":300,"h":250},"video":{"mimes":["video/mp4"]},"secure":1}],"app":{"publisher":{"id":"pub"}},"user":{}}`),
+		},
+		{
 			name:        "missing_signal_records_metric",
 			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t"}],"app":{"publisher":{"id":"pub-1"}},"ext":{"prebid":{"bidderparams":{"pubmatic":{"wrapper":{"profileid":42}}}}},"user":{"buyeruid":""}}`),
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {
@@ -1043,6 +1050,99 @@ func TestUpdateImpression(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
+}
+
+// TestModifyRequestWithAPSParams_ImpExpBeforeSignalMerge_MrecInterstitial confirms imp.exp is
+// derived from the original S2S ad format before OWSDK signal merge. For MREC and interstitial,
+// signal merge can end up with both banner and video (UOE-13773 adds the missing format via
+// applyBannerFromApsVideo / applyVideoFromApsBanner); exp must stay based on the original S2S format.
+func TestModifyRequestWithAPSParams_ImpExpBeforeSignalMerge_MrecInterstitial(t *testing.T) {
+	tests := []struct {
+		name       string
+		s2sImp     string
+		signalBR   *openrtb2.BidRequest
+		wantExp    int64
+		wantBanner bool
+		wantVideo  bool
+	}{
+		{
+			name:   "interstitial_s2s_banner_signal_adds_video_imp_exp_stays_600",
+			s2sImp: `{"id":"i1","tagid":"t1","instl":1,"banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]}}`,
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "si1",
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+			},
+			wantExp:    600,
+			wantBanner: true,
+			wantVideo:  true,
+		},
+		{
+			name:   "mrec_s2s_banner_signal_adds_video_imp_exp_stays_600",
+			s2sImp: `{"id":"i1","tagid":"t1","banner":{"w":300,"h":250,"format":[{"w":300,"h":250}]}}`,
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "si1",
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+			},
+			wantExp:    600,
+			wantBanner: true,
+			wantVideo:  true,
+		},
+		{
+			name:   "interstitial_s2s_video_imp_exp_stays_3600_when_signal_adds_video",
+			s2sImp: `{"id":"i1","tagid":"t1","instl":1,"video":{"w":320,"h":480,"companionad":[{"format":[{"w":320,"h":480}]}]}}`,
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "si1",
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+			},
+			wantExp:    3600,
+			wantBanner: false, // banner from APS video fields is added in UOE-13773 (applyBannerFromApsVideo)
+			wantVideo:  true,
+		},
+		{
+			name:   "mrec_s2s_video_imp_exp_stays_3600_when_signal_adds_video",
+			s2sImp: `{"id":"i1","tagid":"t1","video":{"w":300,"h":250,"companionad":[{"format":[{"w":300,"h":250}]}]}}`,
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID: "si1",
+					Banner: &openrtb2.Banner{
+						MIMEs: []string{"image/jpeg", "image/png"},
+						API:   []adcom1.APIFramework{5, 6},
+					},
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+			},
+			wantExp:    3600,
+			wantBanner: false, // banner from APS video fields is added in UOE-13773 (applyBannerFromApsVideo)
+			wantVideo:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sig := mustMarshalSignalBidRequest(t, tt.signalBR)
+			requestBody := []byte(fmt.Sprintf(
+				`{"id":"r1","imp":[%s],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`,
+				tt.s2sImp, sig,
+			))
+
+			modified := NewAPS(nil).ModifyRequestWithAPSParams(requestBody, &models.RequestCtx{})
+
+			var br openrtb2.BidRequest
+			require.NoError(t, json.Unmarshal(modified, &br))
+			require.Len(t, br.Imp, 1)
+
+			imp := br.Imp[0]
+			assert.Equal(t, tt.wantExp, imp.Exp, "imp.exp must reflect original S2S format, not post-signal banner+video")
+			assert.Equal(t, tt.wantBanner, imp.Banner != nil)
+			assert.Equal(t, tt.wantVideo, imp.Video != nil)
 		})
 	}
 }
