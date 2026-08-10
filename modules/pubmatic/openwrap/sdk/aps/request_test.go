@@ -133,6 +133,19 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]},"video":{"mimes":["video/mp4"],"w":320,"h":480,"companionad":[{"format":[{"w":320,"h":480}]}]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
 		},
 		{
+			name:        "rewarded_banner_only_creates_video_from_aps_banner",
+			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","rwdd":1,"banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`),
+			signalBR: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:    "si1",
+					Video: &openrtb2.Video{MIMEs: []string{"video/mp4", "video/webm"}},
+				}},
+				Device: &openrtb2.Device{UA: "Mozilla"},
+				App:    &openrtb2.App{Name: "SignalApp"},
+			},
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","rwdd":1,"banner":{"w":320,"h":480,"format":[{"w":320,"h":480}]},"video":{"mimes":["video/mp4","video/webm"],"w":320,"h":480,"companionad":[{"format":[{"w":320,"h":480}]}]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+		},
+		{
 			name:        "mrec_video_only_applies_video_fields_to_final_banner",
 			requestBody: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","video":{"w":300,"h":250,"companionad":[{"format":[{"w":300,"h":250}]}]}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`),
 			signalBR: &openrtb2.BidRequest{
@@ -1359,6 +1372,53 @@ func TestUpdateImpressionWithSignalAndApsMedia(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "rewarded_banner_only_creates_video_from_aps_banner",
+			adFormat: apsAdFormatRewarded,
+			imp: openrtb2.Imp{
+				ID:   "i1",
+				Rwdd: 1,
+				Banner: &openrtb2.Banner{
+					W:      ptrutil.ToPtr[int64](320),
+					H:      ptrutil.ToPtr[int64](480),
+					Pos:    pos5,
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+				},
+			},
+			apsMedia: apsImpMediaFields{
+				videoMissing: true,
+				banner: &apsBannerFields{
+					W:      ptrutil.ToPtr[int64](320),
+					H:      ptrutil.ToPtr[int64](480),
+					Pos:    pos5,
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+				},
+			},
+			signalImps: []openrtb2.Imp{{
+				Video: &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+			}},
+			expected: openrtb2.Imp{
+				ID:    "i1",
+				Instl: 1,
+				Rwdd:  1,
+				Banner: &openrtb2.Banner{
+					W:      ptrutil.ToPtr[int64](320),
+					H:      ptrutil.ToPtr[int64](480),
+					Pos:    pos5,
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+				},
+				Video: &openrtb2.Video{
+					MIMEs: []string{"video/mp4"},
+					W:     ptrutil.ToPtr[int64](320),
+					H:     ptrutil.ToPtr[int64](480),
+					Pos:   pos5,
+					CompanionAd: []openrtb2.Banner{{
+						Format: []openrtb2.Format{{W: 320, H: 480}},
+						Pos:    pos5,
+					}},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1447,6 +1507,34 @@ func TestApplyVideoFromApsBanner(t *testing.T) {
 				H:     ptrutil.ToPtr[int64](480),
 				CompanionAd: []openrtb2.Banner{{
 					Format: []openrtb2.Format{{W: 320, H: 480}},
+				}},
+			},
+		},
+		{
+			name:     "rewarded_creates_video_from_aps_banner_when_video_missing",
+			adFormat: apsAdFormatRewarded,
+			imp: openrtb2.Imp{
+				Rwdd: 1,
+				Banner: &openrtb2.Banner{
+					W:      ptrutil.ToPtr[int64](320),
+					H:      ptrutil.ToPtr[int64](480),
+					Pos:    pos5,
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+				},
+			},
+			apsBanner: &apsBannerFields{
+				W:      ptrutil.ToPtr[int64](320),
+				H:      ptrutil.ToPtr[int64](480),
+				Pos:    pos5,
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
+			expected: &openrtb2.Video{
+				W:   ptrutil.ToPtr[int64](320),
+				H:   ptrutil.ToPtr[int64](480),
+				Pos: pos5,
+				CompanionAd: []openrtb2.Banner{{
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+					Pos:    pos5,
 				}},
 			},
 		},

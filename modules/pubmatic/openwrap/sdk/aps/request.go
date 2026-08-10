@@ -287,6 +287,10 @@ func isMrecOrInterstitialAdFormat(adFormat string) bool {
 	return adFormat == apsAdFormatMrec || adFormat == apsAdFormatInterstitial
 }
 
+func isVideoSupportingAdFormat(adFormat string) bool {
+	return adFormat == apsAdFormatMrec || adFormat == apsAdFormatInterstitial || adFormat == apsAdFormatRewarded
+}
+
 // applyBannerFromApsVideo creates a banner object from captured APS video fields when absent.
 // Only used for mrec and interstitial ad formats.
 func applyBannerFromApsVideo(imp *openrtb2.Imp, adFormat string, apsVideo *apsVideoFields) {
@@ -303,10 +307,10 @@ func applyBannerFromApsVideo(imp *openrtb2.Imp, adFormat string, apsVideo *apsVi
 	}
 }
 
-// applyVideoFromApsBanner copies captured APS banner sizing onto the signal video object.
-// Only used for mrec and interstitial ad formats.
+// applyVideoFromApsBanner copies captured APS banner sizing onto the video object.
+// Used for mrec, interstitial, and rewarded when the APS request had no video; creates video if missing.
 func applyVideoFromApsBanner(imp *openrtb2.Imp, adFormat string, apsBanner *apsBannerFields) {
-	if imp == nil || imp.Video == nil || apsBanner == nil || !isMrecOrInterstitialAdFormat(adFormat) {
+	if imp == nil || apsBanner == nil || !isVideoSupportingAdFormat(adFormat) {
 		return
 	}
 
@@ -319,11 +323,11 @@ func applyVideoFromApsBanner(imp *openrtb2.Imp, adFormat string, apsBanner *apsB
 	companion.Pos = apsBanner.Pos
 }
 
-// updateImpressionWithSignalAndApsMedia merges signal impression data and reconciles mrec/interstitial
+// updateImpressionWithSignalAndApsMedia merges signal impression data and reconciles mrec/interstitial/rewarded
 // banner/video objects with captured APS request fields. Keep these steps together; order matters:
-//  1. Create banner from APS video fields when missing (must run before signal banner merge).
+//  1. Create banner from APS video fields when missing (mrec/interstitial only; must run before signal banner merge).
 //  2. Merge signal impression fields (banner mimes/api, full video object from signal).
-//  3. Overlay APS banner fields onto signal video when the original request had no video.
+//  3. Create or overlay video from APS banner fields when the original request had no video (mrec/interstitial/rewarded).
 func updateImpressionWithSignalAndApsMedia(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, adFormat string, apsMedia apsImpMediaFields) {
 	if len(request.Imp) == 0 {
 		return
@@ -367,8 +371,8 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, a
 	// modify banner with signal banner
 	sdkutils.MergeBanner(request.Imp[0].Banner, signalImps[0].Banner)
 
-	// Update video (replace entire video object from signal; restore APS w/h/pos/companion and battr)
-	if signalImps[0].Video != nil {
+	// Create video object from signal if adformat is not banner; restore APS video fields w/h/pos/companion and battr
+	if signalImps[0].Video != nil && adFormat != apsAdFormatBanner {
 		request.Imp[0].Video = signalImps[0].Video
 		restoreApsVideoFields(request.Imp[0].Video, apsVideo)
 	}
@@ -424,10 +428,7 @@ func setUserExtFromExtendedSignal(request *openrtb2.BidRequest, extSignal []byte
 		request.User = &openrtb2.User{}
 	}
 
-	ext := request.User.Ext
-	ext, _ = sdkutils.CopyPath(extSignal, ext, "impdepth")
-	ext, _ = sdkutils.CopyPath(extSignal, ext, "lastadomain")
-	request.User.Ext = ext
+	request.User.Ext = sdkutils.SetIfKeysExists(extSignal, request.User.Ext, "impdepth", "lastadomain")
 }
 
 func setImpExtFromExtendedSignal(request *openrtb2.BidRequest, extSignal []byte, device *openrtb2.Device) {
