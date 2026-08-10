@@ -67,7 +67,19 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 		{
 			name:             "reward_video_sets_rwdd_drops_banner_when_video.ext.videotype_is_rewarded",
 			requestBody:      []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":1,"h":1},"video":{"ext":{"videotype":"rewarded"}}}],"app":{"publisher":{"id":"pub"}}}`),
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","video":{"ext":{"videotype":"rewarded"},"mimes":null},"secure":1,"rwdd":1}],"app":{"publisher":{"id":"pub"}}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","exp":3600,"video":{"ext":{"videotype":"rewarded"},"mimes":null},"secure":1,"rwdd":1}],"app":{"publisher":{"id":"pub"}}}`),
+		},
+		{
+			name:             "s2s_request_exp_preserved_when_signal_has_no_exp",
+			requestBody:      []byte(fmt.Sprintf(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","exp":120,"banner":{"w":300,"h":250}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`, validSig)),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","displaymanager":"dm","displaymanagerver":"2.0.0","instl":1,"tagid":"t1","exp":120,"banner":{"w":300,"h":250},"secure":1,"ext":{"skadn":{"versions":["v1"]},"owsdk":{"x":1}}}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+		},
+		{
+			name: "s2s_banner_without_exp_sets_600_ignores_signal_exp",
+			requestBody: []byte(fmt.Sprintf(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","banner":{"w":300,"h":250}}],"app":{"publisher":{"id":"pub"}},"user":{"buyeruid":%q}}`, mustMarshalSignalBidRequest(t, &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1", Exp: 3600, Banner: &openrtb2.Banner{W: ptrutil.ToPtr[int64](300)}}},
+			}))),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","tagid":"t1","exp":600,"banner":{"w":300,"h":250},"secure":1}],"app":{"publisher":{"id":"pub"}},"user":{}}`),
 		},
 		{
 			name:        "missing_signal_records_metric",
@@ -102,7 +114,7 @@ func TestModifyRequestWithAPSParams(t *testing.T) {
 				Device: &openrtb2.Device{UA: "Mozilla"},
 				App:    &openrtb2.App{Name: "SignalApp"},
 			},
-			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","video":{"battr":[1,2],"mimes":["video/mp4","video/webm"]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
+			expectedResponse: []byte(`{"id":"r1","imp":[{"id":"i1","instl":1,"tagid":"t1","exp":3600,"video":{"battr":[1,2],"mimes":["video/mp4","video/webm"]},"secure":1}],"app":{"name":"SignalApp","publisher":{"id":"pub"}},"device":{"ua":"Mozilla"},"user":{}}`),
 		},
 	}
 
@@ -875,19 +887,31 @@ func TestUpdateImpression(t *testing.T) {
 			},
 		},
 		{
-			name: "copies_exp_from_signal_when_positive",
+			name: "ignores_signal_exp_preserves_s2s_request_exp",
 			request: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{{ID: "1", Exp: 0}},
+				Imp: []openrtb2.Imp{{ID: "1", Exp: 120}},
 			},
 			signalImps: []openrtb2.Imp{
 				{ID: "1", Exp: 300},
 			},
 			expected: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{{ID: "1", Exp: 300}},
+				Imp: []openrtb2.Imp{{ID: "1", Exp: 120}},
 			},
 		},
 		{
-			name: "does_not_overwrite_request_exp_when_signal_exp_is_zero",
+			name: "ignores_signal_exp_when_s2s_request_exp_unset",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1", Exp: 0}},
+			},
+			signalImps: []openrtb2.Imp{
+				{ID: "1", Exp: 3600},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{ID: "1", Exp: 0}},
+			},
+		},
+		{
+			name: "preserves_s2s_request_exp_when_signal_exp_is_zero",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{{ID: "1", Exp: 120}},
 			},

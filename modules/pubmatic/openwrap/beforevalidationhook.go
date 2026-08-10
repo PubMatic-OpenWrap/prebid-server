@@ -694,6 +694,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 		impCtx := rCtx.ImpBidCtx[imp.ID]
 		impCtx.Instl = imp.Instl
+		impCtx.Exp = imp.Exp
 		impCtx.IsAppOpenAd = impExt.IsAppOpenAd
 		impCtx.IsCTAOverlayRequest = isCTAOverlayRequest
 		impCtx.Bidders = bidderMeta
