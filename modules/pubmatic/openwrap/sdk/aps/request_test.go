@@ -896,7 +896,7 @@ func TestUpdateSource(t *testing.T) {
 	}
 }
 
-func TestUpdateImpression(t *testing.T) {
+func TestUpdateImpressionWithSignal(t *testing.T) {
 	reqImpExt := json.RawMessage(`{"prebid":1}`)
 	sigImpExt := json.RawMessage(`{"skadn":{"versions":["3.0"]},"owsdk":{"a":1}}`)
 	mergedImpExt := json.RawMessage(updateImpExtension(reqImpExt, sigImpExt))
@@ -1148,7 +1148,7 @@ func TestUpdateImpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updateImpression(tt.request, tt.signalImps, tt.adFormat, nil)
+			updateImpressionWithSignal(tt.request, tt.signalImps, tt.adFormat, nil)
 
 			expectedJSON, err := json.Marshal(tt.expected)
 			require.NoError(t, err)
@@ -1168,7 +1168,7 @@ func mustMarshalSignalBidRequest(t *testing.T, br *openrtb2.BidRequest) string {
 	return string(b)
 }
 
-func TestApplyBannerFromApsVideo(t *testing.T) {
+func TestCreateBannerFromApsVideoIfMissing(t *testing.T) {
 	pos5 := ptrutil.ToPtr(adcom1.PlacementPosition(5))
 
 	tests := []struct {
@@ -1255,7 +1255,7 @@ func TestApplyBannerFromApsVideo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			imp := tt.imp
-			applyBannerFromApsVideo(&imp, tt.adFormat, tt.apsVideo)
+			createBannerFromApsVideoIfMissing(&imp, tt.adFormat, tt.apsVideo)
 
 			if tt.wantBanner != nil {
 				require.NotNil(t, imp.Banner)
@@ -1328,10 +1328,8 @@ func TestUpdateImpressionWithSignalAndApsMedia(t *testing.T) {
 					MIMEs: []string{"video/mp4", "video/webm"},
 					W:     ptrutil.ToPtr[int64](300),
 					H:     ptrutil.ToPtr[int64](250),
-					Pos:   pos5,
 					CompanionAd: []openrtb2.Banner{{
 						Format: []openrtb2.Format{{W: 300, H: 250}},
-						Pos:    pos5,
 					}},
 				},
 			},
@@ -1437,7 +1435,7 @@ func TestUpdateImpressionWithSignalAndApsMedia(t *testing.T) {
 	}
 }
 
-func TestApplyVideoFromApsBanner(t *testing.T) {
+func TestApplyApsBannerFieldsToVideo(t *testing.T) {
 	pos5 := ptrutil.ToPtr(adcom1.PlacementPosition(5))
 
 	tests := []struct {
@@ -1473,10 +1471,8 @@ func TestApplyVideoFromApsBanner(t *testing.T) {
 				MIMEs: []string{"video/mp4"},
 				W:     ptrutil.ToPtr[int64](300),
 				H:     ptrutil.ToPtr[int64](250),
-				Pos:   pos5,
 				CompanionAd: []openrtb2.Banner{{
 					Format: []openrtb2.Format{{W: 300, H: 250}},
-					Pos:    pos5,
 				}},
 			},
 		},
@@ -1555,7 +1551,7 @@ func TestApplyVideoFromApsBanner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			imp := tt.imp
-			applyVideoFromApsBanner(&imp, tt.adFormat, tt.apsBanner)
+			applyApsBannerFieldsToVideo(&imp, tt.adFormat, tt.apsBanner)
 
 			if tt.expected == nil {
 				assert.Equal(t, tt.imp.Video.W, ptrutil.ToPtr[int64](640))
@@ -1565,6 +1561,81 @@ func TestApplyVideoFromApsBanner(t *testing.T) {
 			require.NotNil(t, imp.Video)
 			assert.Equal(t, tt.expected.MIMEs, imp.Video.MIMEs)
 			assertExpectedVideo(t, tt.expected, imp.Video)
+		})
+	}
+}
+
+func TestRestoreApsVideoFields(t *testing.T) {
+	pos5 := ptrutil.ToPtr(adcom1.PlacementPosition(5))
+
+	tests := []struct {
+		name     string
+		adFormat string
+		video    *openrtb2.Video
+		apsVideo *apsVideoFields
+		expected *openrtb2.Video
+	}{
+		{
+			name:     "mrec_skips_pos_on_video_and_companion",
+			adFormat: apsAdFormatMrec,
+			video: &openrtb2.Video{
+				MIMEs: []string{"video/mp4"},
+				W:     ptrutil.ToPtr[int64](640),
+				H:     ptrutil.ToPtr[int64](360),
+			},
+			apsVideo: &apsVideoFields{
+				W:   ptrutil.ToPtr[int64](300),
+				H:   ptrutil.ToPtr[int64](250),
+				Pos: pos5,
+				CompanionAd: []openrtb2.Banner{{
+					Format: []openrtb2.Format{{W: 300, H: 250}},
+					Pos:    pos5,
+				}},
+			},
+			expected: &openrtb2.Video{
+				MIMEs: []string{"video/mp4"},
+				W:     ptrutil.ToPtr[int64](300),
+				H:     ptrutil.ToPtr[int64](250),
+				CompanionAd: []openrtb2.Banner{{
+					Format: []openrtb2.Format{{W: 300, H: 250}},
+				}},
+			},
+		},
+		{
+			name:     "interstitial_restores_pos_on_video_and_companion",
+			adFormat: apsAdFormatInterstitial,
+			video: &openrtb2.Video{
+				MIMEs: []string{"video/mp4"},
+				W:     ptrutil.ToPtr[int64](640),
+				H:     ptrutil.ToPtr[int64](360),
+			},
+			apsVideo: &apsVideoFields{
+				W:   ptrutil.ToPtr[int64](320),
+				H:   ptrutil.ToPtr[int64](480),
+				Pos: pos5,
+				CompanionAd: []openrtb2.Banner{{
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+					Pos:    pos5,
+				}},
+			},
+			expected: &openrtb2.Video{
+				MIMEs: []string{"video/mp4"},
+				W:     ptrutil.ToPtr[int64](320),
+				H:     ptrutil.ToPtr[int64](480),
+				Pos:   pos5,
+				CompanionAd: []openrtb2.Banner{{
+					Format: []openrtb2.Format{{W: 320, H: 480}},
+					Pos:    pos5,
+				}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			video := tt.video
+			restoreApsVideoFields(video, tt.apsVideo, tt.adFormat)
+			assertExpectedVideo(t, tt.expected, video)
 		})
 	}
 }
@@ -1915,9 +1986,9 @@ func TestApplyAdFormatModifications(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.prepSignalImps != nil {
-				updateImpression(tt.request, tt.prepSignalImps, "", tt.apsVideo)
+				updateImpressionWithSignal(tt.request, tt.prepSignalImps, tt.adFormat, tt.apsVideo)
 			} else if tt.apsVideo != nil && len(tt.request.Imp) > 0 && tt.request.Imp[0].Video != nil {
-				restoreApsVideoFields(tt.request.Imp[0].Video, tt.apsVideo)
+				restoreApsVideoFields(tt.request.Imp[0].Video, tt.apsVideo, tt.adFormat)
 			}
 			if tt.prepSignalUser != nil {
 				updateUser(tt.request, tt.prepSignalUser)

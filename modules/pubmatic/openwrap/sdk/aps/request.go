@@ -291,9 +291,9 @@ func isVideoSupportingAdFormat(adFormat string) bool {
 	return adFormat == apsAdFormatMrec || adFormat == apsAdFormatInterstitial || adFormat == apsAdFormatRewarded
 }
 
-// applyBannerFromApsVideo creates a banner object from captured APS video fields when absent.
+// createBannerFromApsVideoIfMissing creates a banner from captured APS video fields when the imp has none.
 // Only used for mrec and interstitial ad formats.
-func applyBannerFromApsVideo(imp *openrtb2.Imp, adFormat string, apsVideo *apsVideoFields) {
+func createBannerFromApsVideoIfMissing(imp *openrtb2.Imp, adFormat string, apsVideo *apsVideoFields) {
 	if imp == nil || !isMrecOrInterstitialAdFormat(adFormat) || imp.Banner != nil || apsVideo == nil {
 		return
 	}
@@ -307,20 +307,26 @@ func applyBannerFromApsVideo(imp *openrtb2.Imp, adFormat string, apsVideo *apsVi
 	}
 }
 
-// applyVideoFromApsBanner copies captured APS banner sizing onto the video object.
-// Used for mrec, interstitial, and rewarded when the APS request had no video; creates video if missing.
-func applyVideoFromApsBanner(imp *openrtb2.Imp, adFormat string, apsBanner *apsBannerFields) {
+// applyApsBannerFieldsToVideo applies captured APS banner sizing to the video object, creating video if absent.
+// Used for mrec, interstitial, and rewarded when the original APS request had no video.
+func applyApsBannerFieldsToVideo(imp *openrtb2.Imp, adFormat string, apsBanner *apsBannerFields) {
 	if imp == nil || apsBanner == nil || !isVideoSupportingAdFormat(adFormat) {
 		return
 	}
 
+	if imp.Video == nil {
+		imp.Video = &openrtb2.Video{}
+	}
 	video := imp.Video
 	video.W = ptrutil.Clone(apsBanner.W)
 	video.H = ptrutil.Clone(apsBanner.H)
-	video.Pos = apsBanner.Pos
 	companion := ensureCompanionAd(video)
 	companion.Format = slices.Clone(apsBanner.Format)
-	companion.Pos = apsBanner.Pos
+	//don't set pos for mrec
+	if adFormat != apsAdFormatMrec {
+		companion.Pos = apsBanner.Pos
+		video.Pos = apsBanner.Pos
+	}
 }
 
 // updateImpressionWithSignalAndApsMedia merges signal impression data and reconciles mrec/interstitial/rewarded
@@ -333,14 +339,14 @@ func updateImpressionWithSignalAndApsMedia(request *openrtb2.BidRequest, signalI
 		return
 	}
 
-	applyBannerFromApsVideo(&request.Imp[0], adFormat, apsMedia.video)
-	updateImpression(request, signalImps, adFormat, apsMedia.video)
+	createBannerFromApsVideoIfMissing(&request.Imp[0], adFormat, apsMedia.video)
+	updateImpressionWithSignal(request, signalImps, adFormat, apsMedia.video)
 	if apsMedia.videoMissing {
-		applyVideoFromApsBanner(&request.Imp[0], adFormat, apsMedia.banner)
+		applyApsBannerFieldsToVideo(&request.Imp[0], adFormat, apsMedia.banner)
 	}
 }
 
-func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, adFormat string, apsVideo *apsVideoFields) {
+func updateImpressionWithSignal(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, adFormat string, apsVideo *apsVideoFields) {
 	if len(request.Imp) == 0 || len(signalImps) == 0 {
 		return
 	}
@@ -374,7 +380,7 @@ func updateImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp, a
 	// Create video object from signal if adformat is not banner; restore APS video fields w/h/pos/companion and battr
 	if signalImps[0].Video != nil && adFormat != apsAdFormatBanner {
 		request.Imp[0].Video = signalImps[0].Video
-		restoreApsVideoFields(request.Imp[0].Video, apsVideo)
+		restoreApsVideoFields(request.Imp[0].Video, apsVideo, adFormat)
 	}
 
 	request.Imp[0].Ext = updateImpExtension(request.Imp[0].Ext, signalImps[0].Ext)
@@ -496,14 +502,18 @@ func applyVideoFieldsFromExtendedSignal(video *openrtb2.Video, extSignal []byte)
 	}
 }
 
-func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields) {
+func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields, adFormat string) {
 	if video == nil || apsVideo == nil {
 		return
 	}
 
 	video.W = ptrutil.Clone(apsVideo.W)
 	video.H = ptrutil.Clone(apsVideo.H)
-	video.Pos = apsVideo.Pos
+
+	//don't set pos for mrec
+	if adFormat != apsAdFormatMrec {
+		video.Pos = apsVideo.Pos
+	}
 
 	if len(apsVideo.BAttr) > 0 {
 		video.BAttr = slices.Clone(apsVideo.BAttr)
@@ -522,9 +532,13 @@ func restoreApsVideoFields(video *openrtb2.Video, apsVideo *apsVideoFields) {
 			video.CompanionAd = append(video.CompanionAd, openrtb2.Banner{})
 		}
 
-		video.CompanionAd[i].Pos = apsVideo.CompanionAd[i].Pos
 		if len(apsVideo.CompanionAd[i].Format) > 0 {
 			video.CompanionAd[i].Format = slices.Clone(apsVideo.CompanionAd[i].Format)
+		}
+
+		//don't set pos for mrec
+		if adFormat != apsAdFormatMrec {
+			video.CompanionAd[i].Pos = apsVideo.CompanionAd[i].Pos
 		}
 	}
 }
