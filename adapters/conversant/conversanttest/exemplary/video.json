@@ -62,7 +62,7 @@
               "secure": 1,
               "bidfloor": 25.0,
               "bidfloorcur":  "USD",
-              "displaymanager": "prebid-s2s",
+              "displaymanager": "pubmatic-openwrap",
               "video": {
                 "w": 300,
                 "h": 250,

@@ -1,4 +1,4 @@
-package main
+package main_ow
 
 import (
 	"flag"
@@ -24,7 +24,8 @@ func init() {
 	jsoniter.RegisterExtension(&jsonutil.RawMessageExtension{})
 }
 
-func main() {
+// TODO: revert this after PBS-OpenWrap module
+func Main() {
 	flag.Parse() // required for glog flags and testing package flags
 
 	bidderInfoPath, err := filepath.Abs(infoDirectory)
@@ -41,6 +42,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Configuration could not be loaded or did not pass validation: %v", err)
 	}
+	main_ow(cfg)
 
 	// Create a soft memory limit on the total amount of memory that PBS uses to tune the behavior
 	// of the Go garbage collector. In summary, `cfg.GarbageCollectorThreshold` serves as a fixed cost
@@ -56,7 +58,7 @@ func main() {
 	}
 }
 
-const configFileName = "pbs"
+const configFileName = "pbs.yaml"
 const infoDirectory = "./static/bidder-info"
 
 func loadConfig(bidderInfos config.BidderInfos) (*config.Configuration, error) {

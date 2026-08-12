@@ -115,9 +115,13 @@ func scrubDeviceIP(reqWrapper *openrtb_ext.RequestWrapper, ipConf IPConf) {
 	}
 }
 
-func ScrubDeviceIDsIPsUserDemoExt(reqWrapper *openrtb_ext.RequestWrapper, ipConf IPConf, fieldName string, scrubFullGeo bool) {
+// ScrubDeviceIDsIPsUserDemoExt scrubs device IDs, optional device IP, user demographics, user ext, and geo.
+// When applyDeviceIPScrub is false, device.ip / device.ipv6 are left unchanged (e.g. LMT-only scrub without IP masking).
+func ScrubDeviceIDsIPsUserDemoExt(reqWrapper *openrtb_ext.RequestWrapper, ipConf IPConf, fieldName string, scrubFullGeo bool, applyDeviceIPScrub bool) {
 	scrubDeviceIDs(reqWrapper)
-	scrubDeviceIP(reqWrapper, ipConf)
+	if applyDeviceIPScrub {
+		scrubDeviceIP(reqWrapper, ipConf)
+	}
 	scrubUserDemographics(reqWrapper)
 	scrubUserExt(reqWrapper, fieldName)
 

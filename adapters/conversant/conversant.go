@@ -84,11 +84,11 @@ func (c *ConversantAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *
 }
 
 func parseCnvrParams(imp *openrtb2.Imp, cnvrExt openrtb_ext.ExtImpConversant, reqInfo *adapters.ExtraRequestInfo) []error {
-	imp.DisplayManager = "prebid-s2s"
 
 	if version.Ver != "" {
 		imp.DisplayManagerVer = version.Ver
 	}
+	imp.DisplayManager = "pubmatic-openwrap"
 
 	if imp.BidFloor <= 0 && cnvrExt.BidFloor > 0 {
 		imp.BidFloor = cnvrExt.BidFloor

@@ -16,8 +16,6 @@ var (
 // ModifyForIOS modifies the request's LMT flag based on iOS version and identity.
 func ModifyForIOS(req *openrtb2.BidRequest) {
 	modifiers := map[iosutil.VersionClassification]modifier{
-		iosutil.Version140:          modifyForIOS14X,
-		iosutil.Version141:          modifyForIOS14X,
 		iosutil.Version142OrGreater: modifyForIOS142OrGreater,
 	}
 	modifyForIOS(req, modifiers)
@@ -40,14 +38,6 @@ func isRequestForIOS(req *openrtb2.BidRequest) bool {
 
 type modifier func(req *openrtb2.BidRequest)
 
-func modifyForIOS14X(req *openrtb2.BidRequest) {
-	if req.Device.IFA == "" || req.Device.IFA == "00000000-0000-0000-0000-000000000000" {
-		req.Device.Lmt = &int8One
-	} else {
-		req.Device.Lmt = &int8Zero
-	}
-}
-
 func modifyForIOS142OrGreater(req *openrtb2.BidRequest) {
 	atts, err := openrtb_ext.ParseDeviceExtATTS(req.Device.Ext)
 	if err != nil || atts == nil {
@@ -56,7 +46,7 @@ func modifyForIOS142OrGreater(req *openrtb2.BidRequest) {
 
 	switch *atts {
 	case openrtb_ext.IOSAppTrackingStatusNotDetermined:
-		req.Device.Lmt = &int8One
+		req.Device.Lmt = &int8Zero
 	case openrtb_ext.IOSAppTrackingStatusRestricted:
 		req.Device.Lmt = &int8One
 	case openrtb_ext.IOSAppTrackingStatusDenied:

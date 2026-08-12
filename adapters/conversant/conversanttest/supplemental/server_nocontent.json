@@ -30,7 +30,7 @@
         "imp": [
           {
             "id": "1",
-            "displaymanager": "prebid-s2s",
+            "displaymanager": "pubmatic-openwrap",
             "banner": {
               "format": [{"w": 300, "h": 250}]
             },

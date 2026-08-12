@@ -43,7 +43,8 @@ func GetPriceBucket(bid openrtb2.Bid, targetingData targetData, account config.A
 		}
 	}
 
-	if cpm > bucketMax {
+	//OTT-603: Adding Test Price Granularity
+	if config.Test || cpm > bucketMax {
 		// We are over max, just return that
 		cpmStr = strconv.FormatFloat(bucketMax, 'f', precision, 64)
 	} else if increment > 0 {

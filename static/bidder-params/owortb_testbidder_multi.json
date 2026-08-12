@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "testbidder (oRTB Integration) Adapter Params (multi-request-type)",
+  "description": "A schema which validates params accepted by the testbidder (oRTB Integration)",
+  "type": "object",
+  "properties": {
+    "adunit": {
+      "type": "string",
+      "description": "adunitID param",
+      "location": "id"
+    },
+    "tagid": {
+      "type": "string",
+      "description": "tagid param",
+      "location": "imp.#.tagid"
+    },
+    "zone": {
+      "type": "string",
+      "description": "zone param",
+      "location": "appsite.id"
+    },
+    "maxduration": {
+      "type": "integer",
+      "description": "maxduration param",
+      "location": "imp.#.video.maxduration"
+    },
+    "livestream": {
+      "type": "integer",
+      "description": "livestream param",
+      "location": "appsite.cnt.livestream"
+    },
+    "url": {
+      "type": "string",
+      "description": "URL param setting in video-startdelay",
+      "location": "imp.#.video.startdelay"
+    },
+    "randomKey": {
+      "type": "string",
+      "description": "randomKey param",
+      "location": "content.data"
+    },
+    "host": {
+      "type": "string",
+      "description": "host param",
+      "location": "ext.server.host"
+    },
+    "wrapper": {
+      "type": "object",
+      "description": "Specifies configuration for a publisher",
+      "properties": {
+        "profile": {
+          "type": "integer",
+          "description": "An ID which identifies the openwrap profile of publisher"
+        },
+        "version": {
+          "type": "integer",
+          "description": "An ID which identifies version of the openwrap profile"
+        }
+      },
+      "location": "device.ext.publisherWrapper"
+    }
+  },
+  "required": ["adunit"]
+}

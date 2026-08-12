@@ -1,0 +1,593 @@
+{
+    "mockBidRequest": {
+      "id": "test-request-id",
+      "imp": [
+        {
+          "id": "test-imp-id",
+          "banner": {
+            "format": [
+              {
+                "w": 300,
+                "h": 250
+              }
+            ]
+          },
+          "ext": {
+            "bidder": {
+              "adSlot": "AdTag_Div1@300x250",
+              "publisherId": "  999  ",
+              "keywords": [
+                {
+                  "key": "pmZoneID",
+                  "value": [
+                    "Zone1",
+                    "Zone2"
+                  ]
+                },
+                {
+                  "key": "preference",
+                  "value": [
+                    "sports",
+                    "movies"
+                  ]
+                }
+              ],
+              "wrapper": {
+                "version": 1,
+                "profile": 5123
+              },
+              "floors":[6.6, 5.5, 4.4, 3.3, 2.2]
+            }
+          }
+        }
+      ],
+      "device": {
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+      },
+      "site": {
+        "id": "siteID",
+        "publisher": {
+          "id": "1234"
+        }
+      }
+    },
+    "httpCalls": [
+      {
+        "expectedRequest": {
+          "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "body": {
+            "id": "test-request-id",
+            "imp": [
+              {
+                "id": "test-imp-id_mf1",
+                "tagid": "AdTag_Div1",
+                "bidfloor":6.6,
+                "banner": {
+                  "format": [
+                    {
+                      "w": 300,
+                      "h": 250
+                    }
+                  ],
+                  "h": 250,
+                  "w": 300
+                },
+                "ext": {
+                  "pmZoneId": "Zone1,Zone2",
+                  "preference": "sports,movies"
+                }
+              }
+            ],
+            "device": {
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+            },
+            "site": {
+              "id": "siteID",
+              "publisher": {
+                "id": "999"
+              }
+            },
+            "ext": {
+              "wrapper": {
+                "profile": 5123,
+                "version": 1
+              }
+            }
+          },
+          "impIDs":["test-imp-id_mf1"]
+        },
+        "mockResponse": {
+          "status": 200,
+          "body": {
+            "id": "test-request-id",
+            "seatbid": [
+              {
+                "seat": "958",
+                "bid": [
+                  {
+                    "id": "7706636740145184841",
+                    "impid": "test-imp-id_mf1",
+                    "price": 6.7,
+                    "adid": "29681110",
+                    "adm": "some-test-ad",
+                    "adomain": [
+                      "pubmatic.com"
+                    ],
+                    "crid": "29681110",
+                    "mtype": 1,
+                    "h": 250,
+                    "w": 300,
+                    "dealid": "test deal",
+                    "ext": {
+                      "dspid": 6,
+                      "deal_channel": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "bidid": "5778926625248726496",
+            "cur": "USD"
+          }
+        }
+      },
+      {
+        "expectedRequest": {
+          "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "body": {
+            "id": "test-request-id",
+            "imp": [
+              {
+                "id": "test-imp-id_mf2",
+                "tagid": "AdTag_Div1",
+                "bidfloor":5.5,
+                "banner": {
+                  "format": [
+                    {
+                      "w": 300,
+                      "h": 250
+                    }
+                  ],
+                  "h": 250,
+                  "w": 300
+                },
+                "ext": {
+                  "pmZoneId": "Zone1,Zone2",
+                  "preference": "sports,movies"
+                }
+              }
+            ],
+            "device": {
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+            },
+            "site": {
+              "id": "siteID",
+              "publisher": {
+                "id": "999"
+              }
+            },
+            "ext": {
+              "wrapper": {
+                "profile": 5123,
+                "version": 1
+              }
+            }
+          },
+          "impIDs":["test-imp-id_mf2"]
+        },
+        "mockResponse": {
+          "status": 200,
+          "body": {
+            "id": "test-request-id",
+            "seatbid": [
+              {
+                "seat": "958",
+                "bid": [
+                  {
+                    "id": "7706636740145184841",
+                    "impid": "test-imp-id_mf2",
+                    "price": 5.7,
+                    "adid": "29681110",
+                    "adm": "some-test-ad",
+                    "adomain": [
+                      "pubmatic.com"
+                    ],
+                    "crid": "29681110",
+                    "mtype": 1,
+                    "h": 250,
+                    "w": 300,
+                    "dealid": "test deal",
+                    "ext": {
+                      "dspid": 6,
+                      "deal_channel": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "bidid": "5778926625248726496",
+            "cur": "USD"
+          }
+        }
+      },
+      {
+        "expectedRequest": {
+          "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "body": {
+            "id": "test-request-id",
+            "imp": [
+              {
+                "id": "test-imp-id_mf3",
+                "tagid": "AdTag_Div1",
+                "bidfloor": 4.4,
+                "banner": {
+                  "format": [
+                    {
+                      "w": 300,
+                      "h": 250
+                    }
+                  ],
+                  "h": 250,
+                  "w": 300
+                },
+                "ext": {
+                  "pmZoneId": "Zone1,Zone2",
+                  "preference": "sports,movies"
+                }
+              }
+            ],
+            "device": {
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+            },
+            "site": {
+              "id": "siteID",
+              "publisher": {
+                "id": "999"
+              }
+            },
+            "ext": {
+              "wrapper": {
+                "profile": 5123,
+                "version": 1
+              }
+            }
+          },
+          "impIDs":["test-imp-id_mf3"]
+        },
+        "mockResponse": {
+          "status": 200,
+          "body": {
+            "id": "test-request-id",
+            "seatbid": [
+              {
+                "seat": "958",
+                "bid": [
+                  {
+                    "id": "7706636740145184841",
+                    "impid": "test-imp-id_mf3",
+                    "price": 4.7,
+                    "adid": "29681110",
+                    "adm": "some-test-ad",
+                    "adomain": [
+                      "pubmatic.com"
+                    ],
+                    "crid": "29681110",
+                    "mtype": 1,
+                    "h": 250,
+                    "w": 300,
+                    "dealid": "test deal",
+                    "ext": {
+                      "dspid": 6,
+                      "deal_channel": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "bidid": "5778926625248726496",
+            "cur": "USD"
+          }
+        }
+      },
+      {
+        "expectedRequest": {
+          "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "body": {
+            "id": "test-request-id",
+            "imp": [
+              {
+                "id": "test-imp-id_mf4",
+                "tagid": "AdTag_Div1",
+                "bidfloor":3.3,
+                "banner": {
+                  "format": [
+                    {
+                      "w": 300,
+                      "h": 250
+                    }
+                  ],
+                  "h": 250,
+                  "w": 300
+                },
+                "ext": {
+                  "pmZoneId": "Zone1,Zone2",
+                  "preference": "sports,movies"
+                }
+              }
+            ],
+            "device": {
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+            },
+            "site": {
+              "id": "siteID",
+              "publisher": {
+                "id": "999"
+              }
+            },
+            "ext": {
+              "wrapper": {
+                "profile": 5123,
+                "version": 1
+              }
+            }
+          },
+          "impIDs":["test-imp-id_mf4"]
+        },
+        "mockResponse": {
+          "status": 200,
+          "body": {
+            "id": "test-request-id",
+            "seatbid": [
+              {
+                "seat": "958",
+                "bid": [
+                  {
+                    "id": "7706636740145184841",
+                    "impid": "test-imp-id_mf4",
+                    "price": 3.7,
+                    "adid": "29681110",
+                    "adm": "some-test-ad",
+                    "adomain": [
+                      "pubmatic.com"
+                    ],
+                    "crid": "29681110",
+                    "mtype": 1,
+                    "h": 250,
+                    "w": 300,
+                    "dealid": "test deal",
+                    "ext": {
+                      "dspid": 6,
+                      "deal_channel": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "bidid": "5778926625248726496",
+            "cur": "USD"
+          }
+        }
+      },
+      {
+        "expectedRequest": {
+          "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+          "body": {
+            "id": "test-request-id",
+            "imp": [
+              {
+                "id": "test-imp-id_mf5",
+                "tagid": "AdTag_Div1",
+                "bidfloor":2.2,
+                "banner": {
+                  "format": [
+                    {
+                      "w": 300,
+                      "h": 250
+                    }
+                  ],
+                  "h": 250,
+                  "w": 300
+                },
+                "ext": {
+                  "pmZoneId": "Zone1,Zone2",
+                  "preference": "sports,movies"
+                }
+              }
+            ],
+            "device": {
+              "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+            },
+            "site": {
+              "id": "siteID",
+              "publisher": {
+                "id": "999"
+              }
+            },
+            "ext": {
+              "wrapper": {
+                "profile": 5123,
+                "version": 1
+              }
+            }
+          },
+          "impIDs":["test-imp-id_mf5"]
+        },
+        "mockResponse": {
+          "status": 200,
+          "body": {
+            "id": "test-request-id",
+            "seatbid": [
+              {
+                "seat": "958",
+                "bid": [
+                  {
+                    "id": "7706636740145184841",
+                    "impid": "test-imp-id_mf5",
+                    "price": 2.7,
+                    "adid": "29681110",
+                    "adm": "some-test-ad",
+                    "adomain": [
+                      "pubmatic.com"
+                    ],
+                    "crid": "29681110",
+                    "mtype": 1,
+                    "h": 250,
+                    "w": 300,
+                    "dealid": "test deal",
+                    "ext": {
+                      "dspid": 6,
+                      "deal_channel": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "bidid": "5778926625248726496",
+            "cur": "USD"
+          }
+        }
+      }
+    ],
+    "expectedBidResponses": [
+      {
+        "currency": "USD",
+        "bids": [
+          {
+            "bid": {
+              "id": "7706636740145184841",
+              "impid": "test-imp-id",
+              "price": 6.7,
+              "adid": "29681110",
+              "adm": "some-test-ad",
+              "adomain": [
+                "pubmatic.com"
+              ],
+              "crid": "29681110",
+              "mtype": 1,
+              "w": 300,
+              "h": 250,
+              "dealid": "test deal",
+              "ext": {
+                "dspid": 6,
+                "deal_channel": 1,
+                "mbmfv": 6.6
+              }
+            },
+            "type": "banner"
+          }
+        ]
+      },
+      {
+        "currency": "USD",
+        "bids": [
+          {
+            "bid": {
+              "id": "7706636740145184841",
+              "impid": "test-imp-id",
+              "price": 5.7,
+              "adid": "29681110",
+              "adm": "some-test-ad",
+              "adomain": [
+                "pubmatic.com"
+              ],
+              "crid": "29681110",
+              "mtype": 1,
+              "w": 300,
+              "h": 250,
+              "dealid": "test deal",
+              "ext": {
+                "dspid": 6,
+                "deal_channel": 1,
+                "mbmfv": 5.5
+              }
+            },
+            "type": "banner"
+          }
+        ]
+      },
+      {
+        "currency": "USD",
+        "bids": [
+          {
+            "bid": {
+              "id": "7706636740145184841",
+              "impid": "test-imp-id",
+              "price": 4.7,
+              "adid": "29681110",
+              "adm": "some-test-ad",
+              "adomain": [
+                "pubmatic.com"
+              ],
+              "crid": "29681110",
+              "mtype": 1,
+              "w": 300,
+              "h": 250,
+              "dealid": "test deal",
+              "ext": {
+                "dspid": 6,
+                "deal_channel": 1,
+                "mbmfv": 4.4
+              }
+            },
+            "type": "banner"
+          }
+        ]
+      },
+      {
+        "currency": "USD",
+        "bids": [
+          {
+            "bid": {
+              "id": "7706636740145184841",
+              "impid": "test-imp-id",
+              "price": 3.7,
+              "adid": "29681110",
+              "adm": "some-test-ad",
+              "adomain": [
+                "pubmatic.com"
+              ],
+              "crid": "29681110",
+              "mtype": 1,
+              "w": 300,
+              "h": 250,
+              "dealid": "test deal",
+              "ext": {
+                "dspid": 6,
+                "deal_channel": 1,
+                "mbmfv": 3.3
+              }
+            },
+            "type": "banner"
+          }
+        ]
+      },
+      {
+        "currency": "USD",
+        "bids": [
+          {
+            "bid": {
+              "id": "7706636740145184841",
+              "impid": "test-imp-id",
+              "price": 2.7,
+              "adid": "29681110",
+              "adm": "some-test-ad",
+              "adomain": [
+                "pubmatic.com"
+              ],
+              "crid": "29681110",
+              "mtype": 1,
+              "w": 300,
+              "h": 250,
+              "dealid": "test deal",
+              "ext": {
+                "dspid": 6,
+                "deal_channel": 1,
+                "mbmfv": 2.2
+              }
+            },
+            "type": "banner"
+          }
+        ]
+      }
+    ]
+  }

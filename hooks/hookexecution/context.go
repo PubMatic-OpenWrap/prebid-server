@@ -35,6 +35,9 @@ func (ctx executionContext) getModuleContext(moduleName string) hookstage.Module
 
 		moduleInvocationCtx.AccountID = ctx.accountID
 		moduleInvocationCtx.AccountConfig = cfg
+		moduleInvocationCtx.GlobalAccountConfig = ctx.account
+		moduleInvocationCtx.AccountID = ctx.account.ID
+
 	}
 
 	return moduleInvocationCtx

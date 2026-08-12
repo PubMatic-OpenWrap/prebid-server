@@ -1,0 +1,466 @@
+{
+    "description": "Dynamic adpod request",
+    "config": {
+        "mockBidders": [
+            {
+                "bidderName": "pubmatic",
+                "currency": "USD",
+                "bids": [
+                    {
+                        "impid": "pod::imp_1",
+                        "price": 2,
+                        "duration": 30
+                    },
+                    {
+                        "impid": "pod::imp_2",
+                        "price": 3,
+                        "duration": 30
+                    },
+                    {
+                        "impid": "pod::imp_3",
+                        "price": 5,
+                        "duration": 30
+                    }
+                ]
+            },
+            {
+                "bidderName": "appnexus",
+                "currency": "USD",
+                "bids": [
+                    {
+                        "impid": "pod::imp_1",
+                        "price": 4,
+                        "duration": 30
+                    },
+                    {
+                        "impid": "pod::imp_2",
+                        "price": 2,
+                        "duration": 30
+                    },
+                    {
+                        "impid": "pod::imp_3",
+                        "price": 5,
+                        "duration": 30
+                    }
+                ]
+            }
+        ]
+    },
+    "mockBidRequest": {
+        "id": "1559039248176",
+        "cur": [
+            "USD"
+        ],
+        "imp": [
+            {
+                "id": "pod::imp",
+                "video": {
+                    "mimes": [
+                        "video/3gpp",
+                        "video/mp4",
+                        "video/webm"
+                    ],
+                    "startdelay": 0,
+                    "protocols": [
+                        2,
+                        3,
+                        5,
+                        6,
+                        7,
+                        8
+                    ],
+                    "placement": 5,
+                    "linearity": 1,
+                    "skip": 1,
+                    "skipmin": 10,
+                    "skipafter": 15,
+                    "battr": [
+                        6,
+                        7
+                    ],
+                    "maxbitrate": 2000,
+                    "boxingallowed": 1,
+                    "playbackmethod": [
+                        1
+                    ],
+                    "playbackend": 1,
+                    "delivery": [
+                        2
+                    ],
+                    "pos": 7,
+                    "podid": "pod1",
+                    "podseq": 0,
+                    "slotinpod": 0,
+                    "maxseq": 3,
+                    "poddur": 90,
+                    "minduration": 30,
+                    "maxduration": 30
+                },
+                "tagid": "/15671365/MG_VideoAdUnit",
+                "secure": 0,
+                "ext": {
+                    "data": {
+                        "pbadslot": "/15671365/MG_VideoAdUnit"
+                    },
+                    "prebid": {
+                        "bidder": {
+                            "pubmatic": {
+                                "publisherId": "5890",
+                                "adSlot": "/15671365/MG_VideoAdUnit@0x0"
+                            },
+                            "appnexus": {
+                                "placementId": 12883451
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "app": {
+            "name": "OpenWrapperSample",
+            "bundle": "com.pubmatic.openbid.app",
+            "storeurl": "https://itunes.apple.com/us/app/pubmatic-sdk-app/id1175273098?videobid=10",
+            "ver": "1.0",
+            "publisher": {
+                "id": "5890"
+            }
+        },
+        "device": {
+            "ua": "PostmanRuntime/7.36.3",
+            "ip": "::1"
+        },
+        "at": 1,
+        "tmax": 194999,
+        "source": {
+            "tid": "1559039248176"
+        },
+        "ext": {
+            "prebid": {
+                "aliases": {
+                    "adg": "adgeneration",
+                    "andbeyond": "adkernel",
+                    "districtm": "appnexus",
+                    "districtmDMX": "dmx",
+                    "mediafuse": "appnexus",
+                    "pubmatic2": "pubmatic"
+                },
+                "bidadjustmentfactors": {
+                    "pubmatic": 0.9
+                },
+                "bidderparams": {
+                    "appnexus": {
+                        "placementId": 12883451
+                    },
+                    "pubmatic": {
+                        "wiid": "34d54ecd-fc14-4a52-a6dd-30dcba780a0d"
+                    }
+                },
+                "debug": true,
+                "floors": {
+                    "enforcement": {
+                        "enforcepbs": true
+                    },
+                    "enabled": true
+                },
+                "targeting": {
+                    "pricegranularity": {
+                        "precision": 2,
+                        "ranges": [
+                            {
+                                "min": 0,
+                                "max": 100,
+                                "increment": 0.5
+                            }
+                        ]
+                    },
+                    "mediatypepricegranularity": {},
+                    "includewinners": true,
+                    "includebidderkeys": true,
+                    "includebrandcategory": {
+                        "primaryadserver": 0,
+                        "publisher": "",
+                        "withcategory": false,
+                        "translatecategories": false,
+                        "skipdedup": true
+                    }
+                },
+                "macros": {
+                    "[PLATFORM]": "3",
+                    "[PROFILE_ID]": "81367",
+                    "[PROFILE_VERSION]": "1",
+                    "[UNIX_TIMESTAMP]": "1711103402",
+                    "[WRAPPER_IMPRESSION_ID]": "34d54ecd-fc14-4a52-a6dd-30dcba780a0d"
+                },
+                "returnallbidstatus": true
+            }
+        }
+    },
+    "expectedBidResponse": {
+        "id": "1559039248176",
+        "seatbid": [
+            {
+                "bid": [
+                    {
+                        "id": "ecb93ab7-4b90-47ac-9414-c7f54a49cc69",
+                        "impid": "pod::imp",
+                        "price": 13.5,
+                        "adm": "<VAST version=\"3.0\"><Ad id=\"601364\" sequence=\"1\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad><Ad id=\"601364\" sequence=\"2\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad><Ad id=\"601364\" sequence=\"3\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                        "ext": {
+                            "prebid": {
+                                "type": "video",
+                                "video": {
+                                    "duration": 90,
+                                    "primary_category": "",
+                                    "vasttagid": ""
+                                }
+                            },
+                            "adpod": {
+                                "refbids": [
+                                    "appnexus-bid-2",
+                                    "pubmatic-bid-2",
+                                    "appnexus-bid-0"
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "seat": "prebid_ctv"
+            }
+        ],
+        "cur": "USD",
+        "ext": {
+            "warnings": {
+                "general": [
+                    {
+                        "code": 10002,
+                        "message": "debug turned off for account"
+                    }
+                ]
+            },
+            "responsetimemillis": {
+                "appnexus": 1,
+                "pubmatic": 1
+            },
+            "tmaxrequest": 194999,
+            "prebid": {
+                "auctiontimestamp": 1712519355306
+            },
+            "adpod": {
+                "bidresponse": {
+                    "id": "1559039248176",
+                    "seatbid": [
+                        {
+                            "bid": [
+                                {
+                                    "id": "appnexus-bid-0",
+                                    "impid": "pod::imp_1",
+                                    "price": 4,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 4,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "appnexus"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder": "appnexus",
+                                                "hb_bidder_appnexus": "appnexus",
+                                                "hb_cache_host": "www.pbcserver.com",
+                                                "hb_cache_host_appnex": "www.pbcserver.com",
+                                                "hb_cache_path": "/pbcache/endpoint",
+                                                "hb_cache_path_appnex": "/pbcache/endpoint",
+                                                "hb_env": "mobile-app",
+                                                "hb_env_appnexus": "mobile-app",
+                                                "hb_pb": "4.00",
+                                                "hb_pb_appnexus": "4.00",
+                                                "hb_pb_cat_dur": "4.00_30s",
+                                                "hb_pb_cat_dur_appnex": "4.00_30s"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "appnexus-bid-1",
+                                    "impid": "pod::imp_2",
+                                    "price": 2,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 2,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "appnexus"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder_appnexus": "appnexus",
+                                                "hb_cache_host_appnex": "www.pbcserver.com",
+                                                "hb_cache_path_appnex": "/pbcache/endpoint",
+                                                "hb_env_appnexus": "mobile-app",
+                                                "hb_pb_appnexus": "2.00",
+                                                "hb_pb_cat_dur_appnex": "2.00_30s"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "appnexus-bid-2",
+                                    "impid": "pod::imp_3",
+                                    "price": 5,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 5,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "appnexus"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder": "appnexus",
+                                                "hb_bidder_appnexus": "appnexus",
+                                                "hb_cache_host": "www.pbcserver.com",
+                                                "hb_cache_host_appnex": "www.pbcserver.com",
+                                                "hb_cache_path": "/pbcache/endpoint",
+                                                "hb_cache_path_appnex": "/pbcache/endpoint",
+                                                "hb_env": "mobile-app",
+                                                "hb_env_appnexus": "mobile-app",
+                                                "hb_pb": "5.00",
+                                                "hb_pb_appnexus": "5.00",
+                                                "hb_pb_cat_dur": "5.00_30s",
+                                                "hb_pb_cat_dur_appnex": "5.00_30s"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                }
+                            ],
+                            "seat": "appnexus"
+                        },
+                        {
+                            "bid": [
+                                {
+                                    "id": "pubmatic-bid-0",
+                                    "impid": "pod::imp_1",
+                                    "price": 1.8,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 2,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "pubmatic"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder_pubmatic": "pubmatic",
+                                                "hb_cache_host_pubmat": "www.pbcserver.com",
+                                                "hb_cache_path_pubmat": "/pbcache/endpoint",
+                                                "hb_env_pubmatic": "mobile-app",
+                                                "hb_pb_cat_dur_pubmat": "1.50_30s",
+                                                "hb_pb_pubmatic": "1.50"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "pubmatic-bid-1",
+                                    "impid": "pod::imp_2",
+                                    "price": 2.7,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 3,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "pubmatic"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder": "pubmatic",
+                                                "hb_bidder_pubmatic": "pubmatic",
+                                                "hb_cache_host": "www.pbcserver.com",
+                                                "hb_cache_host_pubmat": "www.pbcserver.com",
+                                                "hb_cache_path": "/pbcache/endpoint",
+                                                "hb_cache_path_pubmat": "/pbcache/endpoint",
+                                                "hb_env": "mobile-app",
+                                                "hb_env_pubmatic": "mobile-app",
+                                                "hb_pb": "2.50",
+                                                "hb_pb_cat_dur": "2.50_30s",
+                                                "hb_pb_cat_dur_pubmat": "2.50_30s",
+                                                "hb_pb_pubmatic": "2.50"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                },
+                                {
+                                    "id": "pubmatic-bid-2",
+                                    "impid": "pod::imp_3",
+                                    "price": 4.5,
+                                    "adm": "<VAST version=\"3.0\"><Ad id=\"601364\"><InLine><Impression><![CDATA[https://dsptracker.com/{PSPM}]]></Impression><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID=\"601364\"><Linear skipoffset=\"70%\"><Duration><![CDATA[00:00:04]]></Duration><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://owsdk-stagingams.pubmatic.com:8443/openwrap/media/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Pricing model=\"CPM\" currency=\"USD\"><![CDATA[18]]></Pricing></InLine></Ad></VAST>",
+                                    "ext": {
+                                        "origbidcpm": 5,
+                                        "origbidcur": "USD",
+                                        "prebid": {
+                                            "meta": {
+                                                "adaptercode": "pubmatic"
+                                            },
+                                            "targeting": {
+                                                "hb_bidder_pubmatic": "pubmatic",
+                                                "hb_cache_host_pubmat": "www.pbcserver.com",
+                                                "hb_cache_path_pubmat": "/pbcache/endpoint",
+                                                "hb_env_pubmatic": "mobile-app",
+                                                "hb_pb_cat_dur_pubmat": "4.50_30s",
+                                                "hb_pb_pubmatic": "4.50"
+                                            },
+                                            "type": "video"
+                                        }
+                                    }
+                                }
+                            ],
+                            "seat": "pubmatic"
+                        }
+                    ],
+                    "cur": "USD"
+                },
+                "config": {
+                    "pod1": {
+                        "vidext": {
+                            "offset": 0,
+                            "adpod": {
+                                "minads": 1,
+                                "maxads": 3,
+                                "adminduration": 30,
+                                "admaxduration": 30,
+                                "excladv": 100,
+                                "excliabcat": 100
+                            }
+                        },
+                        "imp": [
+                            {
+                                "id": "pod::imp_1",
+                                "seq": 1,
+                                "minduration": 30,
+                                "maxduration": 30
+                            },
+                            {
+                                "id": "pod::imp_2",
+                                "seq": 2,
+                                "minduration": 30,
+                                "maxduration": 30
+                            },
+                            {
+                                "id": "pod::imp_3",
+                                "seq": 3,
+                                "minduration": 30,
+                                "maxduration": 30
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "expectedReturnCode": 200
+}

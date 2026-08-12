@@ -20,6 +20,11 @@
     "imp": [
       {
         "id": "some-impression-id",
+        "ext": {
+          "bidder": {
+            "placementID": "828782"
+          }
+        },
         "tagid": "ogTAGID",
         "video": {
           "mimes": [
@@ -53,6 +58,11 @@
           "imp": [
             {
               "id": "some-impression-id",
+              "ext": {
+                "nativo": {
+                  "placementID": "828782"
+                }
+              },
               "tagid": "ogTAGID",
               "video": {
                 "mimes": [

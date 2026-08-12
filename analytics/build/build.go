@@ -8,6 +8,7 @@ import (
 	"github.com/prebid/prebid-server/v4/analytics/agma"
 	"github.com/prebid/prebid-server/v4/analytics/clients"
 	"github.com/prebid/prebid-server/v4/analytics/filesystem"
+	"github.com/prebid/prebid-server/v4/analytics/pubmatic"
 	"github.com/prebid/prebid-server/v4/analytics/pubstack"
 	"github.com/prebid/prebid-server/v4/config"
 	"github.com/prebid/prebid-server/v4/logger"
@@ -56,6 +57,9 @@ func New(analytics *config.Analytics) analytics.Runner {
 		}
 	}
 
+	if analytics.PubMatic.Enabled {
+		modules["pubmatic"] = pubmatic.NewHTTPLogger(analytics.PubMatic)
+	}
 	return modules
 }
 

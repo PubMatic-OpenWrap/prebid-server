@@ -1,0 +1,61 @@
+package events
+
+import (
+	"encoding/base64"
+	"errors"
+	"time"
+
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/openrtb/v20/adcom1"
+	"github.com/prebid/openrtb/v20/openrtb2"
+)
+
+var (
+	errEventURLNotConfigured = errors.New("event urls not configured")
+)
+
+// InjectVideoEventTrackers injects the video tracking events
+// Returns VAST xml contains as first argument. Second argument indicates whether the trackers are injected and last argument indicates if there is any error in injecting the trackers
+func InjectVideoEventTrackers(bid *openrtb2.Bid, vastXML string, eventURLMap map[string]string, nurlPresent bool, linearity adcom1.LinearityMode) (response string, err error) {
+	eventInjector := GetXMLEventInjector(nurlPresent, linearity)
+	metrics := openrtb_ext.XMLMetrics{
+		ParserName: eventInjector.Name(),
+	}
+
+	_startTime := time.Now()
+	response, err = eventInjector.Inject(vastXML, eventURLMap)
+	if err != nil {
+		openrtb_ext.XMLLogf(openrtb_ext.XMLLogFormat, eventInjector.Name(), "vcr", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+		return vastXML, err
+	}
+
+	metrics.ParsingTime = time.Since(_startTime)
+
+	return response, metrics, err
+}
+
+/*
+	if fastXMLExperiment && err == nil {
+		etreeXMLResponse := response
+
+		_startTime = time.Now()
+		fastXMLResponse, _ := injectVideoEventsFastXML(vastXML, eventURLMap, nurlPresent, imp.Video.Linearity)
+		fastXMLParserTime := time.Since(_startTime)
+
+		//temporary
+		if fastXMLResponse != vastXML {
+			fastXMLResponse, etreeXMLResponse = openrtb_ext.FastXMLPostProcessing(fastXMLResponse, response)
+		}
+
+		metrics = &openrtb_ext.FastXMLMetrics{
+			FastXMLParserTime: fastXMLParserTime,
+			EtreeParserTime:   etreeParserTime,
+			IsRespMismatch:    (etreeXMLResponse != fastXMLResponse),
+		}
+
+		if metrics.IsRespMismatch {
+			openrtb_ext.FastXMLLogf(openrtb_ext.FastXMLLogFormat, "vcr", base64.StdEncoding.EncodeToString([]byte(vastXML)))
+		}
+
+	}
+*/

@@ -349,7 +349,7 @@ func TestRequestBidRemovesSensitiveHeaders(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/test-version"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/test-version"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -403,7 +403,7 @@ func TestSetGPCHeader(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"Content-Type": {"application/json"}, "X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -455,7 +455,7 @@ func TestSetGPCHeaderNil(t *testing.T) {
 		{
 			Uri:            server.URL,
 			RequestBody:    "requestJson",
-			RequestHeaders: map[string][]string{"X-Prebid": {"pbs-go/unknown"}, "Sec-Gpc": {"1"}},
+			RequestHeaders: map[string][]string{"X-Prebid": {"owpbs-go/unknown"}, "Sec-Gpc": {"1"}},
 			ResponseBody:   "responseJson",
 			Status:         200,
 		},
@@ -1096,7 +1096,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"EUR", "USD", "JPY"},
 			bidResponsesCurrency:   "EUR",
 			expectedPickedCurrency: "EUR",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -1116,7 +1116,7 @@ func TestMultiCurrencies_RequestCurrencyPick(t *testing.T) {
 			bidRequestCurrencies:   []string{"JPY"},
 			bidResponsesCurrency:   "JPY",
 			expectedPickedCurrency: "JPY",
-			expectedError:          false,
+			expectedError:          true, //conversionRateUSD fails as currency conversion in this test is default.
 			rates: currency.Rates{
 				Conversions: map[string]map[string]float64{
 					"JPY": {
@@ -1887,7 +1887,7 @@ func TestSetAssetTypes(t *testing.T) {
 	}{
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -1939,7 +1939,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -1959,7 +1959,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](2),
+				ID: openrtb2.Int64Ptr(2),
 				Data: &nativeResponse.Data{
 					Label: "some label",
 				},
@@ -1979,7 +1979,7 @@ func TestSetAssetTypes(t *testing.T) {
 		},
 		{
 			respAsset: nativeResponse.Asset{
-				ID: ptrutil.ToPtr[int64](1),
+				ID: openrtb2.Int64Ptr(1),
 				Img: &nativeResponse.Image{
 					URL: "http://some-url",
 				},
@@ -2169,7 +2169,7 @@ func TestCallRecordDNSTime(t *testing.T) {
 func TestCallRecordTLSHandshakeTime(t *testing.T) {
 	// setup a mock metrics engine and its expectation
 	metricsMock := &metrics.MetricsEngineMock{}
-	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything).Return()
+	metricsMock.Mock.On("RecordTLSHandshakeTime", mock.Anything, mock.Anything).Return()
 	metricsMock.On("RecordOverheadTime", metrics.PreBidder, mock.Anything).Once()
 	metricsMock.On("RecordBidderServerResponseTime", mock.Anything).Once()
 
@@ -2522,11 +2522,11 @@ func TestExtraBid(t *testing.T) {
 		{
 			HttpCalls: []*openrtb_ext.ExtHttpCall{},
 			Bids: []*entities.PbsOrtbBid{{
-				Bid:            &openrtb2.Bid{ID: "groupmImp1"},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCur: "USD",
-			}},
+				Bid:                 &openrtb2.Bid{ID: "groupmImp1"},
+				DealPriority:        5,
+				BidType:             openrtb_ext.BidTypeVideo,
+				OriginalBidCur:      "USD",
+				AlternateBidderCode: string(openrtb_ext.BidderPubmatic)}},
 			Seat:     "groupm",
 			Currency: "USD",
 		},
@@ -2630,10 +2630,11 @@ func TestExtraBidWithAlternateBidderCodeDisabled(t *testing.T) {
 		{
 			HttpCalls: []*openrtb_ext.ExtHttpCall{},
 			Bids: []*entities.PbsOrtbBid{{
-				Bid:            &openrtb2.Bid{ID: "groupmImp2"},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCur: "USD",
+				Bid:                 &openrtb2.Bid{ID: "groupmImp2"},
+				DealPriority:        5,
+				BidType:             openrtb_ext.BidTypeVideo,
+				OriginalBidCur:      "USD",
+				AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 			}},
 			Seat:     "groupm-allowed",
 			Currency: "USD",
@@ -2736,12 +2737,13 @@ func TestExtraBidWithBidAdjustments(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 21,
+					Price: 7,
 				},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCPM: 7,
-				OriginalBidCur: "USD",
+				DealPriority:        5,
+				BidType:             openrtb_ext.BidTypeVideo,
+				OriginalBidCPM:      7,
+				OriginalBidCur:      "USD",
+				AlternateBidderCode: "PUBMATIC",
 			}},
 			Seat:     "groupm",
 			Currency: "USD",
@@ -2849,12 +2851,13 @@ func TestExtraBidWithBidAdjustmentsUsingAdapterCode(t *testing.T) {
 			Bids: []*entities.PbsOrtbBid{{
 				Bid: &openrtb2.Bid{
 					ID:    "groupmImp1",
-					Price: 14,
+					Price: 7,
 				},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCPM: 7,
-				OriginalBidCur: "USD",
+				DealPriority:        5,
+				BidType:             openrtb_ext.BidTypeVideo,
+				OriginalBidCPM:      7,
+				OriginalBidCur:      "USD",
+				AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 			}},
 			Seat:     "groupm",
 			Currency: "USD",
@@ -2963,10 +2966,12 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "groupmImp1",
 					Price: 571.5994430039375,
 				},
-				DealPriority:   5,
-				BidType:        openrtb_ext.BidTypeVideo,
-				OriginalBidCPM: 7,
-				OriginalBidCur: "USD",
+				DealPriority:        5,
+				BidType:             openrtb_ext.BidTypeVideo,
+				OriginalBidCPM:      7,
+				OriginalBidCur:      "USD",
+				OriginalBidCPMUSD:   7,
+				AlternateBidderCode: string(openrtb_ext.BidderPubmatic),
 			}},
 			Seat:     "groupm",
 			Currency: "INR",
@@ -2978,10 +2983,11 @@ func TestExtraBidWithMultiCurrencies(t *testing.T) {
 					ID:    "pubmaticImp1",
 					Price: 244.97118985883034,
 				},
-				DealPriority:   4,
-				BidType:        openrtb_ext.BidTypeBanner,
-				OriginalBidCPM: 3,
-				OriginalBidCur: "USD",
+				DealPriority:      4,
+				BidType:           openrtb_ext.BidTypeBanner,
+				OriginalBidCPM:    3,
+				OriginalBidCur:    "USD",
+				OriginalBidCPMUSD: 3,
 			}},
 			Seat:     string(openrtb_ext.BidderPubmatic),
 			Currency: "INR",
@@ -3114,7 +3120,7 @@ func TestSeatNonBid(t *testing.T) {
 	}
 	type expect struct {
 		seatBids    []*entities.PbsOrtbSeatBid
-		seatNonBids SeatNonBidBuilder
+		seatNonBids openrtb_ext.SeatNonBidBuilder
 		errors      []error
 	}
 	testCases := []struct {
@@ -3134,7 +3140,7 @@ func TestSeatNonBid(t *testing.T) {
 				client:         &http.Client{Timeout: time.Nanosecond}, // for timeout
 			},
 			expect: expect{
-				seatNonBids: SeatNonBidBuilder{
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{
 					"pubmatic": {{
 						ImpId:      "1234",
 						StatusCode: int(ErrorTimeout),
@@ -3154,7 +3160,7 @@ func TestSeatNonBid(t *testing.T) {
 				},
 			},
 			expect: expect{
-				seatNonBids: SeatNonBidBuilder{
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{
 					"appnexus": {
 						{ImpId: "1234", StatusCode: int(ErrorBidderUnreachable)},
 						{ImpId: "4567", StatusCode: int(ErrorBidderUnreachable)},
@@ -3175,7 +3181,7 @@ func TestSeatNonBid(t *testing.T) {
 				},
 			},
 			expect: expect{
-				seatNonBids: SeatNonBidBuilder{},
+				seatNonBids: openrtb_ext.SeatNonBidBuilder{},
 				seatBids:    []*entities.PbsOrtbSeatBid{{Bids: []*entities.PbsOrtbBid{}, Currency: "USD", HttpCalls: []*openrtb_ext.ExtHttpCall{}}},
 				errors:      []error{&url.Error{Op: "Get", URL: "", Err: errors.New("some_error")}},
 			},

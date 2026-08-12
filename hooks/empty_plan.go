@@ -17,6 +17,10 @@ func (e EmptyPlanBuilder) PlanForRawAuctionStage(endpoint string, account *confi
 	return nil
 }
 
+func (e EmptyPlanBuilder) PlanForValidationStage(endpoint string, account *config.Account) Plan[hookstage.BeforeValidationRequest] {
+	return nil
+}
+
 func (e EmptyPlanBuilder) PlanForProcessedAuctionStage(endpoint string, account *config.Account) Plan[hookstage.ProcessedAuctionRequest] {
 	return nil
 }

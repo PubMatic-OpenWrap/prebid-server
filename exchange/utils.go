@@ -219,7 +219,7 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 		}
 
 		// down convert
-		info, ok := rs.bidderInfo[bidder]
+		info, ok := rs.bidderInfo[string(coreBidder)]
 		if !ok || info.OpenRTB == nil || info.OpenRTB.Version != "2.6" {
 			reqWrapperCopy.Regs = ortb.CloneRegs(reqWrapperCopy.Regs)
 			if err := openrtb_ext.ConvertDownTo25(reqWrapperCopy); err != nil {
@@ -262,6 +262,8 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 		}
 		bidderRequests = append(bidderRequests, bidderRequest)
 	}
+
+	updateContentObjectForBidder(bidderRequests, requestExt)
 
 	return
 }
@@ -384,7 +386,7 @@ func (rs *requestSplitter) applyPrivacy(reqWrapper *openrtb_ext.RequestWrapper, 
 		}
 
 		if ccpaEnforcer.ShouldEnforce(bidderName) {
-			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false)
+			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, true)
 			buyerUIDRemoved = true
 		}
 	}
@@ -400,12 +402,19 @@ func (rs *requestSplitter) applyPrivacy(reqWrapper *openrtb_ext.RequestWrapper, 
 			privacy.ScrubGeoAndDeviceIP(reqWrapper, ipConf)
 		}
 		if ccpaEnforcer.ShouldEnforce(bidderName) {
-			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false)
+			privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, true)
 		}
 	}
 
-	if lmt || coppa {
-		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", coppa)
+	// COPPA: full scrub including device IP.
+	// LMT: for app traffic only, when device.os is iOS or Android, preserve IP; otherwise mask IP (incl. site / non-mobile).
+	if coppa {
+		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", true, true)
+	} else if lmt {
+		isMobileAppOS := reqWrapper.App != nil && reqWrapper.Device != nil &&
+			(strings.EqualFold(reqWrapper.Device.OS, "ios") || strings.EqualFold(reqWrapper.Device.OS, "android"))
+		scrubDeviceIP := !isMobileAppOS
+		privacy.ScrubDeviceIDsIPsUserDemoExt(reqWrapper, ipConf, "eids", false, scrubDeviceIP)
 	}
 
 	passTIDAllowed := auctionReq.Activities.Allow(privacy.ActivityTransmitTIDs, scope, privacy.NewRequestFromBidRequest(*reqWrapper))
@@ -530,6 +539,7 @@ func buildRequestExtForBidder(bidder string, req *openrtb_ext.RequestWrapper, re
 		prebidNew.Sdk = prebid.Sdk
 		prebidNew.Server = prebid.Server
 		prebidNew.Targeting = buildRequestExtTargeting(prebid.Targeting)
+		prebidNew.KeyVal = prebid.KeyVal
 	}
 
 	reqExt.SetPrebid(&prebidNew)
@@ -745,6 +755,11 @@ func createSanitizedImpExt(impExt, impExtPrebid map[string]json.RawMessage) (map
 			sanitizedImpPrebidExt[k] = v
 		}
 	}
+
+	// Dont send this to adapters
+	// if v, exists := impExtPrebid["floors"]; exists {
+	// 	sanitizedImpPrebidExt["floors"] = v
+	// }
 
 	// marshal sanitized imp[].ext.prebid
 	if len(sanitizedImpPrebidExt) > 0 {
