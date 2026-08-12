@@ -196,7 +196,18 @@ func isMrecBanner(banner *openrtb2.Banner) bool {
 	if banner == nil {
 		return false
 	}
-	return hasMrecDimensions(banner.W, banner.H)
+
+	if hasMrecDimensions(banner.W, banner.H) {
+		return true
+	}
+
+	for _, format := range banner.Format {
+		if format.W == apsMrecWidth && format.H == apsMrecHeight {
+			return true
+		}
+	}
+
+	return false
 }
 
 func isMrecVideo(video *openrtb2.Video) bool {
@@ -211,11 +222,10 @@ func hasMrecDimensions(w, h *int64) bool {
 }
 
 func isBannerFormat(banner *openrtb2.Banner) bool {
-	if banner == nil || banner.W == nil || banner.H == nil {
+	if banner == nil {
 		return false
 	}
-
-	return *banner.W != apsMrecWidth && *banner.H != apsMrecHeight
+	return true
 }
 
 func isRewardedImp(imp *openrtb2.Imp) bool {

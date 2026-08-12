@@ -1678,6 +1678,15 @@ func TestDetermineAdFormat(t *testing.T) {
 			want: apsAdFormatMrec,
 		},
 		{
+			name: "mrec_via_banner_format",
+			imp: openrtb2.Imp{
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{{W: 300, H: 250}},
+				},
+			},
+			want: apsAdFormatMrec,
+		},
+		{
 			name: "mrec_via_video_dimensions",
 			imp: openrtb2.Imp{
 				Video: &openrtb2.Video{W: ptrutil.ToPtr[int64](300), H: ptrutil.ToPtr[int64](250)},
@@ -1692,11 +1701,13 @@ func TestDetermineAdFormat(t *testing.T) {
 			want: apsAdFormatBanner,
 		},
 		{
-			name: "banner_without_dimensions",
+			name: "banner_via_format_non_mrec_dimensions",
 			imp: openrtb2.Imp{
-				Banner: &openrtb2.Banner{},
+				Banner: &openrtb2.Banner{
+					Format: []openrtb2.Format{{W: 728, H: 90}},
+				},
 			},
-			want: "",
+			want: apsAdFormatBanner,
 		},
 		{
 			name: "video_only_non_mrec_dimensions",
