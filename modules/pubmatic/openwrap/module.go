@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	"github.com/prebid/prebid-server/v3/modules/moduledeps"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	"github.com/prebid/prebid-server/v4/modules/moduledeps"
 )
 
 // init openwrap module and its dependecies like config, cache, db connection, bidder cfg, etc.
