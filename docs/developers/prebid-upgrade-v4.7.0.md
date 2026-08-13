@@ -1,8 +1,14 @@
-# Prebid Server v4.7.0 Upgrade — Conflict Resolution Notes
+# Prebid Server v4 Upgrade — Conflict Resolution Notes
 
-Notes for merging OW `master` onto upstream `v4.7.0` (branch `prebid_v4.7.0-review`).
+Notes for merging OW `master` onto upstream Prebid v4 (branches `prebid_v4.7.0-review` / `prebid_v4.8.0-review`).
 
-During merge review, `--ours` = upstream v4.7.0, `--theirs` = OW `master`.
+During merge review, `--ours` = upstream v4.x, `--theirs` = OW `master`.
+
+---
+
+## Seat Non-Bid
+
+See **[seat-non-bid-ow-vs-prebid-v4.md](./seat-non-bid-ow-vs-prebid-v4.md)** for the full comparison of OW `openrtb_ext/seat_non_bids*` vs upstream `exchange/seat_non_bids*`, merge resolution (delete upstream exchange files, keep OW openrtb_ext files), API/data-model differences, and checklist.
 
 ---
 
@@ -72,6 +78,28 @@ OW profile config can continue to use `placementId` in `FieldMap`; only the emit
 1. Upstream v4.2.0 is the canonical Prebid schema — same feature, standardized naming (`placementId`).
 2. OW’s adapter-side copy logic in PR #1108 is superseded by upstream’s simpler approach (params stay in `imp.ext.bidder`).
 3. Keeping OW’s `placementID` / required-string schema would diverge from upstream validation and Prebid.js param conventions.
+
+---
+
+## ModuleContext API (v4 hook migration)
+
+Upstream v4 changed hook `ModuleContext` from `map[string]any` to `*hookstage.ModuleContext` with `Get` / `Set` / `GetAll`.
+
+OW hooks in `modules/pubmatic/openwrap/` were migrated to use helpers in `module_context.go`:
+
+```go
+// Old (OW v3)
+moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+len(moduleCtx.ModuleContext) == 0
+moduleCtx.ModuleContext["rctx"] = rCtx
+
+// New (v4)
+getRequestCtx(moduleCtx.ModuleContext)
+!hasModuleContext(moduleCtx.ModuleContext)
+setRequestCtx(moduleCtx.ModuleContext, rCtx)
+```
+
+Reference: `hooks/hookstage/invocation.go` (`NewModuleContext`, `Get`, `Set`).
 
 ---
 

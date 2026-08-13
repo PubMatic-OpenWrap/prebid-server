@@ -25,12 +25,12 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	}
 
 	// absence of rctx at this hook means the first hook failed!. Do nothing
-	if len(moduleCtx.ModuleContext) == 0 {
+	if !hasModuleContext(moduleCtx.ModuleContext) {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAllProcessedBidResponsesHook()")
 		return result, nil
 	}
 
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtx, ok := getRequestCtx(moduleCtx.ModuleContext)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
 		return result, nil

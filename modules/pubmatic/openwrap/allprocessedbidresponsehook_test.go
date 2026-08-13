@@ -116,9 +116,9 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": nil,
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -134,11 +134,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
-					},
+					}),
 				},
 			},
 
@@ -154,11 +154,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
 						},
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -173,11 +173,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointV25,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AllProcessedBidResponsesPayload{
 					Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{

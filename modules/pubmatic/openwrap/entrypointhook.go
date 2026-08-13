@@ -61,8 +61,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return
 		}
-		result.ModuleContext = make(hookstage.ModuleContext)
-		result.ModuleContext["rctx"] = rCtx
+		result.ModuleContext = newModuleContextWithRequestCtx(rCtx)
 	}()
 
 	rCtx.Sshb = queryParams.Get("sshb")

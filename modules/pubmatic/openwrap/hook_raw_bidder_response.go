@@ -62,11 +62,9 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-	var (
-		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnWrap.Enabled
-		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
-	)
+	rCtx, rCtxPresent := getRequestCtx(miCtx.ModuleContext)
+	isVastUnwrapEnabled := rCtxPresent && rCtx.VastUnWrap.Enabled
+	isBidderCheckEnabled := isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
 
 	if !(isBidderCheckEnabled || isVastUnwrapEnabled) {
 		return result, nil

@@ -3400,7 +3400,7 @@ func TestBuilderNativo(t *testing.T) {
 					},
 				},
 			},
-			want:    json.RawMessage(`{"placementID":"1234"}`),
+			want:    json.RawMessage(`{"placementId":1234}`),
 			wantErr: false,
 		},
 		{

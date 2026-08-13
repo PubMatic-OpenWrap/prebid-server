@@ -69,11 +69,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		Reject: true,
 	}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if !hasModuleContext(moduleCtx.ModuleContext) {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
-	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rCtx, ok := getRequestCtx(moduleCtx.ModuleContext)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
@@ -83,7 +83,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
 
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rCtx
+		setRequestCtx(moduleCtx.ModuleContext, rCtx)
 
 		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
@@ -782,9 +782,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// }
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rctx, _ := getRequestCtx(moduleCtx.ModuleContext)
 		defer func() {
-			moduleCtx.ModuleContext["rctx"] = rctx
+			setRequestCtx(moduleCtx.ModuleContext, rctx)
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
 
 			// Always record preprocessing time stats

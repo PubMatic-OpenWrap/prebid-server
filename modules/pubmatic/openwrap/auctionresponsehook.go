@@ -34,11 +34,11 @@ func (m OpenWrap) handleAuctionResponseHook(
 	result.ChangeSet = hookstage.ChangeSet[hookstage.AuctionResponsePayload]{}
 
 	// absence of rctx at this hook means the first hook failed!. Do nothing
-	if len(moduleCtx.ModuleContext) == 0 {
+	if !hasModuleContext(moduleCtx.ModuleContext) {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAuctionResponseHook()")
 		return result, nil
 	}
-	rctx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rctx, ok := getRequestCtx(moduleCtx.ModuleContext)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAuctionResponseHook()")
 		return result, nil
@@ -50,7 +50,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rctx
+		setRequestCtx(moduleCtx.ModuleContext, rctx)
 		m.metricEngine.RecordPublisherResponseTimeStats(rctx.PubIDStr, int(time.Since(time.Unix(rctx.StartTime, 0)).Milliseconds()))
 	}()
 
@@ -400,7 +400,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 	if rctx.Endpoint == models.EndpointWebS2S {
 		result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
-			rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			rctx, _ := getRequestCtx(moduleCtx.ModuleContext)
 			var err error
 			ap.BidResponse, err = tracker.InjectTrackers(rctx, ap.BidResponse)
 			if err == nil {
@@ -415,7 +415,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	}
 
 	result.ChangeSet.AddMutation(func(ap hookstage.AuctionResponsePayload) (hookstage.AuctionResponsePayload, error) {
-		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+		rctx, _ := getRequestCtx(moduleCtx.ModuleContext)
 		var err error
 		ap.BidResponse, err = m.updateORTBV25Response(rctx, ap.BidResponse)
 		if err != nil {
