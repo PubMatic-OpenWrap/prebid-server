@@ -1691,7 +1691,7 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 				&mockVideoStoredReqFetcher{},
 				&mockVideoStoredReqFetcher{},
 				&mockAccountFetcher{data: mockVideoAccountData},
-				&config.Configuration{MaxRequestSize: maxSize},
+				&config.Configuration{Video: config.Video{EnableDeprecatedEndpoint: true}, MaxRequestSize: maxSize},
 				&metricsConfig.NilMetricsEngine{},
 				&analyticsModule,
 				map[string]string{},
@@ -1712,6 +1712,7 @@ func TestSeatNonBidInVideoAuction(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			deps.VideoAuctionEndpoint(recorder, req, nil)
 
+			require.NotEmpty(t, analyticsModule.videoObjects, "expected video analytics object")
 			assert.Equal(t, test.want.seatNonBid, analyticsModule.videoObjects[0].SeatNonBid, "mismatched seatnonbid.")
 		})
 	}
