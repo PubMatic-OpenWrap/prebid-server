@@ -219,7 +219,10 @@ func (rs *requestSplitter) cleanOpenRTBRequests(ctx context.Context,
 		}
 
 		// down convert
-		info, ok := rs.bidderInfo[string(coreBidder)]
+		info, ok := rs.bidderInfo[bidder]
+		if !ok && coreBidder != "" {
+			info, ok = rs.bidderInfo[string(coreBidder)]
+		}
 		if !ok || info.OpenRTB == nil || info.OpenRTB.Version != "2.6" {
 			reqWrapperCopy.Regs = ortb.CloneRegs(reqWrapperCopy.Regs)
 			if err := openrtb_ext.ConvertDownTo25(reqWrapperCopy); err != nil {
