@@ -5,11 +5,11 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/adapters"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/bidderparams"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/resolver"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
+	"github.com/prebid/prebid-server/v4/adapters"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/resolver"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v4/util/jsonutil"
 )
 
 type responseBuilder struct {

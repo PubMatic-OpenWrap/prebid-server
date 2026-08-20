@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/config"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -10,14 +10,14 @@ import (
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
-	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	mock_cache "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache/mock"
+	mock_metrics "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "single bid and supportdeal is false",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -52,7 +52,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -106,7 +106,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "test auction between 3 bids when supportdeal is false and no bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -114,7 +114,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -218,7 +218,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "test auction between 3 bids when supportdeal is false and all bids satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -226,7 +226,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							},
 							PubIDStr: "5890",
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -333,7 +333,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "single bid and supportdeal is true",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -342,7 +342,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -396,7 +396,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and no bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -405,7 +405,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -509,7 +509,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only middle bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -518,7 +518,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -623,7 +623,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only last bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -632,7 +632,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -737,7 +737,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and only first bid satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -746,7 +746,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -851,7 +851,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 			name: "auction between 3 bids when supportdeal is true and all bids satisfies dealTier",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -860,7 +860,7 @@ func TestNonBRCodesInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:     "5890",
 							SupportDeals: true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1005,7 +1005,7 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 			name: "CTA_overlay_injected_for_pubmatic_video_bid_when_imp_requests_it",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime:        time.Now().UnixMilli(),
 							PubIDStr:         "5890",
@@ -1018,7 +1018,7 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1056,7 +1056,7 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 			name: "CTA_overlay_not_injected_when_seat_not_pubmatic_core",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime:        time.Now().UnixMilli(),
 							PubIDStr:         "5890",
@@ -1069,7 +1069,7 @@ func TestCTAOverlayInHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1161,7 +1161,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 			name: "prebid targeting without custom dimensions",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -1170,7 +1170,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 							PubIDStr:         "5890",
 							CustomDimensions: map[string]models.CustomDimension{},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1274,7 +1274,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 			name: "prebid targeting custom dimensions",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -1295,7 +1295,7 @@ func TestPrebidTargetingInHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1517,7 +1517,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointWebS2S,
 							Trackers: map[string]models.OWTracker{
@@ -1526,7 +1526,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1570,7 +1570,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointWebS2S,
 							Trackers: map[string]models.OWTracker{
@@ -1579,7 +1579,7 @@ func TestAuctionResponseHookForEndpointWebS2S(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1779,9 +1779,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": nil,
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
@@ -1798,9 +1798,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": "request-ctx", // request-ctx is not of type RequestCtx
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
@@ -1817,11 +1817,11 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{},
 			},
@@ -1836,13 +1836,13 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Sshb:     "0",
 							PubID:    5890,
 							PubIDStr: "5890",
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1869,7 +1869,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -1908,7 +1908,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -1921,7 +1921,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -1956,7 +1956,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:                 5890,
 							PubIDStr:              "5890",
@@ -1992,7 +1992,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2037,7 +2037,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2091,7 +2091,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2104,7 +2104,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2128,7 +2128,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			want: want{
 				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
 				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":"","vasttagid":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
+				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
 			},
 		},
 		{
@@ -2136,7 +2136,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointV25,
 							PubID:    5890,
@@ -2185,7 +2185,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2198,7 +2198,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2225,7 +2225,7 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 			want: want{
 				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
 				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"pwtbst":"1","pwtbst_pubmatic":"1","pwtecp":"5.00","pwtecp_pubmatic":"5.00","pwtpid":"pubmatic","pwtpid_pubmatic":"pubmatic","pwtplt":"inapp","pwtplt_pubmatic":"inapp","pwtsid":"bid-id-1","pwtsid_pubmatic":"bid-id-1","pwtsz":"0x0","pwtsz_pubmatic":"0x0"},"type":"video","video":{"duration":20,"primary_category":"","vasttagid":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipafter":0,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
+				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"pwtbst":"1","pwtbst_pubmatic":"1","pwtecp":"5.00","pwtecp_pubmatic":"5.00","pwtpid":"pubmatic","pwtpid_pubmatic":"pubmatic","pwtplt":"inapp","pwtplt_pubmatic":"inapp","pwtsid":"bid-id-1","pwtsid_pubmatic":"bid-id-1","pwtsz":"0x0","pwtsz_pubmatic":"0x0"},"type":"video","video":{"duration":20,"primary_category":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipafter":0,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD"}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
 			},
 		},
 	}
@@ -2240,13 +2240,9 @@ func TestOpenWrapHandleAuctionResponseHook(t *testing.T) {
 				metricEngine: mockEngine,
 				pubFeatures:  mockFeature,
 			}
-			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
-			if ok {
-				rCtx, ok := moduleCtx.(models.RequestCtx)
-				if ok {
-					rCtx.MetricsEngine = mockEngine
-					tt.args.moduleCtx.ModuleContext["rctx"] = rCtx
-				}
+			if rCtx, ok := getRequestCtx(tt.args.moduleCtx.ModuleContext); ok {
+				rCtx.MetricsEngine = mockEngine
+				setRequestCtx(tt.args.moduleCtx.ModuleContext, rCtx)
 			}
 			hookResult, err := m.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
@@ -2294,7 +2290,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Platform: models.PLATFORM_VIDEO,
 							Endpoint: models.EndpointAppLovinMax,
@@ -2312,7 +2308,7 @@ func TestAuctionResponseHookForApplovinMax(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2419,7 +2415,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2459,7 +2455,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2472,7 +2468,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2508,7 +2504,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2548,7 +2544,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2561,7 +2557,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2597,7 +2593,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2638,7 +2634,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2651,7 +2647,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2687,7 +2683,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2728,7 +2724,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2741,7 +2737,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<img src=\"http://ads.pubmatic.com/AdTag/728x90.png\"></img><div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.pubmatic.com/wt?adv=&af=banner&aps=0&au=%2F43743431%2FDMDemo&bc=appnexus&bidid=4033c510-6d67-4af6-b53f-682ff1a580c3&di=-1&eg=14&en=14&frv=1.57&ft=0&fv=1.57&iid=429d469d-8cfb-495a-9f0c-5f48aa0ede40&kgpv=&orig=ebay.com&origbidid=718825584&pdvid=1&pid=22503&plt=1&pn=appnexus&psz=728x90&pubid=5890&purl=http%3A%2F%2Febay.com%2Finte%2Fautomation%2Fs2s_activation%2Fbanner-with-gdpr-pubmatic-denied-defaultbidder.html%3Fprofileid%3D22503%26pwtv%3D1%26pwtvc%3D1%26appnexus_banner_fixedbid%3D14%26fixedbid%3D1%26debug%3D1&sl=1&slot=%2F43743431%2FDMDemo&ss=1&tst=1704357774\"></div>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"origbidcpm":8,"origbidcur":"USD","ibv":true,"prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"banner","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2776,7 +2772,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							PubID:    5890,
 							PubIDStr: "5890",
@@ -2832,7 +2828,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 								},
 							},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2845,7 +2841,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 										ImpID: "Div1",
 										Price: 5,
 										AdM:   "<VAST version=\"3.0\"><Ad><Wrapper></Wrapper></Ad></VAST>",
-										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":"","vasttagid":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
+										Ext:   json.RawMessage(`{"bidtype":0,"deal_channel":1,"dspid":6,"mbmfv":4,"origbidcpm":8,"origbidcur":"USD","prebid":{"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a","meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"targeting":{"hb_bidder_pubmatic":"pubmatic","hb_deal_pubmatic":"PUBDEAL1","hb_pb_pubmatic":"8.00","hb_size_pubmatic":"728x90"},"type":"video","video":{"duration":0,"primary_category":""}},"clicktrackers":["http://clicktracker1.com","http://clicktracker2.com"]}`),
 									},
 								},
 								Seat: "pubmatic",
@@ -2870,7 +2866,7 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 			want: want{
 				result:      hookstage.HookResult[hookstage.AuctionResponsePayload]{},
 				err:         nil,
-				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":"","vasttagid":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD","act":1}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
+				bidResponse: json.RawMessage(`{"id":"12345","seatbid":[{"bid":[{"id":"bid-id-1","impid":"Div1","price":5,"adm":"\u003cVAST version=\"3.0\"\u003e\u003cAd\u003e\u003cWrapper\u003e\u003cImpression\u003e\u003c![CDATA[https:?adv=\u0026af=video\u0026aps=0\u0026au=\u0026bc=pubmatic\u0026bidid=bb57a9e3-fdc2-4772-8071-112dd7f50a6a\u0026di=-1\u0026dur=20\u0026eg=0\u0026en=0\u0026frv=4\u0026ft=0\u0026fv=4\u0026iid=\u0026kgpv=\u0026mbmf=1\u0026nwid=6\u0026orig=\u0026origbidid=bid-id-1\u0026pdvid=0\u0026pid=0\u0026plt=0\u0026pn=pubmatic\u0026psz=0x0\u0026pubid=5890\u0026purl=\u0026sl=1\u0026slot=\u0026ss=1\u0026tst=0]]\u003e\u003c/Impression\u003e\u003cExtensions\u003e\u003cExtension\u003e\u003cPricing model=\"CPM\" currency=\"USD\"\u003e\u003c![CDATA[5]]\u003e\u003c/Pricing\u003e\u003c/Extension\u003e\u003c/Extensions\u003e\u003c/Wrapper\u003e\u003c/Ad\u003e\u003c/VAST\u003e","ext":{"prebid":{"meta":{"adaptercode":"pubmatic","advertiserId":4098,"agencyId":4098,"demandSource":"6","mediaType":"banner","networkId":6},"type":"video","video":{"duration":20,"primary_category":""},"bidid":"bb57a9e3-fdc2-4772-8071-112dd7f50a6a"},"refreshInterval":30,"crtype":"video","video":{"minduration":10,"maxduration":20,"skip":1,"skipmin":1,"skipafter":2,"battr":[1],"playbackmethod":[1]},"dspid":6,"netecpm":5,"origbidcpm":8,"origbidcur":"USD","act":1}}],"seat":"pubmatic"}],"ext":{"responsetimemillis":{"pubmatic":8},"matchedimpression":{"pubmatic":0}}}`),
 			},
 		},
 	}
@@ -2885,13 +2881,9 @@ func TestOpenWrapHandleAuctionResponseHookForACT(t *testing.T) {
 				metricEngine: mockEngine,
 				pubFeatures:  mockFeature,
 			}
-			moduleCtx, ok := tt.args.moduleCtx.ModuleContext["rctx"]
-			if ok {
-				rCtx, ok := moduleCtx.(models.RequestCtx)
-				if ok {
-					rCtx.MetricsEngine = mockEngine
-					tt.args.moduleCtx.ModuleContext["rctx"] = rCtx
-				}
+			if rCtx, ok := getRequestCtx(tt.args.moduleCtx.ModuleContext); ok {
+				rCtx.MetricsEngine = mockEngine
+				setRequestCtx(tt.args.moduleCtx.ModuleContext, rCtx)
 			}
 			hookResult, err := m.handleAuctionResponseHook(tt.args.ctx, tt.args.moduleCtx, tt.args.payload)
 			assert.Equal(t, tt.want.err, err, tt.name)
@@ -2939,7 +2931,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "APS endpoint with valid bids should not set reject",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -2949,7 +2941,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							Endpoint: models.EndpointAPS,
 							APS:      models.APS{Reject: false},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -2976,7 +2968,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "APS endpoint with NBR should set reject",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -2986,7 +2978,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							Endpoint: models.EndpointAPS,
 							APS:      models.APS{Reject: false},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -3008,7 +3000,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "APS endpoint with empty bids should set reject",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -3018,7 +3010,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							Endpoint: models.EndpointAPS,
 							APS:      models.APS{Reject: false},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -3039,7 +3031,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "APS endpoint with no seat bids should set reject",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -3049,7 +3041,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							Endpoint: models.EndpointAPS,
 							APS:      models.APS{Reject: false},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -3065,7 +3057,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "Non-APS endpoint should not be affected by APS logic",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -3075,7 +3067,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							Endpoint: models.EndpointWebS2S,
 							APS:      models.APS{Reject: false},
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -3102,7 +3094,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			name: "APS endpoint with debug enabled should include debug message",
 			args: args{
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							StartTime: time.Now().UnixMilli(),
 							ImpBidCtx: map[string]models.ImpCtx{
@@ -3113,7 +3105,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 							APS:      models.APS{Reject: false},
 							Debug:    true,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AuctionResponsePayload{
 					BidResponse: &openrtb2.BidResponse{
@@ -3155,7 +3147,7 @@ func TestHandleAuctionResponseHook_APSIntegration(t *testing.T) {
 			assert.NotNil(t, result, tt.name)
 
 			// Check that APS reject flag is set correctly in the updated rctx
-			updatedRctx := tt.args.moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+			updatedRctx, _ := getRequestCtx(tt.args.moduleCtx.ModuleContext)
 			assert.Equal(t, tt.wantAPSReject, updatedRctx.APS.Reject, tt.name)
 
 			// Check debug message presence

@@ -6,15 +6,15 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/adapters"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/privacy"
-	"github.com/prebid/prebid-server/v3/util/iputil"
+	"github.com/prebid/prebid-server/v4/adapters"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/privacy"
+	"github.com/prebid/prebid-server/v4/util/iputil"
 
 	"github.com/buger/jsonparser"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
 )
 
 type rawBidderResponseHookResult struct {
@@ -62,11 +62,9 @@ func (m OpenWrap) handleRawBidderResponseHook(
 	miCtx hookstage.ModuleInvocationContext,
 	payload hookstage.RawBidderResponsePayload,
 ) (result hookstage.HookResult[hookstage.RawBidderResponsePayload], err error) {
-	var (
-		rCtx, rCtxPresent    = miCtx.ModuleContext[models.RequestContext].(models.RequestCtx)
-		isVastUnwrapEnabled  = rCtxPresent && rCtx.VastUnWrap.Enabled
-		isBidderCheckEnabled = isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
-	)
+	rCtx, rCtxPresent := getRequestCtx(miCtx.ModuleContext)
+	isVastUnwrapEnabled := rCtxPresent && rCtx.VastUnWrap.Enabled
+	isBidderCheckEnabled := isBidderInList(m.cfg.ResponseOverride.BidType, payload.Bidder)
 
 	if !(isBidderCheckEnabled || isVastUnwrapEnabled) {
 		return result, nil

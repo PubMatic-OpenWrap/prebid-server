@@ -4,9 +4,9 @@ import (
 	"time"
 
 	unWrapCfg "git.pubmatic.com/vastunwrap/config"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/stats"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/stats"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
 )
 
 // Config contains the values read from the config file at boot time
