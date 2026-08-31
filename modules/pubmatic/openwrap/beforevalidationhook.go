@@ -413,11 +413,14 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, connectionType)
-			if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
-				//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
-				rCtx.AmpVideoEnabled = true
-				imp.Video = &openrtb2.Video{}
-			}
+			//commnenting code as the feature is not in use
+			/*
+				if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
+					//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
+					rCtx.AmpVideoEnabled = true
+					imp.Video = &openrtb2.Video{}
+				}
+			*/
 			//banner can not be disabled for AMP requests through adunit config
 			if rCtx.Endpoint != models.EndpointAMP {
 				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
@@ -727,7 +730,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	adunitconfig.UpdateFloorsExtObjectFromAdUnitConfig(rCtx, requestExt)
-	setFloorsExt(requestExt, &rCtx, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
+	// commenting code as the feature is not in use
+	//setFloorsExt(requestExt, &rCtx, m.pubFeatures.IsDynamicFloorEnabledPublisher(rCtx.PubID))
+	setFloorsExt(requestExt, &rCtx, false)
 
 	if len(rCtx.Aliases) != 0 && requestExt.Prebid.Aliases == nil {
 		requestExt.Prebid.Aliases = make(map[string]string)
@@ -918,10 +923,12 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-	//For AMP request, if AmpVideoEnabled is true then crate a empty video object and update with adunitConfigs
-	if rCtx.AmpVideoEnabled {
-		imp.Video = &openrtb2.Video{}
-	}
+	/*
+		//For AMP request, if AmpVideoEnabled is true then crate a empty video object and update with adunitConfigs
+		if rCtx.AmpVideoEnabled {
+			imp.Video = &openrtb2.Video{}
+		}
+	*/
 
 	if imp.Video == nil {
 		return
@@ -956,13 +963,15 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 
 	//For AMP request if AmpVideoEnabled is true then, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
-	if rCtx.AmpVideoEnabled {
-		if adUnitCfg.Video.Config != nil {
-			updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
+	/*
+		if rCtx.AmpVideoEnabled {
+			if adUnitCfg.Video.Config != nil {
+				updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
+			}
+			updateAmpImpVideoWithDefault(imp)
+			return
 		}
-		updateAmpImpVideoWithDefault(imp)
-		return
-	}
+	*/
 
 	if adUnitCfg.Video.Config != nil {
 		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)

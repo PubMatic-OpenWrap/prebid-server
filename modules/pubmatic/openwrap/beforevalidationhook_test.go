@@ -3233,184 +3233,186 @@ func TestOpenWrap_applyVideoAdUnitConfig(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_no_video_config_update_imp.Video_to_default_video",
-			args: args{
-				imp: &openrtb2.Imp{
-					ID: "testImp",
-					Banner: &openrtb2.Banner{
-						W: ptrutil.ToPtr[int64](250),
-						H: ptrutil.ToPtr[int64](300),
+		/*
+			{
+				name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_no_video_config_update_imp.Video_to_default_video",
+				args: args{
+					imp: &openrtb2.Imp{
+						ID: "testImp",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](250),
+							H: ptrutil.ToPtr[int64](300),
+						},
 					},
-				},
-				rCtx: models.RequestCtx{
-					PubID: 5890,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"testImp": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Enabled: ptrutil.ToPtr(true),
-										Config: &adunitconfig.VideoConfig{
-											Video: openrtb2.Video{
-												MIMEs:          []string{"video/mpev"},
-												MinDuration:    10,
-												MaxDuration:    50,
-												StartDelay:     adcom1.StartMidRoll.Ptr(),
-												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
-												Placement:      adcom1.VideoPlacementInArticle,
-												Plcmt:          adcom1.VideoPlcmtInstream,
-												Linearity:      adcom1.LinearityNonLinear,
-												Skip:           ptrutil.ToPtr[int8](1),
-												SkipMin:        1,
-												SkipAfter:      1,
-												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
-												PlaybackEnd:    adcom1.PlaybackFloating,
-												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              ptrutil.ToPtr[int64](300),
-												H:              ptrutil.ToPtr[int64](400),
+					rCtx: models.RequestCtx{
+						PubID: 5890,
+						ImpBidCtx: map[string]models.ImpCtx{
+							"testImp": {
+								VideoAdUnitCtx: models.AdUnitCtx{
+									AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+										Video: &adunitconfig.Video{
+											Enabled: ptrutil.ToPtr(true),
+											Config: &adunitconfig.VideoConfig{
+												Video: openrtb2.Video{
+													MIMEs:          []string{"video/mpev"},
+													MinDuration:    10,
+													MaxDuration:    50,
+													StartDelay:     adcom1.StartMidRoll.Ptr(),
+													Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+													Placement:      adcom1.VideoPlacementInArticle,
+													Plcmt:          adcom1.VideoPlcmtInstream,
+													Linearity:      adcom1.LinearityNonLinear,
+													Skip:           ptrutil.ToPtr[int8](1),
+													SkipMin:        1,
+													SkipAfter:      1,
+													PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+													PlaybackEnd:    adcom1.PlaybackFloating,
+													Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+													W:              ptrutil.ToPtr[int64](300),
+													H:              ptrutil.ToPtr[int64](400),
+												},
 											},
 										},
 									},
 								},
 							},
 						},
-					},
-					AmpVideoEnabled: true,
-				},
-			},
-			want: want{
-				imp: &openrtb2.Imp{
-					ID: "testImp",
-					Banner: &openrtb2.Banner{
-						W: ptrutil.ToPtr[int64](250),
-						H: ptrutil.ToPtr[int64](300),
-					},
-					Video: &openrtb2.Video{
-						MIMEs:          []string{"video/mpev"},
-						MinDuration:    10,
-						MaxDuration:    50,
-						StartDelay:     adcom1.StartMidRoll.Ptr(),
-						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
-						Placement:      adcom1.VideoPlacementInArticle,
-						Plcmt:          adcom1.VideoPlcmtInstream,
-						Linearity:      adcom1.LinearityNonLinear,
-						Skip:           ptrutil.ToPtr[int8](1),
-						SkipMin:        1,
-						SkipAfter:      1,
-						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
-						PlaybackEnd:    adcom1.PlaybackFloating,
-						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-						W:              ptrutil.ToPtr[int64](300),
-						H:              ptrutil.ToPtr[int64](400),
+						AmpVideoEnabled: true,
 					},
 				},
-				rCtx: models.RequestCtx{
-					PubID: 5890,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"testImp": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Enabled: ptrutil.ToPtr(true),
-										Config: &adunitconfig.VideoConfig{
-											Video: openrtb2.Video{
-												MIMEs:          []string{"video/mpev"},
-												MinDuration:    10,
-												MaxDuration:    50,
-												StartDelay:     adcom1.StartMidRoll.Ptr(),
-												Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
-												Placement:      adcom1.VideoPlacementInArticle,
-												Plcmt:          adcom1.VideoPlcmtInstream,
-												Linearity:      adcom1.LinearityNonLinear,
-												Skip:           ptrutil.ToPtr[int8](1),
-												SkipMin:        1,
-												SkipAfter:      1,
-												PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
-												PlaybackEnd:    adcom1.PlaybackFloating,
-												Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
-												W:              ptrutil.ToPtr[int64](300),
-												H:              ptrutil.ToPtr[int64](400),
+				want: want{
+					imp: &openrtb2.Imp{
+						ID: "testImp",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](250),
+							H: ptrutil.ToPtr[int64](300),
+						},
+						Video: &openrtb2.Video{
+							MIMEs:          []string{"video/mpev"},
+							MinDuration:    10,
+							MaxDuration:    50,
+							StartDelay:     adcom1.StartMidRoll.Ptr(),
+							Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+							Placement:      adcom1.VideoPlacementInArticle,
+							Plcmt:          adcom1.VideoPlcmtInstream,
+							Linearity:      adcom1.LinearityNonLinear,
+							Skip:           ptrutil.ToPtr[int8](1),
+							SkipMin:        1,
+							SkipAfter:      1,
+							PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+							PlaybackEnd:    adcom1.PlaybackFloating,
+							Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+							W:              ptrutil.ToPtr[int64](300),
+							H:              ptrutil.ToPtr[int64](400),
+						},
+					},
+					rCtx: models.RequestCtx{
+						PubID: 5890,
+						ImpBidCtx: map[string]models.ImpCtx{
+							"testImp": {
+								VideoAdUnitCtx: models.AdUnitCtx{
+									AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+										Video: &adunitconfig.Video{
+											Enabled: ptrutil.ToPtr(true),
+											Config: &adunitconfig.VideoConfig{
+												Video: openrtb2.Video{
+													MIMEs:          []string{"video/mpev"},
+													MinDuration:    10,
+													MaxDuration:    50,
+													StartDelay:     adcom1.StartMidRoll.Ptr(),
+													Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper},
+													Placement:      adcom1.VideoPlacementInArticle,
+													Plcmt:          adcom1.VideoPlcmtInstream,
+													Linearity:      adcom1.LinearityNonLinear,
+													Skip:           ptrutil.ToPtr[int8](1),
+													SkipMin:        1,
+													SkipAfter:      1,
+													PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackClickSoundOn},
+													PlaybackEnd:    adcom1.PlaybackFloating,
+													Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive},
+													W:              ptrutil.ToPtr[int64](300),
+													H:              ptrutil.ToPtr[int64](400),
+												},
 											},
 										},
 									},
 								},
 							},
 						},
+						AmpVideoEnabled: true,
 					},
-					AmpVideoEnabled: true,
 				},
 			},
-		},
-		{
-			name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_video_config_is_also_non_nil_update_imp.Video_to_video_config",
-			args: args{
-				imp: &openrtb2.Imp{
-					ID: "testImp",
-					Banner: &openrtb2.Banner{
-						W: ptrutil.ToPtr[int64](250),
-						H: ptrutil.ToPtr[int64](300),
+			{
+				name: "imp.video_is_nil_but_AmpVideoEnabled_true_update_and_video_config_is_also_non_nil_update_imp.Video_to_video_config",
+				args: args{
+					imp: &openrtb2.Imp{
+						ID: "testImp",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](250),
+							H: ptrutil.ToPtr[int64](300),
+						},
 					},
-				},
-				rCtx: models.RequestCtx{
-					PubID: 5890,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"testImp": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Enabled: ptrutil.ToPtr(true),
+					rCtx: models.RequestCtx{
+						PubID: 5890,
+						ImpBidCtx: map[string]models.ImpCtx{
+							"testImp": {
+								VideoAdUnitCtx: models.AdUnitCtx{
+									AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+										Video: &adunitconfig.Video{
+											Enabled: ptrutil.ToPtr(true),
+										},
 									},
 								},
 							},
 						},
-					},
-					AmpVideoEnabled: true,
-				},
-			},
-			want: want{
-				imp: &openrtb2.Imp{
-					ID: "testImp",
-					Banner: &openrtb2.Banner{
-						W: ptrutil.ToPtr[int64](250),
-						H: ptrutil.ToPtr[int64](300),
-					},
-					Video: &openrtb2.Video{
-						MIMEs:          []string{"video/mp4"},
-						MinDuration:    0,
-						MaxDuration:    30,
-						StartDelay:     adcom1.StartPreRoll.Ptr(),
-						Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
-						Placement:      adcom1.VideoPlacementInBanner,
-						Plcmt:          adcom1.VideoPlcmtNoContent,
-						Linearity:      adcom1.LinearityLinear,
-						Skip:           ptrutil.ToPtr[int8](0),
-						SkipMin:        0,
-						SkipAfter:      0,
-						PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
-						PlaybackEnd:    adcom1.PlaybackCompletion,
-						Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
-						W:              ptrutil.ToPtr[int64](250),
-						H:              ptrutil.ToPtr[int64](300),
+						AmpVideoEnabled: true,
 					},
 				},
-				rCtx: models.RequestCtx{
-					PubID: 5890,
-					ImpBidCtx: map[string]models.ImpCtx{
-						"testImp": {
-							VideoAdUnitCtx: models.AdUnitCtx{
-								AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
-									Video: &adunitconfig.Video{
-										Enabled: ptrutil.ToPtr(true),
+				want: want{
+					imp: &openrtb2.Imp{
+						ID: "testImp",
+						Banner: &openrtb2.Banner{
+							W: ptrutil.ToPtr[int64](250),
+							H: ptrutil.ToPtr[int64](300),
+						},
+						Video: &openrtb2.Video{
+							MIMEs:          []string{"video/mp4"},
+							MinDuration:    0,
+							MaxDuration:    30,
+							StartDelay:     adcom1.StartPreRoll.Ptr(),
+							Protocols:      []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper},
+							Placement:      adcom1.VideoPlacementInBanner,
+							Plcmt:          adcom1.VideoPlcmtNoContent,
+							Linearity:      adcom1.LinearityLinear,
+							Skip:           ptrutil.ToPtr[int8](0),
+							SkipMin:        0,
+							SkipAfter:      0,
+							PlaybackMethod: []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff},
+							PlaybackEnd:    adcom1.PlaybackCompletion,
+							Delivery:       []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload},
+							W:              ptrutil.ToPtr[int64](250),
+							H:              ptrutil.ToPtr[int64](300),
+						},
+					},
+					rCtx: models.RequestCtx{
+						PubID: 5890,
+						ImpBidCtx: map[string]models.ImpCtx{
+							"testImp": {
+								VideoAdUnitCtx: models.AdUnitCtx{
+									AppliedSlotAdUnitConfig: &adunitconfig.AdConfig{
+										Video: &adunitconfig.Video{
+											Enabled: ptrutil.ToPtr(true),
+										},
 									},
 								},
 							},
 						},
+						AmpVideoEnabled: true,
 					},
-					AmpVideoEnabled: true,
 				},
 			},
-		},
+		*/
 		{
 			name: "imp.BidFloor_is_less_than_BidFloor_from_adunit_config_for_applovinmax_setMaxFloor_true",
 			args: args{
@@ -4892,7 +4894,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4978,7 +4980,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5099,7 +5101,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5201,7 +5203,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5272,123 +5274,125 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				nilCurrencyConversion: true,
 			},
 		},
-		{
-			name: "AMP_request_successfully_update_video_object_from_adunit_config_and_updated_remaining_feilds_from_default",
-			args: args{
-				ctx: context.Background(),
-				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: hookstage.ModuleContext{
-						"rctx": models.RequestCtx{
-							PubIDStr:                  "5890",
-							ProfileID:                 1234,
-							PubID:                     5890,
-							DisplayID:                 1,
-							SSAuction:                 -1,
-							Platform:                  "amp",
-							Debug:                     true,
-							DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
-							IsCTVRequest:              false,
-							TrackerEndpoint:           "t.pubmatic.com",
-							VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
-							UidCookie: &http.Cookie{
-								Name:  "uids",
-								Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+		/*
+			{
+				name: "AMP_request_successfully_update_video_object_from_adunit_config_and_updated_remaining_feilds_from_default",
+				args: args{
+					ctx: context.Background(),
+					moduleCtx: hookstage.ModuleInvocationContext{
+						ModuleContext: hookstage.ModuleContext{
+							"rctx": models.RequestCtx{
+								PubIDStr:                  "5890",
+								ProfileID:                 1234,
+								PubID:                     5890,
+								DisplayID:                 1,
+								SSAuction:                 -1,
+								Platform:                  "amp",
+								Debug:                     true,
+								DeviceCtx:                 models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
+								IsCTVRequest:              false,
+								TrackerEndpoint:           "t.pubmatic.com",
+								VideoErrorTrackerEndpoint: "t.pubmatic.com/error",
+								UidCookie: &http.Cookie{
+									Name:  "uids",
+									Value: `eyJ0ZW1wVUlEcyI6eyIzM2Fjcm9zcyI6eyJ1aWQiOiIxMTkxNzkxMDk5Nzc2NjEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTo0My4zODg4Nzk5NVoifSwiYWRmIjp7InVpZCI6IjgwNDQ2MDgzMzM3Nzg4MzkwNzgiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMS4wMzMwNTQ3MjdaIn0sImFka2VybmVsIjp7InVpZCI6IkE5MTYzNTAwNzE0OTkyOTMyOTkwIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuMzczMzg1NjYyWiJ9LCJhZGtlcm5lbEFkbiI6eyJ1aWQiOiJBOTE2MzUwMDcxNDk5MjkzMjk5MCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEzLjQzNDkyNTg5NloifSwiYWRtaXhlciI6eyJ1aWQiOiIzNjZhMTdiMTJmMjI0ZDMwOGYzZTNiOGRhOGMzYzhhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjU5MjkxNDgwMVoifSwiYWRueHMiOnsidWlkIjoiNDE5Mjg5ODUzMDE0NTExOTMiLCJleHBpcmVzIjoiMjAyMy0wMS0xOFQwOTo1MzowOC44MjU0NDI2NzZaIn0sImFqYSI6eyJ1aWQiOiJzMnN1aWQ2RGVmMFl0bjJveGQ1aG9zS1AxVmV3IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTMuMjM5MTc2MDU0WiJ9LCJlcGxhbm5pbmciOnsidWlkIjoiQUoxRjBTOE5qdTdTQ0xWOSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjkyOTk2MDQ3M1oifSwiZ2Ftb3NoaSI6eyJ1aWQiOiJndXNyXzM1NmFmOWIxZDhjNjQyYjQ4MmNiYWQyYjdhMjg4MTYxIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuNTI0MTU3MjI1WiJ9LCJncmlkIjp7InVpZCI6IjRmYzM2MjUwLWQ4NTItNDU5Yy04NzcyLTczNTZkZTE3YWI5NyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE0LjY5NjMxNjIyN1oifSwiZ3JvdXBtIjp7InVpZCI6IjdENzVEMjVGLUZBQzktNDQzRC1CMkQxLUIxN0ZFRTExRTAyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjM5LjIyNjIxMjUzMloifSwiaXgiOnsidWlkIjoiWW9ORlNENlc5QkphOEh6eEdtcXlCUUFBXHUwMDI2Mjk3IiwiZXhwaXJlcyI6IjIwMjMtMDUtMzFUMDc6NTM6MzguNTU1ODI3MzU0WiJ9LCJqaXhpZSI6eyJ1aWQiOiI3MzY3MTI1MC1lODgyLTExZWMtYjUzOC0xM2FjYjdhZjBkZTQiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi4xOTEwOTk3MzJaIn0sImxvZ2ljYWQiOnsidWlkIjoiQVZ4OVROQS11c25pa3M4QURzTHpWa3JvaDg4QUFBR0JUREh0UUEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS40NTUxNDk2MTZaIn0sIm1lZGlhbmV0Ijp7InVpZCI6IjI5Nzg0MjM0OTI4OTU0MTAwMDBWMTAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMy42NzIyMTUxMjhaIn0sIm1naWQiOnsidWlkIjoibTU5Z1hyN0xlX1htIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTcuMDk3MDAxNDcxWiJ9LCJuYW5vaW50ZXJhY3RpdmUiOnsidWlkIjoiNmFlYzhjMTAzNzlkY2I3ODQxMmJjODBiNmRkOWM5NzMxNzNhYjdkNzEyZTQzMWE1YTVlYTcwMzRlNTZhNThhMCIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjE2LjcxNDgwNzUwNVoifSwib25ldGFnIjp7InVpZCI6IjdPelZoVzFOeC1LOGFVak1HMG52NXVNYm5YNEFHUXZQbnVHcHFrZ3k0ckEiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OTowOS4xNDE3NDEyNjJaIn0sIm9wZW54Ijp7InVpZCI6IjVkZWNlNjIyLTBhMjMtMGRhYi0zYTI0LTVhNzcwMTBlNDU4MiIsImV4cGlyZXMiOiIyMDIzLTA1LTMxVDA3OjUyOjQ3LjE0MDQxNzM2M1oifSwicHVibWF0aWMiOnsidWlkIjoiN0Q3NUQyNUYtRkFDOS00NDNELUIyRDEtQjE3RkVFMTFFMDI3IiwiZXhwaXJlcyI6IjIwMjItMTAtMzFUMDk6MTQ6MjUuNzM3MjU2ODk5WiJ9LCJyaWNoYXVkaWVuY2UiOnsidWlkIjoiY2I2YzYzMjAtMzNlMi00Nzc0LWIxNjAtMXp6MTY1NDg0MDc0OSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjUyNTA3NDE4WiJ9LCJzbWFydHlhZHMiOnsidWlkIjoiMTJhZjE1ZTQ0ZjAwZDA3NjMwZTc0YzQ5MTU0Y2JmYmE0Zjg0N2U4ZDRhMTU0YzhjM2Q1MWY1OGNmNzJhNDYyNyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjgyNTAzMTg4NFoifSwic21pbGV3YW50ZWQiOnsidWlkIjoiZGQ5YzNmZTE4N2VmOWIwOWNhYTViNzExNDA0YzI4MzAiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNC4yNTU2MDkzNjNaIn0sInN5bmFjb3JtZWRpYSI6eyJ1aWQiOiJHRFBSIiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MDkuOTc5NTgzNDM4WiJ9LCJ0cmlwbGVsaWZ0Ijp7InVpZCI6IjcwMjE5NzUwNTQ4MDg4NjUxOTQ2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA4Ljk4OTY3MzU3NFoifSwidmFsdWVpbXByZXNzaW9uIjp7InVpZCI6IjlkMDgxNTVmLWQ5ZmUtNGI1OC04OThlLWUyYzU2MjgyYWIzZSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjA5LjA2NzgzOTE2NFoifSwidmlzeCI6eyJ1aWQiOiIyN2UwYWMzYy1iNDZlLTQxYjMtOTkyYy1mOGQyNzE0OTQ5NWUiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxMi45ODk1MjM1NzNaIn0sInlpZWxkbGFiIjp7InVpZCI6IjY5NzE0ZDlmLWZiMDAtNGE1Zi04MTljLTRiZTE5MTM2YTMyNSIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjExLjMwMzAyNjYxNVoifSwieWllbGRtbyI6eyJ1aWQiOiJnOTZjMmY3MTlmMTU1MWIzMWY2MyIsImV4cGlyZXMiOiIyMDIyLTA2LTI0VDA1OjU5OjEwLjExMDUyODYwOVoifSwieWllbGRvbmUiOnsidWlkIjoiMmE0MmZiZDMtMmM3MC00ZWI5LWIxYmQtMDQ2OTY2NTBkOTQ4IiwiZXhwaXJlcyI6IjIwMjItMDYtMjRUMDU6NTk6MTAuMzE4MzMzOTM5WiJ9LCJ6ZXJvY2xpY2tmcmF1ZCI6eyJ1aWQiOiJiOTk5NThmZS0yYTg3LTJkYTQtOWNjNC05NjFmZDExM2JlY2UiLCJleHBpcmVzIjoiMjAyMi0wNi0yNFQwNTo1OToxNS43MTk1OTQ1NjZaIn19LCJiZGF5IjoiMjAyMi0wNS0xN1QwNjo0ODozOC4wMTc5ODgyMDZaIn0=`,
+								},
+								KADUSERCookie: &http.Cookie{
+									Name:  "KADUSERCOOKIE",
+									Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
+								},
+								OriginCookie:             "go-test",
+								Aliases:                  make(map[string]string),
+								ImpBidCtx:                make(map[string]models.ImpCtx),
+								PrebidBidderCode:         make(map[string]string),
+								BidderResponseTimeMillis: make(map[string]int),
+								ProfileIDStr:             "1234",
+								Endpoint:                 models.EndpointAMP,
+								SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
+								MetricsEngine:            mockEngine,
+								WakandaDebug:             &wakanda.Debug{},
 							},
-							KADUSERCookie: &http.Cookie{
-								Name:  "KADUSERCOOKIE",
-								Value: `7D75D25F-FAC9-443D-B2D1-B17FEE11E027`,
-							},
-							OriginCookie:             "go-test",
-							Aliases:                  make(map[string]string),
-							ImpBidCtx:                make(map[string]models.ImpCtx),
-							PrebidBidderCode:         make(map[string]string),
-							BidderResponseTimeMillis: make(map[string]int),
-							ProfileIDStr:             "1234",
-							Endpoint:                 models.EndpointAMP,
-							SeatNonBids:              make(map[string][]openrtb_ext.NonBid),
-							MetricsEngine:            mockEngine,
-							WakandaDebug:             &wakanda.Debug{},
 						},
 					},
+					bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
 				},
-				bidrequest: json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"bidder":{"pubmatic":{"keywords":[{"key":"pmzoneid","value":["val1","val2"]}]}},"prebid":{}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{},"wrapper":{"test":123,"profileid":123,"versionid":1,"wiid":"test_display_wiid"}}}`),
-			},
-			fields: fields{
-				cache:        mockCache,
-				metricEngine: mockEngine,
-			},
-			setup: func() {
-				mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
-					"adunit@700x900": {
-						SlotName: "adunit@700x900",
-						SlotMappings: map[string]interface{}{
-							models.SITE_CACHE_KEY: "12313",
-							models.TAG_CACHE_KEY:  "45343",
+				fields: fields{
+					cache:        mockCache,
+					metricEngine: mockEngine,
+				},
+				setup: func() {
+					mockCache.EXPECT().GetMappingsFromCacheV25(gomock.Any(), gomock.Any()).Return(map[string]models.SlotMapping{
+						"adunit@700x900": {
+							SlotName: "adunit@700x900",
+							SlotMappings: map[string]interface{}{
+								models.SITE_CACHE_KEY: "12313",
+								models.TAG_CACHE_KEY:  "45343",
+							},
 						},
-					},
-				})
-				mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
-					OrderedSlotList: []string{"adunit@700x900"},
-					HashValueMap: map[string]string{
-						"adunit@700x900": "1232433543534543",
-					},
-				})
-				mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
-					2: {
-						models.PARTNER_ID:          "2",
-						models.PREBID_PARTNER_NAME: "appnexus",
-						models.BidderCode:          "appnexus",
-						models.SERVER_SIDE_FLAG:    "1",
-						models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
-						models.TIMEOUT:             "200",
-					},
-					-1: {
-						models.DisplayVersionID: "1",
-						models.PLATFORM_KEY:     models.PLATFORM_AMP,
-					},
-				}, nil)
-				mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
-					ConfigPattern: "_AU_",
-					Config: map[string]*adunitconfig.AdConfig{
-						"adunit": {
-							Video: &adunitconfig.Video{
-								Enabled:              ptrutil.ToPtr(true),
-								AmpTrafficPercentage: ptrutil.ToPtr(100),
-								Config: &adunitconfig.VideoConfig{
-									Video: openrtb2.Video{
-										MIMEs: []string{"video/mp4", "video/mpeg"},
-										W:     ptrutil.ToPtr[int64](640),
-										H:     ptrutil.ToPtr[int64](480),
+					})
+					mockCache.EXPECT().GetSlotToHashValueMapFromCacheV25(gomock.Any(), gomock.Any()).Return(models.SlotMappingInfo{
+						OrderedSlotList: []string{"adunit@700x900"},
+						HashValueMap: map[string]string{
+							"adunit@700x900": "1232433543534543",
+						},
+					})
+					mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
+						2: {
+							models.PARTNER_ID:          "2",
+							models.PREBID_PARTNER_NAME: "appnexus",
+							models.BidderCode:          "appnexus",
+							models.SERVER_SIDE_FLAG:    "1",
+							models.KEY_GEN_PATTERN:     "_AU_@_W_x_H_",
+							models.TIMEOUT:             "200",
+						},
+						-1: {
+							models.DisplayVersionID: "1",
+							models.PLATFORM_KEY:     models.PLATFORM_AMP,
+						},
+					}, nil)
+					mockCache.EXPECT().GetAdunitConfigFromCache(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&adunitconfig.AdUnitConfig{
+						ConfigPattern: "_AU_",
+						Config: map[string]*adunitconfig.AdConfig{
+							"adunit": {
+								Video: &adunitconfig.Video{
+									Enabled:              ptrutil.ToPtr(true),
+									AmpTrafficPercentage: ptrutil.ToPtr(100),
+									Config: &adunitconfig.VideoConfig{
+										Video: openrtb2.Video{
+											MIMEs: []string{"video/mp4", "video/mpeg"},
+											W:     ptrutil.ToPtr[int64](640),
+											H:     ptrutil.ToPtr[int64](480),
+										},
 									},
 								},
 							},
 						},
-					},
-				})
-				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
-				//prometheus metrics
-				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
-				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
-				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
-				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
-				mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
-				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
-				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
-				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-			},
-			want: want{
-				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
-					Reject:        false,
-					NbrCode:       0,
-					ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
-					DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","DisplayManager":"","DisplayManagerVer":"","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":null},"Native":null,"IncomingSlots":["640x480","700x900","728x90","300x250"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"NativeAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+					})
+					mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
+					//prometheus metrics
+					mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "1234")
+					mockEngine.EXPECT().RecordPublisherRequests(models.EndpointAMP, "5890", "amp")
+					mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("amp", "5890", "appnexus")
+					mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
+					mockFeature.EXPECT().IsAmpMultiformatEnabled(5890).Return(true)
+					mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
+					mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
+					mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
 				},
-				bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"maxduration":30,"startdelay":0,"protocols":[1,2,3,4,5,6,7,8,11,12,13,14],"w":640,"h":480,"placement":2,"plcmt":4,"linearity":1,"skip":0,"playbackmethod":[2],"playbackend":1,"delivery":[2,3]},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
-				error:                 false,
-				doMutate:              true,
-				nilCurrencyConversion: false,
+				want: want{
+					hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
+						Reject:        false,
+						NbrCode:       0,
+						ChangeSet:     hookstage.ChangeSet[hookstage.BeforeValidationRequestPayload]{},
+						DebugMessages: []string{`new imp: {"123":{"ImpID":"123","TagID":"adunit","DisplayManager":"","DisplayManagerVer":"","Div":"","SlotName":"adunit","AdUnitName":"adunit","Secure":0,"BidFloor":4.3,"BidFloorCur":"USD","IsRewardInventory":null,"Banner":true,"Video":{"mimes":null},"Native":null,"IncomingSlots":["640x480","700x900","728x90","300x250"],"Type":"video","Bidders":{"appnexus":{"PartnerID":2,"PrebidBidderCode":"appnexus","MatchedSlot":"adunit@700x900","KGP":"_AU_@_W_x_H_","KGPV":"","IsRegex":false,"Params":{"placementId":0,"site":"12313","adtag":"45343"},"VASTTagFlags":null}},"NonMapped":{},"NewExt":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}},"BidCtx":{},"BannerAdUnitCtx":{"MatchedSlot":"","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":null,"AppliedSlotAdUnitConfig":null,"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"VideoAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"NativeAdUnitCtx":{"MatchedSlot":"adunit","IsRegex":false,"MatchedRegex":"","SelectedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"AppliedSlotAdUnitConfig":{"video":{"enabled":true,"amptrafficpercentage":100,"config":{"mimes":["video/mp4","video/mpeg"],"w":640,"h":480}}},"UsingDefaultConfig":false,"AllowedConnectionTypes":null},"BidderError":"","IsAdPodRequest":false,"AdpodConfig":null,"ImpAdPodCfg":null,"BidIDToAPRC":null,"AdserverURL":"","BidIDToDur":null}}`, `new request.ext: {"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"mediatypepricegranularity":{},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}`},
+					},
+					bidRequest:            json.RawMessage(`{"id":"123-456-789","imp":[{"id":"123","banner":{"format":[{"w":728,"h":90},{"w":300,"h":250}],"w":700,"h":900},"video":{"mimes":["video/mp4","video/mpeg"],"maxduration":30,"startdelay":0,"protocols":[1,2,3,4,5,6,7,8,11,12,13,14],"w":640,"h":480,"placement":2,"plcmt":4,"linearity":1,"skip":0,"playbackmethod":[2],"playbackend":1,"delivery":[2,3]},"tagid":"adunit","bidfloor":4.3,"bidfloorcur":"USD","ext":{"data":{"pbadslot":"adunit"},"prebid":{"bidder":{"appnexus":{"placementId":0,"site":"12313","adtag":"45343"}}}}}],"site":{"domain":"test.com","page":"www.test.com","publisher":{"id":"5890"}},"device":{"ua":"Mozilla/5.0(X11;Linuxx86_64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/52.0.2743.82Safari/537.36","ip":"123.145.167.10"},"user":{"id":"119208432","buyeruid":"1rwe432","yob":1980,"gender":"F","customdata":"7D75D25F-FAC9-443D-B2D1-B17FEE11E027","geo":{"country":"US","region":"CA","metro":"90001","city":"Alamo"}},"wseat":["Wseat_0","Wseat_1"],"bseat":["Bseat_0","Bseat_1"],"cur":["cur_0","cur_1"],"wlang":["Wlang_0","Wlang_1"],"bcat":["bcat_0","bcat_1"],"badv":["badv_0","badv_1"],"bapp":["bapp_0","bapp_1"],"source":{"tid":"123-456-789","ext":{"omidpn":"MyIntegrationPartner","omidpv":"7.1"}},"ext":{"prebid":{"bidadjustmentfactors":{"appnexus":1},"bidderparams":{"pubmatic":{"wiid":""}},"debug":true,"floors":{"enforcement":{"enforcepbs":true},"enabled":true},"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":5,"increment":0.05},{"min":5,"max":10,"increment":0.1},{"min":10,"max":20,"increment":0.5}]},"includewinners":true,"includebidderkeys":true},"macros":{"[PLATFORM]":"2","[PROFILE_ID]":"1234","[PROFILE_VERSION]":"1","[UNIX_TIMESTAMP]":"0","[WRAPPER_IMPRESSION_ID]":""}}}}`),
+					error:                 false,
+					doMutate:              true,
+					nilCurrencyConversion: false,
+				},
 			},
-		},
+		*/
 		{
 			name: "Read_adpod_configs_from_UI_and_update_request_impressions_with_configs",
 			args: args{
@@ -5514,7 +5518,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5652,7 +5656,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5732,7 +5736,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5816,7 +5820,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(gomock.Any())
 				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(gomock.Any(), gomock.Any())
 				mockEngine.EXPECT().RecordVideoInstlImpsStats(gomock.Any(), gomock.Any())
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -6181,7 +6185,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 
 	mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 	mockFeature.EXPECT().IsAmpMultiformatEnabled(gomock.Any()).Return(false).AnyTimes()
-	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
+	//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(false).AnyTimes()
 	mockEngine.EXPECT().RecordPublisherProfileRequests(gomock.Any(), gomock.Any()).AnyTimes()
 	mockEngine.EXPECT().RecordPublisherRequests(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -6398,7 +6402,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6464,7 +6468,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6535,7 +6539,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6607,7 +6611,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6674,7 +6678,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{

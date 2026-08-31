@@ -129,11 +129,11 @@ func (fe *feature) updateFeatureConfigMaps() {
 	}
 
 	fe.updateTBFConfigMap()
-	fe.updateAmpMutiformatEnabledPublishers()
+	//fe.updateAmpMutiformatEnabledPublishers()
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
-	fe.updateBidRecoveryEnabledPublishers()
-	fe.updateApplovinMultiFloorsFeature()
+	//fe.updateBidRecoveryEnabledPublishers()
+	//fe.updateApplovinMultiFloorsFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()
