@@ -336,8 +336,8 @@ func TestApplyUnityLevelPlayResponse_PreservesTrackersInEmbeddedBid(t *testing.T
 		}},
 	}
 	rctx := models.RequestCtx{
-		Endpoint:        models.EndpointUnityLevelPlay,
-		UnityLevelPlay:  models.UnityLevelPlay{Reject: false},
+		Endpoint:       models.EndpointUnityLevelPlay,
+		UnityLevelPlay: models.UnityLevelPlay{Reject: false},
 	}
 
 	out := ApplyUnityLevelPlayResponse(rctx, br)
