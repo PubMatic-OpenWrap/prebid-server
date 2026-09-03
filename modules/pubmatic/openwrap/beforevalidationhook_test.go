@@ -4093,6 +4093,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	adapters.InitBidders("./static/bidder-params/")
 	resetFakeUUID := openrtb_ext.SetTestFakeUUIDGenerator("30470a14-2949-4110-abce-b62d57304ad5")
@@ -4894,7 +4895,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -4980,7 +4980,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5101,7 +5100,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5203,7 +5201,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5507,7 +5504,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockCache.EXPECT().GetThrottlePartnersWithCriteria(gomock.Any()).Return(map[string]struct{}{}, nil)
 				//prometheus metrics
 				mockEngine.EXPECT().RecordPublisherProfileRequests("5890", "4444")
-				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 				mockEngine.EXPECT().RecordPublisherRequests(models.EndpointJson, "5890", "video")
 				mockEngine.EXPECT().RecordPlatformPublisherPartnerReqStats("video", "5890", "appnexus")
 				mockEngine.EXPECT().RecordCTVRequests("json", models.PLATFORM_DISPLAY)
@@ -5518,7 +5514,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5656,7 +5651,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5736,7 +5730,6 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFCountryForPublisher(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(true)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5819,8 +5812,8 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(gomock.Any(), gomock.Any()).Return(true)
 				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(gomock.Any())
 				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(gomock.Any(), gomock.Any())
-				mockEngine.EXPECT().RecordVideoInstlImpsStats(gomock.Any(), gomock.Any())
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
+				mockEngine.EXPECT().RecordVideoInstlImpsStats("5890", "1234")
+				mockEngine.EXPECT().RecordPreProcessingTimeStats(rctx.PubIDStr, gomock.Any())
 			},
 			want: want{
 				hookResult: hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{
@@ -5899,6 +5892,7 @@ func TestCurrencyConverion(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 
 	type fields struct {
@@ -6053,6 +6047,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 
 	type fields struct {
 		cfg          config.Config
@@ -6185,7 +6180,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 
 	mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 	mockFeature.EXPECT().IsAmpMultiformatEnabled(gomock.Any()).Return(false).AnyTimes()
-	//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(false).AnyTimes()
 	mockEngine.EXPECT().RecordPublisherProfileRequests(gomock.Any(), gomock.Any()).AnyTimes()
 	mockEngine.EXPECT().RecordPublisherRequests(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -6318,6 +6313,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 
 	type fields struct {
@@ -6402,7 +6398,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6468,7 +6463,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6539,7 +6533,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6611,7 +6604,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6678,7 +6670,6 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 				mockFeature.EXPECT().IsTBFFeatureEnabled(gomock.Any(), gomock.Any()).Return(false)
 				mockFeature.EXPECT().IsAnalyticsTrackingThrottled(gomock.Any(), gomock.Any()).Return(false, false)
 				mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false)
-				//mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false)
 			},
 			want: want{
 				rctx: &models.RequestCtx{
@@ -6726,6 +6717,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
+	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 	type fields struct {
 		cfg          config.Config
