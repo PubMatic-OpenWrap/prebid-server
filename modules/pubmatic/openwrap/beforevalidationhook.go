@@ -649,6 +649,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 		}
 
+		// Preserve client ext.owsdk (e.g. ctaoverlay) before stripping for marshal; merged back with server adattributes below.
 		isCTAOverlayRequest := impExt.OWSDK != nil && impExt.OWSDK["ctaoverlay"] == float64(1)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
@@ -666,42 +667,37 @@ func (m OpenWrap) handleBeforeValidationHook(
 			displaymanagerVer = imp.DisplayManagerVer
 		}
 		// cache the details for further processing
-		if _, ok := rCtx.ImpBidCtx[imp.ID]; !ok {
-			rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
-				ImpID:             imp.ID,
-				TagID:             imp.TagID,
-				Div:               div,
-				IsRewardInventory: reward,
-				BidFloor:          imp.BidFloor,
-				BidFloorCur:       imp.BidFloorCur,
-				Type:              slotType,
-				IsBanner:          imp.Banner != nil,
-				Banner:            ortb.DeepCopyImpBanner(imp.Banner),
-				Video:             imp.Video,
-				Native:            imp.Native,
-				IncomingSlots:     incomingSlots,
-				Bidders:           make(map[string]models.PartnerData),
-				BidCtx:            make(map[string]models.BidCtx),
-				NewExt:            json.RawMessage(newImpExt),
-				AdpodConfig:       adpodConfig,
-				SlotName:          slotName,
-				AdUnitName:        adUnitName,
-				AdserverURL:       adserverURL,
-				DisplayManager:    displaymanager,
-				DisplayManagerVer: displaymanagerVer,
-			}
+		rCtx.ImpBidCtx[imp.ID] = models.ImpCtx{
+			ImpID:               imp.ID,
+			TagID:               imp.TagID,
+			Div:                 div,
+			IsRewardInventory:   reward,
+			BidFloor:            imp.BidFloor,
+			BidFloorCur:         imp.BidFloorCur,
+			Type:                slotType,
+			IsBanner:            imp.Banner != nil,
+			Banner:              ortb.DeepCopyImpBanner(imp.Banner),
+			Video:               imp.Video,
+			Native:              imp.Native,
+			IncomingSlots:       incomingSlots,
+			Bidders:             bidderMeta,
+			NonMapped:           nonMapped,
+			BidCtx:              make(map[string]models.BidCtx),
+			NewExt:              json.RawMessage(newImpExt),
+			AdpodConfig:         adpodConfig,
+			SlotName:            slotName,
+			AdUnitName:          adUnitName,
+			AdserverURL:         adserverURL,
+			DisplayManager:      displaymanager,
+			DisplayManagerVer:   displaymanagerVer,
+			Instl:               imp.Instl,
+			Exp:                 imp.Exp,
+			IsAppOpenAd:         impExt.IsAppOpenAd,
+			IsCTAOverlayRequest: isCTAOverlayRequest,
+			VideoAdUnitCtx:      videoAdUnitCtx,
+			BannerAdUnitCtx:     bannerAdUnitCtx,
+			NativeAdUnitCtx:     nativeAdUnitCtx,
 		}
-
-		impCtx := rCtx.ImpBidCtx[imp.ID]
-		impCtx.Instl = imp.Instl
-		impCtx.IsAppOpenAd = impExt.IsAppOpenAd
-		impCtx.IsCTAOverlayRequest = isCTAOverlayRequest
-		impCtx.Bidders = bidderMeta
-		impCtx.NonMapped = nonMapped
-		impCtx.VideoAdUnitCtx = videoAdUnitCtx
-		impCtx.BannerAdUnitCtx = bannerAdUnitCtx
-		impCtx.NativeAdUnitCtx = nativeAdUnitCtx
-		rCtx.ImpBidCtx[imp.ID] = impCtx
 	} // for(imp
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
@@ -873,13 +869,17 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	}
 	bidRequest.Source.TID = bidRequest.ID
 
+	deviceOS := ""
+	if bidRequest.Device != nil {
+		deviceOS = bidRequest.Device.OS
+	}
 	for i := 0; i < len(bidRequest.Imp); i++ {
 		if rctx.Endpoint != models.EndpointAMP {
 			m.applyBannerAdUnitConfig(rctx, &bidRequest.Imp[i])
 		}
 		m.applyVideoAdUnitConfig(rctx, &bidRequest.Imp[i])
 		m.applyNativeAdUnitConfig(rctx, &bidRequest.Imp[i])
-		m.applyImpChanges(rctx, &bidRequest.Imp[i])
+		m.applyImpChanges(rctx, &bidRequest.Imp[i], deviceOS)
 	}
 
 	setSChainInRequest(rctx.NewReqExt, bidRequest.Source, rctx.PartnerConfigMap)
@@ -969,7 +969,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 }
 
-func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
+func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp, deviceOS string) {
 	if imp.BidFloor == 0 {
 		imp.BidFloorCur = ""
 	} else if imp.BidFloorCur == "" {
@@ -987,6 +987,12 @@ func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp) {
 
 	//update impression extensions
 	imp.Ext = rCtx.ImpBidCtx[imp.ID].NewExt
+
+	if sdkutils.IsSdkEndpoint(rCtx.Endpoint) || rCtx.Endpoint == models.EndpointV25 {
+		if err := ApplyOWSDKFormatLevelAdAttributes(imp, rCtx.ImpBidCtx[imp.ID], deviceOS); err != nil {
+			glog.Errorf("OWSDK format-level adattributes imp=%s: %v", imp.ID, err)
+		}
+	}
 }
 
 func (m *OpenWrap) applyImpVideoChanges(rCtx models.RequestCtx, video *openrtb2.Video) {
