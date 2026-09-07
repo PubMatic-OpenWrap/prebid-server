@@ -9,10 +9,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/feature"
-	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/feature"
+	mock_metrics "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 

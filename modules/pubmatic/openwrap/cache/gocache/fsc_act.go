@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 )
 
 // GetFSCAndACTThresholdsPerDSP returns both FSC and ACT DSP thresholds in one DB call when the

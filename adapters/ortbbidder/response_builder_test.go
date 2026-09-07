@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/adapters"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/bidderparams"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/resolver"
-	"github.com/prebid/prebid-server/v3/adapters/ortbbidder/util"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/adapters"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/bidderparams"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/resolver"
+	"github.com/prebid/prebid-server/v4/adapters/ortbbidder/util"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -9,15 +9,15 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/analytics"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/exchange"
-	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/analytics"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/exchange"
+	"github.com/prebid/prebid-server/v4/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v4/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -144,7 +144,7 @@ func TestConvertNonBidToBid(t *testing.T) {
 					DealID:  "d1",
 					W:       10,
 					H:       50,
-					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
+					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":""}},"origbidcpm":10,"origbidcur":"USD"}`),
 				},
 				exchange.ResponseRejectedBelowFloor.Ptr(),
 			},
@@ -183,7 +183,7 @@ func TestConvertNonBidToBid(t *testing.T) {
 					W:       10,
 					H:       50,
 					Bundle:  "dummy_bundle",
-					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":"","vasttagid":""}},"origbidcpm":10,"origbidcur":"USD"}`),
+					Ext:     json.RawMessage(`{"prebid":{"dealpriority":1,"video":{"duration":10,"primary_category":""}},"origbidcpm":10,"origbidcur":"USD"}`),
 				},
 				exchange.ResponseRejectedBelowFloor.Ptr(),
 			},

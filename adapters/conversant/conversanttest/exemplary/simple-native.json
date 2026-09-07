@@ -35,7 +35,6 @@
               "secure": 1,
               "bidfloor": 0.01,
               "displaymanager": "pubmatic-openwrap",
-              "displaymanagerver": "2.0.0",
               "ext": {
                 "bidder": {
                   "site_id": "108060",

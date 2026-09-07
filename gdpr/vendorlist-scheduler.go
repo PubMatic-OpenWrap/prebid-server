@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/metrics"
+	"github.com/prebid/prebid-server/v4/metrics"
 )
 
 type vendorListScheduler struct {

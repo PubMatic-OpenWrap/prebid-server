@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 )
 
 // GetAdapterThrottleMap creates a map of adapters that should be throttled and returns whether all partners are throttled.

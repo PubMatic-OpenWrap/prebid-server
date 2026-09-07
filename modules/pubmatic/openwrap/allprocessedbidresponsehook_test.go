@@ -9,13 +9,13 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/exchange/entities"
-	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/exchange/entities"
+	"github.com/prebid/prebid-server/v4/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	mock_cache "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,9 +116,9 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": nil,
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -134,11 +134,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
-					},
+					}),
 				},
 			},
 
@@ -154,11 +154,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
 						},
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.AllProcessedBidResponsesPayload]{
@@ -173,11 +173,11 @@ func TestOpenWrap_handleAllProcessedBidResponsesHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointV25,
 						},
-					},
+					}),
 				},
 				payload: hookstage.AllProcessedBidResponsesPayload{
 					Responses: map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid{

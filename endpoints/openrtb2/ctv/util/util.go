@@ -12,10 +12,10 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/types"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v4/endpoints/openrtb2/ctv/types"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 // default targeting key prefix

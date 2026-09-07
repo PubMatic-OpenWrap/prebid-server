@@ -210,8 +210,7 @@
                                 "type": "video",
                                 "video": {
                                     "duration": 90,
-                                    "primary_category": "",
-                                    "vasttagid": ""
+                                    "primary_category": ""
                                 }
                             },
                             "adpod": {

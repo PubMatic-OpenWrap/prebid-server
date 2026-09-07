@@ -7,12 +7,12 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/exchange"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/exchange"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	uuid "github.com/satori/go.uuid"
 )
 

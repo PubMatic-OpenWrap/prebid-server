@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/metrics"
-	prometheusmetrics "github.com/prebid/prebid-server/v3/metrics/prometheus"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/metrics"
+	prometheusmetrics "github.com/prebid/prebid-server/v4/metrics/prometheus"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/prometheus/client_golang/prometheus"
 	gometrics "github.com/rcrowley/go-metrics"
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
@@ -357,6 +357,12 @@ func (me *MultiMetricsEngine) RecordGvlListRequest() {
 	}
 }
 
+func (me *MultiMetricsEngine) RecordLiveGVLFetch(success bool) {
+	for _, thisME := range *me {
+		thisME.RecordLiveGVLFetch(success)
+	}
+}
+
 func (me *MultiMetricsEngine) RecordRejectedBidsForAccount(pubId string) {
 	for _, thisME := range *me {
 		thisME.RecordRejectedBidsForAccount(pubId)
@@ -625,6 +631,9 @@ func (me *NilMetricsEngine) RecordRejectedBidsForAccount(pubId string) {
 }
 
 func (me *NilMetricsEngine) RecordFloorsRequestForAccount(pubId string) {
+}
+
+func (me *NilMetricsEngine) RecordLiveGVLFetch(success bool) {
 }
 
 func (me *NilMetricsEngine) RecordAdsCertReq(success bool) {
