@@ -301,20 +301,7 @@ func MergeSignalFormatLevelOWSDK(imp *openrtb2.Imp, signalRequest *openrtb2.BidR
 		return nil
 	}
 
-	var signalImp *openrtb2.Imp
-	if len(signalRequest.Imp) == 1 {
-		signalImp = &signalRequest.Imp[0]
-	} else {
-		for i := range signalRequest.Imp {
-			if signalRequest.Imp[i].ID == imp.ID {
-				signalImp = &signalRequest.Imp[i]
-				break
-			}
-		}
-	}
-	if signalImp == nil {
-		return nil
-	}
+	signalImp := &signalRequest.Imp[0]
 
 	var errs []error
 
