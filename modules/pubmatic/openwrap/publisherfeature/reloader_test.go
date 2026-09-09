@@ -132,7 +132,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		tbf tbf
 		//ampMultiformat      ampMultiformat
 		//bidRecovery         bidRecovery
-		//appLovinMultiFloors appLovinMultiFloors
 		impCountingMethod impCountingMethod
 		act               act
 	}
@@ -228,9 +227,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						},
 					},
 				},
-				//appLovinMultiFloors: appLovinMultiFloors{
-				//	enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
-				//},
 				//bidRecovery: bidRecovery{
 				//	enabledPublisherProfile: map[int]map[int]struct{}{},
 				//},
@@ -296,9 +292,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				//bidRecovery: bidRecovery{
 				//	enabledPublisherProfile: map[int]map[int]struct{}{},
 				//},
-				//appLovinMultiFloors: appLovinMultiFloors{
-				//	enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
-				//},
 				impCountingMethod: impCountingMethod{
 					enabledBidders: [2]map[string]struct{}{
 						{},
@@ -309,7 +302,7 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			},
 		},
 		//{
-		//	name: "fetch applovin_abtest,bidrecovery feature data",
+		//	name: "fetch bidrecovery feature data",
 		//	fields: fields{
 		//		cache: mockCache,
 		//	},
@@ -329,10 +322,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		//				models.FeatureBidRecovery: {
 		//					Enabled: 1,
 		//					Value:   `[1234,3212]`,
-		//				},
-		//				models.FeatureApplovinMultiFloors: {
-		//					Enabled: 1,
-		//					Value:   `{"1232":{"adunit_123":[4.2,5.6,5.8],"adunit_dmdemo":[4.2,5.6,5.8]},"4322":{"adunit_12323":[4.2,5.6,5.8],"adunit_dmdemo1":[4.2,5.6,5.8]}}`,
 		//				},
 		//			},
 		//		}, nil)
@@ -371,20 +360,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		//				5890: {
 		//					1234: {},
 		//					3212: {},
-		//				},
-		//			},
-		//		},
-		//		appLovinMultiFloors: appLovinMultiFloors{
-		//			enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{
-		//				5890: {
-		//					"1232": models.ApplovinAdUnitFloors{
-		//						"adunit_123":    {4.2, 5.6, 5.8},
-		//						"adunit_dmdemo": {4.2, 5.6, 5.8},
-		//					},
-		//					"4322": models.ApplovinAdUnitFloors{
-		//						"adunit_12323":   {4.2, 5.6, 5.8},
-		//						"adunit_dmdemo1": {4.2, 5.6, 5.8},
-		//					},
 		//				},
 		//			},
 		//		},
@@ -435,9 +410,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				//bidRecovery: bidRecovery{
 				//	enabledPublisherProfile: map[int]map[int]struct{}{},
 				//},
-				//appLovinMultiFloors: appLovinMultiFloors{
-				//	enabledPublisherProfile: map[int]map[string]models.ApplovinAdUnitFloors{},
-				//},
 				impCountingMethod: impCountingMethod{
 					enabledBidders: [2]map[string]struct{}{
 						{},
@@ -482,7 +454,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
 			//assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			//assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)
-			//assert.Equal(t, tt.want.appLovinMultiFloors, fe.appLovinMultiFloors, tt.name)
 			assert.Equal(t, tt.want.impCountingMethod, fe.impCountingMethod, tt.name)
 		})
 	}

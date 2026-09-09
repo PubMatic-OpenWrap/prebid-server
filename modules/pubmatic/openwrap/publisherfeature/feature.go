@@ -9,8 +9,6 @@ type Feature interface {
 	IsTBFFeatureEnabled(pubid int, profid int) bool
 	IsAnalyticsTrackingThrottled(pubID, profileID int) (bool, bool)
 	IsBidRecoveryEnabled(pubID int, profileID int) bool
-	IsApplovinMultiFloorsEnabled(pubID int, profileID string) bool
-	GetApplovinMultiFloors(pubID int, profileID string) models.ApplovinAdUnitFloors
 	GetImpCountingMethodEnabledBidders() map[string]struct{}
 	IsCountryGDPREnabled(countryCode string) bool
 	IsMBMFCountryForPublisher(countryCode string, pubID int) bool

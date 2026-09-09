@@ -27,7 +27,6 @@ type feature struct {
 	ampMultiformat          ampMultiformat
 	maxFloors               maxFloors
 	bidRecovery             bidRecovery
-	appLovinMultiFloors     appLovinMultiFloors
 	impCountingMethod       impCountingMethod
 	gdprCountryCodes        gdprCountryCodes
 	mbmf                    *mbmf
@@ -64,9 +63,6 @@ func New(config Config) *feature {
 			ant: analyticsThrottle{
 				vault: newPubThrottling(config.AnalyticsThrottleList),
 				db:    newPubThrottling(config.AnalyticsThrottleList),
-			},
-			appLovinMultiFloors: appLovinMultiFloors{
-				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 			impCountingMethod:       newImpCountingMethod(),
 			gdprCountryCodes:        newGDPRCountryCodes(),
@@ -133,7 +129,6 @@ func (fe *feature) updateFeatureConfigMaps() {
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
 	//fe.updateBidRecoveryEnabledPublishers()
-	//fe.updateApplovinMultiFloorsFeature()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()

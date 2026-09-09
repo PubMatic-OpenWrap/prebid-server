@@ -279,13 +279,6 @@ type AppLovinMax struct {
 	Reject bool
 }
 
-type MultiFloorsConfig struct {
-	Enabled bool
-	Config  ApplovinAdUnitFloors
-}
-
-type ApplovinAdUnitFloors map[string][]float64
-
 type WinningBids map[string][]*OwBid
 
 type HashSet map[string]struct{}

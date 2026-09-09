@@ -629,7 +629,6 @@ const (
 	FeatureAnalyticsThrottle   = 4
 	FeatureMaxFloors           = 5
 	FeatureBidRecovery         = 6
-	FeatureApplovinMultiFloors = 7
 	FeatureImpCountingMethod   = 8
 	FeatureMBMFCountry         = 9
 	FeatureMBMFPublisher       = 10
