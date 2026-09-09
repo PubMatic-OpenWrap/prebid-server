@@ -1249,7 +1249,6 @@ func Test_getIP(t *testing.T) {
 	}
 }
 
-
 func TestGetRequestIP(t *testing.T) {
 
 	tests := []struct {

@@ -7519,9 +7519,6 @@ func TestUpdateImpVideoWithVideoConfig(t *testing.T) {
 	}
 }
 
-
-
-
 func TestIsVastUnwrapEnabled(t *testing.T) {
 
 	type args struct {
