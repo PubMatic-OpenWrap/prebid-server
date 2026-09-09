@@ -130,7 +130,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 	type want struct {
 		fsc fsc
 		tbf tbf
-		//ampMultiformat      ampMultiformat
 		//bidRecovery         bidRecovery
 		impCountingMethod impCountingMethod
 		act               act
@@ -162,9 +161,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 						6: 100,
 					},
 				},
-				//ampMultiformat: ampMultiformat{
-				//	enabledPublishers: map[int]struct{}{},
-				//},
 				tbf: tbf{
 					pubProfileTraffic: map[int]map[int]int{},
 				},
@@ -196,9 +192,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 							Enabled: 1,
 							Value:   `{"1234": 100}`,
 						},
-						//models.FeatureAMPMultiFormat: {
-						//	Enabled: 1,
-						//},
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(nil, nil, errors.New("QUERY FAILED"))
@@ -215,11 +208,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					disabledPublishers: map[int]struct{}{},
 					thresholdsPerDsp:   map[int]int{},
 				},
-				//ampMultiformat: ampMultiformat{
-				//	enabledPublishers: map[int]struct{}{
-				//		5890: {},
-				//	},
-				//},
 				tbf: tbf{
 					pubProfileTraffic: map[int]map[int]int{
 						5890: {
@@ -254,9 +242,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 							Enabled: 1,
 							Value:   `{"1234": 100}`,
 						},
-						//models.FeatureAMPMultiFormat: {
-						//	Enabled: 1,
-						//},
 					},
 				}, nil)
 				mockCache.EXPECT().GetFSCAndACTThresholdsPerDSP().Return(map[int]int{6: 100}, map[int]int{}, nil)
@@ -277,11 +262,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					disabledPublishers: map[int]struct{}{},
 					thresholdsPerDsp:   map[int]int{},
 				},
-				//ampMultiformat: ampMultiformat{
-				//	enabledPublishers: map[int]struct{}{
-				//		5890: {},
-				//	},
-				//},
 				tbf: tbf{
 					pubProfileTraffic: map[int]map[int]int{
 						5890: {
@@ -316,7 +296,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		//					Enabled: 1,
 		//					Value:   `{"1234": 100}`,
 		//				},
-		//				models.FeatureAMPMultiFormat: {
 		//					Enabled: 1,
 		//				},
 		//				models.FeatureBidRecovery: {
@@ -343,7 +322,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 		//			disabledPublishers: map[int]struct{}{},
 		//			thresholdsPerDsp:   map[int]int{},
 		//		},
-		//		ampMultiformat: ampMultiformat{
 		//			enabledPublishers: map[int]struct{}{
 		//				5890: {},
 		//			},
@@ -401,9 +379,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 					disabledPublishers: map[int]struct{}{},
 					thresholdsPerDsp:   map[int]int{},
 				},
-				//ampMultiformat: ampMultiformat{
-				//	enabledPublishers: map[int]struct{}{},
-				//},
 				tbf: tbf{
 					pubProfileTraffic: map[int]map[int]int{},
 				},
@@ -439,7 +414,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 				tbf: tbf{
 					pubProfileTraffic: make(map[int]map[int]int),
 				},
-				//ampMultiformat: ampMultiformat{
 				//	enabledPublishers: make(map[int]struct{}),
 				//},
 				impCountingMethod: newImpCountingMethod(),
@@ -452,7 +426,6 @@ func TestFeatureUpdateFeatureConfigMaps(t *testing.T) {
 			assert.Equal(t, tt.want.fsc, fe.fsc, tt.name)
 			assert.Equal(t, tt.want.act, fe.act, tt.name)
 			assert.Equal(t, tt.want.tbf, fe.tbf, tt.name)
-			//assert.Equal(t, tt.want.ampMultiformat, fe.ampMultiformat, tt.name)
 			//assert.Equal(t, tt.want.bidRecovery, fe.bidRecovery, tt.name)
 			assert.Equal(t, tt.want.impCountingMethod, fe.impCountingMethod, tt.name)
 		})

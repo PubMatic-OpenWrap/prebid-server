@@ -413,14 +413,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 			}
 
 			videoAdUnitCtx = adunitconfig.UpdateVideoObjectWithAdunitConfig(rCtx, imp, div, connectionType)
-			//commnenting code as the feature is not in use
-			/*
-				if rCtx.Endpoint == models.EndpointAMP && m.pubFeatures.IsAmpMultiformatEnabled(rCtx.PubID) && isVideoEnabledForAMP(videoAdUnitCtx.AppliedSlotAdUnitConfig) {
-					//Iniitalized local imp.Video object to update macros and get mappings in case of AMP request
-					rCtx.AmpVideoEnabled = true
-					imp.Video = &openrtb2.Video{}
-				}
-			*/
 			//banner can not be disabled for AMP requests through adunit config
 			if rCtx.Endpoint != models.EndpointAMP {
 				bannerAdUnitCtx = adunitconfig.UpdateBannerObjectWithAdunitConfig(rCtx, imp, div)
@@ -921,13 +913,6 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 }
 
 func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.Imp) {
-	/*
-		//For AMP request, if AmpVideoEnabled is true then crate a empty video object and update with adunitConfigs
-		if rCtx.AmpVideoEnabled {
-			imp.Video = &openrtb2.Video{}
-		}
-	*/
-
 	if imp.Video == nil {
 		return
 	}
@@ -959,17 +944,6 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 		rCtx.ImpBidCtx[imp.ID] = impBidCtx
 		return
 	}
-
-	//For AMP request if AmpVideoEnabled is true then, update the imp.video object with adunitConfig and if adunitConfig is not present then update with default values
-	/*
-		if rCtx.AmpVideoEnabled {
-			if adUnitCfg.Video.Config != nil {
-				updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
-			}
-			updateAmpImpVideoWithDefault(imp)
-			return
-		}
-	*/
 
 	if adUnitCfg.Video.Config != nil {
 		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
@@ -1493,79 +1467,6 @@ func updateImpVideoWithVideoConfig(imp *openrtb2.Imp, configObjInVideoConfig *mo
 	if imp.Video.CompanionAd == nil {
 		imp.Video.CompanionAd = configObjInVideoConfig.CompanionAd
 	}
-}
-
-func updateAmpImpVideoWithDefault(imp *openrtb2.Imp) {
-	if imp.Video.W == nil {
-		imp.Video.W = getW(imp)
-	}
-	if imp.Video.H == nil {
-		imp.Video.H = getH(imp)
-	}
-	if imp.Video.MIMEs == nil {
-		imp.Video.MIMEs = []string{"video/mp4"}
-	}
-	if imp.Video.MinDuration == 0 {
-		imp.Video.MinDuration = 0
-	}
-	if imp.Video.MaxDuration == 0 {
-		imp.Video.MaxDuration = 30
-	}
-	if imp.Video.StartDelay == nil {
-		imp.Video.StartDelay = adcom1.StartPreRoll.Ptr()
-	}
-	if imp.Video.Protocols == nil {
-		imp.Video.Protocols = []adcom1.MediaCreativeSubtype{adcom1.CreativeVAST10, adcom1.CreativeVAST20, adcom1.CreativeVAST30, adcom1.CreativeVAST10Wrapper, adcom1.CreativeVAST20Wrapper, adcom1.CreativeVAST30Wrapper, adcom1.CreativeVAST40, adcom1.CreativeVAST40Wrapper, adcom1.CreativeVAST41, adcom1.CreativeVAST41Wrapper, adcom1.CreativeVAST42, adcom1.CreativeVAST42Wrapper}
-	}
-	if imp.Video.Placement == 0 {
-		imp.Video.Placement = adcom1.VideoPlacementInBanner
-	}
-	if imp.Video.Plcmt == 0 {
-		imp.Video.Plcmt = adcom1.VideoPlcmtNoContent
-	}
-	if imp.Video.Linearity == 0 {
-		imp.Video.Linearity = adcom1.LinearityLinear
-	}
-	if imp.Video.Skip == nil {
-		imp.Video.Skip = ptrutil.ToPtr[int8](0)
-	}
-	if imp.Video.PlaybackMethod == nil {
-		imp.Video.PlaybackMethod = []adcom1.PlaybackMethod{adcom1.PlaybackPageLoadSoundOff}
-	}
-	if imp.Video.PlaybackEnd == 0 {
-		imp.Video.PlaybackEnd = adcom1.PlaybackCompletion
-	}
-	if imp.Video.Delivery == nil {
-		imp.Video.Delivery = []adcom1.DeliveryMethod{adcom1.DeliveryProgressive, adcom1.DeliveryDownload}
-	}
-}
-
-func getW(imp *openrtb2.Imp) *int64 {
-	if imp.Banner != nil {
-		if imp.Banner.W != nil {
-			return imp.Banner.W
-		}
-		for _, format := range imp.Banner.Format {
-			if format.W != 0 {
-				return &format.W
-			}
-		}
-	}
-	return nil
-}
-
-func getH(imp *openrtb2.Imp) *int64 {
-	if imp.Banner != nil {
-		if imp.Banner.H != nil {
-			return imp.Banner.H
-		}
-		for _, format := range imp.Banner.Format {
-			if format.H != 0 {
-				return &format.H
-			}
-		}
-	}
-	return nil
 }
 
 func isValidURL(urlVal string) bool {

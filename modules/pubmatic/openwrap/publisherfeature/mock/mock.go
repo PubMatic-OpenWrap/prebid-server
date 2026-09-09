@@ -104,20 +104,6 @@ func (mr *MockFeatureMockRecorder) GetProfileAdUnitMultiFloors(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileAdUnitMultiFloors", reflect.TypeOf((*MockFeature)(nil).GetProfileAdUnitMultiFloors), arg0)
 }
 
-// IsAmpMultiformatEnabled mocks base method.
-func (m *MockFeature) IsAmpMultiformatEnabled(arg0 int) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAmpMultiformatEnabled", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsAmpMultiformatEnabled indicates an expected call of IsAmpMultiformatEnabled.
-func (mr *MockFeatureMockRecorder) IsAmpMultiformatEnabled(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAmpMultiformatEnabled", reflect.TypeOf((*MockFeature)(nil).IsAmpMultiformatEnabled), arg0)
-}
-
 // IsAnalyticsTrackingThrottled mocks base method.
 func (m *MockFeature) IsAnalyticsTrackingThrottled(arg0, arg1 int) (bool, bool) {
 	m.ctrl.T.Helper()

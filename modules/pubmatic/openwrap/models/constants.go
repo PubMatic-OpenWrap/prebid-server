@@ -625,7 +625,6 @@ const (
 const (
 	FeatureFSC                 = 1
 	FeatureTBF                 = 2
-	FeatureAMPMultiFormat      = 3
 	FeatureAnalyticsThrottle   = 4
 	FeatureMaxFloors           = 5
 	FeatureBidRecovery         = 6

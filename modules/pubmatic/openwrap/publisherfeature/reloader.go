@@ -24,7 +24,6 @@ type feature struct {
 	fsc                     fsc
 	tbf                     tbf
 	ant                     analyticsThrottle
-	ampMultiformat          ampMultiformat
 	maxFloors               maxFloors
 	bidRecovery             bidRecovery
 	impCountingMethod       impCountingMethod
@@ -53,9 +52,6 @@ func New(config Config) *feature {
 			},
 			tbf: tbf{
 				pubProfileTraffic: make(map[int]map[int]int),
-			},
-			ampMultiformat: ampMultiformat{
-				enabledPublishers: make(map[int]struct{}),
 			},
 			maxFloors: maxFloors{
 				enabledPublishers: make(map[int]struct{}),
@@ -125,7 +121,6 @@ func (fe *feature) updateFeatureConfigMaps() {
 	}
 
 	fe.updateTBFConfigMap()
-	//fe.updateAmpMutiformatEnabledPublishers()
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
 	//fe.updateBidRecoveryEnabledPublishers()
