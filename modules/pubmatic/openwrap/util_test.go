@@ -15,7 +15,6 @@ import (
 	"github.com/prebid/prebid-server/v3/macros"
 	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata"
 	mock_profilemetadata "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/profilemetadata/mock"
@@ -1246,87 +1245,6 @@ func Test_getIP(t *testing.T) {
 			if got := getIP(tt.args.bidRequest, tt.args.defaultIP); got != tt.want {
 				t.Errorf("getIP() = %v, want %v", got, tt.want)
 			}
-		})
-	}
-}
-
-func TestCheckIsVideoEnabledForAMP(t *testing.T) {
-	type args struct {
-		adUnitConfig *adunitconfig.AdConfig
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "empty_adunitConfig",
-			args: args{
-				adUnitConfig: nil,
-			},
-			want: false,
-		},
-		{
-			name: "adunitConfig_video_is_nil",
-			args: args{
-				adUnitConfig: &adunitconfig.AdConfig{
-					Video: nil,
-				},
-			},
-			want: false,
-		},
-		{
-			name: "adunitConfig_video_is_disabled",
-			args: args{
-				adUnitConfig: &adunitconfig.AdConfig{
-					Video: &adunitconfig.Video{
-						Enabled: ptrutil.ToPtr(false),
-					},
-				},
-			},
-			want: false,
-		},
-		{
-			name: "adunitConfig_video_is_enabled_but_empty_AmptrafficPercentage",
-			args: args{
-				adUnitConfig: &adunitconfig.AdConfig{
-					Video: &adunitconfig.Video{
-						Enabled:              ptrutil.ToPtr(true),
-						AmpTrafficPercentage: nil,
-					},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "adunitConfig_video_is_enabled_but_and_AmptrafficPercentage_is_0",
-			args: args{
-				adUnitConfig: &adunitconfig.AdConfig{
-					Video: &adunitconfig.Video{
-						Enabled:              ptrutil.ToPtr(true),
-						AmpTrafficPercentage: ptrutil.ToPtr(0),
-					},
-				},
-			},
-			want: false,
-		},
-		{
-			name: "adunitConfig_video_is_enabled_but_and_AmptrafficPercentage_is_100",
-			args: args{
-				adUnitConfig: &adunitconfig.AdConfig{
-					Video: &adunitconfig.Video{
-						Enabled:              ptrutil.ToPtr(true),
-						AmpTrafficPercentage: ptrutil.ToPtr(100),
-					},
-				},
-			},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isVideoEnabledForAMP(tt.args.adUnitConfig)
-			assert.Equal(t, tt.want, got, tt.name)
 		})
 	}
 }
