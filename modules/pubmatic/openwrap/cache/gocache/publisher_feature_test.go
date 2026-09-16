@@ -44,7 +44,7 @@ func Test_cache_GetPublisherFeatureMap(t *testing.T) {
 						Enabled: 1,
 						Value:   `{"1234": 100}`,
 					},
-					models.FeatureMaxFloors: {
+					models.FeatureAMPMultiFormat: {
 						Enabled: 1,
 					},
 				},
@@ -59,7 +59,7 @@ func Test_cache_GetPublisherFeatureMap(t *testing.T) {
 							Enabled: 1,
 							Value:   `{"1234": 100}`,
 						},
-						models.FeatureMaxFloors: {
+						models.FeatureAMPMultiFormat: {
 							Enabled: 1,
 						},
 					},
