@@ -61,7 +61,6 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderAidem):          builderAidem,
 		string(openrtb_ext.BidderCompass):        builderCompass,
 		string(openrtb_ext.BidderOpenWeb):        builderOpenweb,
-		string(openrtb_ext.BidderNativo):         builderNativo,
 		string(openrtb_ext.BidderOms):            builderOMS,
 		string(openrtb_ext.BidderNexx360):        builderNexx360,
 		string(openrtb_ext.Bidder33Across):       builder33Across,
