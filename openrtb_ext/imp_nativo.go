@@ -1,5 +1,7 @@
 package openrtb_ext
 
+import "github.com/prebid/prebid-server/v4/util/jsonutil"
+
 type ImpExtNativo struct {
-	PlacementId string `json:"placementID"`
+	PlacementID jsonutil.StringInt `json:"placementId"`
 }

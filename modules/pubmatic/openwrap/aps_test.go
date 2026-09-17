@@ -6,9 +6,9 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
-	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache"
+	mock_cache "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

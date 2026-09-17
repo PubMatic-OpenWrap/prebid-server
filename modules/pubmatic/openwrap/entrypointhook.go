@@ -12,19 +12,19 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	v25 "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/aps"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/usersync"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	v25 "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/endpoints/legacy/openrtb/v25"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/aps"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/usersync"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -61,8 +61,7 @@ func (m OpenWrap) handleEntrypointHook(
 			}
 			return
 		}
-		result.ModuleContext = make(hookstage.ModuleContext)
-		result.ModuleContext["rctx"] = rCtx
+		result.ModuleContext = newModuleContextWithRequestCtx(rCtx)
 	}()
 
 	rCtx.Sshb = queryParams.Get("sshb")

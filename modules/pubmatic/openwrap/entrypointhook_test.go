@@ -7,17 +7,17 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/prebid/prebid-server/v3/hooks/hookexecution"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
-	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	mock_feature "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/publisherfeature/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/hooks/hookexecution"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/config"
+	mock_metrics "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	mock_feature "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/publisherfeature/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,12 +72,12 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						Sshb:      "1",
 						DeviceCtx: models.DeviceCtx{IP: "127.0.0.1", UA: "go-test"},
 					},
-				},
+				}),
 			},
 		},
 		{
@@ -110,7 +110,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						PubIDStr:                  "5890",
 						PubID:                     5890,
@@ -145,7 +145,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -178,7 +178,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						PubIDStr:                        "5890",
 						PubID:                           5890,
@@ -204,7 +204,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -263,7 +263,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						ProfileID:        43563,
 						PubID:            5890,
@@ -296,7 +296,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -325,7 +325,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						ProfileID:        43563,
 						PubID:            5890,
@@ -358,7 +358,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -420,11 +420,11 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						Endpoint: models.EndpointHybrid,
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -449,11 +449,11 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						Endpoint: models.EndpointHybrid,
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -486,7 +486,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						PubIDStr:                        "5890",
 						PubID:                           5890,
@@ -511,7 +511,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						WakandaDebug:                    &wakanda.Debug{},
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			wantErr: nil,
 		},
@@ -544,7 +544,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						PubIDStr:                        "5890",
 						PubID:                           5890,
@@ -571,7 +571,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						SendBurl:                        true,
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			doMutate: true,
 			wantErr:  nil,
@@ -606,7 +606,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				setup: func(mme *mock_metrics.MockMetricsEngine) {},
 			},
 			want: hookstage.HookResult[hookstage.EntrypointPayload]{
-				ModuleContext: hookstage.ModuleContext{
+				ModuleContext: moduleContextFromMap(map[string]any{
 					"rctx": models.RequestCtx{
 						PubIDStr:                  "111",
 						PubID:                     111,
@@ -649,7 +649,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 						SendBurl:                        true,
 						ImpCountingMethodEnabledBidders: make(map[string]struct{}),
 					},
-				},
+				}),
 			},
 			doMutate: true,
 			wantErr:  nil,
@@ -670,7 +670,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 
 			if tt.want.ModuleContext != nil {
 				// validate runtime values individually and reset them
-				gotRctx := got.ModuleContext["rctx"].(models.RequestCtx)
+				gotRctx, _ := getRequestCtx(got.ModuleContext)
 				if gotRctx.Endpoint == models.EndpointHybrid || gotRctx.Sshb == "1" {
 					assert.Equal(t, got, tt.want)
 					return
@@ -681,7 +681,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 				assert.NotEmpty(t, gotRctx.GoogleSDK.StartTime)
 				gotRctx.GoogleSDK.StartTime = time.Time{}
 
-				wantRctx := tt.want.ModuleContext["rctx"].(models.RequestCtx)
+				wantRctx, _ := getRequestCtx(tt.want.ModuleContext)
 				if wantRctx.LoggerImpressionID == "" {
 					assert.Len(t, gotRctx.LoggerImpressionID, 36)
 					gotRctx.LoggerImpressionID = ""
@@ -691,7 +691,7 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					assert.NotNil(t, gotRctx.SignalRequest, "decoded SDK signal must survive rCtx re-init")
 					gotRctx.SignalRequest = nil
 				}
-				got.ModuleContext["rctx"] = gotRctx
+				setRequestCtx(got.ModuleContext, gotRctx)
 			}
 
 			if tt.doMutate {
@@ -703,7 +703,9 @@ func TestOpenWrap_handleEntrypointHook(t *testing.T) {
 					assert.Equal(t, tt.wantBody, result.Body)
 				}
 			}
-			assert.Equal(t, tt.want.ModuleContext, got.ModuleContext)
+			wantRctxAll, _ := getRequestCtx(tt.want.ModuleContext)
+			gotRctxAll, _ := getRequestCtx(got.ModuleContext)
+			assert.Equal(t, wantRctxAll, gotRctxAll)
 		})
 	}
 }

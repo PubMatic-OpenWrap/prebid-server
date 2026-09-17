@@ -3,9 +3,9 @@ package moduledeps
 import (
 	"net/http"
 
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/currency"
-	metricsCfg "github.com/prebid/prebid-server/v3/metrics/config"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/currency"
+	metricsCfg "github.com/prebid/prebid-server/v4/metrics/config"
 )
 
 // ModuleDeps provides dependencies that custom modules may need for hooks execution.

@@ -9,9 +9,9 @@ import (
 	"github.com/buger/jsonparser"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
 )
 
 // Prometheus label values for metrics.aps_slot_mapping_rejects (reason).
