@@ -812,7 +812,6 @@ func builderOpenweb(params BidderParameters) (json.RawMessage, error) {
 	return jsonStr.Bytes(), nil
 }
 
-
 func builderOMS(params BidderParameters) (json.RawMessage, error) {
 	jsonStr := bytes.Buffer{}
 
