@@ -36,6 +36,7 @@
 		int   edge_postal_conf;
 		int   edge_gmt_offset;
 		char  edge_in_dst[ONE_CHAR_LEN +1];
+		char  edge_timezone[GENERAL_STRING_LEN +1];
 	}na_edge_data_t;
 
 	/* Feature - 24 - Mobile Carrier response structure*/
