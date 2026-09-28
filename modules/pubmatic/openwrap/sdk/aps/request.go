@@ -19,8 +19,15 @@ const (
 	apsAdFormatInterstitial = "interstitial"
 	apsAdFormatRewarded     = "rewarded"
 
+	// APS extendedsignal.<adFormat> keys for format-level owsdk.adattributes.
+	apsBannerAdAttributesKey = "banneradattributes"
+	apsVideoAdAttributesKey  = "videoadattributes"
+
 	apsMrecWidth  int64 = 300
 	apsMrecHeight int64 = 250
+
+	owSdk        = "owsdk"
+	adAttributes = "adattributes"
 )
 
 type apsVideoFields struct {
@@ -439,6 +446,22 @@ func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, s
 	setUserExtFromExtendedSignal(request, extSignal)
 	if adFormat != apsAdFormatBanner {
 		setImpExtFromExtendedSignal(request, extSignal, request.Device)
+	}
+	setFormatLevelAdAttributesFromExtendedSignal(imp, extSignal)
+}
+
+// setFormatLevelAdAttributesFromExtendedSignal maps APS extendedsignal.<adFormat>
+// banneradattributes / videoadattributes onto imp.banner|video.ext.owsdk.adattributes.
+func setFormatLevelAdAttributesFromExtendedSignal(imp *openrtb2.Imp, extSignal []byte) {
+	if imp == nil || len(extSignal) == 0 {
+		return
+	}
+
+	if imp.Banner != nil {
+		imp.Banner.Ext = setImpExtFieldFromExtSignal(imp.Banner.Ext, extSignal, apsBannerAdAttributesKey, owSdk, adAttributes)
+	}
+	if imp.Video != nil {
+		imp.Video.Ext = setImpExtFieldFromExtSignal(imp.Video.Ext, extSignal, apsVideoAdAttributesKey, owSdk, adAttributes)
 	}
 }
 
