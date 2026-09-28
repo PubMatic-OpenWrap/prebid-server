@@ -23,6 +23,10 @@ const (
 	apsBannerAdAttributesKey = "banneradattributes"
 	apsVideoAdAttributesKey  = "videoadattributes"
 
+	// Format-level adattributes from extendedsignal apply only for SDK 5.4.0+
+	// (aligned with OWSDKSignalFormatLevelMinSDKVersion in openwrap/adattributes.go).
+	apsFormatLevelAdAttributesMinSDKVersion = "5.4.0"
+
 	apsMrecWidth  int64 = 300
 	apsMrecHeight int64 = 250
 
@@ -447,11 +451,22 @@ func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, s
 	if adFormat != apsAdFormatBanner {
 		setImpExtFromExtendedSignal(request, extSignal, request.Device)
 	}
-	setFormatLevelAdAttributesFromExtendedSignal(imp, extSignal)
+	if shouldSetFormatLevelAdAttributesFromExtendedSignal(imp.DisplayManagerVer) {
+		setFormatLevelAdAttributesFromExtendedSignal(imp, extSignal)
+	}
+}
+
+// shouldSetFormatLevelAdAttributesFromExtendedSignal is true when displaymanagerver is >= 5.4.0.
+func shouldSetFormatLevelAdAttributesFromExtendedSignal(sdkVersion string) bool {
+	if sdkVersion == "" {
+		return false
+	}
+	return !sdkutils.IsVersionLessThan(sdkVersion, apsFormatLevelAdAttributesMinSDKVersion)
 }
 
 // setFormatLevelAdAttributesFromExtendedSignal maps APS extendedsignal.<adFormat>
 // banneradattributes / videoadattributes onto imp.banner|video.ext.owsdk.adattributes.
+// Caller must gate on SDK >= 5.4.0 via shouldSetFormatLevelAdAttributesFromExtendedSignal.
 func setFormatLevelAdAttributesFromExtendedSignal(imp *openrtb2.Imp, extSignal []byte) {
 	if imp == nil || len(extSignal) == 0 {
 		return

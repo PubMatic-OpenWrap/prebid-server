@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 // Wire IDs for ext.owsdk.adattributes (numeric; product spec).
@@ -187,7 +187,7 @@ func shouldMergeSignalFormatLevelOWSDK(sdkVersion string) bool {
 	if sdkVersion == "" {
 		return false
 	}
-	return !isVersionLessThan(sdkVersion, OWSDKSignalFormatLevelMinSDKVersion)
+	return !sdkutils.IsVersionLessThan(sdkVersion, OWSDKSignalFormatLevelMinSDKVersion)
 }
 
 // shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.3.0] inclusive.
@@ -195,10 +195,10 @@ func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	if sdkVersion == "" {
 		return false
 	}
-	if isVersionLessThan(sdkVersion, OWSDKServerAdAttributesMinSDKVersion) {
+	if sdkutils.IsVersionLessThan(sdkVersion, OWSDKServerAdAttributesMinSDKVersion) {
 		return false
 	}
-	if isVersionGreaterThan(sdkVersion, OWSDKServerAdAttributesMaxSDKVersion) {
+	if sdkutils.IsVersionGreaterThan(sdkVersion, OWSDKServerAdAttributesMaxSDKVersion) {
 		return false
 	}
 	return true
@@ -433,7 +433,7 @@ func lookupSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdForm
 	}
 
 	for _, config := range unifiedFeatureMatrixByOSFormat[key] {
-		if isVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
+		if sdkutils.IsVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
 			return config.WireIDs
 		}
 	}
@@ -541,53 +541,6 @@ func DetermineOS(deviceOS string) OS {
 	default:
 		return "" // Unknown OS
 	}
-}
-
-// isVersionLessThan checks if version1 is less than version2
-func isVersionLessThan(version1, version2 string) bool {
-	return compareVersions(version1, version2) < 0
-}
-
-// isVersionGreaterThan checks if version1 is greater than version2
-func isVersionGreaterThan(version1, version2 string) bool {
-	return compareVersions(version1, version2) > 0
-}
-
-// isVersionInRange checks if version is within the specified range (inclusive)
-func isVersionInRange(version, minVersion, maxVersion string) bool {
-	// If maxVersion is empty, it means no upper bound
-	if maxVersion == "" {
-		return compareVersions(version, minVersion) >= 0
-	}
-
-	return compareVersions(version, minVersion) >= 0 && compareVersions(version, maxVersion) <= 0
-}
-
-// compareVersions compares two dot-separated numeric version strings (e.g. "5.1.0").
-// Non-numeric segments are treated as 0; leading/trailing whitespace is ignored.
-func compareVersions(v1, v2 string) int {
-	p1 := strings.Split(strings.TrimSpace(v1), ".")
-	p2 := strings.Split(strings.TrimSpace(v2), ".")
-
-	for i := 0; i < max(len(p1), len(p2)); i++ {
-		n1, n2 := 0, 0
-
-		if i < len(p1) {
-			n1, _ = strconv.Atoi(p1[i])
-		}
-		if i < len(p2) {
-			n2, _ = strconv.Atoi(p2[i])
-		}
-
-		switch {
-		case n1 < n2:
-			return -1
-		case n1 > n2:
-			return 1
-		}
-	}
-
-	return 0
 }
 
 // CreateOWSDKExtension builds ext.owsdk with sorted, deduplicated, positive adattribute wire IDs.
