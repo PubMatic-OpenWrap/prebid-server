@@ -1,6 +1,8 @@
 package profilemetadata
 
-func (pmd *profileMetaData) GetAppSubIntegrationPath(appSubIntegrationPath string) (int, bool) {
+import "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+
+func (pmd *profileMetaData) GetAppSubIntegrationPath(appSubIntegrationPath string) (models.AppSubIntegrationPath, bool) {
 	pmd.RLock()
 	val, ok := pmd.appSubIntegrationPath[appSubIntegrationPath]
 	pmd.RUnlock()

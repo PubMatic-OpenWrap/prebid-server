@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +20,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    map[string]int
+		want    map[string]models.AppSubIntegrationPath
 		wantErr error
 		setup   func() *sql.DB
 	}{
@@ -50,8 +51,8 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]int{
-				"test_sub_2": 2,
+			want: map[string]models.AppSubIntegrationPath{
+				"test_sub_2": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
 			},
 			wantErr: nil,
 			setup: func() *sql.DB {
@@ -59,9 +60,33 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"name", "id"}).
-					AddRow(`test_sub_1`, `1,3`).
-					AddRow(`test_sub_2`, `2`)
+				rows := sqlmock.NewRows([]string{"name", "id", "mediation_name", "mediation_type"}).
+					AddRow(`test_sub_1`, `1,3`, "AdMob", "bidding").
+					AddRow(`test_sub_2`, `2`, "AppLovin", "waterfall")
+				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
+				return db
+			},
+		},
+		{
+			name: "null mediation columns",
+			fields: fields{
+				cfg: config.Database{
+					MaxDbContextTimeout: 100,
+					Queries: config.Queries{
+						GetAppSubIntegrationPathMapQuery: "^SELECT (.+) FROM app_sub_integration_path (.+)",
+					},
+				},
+			},
+			want: map[string]models.AppSubIntegrationPath{
+				"DFP": {ID: 1},
+			},
+			setup: func() *sql.DB {
+				db, mock, err := sqlmock.New()
+				if err != nil {
+					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+				}
+				rows := sqlmock.NewRows([]string{"name", "id", "mediation_name", "mediation_type"}).
+					AddRow("DFP", 1, nil, nil)
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -76,14 +101,14 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]int{},
+			want:    map[string]models.AppSubIntegrationPath{},
 			wantErr: nil,
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"name", "id"})
+				rows := sqlmock.NewRows([]string{"name", "id", "mediation_name", "mediation_type"})
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
 				return db
 			},
@@ -98,16 +123,16 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 					},
 				},
 			},
-			want:    map[string]int(nil),
+			want:    map[string]models.AppSubIntegrationPath(nil),
 			wantErr: errors.New("error in row scan"),
 			setup: func() *sql.DB {
 				db, mock, err := sqlmock.New()
 				if err != nil {
 					t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 				}
-				rows := sqlmock.NewRows([]string{"name", "id"}).
-					AddRow(`test_sub_1`, `1,3`).
-					AddRow(`test_sub_2`, `2`)
+				rows := sqlmock.NewRows([]string{"name", "id", "mediation_name", "mediation_type"}).
+					AddRow(`test_sub_1`, `1`, "AdMob", "bidding").
+					AddRow(`test_sub_2`, `2`, "AppLovin", "waterfall")
 				rows = rows.RowError(1, errors.New("error in row scan"))
 				mock.ExpectQuery(regexp.QuoteMeta("^SELECT (.+) FROM app_sub_integration_path (.+)")).WillReturnRows(rows)
 				return db

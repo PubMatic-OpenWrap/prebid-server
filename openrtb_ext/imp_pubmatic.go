@@ -20,6 +20,7 @@ type ExtImpPubmatic struct {
 	DealTier            *DealTier               `json:"dealtier,omitempty"`
 	Floors              []float64               `json:"floors,omitempty"`
 	OWSDK               map[string]any          `json:"owsdk,omitempty"`
+	Mediation           json.RawMessage         `json:"mediation,omitempty"`
 }
 
 // ExtImpPubmaticKeyVal defines the contract for bidrequest.imp[i].ext.prebid.bidder.pubmatic.keywords[i]

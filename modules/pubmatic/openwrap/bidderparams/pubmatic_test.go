@@ -1532,6 +1532,43 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 			},
 		},
 		{
+			name: "mediation_from_app_sub_integration_path",
+			args: args{
+				rctx: models.RequestCtx{
+					IsTestRequest:     2,
+					PubID:             5890,
+					PubIDStr:          "5890",
+					ProfileID:         123,
+					DisplayID:         1,
+					PubMaticMediation: json.RawMessage(`{"name":"AdMob","waterfall_or_bidding":"bidding"}`),
+					PartnerConfigMap: map[int]map[string]string{
+						1: {
+							models.PREBID_PARTNER_NAME: "pubmatic",
+							models.BidderCode:          "pubmatic",
+							models.TIMEOUT:             "200",
+							models.KEY_GEN_PATTERN:     "_AU_@_DIV_@_W_x_H_",
+							models.SERVER_SIDE_FLAG:    "1",
+						},
+					},
+				},
+				cache: mockCache,
+				impExt: models.ImpExtension{
+					Wrapper: &models.ExtImpWrapper{
+						Div: "Div1",
+					},
+				},
+				imp:       getTestImp("/Test_Adunit1234", true, false),
+				partnerID: 1,
+			},
+			want: want{
+				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
+				matchedPattern: "",
+				isRegexSlot:    false,
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@Div1@200x300","wrapper":{"version":1,"profile":123},"mediation":{"name":"AdMob","waterfall_or_bidding":"bidding"}}`),
+				wantErr:        false,
+			},
+		},
+		{
 			name: "For_test_value_2_with_non_regex",
 			args: args{
 				rctx: models.RequestCtx{

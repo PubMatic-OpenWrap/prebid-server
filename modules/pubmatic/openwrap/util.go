@@ -455,7 +455,10 @@ func getAppIntegrationPath(partnerConfigMap map[int]map[string]string, profileMe
 	return -1
 }
 
-func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) int {
+func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profileMetaData profilemetadata.ProfileMetaData) models.AppSubIntegrationPath {
+	if profileMetaData == nil {
+		return models.AppSubIntegrationPath{ID: -1}
+	}
 	if appSubIntegrationPathStr, ok := partnerConfigMap[models.VersionLevelConfigID][models.SubIntegrationPathKey]; ok {
 		if appSubIntegrationPath, ok := profileMetaData.GetAppSubIntegrationPath(appSubIntegrationPathStr); ok {
 			return appSubIntegrationPath
@@ -466,7 +469,24 @@ func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profil
 			return adserver
 		}
 	}
-	return -1
+	return models.AppSubIntegrationPath{ID: -1}
+}
+
+// pubmaticMediation returns imp.ext.prebid.bidder.pubmatic.mediation for a server-side PubMatic partner.
+// name and waterfall_or_bidding come from the resolved AppSubIntegrationPath row.
+func pubmaticMediation(partnerConfigMap map[int]map[string]string, appSubIntegrationPath models.AppSubIntegrationPath) json.RawMessage {
+	if !models.HasPubMaticPartner(partnerConfigMap) {
+		return nil
+	}
+	mediation := appSubIntegrationPath.ImpMediation()
+	if mediation == nil {
+		return nil
+	}
+	raw, err := json.Marshal(mediation)
+	if err != nil {
+		return nil
+	}
+	return raw
 }
 
 func getAccountIdFromRawRequest(hasStoredRequest bool, storedRequest, originalRequest json.RawMessage) (string, bool, bool, []error) {
