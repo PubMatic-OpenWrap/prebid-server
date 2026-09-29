@@ -2212,6 +2212,37 @@ func TestApplyAdFormatModifications(t *testing.T) {
 			},
 		},
 		{
+			name:     "mrec_maps_banner_and_video_adattributes",
+			adFormat: apsAdFormatMrec,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"mrec": {
+						"banneradattributes": [1, 4],
+						"videoadattributes": [2, 5],
+						"impdepth": 1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.4.0",
+					Banner:            &openrtb2.Banner{},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerExt: json.RawMessage(`{"owsdk":{"adattributes":[1,4]}}`),
+					VideoExt:  json.RawMessage(`{"owsdk":{"adattributes":[2,5]}}`),
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":1}`),
+				},
+			},
+		},
+		{
 			name:     "rewarded_maps_videoadattributes_only",
 			adFormat: apsAdFormatRewarded,
 			signalExt: json.RawMessage(`{
