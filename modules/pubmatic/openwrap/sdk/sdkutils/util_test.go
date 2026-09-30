@@ -967,3 +967,214 @@ func TestIsSdkEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestCompareVersions(t *testing.T) {
+	tests := []struct {
+		name string
+		v1   string
+		v2   string
+		want int
+	}{
+		{
+			name: "less_than",
+			v1:   "5.1.0",
+			v2:   "5.2.0",
+			want: -1,
+		},
+		{
+			name: "equal",
+			v1:   "5.2.0",
+			v2:   "5.2.0",
+			want: 0,
+		},
+		{
+			name: "greater_than",
+			v1:   "5.3.0",
+			v2:   "5.2.0",
+			want: 1,
+		},
+		{
+			name: "short_form_equal",
+			v1:   "5.1",
+			v2:   "5.1.0",
+			want: 0,
+		},
+		{
+			name: "short_form_less",
+			v1:   "5.1",
+			v2:   "5.1.1",
+			want: -1,
+		},
+		{
+			name: "trims_whitespace",
+			v1:   " 5.1.0 ",
+			v2:   "5.1.0",
+			want: 0,
+		},
+		{
+			name: "above_minimum_gate",
+			v1:   "4.1.0",
+			v2:   "4.0.9",
+			want: 1,
+		},
+		{
+			name: "non_numeric_segment_as_zero",
+			v1:   "5.a.0",
+			v2:   "5.0.0",
+			want: 0,
+		},
+		{
+			name: "empty_equal",
+			v1:   "",
+			v2:   "",
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, CompareVersions(tt.v1, tt.v2))
+		})
+	}
+}
+
+func TestIsVersionLessThan(t *testing.T) {
+	tests := []struct {
+		name     string
+		version1 string
+		version2 string
+		want     bool
+	}{
+		{
+			name:     "less",
+			version1: "5.3.0",
+			version2: "5.4.0",
+			want:     true,
+		},
+		{
+			name:     "equal",
+			version1: "5.4.0",
+			version2: "5.4.0",
+			want:     false,
+		},
+		{
+			name:     "greater",
+			version1: "5.5.0",
+			version2: "5.4.0",
+			want:     false,
+		},
+		{
+			name:     "short_form_less",
+			version1: "5.3",
+			version2: "5.4.0",
+			want:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsVersionLessThan(tt.version1, tt.version2))
+		})
+	}
+}
+
+func TestIsVersionGreaterThan(t *testing.T) {
+	tests := []struct {
+		name     string
+		version1 string
+		version2 string
+		want     bool
+	}{
+		{
+			name:     "greater",
+			version1: "5.4.0",
+			version2: "5.3.0",
+			want:     true,
+		},
+		{
+			name:     "equal",
+			version1: "5.3.0",
+			version2: "5.3.0",
+			want:     false,
+		},
+		{
+			name:     "less",
+			version1: "5.2.0",
+			version2: "5.3.0",
+			want:     false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsVersionGreaterThan(tt.version1, tt.version2))
+		})
+	}
+}
+
+func TestIsVersionInRange(t *testing.T) {
+	tests := []struct {
+		name       string
+		version    string
+		minVersion string
+		maxVersion string
+		want       bool
+	}{
+		{
+			name:       "inside_inclusive_range",
+			version:    "5.0.0",
+			minVersion: "4.1.0",
+			maxVersion: "5.3.0",
+			want:       true,
+		},
+		{
+			name:       "at_min_bound",
+			version:    "4.1.0",
+			minVersion: "4.1.0",
+			maxVersion: "5.3.0",
+			want:       true,
+		},
+		{
+			name:       "at_max_bound",
+			version:    "5.3.0",
+			minVersion: "4.1.0",
+			maxVersion: "5.3.0",
+			want:       true,
+		},
+		{
+			name:       "below_min",
+			version:    "4.0.9",
+			minVersion: "4.1.0",
+			maxVersion: "5.3.0",
+			want:       false,
+		},
+		{
+			name:       "above_max",
+			version:    "5.4.0",
+			minVersion: "4.1.0",
+			maxVersion: "5.3.0",
+			want:       false,
+		},
+		{
+			name:       "empty_max_at_min",
+			version:    "5.4.0",
+			minVersion: "5.4.0",
+			maxVersion: "", want: true,
+		},
+		{
+			name:       "empty_max_above_min",
+			version:    "6.0.0",
+			minVersion: "5.4.0",
+			maxVersion: "", want: true,
+		},
+		{
+			name:       "empty_max_below_min",
+			version:    "5.3.0",
+			minVersion: "5.4.0",
+			maxVersion: "",
+			want:       false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsVersionInRange(tt.version, tt.minVersion, tt.maxVersion))
+		})
+	}
+}

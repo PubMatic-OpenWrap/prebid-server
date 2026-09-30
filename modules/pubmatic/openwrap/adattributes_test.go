@@ -7,6 +7,7 @@ import (
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -402,7 +403,7 @@ func TestCompareVersions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, compareVersions(tt.v1, tt.v2))
+			assert.Equal(t, tt.want, sdkutils.CompareVersions(tt.v1, tt.v2))
 		})
 	}
 }
