@@ -3,8 +3,8 @@ package adapters
 import (
 	"encoding/json"
 
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 // BidderParameters provides all properties requires for bidder to generate bidder json
@@ -61,7 +61,6 @@ func initBidderBuilderFactory() {
 		string(openrtb_ext.BidderAidem):          builderAidem,
 		string(openrtb_ext.BidderCompass):        builderCompass,
 		string(openrtb_ext.BidderOpenWeb):        builderOpenweb,
-		string(openrtb_ext.BidderNativo):         builderNativo,
 		string(openrtb_ext.BidderOms):            builderOMS,
 		string(openrtb_ext.BidderNexx360):        builderNexx360,
 		string(openrtb_ext.Bidder33Across):       builder33Across,

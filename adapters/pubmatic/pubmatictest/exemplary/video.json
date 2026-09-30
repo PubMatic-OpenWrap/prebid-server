@@ -175,8 +175,7 @@
             "type": "video",
             "video" :{
               "duration" : 5,
-              "primary_category": "",
-              "vasttagid": ""
+              "primary_category": ""
             }
           }
         ]

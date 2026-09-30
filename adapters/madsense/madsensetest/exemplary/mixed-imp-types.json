@@ -265,8 +265,7 @@
           "type": "video",
           "video": {
             "duration": 15,
-            "primary_category": "IAB1-5",
-            "vasttagid": ""
+            "primary_category": "IAB1-5"
           }
         },
         {
@@ -287,8 +286,7 @@
           "type": "video",
           "video": {
             "duration": 30,
-            "primary_category": "IAB1-1",
-            "vasttagid": ""
+            "primary_category": "IAB1-1"
           }
         }
       ]

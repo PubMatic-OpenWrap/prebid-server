@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/adapters"
-	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v4/adapters"
+	mock_metrics "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/mock"
 	"github.com/stretchr/testify/assert"
 )
 

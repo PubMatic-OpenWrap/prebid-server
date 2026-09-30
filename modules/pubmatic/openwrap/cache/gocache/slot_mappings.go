@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 // PopulateCacheWithPubSlotNameHash will put the slot names and hashes for a publisher in cache
