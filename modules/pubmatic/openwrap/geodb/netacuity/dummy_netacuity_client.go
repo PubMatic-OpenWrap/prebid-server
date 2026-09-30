@@ -1,7 +1,7 @@
 package netacuity
 
 import (
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/geodb"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/geodb"
 )
 
 // DummyNetAcuity instance for netacuity

@@ -3,11 +3,11 @@ package openwrap
 import (
 	"context"
 
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod/impressions"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adpod/impressions"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 func (m OpenWrap) HandleProcessedAuctionHook(
@@ -18,11 +18,11 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 	result := hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{}
 	result.ChangeSet = hookstage.ChangeSet[hookstage.ProcessedAuctionRequestPayload]{}
 
-	if len(moduleCtx.ModuleContext) == 0 {
+	if !hasModuleContext(moduleCtx.ModuleContext) {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleProcessedAuctionHook()")
 		return result, nil
 	}
-	rctx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
+	rctx, ok := getRequestCtx(moduleCtx.ModuleContext)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleProcessedAuctionHook()")
 		return result, nil
@@ -33,7 +33,7 @@ func (m OpenWrap) HandleProcessedAuctionHook(
 		return result, nil
 	}
 	defer func() {
-		moduleCtx.ModuleContext["rctx"] = rctx
+		setRequestCtx(moduleCtx.ModuleContext, rctx)
 	}()
 
 	var imps []*openrtb_ext.ImpWrapper

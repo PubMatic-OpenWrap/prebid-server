@@ -9,8 +9,8 @@ import (
 	"github.com/PubMatic-OpenWrap/fastxml"
 	"github.com/beevik/etree"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/endpoints/openrtb2/ctv/constant"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/endpoints/openrtb2/ctv/constant"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 type AdpodBuilder interface {

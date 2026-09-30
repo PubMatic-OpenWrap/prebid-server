@@ -8,9 +8,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	models "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	adpodconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adpodconfig"
-	adunitconfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	models "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	adpodconfig "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adpodconfig"
+	adunitconfig "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
 )
 
 // MockDatabase is a mock of Database interface.
