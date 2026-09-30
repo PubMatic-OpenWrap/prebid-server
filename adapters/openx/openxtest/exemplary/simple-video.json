@@ -94,7 +94,8 @@
           },
           "video": {
             "duration": 30,
-            "primary_category": "IAB20"
+            "primary_category": "IAB20",
+            "vasttagid": ""
           },
           "type": "video"
         }

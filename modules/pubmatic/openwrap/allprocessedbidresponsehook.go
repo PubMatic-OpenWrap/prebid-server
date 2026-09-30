@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/prebid/prebid-server/v4/exchange/entities"
-	"github.com/prebid/prebid-server/v4/hooks/hookstage"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/exchange/entities"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/unitylevelplay"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
 )
 
 // handleAllProcessedBidResponsesHook will create unique id for each bid in bid Response. This hook is introduced
@@ -25,12 +25,12 @@ func (m OpenWrap) handleAllProcessedBidResponsesHook(
 	}
 
 	// absence of rctx at this hook means the first hook failed!. Do nothing
-	if !hasModuleContext(moduleCtx.ModuleContext) {
+	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleAllProcessedBidResponsesHook()")
 		return result, nil
 	}
 
-	rCtx, ok := getRequestCtx(moduleCtx.ModuleContext)
+	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleAllProcessedBidResponsesHook()")
 		return result, nil

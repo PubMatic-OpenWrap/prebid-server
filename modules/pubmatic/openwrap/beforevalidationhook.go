@@ -18,25 +18,25 @@ import (
 	nativeRequests "github.com/prebid/openrtb/v20/native1/request"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v4/currency"
-	"github.com/prebid/prebid-server/v4/floors"
-	"github.com/prebid/prebid-server/v4/hooks/hookstage"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adapters"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adpod"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adunitconfig"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/bidderparams"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/customdimensions"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/eds"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
-	modelsAdunitConfig "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/ortb"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/utils"
-	"github.com/prebid/prebid-server/v4/openrtb_ext"
-	"github.com/prebid/prebid-server/v4/util/ptrutil"
+	"github.com/prebid/prebid-server/v3/currency"
+	"github.com/prebid/prebid-server/v3/floors"
+	"github.com/prebid/prebid-server/v3/hooks/hookstage"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adapters"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adpod"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/bidderparams"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/customdimensions"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/eds"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	modelsAdunitConfig "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
+	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v3/util/ptrutil"
 )
 
 // logHookBidRequest logs the bidRequest at different stages of the hook execution
@@ -69,11 +69,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		Reject: true,
 	}
 
-	if !hasModuleContext(moduleCtx.ModuleContext) {
+	if len(moduleCtx.ModuleContext) == 0 {
 		result.DebugMessages = append(result.DebugMessages, "error: module-ctx not found in handleBeforeValidationHook()")
 		return result, nil
 	}
-	rCtx, ok := getRequestCtx(moduleCtx.ModuleContext)
+	rCtx, ok := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 	if !ok {
 		result.DebugMessages = append(result.DebugMessages, "error: request-ctx not found in handleBeforeValidationHook()")
 		return result, nil
@@ -83,7 +83,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	logHookBidRequest("hook_start", rCtx, payload.BidRequest, 0)
 
 	defer func() {
-		setRequestCtx(moduleCtx.ModuleContext, rCtx)
+		moduleCtx.ModuleContext["rctx"] = rCtx
 
 		// Log at the end of the hook with updated bidRequest
 		if result.Reject {
@@ -778,9 +778,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// }
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
-		rctx, _ := getRequestCtx(moduleCtx.ModuleContext)
+		rctx := moduleCtx.ModuleContext["rctx"].(models.RequestCtx)
 		defer func() {
-			setRequestCtx(moduleCtx.ModuleContext, rctx)
+			moduleCtx.ModuleContext["rctx"] = rctx
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
 
 			// Always record preprocessing time stats

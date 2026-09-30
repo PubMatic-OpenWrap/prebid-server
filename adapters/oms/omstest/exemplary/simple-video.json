@@ -155,7 +155,8 @@
                     },
                     "video": {
                         "duration": 10,
-                        "primary_category": "IAB20"
+                        "primary_category": "IAB20",
+                        "vasttagid": ""
                     },
                     "type": "video"
                 }
