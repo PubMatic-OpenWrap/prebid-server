@@ -10,8 +10,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 // Wire IDs for ext.owsdk.adattributes (numeric; product spec).
