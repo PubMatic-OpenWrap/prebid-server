@@ -1,0 +1,108 @@
+{
+  "mockBidRequest": {
+    "id": "test-request-id",
+    "imp": [
+      {
+        "id": "test-imp-id",
+        "banner": {
+          "format": [
+            {
+              "w": 300,
+              "h": 250
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {
+            "publisherId": "999",
+            "adSlot": "AdTag_Div1@300x250",
+            "mediation": {
+              "name": "AdMob",
+              "waterfall_or_bidding": "bidding"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+        "body": {
+          "id": "test-request-id",
+          "imp": [
+            {
+              "id": "test-imp-id",
+              "banner": {
+                "format": [
+                  {
+                    "w": 300,
+                    "h": 250
+                  }
+                ],
+                "h": 250,
+                "w": 300
+              },
+              "tagid": "AdTag_Div1",
+              "ext": {
+                "mediation": {
+                  "name": "AdMob",
+                  "waterfall_or_bidding": "bidding"
+                }
+              }
+            }
+          ],
+          "ext": {}
+        },
+        "impIDs": ["test-imp-id"]
+      },
+      "mockResponse": {
+        "status": 200,
+        "body": {
+          "id": "test-request-id",
+          "seatbid": [
+            {
+              "seat": "pubmatic",
+              "bid": [
+                {
+                  "id": "bid-1",
+                  "impid": "test-imp-id",
+                  "price": 1.1,
+                  "adm": "some-test-ad",
+                  "crid": "crid_10",
+                  "h": 250,
+                  "w": 300,
+                  "mtype": 1,
+                  "ext": {}
+                }
+              ]
+            }
+          ],
+          "cur": "USD"
+        }
+      }
+    }
+  ],
+  "expectedBidResponses": [
+    {
+      "currency": "USD",
+      "bids": [
+        {
+          "bid": {
+            "id": "bid-1",
+            "impid": "test-imp-id",
+            "price": 1.1,
+            "adm": "some-test-ad",
+            "crid": "crid_10",
+            "w": 300,
+            "h": 250,
+            "mtype": 1,
+            "ext": {}
+          },
+          "type": "banner"
+        }
+      ]
+    }
+  ]
+}

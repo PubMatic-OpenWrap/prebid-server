@@ -1727,7 +1727,7 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(8, true)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(models.AppSubIntegrationPath{ID: 8}, true)
 			},
 			want: 8,
 		},
@@ -1742,7 +1742,7 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(models.AppSubIntegrationPath{}, false)
 			},
 			want: -1,
 		},
@@ -1758,8 +1758,8 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(1, true)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(models.AppSubIntegrationPath{}, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(models.AppSubIntegrationPath{ID: 1}, true)
 			},
 			want: 1,
 		},
@@ -1770,9 +1770,87 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				tt.setup()
 			}
 			got := getAppSubIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
-			assert.Equal(t, tt.want, got, tt.name)
+			assert.Equal(t, tt.want, got.ID, tt.name)
 		})
 	}
+}
+
+func TestPubmaticMediation(t *testing.T) {
+	path := models.AppSubIntegrationPath{
+		ID:            16,
+		MediationName: "AdMob",
+		MediationType: "bidding",
+	}
+	tests := []struct {
+		name             string
+		partnerConfigMap map[int]map[string]string
+		path             models.AppSubIntegrationPath
+		want             string
+	}{
+		{
+			name: "server side pubmatic",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+			want: `{"name":"AdMob","waterfall_or_bidding":"bidding"}`,
+		},
+		{
+			name: "server side pubmatic2",
+			partnerConfigMap: map[int]map[string]string{
+				2: {models.PREBID_PARTNER_NAME: models.BidderPubMaticSecondaryAlias, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+			want: `{"name":"AdMob","waterfall_or_bidding":"bidding"}`,
+		},
+		{
+			name: "other partner",
+			partnerConfigMap: map[int]map[string]string{
+				3: {models.PREBID_PARTNER_NAME: "appnexus", models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+		},
+		{
+			name: "client side pubmatic",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "0"},
+			},
+			path: path,
+		},
+		{
+			name: "empty mediation columns",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: models.AppSubIntegrationPath{ID: 1},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := pubmaticMediation(tt.partnerConfigMap, tt.path)
+			if tt.want == "" {
+				assert.Nil(t, got)
+				return
+			}
+			assert.JSONEq(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestGetAppSubIntegrationPathMediationFields(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+	mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AdMob - SDK Bidding").Return(models.AppSubIntegrationPath{
+		ID:            16,
+		MediationName: "admob",
+		MediationType: "bidding",
+	}, true)
+
+	got := getAppSubIntegrationPath(map[int]map[string]string{
+		models.VersionLevelConfigID: {models.SubIntegrationPathKey: "AdMob - SDK Bidding"},
+	}, mockProfileMetaData)
+	assert.Equal(t, models.AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationType: "bidding"}, got)
 }
 
 func TestSearchAccountID(t *testing.T) {

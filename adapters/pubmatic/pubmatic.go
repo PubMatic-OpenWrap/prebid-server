@@ -108,6 +108,7 @@ const (
 	sendBurlKey              = "sendburl"
 	sdkSubIntegrationKey     = "sdksubintegration"
 	owSDKKey                 = "owsdk"
+	mediationKey             = "mediation"
 )
 
 func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
@@ -476,6 +477,10 @@ func parseImpressionObject(imp *openrtb2.Imp, extractWrapperExtFromImp, extractP
 
 	//Google Sdk
 	addGoogleSDKParamsToBidExt(extMap, bidderExt)
+
+	if len(pubmaticExt.Mediation) > 0 {
+		extMap[mediationKey] = pubmaticExt.Mediation
+	}
 
 	imp.Ext = nil
 	if len(extMap) > 0 {
