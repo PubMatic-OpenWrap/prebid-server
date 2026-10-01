@@ -14,25 +14,25 @@ func TestAppSubIntegrationPathImpMediation(t *testing.T) {
 		want *ImpMediation
 	}{
 		{
-			name: "name and type",
+			name: "name_and_type",
 			path: AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationType: "bidding"},
 			want: &ImpMediation{Name: "admob", WaterfallOrBidding: "bidding"},
 		},
 		{
-			name: "waterfall type",
+			name: "waterfall_type",
 			path: AppSubIntegrationPath{ID: 2, MediationName: "google_ad_manager", MediationType: "waterfall"},
 			want: &ImpMediation{Name: "google_ad_manager", WaterfallOrBidding: "waterfall"},
 		},
 		{
-			name: "empty name",
+			name: "empty_name",
 			path: AppSubIntegrationPath{ID: 1, MediationType: "bidding"},
 		},
 		{
-			name: "empty type",
+			name: "empty_type",
 			path: AppSubIntegrationPath{ID: 1, MediationName: "admob"},
 		},
 		{
-			name: "empty name and type",
+			name: "empty_name_and_type",
 			path: AppSubIntegrationPath{ID: 1},
 		},
 	}
@@ -50,39 +50,39 @@ func TestHasPubMaticPartner(t *testing.T) {
 		want             bool
 	}{
 		{
-			name: "server side pubmatic",
+			name: "server_side_pubmatic",
 			partnerConfigMap: map[int]map[string]string{
 				1: {PREBID_PARTNER_NAME: BidderPubMatic, SERVER_SIDE_FLAG: "1"},
 			},
 			want: true,
 		},
 		{
-			name: "server side pubmatic2",
+			name: "server_side_pubmatic2",
 			partnerConfigMap: map[int]map[string]string{
 				2: {PREBID_PARTNER_NAME: BidderPubMaticSecondaryAlias, SERVER_SIDE_FLAG: "1"},
 			},
 			want: true,
 		},
 		{
-			name: "client side pubmatic",
+			name: "client_side_pubmatic",
 			partnerConfigMap: map[int]map[string]string{
 				1: {PREBID_PARTNER_NAME: BidderPubMatic, SERVER_SIDE_FLAG: "0"},
 			},
 		},
 		{
-			name: "version level config is ignored",
+			name: "version_level_config_is_ignored",
 			partnerConfigMap: map[int]map[string]string{
 				VersionLevelConfigID: {PREBID_PARTNER_NAME: BidderPubMatic, SERVER_SIDE_FLAG: "1"},
 			},
 		},
 		{
-			name: "other server side partner",
+			name: "other_server_side_partner",
 			partnerConfigMap: map[int]map[string]string{
 				3: {PREBID_PARTNER_NAME: "appnexus", SERVER_SIDE_FLAG: "1"},
 			},
 		},
 		{
-			name: "empty map",
+			name: "empty_map",
 		},
 	}
 	for _, tt := range tests {
