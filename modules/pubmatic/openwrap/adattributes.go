@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 // Wire IDs for ext.owsdk.adattributes (numeric; product spec).
@@ -49,9 +49,12 @@ const (
 	MRECHeight = 250
 
 	// Server injects format-level ext.owsdk.adattributes only for displaymanagerver in [4.1.0, 5.3.0].
-	// SDK 5.3.1+ sends adattributes on the request; OpenWrap does not add them.
+	// SDK 5.4.0+ sends format-level owsdk in signal; OpenWrap merges from signal instead.
 	OWSDKServerAdAttributesMinSDKVersion = "4.1.0"
 	OWSDKServerAdAttributesMaxSDKVersion = "5.3.0"
+
+	// SDK 5.4.0+ includes format-level ext.owsdk (e.g. adattributes) in decoded signal banner/video ext.
+	OWSDKSignalFormatLevelMinSDKVersion = "5.4.0"
 )
 
 const (
@@ -179,15 +182,23 @@ func init() {
 	}
 }
 
+// shouldMergeSignalFormatLevelOWSDK is true when displaymanagerver is >= 5.4.0.
+func shouldMergeSignalFormatLevelOWSDK(sdkVersion string) bool {
+	if sdkVersion == "" {
+		return false
+	}
+	return !sdkutils.IsVersionLessThan(sdkVersion, OWSDKSignalFormatLevelMinSDKVersion)
+}
+
 // shouldServerInjectFormatLevelAdAttributes is true when displaymanagerver is in [4.1.0, 5.3.0] inclusive.
 func shouldServerInjectFormatLevelAdAttributes(sdkVersion string) bool {
 	if sdkVersion == "" {
 		return false
 	}
-	if isVersionLessThan(sdkVersion, OWSDKServerAdAttributesMinSDKVersion) {
+	if sdkutils.IsVersionLessThan(sdkVersion, OWSDKServerAdAttributesMinSDKVersion) {
 		return false
 	}
-	if isVersionGreaterThan(sdkVersion, OWSDKServerAdAttributesMaxSDKVersion) {
+	if sdkutils.IsVersionGreaterThan(sdkVersion, OWSDKServerAdAttributesMaxSDKVersion) {
 		return false
 	}
 	return true
@@ -264,6 +275,52 @@ func marshalExtOWSDKOnly(owsdkBytes []byte) (json.RawMessage, error) {
 	return json.Marshal(map[string]json.RawMessage{
 		extOWSDKKey: owsdkBytes,
 	})
+}
+
+// mergeSignalFormatOWSDKFromFormatExt copies signal format ext.owsdk onto the request format ext.
+// Only owsdk is taken from signal; other signal format ext keys are ignored. Request ext keys are preserved.
+func mergeSignalFormatOWSDKFromFormatExt(requestExt, signalExt json.RawMessage) (json.RawMessage, error) {
+	if len(signalExt) == 0 {
+		return requestExt, nil
+	}
+
+	signalOWSDK, _, _, err := jsonparser.Get(signalExt, extOWSDKKey)
+	if err != nil || len(signalOWSDK) <= 2 {
+		return requestExt, nil
+	}
+
+	adAttributesJSON, _, _, _ := jsonparser.Get(signalOWSDK, adAttributesKey)
+	return mergeOWSDKServerFieldsIntoExtJSON(requestExt, signalOWSDK, adAttributesJSON)
+}
+
+// MergeSignalFormatLevelOWSDK copies format-level ext.owsdk from decoded SDK signal onto the request imp
+// when displaymanagerver >= 5.4.0. v25 requests already carry format-level owsdk on the imp and do not use signal.
+// For SDK < 5.4.0 this is a no-op (server injection handles 4.1.0–5.3.0).
+func MergeSignalFormatLevelOWSDK(imp *openrtb2.Imp, signalRequest *openrtb2.BidRequest, sdkVersion string) error {
+	if imp == nil || signalRequest == nil || len(signalRequest.Imp) == 0 || !shouldMergeSignalFormatLevelOWSDK(sdkVersion) {
+		return nil
+	}
+
+	signalImp := &signalRequest.Imp[0]
+
+	var errs []error
+
+	if imp.Banner != nil && signalImp.Banner != nil {
+		if out, err := mergeSignalFormatOWSDKFromFormatExt(imp.Banner.Ext, signalImp.Banner.Ext); err != nil {
+			errs = append(errs, fmt.Errorf("banner: %w", err))
+		} else {
+			imp.Banner.Ext = out
+		}
+	}
+	if imp.Video != nil && signalImp.Video != nil {
+		if out, err := mergeSignalFormatOWSDKFromFormatExt(imp.Video.Ext, signalImp.Video.Ext); err != nil {
+			errs = append(errs, fmt.Errorf("video: %w", err))
+		} else {
+			imp.Video.Ext = out
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 // ApplyOWSDKFormatLevelAdAttributes sets imp.banner|video ext.owsdk.adattributes from unifiedFeatureMatrix
@@ -376,7 +433,7 @@ func lookupSupportedAdAttributeWireIDs(os OS, sdkVersion string, adFormat AdForm
 	}
 
 	for _, config := range unifiedFeatureMatrixByOSFormat[key] {
-		if isVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
+		if sdkutils.IsVersionInRange(sdkVersion, config.MinVersion, config.MaxVersion) {
 			return config.WireIDs
 		}
 	}
@@ -484,53 +541,6 @@ func DetermineOS(deviceOS string) OS {
 	default:
 		return "" // Unknown OS
 	}
-}
-
-// isVersionLessThan checks if version1 is less than version2
-func isVersionLessThan(version1, version2 string) bool {
-	return compareVersions(version1, version2) < 0
-}
-
-// isVersionGreaterThan checks if version1 is greater than version2
-func isVersionGreaterThan(version1, version2 string) bool {
-	return compareVersions(version1, version2) > 0
-}
-
-// isVersionInRange checks if version is within the specified range (inclusive)
-func isVersionInRange(version, minVersion, maxVersion string) bool {
-	// If maxVersion is empty, it means no upper bound
-	if maxVersion == "" {
-		return compareVersions(version, minVersion) >= 0
-	}
-
-	return compareVersions(version, minVersion) >= 0 && compareVersions(version, maxVersion) <= 0
-}
-
-// compareVersions compares two dot-separated numeric version strings (e.g. "5.1.0").
-// Non-numeric segments are treated as 0; leading/trailing whitespace is ignored.
-func compareVersions(v1, v2 string) int {
-	p1 := strings.Split(strings.TrimSpace(v1), ".")
-	p2 := strings.Split(strings.TrimSpace(v2), ".")
-
-	for i := 0; i < max(len(p1), len(p2)); i++ {
-		n1, n2 := 0, 0
-
-		if i < len(p1) {
-			n1, _ = strconv.Atoi(p1[i])
-		}
-		if i < len(p2) {
-			n2, _ = strconv.Atoi(p2[i])
-		}
-
-		switch {
-		case n1 < n2:
-			return -1
-		case n1 > n2:
-			return 1
-		}
-	}
-
-	return 0
 }
 
 // CreateOWSDKExtension builds ext.owsdk with sorted, deduplicated, positive adattribute wire IDs.

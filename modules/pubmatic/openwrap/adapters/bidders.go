@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 )
 
 // PrepareBidParamJSONForPartner preparing bid params json for partner
@@ -809,19 +809,6 @@ func builderOpenweb(params BidderParameters) (json.RawMessage, error) {
 	}
 
 	jsonStr.WriteByte('}')
-	return jsonStr.Bytes(), nil
-}
-
-func builderNativo(params BidderParameters) (json.RawMessage, error) {
-
-	pid, ok := getInt(params.FieldMap["placementId"])
-
-	if !ok || pid == 0 {
-		return nil, fmt.Errorf(errMandatoryParameterMissingFormat, params.AdapterName, "placementId")
-	}
-
-	jsonStr := bytes.NewBuffer(nil)
-	fmt.Fprintf(jsonStr, `{"placementID":"%d"}`, pid)
 	return jsonStr.Bytes(), nil
 }
 

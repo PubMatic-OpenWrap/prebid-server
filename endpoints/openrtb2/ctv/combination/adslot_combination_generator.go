@@ -3,7 +3,7 @@ package combination
 import (
 	"math/big"
 
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 // generator holds all the combinations based
