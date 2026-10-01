@@ -101,7 +101,6 @@ type RequestCtx struct {
 	CurrencyConversion              func(from string, to string, value float64) (float64, error)
 	MatchedImpression               map[string]int
 	CustomDimensions                map[string]CustomDimension
-	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
 	AppLovinMax                     AppLovinMax
 	LoggerDisabled                  bool
@@ -278,13 +277,6 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject bool
 }
-
-type MultiFloorsConfig struct {
-	Enabled bool
-	Config  ApplovinAdUnitFloors
-}
-
-type ApplovinAdUnitFloors map[string][]float64
 
 type WinningBids map[string][]*OwBid
 

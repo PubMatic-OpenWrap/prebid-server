@@ -24,10 +24,8 @@ type feature struct {
 	fsc                     fsc
 	tbf                     tbf
 	ant                     analyticsThrottle
-	ampMultiformat          ampMultiformat
 	maxFloors               maxFloors
 	bidRecovery             bidRecovery
-	appLovinMultiFloors     appLovinMultiFloors
 	impCountingMethod       impCountingMethod
 	gdprCountryCodes        gdprCountryCodes
 	mbmf                    *mbmf
@@ -55,18 +53,12 @@ func New(config Config) *feature {
 			tbf: tbf{
 				pubProfileTraffic: make(map[int]map[int]int),
 			},
-			ampMultiformat: ampMultiformat{
-				enabledPublishers: make(map[int]struct{}),
-			},
 			maxFloors: maxFloors{
 				enabledPublishers: make(map[int]struct{}),
 			},
 			ant: analyticsThrottle{
 				vault: newPubThrottling(config.AnalyticsThrottleList),
 				db:    newPubThrottling(config.AnalyticsThrottleList),
-			},
-			appLovinMultiFloors: appLovinMultiFloors{
-				enabledPublisherProfile: make(map[int]map[string]models.ApplovinAdUnitFloors),
 			},
 			impCountingMethod:       newImpCountingMethod(),
 			gdprCountryCodes:        newGDPRCountryCodes(),
@@ -129,11 +121,9 @@ func (fe *feature) updateFeatureConfigMaps() {
 	}
 
 	fe.updateTBFConfigMap()
-	fe.updateAmpMutiformatEnabledPublishers()
 	fe.updateMaxFloorsEnabledPublishers()
 	fe.updateAnalyticsThrottling()
-	fe.updateBidRecoveryEnabledPublishers()
-	fe.updateApplovinMultiFloorsFeature()
+	//fe.updateBidRecoveryEnabledPublishers()
 	fe.updateImpCountingMethodEnabledBidders()
 	fe.updateMBMF()
 	fe.updateDynamicFloorEnabledPublishers()

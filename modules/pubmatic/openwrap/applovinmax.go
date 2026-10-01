@@ -320,14 +320,3 @@ func modifyRequestBody(requestBody []byte) []byte {
 
 	return requestBody
 }
-
-// getApplovinMultiFloors fetches adunitwise floors for pub-profile
-func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFloorsConfig {
-	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinMultiFloorsEnabled(rctx.PubID, rctx.ProfileIDStr) {
-		return models.MultiFloorsConfig{
-			Enabled: true,
-			Config:  m.pubFeatures.GetApplovinMultiFloors(rctx.PubID, rctx.ProfileIDStr),
-		}
-	}
-	return models.MultiFloorsConfig{Enabled: false}
-}
