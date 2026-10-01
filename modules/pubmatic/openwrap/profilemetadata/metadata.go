@@ -1,6 +1,6 @@
 package profilemetadata
 
-import "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+import "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 
 type ProfileMetaData interface {
 	GetProfileTypePlatform(profileTypePlatform string) (int, bool)

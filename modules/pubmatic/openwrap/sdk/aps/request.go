@@ -7,10 +7,10 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	adcom1 "github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 )
 
 const (
@@ -19,8 +19,19 @@ const (
 	apsAdFormatInterstitial = "interstitial"
 	apsAdFormatRewarded     = "rewarded"
 
+	// APS extendedsignal.<adFormat> keys for format-level owsdk.adattributes.
+	apsBannerAdAttributesKey = "banneradattributes"
+	apsVideoAdAttributesKey  = "videoadattributes"
+
+	// Format-level adattributes from extendedsignal apply only for SDK 5.4.0+
+	// (aligned with OWSDKSignalFormatLevelMinSDKVersion in openwrap/adattributes.go).
+	apsFormatLevelAdAttributesMinSDKVersion = "5.4.0"
+
 	apsMrecWidth  int64 = 300
 	apsMrecHeight int64 = 250
+
+	owSdk        = "owsdk"
+	adAttributes = "adattributes"
 )
 
 type apsVideoFields struct {
@@ -439,6 +450,33 @@ func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, s
 	setUserExtFromExtendedSignal(request, extSignal)
 	if adFormat != apsAdFormatBanner {
 		setImpExtFromExtendedSignal(request, extSignal, request.Device)
+	}
+	if shouldSetFormatLevelAdAttributesFromExtendedSignal(imp.DisplayManagerVer) {
+		setFormatLevelAdAttributesFromExtendedSignal(imp, extSignal)
+	}
+}
+
+// shouldSetFormatLevelAdAttributesFromExtendedSignal is true when displaymanagerver is >= 5.4.0.
+func shouldSetFormatLevelAdAttributesFromExtendedSignal(sdkVersion string) bool {
+	if sdkVersion == "" {
+		return false
+	}
+	return !sdkutils.IsVersionLessThan(sdkVersion, apsFormatLevelAdAttributesMinSDKVersion)
+}
+
+// setFormatLevelAdAttributesFromExtendedSignal maps APS extendedsignal.<adFormat>
+// banneradattributes / videoadattributes onto imp.banner|video.ext.owsdk.adattributes.
+// Caller must gate on SDK >= 5.4.0 via shouldSetFormatLevelAdAttributesFromExtendedSignal.
+func setFormatLevelAdAttributesFromExtendedSignal(imp *openrtb2.Imp, extSignal []byte) {
+	if imp == nil || len(extSignal) == 0 {
+		return
+	}
+
+	if imp.Banner != nil {
+		imp.Banner.Ext = setImpExtFieldFromExtSignal(imp.Banner.Ext, extSignal, apsBannerAdAttributesKey, owSdk, adAttributes)
+	}
+	if imp.Video != nil {
+		imp.Video.Ext = setImpExtFieldFromExtSignal(imp.Video.Ext, extSignal, apsVideoAdAttributesKey, owSdk, adAttributes)
 	}
 }
 

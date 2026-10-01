@@ -3,7 +3,7 @@ package feature
 import (
 	"database/sql"
 
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/config"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/config"
 )
 
 const (

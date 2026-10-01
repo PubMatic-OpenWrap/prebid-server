@@ -6,7 +6,7 @@ package mock_profilemetadata
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	models "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	models "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	reflect "reflect"
 )
 
