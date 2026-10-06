@@ -5,24 +5,23 @@ package models
 type AppSubIntegrationPath struct {
 	ID            int
 	MediationName string
-	MediationType string
+	MediationPath string
 }
 
 // ImpMediation is imp.ext.prebid.bidder.pubmatic.mediation.
-// MediationType is written as waterfall_or_bidding.
 type ImpMediation struct {
-	Name               string `json:"name,omitempty"`
-	WaterfallOrBidding string `json:"waterfall_or_bidding,omitempty"`
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
 }
 
 // ImpMediation builds imp.ext.mediation from the sub-integration path row.
-// Name comes from MediationName and waterfall_or_bidding comes from MediationType.
+// Name comes from MediationName and path comes from MediationPath.
 func (p AppSubIntegrationPath) ImpMediation() *ImpMediation {
-	if p.MediationName == "" || p.MediationType == "" {
+	if p.MediationName == "" || p.MediationPath == "" {
 		return nil
 	}
 	return &ImpMediation{
-		Name:               p.MediationName,
-		WaterfallOrBidding: p.MediationType,
+		Name: p.MediationName,
+		Path: p.MediationPath,
 	}
 }

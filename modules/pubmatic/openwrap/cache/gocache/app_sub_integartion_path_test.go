@@ -38,13 +38,13 @@ func Test_cache_GetAppSubIntegrationPath(t *testing.T) {
 		{
 			name: "Valid Data present in DB, return same",
 			want: map[string]models.AppSubIntegrationPath{
-				"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationType: "bidding"},
-				"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+				"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationPath: "bidding"},
+				"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 			},
 			setup: func() {
 				mockDatabase.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{
-					"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationType: "bidding"},
-					"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+					"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationPath: "bidding"},
+					"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				}, nil)
 			},
 			fields: fields{

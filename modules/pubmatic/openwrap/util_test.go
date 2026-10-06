@@ -1779,7 +1779,7 @@ func TestPubmaticMediation(t *testing.T) {
 	path := models.AppSubIntegrationPath{
 		ID:            16,
 		MediationName: "AdMob",
-		MediationType: "bidding",
+		MediationPath: "bidding",
 	}
 	tests := []struct {
 		name             string
@@ -1793,7 +1793,7 @@ func TestPubmaticMediation(t *testing.T) {
 				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "1"},
 			},
 			path: path,
-			want: `{"name":"AdMob","waterfall_or_bidding":"bidding"}`,
+			want: `{"name":"AdMob","path":"bidding"}`,
 		},
 		{
 			name: "server side pubmatic2",
@@ -1801,7 +1801,7 @@ func TestPubmaticMediation(t *testing.T) {
 				2: {models.PREBID_PARTNER_NAME: models.BidderPubMaticSecondaryAlias, models.SERVER_SIDE_FLAG: "1"},
 			},
 			path: path,
-			want: `{"name":"AdMob","waterfall_or_bidding":"bidding"}`,
+			want: `{"name":"AdMob","path":"bidding"}`,
 		},
 		{
 			name: "other partner",
@@ -1844,13 +1844,13 @@ func TestGetAppSubIntegrationPathMediationFields(t *testing.T) {
 	mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AdMob - SDK Bidding").Return(models.AppSubIntegrationPath{
 		ID:            16,
 		MediationName: "admob",
-		MediationType: "bidding",
+		MediationPath: "bidding",
 	}, true)
 
 	got := getAppSubIntegrationPath(map[int]map[string]string{
 		models.VersionLevelConfigID: {models.SubIntegrationPathKey: "AdMob - SDK Bidding"},
 	}, mockProfileMetaData)
-	assert.Equal(t, models.AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationType: "bidding"}, got)
+	assert.Equal(t, models.AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationPath: "bidding"}, got)
 }
 
 func TestSearchAccountID(t *testing.T) {

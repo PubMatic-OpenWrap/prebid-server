@@ -29,13 +29,13 @@ func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 				RWMutex: sync.RWMutex{},
 				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{
 					"DFP":    {ID: 1},
-					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				},
 			},
 			args: args{
 				appSubIntegrationPathStr: "CUSTOM",
 			},
-			want:  models.AppSubIntegrationPath{ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+			want:  models.AppSubIntegrationPath{ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 			want1: true,
 		},
 		{
@@ -44,7 +44,7 @@ func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 				RWMutex: sync.RWMutex{},
 				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{
 					"DFP":    {ID: 1},
-					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				},
 			},
 			args: args{
@@ -68,8 +68,8 @@ func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 }
 
 func TestAppSubIntegrationPathImpMediation(t *testing.T) {
-	got := models.AppSubIntegrationPath{ID: 16, MediationName: "AdMob", MediationType: "bidding"}.ImpMediation()
-	assert.Equal(t, &models.ImpMediation{Name: "AdMob", WaterfallOrBidding: "bidding"}, got)
+	got := models.AppSubIntegrationPath{ID: 16, MediationName: "AdMob", MediationPath: "bidding"}.ImpMediation()
+	assert.Equal(t, &models.ImpMediation{Name: "AdMob", Path: "bidding"}, got)
 
 	assert.Nil(t, models.AppSubIntegrationPath{ID: 1}.ImpMediation())
 }

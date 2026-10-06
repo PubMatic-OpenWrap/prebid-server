@@ -18,7 +18,7 @@
             "adSlot": "AdTag_Div1@300x250",
             "mediation": {
               "name": "AdMob",
-              "waterfall_or_bidding": "bidding"
+              "path": "bidding"
             }
           }
         }
@@ -48,7 +48,7 @@
               "ext": {
                 "mediation": {
                   "name": "AdMob",
-                  "waterfall_or_bidding": "bidding"
+                  "path": "bidding"
                 }
               }
             }

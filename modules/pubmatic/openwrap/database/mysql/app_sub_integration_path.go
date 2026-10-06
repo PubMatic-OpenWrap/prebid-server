@@ -22,16 +22,16 @@ func (db *mySqlDB) GetAppSubIntegrationPaths() (map[string]models.AppSubIntegrat
 	appSubIntegrationPathMap := make(map[string]models.AppSubIntegrationPath)
 	for rows.Next() {
 		var asipKey string
-		var asipMediationName, asipMediationType sql.NullString
+		var asipMediationName, asipMediationPath sql.NullString
 		var asipValue int
-		if err := rows.Scan(&asipKey, &asipValue, &asipMediationName, &asipMediationType); err != nil {
+		if err := rows.Scan(&asipKey, &asipValue, &asipMediationName, &asipMediationPath); err != nil {
 			glog.Errorf(models.ErrDBRowScanFailed, models.AppSubIntegrationPathMapQuery, "", "", err.Error())
 			continue
 		}
 		appSubIntegrationPathMap[asipKey] = models.AppSubIntegrationPath{
 			ID:            asipValue,
 			MediationName: asipMediationName.String,
-			MediationType: asipMediationType.String,
+			MediationPath: asipMediationPath.String,
 		}
 	}
 

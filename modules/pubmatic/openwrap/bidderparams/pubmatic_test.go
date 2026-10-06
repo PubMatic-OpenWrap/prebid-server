@@ -1540,7 +1540,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 					PubIDStr:          "5890",
 					ProfileID:         123,
 					DisplayID:         1,
-					PubMaticMediation: json.RawMessage(`{"name":"AdMob","waterfall_or_bidding":"bidding"}`),
+					PubMaticMediation: json.RawMessage(`{"name":"AdMob","path":"bidding"}`),
 					PartnerConfigMap: map[int]map[string]string{
 						1: {
 							models.PREBID_PARTNER_NAME: "pubmatic",
@@ -1564,7 +1564,7 @@ func TestPreparePubMaticParamsV25(t *testing.T) {
 				matchedSlot:    "/Test_Adunit1234@Div1@200x300",
 				matchedPattern: "",
 				isRegexSlot:    false,
-				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@Div1@200x300","wrapper":{"version":1,"profile":123},"mediation":{"name":"AdMob","waterfall_or_bidding":"bidding"}}`),
+				params:         []byte(`{"publisherId":"5890","adSlot":"/Test_Adunit1234@Div1@200x300","wrapper":{"version":1,"profile":123},"mediation":{"name":"AdMob","path":"bidding"}}`),
 				wantErr:        false,
 			},
 		},

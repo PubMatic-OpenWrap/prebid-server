@@ -473,7 +473,7 @@ func getAppSubIntegrationPath(partnerConfigMap map[int]map[string]string, profil
 }
 
 // pubmaticMediation returns imp.ext.prebid.bidder.pubmatic.mediation for a server-side PubMatic partner.
-// name and waterfall_or_bidding come from the resolved AppSubIntegrationPath row.
+// name and path come from the resolved AppSubIntegrationPath row.
 func pubmaticMediation(partnerConfigMap map[int]map[string]string, appSubIntegrationPath models.AppSubIntegrationPath) json.RawMessage {
 	if !models.HasPubMaticPartner(partnerConfigMap) {
 		return nil

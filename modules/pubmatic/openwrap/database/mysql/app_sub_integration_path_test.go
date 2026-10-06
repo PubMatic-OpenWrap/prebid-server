@@ -52,7 +52,7 @@ func Test_mySqlDB_GetAppSubIntegrationPath(t *testing.T) {
 				},
 			},
 			want: map[string]models.AppSubIntegrationPath{
-				"test_sub_2": {ID: 2, MediationName: "AppLovin", MediationType: "waterfall"},
+				"test_sub_2": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 			},
 			wantErr: nil,
 			setup: func() *sql.DB {

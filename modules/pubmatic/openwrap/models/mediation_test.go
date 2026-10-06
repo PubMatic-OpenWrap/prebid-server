@@ -15,17 +15,17 @@ func TestAppSubIntegrationPathImpMediation(t *testing.T) {
 	}{
 		{
 			name: "name_and_type",
-			path: AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationType: "bidding"},
-			want: &ImpMediation{Name: "admob", WaterfallOrBidding: "bidding"},
+			path: AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationPath: "bidding"},
+			want: &ImpMediation{Name: "admob", Path: "bidding"},
 		},
 		{
 			name: "waterfall_type",
-			path: AppSubIntegrationPath{ID: 2, MediationName: "google_ad_manager", MediationType: "waterfall"},
-			want: &ImpMediation{Name: "google_ad_manager", WaterfallOrBidding: "waterfall"},
+			path: AppSubIntegrationPath{ID: 2, MediationName: "google_ad_manager", MediationPath: "waterfall"},
+			want: &ImpMediation{Name: "google_ad_manager", Path: "waterfall"},
 		},
 		{
 			name: "empty_name",
-			path: AppSubIntegrationPath{ID: 1, MediationType: "bidding"},
+			path: AppSubIntegrationPath{ID: 1, MediationPath: "bidding"},
 		},
 		{
 			name: "empty_type",
@@ -93,9 +93,9 @@ func TestHasPubMaticPartner(t *testing.T) {
 }
 
 func TestImpMediationJSON(t *testing.T) {
-	raw, err := json.Marshal(ImpMediation{Name: "applovin", WaterfallOrBidding: "bidding"})
+	raw, err := json.Marshal(ImpMediation{Name: "applovin", Path: "bidding"})
 	assert.NoError(t, err)
-	assert.JSONEq(t, `{"name":"applovin","waterfall_or_bidding":"bidding"}`, string(raw))
+	assert.JSONEq(t, `{"name":"applovin","path":"bidding"}`, string(raw))
 
 	raw, err = json.Marshal(ImpMediation{})
 	assert.NoError(t, err)
