@@ -31,20 +31,20 @@ func Test_cache_GetAppSubIntegrationPath(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    map[string]int
+		want    map[string]models.AppSubIntegrationPath
 		wantErr bool
 		setup   func()
 	}{
 		{
 			name: "Valid Data present in DB, return same",
-			want: map[string]int{
-				"app_sub_int_1": 1,
-				"app_sub_int_2": 2,
+			want: map[string]models.AppSubIntegrationPath{
+				"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationPath: "bidding"},
+				"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 			},
 			setup: func() {
-				mockDatabase.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{
-					"app_sub_int_1": 1,
-					"app_sub_int_2": 2,
+				mockDatabase.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{
+					"app_sub_int_1": {ID: 1, MediationName: "AdMob", MediationPath: "bidding"},
+					"app_sub_int_2": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				}, nil)
 			},
 			fields: fields{
@@ -58,9 +58,9 @@ func Test_cache_GetAppSubIntegrationPath(t *testing.T) {
 		},
 		{
 			name: "Error In DB, Set Empty",
-			want: map[string]int{},
+			want: map[string]models.AppSubIntegrationPath{},
 			setup: func() {
-				mockDatabase.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, errors.New("QUERY FAILD"))
+				mockDatabase.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{}, errors.New("QUERY FAILD"))
 				mockEngine.EXPECT().RecordDBQueryFailure(models.AppSubIntegrationPathMapQuery, "", "").Return()
 			},
 			fields: fields{
