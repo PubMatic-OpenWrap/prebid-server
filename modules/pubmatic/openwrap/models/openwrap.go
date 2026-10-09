@@ -9,14 +9,14 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/openrtb/v20/openrtb3"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/ortb"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/wakanda"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/usersync"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/ortb"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/usersync"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 )
 
 type RequestCtx struct {
@@ -101,7 +101,6 @@ type RequestCtx struct {
 	CurrencyConversion              func(from string, to string, value float64) (float64, error)
 	MatchedImpression               map[string]int
 	CustomDimensions                map[string]CustomDimension
-	AmpVideoEnabled                 bool //AmpVideoEnabled indicates whether to include a Video object in an AMP request.
 	IsTBFFeatureEnabled             bool
 	AppLovinMax                     AppLovinMax
 	LoggerDisabled                  bool
@@ -278,13 +277,6 @@ type FeatureData struct {
 type AppLovinMax struct {
 	Reject bool
 }
-
-type MultiFloorsConfig struct {
-	Enabled bool
-	Config  ApplovinAdUnitFloors
-}
-
-type ApplovinAdUnitFloors map[string][]float64
 
 type WinningBids map[string][]*OwBid
 

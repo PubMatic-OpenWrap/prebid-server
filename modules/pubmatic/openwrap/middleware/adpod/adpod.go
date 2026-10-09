@@ -8,14 +8,14 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/metrics"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/endpoints/legacy/ctv"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/nbr"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/utils"
-	pbc "github.com/prebid/prebid-server/v3/prebid_cache_client"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/metrics"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/utils"
+	pbc "github.com/prebid/prebid-server/v4/prebid_cache_client"
 )
 
 const (
