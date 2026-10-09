@@ -812,9 +812,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
-		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
-			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
-		}
+		m.updateSchain(&rctx, ep.BidRequest)
 
 		if rctx.IsCTVRequest {
 			err = ctv.FilterNonVideoImpressions(ep.BidRequest)

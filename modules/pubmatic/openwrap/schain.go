@@ -91,37 +91,65 @@ func setAllBidderSChain(requestExt *models.RequestExt, partnerConfigMap map[int]
 	requestExt.Prebid.SChains = allBidderSChainConfig
 }
 
-func (m OpenWrap) updateAppLovinMaxRequestSchain(rctx *models.RequestCtx, maxRequest *openrtb2.BidRequest) {
-	if removeApplovinNode(maxRequest.Source) {
-		glog.V(models.LogLevelDebug).Info("Removed applovin node from schain object from request")
-		rctx.ABTestConfigApplied = 1
-		m.metricEngine.RecordRequestWithSchainABTestEnabled()
+const (
+	schainASIAppLovin = "applovin.com"
+	schainASIGoogle   = "google.com"
+)
+
+func schainNodeASI(endpoint string) string {
+	switch endpoint {
+	case models.EndpointAppLovinMax:
+		return schainASIAppLovin
+	case models.EndpointGoogleSDK:
+		return schainASIGoogle
+	default:
+		return ""
 	}
 }
 
-// removeApplovinNode removes AppLovin node(s) from Source.SChain and source.ext.schain if present
-func removeApplovinNode(src *openrtb2.Source) (removed bool) {
-	if src == nil {
+func (m OpenWrap) updateSchain(rctx *models.RequestCtx, request *openrtb2.BidRequest) {
+	if rctx.Endpoint != models.EndpointAppLovinMax && rctx.Endpoint != models.EndpointGoogleSDK {
+		return
+	}
+
+	if request == nil || request.Source == nil {
+		return
+	}
+
+	// Get the ASI for the endpoint
+	asi := schainNodeASI(rctx.Endpoint)
+	if asi == "" {
+		return
+	}
+
+	// Remove the node from the schain object and source.ext.schain
+	if removeSchainNode(request.Source, asi) {
+		glog.V(models.LogLevelDebug).Infof("Removed %s node from schain object from request", asi)
+		m.metricEngine.RecordRequestWithSchainNodeRemoved(rctx.Endpoint)
+	}
+}
+
+// removeSchainNode removes nodes whose ASI matches asi from Source.SChain and source.ext.schain.
+func removeSchainNode(src *openrtb2.Source, asi string) (removed bool) {
+	if src == nil || asi == "" {
 		return false
 	}
 
-	// Remove only AppLovin node(s) from Source.SChain if present
-	if isRemoved := removeNode(src.SChain); isRemoved {
+	if isRemoved := removeNode(src.SChain, asi); isRemoved {
 		removed = true
 	}
-	// Remove only AppLovin node(s) from source.ext.schain if exists and return true if removed
-	return removeNodeFromSourceExt(src) || removed
+	return removeNodeFromSourceExt(src, asi) || removed
 }
 
-// removeNode removes AppLovin node(s) from SupplyChain if present
-func removeNode(schain *openrtb2.SupplyChain) (removed bool) {
-	if schain == nil || len(schain.Nodes) == 0 {
+// removeNode removes supply-chain nodes whose ASI matches asi.
+func removeNode(schain *openrtb2.SupplyChain, asi string) (removed bool) {
+	if schain == nil || len(schain.Nodes) == 0 || asi == "" {
 		return false
 	}
 
 	filtered := schain.Nodes[:0]
 	for _, n := range schain.Nodes {
-		if n.ASI == "applovin.com" {
+		if n.ASI == asi {
 			removed = true
 			continue
 		}
@@ -133,9 +161,9 @@ func removeNode(schain *openrtb2.SupplyChain) (removed bool) {
 	return removed
 }
 
-// removeNodeFromSourceExt removes AppLovin node(s) from source.ext.schain if exists
-func removeNodeFromSourceExt(src *openrtb2.Source) (removed bool) {
-	if len(src.Ext) == 0 {
+// removeNodeFromSourceExt removes matching nodes from source.ext.schain when that object exists.
+func removeNodeFromSourceExt(src *openrtb2.Source, asi string) (removed bool) {
+	if len(src.Ext) == 0 || asi == "" {
 		return false
 	}
 
@@ -144,8 +172,8 @@ func removeNodeFromSourceExt(src *openrtb2.Source) (removed bool) {
 		return false
 	}
 
-	//avoid full unmarshal/marshal if AppLovin node doesn't exist in schain obj.
-	if !bytes.Contains(schainRaw, []byte("applovin.com")) {
+	// Avoid a full unmarshal when the node is not present.
+	if !bytes.Contains(schainRaw, []byte(asi)) {
 		return false
 	}
 
@@ -154,7 +182,7 @@ func removeNodeFromSourceExt(src *openrtb2.Source) (removed bool) {
 		return false
 	}
 
-	isRemoved := removeNode(&schain)
+	isRemoved := removeNode(&schain, asi)
 	if !isRemoved {
 		return false
 	}

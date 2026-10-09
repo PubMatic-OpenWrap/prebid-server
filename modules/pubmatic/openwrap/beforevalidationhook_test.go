@@ -8246,7 +8246,7 @@ func TestOpenWrapapplyNativeAdUnitConfig(t *testing.T) {
 	}
 }
 
-func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
+func TestOpenWrap_updateSchain(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockFeature := mock_feature.NewMockFeature(ctrl)
@@ -8257,12 +8257,11 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 	ow = &OpenWrap{pubFeatures: mockFeature}
 
 	tests := []struct {
-		name              string
-		rctx              *models.RequestCtx
-		maxRequest        *openrtb2.BidRequest
-		want              *openrtb2.BidRequest
-		wantABTestEnabled bool
-		setup             func()
+		name       string
+		rctx       *models.RequestCtx
+		maxRequest *openrtb2.BidRequest
+		want       *openrtb2.BidRequest
+		setup      func()
 	}{
 		{
 			name: "schain_not_present_in_request",
@@ -8279,7 +8278,6 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 					SChain: nil,
 				},
 			},
-			wantABTestEnabled: false,
 		},
 		{
 			name: "schain_removed_from_request",
@@ -8302,7 +8300,7 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 				},
 			},
 			setup: func() {
-				mockEngine.EXPECT().RecordRequestWithSchainABTestEnabled()
+				mockEngine.EXPECT().RecordRequestWithSchainNodeRemoved(models.EndpointAppLovinMax)
 			},
 			want: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{
@@ -8312,7 +8310,36 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 					},
 				},
 			},
-			wantABTestEnabled: true,
+		},
+		{
+			name: "googlesdk_schain_node_removed",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			maxRequest: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Nodes: []openrtb2.SupplyChainNode{
+							{ASI: "google.com", SID: "g1"},
+							{ASI: "applovin.com", SID: "a1"},
+						},
+					},
+				},
+			},
+			setup: func() {
+				mockEngine.EXPECT().RecordRequestWithSchainNodeRemoved(models.EndpointGoogleSDK)
+			},
+			want: &openrtb2.BidRequest{
+				Source: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{
+						Complete: 1,
+						Nodes: []openrtb2.SupplyChainNode{
+							{ASI: "applovin.com", SID: "a1"},
+						},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -8324,9 +8351,8 @@ func TestOpenWrap_updateAppLovinMaxRequestSchain(t *testing.T) {
 				pubFeatures:  mockFeature,
 				metricEngine: mockEngine,
 			}
-			m.updateAppLovinMaxRequestSchain(tt.rctx, tt.maxRequest)
+			m.updateSchain(tt.rctx, tt.maxRequest)
 			assert.Equal(t, tt.want, tt.maxRequest)
-			assert.Equal(t, tt.wantABTestEnabled, (tt.rctx.ABTestConfigApplied == 1))
 		})
 	}
 }
