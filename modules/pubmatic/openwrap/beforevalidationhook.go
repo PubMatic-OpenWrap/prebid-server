@@ -645,11 +645,12 @@ func (m OpenWrap) handleBeforeValidationHook(
 		}
 
 		// Preserve client ext.owsdk (e.g. ctaoverlay) before stripping for marshal; merged back with server adattributes below.
+		// PubMatic bidder params already hold this same map. Assign a new map so that copy stays intact.
 		isCTAOverlayRequest := impExt.OWSDK != nil && impExt.OWSDK["ctaoverlay"] == float64(1)
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
-		impExt.OWSDK = nil
+		impExt.OWSDK = appStatusSchemesForPartners(impExt.OWSDK, rCtx.Endpoint)
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
@@ -948,6 +949,21 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	if adUnitCfg.Video.Config != nil {
 		updateImpVideoWithVideoConfig(imp, adUnitCfg.Video.Config)
 	}
+}
+
+// appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes for every OpenWrap partner
+// on non-SDK-bidding paths. The value is copied as sent. SDK bidding auctions only call PubMatic,
+// which already receives the full owsdk object through bidder params, so those paths return nil.
+// The returned map is new; the caller's map is not modified.
+func appStatusSchemesForPartners(owsdk map[string]any, endpoint string) map[string]any {
+	if sdkutils.IsSdkBiddingEndpoint(endpoint) || owsdk == nil {
+		return nil
+	}
+	val, ok := owsdk[models.AppStatusSchemes]
+	if !ok {
+		return nil
+	}
+	return map[string]any{models.AppStatusSchemes: val}
 }
 
 func (m *OpenWrap) applyImpChanges(rCtx models.RequestCtx, imp *openrtb2.Imp, deviceOS string) {
