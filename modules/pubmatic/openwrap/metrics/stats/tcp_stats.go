@@ -358,4 +358,4 @@ func (st *StatsTCP) RecordGeoLookupFailure(endpoint string)                     
 func (st *StatsTCP) RecordAPSSlotMappingReject(publisherID, slotUUID, reason string)             {}
 func (st *StatsTCP) RecordPartnerThrottledRequests(publisher, bidder, featureID string)          {}
 func (st *StatsTCP) RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string) {}
-func (st *StatsTCP) RecordRequestWithSchainABTestEnabled()                                       {}
+func (st *StatsTCP) RecordRequestWithSchainNodeRemoved(endpoint string)                          {}

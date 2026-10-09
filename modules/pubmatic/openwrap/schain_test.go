@@ -336,9 +336,11 @@ func TestSetAllBidderSChain(t *testing.T) {
 	}
 }
 
-func TestRemoveApplovinNode(t *testing.T) {
+func TestRemoveSchainNode(t *testing.T) {
 	type args struct {
-		src *openrtb2.Source
+		src      *openrtb2.Source
+		asi      string
+		endpoint string
 	}
 	type want struct {
 		removed bool
@@ -371,6 +373,11 @@ func TestRemoveApplovinNode(t *testing.T) {
 			want: want{removed: true, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "example.com", SID: "s2"}}}}},
 		},
 		{
+			name: "source_schain_only_google_removed",
+			args: args{asi: schainASIGoogle, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "google.com", SID: "g1"}, {ASI: "applovin.com", SID: "a1"}}}}},
+			want: want{removed: true, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "applovin.com", SID: "a1"}}}}},
+		},
+		{
 			name: "source_ext_schain_no_nodes_noop",
 			args: args{src: &openrtb2.Source{Ext: json.RawMessage(`{"schain":{"complete":0,"nodes":null,"ver":"1"}}`)}},
 			want: want{removed: false, src: &openrtb2.Source{Ext: json.RawMessage(`{"schain":{"complete":0,"nodes":null,"ver":"1"}}`)}},
@@ -395,10 +402,49 @@ func TestRemoveApplovinNode(t *testing.T) {
 			args: args{src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "applovin.com", SID: "s1"}}}, Ext: json.RawMessage(`{`)}},
 			want: want{removed: true, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{}}, Ext: json.RawMessage(`{`)}},
 		},
+		{
+			name: "endpoint_applovinmax_removes_applovin_only",
+			args: args{
+				endpoint: models.EndpointAppLovinMax,
+				src:      &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "applovin.com", SID: "a1"}, {ASI: "google.com", SID: "g1"}}}},
+			},
+			want: want{removed: true, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "google.com", SID: "g1"}}}}},
+		},
+		{
+			name: "endpoint_googlesdk_removes_google_from_source_and_ext",
+			args: args{
+				endpoint: models.EndpointGoogleSDK,
+				src: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "google.com", SID: "g1"}, {ASI: "example.com", SID: "s2"}}},
+					Ext:    json.RawMessage(`{"schain":{"complete":1,"nodes":[{"asi":"google.com","sid":"g3"},{"asi":"example2.com","sid":"s4"}],"ver":"1.0"}}`),
+				},
+			},
+			want: want{
+				removed: true,
+				src: &openrtb2.Source{
+					SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "example.com", SID: "s2"}}},
+					Ext:    json.RawMessage(`{"schain":{"complete":1,"nodes":[{"asi":"example2.com","sid":"s4"}],"ver":"1.0"}}`),
+				},
+			},
+		},
+		{
+			name: "endpoint_other_does_not_remove",
+			args: args{
+				endpoint: models.EndpointV25,
+				src:      &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "applovin.com", SID: "a1"}, {ASI: "google.com", SID: "g1"}}}},
+			},
+			want: want{removed: false, src: &openrtb2.Source{SChain: &openrtb2.SupplyChain{Complete: 1, Nodes: []openrtb2.SupplyChainNode{{ASI: "applovin.com", SID: "a1"}, {ASI: "google.com", SID: "g1"}}}}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			removed := removeApplovinNode(tt.args.src)
+			asi := tt.args.asi
+			if tt.args.endpoint != "" {
+				asi = schainNodeASI(tt.args.endpoint)
+			} else if asi == "" {
+				asi = schainASIAppLovin
+			}
+			removed := removeSchainNode(tt.args.src, asi)
 			got := want{removed: removed, src: tt.args.src}
 			assert.Equal(t, tt.want, got, tt.name)
 		})
@@ -451,7 +497,7 @@ func TestRemoveNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			removed := removeNode(tt.args.schain)
+			removed := removeNode(tt.args.schain, schainASIAppLovin)
 			assert.Equal(t, tt.want, want{removed: removed, schain: tt.args.schain}, tt.name)
 		})
 	}
@@ -503,7 +549,7 @@ func TestRemoveNodeFromSourceExt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			removed := removeNodeFromSourceExt(tt.args.src)
+			removed := removeNodeFromSourceExt(tt.args.src, schainASIAppLovin)
 			assert.Equal(t, tt.want, want{removed: removed, src: tt.args.src}, tt.name)
 		})
 	}

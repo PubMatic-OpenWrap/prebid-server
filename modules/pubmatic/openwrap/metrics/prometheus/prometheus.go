@@ -30,14 +30,14 @@ type Metrics struct {
 	pubProfImpDisabledViaConfig *prometheus.CounterVec
 
 	// publisher level metrics
-	pubRequestValidationErrors      *prometheus.CounterVec // TODO : should we add profiles as label ?
-	pubNoBidResponseErrors          *prometheus.CounterVec
-	pubResponseTime                 *prometheus.HistogramVec
-	pubImpsWithContent              *prometheus.CounterVec
-	pubBidRecoveryStatus            *prometheus.CounterVec
-	pubBidRecoveryTime              *prometheus.HistogramVec
-	requestsWithSchainABTestEnabled *prometheus.CounterVec
-	pubPreProcessingTime            *prometheus.HistogramVec
+	pubRequestValidationErrors    *prometheus.CounterVec // TODO : should we add profiles as label ?
+	pubNoBidResponseErrors        *prometheus.CounterVec
+	pubResponseTime               *prometheus.HistogramVec
+	pubImpsWithContent            *prometheus.CounterVec
+	pubBidRecoveryStatus          *prometheus.CounterVec
+	pubBidRecoveryTime            *prometheus.HistogramVec
+	requestsWithSchainNodeRemoved *prometheus.CounterVec
+	pubPreProcessingTime          *prometheus.HistogramVec
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
 	pubPartnerPlatformResponses *prometheus.CounterVec
@@ -396,10 +396,10 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		[]string{pubIdLabel},
 	)
 
-	metrics.requestsWithSchainABTestEnabled = newCounter(cfg, promRegistry,
-		"requests_with_schain_AB_Test_enabled",
-		"Count of requests with schain AB test enabled",
-		[]string{},
+	metrics.requestsWithSchainNodeRemoved = newCounter(cfg, promRegistry,
+		"requests_with_schain_node_removed",
+		"Count of requests where schain node is removed",
+		[]string{endpointLabel},
 	)
 
 	metrics.adPodGeneratedImpressionsCount = newCounter(cfg, promRegistry,
@@ -684,9 +684,11 @@ func (m *Metrics) RecordPublisherWrapperLoggerFailure(publisher string) {
 	}).Inc()
 }
 
-// RecordRequestWithSchainABTestEnabled record request with schain AB test enabled
-func (m *Metrics) RecordRequestWithSchainABTestEnabled() {
-	m.requestsWithSchainABTestEnabled.With(prometheus.Labels{}).Inc()
+// RecordRequestWithSchainNodeRemoved records requests where a schain node is removed
+func (m *Metrics) RecordRequestWithSchainNodeRemoved(endpoint string) {
+	m.requestsWithSchainNodeRemoved.With(prometheus.Labels{
+		endpointLabel: endpoint,
+	}).Inc()
 }
 
 // RecordAnalyticsTrackingThrottled record analytics throttling at publisher profile level
