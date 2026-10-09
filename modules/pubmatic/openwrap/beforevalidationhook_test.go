@@ -8264,6 +8264,22 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 		setup      func()
 	}{
 		{
+			name: "nil_request",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointAppLovinMax,
+			},
+			maxRequest: nil,
+			want:       nil,
+		},
+		{
+			name: "nil_source",
+			rctx: &models.RequestCtx{
+				Endpoint: models.EndpointGoogleSDK,
+			},
+			maxRequest: &openrtb2.BidRequest{},
+			want:       &openrtb2.BidRequest{},
+		},
+		{
 			name: "schain_not_present_in_request",
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointAppLovinMax,
