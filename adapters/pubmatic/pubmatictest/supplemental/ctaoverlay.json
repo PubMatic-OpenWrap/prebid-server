@@ -125,7 +125,13 @@
                                         "deal_channel": 1,
                                         "owsdk": {
                                             "ctaoverlay": 1
-                                        }
+                                        },
+                                        "trackers": [
+                                            {
+                                                "event": "ad_attribute",
+                                                "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                                            }
+                                        ]
                                     }
                                 }
                             ]
@@ -161,7 +167,13 @@
                             "deal_channel": 1,
                             "owsdk": {
                                 "ctaoverlay": 1
-                            }
+                            },
+                            "trackers": [
+                                {
+                                    "event": "ad_attribute",
+                                    "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                                }
+                            ]
                         }
                     },
                     "type": "banner"
