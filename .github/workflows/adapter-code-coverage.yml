@@ -15,7 +15,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24.0
+          go-version-file: go.mod
 
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -46,6 +46,12 @@ jobs:
       - name: Run Coverage Tests
         id: run_coverage
         if: steps.get_directories.outputs.result != ''
+        env:
+          GOTOOLCHAIN: local
+          GO111MODULE: "on"
+          GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+          TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+          USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
         run: |
           git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
 
@@ -71,11 +77,6 @@ jobs:
           # remove pull request branch files
           cd ..
           rm -f -r ./*
-        env:
-          GO111MODULE: "on"
-          GOPRIVATE: "git.pubmatic.com/PubMatic/*"
-          TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
-          USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
 
       - name: Checkout Coverage Preview Branch
         uses: actions/checkout@v4
@@ -110,8 +111,8 @@ jobs:
             const utils = require('./.github/workflows/helpers/pull-request-utils.js')
             const helper = utils.coverageHelper({
               github, context,
-              headSha: '${{ github.event.pull_request.head.sha }}', 
-              tmpCoverageDir: '${{ steps.run_coverage.outputs.coverage_dir }}', 
+              headSha: '${{ github.event.pull_request.head.sha }}',
+              tmpCoverageDir: '${{ steps.run_coverage.outputs.coverage_dir }}',
               remoteCoverageDir: '${{ steps.commit_coverage.outputs.remote_coverage_preview_dir }}'
             })
             const adapterDirectories = JSON.parse('${{ steps.get_directories.outputs.result }}')

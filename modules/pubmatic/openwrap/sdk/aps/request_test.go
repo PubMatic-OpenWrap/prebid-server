@@ -9,10 +9,10 @@ import (
 	"github.com/golang/mock/gomock"
 	adcom1 "github.com/prebid/openrtb/v20/adcom1"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	mock_metrics "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/metrics/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	mock_metrics "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -2116,6 +2116,163 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "banner_maps_banneradattributes_to_banner_ext_owsdk",
+			adFormat: apsAdFormatBanner,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"banner": {
+						"banneradattributes": [1, 3],
+						"videoadattributes": [1, 2],
+						"impdepth": 1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.4.0",
+					Banner:            &openrtb2.Banner{},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					VideoIsNil: true,
+					BannerExt:  json.RawMessage(`{"owsdk":{"adattributes":[1,3]}}`),
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":1}`),
+				},
+			},
+		},
+		{
+			name:     "banner_skips_adattributes_when_sdk_below_5_4_0",
+			adFormat: apsAdFormatBanner,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"banner": {
+						"banneradattributes": [1, 3],
+						"videoadattributes": [1, 2],
+						"impdepth": 1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.3.0",
+					Banner:            &openrtb2.Banner{},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					VideoIsNil:   true,
+					BannerExtNil: true,
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":1}`),
+				},
+			},
+		},
+		{
+			name:     "interstitial_maps_banner_and_video_adattributes",
+			adFormat: apsAdFormatInterstitial,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"interstitial": {
+						"banneradattributes": [1, 3, 4],
+						"videoadattributes": [1, 2, 3, 4],
+						"ctaoverlay": true,
+						"impdepth": 0
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.4.0",
+					Banner:            &openrtb2.Banner{Ext: json.RawMessage(`{"prebid":{"banner":1}}`)},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerExt: json.RawMessage(`{"prebid":{"banner":1},"owsdk":{"adattributes":[1,3,4]}}`),
+					VideoExt:  json.RawMessage(`{"owsdk":{"adattributes":[1,2,3,4]}}`),
+					Ext:       json.RawMessage(`{"owsdk":{"ctaoverlay":true}}`),
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":0}`),
+				},
+			},
+		},
+		{
+			name:     "mrec_maps_banner_and_video_adattributes",
+			adFormat: apsAdFormatMrec,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"mrec": {
+						"banneradattributes": [1, 4],
+						"videoadattributes": [2, 5],
+						"impdepth": 1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.4.0",
+					Banner:            &openrtb2.Banner{},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerExt: json.RawMessage(`{"owsdk":{"adattributes":[1,4]}}`),
+					VideoExt:  json.RawMessage(`{"owsdk":{"adattributes":[2,5]}}`),
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":1}`),
+				},
+			},
+		},
+		{
+			name:     "rewarded_maps_videoadattributes_only",
+			adFormat: apsAdFormatRewarded,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"rewarded": {
+						"banneradattributes": [1],
+						"videoadattributes": [1, 2, 3],
+						"impdepth": 2
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:                "1",
+					DisplayManagerVer: "5.4.0",
+					Banner:            &openrtb2.Banner{},
+					Video:             &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerIsNil: true,
+					VideoExt:    json.RawMessage(`{"owsdk":{"adattributes":[1,2,3]}}`),
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":2}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2145,8 +2302,12 @@ type expectedImp struct {
 	DisplayManagerVer string
 	Banner            *openrtb2.Banner
 	BannerIsNil       bool
+	BannerExt         json.RawMessage
+	BannerExtNil      bool
 	Video             *openrtb2.Video
 	VideoIsNil        bool
+	VideoExt          json.RawMessage
+	VideoExtNil       bool
 	Ext               json.RawMessage
 }
 
@@ -2174,12 +2335,26 @@ func assertAdFormatExpected(t *testing.T, request *openrtb2.BidRequest, expected
 		require.NotNil(t, imp.Banner)
 		assertExpectedBanner(t, expected.Imp.Banner, imp.Banner)
 	}
+	if expected.Imp.BannerExtNil {
+		require.NotNil(t, imp.Banner)
+		assert.Empty(t, imp.Banner.Ext)
+	} else if len(expected.Imp.BannerExt) > 0 {
+		require.NotNil(t, imp.Banner)
+		assert.JSONEq(t, string(expected.Imp.BannerExt), string(imp.Banner.Ext))
+	}
 
 	if expected.Imp.VideoIsNil {
 		assert.Nil(t, imp.Video)
 	} else if expected.Imp.Video != nil {
 		require.NotNil(t, imp.Video)
 		assertExpectedVideo(t, expected.Imp.Video, imp.Video)
+	}
+	if expected.Imp.VideoExtNil {
+		require.NotNil(t, imp.Video)
+		assert.Empty(t, imp.Video.Ext)
+	} else if len(expected.Imp.VideoExt) > 0 {
+		require.NotNil(t, imp.Video)
+		assert.JSONEq(t, string(expected.Imp.VideoExt), string(imp.Video.Ext))
 	}
 
 	if len(expected.Imp.Ext) > 0 {

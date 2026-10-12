@@ -6,11 +6,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/hooks/hookanalytics"
-	"github.com/prebid/prebid-server/v3/hooks/hookstage"
-	mock_cache "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/cache/mock"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/hooks/hookanalytics"
+	"github.com/prebid/prebid-server/v4/hooks/hookstage"
+	mock_cache "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,9 +52,9 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": nil,
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{
@@ -70,11 +70,11 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Sshb: "1",
 						},
-					},
+					}),
 				},
 			},
 
@@ -90,11 +90,11 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint: models.EndpointHybrid,
 						},
-					},
+					}),
 				},
 			},
 			want: hookstage.HookResult[hookstage.ProcessedAuctionRequestPayload]{
@@ -109,12 +109,12 @@ func TestOpenWrap_HandleProcessedAuctionHook(t *testing.T) {
 			args: args{
 				ctx: nil,
 				moduleCtx: hookstage.ModuleInvocationContext{
-					ModuleContext: map[string]interface{}{
+					ModuleContext: moduleContextFromMap(map[string]any{
 						"rctx": models.RequestCtx{
 							Endpoint:  models.EndpointV25,
 							DeviceCtx: models.DeviceCtx{IP: "10.20.30.40"},
 						},
-					},
+					}),
 				},
 				payload: hookstage.ProcessedAuctionRequestPayload{
 					Request: &openrtb_ext.RequestWrapper{

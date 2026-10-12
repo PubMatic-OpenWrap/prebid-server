@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mock_database "github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/database/mock"
+	mock_database "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/database/mock"
 	"github.com/stretchr/testify/assert"
 )
 

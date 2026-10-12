@@ -2,7 +2,7 @@ package feature
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/parser"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/parser"
 )
 
 func EnrichVASTForSSUFeature(bidResponse *openrtb2.BidResponse, vastXMLHandler parser.VASTXMLHandler) {

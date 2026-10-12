@@ -9,7 +9,7 @@ import (
 	sync "sync"
 
 	gomock "github.com/golang/mock/gomock"
-	mhttp "github.com/prebid/prebid-server/v3/analytics/pubmatic/mhttp"
+	mhttp "github.com/prebid/prebid-server/v4/analytics/pubmatic/mhttp"
 )
 
 // MockHttpCallInterface is a mock of HttpCallInterface interface.

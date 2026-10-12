@@ -51,8 +51,7 @@
                 "bidType": "video",
                 "bidVideo": {
                   "duration": 30,
-                  "primary_category": "",
-                  "vasttagid": ""
+                  "primary_category": ""
                 }
               }
             ],
@@ -88,8 +87,7 @@
                   "type": "video",
                   "video": {
                     "duration": 30,
-                    "primary_category": "",
-                    "vasttagid": ""
+                    "primary_category": ""
                   }
                 }
               }

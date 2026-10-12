@@ -6,10 +6,10 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models/adunitconfig"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 func injectBannerTracker(rctx models.RequestCtx, tracker models.OWTracker, bid openrtb2.Bid, seat string, pixels []adunitconfig.UniversalPixel) (string, string) {

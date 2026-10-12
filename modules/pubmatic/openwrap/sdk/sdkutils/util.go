@@ -6,8 +6,8 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/analytics"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/analytics"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 )
 
 func MergeDevice(dst *openrtb2.Device, src *openrtb2.Device) *openrtb2.Device {
@@ -321,4 +321,50 @@ func IsGoogleSDKResponseRejected(rCtx *models.RequestCtx, ao analytics.AuctionOb
 
 func IsIOSDevice(device *openrtb2.Device) bool {
 	return device != nil && strings.EqualFold(device.OS, "ios")
+}
+
+// IsVersionLessThan reports whether version1 is less than version2.
+func IsVersionLessThan(version1, version2 string) bool {
+	return CompareVersions(version1, version2) < 0
+}
+
+// IsVersionGreaterThan reports whether version1 is greater than version2.
+func IsVersionGreaterThan(version1, version2 string) bool {
+	return CompareVersions(version1, version2) > 0
+}
+
+// IsVersionInRange reports whether version is within [minVersion, maxVersion] inclusive.
+// An empty maxVersion means no upper bound.
+func IsVersionInRange(version, minVersion, maxVersion string) bool {
+	if maxVersion == "" {
+		return CompareVersions(version, minVersion) >= 0
+	}
+	return CompareVersions(version, minVersion) >= 0 && CompareVersions(version, maxVersion) <= 0
+}
+
+// CompareVersions compares two dot-separated numeric version strings (e.g. "5.1.0").
+// Non-numeric segments are treated as 0; leading/trailing whitespace is ignored.
+func CompareVersions(v1, v2 string) int {
+	p1 := strings.Split(strings.TrimSpace(v1), ".")
+	p2 := strings.Split(strings.TrimSpace(v2), ".")
+
+	for i := 0; i < max(len(p1), len(p2)); i++ {
+		n1, n2 := 0, 0
+
+		if i < len(p1) {
+			n1, _ = strconv.Atoi(p1[i])
+		}
+		if i < len(p2) {
+			n2, _ = strconv.Atoi(p2[i])
+		}
+
+		switch {
+		case n1 < n2:
+			return -1
+		case n1 > n2:
+			return 1
+		}
+	}
+
+	return 0
 }

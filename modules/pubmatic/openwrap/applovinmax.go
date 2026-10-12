@@ -7,8 +7,8 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/golang/glog"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v3/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 )
 
 func getSignalData(requestBody []byte, rctx models.RequestCtx) *openrtb2.BidRequest {
@@ -319,15 +319,4 @@ func modifyRequestBody(requestBody []byte) []byte {
 	requestBody = jsonparser.Delete(requestBody, "imp", "[0]", "native")
 
 	return requestBody
-}
-
-// getApplovinMultiFloors fetches adunitwise floors for pub-profile
-func (m OpenWrap) getApplovinMultiFloors(rctx models.RequestCtx) models.MultiFloorsConfig {
-	if rctx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsApplovinMultiFloorsEnabled(rctx.PubID, rctx.ProfileIDStr) {
-		return models.MultiFloorsConfig{
-			Enabled: true,
-			Config:  m.pubFeatures.GetApplovinMultiFloors(rctx.PubID, rctx.ProfileIDStr),
-		}
-	}
-	return models.MultiFloorsConfig{Enabled: false}
 }
