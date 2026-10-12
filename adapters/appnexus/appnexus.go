@@ -39,6 +39,7 @@ type adapter struct {
 type impExtIncoming struct {
 	Bidder openrtb_ext.ExtImpAppnexus `json:"bidder"`
 	GPID   string                     `json:"gpid"`
+	OWSDK  json.RawMessage            `json:"owsdk,omitempty"`
 }
 
 // Builder builds a new instance of the AppNexus adapter for the given bidder with the given config.
@@ -403,7 +404,8 @@ func buildRequestImp(imp *openrtb2.Imp, ext impExtIncoming, displayManagerVer st
 			ExtInvCode:        ext.Bidder.ExtInvCode,
 			ExternalImpID:     ext.Bidder.ExternalImpId,
 		},
-		GPID: ext.GPID,
+		GPID:  ext.GPID,
+		OWSDK: ext.OWSDK,
 	}
 
 	var err error
