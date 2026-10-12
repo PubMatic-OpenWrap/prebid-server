@@ -1,0 +1,71 @@
+package cloudx
+
+import (
+	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v4/exchange/entities"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+)
+
+func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
+	serializedResponse, err := jsoniterator.Marshal(bidResponse)
+	if err != nil {
+		return nil
+	}
+
+	bid := bidResponse.SeatBid[0].Bid[0]
+	bid.AdM = string(serializedResponse)
+	return []openrtb2.Bid{bid}
+}
+
+func ApplyCloudXResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) *openrtb2.BidResponse {
+	if rctx.Endpoint != models.EndpointCloudX || bidResponse.NBR != nil || rctx.CloudX.Reject {
+		return bidResponse
+	}
+
+	bids := getBids(bidResponse)
+	if len(bids) == 0 {
+		return bidResponse
+	}
+
+	*bidResponse = openrtb2.BidResponse{
+		ID:    bidResponse.ID,
+		BidID: bidResponse.SeatBid[0].Bid[0].ID,
+		Cur:   bidResponse.Cur,
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: bids,
+			},
+		},
+	}
+
+	return bidResponse
+}
+
+func SetCloudXResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) bool {
+	if rctx.Endpoint != models.EndpointCloudX {
+		return false
+	}
+
+	reject := false
+	if bidResponse.NBR != nil {
+		if !rctx.Debug {
+			reject = true
+		}
+	} else if len(bidResponse.SeatBid) == 0 || len(bidResponse.SeatBid[0].Bid) == 0 {
+		reject = true
+	}
+	return reject
+}
+
+func UpdateBidWithTestPrice(rctx models.RequestCtx, bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
+	if rctx.Endpoint != models.EndpointCloudX || rctx.IsTestRequest != 1 {
+		return
+	}
+
+	for _, seatBid := range bidderResponses {
+		for i := range seatBid.Bids {
+			seatBid.Bids[i].Bid.Price = 99
+		}
+	}
+}

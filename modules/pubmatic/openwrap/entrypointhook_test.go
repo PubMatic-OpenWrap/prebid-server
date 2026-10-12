@@ -884,6 +884,15 @@ func TestGetEndpoint(t *testing.T) {
 			},
 			want: models.EndpointAppLovinMax,
 		},
+		{
+			name: "CloudX",
+			args: args{
+				path:   hookexecution.EndpointAuction,
+				source: "owsdk",
+				agent:  models.CloudXAgent,
+			},
+			want: models.EndpointCloudX,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -924,6 +933,14 @@ func TestGetSendBurl(t *testing.T) {
 			args: args{
 				request:  []byte(`{}`),
 				endpoint: models.EndpointUnityLevelPlay,
+			},
+			want: true,
+		},
+		{
+			name: "CloudX endpoint should always return true",
+			args: args{
+				request:  []byte(`{}`),
+				endpoint: models.EndpointCloudX,
 			},
 			want: true,
 		},
