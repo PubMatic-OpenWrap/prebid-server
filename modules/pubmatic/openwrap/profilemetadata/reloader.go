@@ -23,7 +23,7 @@ type profileMetaData struct {
 	profileMetaDataExpiry int
 	profileTypePlatform   map[string]int
 	appIntegrationPath    map[string]int
-	appSubIntegrationPath map[string]int
+	appSubIntegrationPath map[string]models.AppSubIntegrationPath
 }
 
 var pmd *profileMetaData
@@ -38,7 +38,7 @@ func New(config Config) *profileMetaData {
 			profileMetaDataExpiry: config.ProfileMetaDataExpiry,
 			profileTypePlatform:   make(map[string]int),
 			appIntegrationPath:    make(map[string]int),
-			appSubIntegrationPath: make(map[string]int),
+			appSubIntegrationPath: make(map[string]models.AppSubIntegrationPath),
 		}
 	})
 	return pmd

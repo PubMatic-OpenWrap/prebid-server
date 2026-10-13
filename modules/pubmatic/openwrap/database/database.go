@@ -19,7 +19,7 @@ type Database interface {
 	GetAdpodConfig(pubID, profileID, displayVersion int) (*adpodconfig.AdpodConfig, error)
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)
-	GetAppSubIntegrationPaths() (map[string]int, error)
+	GetAppSubIntegrationPaths() (map[string]models.AppSubIntegrationPath, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 	GetLatestCountryPartnerFilter() map[string]map[string]struct{}

@@ -20,7 +20,7 @@ type Cache interface {
 	GetPublisherFeatureMap() (map[int]map[int]models.FeatureData, error)
 	GetProfileTypePlatforms() (map[string]int, error)
 	GetAppIntegrationPaths() (map[string]int, error)
-	GetAppSubIntegrationPaths() (map[string]int, error)
+	GetAppSubIntegrationPaths() (map[string]models.AppSubIntegrationPath, error)
 	GetGDPRCountryCodes() (models.HashSet, error)
 	GetProfileAdUnitMultiFloors() (models.ProfileAdUnitMultiFloors, error)
 	GetPerformanceDSPs() (map[int]struct{}, error)
