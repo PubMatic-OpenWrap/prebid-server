@@ -121,6 +121,11 @@ func MergeBanner(dst, src *openrtb2.Banner) {
 	if src.API != nil {
 		dst.API = src.API
 	}
+
+	//give preference to bidding partner Pos, fallback to signal
+	if dst.Pos == nil {
+		dst.Pos = src.Pos
+	}
 }
 
 func mergeGeo(dst *openrtb2.Geo, src *openrtb2.Geo) *openrtb2.Geo {

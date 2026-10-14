@@ -7,7 +7,9 @@ import (
 	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
-func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
+func getBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
+	applyCloudXBidExpIfMissing(rctx, bidResponse)
+
 	serializedResponse, err := jsoniterator.Marshal(bidResponse)
 	if err != nil {
 		return nil
@@ -15,6 +17,7 @@ func getBids(bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
 
 	bid := bidResponse.SeatBid[0].Bid[0]
 	bid.AdM = string(serializedResponse)
+	bid.Ext = nil
 	return []openrtb2.Bid{bid}
 }
 
@@ -23,7 +26,7 @@ func ApplyCloudXResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidRespon
 		return bidResponse
 	}
 
-	bids := getBids(bidResponse)
+	bids := getBids(rctx, bidResponse)
 	if len(bids) == 0 {
 		return bidResponse
 	}

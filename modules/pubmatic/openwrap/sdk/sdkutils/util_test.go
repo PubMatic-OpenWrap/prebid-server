@@ -299,6 +299,24 @@ func TestMergeBanner(t *testing.T) {
 			src:      &openrtb2.Banner{},
 			expected: &openrtb2.Banner{MIMEs: []string{"image/gif"}},
 		},
+		{
+			name:     "nil_dst_pos_falls_back_to_signal_pos",
+			dst:      &openrtb2.Banner{},
+			src:      &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+			expected: &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+		},
+		{
+			name:     "dst_pos_kept_when_already_set",
+			dst:      &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+			src:      &openrtb2.Banner{Pos: adcom1.PositionBelowFold.Ptr()},
+			expected: &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+		},
+		{
+			name:     "nil_dst_pos_stays_nil_when_signal_pos_nil",
+			dst:      &openrtb2.Banner{},
+			src:      &openrtb2.Banner{},
+			expected: &openrtb2.Banner{},
+		},
 	}
 
 	for _, tt := range tests {

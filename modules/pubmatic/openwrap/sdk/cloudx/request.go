@@ -69,15 +69,9 @@ func (l *CloudX) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 	}
 
 	if len(request.Imp) > 0 {
-		// Set imp.instl and imp.rwdd as 1 when video.ext.reward is 1
-		if request.Imp[0].Video != nil && request.Imp[0].Video.Ext != nil {
-			reward, err := jsonparser.GetInt(request.Imp[0].Video.Ext, "reward")
-			if reward == 1 && err == nil {
-				request.Imp[0].Instl = 1
-				request.Imp[0].Rwdd = 1
-				// remove banner
-				request.Imp[0].Banner = nil
-			}
+		// Set banner to nil for rewarded inventorys
+		if request.Imp[0].Video != nil && request.Imp[0].Rwdd == 1 {
+			request.Imp[0].Banner = nil
 		}
 
 		// Set imp.secure as 1
@@ -192,7 +186,6 @@ func modifyImpExtension(requestImpExt, signalImpExt []byte) []byte {
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skoverlay")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "productpage")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "skadn", "skadnetids")
-	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "gpid")
 	requestImpExt, _ = sdkutils.CopyPath(signalImpExt, requestImpExt, "owsdk")
 
 	return requestImpExt
@@ -211,10 +204,33 @@ func modifyRegs(request *openrtb2.BidRequest, signalRegs *openrtb2.Regs) {
 		request.Regs.COPPA = signalRegs.COPPA
 	}
 
-	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp")
-	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gpp_sid")
-	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "gdpr")
-	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "us_privacy")
+	// Read privacy fields from signal regs.ext and set them on the request regs object when present.
+	if gpp, err := jsonparser.GetString(signalRegs.Ext, "gpp"); err == nil && gpp != "" {
+		request.Regs.GPP = gpp
+	}
+	if _, dataType, _, err := jsonparser.Get(signalRegs.Ext, "gpp_sid"); err == nil && dataType == jsonparser.Array {
+		var sids []int8
+		jsonparser.ArrayEach(signalRegs.Ext, func(value []byte, _ jsonparser.ValueType, _ int, err error) {
+			if err != nil {
+				return
+			}
+			n, convErr := jsonparser.ParseInt(value)
+			if convErr != nil {
+				return
+			}
+			sids = append(sids, int8(n))
+		}, "gpp_sid")
+		if len(sids) > 0 {
+			request.Regs.GPPSID = sids
+		}
+	}
+	if gdpr, err := jsonparser.GetInt(signalRegs.Ext, "gdpr"); err == nil {
+		request.Regs.GDPR = ptrutil.ToPtr(int8(gdpr))
+	}
+	if usPrivacy, err := jsonparser.GetString(signalRegs.Ext, "us_privacy"); err == nil && usPrivacy != "" {
+		request.Regs.USPrivacy = usPrivacy
+	}
+
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "dsarequired")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "pubrender")
 	request.Regs.Ext, _ = sdkutils.CopyPath(signalRegs.Ext, request.Regs.Ext, "dsa", "datatopub")
@@ -256,6 +272,13 @@ func modifyApp(request *openrtb2.BidRequest, signalApp *openrtb2.App) {
 	if len(request.App.StoreURL) == 0 {
 		request.App.StoreURL = signalApp.StoreURL
 	}
+
+	if signalApp.Content != nil && len(signalApp.Content.URL) > 0 {
+		if request.App.Content == nil {
+			request.App.Content = &openrtb2.Content{}
+		}
+		request.App.Content.URL = signalApp.Content.URL
+	}
 }
 
 func modifyDevice(request *openrtb2.BidRequest, signalDevice *openrtb2.Device) {
@@ -294,8 +317,11 @@ func modifyUser(request *openrtb2.BidRequest, signalUser *openrtb2.User) {
 		request.User.Keywords = signalUser.Keywords
 	}
 
+	if consent, err := jsonparser.GetString(signalUser.Ext, "consent"); err == nil && consent != "" {
+		request.User.Consent = consent
+	}
+
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "sessionduration")
-	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "consent")
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "eids")
 	request.User.Ext, _ = sdkutils.CopyPath(signalUser.Ext, request.User.Ext, "lastadomain")
 	request.User.Ext = sdkutils.SetIfKeysExists(signalUser.Ext, request.User.Ext, "impdepth")

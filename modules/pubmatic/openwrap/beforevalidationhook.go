@@ -626,7 +626,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			adserverURL = impExt.Wrapper.AdServerURL
 		}
 
-		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay || rCtx.Endpoint == models.EndpointCloudX {
+		if rCtx.Endpoint == models.EndpointAppLovinMax || rCtx.Endpoint == models.EndpointUnityLevelPlay {
 			if len(impExt.GpId) == 0 {
 				impExt.GpId = imp.TagID
 			}

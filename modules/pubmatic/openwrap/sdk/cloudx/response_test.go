@@ -123,9 +123,9 @@ func TestApplyCloudXResponse(t *testing.T) {
 								ID:    "bid-1",
 								ImpID: "imp-1",
 								Price: 1.0,
-								AdM:   `{"id":"test-id","seatbid":[{"bid":[{"id":"bid-1","impid":"imp-1","price":1,"burl":"http://example.com","ext":{"test":1}}]}],"cur":"USD"}`,
+								AdM:   `{"id":"test-id","seatbid":[{"bid":[{"id":"bid-1","impid":"imp-1","price":1,"burl":"http://example.com","exp":3000,"ext":{"test":1}}]}],"cur":"USD"}`,
 								BURL:  "http://example.com",
-								Ext:   json.RawMessage(`{"test":1}`),
+								Exp:   cloudXDefaultExp,
 							},
 						},
 					},
@@ -146,6 +146,68 @@ func TestApplyCloudXResponse(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.JSONEq(t, string(expectedJSON), string(actualJSON))
+		})
+	}
+}
+
+func TestApplyCloudXResponse_SetsBidExpWhenMissing(t *testing.T) {
+	tests := []struct {
+		name       string
+		impBidCtx  map[string]models.ImpCtx
+		bidExp     int64
+		wantBidExp int64
+	}{
+		{
+			name:       "sets_bid_exp_from_imp_ctx_when_missing",
+			impBidCtx:  map[string]models.ImpCtx{"imp-9": {Exp: 600}},
+			bidExp:     0,
+			wantBidExp: 600,
+		},
+		{
+			name:       "preserves_existing_bid_exp",
+			impBidCtx:  map[string]models.ImpCtx{"imp-9": {Exp: 600}},
+			bidExp:     120,
+			wantBidExp: 120,
+		},
+		{
+			name:       "missing_imp_exp_defaults_bid_exp_to_3000",
+			impBidCtx:  map[string]models.ImpCtx{"imp-9": {Exp: 0}},
+			bidExp:     0,
+			wantBidExp: cloudXDefaultExp,
+		},
+		{
+			name:       "unknown_imp_id_defaults_bid_exp_to_3000",
+			impBidCtx:  map[string]models.ImpCtx{"other-imp": {Exp: 600}},
+			bidExp:     0,
+			wantBidExp: cloudXDefaultExp,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rctx := models.RequestCtx{
+				Endpoint:  models.EndpointCloudX,
+				ImpBidCtx: tt.impBidCtx,
+			}
+			br := &openrtb2.BidResponse{
+				ID:  "resp",
+				Cur: "USD",
+				SeatBid: []openrtb2.SeatBid{{
+					Bid: []openrtb2.Bid{{
+						ID:    "bid-1",
+						ImpID: "imp-9",
+						Exp:   tt.bidExp,
+						Price: 1.0,
+					}},
+				}},
+			}
+
+			out := ApplyCloudXResponse(rctx, br)
+			assert.Equal(t, tt.wantBidExp, out.SeatBid[0].Bid[0].Exp)
+
+			var decoded openrtb2.BidResponse
+			assert.NoError(t, json.Unmarshal([]byte(out.SeatBid[0].Bid[0].AdM), &decoded))
+			assert.Equal(t, tt.wantBidExp, decoded.SeatBid[0].Bid[0].Exp)
 		})
 	}
 }

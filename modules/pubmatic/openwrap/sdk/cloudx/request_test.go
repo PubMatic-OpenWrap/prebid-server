@@ -88,10 +88,10 @@ func TestModifyRequestWithCloudXParams(t *testing.T) {
 		},
 		{
 			name: "request with valid signal data",
-			requestBody: []byte(fmt.Sprintf(`{"id":"test","app":{"id":"app1"},"imp":[{"id":"1","video":{"ext":{"reward":1}},"ext":{"buyer_generated_request_data":%q}}]}`,
-				`{"id":"signal","app":{"name":"testapp"},"imp":[{"displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}}}]}`)),
-			expectedResponse: []byte(fmt.Sprintf(`{"id":"test","app":{"id":"app1","name":"testapp"},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}},"instl":1,"rwdd":1,"ext":{"buyer_generated_request_data":%q}}]}`,
-				`{"id":"signal","app":{"name":"testapp"},"imp":[{"displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"video":{"mimes":["video/mp4"],"ext":{"reward":1}}}]}`)),
+			requestBody: []byte(fmt.Sprintf(`{"id":"test","app":{"id":"app1"},"imp":[{"id":"1","ext":{"buyer_generated_request_data":%q}}]}`,
+				`{"id":"signal","app":{"name":"testapp"},"imp":[{"displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"video":{"mimes":["video/mp4"]}}]}`)),
+			expectedResponse: []byte(fmt.Sprintf(`{"id":"test","app":{"id":"app1","name":"testapp"},"imp":[{"id":"1","displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"secure":1,"video":{"mimes":["video/mp4"]},"ext":{"buyer_generated_request_data":%q}}]}`,
+				`{"id":"signal","app":{"name":"testapp"},"imp":[{"displaymanager":"unity","displaymanagerver":"1.0","clickbrowser":1,"video":{"mimes":["video/mp4"]}}]}`)),
 			metricsSetup: func(m *mock_metrics.MockMetricsEngine) {},
 		},
 	}
@@ -300,10 +300,12 @@ func TestModifyRequestWithSignalData(t *testing.T) {
 					Gender:   "M",
 					Keywords: "test,user",
 					Data:     []openrtb2.Data{{ID: "1"}},
-					Ext:      []byte(`{"consent":"test","eids":[{"source":"test"}],"impdepth":1,"sessionduration":300}`),
+					Consent:  "test",
+					Ext:      []byte(`{"eids":[{"source":"test"}],"impdepth":1,"sessionduration":300}`),
 				},
 				Regs: &openrtb2.Regs{
-					Ext: []byte(`{"gdpr":1,"us_privacy":"test"}`),
+					GDPR:      ptrutil.ToPtr(int8(1)),
+					USPrivacy: "test",
 				},
 				Source: &openrtb2.Source{
 					Ext: []byte(`{"omidpn":"test","omidpv":"1.0"}`),
@@ -570,12 +572,6 @@ func TestModifyImpExtension(t *testing.T) {
 			expectedImpExt: []byte(`{"existingfield":1,"skadn":{"versions":["2.0","3.0"],"version":"2.0","skoverlay":true,"productpage":"https://example.com","skadnetids":["123","456"]}}`),
 		},
 		{
-			name:           "copy gpid",
-			requestImpExt:  []byte(`{"existingfield":1}`),
-			signalImpExt:   []byte(`{"gpid":"test-gpid"}`),
-			expectedImpExt: []byte(`{"existingfield":1,"gpid":"test-gpid"}`),
-		},
-		{
 			name:           "copy partial skadn fields",
 			requestImpExt:  []byte(`{"existingfield":1}`),
 			signalImpExt:   []byte(`{"skadn":{"version":"2.0","skoverlay":true}}`),
@@ -629,16 +625,44 @@ func TestModifyRegs(t *testing.T) {
 			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{COPPA: 1}},
 		},
 		{
-			name:     "copy all extension fields",
-			request:  &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1}`)}},
-			signal:   &openrtb2.Regs{Ext: []byte(`{"gpp":"test-gpp","gpp_sid":[1,2],"gdpr":1,"us_privacy":"test","dsa":{"dsarequired":true,"pubrender":true,"datatopub":true}}`)},
-			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1,"gpp":"test-gpp","gpp_sid":[1,2],"gdpr":1,"us_privacy":"test","dsa":{"dsarequired":true,"pubrender":true,"datatopub":true}}`)}},
+			name:    "privacy fields from signal regs ext set on request regs",
+			request: &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1}`)}},
+			signal:  &openrtb2.Regs{Ext: []byte(`{"gpp":"test-gpp","gpp_sid":[1,2],"gdpr":1,"us_privacy":"test","dsa":{"dsarequired":true,"pubrender":true,"datatopub":true}}`)},
+			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{
+				GPP:       "test-gpp",
+				GPPSID:    []int8{1, 2},
+				GDPR:      ptrutil.ToPtr(int8(1)),
+				USPrivacy: "test",
+				Ext:       []byte(`{"existingfield":1,"dsa":{"datatopub":true,"dsarequired":true,"pubrender":true}}`),
+			}},
 		},
 		{
-			name:     "copy partial extension fields",
-			request:  &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1}`)}},
-			signal:   &openrtb2.Regs{Ext: []byte(`{"gdpr":1,"us_privacy":"test"}`)},
-			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1,"gdpr":1,"us_privacy":"test"}`)}},
+			name: "request regs privacy fields kept when absent from signal regs ext",
+			request: &openrtb2.BidRequest{Regs: &openrtb2.Regs{
+				GPP:       "request-gpp",
+				GPPSID:    []int8{7, 8},
+				GDPR:      ptrutil.ToPtr(int8(0)),
+				USPrivacy: "1YNN",
+				Ext:       []byte(`{"existingfield":1}`),
+			}},
+			signal: &openrtb2.Regs{Ext: []byte(`{"other":1}`)},
+			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{
+				GPP:       "request-gpp",
+				GPPSID:    []int8{7, 8},
+				GDPR:      ptrutil.ToPtr(int8(0)),
+				USPrivacy: "1YNN",
+				Ext:       []byte(`{"existingfield":1}`),
+			}},
+		},
+		{
+			name:    "only present privacy fields set on request regs",
+			request: &openrtb2.BidRequest{Regs: &openrtb2.Regs{Ext: []byte(`{"existingfield":1}`)}},
+			signal:  &openrtb2.Regs{Ext: []byte(`{"gdpr":1,"us_privacy":"test"}`)},
+			expected: &openrtb2.BidRequest{Regs: &openrtb2.Regs{
+				GDPR:      ptrutil.ToPtr(int8(1)),
+				USPrivacy: "test",
+				Ext:       []byte(`{"existingfield":1}`),
+			}},
 		},
 	}
 
@@ -1064,7 +1088,8 @@ func TestModifyUser(t *testing.T) {
 				Yob:      2000,
 				Gender:   "M",
 				Keywords: "test,user",
-				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"consent":"test","eids":[{"source":"test"}],"lastadomain":"example.com"}`),
+				Consent:  "test",
+				Ext:      []byte(`{"sessionduration":300,"impdepth":1,"eids":[{"source":"test"}],"lastadomain":"example.com"}`),
 			}},
 		},
 		{
@@ -1100,6 +1125,20 @@ func TestModifyUser(t *testing.T) {
 				Gender:   "M",
 				Keywords: "test,user",
 				Ext:      []byte(`{"sessionduration":300}`),
+			}},
+		},
+		{
+			name: "request consent kept when absent from signal user ext",
+			request: &openrtb2.BidRequest{User: &openrtb2.User{
+				Consent: "existing",
+				Ext:     []byte(`{"existingKey":"existingValue"}`),
+			}},
+			signal: &openrtb2.User{
+				Ext: []byte(`{"sessionduration":300}`),
+			},
+			expected: &openrtb2.BidRequest{User: &openrtb2.User{
+				Consent: "existing",
+				Ext:     []byte(`{"existingKey":"existingValue","sessionduration":300}`),
 			}},
 		},
 		{
@@ -1142,24 +1181,6 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			name:     "nil request",
 			request:  nil,
 			expected: nil,
-		},
-		{
-			name: "request with video reward=1",
-			request: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{{
-					Video: &openrtb2.Video{
-						Ext: []byte(`{"reward":1}`),
-					},
-					Banner: &openrtb2.Banner{},
-				}},
-			},
-			expected: &openrtb2.BidRequest{
-				Imp: []openrtb2.Imp{{
-					Instl:  1,
-					Rwdd:   1,
-					Secure: ptrutil.ToPtr(int8(1)),
-				}},
-			},
 		},
 		{
 			name: "request with video but no reward",
