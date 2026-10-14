@@ -43,10 +43,16 @@ func appendUPixelinBanner(adm string, universalPixel []adunitconfig.UniversalPix
 	return adm
 }
 
-// TrackerWithOM checks for OM active condition
+// TrackerWithOM checks for OM active condition.
+// When true, CreateTrackers sets tracker ctm / InViewCountingFlag and InjectTrackers sets bid.ext.imp_ct_mthd=1.
 func trackerWithOM(rctx models.RequestCtx, prebidPartnerName string, dspID int, bidExt json.RawMessage, adformat string) bool {
 	if rctx.Platform != models.PLATFORM_APP || adformat != models.Banner {
 		return false
+	}
+
+	// APS always uses in-view impression counting for banner, regardless of DSP preference.
+	if rctx.Endpoint == models.EndpointAPS {
+		return true
 	}
 
 	// check for OM active for inview enabled publishers and performance DSPs, handle DV360 separately
