@@ -8257,11 +8257,11 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 	ow = &OpenWrap{pubFeatures: mockFeature}
 
 	tests := []struct {
-		name       string
-		rctx       *models.RequestCtx
+		name    string
+		rctx    *models.RequestCtx
 		request *openrtb2.BidRequest
-		want       *openrtb2.BidRequest
-		setup      func()
+		want    *openrtb2.BidRequest
+		setup   func()
 	}{
 		{
 			name: "nil_request",
@@ -8269,7 +8269,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 				Endpoint: models.EndpointAppLovinMax,
 			},
 			request: nil,
-			want:       nil,
+			want:    nil,
 		},
 		{
 			name: "nil_source",
@@ -8277,7 +8277,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 				Endpoint: models.EndpointGoogleSDK,
 			},
 			request: &openrtb2.BidRequest{},
-			want:       &openrtb2.BidRequest{},
+			want:    &openrtb2.BidRequest{},
 		},
 		{
 			name: "schain_not_present_in_request",
