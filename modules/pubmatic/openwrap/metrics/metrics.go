@@ -108,6 +108,6 @@ type MetricsEngine interface {
 	RecordPartnerThrottledRequests(publisher, bidder, featureID string)
 	RecordCountryLevelPartnerThrottledRequests(endpoint, bidder, country string)
 
-	//Request with schain removed
-	RecordRequestWithSchainABTestEnabled()
+	//RecordRequestWithSchainNodeRemoved records requests where a schain node is removed
+	RecordRequestWithSchainNodeRemoved(endpoint string)
 }
