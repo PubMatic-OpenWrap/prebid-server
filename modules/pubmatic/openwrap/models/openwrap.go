@@ -110,6 +110,7 @@ type RequestCtx struct {
 	AppPlatform                     int
 	AppIntegrationPath              *int
 	AppSubIntegrationPath           *int
+	PubMaticMediation               json.RawMessage
 	Method                          string
 	Errors                          []error
 	RedirectURL                     string
