@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/aps"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/cloudx"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
@@ -109,6 +110,17 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-unity-level-play-request")
+	}
+
+	if endpoint == models.EndpointCloudX {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		cx := cloudx.NewCloudX(m.metricEngine)
+		payload.Body = cx.ModifyRequestWithCloudXParams(payload.Body, &rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-cloudx-request")
 	}
 
 	// Publisher id from raw body after any SDK merge (e.g. Google SDK injects app.publisher.id from signal).
@@ -286,6 +298,8 @@ func GetEndpoint(path, source string, agent string) string {
 				return models.EndpointGoogleSDK
 			case models.UnityLevelPlayAgent:
 				return models.EndpointUnityLevelPlay
+			case models.CloudXAgent:
+				return models.EndpointCloudX
 			case models.ApsAgent:
 				return models.EndpointAPS
 			}

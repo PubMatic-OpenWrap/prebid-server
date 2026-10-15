@@ -124,6 +124,7 @@ type RequestCtx struct {
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
+	CloudX                          CloudX
 	APS                             APS
 	SignalRequest                   *openrtb2.BidRequest
 	EdsStatus                       *int
@@ -151,6 +152,9 @@ type GoogleSDK struct {
 }
 
 type UnityLevelPlay struct {
+	Reject bool
+}
+type CloudX struct {
 	Reject bool
 }
 type APS struct {

@@ -844,6 +844,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if rctx.Endpoint == models.EndpointUnityLevelPlay && bidRequest.App != nil {
 		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
+	if rctx.Endpoint == models.EndpointCloudX {
+		if len(bidRequest.Imp) > 0 {
+			bidRequest.Imp[0].Ext = jsonparser.Delete(bidRequest.Imp[0].Ext, "buyer_generated_request_data")
+		}
+	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled
 	if googleSSUFeatureEnabled {

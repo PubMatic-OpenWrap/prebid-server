@@ -2496,6 +2496,35 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 			},
 		},
 		{
+			name: "CloudX endpoint runs MBMF gating",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointCloudX,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID: "adunit",
+					Instl: 1,
+				},
+			},
+			want: &models.MultiFloors{IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3},
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(nil)
+				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(&models.MultiFloors{
+					IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3,
+				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointCloudX, "5890", models.MBMFSuccess)
+			},
+		},
+		{
 			name: "Unity levelplay endpoint runs MBMF gating",
 			args: args{
 				rctx: models.RequestCtx{
