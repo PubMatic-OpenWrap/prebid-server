@@ -108,15 +108,10 @@ func schainNodeASI(endpoint string) string {
 }
 
 func (m OpenWrap) updateSchain(rctx *models.RequestCtx, request *openrtb2.BidRequest) {
-	if rctx.Endpoint != models.EndpointAppLovinMax && rctx.Endpoint != models.EndpointGoogleSDK {
-		return
-	}
-
 	if request == nil || request.Source == nil {
 		return
 	}
 
-	// Get the ASI for the endpoint
 	asi := schainNodeASI(rctx.Endpoint)
 	if asi == "" {
 		return

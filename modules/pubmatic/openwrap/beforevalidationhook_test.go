@@ -8259,7 +8259,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 	tests := []struct {
 		name       string
 		rctx       *models.RequestCtx
-		maxRequest *openrtb2.BidRequest
+		request *openrtb2.BidRequest
 		want       *openrtb2.BidRequest
 		setup      func()
 	}{
@@ -8268,7 +8268,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointAppLovinMax,
 			},
-			maxRequest: nil,
+			request: nil,
 			want:       nil,
 		},
 		{
@@ -8276,7 +8276,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointGoogleSDK,
 			},
-			maxRequest: &openrtb2.BidRequest{},
+			request: &openrtb2.BidRequest{},
 			want:       &openrtb2.BidRequest{},
 		},
 		{
@@ -8284,7 +8284,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointAppLovinMax,
 			},
-			maxRequest: &openrtb2.BidRequest{
+			request: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{},
 			},
 			setup: func() {
@@ -8300,7 +8300,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointAppLovinMax,
 			},
-			maxRequest: &openrtb2.BidRequest{
+			request: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{
 					SChain: &openrtb2.SupplyChain{
 						Complete: 1,
@@ -8332,7 +8332,7 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 			rctx: &models.RequestCtx{
 				Endpoint: models.EndpointGoogleSDK,
 			},
-			maxRequest: &openrtb2.BidRequest{
+			request: &openrtb2.BidRequest{
 				Source: &openrtb2.Source{
 					SChain: &openrtb2.SupplyChain{
 						Complete: 1,
@@ -8367,8 +8367,8 @@ func TestOpenWrap_updateSchain(t *testing.T) {
 				pubFeatures:  mockFeature,
 				metricEngine: mockEngine,
 			}
-			m.updateSchain(tt.rctx, tt.maxRequest)
-			assert.Equal(t, tt.want, tt.maxRequest)
+			m.updateSchain(tt.rctx, tt.request)
+			assert.Equal(t, tt.want, tt.request)
 		})
 	}
 }
