@@ -77,6 +77,9 @@ func (l *CloudX) modifyRequestWithStaticData(request *openrtb2.BidRequest) {
 		// Set imp.secure as 1
 		request.Imp[0].Secure = ptrutil.ToPtr(int8(1))
 
+		// Remove metric
+		request.Imp[0].Metric = nil
+
 		// Remove native from request
 		request.Imp[0].Native = nil
 
