@@ -1183,6 +1183,21 @@ func TestModifyRequestWithStaticData(t *testing.T) {
 			expected: nil,
 		},
 		{
+			name: "remove metric from impression",
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Metric: []openrtb2.Metric{
+						{Type: "viewability"},
+					},
+				}},
+			},
+			expected: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					Secure: ptrutil.ToPtr(int8(1)),
+				}},
+			},
+		},
+		{
 			name: "request with video but no reward",
 			request: &openrtb2.BidRequest{
 				Imp: []openrtb2.Imp{{
