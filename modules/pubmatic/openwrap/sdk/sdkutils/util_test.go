@@ -299,6 +299,24 @@ func TestMergeBanner(t *testing.T) {
 			src:      &openrtb2.Banner{},
 			expected: &openrtb2.Banner{MIMEs: []string{"image/gif"}},
 		},
+		{
+			name:     "nil_dst_pos_falls_back_to_signal_pos",
+			dst:      &openrtb2.Banner{},
+			src:      &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+			expected: &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+		},
+		{
+			name:     "dst_pos_kept_when_already_set",
+			dst:      &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+			src:      &openrtb2.Banner{Pos: adcom1.PositionBelowFold.Ptr()},
+			expected: &openrtb2.Banner{Pos: adcom1.PositionAboveFold.Ptr()},
+		},
+		{
+			name:     "nil_dst_pos_stays_nil_when_signal_pos_nil",
+			dst:      &openrtb2.Banner{},
+			src:      &openrtb2.Banner{},
+			expected: &openrtb2.Banner{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -892,6 +910,11 @@ func TestIsSdkBiddingEndpoint(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "CloudX endpoint should be SDK integration",
+			endpoint: models.EndpointCloudX,
+			expected: true,
+		},
+		{
 			name:     "GoogleSDK endpoint should be SDK integration",
 			endpoint: models.EndpointGoogleSDK,
 			expected: true,
@@ -957,6 +980,7 @@ func TestIsSdkEndpoint(t *testing.T) {
 		{name: "v25 endpoint", endpoint: models.EndpointV25, expected: true},
 		{name: "google sdk endpoint", endpoint: models.EndpointGoogleSDK, expected: true},
 		{name: "applovin max endpoint", endpoint: models.EndpointAppLovinMax, expected: true},
+		{name: "cloudx endpoint", endpoint: models.EndpointCloudX, expected: true},
 		{name: "amp endpoint", endpoint: models.EndpointAMP, expected: false},
 		{name: "web s2s endpoint", endpoint: models.EndpointWebS2S, expected: false},
 	}

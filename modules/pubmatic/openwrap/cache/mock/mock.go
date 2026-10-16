@@ -97,10 +97,10 @@ func (mr *MockCacheMockRecorder) GetAppIntegrationPaths() *gomock.Call {
 }
 
 // GetAppSubIntegrationPaths mocks base method.
-func (m *MockCache) GetAppSubIntegrationPaths() (map[string]int, error) {
+func (m *MockCache) GetAppSubIntegrationPaths() (map[string]models.AppSubIntegrationPath, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppSubIntegrationPaths")
-	ret0, _ := ret[0].(map[string]int)
+	ret0, _ := ret[0].(map[string]models.AppSubIntegrationPath)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

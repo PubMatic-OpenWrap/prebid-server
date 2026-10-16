@@ -593,9 +593,9 @@ func (me *MultiMetricsEngine) RecordAPSSlotMappingReject(publisherID, slotUUID, 
 	}
 }
 
-// RecordRequestWithSchainABTestEnabled record request with schain removed
-func (me *MultiMetricsEngine) RecordRequestWithSchainABTestEnabled() {
+// RecordRequestWithSchainNodeRemoved records requests where a schain node is removed
+func (me *MultiMetricsEngine) RecordRequestWithSchainNodeRemoved(endpoint string) {
 	for _, thisME := range *me {
-		thisME.RecordRequestWithSchainABTestEnabled()
+		thisME.RecordRequestWithSchainNodeRemoved(endpoint)
 	}
 }

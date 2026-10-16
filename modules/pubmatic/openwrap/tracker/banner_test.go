@@ -407,6 +407,57 @@ func TestTrackerWithOM(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "aps_endpoint_in-app_banner_forces_inview_ignoring_dsp_flag_0",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Endpoint: models.EndpointAPS,
+				},
+				prebidPartnerName: "appnexus",
+				bidExt:            json.RawMessage(`{"imp_ct_mthd":0}`),
+				adformat:          models.Banner,
+			},
+			want: true,
+		},
+		{
+			name: "aps_endpoint_in-app_banner_pubmatic_forces_inview_without_dsp_rules",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Endpoint: models.EndpointAPS,
+					PubID:    5890,
+				},
+				prebidPartnerName: models.BidderPubMatic,
+				dspID:             999,
+				adformat:          models.Banner,
+			},
+			want: true,
+		},
+		{
+			name: "aps_endpoint_in-app_video_does_not_force_inview",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_APP,
+					Endpoint: models.EndpointAPS,
+				},
+				prebidPartnerName: "appnexus",
+				adformat:          models.Video,
+			},
+			want: false,
+		},
+		{
+			name: "aps_endpoint_display_banner_does_not_force_inview",
+			args: args{
+				rctx: models.RequestCtx{
+					Platform: models.PLATFORM_DISPLAY,
+					Endpoint: models.EndpointAPS,
+				},
+				prebidPartnerName: "appnexus",
+				adformat:          models.Banner,
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

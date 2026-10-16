@@ -110,6 +110,7 @@ type RequestCtx struct {
 	AppPlatform                     int
 	AppIntegrationPath              *int
 	AppSubIntegrationPath           *int
+	PubMaticMediation               json.RawMessage
 	Method                          string
 	Errors                          []error
 	RedirectURL                     string
@@ -123,6 +124,7 @@ type RequestCtx struct {
 	GoogleSDK                       GoogleSDK
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
+	CloudX                          CloudX
 	APS                             APS
 	SignalRequest                   *openrtb2.BidRequest
 	EdsStatus                       *int
@@ -150,6 +152,9 @@ type GoogleSDK struct {
 }
 
 type UnityLevelPlay struct {
+	Reject bool
+}
+type CloudX struct {
 	Reject bool
 }
 type APS struct {

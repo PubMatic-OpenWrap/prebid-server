@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache"
 	mock_cache "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache/mock"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -111,7 +112,7 @@ func TestInitiateReloader(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetAppIntegrationPaths().Return(map[string]int{}, nil)
-				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{}, nil)
 				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, nil)
 			},
 			want: false,
@@ -124,7 +125,7 @@ func TestInitiateReloader(t *testing.T) {
 			},
 			setup: func() {
 				mockCache.EXPECT().GetAppIntegrationPaths().Return(nil, fmt.Errorf("error"))
-				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{}, nil)
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{}, nil)
 				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{}, nil)
 			},
 			want: true,
@@ -169,12 +170,12 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 		profileMetaDataExpiry int
 		profileTypePlatform   map[string]int
 		appIntegrationPath    map[string]int
-		appSubIntegrationPath map[string]int
+		appSubIntegrationPath map[string]models.AppSubIntegrationPath
 	}
 	type want struct {
 		profileTypePlatform   map[string]int
 		appIntegrationPath    map[string]int
-		appSubIntegrationPath map[string]int
+		appSubIntegrationPath map[string]models.AppSubIntegrationPath
 	}
 	tests := []struct {
 		name    string
@@ -189,7 +190,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				cache:                 mockCache,
 				profileTypePlatform:   map[string]int{},
 				appIntegrationPath:    map[string]int{},
-				appSubIntegrationPath: map[string]int{},
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{},
 			},
 			setup: func() {
 				mockCache.EXPECT().GetProfileTypePlatforms().Return(map[string]int{
@@ -200,9 +201,9 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 					"iOS":     1,
 					"Android": 2,
 				}, nil)
-				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]int{
-					"DFP":   1,
-					"MoPub": 3,
+				mockCache.EXPECT().GetAppSubIntegrationPaths().Return(map[string]models.AppSubIntegrationPath{
+					"DFP":   {ID: 1},
+					"MoPub": {ID: 3},
 				}, nil)
 			},
 			want: want{
@@ -214,9 +215,9 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 					"iOS":     1,
 					"Android": 2,
 				},
-				appSubIntegrationPath: map[string]int{
-					"DFP":   1,
-					"MoPub": 3,
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{
+					"DFP":   {ID: 1},
+					"MoPub": {ID: 3},
 				},
 			},
 			wantErr: false,
@@ -227,7 +228,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 				cache:                 mockCache,
 				profileTypePlatform:   map[string]int{},
 				appIntegrationPath:    map[string]int{},
-				appSubIntegrationPath: map[string]int{},
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{},
 			},
 			setup: func() {
 				mockCache.EXPECT().GetProfileTypePlatforms().Return(nil, fmt.Errorf("error"))
@@ -238,7 +239,7 @@ func Test_profileMetaData_updateProfileMetadaMaps(t *testing.T) {
 			want: want{
 				profileTypePlatform:   map[string]int{},
 				appIntegrationPath:    map[string]int{},
-				appSubIntegrationPath: map[string]int{},
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{},
 			},
 			wantErr: true,
 		},

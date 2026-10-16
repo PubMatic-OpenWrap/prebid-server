@@ -248,7 +248,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.ProfileTypePlatform = getProfileTypePlatform(partnerConfigMap, m.profileMetaData)
 	rCtx.AppPlatform = getAppPlatform(partnerConfigMap)
 	rCtx.AppIntegrationPath = ptrutil.ToPtr(getAppIntegrationPath(partnerConfigMap, m.profileMetaData))
-	rCtx.AppSubIntegrationPath = ptrutil.ToPtr(getAppSubIntegrationPath(partnerConfigMap, m.profileMetaData))
+	appSubIntegrationPath := getAppSubIntegrationPath(partnerConfigMap, m.profileMetaData)
+	rCtx.AppSubIntegrationPath = ptrutil.ToPtr(appSubIntegrationPath.ID)
+	rCtx.PubMaticMediation = pubmaticMediation(rCtx.PartnerConfigMap, appSubIntegrationPath)
 
 	// To check if VAST unwrap needs to be enabled for given request
 	if isVastUnwrapEnabled(rCtx.PartnerConfigMap, m.cfg.Features.VASTUnwrapPercent) {
@@ -812,9 +814,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			result.Errors = append(result.Errors, "failed to apply profile changes: "+err.Error())
 		}
 
-		if rctx.Endpoint == models.EndpointAppLovinMax && ep.BidRequest.Source != nil {
-			m.updateAppLovinMaxRequestSchain(&rctx, ep.BidRequest)
-		}
+		m.updateSchain(&rctx, ep.BidRequest)
 
 		if rctx.IsCTVRequest {
 			err = ctv.FilterNonVideoImpressions(ep.BidRequest)
@@ -843,6 +843,11 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 
 	if rctx.Endpoint == models.EndpointUnityLevelPlay && bidRequest.App != nil {
 		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
+	}
+	if rctx.Endpoint == models.EndpointCloudX {
+		if len(bidRequest.Imp) > 0 {
+			bidRequest.Imp[0].Ext = jsonparser.Delete(bidRequest.Imp[0].Ext, "buyer_generated_request_data")
+		}
 	}
 
 	googleSSUFeatureEnabled := models.GetVersionLevelPropertyFromPartnerConfig(rctx.PartnerConfigMap, models.GoogleSSUFeatureEnabledKey) == models.Enabled

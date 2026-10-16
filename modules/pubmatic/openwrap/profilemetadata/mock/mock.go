@@ -6,6 +6,7 @@ package mock_profilemetadata
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	models "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	reflect "reflect"
 )
 
@@ -48,10 +49,10 @@ func (mr *MockProfileMetaDataMockRecorder) GetAppIntegrationPath(arg0 interface{
 }
 
 // GetAppSubIntegrationPath mocks base method
-func (m *MockProfileMetaData) GetAppSubIntegrationPath(arg0 string) (int, bool) {
+func (m *MockProfileMetaData) GetAppSubIntegrationPath(arg0 string) (models.AppSubIntegrationPath, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppSubIntegrationPath", arg0)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(models.AppSubIntegrationPath)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
