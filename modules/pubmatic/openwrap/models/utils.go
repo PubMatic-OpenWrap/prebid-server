@@ -265,6 +265,19 @@ func IsPubmaticCorePartner(partnerName string) bool {
 	return false
 }
 
+// HasPubMaticPartner reports whether the profile has a server-side PubMatic or pubmatic2 partner.
+func HasPubMaticPartner(partnerConfigMap map[int]map[string]string) bool {
+	for id, cfg := range partnerConfigMap {
+		if id == VersionLevelConfigID || cfg[SERVER_SIDE_FLAG] != "1" {
+			continue
+		}
+		if IsPubmaticCorePartner(cfg[PREBID_PARTNER_NAME]) {
+			return true
+		}
+	}
+	return false
+}
+
 // wraps error with error msg
 func ErrorWrap(cErr, nErr error) error {
 	if cErr == nil {

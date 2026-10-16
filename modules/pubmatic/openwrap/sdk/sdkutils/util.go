@@ -121,6 +121,11 @@ func MergeBanner(dst, src *openrtb2.Banner) {
 	if src.API != nil {
 		dst.API = src.API
 	}
+
+	//give preference to bidding partner Pos, fallback to signal
+	if dst.Pos == nil {
+		dst.Pos = src.Pos
+	}
 }
 
 func mergeGeo(dst *openrtb2.Geo, src *openrtb2.Geo) *openrtb2.Geo {
@@ -260,7 +265,7 @@ func SetIfKeysExists(source []byte, target []byte, keys ...string) []byte {
 }
 
 func IsSdkBiddingEndpoint(endpoint string) bool {
-	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointAPS
+	return endpoint == models.EndpointAppLovinMax || endpoint == models.EndpointUnityLevelPlay || endpoint == models.EndpointCloudX || endpoint == models.EndpointGoogleSDK || endpoint == models.EndpointAPS
 }
 
 // IsSdkEndpoint returns true for SDK mediation endpoints and the v25 endpoint.

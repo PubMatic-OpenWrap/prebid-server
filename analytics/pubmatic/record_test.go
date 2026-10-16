@@ -37,6 +37,11 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeSDK,
 		},
 		{
+			name:            "cloudx",
+			endpoint:        models.EndpointCloudX,
+			integrationType: models.TypeSDK,
+		},
+		{
 			name:            "aps",
 			endpoint:        models.EndpointAPS,
 			integrationType: models.TypeSDK,
