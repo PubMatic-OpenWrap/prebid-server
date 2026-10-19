@@ -4,13 +4,14 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 	type fields struct {
 		RWMutex               sync.RWMutex
-		appSubIntegrationPath map[string]int
+		appSubIntegrationPath map[string]models.AppSubIntegrationPath
 	}
 	type args struct {
 		appSubIntegrationPathStr string
@@ -19,37 +20,37 @@ func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   int
+		want   models.AppSubIntegrationPath
 		want1  bool
 	}{
 		{
 			name: "appIntegrationPath map has key",
 			fields: fields{
 				RWMutex: sync.RWMutex{},
-				appSubIntegrationPath: map[string]int{
-					"DFP":    1,
-					"CUSTOM": 2,
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{
+					"DFP":    {ID: 1},
+					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				},
 			},
 			args: args{
 				appSubIntegrationPathStr: "CUSTOM",
 			},
-			want:  2,
+			want:  models.AppSubIntegrationPath{ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 			want1: true,
 		},
 		{
 			name: "appIntegrationPath map does not have key",
 			fields: fields{
 				RWMutex: sync.RWMutex{},
-				appSubIntegrationPath: map[string]int{
-					"DFP":    1,
-					"CUSTOM": 2,
+				appSubIntegrationPath: map[string]models.AppSubIntegrationPath{
+					"DFP":    {ID: 1},
+					"CUSTOM": {ID: 2, MediationName: "AppLovin", MediationPath: "waterfall"},
 				},
 			},
 			args: args{
 				appSubIntegrationPathStr: "test",
 			},
-			want:  0,
+			want:  models.AppSubIntegrationPath{},
 			want1: false,
 		},
 	}
@@ -64,4 +65,11 @@ func Test_profileMetaData_GetAppSubIntegrationPath(t *testing.T) {
 			assert.Equal(t, got1, tt.want1)
 		})
 	}
+}
+
+func TestAppSubIntegrationPathImpMediation(t *testing.T) {
+	got := models.AppSubIntegrationPath{ID: 16, MediationName: "AdMob", MediationPath: "bidding"}.ImpMediation()
+	assert.Equal(t, &models.ImpMediation{Name: "AdMob", Path: "bidding"}, got)
+
+	assert.Nil(t, models.AppSubIntegrationPath{ID: 1}.ImpMediation())
 }

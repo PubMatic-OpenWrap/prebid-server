@@ -962,6 +962,53 @@ func TestInjectTrackers(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "aps_endpoint_banner_sets_imp_ct_mthd_without_om_script_in_adm",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint: models.EndpointAPS,
+					Platform: models.PLATFORM_APP,
+					Trackers: map[string]models.OWTracker{
+						"12345": {
+							BidType:     models.Banner,
+							TrackerURL:  `Tracking URL`,
+							IsOMEnabled: true,
+						},
+					},
+				},
+				bidResponse: &openrtb2.BidResponse{
+					SeatBid: []openrtb2.SeatBid{
+						{
+							Bid: []openrtb2.Bid{
+								{
+									ID:   "12345",
+									BURL: `http://burl.com`,
+									AdM:  `sample_creative`,
+									Ext:  []byte(`{"imp_ct_mthd":0}`),
+								},
+							},
+							Seat: string(openrtb_ext.BidderAppnexus),
+						},
+					},
+				},
+			},
+			want: &openrtb2.BidResponse{
+				SeatBid: []openrtb2.SeatBid{
+					{
+						Bid: []openrtb2.Bid{
+							{
+								ID:   "12345",
+								BURL: `Tracking URL&owsspburl=http%3A%2F%2Fburl.com`,
+								AdM:  `sample_creative`,
+								Ext:  []byte(`{"imp_ct_mthd":1}`),
+							},
+						},
+						Seat: string(openrtb_ext.BidderAppnexus),
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 var errorAppSubIntegrationPathMapUpdate = "[ErrorAppSubIntegrationPathMapUpdate]:%w"
 
 // We are not saving data in cache here
-func (c *cache) GetAppSubIntegrationPaths() (map[string]int, error) {
+func (c *cache) GetAppSubIntegrationPaths() (map[string]models.AppSubIntegrationPath, error) {
 	appSubIntegrationPathMap, err := c.db.GetAppSubIntegrationPaths()
 	if err != nil {
 		c.metricEngine.RecordDBQueryFailure(models.AppSubIntegrationPathMapQuery, "", "")

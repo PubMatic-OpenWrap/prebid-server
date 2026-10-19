@@ -1645,7 +1645,7 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(8, true)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AppLovin Max SDK Bidding").Return(models.AppSubIntegrationPath{ID: 8}, true)
 			},
 			want: 8,
 		},
@@ -1660,7 +1660,7 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(models.AppSubIntegrationPath{}, false)
 			},
 			want: -1,
 		},
@@ -1676,8 +1676,8 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				profileMetaData: mockProfileMetaData,
 			},
 			setup: func() {
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(0, false)
-				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(1, true)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("invalid").Return(models.AppSubIntegrationPath{}, false)
+				mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("DFP").Return(models.AppSubIntegrationPath{ID: 1}, true)
 			},
 			want: 1,
 		},
@@ -1688,9 +1688,87 @@ func TestGetAppSubIntegrationPath(t *testing.T) {
 				tt.setup()
 			}
 			got := getAppSubIntegrationPath(tt.args.partnerConfigMap, tt.args.profileMetaData)
-			assert.Equal(t, tt.want, got, tt.name)
+			assert.Equal(t, tt.want, got.ID, tt.name)
 		})
 	}
+}
+
+func TestPubmaticMediation(t *testing.T) {
+	path := models.AppSubIntegrationPath{
+		ID:            16,
+		MediationName: "AdMob",
+		MediationPath: "bidding",
+	}
+	tests := []struct {
+		name             string
+		partnerConfigMap map[int]map[string]string
+		path             models.AppSubIntegrationPath
+		want             string
+	}{
+		{
+			name: "server side pubmatic",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+			want: `{"name":"AdMob","path":"bidding"}`,
+		},
+		{
+			name: "server side pubmatic2",
+			partnerConfigMap: map[int]map[string]string{
+				2: {models.PREBID_PARTNER_NAME: models.BidderPubMaticSecondaryAlias, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+			want: `{"name":"AdMob","path":"bidding"}`,
+		},
+		{
+			name: "other partner",
+			partnerConfigMap: map[int]map[string]string{
+				3: {models.PREBID_PARTNER_NAME: "appnexus", models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: path,
+		},
+		{
+			name: "client side pubmatic",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "0"},
+			},
+			path: path,
+		},
+		{
+			name: "empty mediation columns",
+			partnerConfigMap: map[int]map[string]string{
+				1: {models.PREBID_PARTNER_NAME: models.BidderPubMatic, models.SERVER_SIDE_FLAG: "1"},
+			},
+			path: models.AppSubIntegrationPath{ID: 1},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := pubmaticMediation(tt.partnerConfigMap, tt.path)
+			if tt.want == "" {
+				assert.Nil(t, got)
+				return
+			}
+			assert.JSONEq(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestGetAppSubIntegrationPathMediationFields(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
+	mockProfileMetaData.EXPECT().GetAppSubIntegrationPath("AdMob - SDK Bidding").Return(models.AppSubIntegrationPath{
+		ID:            16,
+		MediationName: "admob",
+		MediationPath: "bidding",
+	}, true)
+
+	got := getAppSubIntegrationPath(map[int]map[string]string{
+		models.VersionLevelConfigID: {models.SubIntegrationPathKey: "AdMob - SDK Bidding"},
+	}, mockProfileMetaData)
+	assert.Equal(t, models.AppSubIntegrationPath{ID: 16, MediationName: "admob", MediationPath: "bidding"}, got)
 }
 
 func TestSearchAccountID(t *testing.T) {
@@ -2415,6 +2493,35 @@ func TestOpenWrapGetMultiFloors(t *testing.T) {
 					IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3,
 				})
 				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointAppLovinMax, "5890", models.MBMFSuccess)
+			},
+		},
+		{
+			name: "CloudX endpoint runs MBMF gating",
+			args: args{
+				rctx: models.RequestCtx{
+					Endpoint:  models.EndpointCloudX,
+					PubID:     5890,
+					PubIDStr:  "5890",
+					ProfileID: 1234,
+					DeviceCtx: models.DeviceCtx{
+						DerivedCountryCode: "US",
+					},
+				},
+				imp: openrtb2.Imp{
+					TagID: "adunit",
+					Instl: 1,
+				},
+			},
+			want: &models.MultiFloors{IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3},
+			setup: func() {
+				mockFeature.EXPECT().IsMBMFPublisherEnabled(5890).Return(true)
+				mockFeature.EXPECT().IsMBMFCountryForPublisher("US", 5890).Return(true)
+				mockFeature.EXPECT().IsMBMFEnabledForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(true)
+				mockFeature.EXPECT().GetProfileAdUnitMultiFloors(1234).Return(nil)
+				mockFeature.EXPECT().GetMBMFFloorsForAdUnitFormat(5890, models.AdUnitFormatInstl).Return(&models.MultiFloors{
+					IsActive: true, Tier1: 1, Tier2: 2, Tier3: 3,
+				})
+				mockEngine.EXPECT().RecordMBMFRequests(models.EndpointCloudX, "5890", models.MBMFSuccess)
 			},
 		},
 		{
