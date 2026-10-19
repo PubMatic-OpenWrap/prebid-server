@@ -188,6 +188,8 @@ type DeviceCtx struct {
 	Country            string
 	IP                 string
 	DerivedCountryCode string
+	// DerivedAlpha3CountryCode is the ISO-3166-1 alpha-3 country from the same geo lookup as DerivedCountryCode.
+	DerivedAlpha3CountryCode string
 }
 
 type ImpCtx struct {

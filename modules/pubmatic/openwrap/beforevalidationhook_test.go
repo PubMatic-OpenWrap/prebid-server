@@ -71,6 +71,10 @@ func allowEDSBlockedCountryCheck(mockFeature *mock_feature.MockFeature) {
 	mockFeature.EXPECT().IsEDSBlockedCountry(gomock.Any()).Return(false).AnyTimes()
 }
 
+func expectPreProcessingPhaseMetrics(mockEngine *mock_metrics.MockMetricsEngine) {
+	mockEngine.EXPECT().RecordPreProcessingPhaseTime(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+}
+
 func expectEDSBlockedCountryPartnerConfigMap(mockCache *mock_cache.MockCache) {
 	mockCache.EXPECT().GetPartnerConfigMap(gomock.Any(), gomock.Any(), gomock.Any()).Return(map[int]map[string]string{
 		1: {
@@ -4091,6 +4095,7 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
 	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
@@ -5673,6 +5678,11 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"rctx": func() models.RequestCtx {
 							testrctx := rctx
 							testrctx.Endpoint = models.EndpointAppLovinMax
+							// Shallow copy shares map headers with package-level rctx; isolate mutable maps.
+							testrctx.Aliases = make(map[string]string)
+							testrctx.ImpBidCtx = make(map[string]models.ImpCtx)
+							testrctx.PrebidBidderCode = make(map[string]string)
+							testrctx.SeatNonBids = make(map[string][]openrtb_ext.NonBid)
 							return testrctx
 						}(),
 					}),
@@ -5753,6 +5763,10 @@ func TestOpenWrapHandleBeforeValidationHook(t *testing.T) {
 						"rctx": func() models.RequestCtx {
 							testrctx := rctx
 							testrctx.Endpoint = models.EndpointAppLovinMax
+							testrctx.Aliases = make(map[string]string)
+							testrctx.ImpBidCtx = make(map[string]models.ImpCtx)
+							testrctx.PrebidBidderCode = make(map[string]string)
+							testrctx.SeatNonBids = make(map[string][]openrtb_ext.NonBid)
 							return testrctx
 						}(),
 					}),
@@ -5888,6 +5902,7 @@ func TestCurrencyConverion(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
 	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
@@ -6042,6 +6057,7 @@ func TestUserAgent_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
 	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
@@ -6171,6 +6187,7 @@ func TestEDSBlockedCountry_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	mockProfileMetaData := mock_profilemetadata.NewMockProfileMetaData(ctrl)
 
@@ -6306,6 +6323,7 @@ func TestVASTUnwrap_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
 	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
@@ -6709,6 +6727,7 @@ func TestImpBidCtx_handleBeforeValidationHook(t *testing.T) {
 	defer ctrl.Finish()
 	mockCache := mock_cache.NewMockCache(ctrl)
 	mockEngine := mock_metrics.NewMockMetricsEngine(ctrl)
+	expectPreProcessingPhaseMetrics(mockEngine)
 	mockFeature := mock_feature.NewMockFeature(ctrl)
 	allowEDSBlockedCountryCheck(mockFeature)
 	mockFeature.EXPECT().IsDynamicFloorEnabledPublisher(gomock.Any()).Return(false).AnyTimes()
@@ -8610,4 +8629,75 @@ func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
 			assert.Equal(t, tt.wantImpNative, tt.args.impNative)
 		})
 	}
+}
+
+func TestInjectDealTierIfPresent(t *testing.T) {
+	params := json.RawMessage(`{"site":"123"}`)
+	t.Run("skips_when_no_dealtier", func(t *testing.T) {
+		got := injectDealTierIfPresent(params, &models.ImpExtension{
+			Bidder: map[string]*models.BidderExtension{
+				"pubmatic": {DealTier: nil},
+			},
+		}, "pubmatic")
+		assert.JSONEq(t, string(params), string(got))
+	})
+	t.Run("injects_when_dealtier_present", func(t *testing.T) {
+		got := injectDealTierIfPresent(params, &models.ImpExtension{
+			Bidder: map[string]*models.BidderExtension{
+				"pubmatic": {DealTier: &openrtb_ext.DealTier{Prefix: "tier", MinDealTier: 5}},
+			},
+		}, "pubmatic")
+		assert.JSONEq(t, `{"site":"123","dealtier":{"prefix":"tier","minDealTier":5}}`, string(got))
+	})
+}
+
+func TestCollectAuctionPartners(t *testing.T) {
+	rCtx := models.RequestCtx{
+		PrebidBidderCode: make(map[string]string),
+		AdapterFilteredMap: map[string]struct{}{
+			"filtered": {},
+		},
+		AdapterThrottleMap: map[string]struct{}{
+			"throttled": {},
+		},
+		PartnerConfigMap: map[int]map[string]string{
+			models.VersionLevelConfigID: {
+				models.PARTNER_ID:       "-1",
+				models.SERVER_SIDE_FLAG: "1",
+			},
+			1: {
+				models.PARTNER_ID:          "1",
+				models.SERVER_SIDE_FLAG:    "1",
+				models.BidderCode:          "pubmatic",
+				models.PREBID_PARTNER_NAME: "pubmatic",
+			},
+			2: {
+				models.PARTNER_ID:          "2",
+				models.SERVER_SIDE_FLAG:    "0",
+				models.BidderCode:          "client",
+				models.PREBID_PARTNER_NAME: "appnexus",
+			},
+			3: {
+				models.PARTNER_ID:          "3",
+				models.SERVER_SIDE_FLAG:    "1",
+				models.BidderCode:          "filtered",
+				models.PREBID_PARTNER_NAME: "rubicon",
+			},
+			4: {
+				models.PARTNER_ID:          "4",
+				models.SERVER_SIDE_FLAG:    "1",
+				models.BidderCode:          "throttled",
+				models.PREBID_PARTNER_NAME: "ix",
+			},
+		},
+	}
+	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
+	partners := collectAuctionPartners(&rCtx, &result)
+	assert.Len(t, partners, 1)
+	assert.Equal(t, "pubmatic", partners[0].BidderCode)
+	assert.Equal(t, "pubmatic", rCtx.PrebidBidderCode["pubmatic"])
+	assert.Equal(t, "rubicon", rCtx.PrebidBidderCode["filtered"])
+	assert.Equal(t, "ix", rCtx.PrebidBidderCode["throttled"])
+	assert.Contains(t, result.Warnings, "Dropping adapter due to bidder filtering: filtered")
+	assert.Contains(t, result.Warnings, "Dropping throttled adapter from auction: throttled")
 }

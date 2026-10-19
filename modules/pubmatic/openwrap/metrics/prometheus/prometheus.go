@@ -38,6 +38,7 @@ type Metrics struct {
 	pubBidRecoveryTime              *prometheus.HistogramVec
 	requestsWithSchainABTestEnabled *prometheus.CounterVec
 	pubPreProcessingTime            *prometheus.HistogramVec
+	pubPreProcessingPhaseTime       *prometheus.HistogramVec
 	// publisher-partner-platform level metrics
 	pubPartnerPlatformRequests  *prometheus.CounterVec
 	pubPartnerPlatformResponses *prometheus.CounterVec
@@ -140,6 +141,7 @@ const (
 	countryLabel       = "country"
 	apsReasonLabel     = "reason"
 	apsSlotUUIDLabel   = "slot_uuid"
+	phaseLabel         = "phase"
 )
 
 var standardTimeBuckets = []float64{0.05, 0.1, 0.3, 0.75, 1}
@@ -267,6 +269,13 @@ func newMetrics(cfg *config.PrometheusMetrics, promRegistry *prometheus.Registry
 		"pub_preprocessing_time",
 		"Total time taken for preprocessing in seconds at publisher level.",
 		[]string{pubIDLabel},
+		standardTimeBuckets,
+	)
+
+	metrics.pubPreProcessingPhaseTime = newHistogramVec(cfg, promRegistry,
+		"pub_preprocessing_phase_time",
+		"Time taken for BeforeValidation sub-phases in seconds at publisher and phase level (profile_load_ms, imp_loop_ms, partner_params_ms, mutation_ms).",
+		[]string{pubIDLabel, phaseLabel},
 		standardTimeBuckets,
 	)
 
@@ -748,6 +757,13 @@ func (m *Metrics) RecordPreProcessingTimeStats(publisherID string, processingTim
 	m.pubPreProcessingTime.With(prometheus.Labels{
 		pubIDLabel: publisherID,
 	}).Observe(float64(processingTime) / 1000)
+}
+
+func (m *Metrics) RecordPreProcessingPhaseTime(publisherID, phase string, processingTimeMs int) {
+	m.pubPreProcessingPhaseTime.With(prometheus.Labels{
+		pubIDLabel: publisherID,
+		phaseLabel: phase,
+	}).Observe(float64(processingTimeMs) / 1000)
 }
 func (m *Metrics) RecordInvalidCreativeStats(publisherID, partner string) {}
 

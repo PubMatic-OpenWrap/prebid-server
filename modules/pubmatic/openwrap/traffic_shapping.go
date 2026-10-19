@@ -49,6 +49,11 @@ func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
 		return rctx.DeviceCtx.Country
 	}
 
+	// Reuse the geo lookup already done in handleBeforeValidationHook.
+	if rctx.DeviceCtx.DerivedAlpha3CountryCode != "" {
+		return rctx.DeviceCtx.DerivedAlpha3CountryCode
+	}
+
 	if rctx.DeviceCtx.IP != "" {
 		_, alpha3CountryCode := m.getCountryCodes(rctx.DeviceCtx.IP)
 		return alpha3CountryCode
