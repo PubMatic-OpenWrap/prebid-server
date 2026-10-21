@@ -364,6 +364,12 @@ func TestModifyBanner(t *testing.T) {
 			expectedBanner: nil,
 		},
 		{
+			name:           "nil request banner with signal format",
+			requestBanner:  nil,
+			signalBanner:   &openrtb2.Banner{Format: []openrtb2.Format{{W: 300, H: 250}}},
+			expectedBanner: nil,
+		},
+		{
 			name:           "request banner with API",
 			requestBanner:  &openrtb2.Banner{API: []adcom1.APIFramework{1}},
 			signalBanner:   &openrtb2.Banner{API: []adcom1.APIFramework{2}},
@@ -374,6 +380,50 @@ func TestModifyBanner(t *testing.T) {
 			requestBanner:  &openrtb2.Banner{},
 			signalBanner:   &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
 			expectedBanner: &openrtb2.Banner{MIMEs: []string{"image/jpeg"}},
+		},
+		{
+			name:          "copies signal banner format when request format is nil",
+			requestBanner: &openrtb2.Banner{},
+			signalBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 300, H: 250}},
+			},
+			expectedBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 300, H: 250}},
+			},
+		},
+		{
+			name: "overwrites request banner format with signal banner format",
+			requestBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
+			signalBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 300, H: 250}, {W: 320, H: 50}},
+			},
+			expectedBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 300, H: 250}, {W: 320, H: 50}},
+			},
+		},
+		{
+			name: "keeps request banner format when signal format is nil",
+			requestBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
+			signalBanner: &openrtb2.Banner{},
+			expectedBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
+		},
+		{
+			name: "keeps request banner format when signal format is empty",
+			requestBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
+			signalBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{},
+			},
+			expectedBanner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 320, H: 480}},
+			},
 		},
 	}
 

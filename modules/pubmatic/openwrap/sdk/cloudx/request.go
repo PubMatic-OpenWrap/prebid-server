@@ -129,6 +129,10 @@ func (l *CloudX) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx 
 
 func modifyBanner(requestBanner *openrtb2.Banner, signalBanner *openrtb2.Banner) {
 	sdkutils.MergeBanner(requestBanner, signalBanner)
+	// cloudx sends device size in the request, so we need to overwrite the request banner format with the signal banner format
+	if requestBanner != nil && signalBanner != nil && signalBanner.Format != nil && len(signalBanner.Format) > 0 {
+		requestBanner.Format = signalBanner.Format
+	}
 }
 
 func modifyImpression(request *openrtb2.BidRequest, signalImps []openrtb2.Imp) {
