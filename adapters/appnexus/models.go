@@ -6,9 +6,8 @@ import (
 
 // impExt defines the outgoing data contract.
 type impExt struct {
-	Appnexus impExtAppnexus  `json:"appnexus"`
-	GPID     string          `json:"gpid,omitempty"`
-	OWSDK    json.RawMessage `json:"owsdk,omitempty"`
+	Appnexus impExtAppnexus `json:"appnexus"`
+	GPID     string         `json:"gpid,omitempty"`
 }
 
 type impExtAppnexus struct {
