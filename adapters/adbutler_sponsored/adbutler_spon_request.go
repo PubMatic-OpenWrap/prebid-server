@@ -57,6 +57,19 @@ func (a *AdButlerSponsoredAdapter) MakeRequests(request *openrtb2.BidRequest, re
 	}
 
 	var adButlerReq AdButlerSponsoredRequest
+
+	if commerceExt.Bidder.DsConsentApplies != nil {
+		if dsConsentApplies, ok := commerceExt.Bidder.DsConsentApplies.(string); ok {
+			adButlerReq.DsConsentApplies = dsConsentApplies
+		}
+	}
+
+	if commerceExt.Bidder.DsConsentGiven != nil {
+		if dsConsentGiven, ok := commerceExt.Bidder.DsConsentGiven.(string); ok {
+			adButlerReq.DsConsentGiven = dsConsentGiven
+		}
+	}
+
 	//Assign Page Source if Present
 	if siteExt != nil {
 		if isLowercaseNumbersDashes(siteExt.Page) {
