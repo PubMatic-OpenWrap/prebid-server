@@ -8612,62 +8612,6 @@ func TestApplyNativeVideoAssetRulesFromAdUnitConfig(t *testing.T) {
 	}
 }
 
-func TestHasNonPubmaticPartner(t *testing.T) {
-	tests := []struct {
-		name       string
-		bidderMeta map[string]models.PartnerData
-		want       bool
-	}{
-		{
-			name:       "empty",
-			bidderMeta: nil,
-			want:       false,
-		},
-		{
-			name: "pubmatic_only",
-			bidderMeta: map[string]models.PartnerData{
-				"pubmatic": {PrebidBidderCode: string(openrtb_ext.BidderPubmatic)},
-			},
-			want: false,
-		},
-		{
-			name: "pubmatic2_only",
-			bidderMeta: map[string]models.PartnerData{
-				"pubmatic2": {PrebidBidderCode: models.BidderPubMaticSecondaryAlias},
-			},
-			want: false,
-		},
-		{
-			name: "pubmatic_and_pubmatic2",
-			bidderMeta: map[string]models.PartnerData{
-				"pubmatic":  {PrebidBidderCode: string(openrtb_ext.BidderPubmatic)},
-				"pubmatic2": {PrebidBidderCode: models.BidderPubMaticSecondaryAlias},
-			},
-			want: false,
-		},
-		{
-			name: "pubmatic_and_appnexus",
-			bidderMeta: map[string]models.PartnerData{
-				"pubmatic": {PrebidBidderCode: string(openrtb_ext.BidderPubmatic)},
-				"appnexus": {PrebidBidderCode: string(openrtb_ext.BidderAppnexus)},
-			},
-			want: true,
-		},
-		{
-			name: "appnexus_only",
-			bidderMeta: map[string]models.PartnerData{
-				"appnexus": {PrebidBidderCode: string(openrtb_ext.BidderAppnexus)},
-			},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, hasNonPubmaticPartner(tt.bidderMeta))
-		})
-	}
-}
-
 func TestAppStatusSchemesForPartners(t *testing.T) {
 	schemes := map[string]any{"com.temu": 1, "com.other": 0}
 	fullOWSDK := map[string]any{
@@ -8675,144 +8619,108 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 		models.AppStatusSchemes: schemes,
 		"adattributes":          []any{float64(1), float64(4)},
 	}
-	withNonPubmatic := map[string]models.PartnerData{
-		"pubmatic": {PrebidBidderCode: string(openrtb_ext.BidderPubmatic)},
-		"appnexus": {PrebidBidderCode: string(openrtb_ext.BidderAppnexus)},
-	}
-	pubmaticOnly := map[string]models.PartnerData{
-		"pubmatic": {PrebidBidderCode: string(openrtb_ext.BidderPubmatic)},
-	}
 
 	tests := []struct {
-		name       string
-		owsdk      map[string]any
-		endpoint   string
-		bidderMeta map[string]models.PartnerData
-		want       map[string]any
+		name     string
+		owsdk    map[string]any
+		endpoint string
+		want     map[string]any
 	}{
 		{
-			name:       "v25_keeps_appstatusschemes_value",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointV25,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: schemes},
+			name:     "v25_keeps_appstatusschemes_value",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointV25,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:       "v25_keeps_sdk_array_value",
-			owsdk:      map[string]any{models.AppStatusSchemes: []any{"temu"}},
-			endpoint:   models.EndpointV25,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: []any{"temu"}},
+			name:     "v25_keeps_sdk_array_value",
+			owsdk:    map[string]any{models.AppStatusSchemes: []any{"temu"}},
+			endpoint: models.EndpointV25,
+			want:     map[string]any{models.AppStatusSchemes: []any{"temu"}},
 		},
 		{
-			name:       "v25_keeps_string_value",
-			owsdk:      map[string]any{models.AppStatusSchemes: "installed"},
-			endpoint:   models.EndpointV25,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: "installed"},
+			name:     "v25_keeps_string_value",
+			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
+			endpoint: models.EndpointV25,
+			want:     map[string]any{models.AppStatusSchemes: "installed"},
 		},
 		{
-			name:       "v25_pubmatic_only_returns_nil",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointV25,
-			bidderMeta: pubmaticOnly,
-			want:       nil,
+			name:     "applovinmax_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointAppLovinMax,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:       "applovinmax_keeps_appstatusschemes_with_non_pubmatic",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointAppLovinMax,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: schemes},
+			name:     "unity_levelplay_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointUnityLevelPlay,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:       "applovinmax_pubmatic_only_returns_nil",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointAppLovinMax,
-			bidderMeta: pubmaticOnly,
-			want:       nil,
+			name:     "googlesdk_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointGoogleSDK,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:       "unity_levelplay_keeps_appstatusschemes",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointUnityLevelPlay,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: schemes},
+			name:     "aps_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointAPS,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:       "googlesdk_keeps_appstatusschemes",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointGoogleSDK,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: schemes},
+			name:     "amp_keeps_nil_existing_behavior",
+			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
+			endpoint: models.EndpointAMP,
+			want:     nil,
 		},
 		{
-			name:       "aps_keeps_appstatusschemes",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointAPS,
-			bidderMeta: withNonPubmatic,
-			want:       map[string]any{models.AppStatusSchemes: schemes},
+			name:     "ortb_keeps_nil_existing_behavior",
+			owsdk:    map[string]any{models.AppStatusSchemes: false},
+			endpoint: models.EndpointORTB,
+			want:     nil,
 		},
 		{
-			name:       "amp_keeps_nil_existing_behavior",
-			owsdk:      map[string]any{models.AppStatusSchemes: "installed"},
-			endpoint:   models.EndpointAMP,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
+			name:     "video_keeps_nil_existing_behavior",
+			owsdk:    map[string]any{models.AppStatusSchemes: nil},
+			endpoint: models.EndpointVideo,
+			want:     nil,
 		},
 		{
-			name:       "ortb_keeps_nil_existing_behavior",
-			owsdk:      map[string]any{models.AppStatusSchemes: false},
-			endpoint:   models.EndpointORTB,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
+			name:     "webs2s_keeps_nil_existing_behavior",
+			owsdk:    map[string]any{models.AppStatusSchemes: map[string]any{}},
+			endpoint: models.EndpointWebS2S,
+			want:     nil,
 		},
 		{
-			name:       "video_keeps_nil_existing_behavior",
-			owsdk:      map[string]any{models.AppStatusSchemes: nil},
-			endpoint:   models.EndpointVideo,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
+			name:     "hybrid_keeps_nil_existing_behavior",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointHybrid,
+			want:     nil,
 		},
 		{
-			name:       "webs2s_keeps_nil_existing_behavior",
-			owsdk:      map[string]any{models.AppStatusSchemes: map[string]any{}},
-			endpoint:   models.EndpointWebS2S,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
+			name:     "missing_key_drops_owsdk",
+			owsdk:    map[string]any{"ctaoverlay": float64(1)},
+			endpoint: models.EndpointV25,
+			want:     nil,
 		},
 		{
-			name:       "hybrid_keeps_nil_existing_behavior",
-			owsdk:      fullOWSDK,
-			endpoint:   models.EndpointHybrid,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
-		},
-		{
-			name:       "missing_key_drops_owsdk",
-			owsdk:      map[string]any{"ctaoverlay": float64(1)},
-			endpoint:   models.EndpointV25,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
-		},
-		{
-			name:       "nil_owsdk",
-			owsdk:      nil,
-			endpoint:   models.EndpointV25,
-			bidderMeta: withNonPubmatic,
-			want:       nil,
+			name:     "nil_owsdk",
+			owsdk:    nil,
+			endpoint: models.EndpointV25,
+			want:     nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := appStatusSchemesForPartners(tt.owsdk, tt.endpoint, tt.bidderMeta)
+			got := appStatusSchemesForPartners(tt.owsdk, tt.endpoint)
 			assert.Equal(t, tt.want, got)
 		})
 	}
 
 	// PubMatic bidder params hold the original map. The partner copy must not alter it.
-	got := appStatusSchemesForPartners(fullOWSDK, models.EndpointV25, withNonPubmatic)
+	got := appStatusSchemesForPartners(fullOWSDK, models.EndpointV25)
 	assert.Equal(t, map[string]any{
 		"ctaoverlay":            float64(1),
 		models.AppStatusSchemes: schemes,
@@ -8821,7 +8729,7 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 	got[models.AppStatusSchemes] = "changed"
 	assert.Equal(t, schemes, fullOWSDK[models.AppStatusSchemes])
 
-	ext := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointV25, withNonPubmatic)}
+	ext := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointV25)}
 	raw, err := json.Marshal(ext)
 	assert.NoError(t, err)
 	var impExt map[string]json.RawMessage
@@ -8829,7 +8737,7 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 	assert.JSONEq(t, `{"appstatusschemes":{"com.other":0,"com.temu":1}}`, string(impExt["owsdk"]))
 
 	// Non-SDK endpoints keep existing behavior: no owsdk on shared imp.ext.
-	extHybrid := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointHybrid, withNonPubmatic)}
+	extHybrid := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointHybrid)}
 	rawHybrid, err := json.Marshal(extHybrid)
 	assert.NoError(t, err)
 	var impExtHybrid map[string]json.RawMessage
