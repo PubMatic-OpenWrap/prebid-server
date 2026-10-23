@@ -650,7 +650,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		impExt.Wrapper = nil
 		impExt.Reward = nil
 		impExt.Bidder = nil
-		impExt.OWSDK = appStatusSchemesForPartners(impExt.OWSDK, rCtx.Endpoint)
+		impExt.OWSDK = appStatusSchemesForPartners(impExt.OWSDK, rCtx.Endpoint, bidderMeta)
 		newImpExt, err := json.Marshal(impExt)
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("failed to update bidder params for impression %s", imp.ID))
@@ -951,12 +951,22 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 }
 
-// appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes for OpenBid v25 and SDK
-// bidding endpoints (applovinmax, googlesdk, ulevelplay, aps). The value is copied as sent.
-// Other endpoints keep existing behavior (imp.ext.owsdk = nil). The returned map is new; the
-// caller's map is not modified.
-func appStatusSchemesForPartners(owsdk map[string]any, endpoint string) map[string]any {
-	if !sdkutils.IsSdkEndpoint(endpoint) || owsdk == nil {
+// hasNonPubmaticPartner reports whether the auction includes any SSP other than PubMatic.
+func hasNonPubmaticPartner(bidderMeta map[string]models.PartnerData) bool {
+	for _, meta := range bidderMeta {
+		if !models.IsPubmaticCorePartner(meta.PrebidBidderCode) {
+			return true
+		}
+	}
+	return false
+}
+
+// appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes on the shared impression for
+// OpenBid v25 and SDK bidding endpoints when at least one non-PubMatic partner is present.
+// PubMatic already receives full owsdk via bidder params. Other endpoints / PubMatic-only
+// auctions keep imp.ext.owsdk = nil. The returned map is new; the caller's map is not modified.
+func appStatusSchemesForPartners(owsdk map[string]any, endpoint string, bidderMeta map[string]models.PartnerData) map[string]any {
+	if !sdkutils.IsSdkEndpoint(endpoint) || owsdk == nil || !hasNonPubmaticPartner(bidderMeta) {
 		return nil
 	}
 	val, ok := owsdk[models.AppStatusSchemes]
