@@ -419,6 +419,8 @@ const (
 
 	//constants for SDK features
 	CTAOVERLAY = "ctaoverlay"
+	// AppStatusSchemes is imp.ext.owsdk.appstatusschemes. The value is forwarded as sent by the client.
+	AppStatusSchemes = "appstatusschemes"
 )
 
 const (
