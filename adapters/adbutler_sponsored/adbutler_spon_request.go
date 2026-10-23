@@ -14,19 +14,21 @@ import (
 )
 
 type AdButlerSponsoredRequest struct {
-	SearchString  string                 `json:"search,omitempty"`
-	SearchType    string                 `json:"search_type,omitempty"`
-	Params        map[string][]string    `json:"params,omitempty"`
-	Identifiers   []string               `json:"identifiers,omitempty"`
-	Target        map[string]interface{} `json:"_abdk_json,omitempty"`
-	Limit         int                    `json:"limit,omitempty"`
-	Source        string                 `json:"source,omitempty"`
-	UserID        string                 `json:"adb_uid,omitempty"`
-	IP            string                 `json:"ip,omitempty"`
-	UserAgent     string                 `json:"ua,omitempty"`
-	Referrer      string                 `json:"referrer,omitempty"`
-	FloorCPC      float64                `json:"bid_floor_cpc,omitempty"`
-	IsTestRequest bool                   `json:"test_request,omitempty"`
+	SearchString     string                 `json:"search,omitempty"`
+	SearchType       string                 `json:"search_type,omitempty"`
+	Params           map[string][]string    `json:"params,omitempty"`
+	Identifiers      []string               `json:"identifiers,omitempty"`
+	Target           map[string]interface{} `json:"_abdk_json,omitempty"`
+	Limit            int                    `json:"limit,omitempty"`
+	Source           string                 `json:"source,omitempty"`
+	UserID           string                 `json:"adb_uid,omitempty"`
+	IP               string                 `json:"ip,omitempty"`
+	UserAgent        string                 `json:"ua,omitempty"`
+	Referrer         string                 `json:"referrer,omitempty"`
+	FloorCPC         float64                `json:"bid_floor_cpc,omitempty"`
+	IsTestRequest    bool                   `json:"test_request,omitempty"`
+	DsConsentApplies string                 `json:"ds_consent_applies,omitempty"`
+	DsConsentGiven   string                 `json:"ds_consent_given,omitempty"`
 }
 
 func isLowercaseNumbersDashes(s string) bool {

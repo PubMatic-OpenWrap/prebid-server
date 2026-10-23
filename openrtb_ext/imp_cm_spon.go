@@ -69,6 +69,8 @@ type ExtBidderCommerce struct {
 	PrebidBidderName string             `json:"prebidname,omitempty"`
 	BidderCode       string             `json:"biddercode,omitempty"`
 	CustomConfig     []*ExtCustomConfig `json:"config,omitempty"`
+	DsConsentApplies string 			`json:"ds_consent_applies,omitempty"`
+	DsConsentGiven     string 			`json:"ds_consent_given,omitempty"`
 }
 
 type ExtBidCMSponsored struct {

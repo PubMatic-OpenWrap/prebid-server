@@ -37,6 +37,8 @@ const (
 	DATATYE_DATE              = 4
 	DATATYE_TIME              = 5
 	DATATYE_DATETIME          = 6
+
+	TRK_URL_END_TAG = "&te=1"
 )
 
 const (
