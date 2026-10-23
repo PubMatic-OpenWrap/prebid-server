@@ -8633,34 +8633,70 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
-			name:     "amp_keeps_string_value",
-			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
-			endpoint: models.EndpointAMP,
-			want:     map[string]any{models.AppStatusSchemes: "installed"},
-		},
-		{
 			name:     "v25_keeps_sdk_array_value",
 			owsdk:    map[string]any{models.AppStatusSchemes: []any{"temu"}},
 			endpoint: models.EndpointV25,
 			want:     map[string]any{models.AppStatusSchemes: []any{"temu"}},
 		},
 		{
-			name:     "ortb_keeps_false",
+			name:     "v25_keeps_string_value",
+			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
+			endpoint: models.EndpointV25,
+			want:     map[string]any{models.AppStatusSchemes: "installed"},
+		},
+		{
+			name:     "applovinmax_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointAppLovinMax,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
+		},
+		{
+			name:     "unity_levelplay_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointUnityLevelPlay,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
+		},
+		{
+			name:     "googlesdk_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointGoogleSDK,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
+		},
+		{
+			name:     "aps_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointAPS,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
+		},
+		{
+			name:     "amp_keeps_nil_existing_behavior",
+			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
+			endpoint: models.EndpointAMP,
+			want:     nil,
+		},
+		{
+			name:     "ortb_keeps_nil_existing_behavior",
 			owsdk:    map[string]any{models.AppStatusSchemes: false},
 			endpoint: models.EndpointORTB,
-			want:     map[string]any{models.AppStatusSchemes: false},
+			want:     nil,
 		},
 		{
-			name:     "video_keeps_null",
+			name:     "video_keeps_nil_existing_behavior",
 			owsdk:    map[string]any{models.AppStatusSchemes: nil},
 			endpoint: models.EndpointVideo,
-			want:     map[string]any{models.AppStatusSchemes: nil},
+			want:     nil,
 		},
 		{
-			name:     "webs2s_keeps_empty_object",
+			name:     "webs2s_keeps_nil_existing_behavior",
 			owsdk:    map[string]any{models.AppStatusSchemes: map[string]any{}},
 			endpoint: models.EndpointWebS2S,
-			want:     map[string]any{models.AppStatusSchemes: map[string]any{}},
+			want:     nil,
+		},
+		{
+			name:     "hybrid_keeps_nil_existing_behavior",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointHybrid,
+			want:     nil,
 		},
 		{
 			name:     "missing_key_drops_owsdk",
@@ -8672,30 +8708,6 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 			name:     "nil_owsdk",
 			owsdk:    nil,
 			endpoint: models.EndpointV25,
-			want:     nil,
-		},
-		{
-			name:     "applovinmax_drops_appstatusschemes",
-			owsdk:    fullOWSDK,
-			endpoint: models.EndpointAppLovinMax,
-			want:     nil,
-		},
-		{
-			name:     "unity_levelplay_drops_appstatusschemes",
-			owsdk:    fullOWSDK,
-			endpoint: models.EndpointUnityLevelPlay,
-			want:     nil,
-		},
-		{
-			name:     "googlesdk_drops_appstatusschemes",
-			owsdk:    fullOWSDK,
-			endpoint: models.EndpointGoogleSDK,
-			want:     nil,
-		},
-		{
-			name:     "aps_drops_appstatusschemes",
-			owsdk:    fullOWSDK,
-			endpoint: models.EndpointAPS,
 			want:     nil,
 		},
 	}
@@ -8717,10 +8729,19 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 	got[models.AppStatusSchemes] = "changed"
 	assert.Equal(t, schemes, fullOWSDK[models.AppStatusSchemes])
 
-	ext := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointHybrid)}
+	ext := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointV25)}
 	raw, err := json.Marshal(ext)
 	assert.NoError(t, err)
 	var impExt map[string]json.RawMessage
 	assert.NoError(t, json.Unmarshal(raw, &impExt))
 	assert.JSONEq(t, `{"appstatusschemes":{"com.other":0,"com.temu":1}}`, string(impExt["owsdk"]))
+
+	// Non-SDK endpoints keep existing behavior: no owsdk on shared imp.ext.
+	extHybrid := models.ImpExtension{OWSDK: appStatusSchemesForPartners(fullOWSDK, models.EndpointHybrid)}
+	rawHybrid, err := json.Marshal(extHybrid)
+	assert.NoError(t, err)
+	var impExtHybrid map[string]json.RawMessage
+	assert.NoError(t, json.Unmarshal(rawHybrid, &impExtHybrid))
+	_, hasOWSDK := impExtHybrid["owsdk"]
+	assert.False(t, hasOWSDK)
 }

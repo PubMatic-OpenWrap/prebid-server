@@ -951,12 +951,12 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 	}
 }
 
-// appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes for every OpenWrap partner
-// on non-SDK-bidding paths. The value is copied as sent. SDK bidding auctions only call PubMatic,
-// which already receives the full owsdk object through bidder params, so those paths return nil.
-// The returned map is new; the caller's map is not modified.
+// appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes for OpenBid v25 and SDK
+// bidding endpoints (applovinmax, googlesdk, ulevelplay, aps). The value is copied as sent.
+// Other endpoints keep existing behavior (imp.ext.owsdk = nil). The returned map is new; the
+// caller's map is not modified.
 func appStatusSchemesForPartners(owsdk map[string]any, endpoint string) map[string]any {
-	if sdkutils.IsSdkBiddingEndpoint(endpoint) || owsdk == nil {
+	if !sdkutils.IsSdkEndpoint(endpoint) || owsdk == nil {
 		return nil
 	}
 	val, ok := owsdk[models.AppStatusSchemes]
