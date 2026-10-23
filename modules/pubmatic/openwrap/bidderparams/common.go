@@ -2,10 +2,10 @@ package bidderparams
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/adunitconfig"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/cache"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 )
@@ -153,7 +153,7 @@ func GetRegexMatchingSlot(rctx models.RequestCtx, cache cache.Cache, slot string
 		requestSlotKeyParts := strings.Split(slot, "@")
 		if len(dbSlotNameParts) == len(requestSlotKeyParts) {
 			for i, dbPart := range dbSlotNameParts {
-				re, err := regexp.Compile(regexFlags + dbPart)
+				re, err := adunitconfig.Compile(regexFlags + dbPart)
 				if err != nil {
 					// If an invalid regex pattern is encountered, check further entries intead of returning immediately
 					break
