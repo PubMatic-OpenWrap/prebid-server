@@ -62,7 +62,7 @@ func benchmarkHandleBeforeValidationHook(b *testing.B, impCount, partnerCount in
 	mockFeature.EXPECT().IsMBMFPublisherEnabled(gomock.Any()).Return(false).AnyTimes()
 	mockProfileMetaData.EXPECT().GetProfileTypePlatform(gomock.Any()).Return(0, false).AnyTimes()
 	mockProfileMetaData.EXPECT().GetAppIntegrationPath(gomock.Any()).Return(0, false).AnyTimes()
-	mockProfileMetaData.EXPECT().GetAppSubIntegrationPath(gomock.Any()).Return(0, false).AnyTimes()
+	mockProfileMetaData.EXPECT().GetAppSubIntegrationPath(gomock.Any()).Return(models.AppSubIntegrationPath{}, false).AnyTimes()
 
 	partnerConfigMap := make(map[int]map[string]string, partnerCount+1)
 	partnerConfigMap[models.VersionLevelConfigID] = map[string]string{
