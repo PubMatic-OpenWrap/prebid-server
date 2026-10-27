@@ -278,7 +278,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	var allPartnersFilteredFlag bool
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
+	// Build server-side partners once; reuse for percent-throttle, bidder-filter, and auction.
+	ssPartners := collectServerSidePartners(rCtx.PartnerConfigMap)
+
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = applyAdapterThrottle(ssPartners, rCtx.AdapterThrottleMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
@@ -287,7 +290,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
+	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.filterBidders(rCtx, payload.BidRequest, ssPartners)
 
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, payload)
 
@@ -298,7 +301,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, err
 	}
 
-	auctionPartners := collectAuctionPartners(&rCtx, &result)
+	auctionPartners := collectAuctionPartners(ssPartners, &rCtx, &result)
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
@@ -816,50 +819,64 @@ type auctionPartner struct {
 	Config           map[string]string
 }
 
-// collectAuctionPartners builds the server-side partner slice once after throttle/filter
-// so the impression loop does not rescan PartnerConfigMap.
-func collectAuctionPartners(rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) []auctionPartner {
-	partners := make([]auctionPartner, 0, len(rCtx.PartnerConfigMap))
-	for _, partnerConfig := range rCtx.PartnerConfigMap {
+// collectServerSidePartners returns server-side partners once so throttle, filter, and the
+// auction partner list do not each rescan PartnerConfigMap. Criteria match GetAdapterThrottleMap
+// (SERVER_SIDE_FLAG + non-empty bidderCode). Partner ID is parsed when present for auction use.
+func collectServerSidePartners(partnerConfigMap map[int]map[string]string) []auctionPartner {
+	partners := make([]auctionPartner, 0, len(partnerConfigMap))
+	for _, partnerConfig := range partnerConfigMap {
 		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
 			continue
 		}
 
-		partneridstr, ok := partnerConfig[models.PARTNER_ID]
-		if !ok {
-			continue
-		}
-		partnerID, err := strconv.Atoi(partneridstr)
-		if err != nil || partnerID == models.VersionLevelConfigID {
-			continue
-		}
-
 		bidderCode := partnerConfig[models.BidderCode]
-		prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
-		if rCtx.PrebidBidderCode == nil {
-			rCtx.PrebidBidderCode = make(map[string]string)
-		}
-		rCtx.PrebidBidderCode[bidderCode] = prebidBidderCode
-
-		if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
-			if result != nil {
-				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
-			}
-			continue
-		}
-		if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
-			if result != nil {
-				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
-			}
+		if bidderCode == "" {
 			continue
 		}
 
-		partners = append(partners, auctionPartner{
-			ID:               partnerID,
+		partner := auctionPartner{
 			BidderCode:       bidderCode,
-			PrebidBidderCode: prebidBidderCode,
+			PrebidBidderCode: partnerConfig[models.PREBID_PARTNER_NAME],
 			Config:           partnerConfig,
-		})
+		}
+		if partneridstr, ok := partnerConfig[models.PARTNER_ID]; ok {
+			if partnerID, err := strconv.Atoi(partneridstr); err == nil && partnerID != models.VersionLevelConfigID {
+				partner.ID = partnerID
+			}
+		}
+		partners = append(partners, partner)
+	}
+	return partners
+}
+
+// collectAuctionPartners drops throttled/filtered partners from a precomputed server-side list.
+// Partners without a valid partner ID are skipped (same as the prior PartnerConfigMap scan).
+func collectAuctionPartners(ssPartners []auctionPartner, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) []auctionPartner {
+	partners := make([]auctionPartner, 0, len(ssPartners))
+	if rCtx.PrebidBidderCode == nil {
+		rCtx.PrebidBidderCode = make(map[string]string)
+	}
+	for _, partner := range ssPartners {
+		if partner.ID == 0 {
+			continue
+		}
+
+		rCtx.PrebidBidderCode[partner.BidderCode] = partner.PrebidBidderCode
+
+		if _, ok := rCtx.AdapterFilteredMap[partner.BidderCode]; ok {
+			if result != nil {
+				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+partner.BidderCode)
+			}
+			continue
+		}
+		if _, ok := rCtx.AdapterThrottleMap[partner.BidderCode]; ok {
+			if result != nil {
+				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+partner.BidderCode)
+			}
+			continue
+		}
+
+		partners = append(partners, partner)
 	}
 	return partners
 }

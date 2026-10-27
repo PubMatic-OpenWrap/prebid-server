@@ -8734,7 +8734,8 @@ func TestCollectAuctionPartners(t *testing.T) {
 		},
 	}
 	result := hookstage.HookResult[hookstage.BeforeValidationRequestPayload]{}
-	partners := collectAuctionPartners(&rCtx, &result)
+	ssPartners := collectServerSidePartners(rCtx.PartnerConfigMap)
+	partners := collectAuctionPartners(ssPartners, &rCtx, &result)
 	assert.Len(t, partners, 1)
 	assert.Equal(t, "pubmatic", partners[0].BidderCode)
 	assert.Equal(t, "pubmatic", rCtx.PrebidBidderCode["pubmatic"])
