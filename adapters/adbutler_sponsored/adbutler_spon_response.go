@@ -168,11 +168,11 @@ func (a *AdButlerSponsoredAdapter) GetBidderResponse(request *openrtb2.BidReques
 		for _, beacon := range adButlerBid.Beacons {
 			switch beacon.Type {
 			case BEACONTYPE_IMP:
-				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl)
+				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl) + TRK_URL_END_TAG
 			case BEACONTYPE_ELG_IMP:
-				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl)
+				impressionUrl = IMP_KEY + adapters.EncodeURL(beacon.TrackingUrl) + TRK_URL_END_TAG
 			case BEACONTYPE_CLICK:
-				clickUrl = CLICK_KEY + adapters.EncodeURL(beacon.TrackingUrl)
+				clickUrl = CLICK_KEY + adapters.EncodeURL(beacon.TrackingUrl) + TRK_URL_END_TAG
 			}
 		}
 

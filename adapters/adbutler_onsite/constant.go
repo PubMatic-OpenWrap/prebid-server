@@ -32,4 +32,6 @@ const (
 	CampaignId_KEY = "tp_cid="
 
 	Pattern_Click_URL = `href="(https?://[^\s]+/redirect\.spark\?[^"]+)"`
+
+	TRK_URL_END_TAG = "&te=1"
 )
