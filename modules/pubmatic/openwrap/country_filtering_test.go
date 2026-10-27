@@ -401,7 +401,7 @@ func TestAapplyPartnerThrottling(t *testing.T) {
 			GetRandomNumberIn1To100 = func() int {
 				return tt.randomNumber
 			}
-			got, gotAll := m.applyPartnerThrottling(tt.rCtx)
+			got, gotAll := m.applyPartnerThrottling(tt.rCtx, collectServerSidePartners(tt.rCtx.PartnerConfigMap))
 			assert.Equal(t, tt.expectedMap, got)
 			assert.Equal(t, tt.expectedAllFlag, gotAll)
 		})

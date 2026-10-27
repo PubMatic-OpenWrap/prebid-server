@@ -265,8 +265,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
+	// Build server-side partners once; reuse for country-throttle, percent-throttle, bidder-filter, and auction.
+	ssPartners := collectServerSidePartners(rCtx.PartnerConfigMap)
+
 	allPartnersThrottledFlag := false
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, ssPartners)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
@@ -277,9 +280,6 @@ func (m OpenWrap) handleBeforeValidationHook(
 	}
 
 	var allPartnersFilteredFlag bool
-
-	// Build server-side partners once; reuse for percent-throttle, bidder-filter, and auction.
-	ssPartners := collectServerSidePartners(rCtx.PartnerConfigMap)
 
 	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = applyAdapterThrottle(ssPartners, rCtx.AdapterThrottleMap)
 
