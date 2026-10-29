@@ -561,9 +561,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 				PrebidBidderCode: prebidBidderCode,
 				MatchedSlot:      slot, // KGPSV
 				Params:           bidderParams,
-				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
-				KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
-				IsRegex:          isRegex,                                                  // regex pattern
+				KGP:              partnerConfig[models.KEY_GEN_PATTERN], // acutual slot
+				KGPV:             kgpv,                                  // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
+				IsRegex:          isRegex,                               // regex pattern
 			}
 
 			if len(matchedSlotKeysVAST) > 0 {
@@ -588,7 +588,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
-			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			revShare := models.GetRevenueShare(partnerConfig)
 			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
 		} // for(auctionPartners
@@ -698,7 +698,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	if cto := setContentTransparencyObject(rCtx, requestExt); cto != nil {
+	if cto := setContentTransparencyObject(rCtx, requestExt, ssPartners); cto != nil {
 		requestExt.Prebid.Transparency = cto
 	}
 
