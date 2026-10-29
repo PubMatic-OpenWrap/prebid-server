@@ -6,9 +6,9 @@ import (
 	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
-// setContentObjectTransparencyObject from request or AdUnit Object
-// setContentObjectTransparencyObject from request or AdUnit Object
-func setContentTransparencyObject(rctx models.RequestCtx, reqExt *models.RequestExt) (prebidTransparency *openrtb_ext.TransparencyExt) {
+// setContentTransparencyObject from request or AdUnit Object.
+// partners should be the precomputed server-side list (avoids another PartnerConfigMap scan).
+func setContentTransparencyObject(rctx models.RequestCtx, reqExt *models.RequestExt, partners []auctionPartner) (prebidTransparency *openrtb_ext.TransparencyExt) {
 	if reqExt.Prebid.Transparency != nil {
 		return
 	}
@@ -28,11 +28,9 @@ func setContentTransparencyObject(rctx models.RequestCtx, reqExt *models.Request
 
 		content := make(map[string]openrtb_ext.TransparencyRule)
 
-		for _, partnerConfig := range rctx.PartnerConfigMap {
-			bidder := partnerConfig[models.BidderCode]
-
-			_, ok := rctx.AdapterThrottleMap[bidder]
-			if ok || partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+		for _, partner := range partners {
+			bidder := partner.BidderCode
+			if _, ok := rctx.AdapterThrottleMap[bidder]; ok {
 				continue
 			}
 

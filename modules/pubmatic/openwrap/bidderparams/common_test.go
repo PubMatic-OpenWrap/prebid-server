@@ -613,3 +613,25 @@ func TestGetRegexMatchingSlot(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkGetRegexMatchingSlot(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+	mockCache := mock_cache.NewMockCache(ctrl)
+	mockCache.EXPECT().Get(gomock.Any()).Return(nil, false).AnyTimes()
+	mockCache.EXPECT().Set(gomock.Any(), gomock.Any()).AnyTimes()
+
+	rctx := models.RequestCtx{PubID: 5890, ProfileID: 123, DisplayID: 1}
+	slotMappingInfo := models.SlotMappingInfo{
+		OrderedSlotList: []string{"AU1.*@Div.*@.*", ".*@.*@.*"},
+	}
+	slot := "AU123@Div1@728x90"
+
+	// Warm compiled regex cache.
+	GetRegexMatchingSlot(rctx, mockCache, slot, nil, slotMappingInfo, 1)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		GetRegexMatchingSlot(rctx, mockCache, slot, nil, slotMappingInfo, 1)
+	}
+}

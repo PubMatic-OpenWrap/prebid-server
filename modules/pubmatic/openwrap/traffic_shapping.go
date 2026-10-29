@@ -12,21 +12,22 @@ import (
 )
 
 func (m OpenWrap) getFilteredBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest) (map[string]struct{}, bool) {
+	return m.filterBidders(rCtx, bidRequest, collectServerSidePartners(rCtx.PartnerConfigMap))
+}
+
+// filterBidders evaluates bidder filters against a precomputed server-side partner list.
+func (m OpenWrap) filterBidders(rCtx models.RequestCtx, bidRequest *openrtb2.BidRequest, partners []auctionPartner) (map[string]struct{}, bool) {
 	filteredBidders := map[string]struct{}{}
 	data := m.generateEvaluationData(rCtx, bidRequest)
 	allPartnersFilteredFlag := true
-	for _, partnerConfig := range rCtx.PartnerConfigMap {
-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+	for _, partner := range partners {
+		if _, ok := rCtx.AdapterThrottleMap[partner.BidderCode]; ok {
 			continue
 		}
 
-		if _, ok := rCtx.AdapterThrottleMap[partnerConfig[models.BidderCode]]; ok {
-			continue
-		}
-
-		biddingCondition, ok := partnerConfig[models.BidderFilters]
+		biddingCondition, ok := partner.Config[models.BidderFilters]
 		if ok && !evaluateBiddingCondition(data, biddingCondition) {
-			filteredBidders[partnerConfig[models.BidderCode]] = struct{}{}
+			filteredBidders[partner.BidderCode] = struct{}{}
 			continue
 		}
 		allPartnersFilteredFlag = false
@@ -47,6 +48,11 @@ func (m OpenWrap) generateEvaluationData(rCtx models.RequestCtx, bidRequest *ope
 func (m OpenWrap) getCountryFromRequest(rctx models.RequestCtx) string {
 	if len(rctx.DeviceCtx.Country) > 0 {
 		return rctx.DeviceCtx.Country
+	}
+
+	// Reuse the geo lookup already done in handleBeforeValidationHook.
+	if rctx.DeviceCtx.DerivedAlpha3CountryCode != "" {
+		return rctx.DeviceCtx.DerivedAlpha3CountryCode
 	}
 
 	if rctx.DeviceCtx.IP != "" {

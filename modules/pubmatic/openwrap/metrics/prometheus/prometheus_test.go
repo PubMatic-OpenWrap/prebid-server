@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -325,6 +326,16 @@ func TestRecordPreProcessingTimeStats(t *testing.T) {
 		pubIDLabel, "5890")
 
 	assertHistogram(t, "pub_pre_processing_time", resultingHistogram, 1, 2.5)
+}
+
+func TestRecordPreProcessingPhaseTime(t *testing.T) {
+	m := createMetricsForTesting()
+
+	m.RecordPreProcessingPhaseTime("5890", metrics.PreProcessPhaseImpLoop, 2500)
+	resultingHistogram := getHistogramFromHistogramVecByTwoKeys(m.pubPreProcessingPhaseTime,
+		pubIDLabel, "5890", phaseLabel, metrics.PreProcessPhaseImpLoop)
+
+	assertHistogram(t, "pub_preprocessing_phase_time", resultingHistogram, 1, 2.5)
 }
 
 func TestRecordGetProfileDataTime(t *testing.T) {

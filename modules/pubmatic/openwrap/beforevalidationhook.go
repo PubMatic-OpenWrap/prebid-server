@@ -28,6 +28,7 @@ import (
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/customdimensions"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/eds"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/endpoints/legacy/ctv"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/metrics"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
 	modelsAdunitConfig "github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/adunitconfig"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models/nbr"
@@ -126,7 +127,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 	rCtx.DeviceCtx.UA = getUserAgent(payload.BidRequest, rCtx.DeviceCtx.UA)
 	rCtx.DeviceCtx.IP = getIP(payload.BidRequest, rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Country = getCountry(payload.BidRequest)
-	rCtx.DeviceCtx.DerivedCountryCode, _ = m.getCountryCodes(rCtx.DeviceCtx.IP)
+	rCtx.DeviceCtx.DerivedCountryCode, rCtx.DeviceCtx.DerivedAlpha3CountryCode = m.getCountryCodes(rCtx.DeviceCtx.IP)
 	rCtx.DeviceCtx.Platform = getDevicePlatform(rCtx, payload.BidRequest)
 	rCtx.IsMaxFloorsEnabled = rCtx.Endpoint == models.EndpointAppLovinMax && m.pubFeatures.IsMaxFloorsEnabled(rCtx.PubID)
 	populateDeviceContext(&rCtx.DeviceCtx, payload.BidRequest.Device)
@@ -160,7 +161,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.IsTestRequest = payload.BidRequest.Test
 	}
 
+	profileLoadStart := time.Now()
 	partnerConfigMap, err := m.getProfileData(rCtx, *payload.BidRequest)
+	m.metricEngine.RecordPreProcessingPhaseTime(rCtx.PubIDStr, metrics.PreProcessPhaseProfileLoad, int(time.Since(profileLoadStart).Milliseconds()))
 	if err != nil || len(partnerConfigMap) == 0 {
 		// TODO: seperate DB fetch errors as internal errors
 		result.NbrCode = int(nbr.InvalidProfileConfiguration)
@@ -262,8 +265,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 	//TMax should be updated after ABTest processing
 	rCtx.TMax = m.setTimeout(rCtx, payload.BidRequest)
 
+	// Build server-side partners once; reuse for country-throttle, percent-throttle, bidder-filter, and auction.
+	ssPartners := collectServerSidePartners(rCtx.PartnerConfigMap)
+
 	allPartnersThrottledFlag := false
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx)
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = m.applyPartnerThrottling(rCtx, ssPartners)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.RequestBlockedGeoFiltered)
@@ -275,7 +281,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	var allPartnersFilteredFlag bool
 
-	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = GetAdapterThrottleMap(rCtx.PartnerConfigMap, rCtx.AdapterThrottleMap)
+	rCtx.AdapterThrottleMap, allPartnersThrottledFlag = applyAdapterThrottle(ssPartners, rCtx.AdapterThrottleMap)
 
 	if allPartnersThrottledFlag {
 		result.NbrCode = int(nbr.AllPartnerThrottled)
@@ -284,7 +290,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.getFilteredBidders(rCtx, payload.BidRequest)
+	rCtx.AdapterFilteredMap, allPartnersFilteredFlag = m.filterBidders(rCtx, payload.BidRequest, ssPartners)
 
 	result.SeatNonBid = getSeatNonBid(rCtx.AdapterFilteredMap, payload)
 
@@ -294,6 +300,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.ImpBidCtx = getDefaultImpBidCtx(*payload.BidRequest) // for wrapper logger sz
 		return result, err
 	}
+
+	auctionPartners := collectAuctionPartners(ssPartners, &rCtx, &result)
 
 	priceGranularity, err := computePriceGranularity(rCtx)
 	if err != nil {
@@ -348,6 +356,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	aliasgvlids := make(map[string]uint16)
 	rCtx.MultiFloors = make(map[string]*models.MultiFloors)
+	impLoopStart := time.Now()
+	var partnerParamsDur time.Duration
 	for i := 0; i < len(payload.BidRequest.Imp); i++ {
 		slotType := "banner"
 		imp := payload.BidRequest.Imp[i]
@@ -507,36 +517,11 @@ func (m OpenWrap) handleBeforeValidationHook(
 		rCtx.MultiFloors[imp.ID] = m.getMultiFloors(rCtx, reward, imp)
 		bidderMeta := make(map[string]models.PartnerData)
 		nonMapped := make(map[string]struct{})
-		for _, partnerConfig := range rCtx.PartnerConfigMap {
-			if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
-				continue
-			}
-
-			partneridstr, ok := partnerConfig[models.PARTNER_ID]
-			if !ok {
-				continue
-			}
-			partnerID, err := strconv.Atoi(partneridstr)
-			if err != nil || partnerID == models.VersionLevelConfigID {
-				continue
-			}
-
-			// bidderCode is in context with pubmatic. Ex. it could be appnexus-1, appnexus-2, etc.
-			bidderCode := partnerConfig[models.BidderCode]
-			// prebidBidderCode is equivalent of PBS-Core's bidderCode
-			prebidBidderCode := partnerConfig[models.PREBID_PARTNER_NAME]
-			//
-			rCtx.PrebidBidderCode[bidderCode] = prebidBidderCode
-
-			if _, ok := rCtx.AdapterFilteredMap[bidderCode]; ok {
-				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+bidderCode)
-				continue
-			}
-
-			if _, ok := rCtx.AdapterThrottleMap[bidderCode]; ok {
-				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+bidderCode)
-				continue
-			}
+		for _, partner := range auctionPartners {
+			partnerConfig := partner.Config
+			partnerID := partner.ID
+			bidderCode := partner.BidderCode
+			prebidBidderCode := partner.PrebidBidderCode
 
 			var (
 				isRegex             bool
@@ -544,6 +529,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 				bidderParams        json.RawMessage
 				matchedSlotKeysVAST []string
 			)
+			partnerParamsStart := time.Now()
 			switch prebidBidderCode {
 			case string(openrtb_ext.BidderPubmatic), models.BidderPubMaticSecondaryAlias:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PreparePubMaticParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
@@ -552,6 +538,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 			default:
 				slot, kgpv, isRegex, bidderParams, err = bidderparams.PrepareAdapterParamsV25(rCtx, m.cache, *payload.BidRequest, imp, *impExt, partnerID)
 			}
+			partnerParamsDur += time.Since(partnerParamsStart)
 
 			if err != nil || len(bidderParams) == 0 {
 				result.Errors = append(result.Errors, fmt.Sprintf("no bidder params found for imp:%s partner: %s", imp.ID, prebidBidderCode))
@@ -565,18 +552,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 			m.metricEngine.RecordPlatformPublisherPartnerReqStats(rCtx.Platform, rCtx.PubIDStr, bidderCode)
 
-			if requestExt.Prebid.SupportDeals && impExt.Bidder != nil {
-				var bidderParamsMap map[string]interface{}
-				err := json.Unmarshal(bidderParams, &bidderParamsMap)
-				if err == nil {
-					if bidderExt, ok := impExt.Bidder[bidderCode]; ok && bidderExt != nil && bidderExt.DealTier != nil {
-						bidderParamsMap[models.DEAL_TIER_KEY] = bidderExt.DealTier
-					}
-					newBidderParams, err := json.Marshal(bidderParamsMap)
-					if err == nil {
-						bidderParams = newBidderParams
-					}
-				}
+			if requestExt.Prebid.SupportDeals {
+				bidderParams = injectDealTierIfPresent(bidderParams, impExt, bidderCode)
 			}
 
 			bidderMeta[bidderCode] = models.PartnerData{
@@ -584,9 +561,9 @@ func (m OpenWrap) handleBeforeValidationHook(
 				PrebidBidderCode: prebidBidderCode,
 				MatchedSlot:      slot, // KGPSV
 				Params:           bidderParams,
-				KGP:              rCtx.PartnerConfigMap[partnerID][models.KEY_GEN_PATTERN], // acutual slot
-				KGPV:             kgpv,                                                     // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
-				IsRegex:          isRegex,                                                  // regex pattern
+				KGP:              partnerConfig[models.KEY_GEN_PATTERN], // acutual slot
+				KGPV:             kgpv,                                  // regex pattern, use this field for pubmatic default unmapped slot as well using isRegex
+				IsRegex:          isRegex,                               // regex pattern
 			}
 
 			if len(matchedSlotKeysVAST) > 0 {
@@ -611,10 +588,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 				updateAliasGVLIds(aliasgvlids, bidderCode, partnerConfig)
 			}
 
-			revShare := models.GetRevenueShare(rCtx.PartnerConfigMap[partnerID])
+			revShare := models.GetRevenueShare(partnerConfig)
 			requestExt.Prebid.BidAdjustmentFactors[bidderCode] = models.GetBidAdjustmentValue(revShare)
 			serviceSideBidderPresent = true
-		} // for(rctx.PartnerConfigMap
+		} // for(auctionPartners
 
 		// update the imp.ext with bidder params for this
 		if impExt.Prebid.Bidder == nil {
@@ -696,6 +673,8 @@ func (m OpenWrap) handleBeforeValidationHook(
 			NativeAdUnitCtx:     nativeAdUnitCtx,
 		}
 	} // for(imp
+	m.metricEngine.RecordPreProcessingPhaseTime(rCtx.PubIDStr, metrics.PreProcessPhaseImpLoop, int(time.Since(impLoopStart).Milliseconds()))
+	m.metricEngine.RecordPreProcessingPhaseTime(rCtx.PubIDStr, metrics.PreProcessPhasePartnerParams, int(partnerParamsDur.Milliseconds()))
 
 	if disabledSlots == len(payload.BidRequest.Imp) {
 		result.NbrCode = int(nbr.AllSlotsDisabled)
@@ -719,7 +698,7 @@ func (m OpenWrap) handleBeforeValidationHook(
 		return result, nil
 	}
 
-	if cto := setContentTransparencyObject(rCtx, requestExt); cto != nil {
+	if cto := setContentTransparencyObject(rCtx, requestExt, ssPartners); cto != nil {
 		requestExt.Prebid.Transparency = cto
 	}
 
@@ -775,8 +754,10 @@ func (m OpenWrap) handleBeforeValidationHook(
 	// }
 
 	result.ChangeSet.AddMutation(func(ep hookstage.BeforeValidationRequestPayload) (hookstage.BeforeValidationRequestPayload, error) {
+		mutationStart := time.Now()
 		rctx, _ := getRequestCtx(moduleCtx.ModuleContext)
 		defer func() {
+			m.metricEngine.RecordPreProcessingPhaseTime(rCtx.PubIDStr, metrics.PreProcessPhaseMutation, int(time.Since(mutationStart).Milliseconds()))
 			setRequestCtx(moduleCtx.ModuleContext, rctx)
 			logHookBidRequest("hook_end_success", rCtx, ep.BidRequest, 0)
 
@@ -829,6 +810,96 @@ func (m OpenWrap) handleBeforeValidationHook(
 
 	result.Reject = false
 	return result, nil
+}
+
+type auctionPartner struct {
+	ID               int
+	BidderCode       string
+	PrebidBidderCode string
+	Config           map[string]string
+}
+
+// collectServerSidePartners returns server-side partners once so throttle, filter, and the
+// auction partner list do not each rescan PartnerConfigMap. Criteria match GetAdapterThrottleMap
+// (SERVER_SIDE_FLAG + non-empty bidderCode). Partner ID is parsed when present for auction use.
+func collectServerSidePartners(partnerConfigMap map[int]map[string]string) []auctionPartner {
+	partners := make([]auctionPartner, 0, len(partnerConfigMap))
+	for _, partnerConfig := range partnerConfigMap {
+		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
+			continue
+		}
+
+		bidderCode := partnerConfig[models.BidderCode]
+		if bidderCode == "" {
+			continue
+		}
+
+		partner := auctionPartner{
+			BidderCode:       bidderCode,
+			PrebidBidderCode: partnerConfig[models.PREBID_PARTNER_NAME],
+			Config:           partnerConfig,
+		}
+		if partneridstr, ok := partnerConfig[models.PARTNER_ID]; ok {
+			if partnerID, err := strconv.Atoi(partneridstr); err == nil && partnerID != models.VersionLevelConfigID {
+				partner.ID = partnerID
+			}
+		}
+		partners = append(partners, partner)
+	}
+	return partners
+}
+
+// collectAuctionPartners drops throttled/filtered partners from a precomputed server-side list.
+// Partners without a valid partner ID are skipped (same as the prior PartnerConfigMap scan).
+func collectAuctionPartners(ssPartners []auctionPartner, rCtx *models.RequestCtx, result *hookstage.HookResult[hookstage.BeforeValidationRequestPayload]) []auctionPartner {
+	partners := make([]auctionPartner, 0, len(ssPartners))
+	if rCtx.PrebidBidderCode == nil {
+		rCtx.PrebidBidderCode = make(map[string]string)
+	}
+	for _, partner := range ssPartners {
+		if partner.ID == 0 {
+			continue
+		}
+
+		rCtx.PrebidBidderCode[partner.BidderCode] = partner.PrebidBidderCode
+
+		if _, ok := rCtx.AdapterFilteredMap[partner.BidderCode]; ok {
+			if result != nil {
+				result.Warnings = append(result.Warnings, "Dropping adapter due to bidder filtering: "+partner.BidderCode)
+			}
+			continue
+		}
+		if _, ok := rCtx.AdapterThrottleMap[partner.BidderCode]; ok {
+			if result != nil {
+				result.Warnings = append(result.Warnings, "Dropping throttled adapter from auction: "+partner.BidderCode)
+			}
+			continue
+		}
+
+		partners = append(partners, partner)
+	}
+	return partners
+}
+
+func injectDealTierIfPresent(bidderParams json.RawMessage, impExt *models.ImpExtension, bidderCode string) json.RawMessage {
+	if len(bidderParams) == 0 || impExt == nil || impExt.Bidder == nil {
+		return bidderParams
+	}
+	bidderExt, ok := impExt.Bidder[bidderCode]
+	if !ok || bidderExt == nil || bidderExt.DealTier == nil {
+		return bidderParams
+	}
+
+	var bidderParamsMap map[string]interface{}
+	if err := json.Unmarshal(bidderParams, &bidderParamsMap); err != nil {
+		return bidderParams
+	}
+	bidderParamsMap[models.DEAL_TIER_KEY] = bidderExt.DealTier
+	newBidderParams, err := json.Marshal(bidderParamsMap)
+	if err != nil {
+		return bidderParams
+	}
+	return newBidderParams
 }
 
 // applyProfileChanges copies and updates BidRequest with required values from http header and partnetConfigMap
