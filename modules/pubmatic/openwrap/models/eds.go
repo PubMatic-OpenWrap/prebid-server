@@ -7,6 +7,8 @@ const (
 	PubmaticBidderKey = "pubmatic"
 	EDSDeviceKey      = "device"
 	EDSAppKey         = "app"
+	EDSUserKey        = "user"
+	EDSImpKey         = "imp"
 
 	// EDSBlockedCountriesAll disables EDS params for all countries when used as feature value.
 	EDSBlockedCountriesAll = "*"
@@ -29,11 +31,16 @@ var AppEDSTier1BlockedParams = []string{
 
 // ResolvedEds holds flattened PubMatic-only enrichment parameters carried in
 // ext.prebid.bidderparams.{pubmatic}.eds until the PubMatic adapter merges them.
+//
+// SDK passes values under *.ext.eds; the PubMatic adapter promotes them to *.ext
+// (e.g. imp.ext.eds.session_count → imp.ext.session_count).
 type ResolvedEds struct {
-	Device json.RawMessage `json:"device,omitempty"`
-	App    json.RawMessage `json:"app,omitempty"`
+	Device json.RawMessage            `json:"device,omitempty"`
+	App    json.RawMessage            `json:"app,omitempty"`
+	User   json.RawMessage            `json:"user,omitempty"`
+	Imp    map[string]json.RawMessage `json:"imp,omitempty"` // keyed by imp.id
 }
 
 func (r ResolvedEds) IsEmpty() bool {
-	return len(r.Device) == 0 && len(r.App) == 0
+	return len(r.Device) == 0 && len(r.App) == 0 && len(r.User) == 0 && len(r.Imp) == 0
 }

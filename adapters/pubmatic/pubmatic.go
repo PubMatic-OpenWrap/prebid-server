@@ -123,7 +123,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
 	}
 
-	// flatten eds object in bidderparams onto device.ext and app.ext
+	// flatten eds object in bidderparams onto device/app/user/imp.ext
 	// on the outbound PubMatic bid request.
 	reqExt, err := unmarshalRequestExt(request)
 	if err != nil {
@@ -133,7 +133,13 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if err != nil {
 		return nil, []error{err}
 	}
-	applyEdsFromBidderParams(request, bidderParams)
+	// Imp EDS must be applied after parseImpressionObject, which rebuilds imp.ext.
+	edsResolved := extractEdsFromBidderParams(bidderParams)
+	applyEdsToRequest(request, resolvedEds{
+		Device: edsResolved.Device,
+		App:    edsResolved.App,
+		User:   edsResolved.User,
+	})
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request, reqExt, bidderParams)
 	if err != nil {
@@ -192,6 +198,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if len(request.Imp) == 0 {
 		return nil, errs
 	}
+
+	applyEdsToRequest(request, resolvedEds{Imp: edsResolved.Imp})
 
 	newReqExt.Wrapper = wrapperExt
 	rawExt, err := json.Marshal(newReqExt)

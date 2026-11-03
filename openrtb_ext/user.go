@@ -26,6 +26,12 @@ type ExtUser struct {
 	SessionDuration int64           `json:"sessionduration,omitempty"`
 	ImpDepth        *int            `json:"impdepth,omitempty"`
 	LastAdomain     json.RawMessage `json:"lastadomain,omitempty"`
+
+	// PubMatic EDS / contextual fields (promoted from user.ext.eds by OpenWrap).
+	// Must be declared here so MakeRequests' user.ext.eids → user.eids remarshel keeps them.
+	LastBundle string   `json:"lastbundle,omitempty"`
+	LastClick  *int     `json:"lastclick,omitempty"`
+	LastCPM    *float64 `json:"lastcpm,omitempty"`
 }
 
 // ExtUserPrebid defines the contract for bidrequest.user.ext.prebid

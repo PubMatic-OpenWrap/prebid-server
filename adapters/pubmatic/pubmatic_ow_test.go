@@ -8,9 +8,11 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v4/adapters"
+	"github.com/prebid/prebid-server/v4/config"
 	"github.com/prebid/prebid-server/v4/openrtb_ext"
 	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetAdServerTargetingForEmptyExt(t *testing.T) {
@@ -1162,6 +1164,8 @@ func TestExtractEdsFromBidderParams(t *testing.T) {
 		bidderParams json.RawMessage
 		wantDevice   string
 		wantApp      string
+		wantUser     string
+		wantImp      map[string]string
 	}{
 		{
 			name:         "empty_bidderparams",
@@ -1185,6 +1189,15 @@ func TestExtractEdsFromBidderParams(t *testing.T) {
 			wantDevice:   `{"boottime":1710000000000,"totalmem":8589934592}`,
 			wantApp:      `{"install_time":1710000000001}`,
 		},
+		{
+			name:         "valid_eds_payload_with_user_and_imp",
+			bidderParams: json.RawMessage(`{"eds":{"device":{"orientation":0,"batterysaver":1},"user":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1},"imp":{"imp-1":{"session_count":3}}}}`),
+			wantDevice:   `{"orientation":0,"batterysaver":1}`,
+			wantUser:     `{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}`,
+			wantImp: map[string]string{
+				"imp-1": `{"session_count":3}`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1202,6 +1215,19 @@ func TestExtractEdsFromBidderParams(t *testing.T) {
 				assert.Empty(t, got.App)
 			} else {
 				assert.JSONEq(t, tt.wantApp, string(got.App))
+			}
+			if tt.wantUser == "" {
+				assert.Empty(t, got.User)
+			} else {
+				assert.JSONEq(t, tt.wantUser, string(got.User))
+			}
+			if len(tt.wantImp) == 0 {
+				assert.Empty(t, got.Imp)
+			} else {
+				assert.Len(t, got.Imp, len(tt.wantImp))
+				for id, want := range tt.wantImp {
+					assert.JSONEq(t, want, string(got.Imp[id]))
+				}
 			}
 		})
 	}
@@ -1247,6 +1273,26 @@ func TestApplyEdsToRequest(t *testing.T) {
 		assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
 		assert.JSONEq(t, `{"install_time":1710000000001,"orientation":1}`, string(req.App.Ext))
 	})
+
+	t.Run("merges_user_and_imp_ext", func(t *testing.T) {
+		req := &openrtb2.BidRequest{
+			User: &openrtb2.User{
+				Ext: json.RawMessage(`{"consent":"abc"}`),
+			},
+			Imp: []openrtb2.Imp{{
+				ID:  "imp-1",
+				Ext: json.RawMessage(`{"gpid":"/adunit"}`),
+			}},
+		}
+		applyEdsToRequest(req, resolvedEds{
+			User: json.RawMessage(`{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}`),
+			Imp: map[string]json.RawMessage{
+				"imp-1": json.RawMessage(`{"session_count":3}`),
+			},
+		})
+		assert.JSONEq(t, `{"consent":"abc","lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}`, string(req.User.Ext))
+		assert.JSONEq(t, `{"gpid":"/adunit","session_count":3}`, string(req.Imp[0].Ext))
+	})
 }
 
 func TestApplyEdsFromBidderParams(t *testing.T) {
@@ -1280,6 +1326,27 @@ func TestApplyEdsFromBidderParams(t *testing.T) {
 		assert.JSONEq(t, `{"atts":1,"boottime":1710000000000}`, string(req.Device.Ext))
 		assert.JSONEq(t, `{"install_time":1710000000001,"orientation":1}`, string(req.App.Ext))
 	})
+
+	t.Run("merges_user_and_imp_eds_onto_request", func(t *testing.T) {
+		req := &openrtb2.BidRequest{
+			Device: &openrtb2.Device{
+				Ext: json.RawMessage(`{"atts":1}`),
+			},
+			User: &openrtb2.User{
+				Ext: json.RawMessage(`{"consent":"abc"}`),
+			},
+			Imp: []openrtb2.Imp{{
+				ID:  "imp-1",
+				Ext: json.RawMessage(`{"gpid":"/adunit"}`),
+			}},
+		}
+		applyEdsFromBidderParams(req, map[string]json.RawMessage{
+			"eds": json.RawMessage(`{"device":{"orientation":0,"batterysaver":1},"user":{"lastbundle":"com.company.app","lastclick":4,"lastcpm":2.1},"imp":{"imp-1":{"session_count":3}}}`),
+		})
+		assert.JSONEq(t, `{"atts":1,"orientation":0,"batterysaver":1}`, string(req.Device.Ext))
+		assert.JSONEq(t, `{"consent":"abc","lastbundle":"com.company.app","lastclick":4,"lastcpm":2.1}`, string(req.User.Ext))
+		assert.JSONEq(t, `{"gpid":"/adunit","session_count":3}`, string(req.Imp[0].Ext))
+	})
 }
 
 func TestApplyEdsSurvivesRequestExtReplacement(t *testing.T) {
@@ -1302,6 +1369,38 @@ func TestApplyEdsSurvivesRequestExtReplacement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, json.Valid(req.Device.Ext))
 	assert.True(t, json.Valid(req.App.Ext))
+}
+
+func TestMakeRequestsPreservesUserEdsFieldsWhenEidsPresent(t *testing.T) {
+	bidder, err := Builder(openrtb_ext.BidderPubmatic, config.Adapter{
+		Endpoint: "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
+	}, config.Server{ExternalUrl: "http://hosturl.com", GvlID: 1, DataCenter: "2"})
+	require.NoError(t, err)
+
+	req := &openrtb2.BidRequest{
+		ID: "eds-eids-req",
+		Imp: []openrtb2.Imp{{
+			ID: "imp-1",
+			Banner: &openrtb2.Banner{
+				Format: []openrtb2.Format{{W: 300, H: 250}},
+			},
+			Ext: json.RawMessage(`{"bidder":{"adSlot":"AdTag@300x250","publisherId":"999"}}`),
+		}},
+		User: &openrtb2.User{
+			Ext: json.RawMessage(`{"consent":"abc","lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1,"eids":[{"source":"liveramp.com","uids":[{"id":"xyz"}]}]}`),
+		},
+		Ext: json.RawMessage(`{"prebid":{"bidderparams":{"eds":{"user":{"lastbundle":"com.company.app1","lastclick":1,"lastcpm":2.2}}}}}`),
+	}
+
+	requests, errs := bidder.MakeRequests(req, &adapters.ExtraRequestInfo{})
+	require.Empty(t, errs)
+	require.Len(t, requests, 1)
+
+	var out openrtb2.BidRequest
+	require.NoError(t, json.Unmarshal(requests[0].Body, &out))
+	require.NotNil(t, out.User)
+	assert.NotEmpty(t, out.User.EIDs)
+	assert.JSONEq(t, `{"consent":"abc","lastbundle":"com.company.app1","lastclick":1,"lastcpm":2.2}`, string(out.User.Ext))
 }
 
 //Need to write happy path test cases with nil bidExt
