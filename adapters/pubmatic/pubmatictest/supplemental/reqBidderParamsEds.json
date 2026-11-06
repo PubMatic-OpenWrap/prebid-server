@@ -24,6 +24,11 @@
         }
       }
     ],
+    "user": {
+      "ext": {
+        "consent": "test-consent"
+      }
+    },
     "device": {
       "ua": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36",
       "ext": {
@@ -46,10 +51,22 @@
           "eds": {
             "device": {
               "boottime": 1710000000000,
-              "totalmem": 8589934592
+              "totalmem": 8589934592,
+              "orientation": 0,
+              "batterysaver": 1
             },
             "app": {
               "install_time": 1710000000001
+            },
+            "user": {
+              "lastbundle": "com.company.app",
+              "lastclick": 0,
+              "lastcpm": 2.1
+            },
+            "imp": {
+              "test-imp-id": {
+                "session_count": 3
+              }
             }
           }
         }
@@ -75,15 +92,28 @@
                 ],
                 "h": 250,
                 "w": 300
+              },
+              "ext": {
+                "session_count": 3
               }
             }
           ],
+          "user": {
+            "ext": {
+              "consent": "test-consent",
+              "lastbundle": "com.company.app",
+              "lastclick": 0,
+              "lastcpm": 2.1
+            }
+          },
           "device": {
             "ua": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36",
             "ext": {
               "atts": 1,
               "boottime": 1710000000000,
-              "totalmem": 8589934592
+              "totalmem": 8589934592,
+              "orientation": 0,
+              "batterysaver": 1
             }
           },
           "app": {

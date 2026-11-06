@@ -36,16 +36,19 @@ var (
 var appLovinMaxImpressionRegex = regexp.MustCompile(appLovinMaxImpressionPattern)
 
 type resolvedEds struct {
-	Device json.RawMessage `json:"device,omitempty"`
-	App    json.RawMessage `json:"app,omitempty"`
+	Device json.RawMessage            `json:"device,omitempty"`
+	App    json.RawMessage            `json:"app,omitempty"`
+	User   json.RawMessage            `json:"user,omitempty"`
+	Imp    map[string]json.RawMessage `json:"imp,omitempty"` // keyed by imp.id
 }
 
 func (r resolvedEds) isEmpty() bool {
-	return len(r.Device) == 0 && len(r.App) == 0
+	return len(r.Device) == 0 && len(r.App) == 0 && len(r.User) == 0 && len(r.Imp) == 0
 }
 
 // applyEdsFromBidderParams reads OpenWrap EDS from ext.prebid.bidderparams.{bidder}.eds
-// (per-bidder filtered object passed by the exchange) and merges flat device/app ext keys onto the PubMatic request.
+// (per-bidder filtered object passed by the exchange) and merges flat *.ext keys onto the
+// PubMatic request (device/app/user/imp). Example: imp.ext.eds.session_count → imp.ext.session_count.
 // Implemented here (not in modules/) to keep the core adapter free of OpenWrap module imports.
 func applyEdsFromBidderParams(request *openrtb2.BidRequest, bidderParams map[string]json.RawMessage) {
 	if request == nil {
@@ -68,6 +71,8 @@ func extractEdsFromBidderParams(bidderParams map[string]json.RawMessage) resolve
 	return resolvedEds{
 		Device: edsObjectField(edsRaw, "device"),
 		App:    edsObjectField(edsRaw, "app"),
+		User:   edsObjectField(edsRaw, "user"),
+		Imp:    edsImpObjectMap(edsRaw),
 	}
 }
 
@@ -78,6 +83,26 @@ func edsObjectField(edsRaw []byte, key string) json.RawMessage {
 	}
 
 	return cloneJSONBytes(value)
+}
+
+func edsImpObjectMap(edsRaw []byte) map[string]json.RawMessage {
+	impObj := edsObjectField(edsRaw, "imp")
+	if len(impObj) == 0 {
+		return nil
+	}
+
+	out := make(map[string]json.RawMessage)
+	_ = jsonparser.ObjectEach(impObj, func(key []byte, value []byte, dataType jsonparser.ValueType, _ int) error {
+		if dataType != jsonparser.Object || isEmptyJSONObject(value) {
+			return nil
+		}
+		out[string(key)] = cloneJSONBytes(value)
+		return nil
+	})
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
@@ -104,6 +129,29 @@ func applyEdsToRequest(req *openrtb2.BidRequest, resolved resolvedEds) {
 		}
 		req.App.Ext = mergeExtJSON(req.App.Ext, resolved.App, true)
 	}
+
+	if len(resolved.User) > 0 {
+		if req.User == nil {
+			req.User = &openrtb2.User{}
+		} else {
+			userCopy := *req.User
+			req.User = &userCopy
+		}
+		req.User.Ext = mergeExtJSON(req.User.Ext, resolved.User, true)
+	}
+
+	if len(resolved.Imp) > 0 && len(req.Imp) > 0 {
+		imps := make([]openrtb2.Imp, len(req.Imp))
+		copy(imps, req.Imp)
+		for i := range imps {
+			overlay, ok := resolved.Imp[imps[i].ID]
+			if !ok || len(overlay) == 0 {
+				continue
+			}
+			imps[i].Ext = mergeExtJSON(imps[i].Ext, overlay, true)
+		}
+		req.Imp = imps
+	}
 }
 
 func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessage {
@@ -126,18 +174,25 @@ func mergeExtJSON(base, overlay json.RawMessage, overlayWins bool) json.RawMessa
 	}
 
 	result := cloneJSONBytes(base)
-	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, _ jsonparser.ValueType, _ int) error {
+	_ = jsonparser.ObjectEach(overlay, func(key []byte, value []byte, dataType jsonparser.ValueType, _ int) error {
 		if !overlayWins {
 			if _, _, _, err := jsonparser.Get(result, string(key)); err == nil {
 				return nil
 			}
 		}
 		var err error
-		result, err = jsonparser.Set(result, cloneJSONBytes(value), string(key))
+		result, err = jsonparser.Set(result, jsonValueForSet(value, dataType), string(key))
 		return err
 	})
 
 	return result
+}
+
+func jsonValueForSet(value []byte, dataType jsonparser.ValueType) []byte {
+	if dataType == jsonparser.String {
+		return []byte(strconv.Quote(string(value)))
+	}
+	return cloneJSONBytes(value)
 }
 
 func cloneJSONBytes(b json.RawMessage) json.RawMessage {
