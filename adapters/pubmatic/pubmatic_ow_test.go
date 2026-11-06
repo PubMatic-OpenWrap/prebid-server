@@ -1371,7 +1371,8 @@ func TestApplyEdsSurvivesRequestExtReplacement(t *testing.T) {
 	assert.True(t, json.Valid(req.App.Ext))
 }
 
-func TestMakeRequestsPreservesUserEdsFieldsWhenEidsPresent(t *testing.T) {
+func TestMakeRequestsPreservesUserEdsFieldsWithUserEids(t *testing.T) {
+	// ORTB 2.6 ConvertUpTo26 already moved user.ext.eids → user.eids before MakeRequests.
 	bidder, err := Builder(openrtb_ext.BidderPubmatic, config.Adapter{
 		Endpoint: "https://hbopenbid.pubmatic.com/translator?source=prebid-server",
 	}, config.Server{ExternalUrl: "http://hosturl.com", GvlID: 1, DataCenter: "2"})
@@ -1387,9 +1388,10 @@ func TestMakeRequestsPreservesUserEdsFieldsWhenEidsPresent(t *testing.T) {
 			Ext: json.RawMessage(`{"bidder":{"adSlot":"AdTag@300x250","publisherId":"999"}}`),
 		}},
 		User: &openrtb2.User{
-			Ext: json.RawMessage(`{"consent":"abc","lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1,"eids":[{"source":"liveramp.com","uids":[{"id":"xyz"}]}]}`),
+			EIDs: []openrtb2.EID{{Source: "liveramp.com", UIDs: []openrtb2.UID{{ID: "xyz"}}}},
+			Ext:  json.RawMessage(`{"consent":"abc"}`),
 		},
-		Ext: json.RawMessage(`{"prebid":{"bidderparams":{"eds":{"user":{"lastbundle":"com.company.app1","lastclick":1,"lastcpm":2.2}}}}}`),
+		Ext: json.RawMessage(`{"prebid":{"bidderparams":{"eds":{"user":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}}}}}`),
 	}
 
 	requests, errs := bidder.MakeRequests(req, &adapters.ExtraRequestInfo{})
@@ -1400,7 +1402,7 @@ func TestMakeRequestsPreservesUserEdsFieldsWhenEidsPresent(t *testing.T) {
 	require.NoError(t, json.Unmarshal(requests[0].Body, &out))
 	require.NotNil(t, out.User)
 	assert.NotEmpty(t, out.User.EIDs)
-	assert.JSONEq(t, `{"consent":"abc","lastbundle":"com.company.app1","lastclick":1,"lastcpm":2.2}`, string(out.User.Ext))
+	assert.JSONEq(t, `{"consent":"abc","lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}`, string(out.User.Ext))
 }
 
 //Need to write happy path test cases with nil bidExt

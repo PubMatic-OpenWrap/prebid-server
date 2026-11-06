@@ -230,43 +230,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		request.App = &appCopy
 	}
 
-	// move user.ext.eids to user.eids
-	if request.User != nil && request.User.Ext != nil {
-		var userExt *openrtb_ext.ExtUser
-		if err = json.Unmarshal(request.User.Ext, &userExt); err == nil {
-			if userExt != nil && userExt.Eids != nil {
-				var eidArr []openrtb2.EID
-				for _, eid := range userExt.Eids {
-					newEid := &openrtb2.EID{
-						ID:     eid.ID,
-						Source: eid.Source,
-						Ext:    eid.Ext,
-					}
-					var uidArr []openrtb2.UID
-					for _, uid := range eid.UIDs {
-						newUID := &openrtb2.UID{
-							ID:    uid.ID,
-							AType: uid.AType,
-							Ext:   uid.Ext,
-						}
-						uidArr = append(uidArr, *newUID)
-					}
-					newEid.UIDs = uidArr
-					eidArr = append(eidArr, *newEid)
-				}
-
-				user := *request.User
-				user.EIDs = eidArr
-				userExt.Eids = nil
-				updatedUserExt, err1 := json.Marshal(userExt)
-				if err1 == nil {
-					user.Ext = updatedUserExt
-				}
-				request.User = &user
-			}
-		}
-	}
-
 	//adding hack to support DNT, since hbopenbid does not support lmt
 	if request.Device != nil && request.Device.Lmt != nil && *request.Device.Lmt != 0 {
 		request.Device.DNT = request.Device.Lmt
