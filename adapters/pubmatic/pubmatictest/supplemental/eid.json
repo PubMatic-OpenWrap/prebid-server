@@ -48,35 +48,33 @@
 		      	}
           },
         "user": {
-          "ext": {
-              "eids": [
-                  {
-                      "source": "bvod.connect",
-                      "uids": [
-                          {
-                              "atype": 501,
-                              "id": "OztamSession-123456"
+          "eids": [
+              {
+                  "source": "bvod.connect",
+                  "uids": [
+                      {
+                          "atype": 501,
+                          "id": "OztamSession-123456"
+                      },
+                      {
+                          "ext": {
+                              "demgid": "1234",
+                              "seq": 1
                           },
-                          {
-                              "ext": {
-                                  "demgid": "1234",
-                                  "seq": 1
-                              },
-                              "atype": 2,
-                              "id": "7D92078A-8246-4BA4-AE5B-76104861E7DC"
+                          "atype": 2,
+                          "id": "7D92078A-8246-4BA4-AE5B-76104861E7DC"
+                      },
+                      {
+                          "ext": {
+                              "demgid": "2345",
+                              "seq": 2
                           },
-                          {
-                              "ext": {
-                                  "demgid": "2345",
-                                  "seq": 2
-                              },
-                              "atype": 2,
-                              "id": "8D92078A-8246-4BA4-AE5B-76104861E7DC"
-                          }
-                      ]
-                  }
-              ]
-          }
+                          "atype": 2,
+                          "id": "8D92078A-8246-4BA4-AE5B-76104861E7DC"
+                      }
+                  ]
+              }
+          ]
         }
      },
   
@@ -143,8 +141,7 @@
                           }
                       ]
                   }
-              ],
-              "ext":{}
+              ]
             },
             "ext": {
                 "wrapper": {
