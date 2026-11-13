@@ -289,7 +289,9 @@ func applyAppLovinMaxResponse(rctx models.RequestCtx, bidResponse *openrtb2.BidR
 						BURL:  bidResponse.SeatBid[0].Bid[0].BURL,
 						NURL:  bidResponse.SeatBid[0].Bid[0].NURL,
 						LURL:  bidResponse.SeatBid[0].Bid[0].LURL,
-						Ext:   json.RawMessage(signaldata),
+						// required at top level for AppLovin MAX
+						CrID: bidResponse.SeatBid[0].Bid[0].CrID,
+						Ext:  json.RawMessage(signaldata),
 					},
 				},
 			},
