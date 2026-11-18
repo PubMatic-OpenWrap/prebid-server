@@ -2,9 +2,7 @@ package cloudx
 
 import (
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v4/exchange/entities"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/models"
-	"github.com/prebid/prebid-server/v4/openrtb_ext"
 )
 
 func getBids(rctx models.RequestCtx, bidResponse *openrtb2.BidResponse) []openrtb2.Bid {
@@ -59,16 +57,4 @@ func SetCloudXResponseReject(rctx models.RequestCtx, bidResponse *openrtb2.BidRe
 		reject = true
 	}
 	return reject
-}
-
-func UpdateBidWithTestPrice(rctx models.RequestCtx, bidderResponses map[openrtb_ext.BidderName]*entities.PbsOrtbSeatBid) {
-	if rctx.Endpoint != models.EndpointCloudX || rctx.IsTestRequest != 1 {
-		return
-	}
-
-	for _, seatBid := range bidderResponses {
-		for i := range seatBid.Bids {
-			seatBid.Bids[i].Bid.Price = 99
-		}
-	}
 }
