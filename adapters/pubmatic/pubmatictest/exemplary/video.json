@@ -131,7 +131,17 @@
                     "BidType": 1,
                     "video" : {
                       "duration" : 5  
-                    }
+                    },
+                    "trackers": [
+                      {
+                        "event": "ad_attribute",
+                        "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                      },
+                      {
+                        "event": "countdowntimer",
+                        "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                      }
+                    ]
                   }
                 }]
               }
@@ -169,7 +179,17 @@
                 "BidType": 1,
                 "video" : {
                   "duration" : 5  
-                }
+                },
+                "trackers": [
+                  {
+                    "event": "ad_attribute",
+                    "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                  },
+                  {
+                    "event": "countdowntimer",
+                    "url": "https://t.pubmatic.com?bidid=789&ad_attribute={ADATTRIBUTE}"
+                  }
+                ]
               }
             },
             "type": "video",
