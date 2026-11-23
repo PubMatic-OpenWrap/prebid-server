@@ -180,8 +180,6 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx *mo
 	request.Ext, _ = sdkutils.CopyPath(signalRequest.Ext, request.Ext, "wrapper", "clientconfig")
 
 	applyAdFormatModifications(request, adFormat, signalRequest.Ext)
-	// ResolveEds prefers signal *.ext.eds; keep mapped user EDS on the signal too.
-	syncSignalUserEdsFromRequest(signalRequest, request)
 
 	// Embedded signal lives in buyeruid; merged device/app/imp/user/source/regs stay—do not forward raw JSON to partners.
 	if request.User != nil {
@@ -515,35 +513,6 @@ func setUserEdsFromExtendedSignal(userExt, extSignal []byte) []byte {
 		return userExt
 	}
 	return updated
-}
-
-// syncSignalUserEdsFromRequest copies request user.ext.eds onto the decoded signal so
-// BuildPubmaticEdsBidderParams / ResolveEds (signal-first) include nucleus phase-2 params.
-func syncSignalUserEdsFromRequest(signal, request *openrtb2.BidRequest) {
-	if signal == nil || request == nil || request.User == nil {
-		return
-	}
-
-	eds, dataType, _, err := jsonparser.Get(request.User.Ext, models.ExtEDSKey)
-	if err != nil || dataType != jsonparser.Object || len(eds) <= 2 {
-		return
-	}
-
-	if signal.User == nil {
-		signal.User = &openrtb2.User{}
-	}
-	if len(signal.User.Ext) == 0 {
-		signal.User.Ext = []byte(`{}`)
-	}
-
-	merged := eds
-	if existing, existingType, _, existingErr := jsonparser.Get(signal.User.Ext, models.ExtEDSKey); existingErr == nil && existingType == jsonparser.Object {
-		merged = sdkutils.SetIfKeysExists(eds, existing, apsUserEdsKeys...)
-	}
-
-	if updated, setErr := jsonparser.Set(signal.User.Ext, merged, models.ExtEDSKey); setErr == nil {
-		signal.User.Ext = updated
-	}
 }
 
 func setImpExtFromExtendedSignal(request *openrtb2.BidRequest, extSignal []byte, device *openrtb2.Device) {

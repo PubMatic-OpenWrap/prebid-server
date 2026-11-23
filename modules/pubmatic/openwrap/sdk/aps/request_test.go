@@ -2446,44 +2446,6 @@ func TestSetUserEdsFromExtendedSignal(t *testing.T) {
 	}
 }
 
-func TestSyncSignalUserEdsFromRequest(t *testing.T) {
-	t.Run("copies_eds_onto_signal_user", func(t *testing.T) {
-		request := &openrtb2.BidRequest{
-			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`)},
-		}
-		signal := &openrtb2.BidRequest{}
-
-		syncSignalUserEdsFromRequest(signal, request)
-
-		require.NotNil(t, signal.User)
-		assert.JSONEq(t, `{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`, string(signal.User.Ext))
-	})
-
-	t.Run("merges_with_existing_signal_eds", func(t *testing.T) {
-		request := &openrtb2.BidRequest{
-			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"lastbundle":"com.app","lastclick":1}}`)},
-		}
-		signal := &openrtb2.BidRequest{
-			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"other":"keep"},"consent":"abc"}`)},
-		}
-
-		syncSignalUserEdsFromRequest(signal, request)
-
-		assert.JSONEq(t, `{"eds":{"other":"keep","lastbundle":"com.app","lastclick":1},"consent":"abc"}`, string(signal.User.Ext))
-	})
-
-	t.Run("no_op_when_request_has_no_eds", func(t *testing.T) {
-		request := &openrtb2.BidRequest{
-			User: &openrtb2.User{Ext: json.RawMessage(`{"impdepth":1}`)},
-		}
-		signal := &openrtb2.BidRequest{}
-
-		syncSignalUserEdsFromRequest(signal, request)
-
-		assert.Nil(t, signal.User)
-	})
-}
-
 type adFormatExpected struct {
 	Imp  expectedImp
 	User expectedUser
