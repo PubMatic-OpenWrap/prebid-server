@@ -2273,6 +2273,115 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "banner_maps_nucleus_phase2_params_to_user_ext_eds",
+			adFormat: apsAdFormatBanner,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"banner": {
+						"impdepth": 2,
+						"lastadomain": "banner.example.com",
+						"lastbundle": "com.company.app",
+						"lastclick": 0,
+						"lastcpm": 2.1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp:  []openrtb2.Imp{{ID: "1", Banner: &openrtb2.Banner{}, Video: &openrtb2.Video{}}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					VideoIsNil: true,
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":2,"lastadomain":"banner.example.com","eds":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}}`),
+				},
+			},
+		},
+		{
+			name:     "rewarded_maps_nucleus_phase2_params_to_user_ext_eds",
+			adFormat: apsAdFormatRewarded,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"rewarded": {
+						"lastbundle": "com.rewarded.app",
+						"lastclick": 4,
+						"lastcpm": 1.5
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			apsVideo: &apsVideoFields{W: ptrutil.ToPtr[int64](640), H: ptrutil.ToPtr[int64](360)},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerIsNil: true,
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.rewarded.app","lastclick":4,"lastcpm":1.5}}`),
+				},
+			},
+		},
+		{
+			name:     "interstitial_maps_nucleus_phase2_params_to_user_ext_eds",
+			adFormat: apsAdFormatInterstitial,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"interstitial": {
+						"lastbundle": "com.interstitial.app",
+						"lastclick": 1,
+						"lastcpm": 0.5
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				User: expectedUser{
+					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.interstitial.app","lastclick":1,"lastcpm":0.5}}`),
+				},
+			},
+		},
+		{
+			name:     "mrec_maps_nucleus_phase2_params_to_user_ext_eds",
+			adFormat: apsAdFormatMrec,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"mrec": {
+						"lastbundle": "com.mrec.app",
+						"lastclick": 2,
+						"lastcpm": 3.3
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+				User: &openrtb2.User{},
+			},
+			expected: adFormatExpected{
+				User: expectedUser{
+					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.mrec.app","lastclick":2,"lastcpm":3.3}}`),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2290,6 +2399,89 @@ func TestApplyAdFormatModifications(t *testing.T) {
 			assertAdFormatExpected(t, tt.request, tt.expected)
 		})
 	}
+}
+
+func TestSetUserEdsFromExtendedSignal(t *testing.T) {
+	tests := []struct {
+		name      string
+		userExt   []byte
+		extSignal []byte
+		want      []byte
+	}{
+		{
+			name:      "nil_ext_signal",
+			userExt:   []byte(`{"impdepth":1}`),
+			extSignal: nil,
+			want:      []byte(`{"impdepth":1}`),
+		},
+		{
+			name:      "maps_all_keys",
+			userExt:   nil,
+			extSignal: []byte(`{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1,"impdepth":1}`),
+			want:      []byte(`{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`),
+		},
+		{
+			name:      "merges_into_existing_eds",
+			userExt:   []byte(`{"eds":{"other":"keep"},"impdepth":1}`),
+			extSignal: []byte(`{"lastbundle":"com.app","lastclick":4}`),
+			want:      []byte(`{"eds":{"other":"keep","lastbundle":"com.app","lastclick":4},"impdepth":1}`),
+		},
+		{
+			name:      "partial_keys_only",
+			userExt:   []byte(`{}`),
+			extSignal: []byte(`{"lastcpm":1.25}`),
+			want:      []byte(`{"eds":{"lastcpm":1.25}}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := setUserEdsFromExtendedSignal(tt.userExt, tt.extSignal)
+			if tt.want == nil {
+				assert.Nil(t, got)
+				return
+			}
+			assert.JSONEq(t, string(tt.want), string(got))
+		})
+	}
+}
+
+func TestSyncSignalUserEdsFromRequest(t *testing.T) {
+	t.Run("copies_eds_onto_signal_user", func(t *testing.T) {
+		request := &openrtb2.BidRequest{
+			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`)},
+		}
+		signal := &openrtb2.BidRequest{}
+
+		syncSignalUserEdsFromRequest(signal, request)
+
+		require.NotNil(t, signal.User)
+		assert.JSONEq(t, `{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`, string(signal.User.Ext))
+	})
+
+	t.Run("merges_with_existing_signal_eds", func(t *testing.T) {
+		request := &openrtb2.BidRequest{
+			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"lastbundle":"com.app","lastclick":1}}`)},
+		}
+		signal := &openrtb2.BidRequest{
+			User: &openrtb2.User{Ext: json.RawMessage(`{"eds":{"other":"keep"},"consent":"abc"}`)},
+		}
+
+		syncSignalUserEdsFromRequest(signal, request)
+
+		assert.JSONEq(t, `{"eds":{"other":"keep","lastbundle":"com.app","lastclick":1},"consent":"abc"}`, string(signal.User.Ext))
+	})
+
+	t.Run("no_op_when_request_has_no_eds", func(t *testing.T) {
+		request := &openrtb2.BidRequest{
+			User: &openrtb2.User{Ext: json.RawMessage(`{"impdepth":1}`)},
+		}
+		signal := &openrtb2.BidRequest{}
+
+		syncSignalUserEdsFromRequest(signal, request)
+
+		assert.Nil(t, signal.User)
+	})
 }
 
 type adFormatExpected struct {
