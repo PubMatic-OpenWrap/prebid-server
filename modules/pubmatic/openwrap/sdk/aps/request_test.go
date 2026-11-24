@@ -1858,14 +1858,16 @@ func TestDetermineAdFormat(t *testing.T) {
 
 func TestApplyAdFormatModifications(t *testing.T) {
 	tests := []struct {
-		name           string
-		adFormat       string
-		signalExt      []byte
-		request        *openrtb2.BidRequest
-		prepSignalImps []openrtb2.Imp
-		prepSignalUser *openrtb2.User
-		apsVideo       *apsVideoFields
-		expected       adFormatExpected
+		name               string
+		adFormat           string
+		signalExt          []byte
+		request            *openrtb2.BidRequest
+		signal             *openrtb2.BidRequest
+		prepSignalImps     []openrtb2.Imp
+		prepSignalUser     *openrtb2.User
+		apsVideo           *apsVideoFields
+		expected           adFormatExpected
+		expectedSignalUser expectedUser
 	}{
 		{
 			name:     "banner_removes_video_and_sets_user_ext",
@@ -2274,7 +2276,7 @@ func TestApplyAdFormatModifications(t *testing.T) {
 			},
 		},
 		{
-			name:     "banner_maps_nucleus_phase2_params_to_user_ext_eds",
+			name:     "banner_maps_nucleus_phase2_params_to_signal_user_ext_eds",
 			adFormat: apsAdFormatBanner,
 			signalExt: json.RawMessage(`{
 				"extendedsignal": {
@@ -2291,17 +2293,21 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				Imp:  []openrtb2.Imp{{ID: "1", Banner: &openrtb2.Banner{}, Video: &openrtb2.Video{}}},
 				User: &openrtb2.User{},
 			},
+			signal: &openrtb2.BidRequest{},
 			expected: adFormatExpected{
 				Imp: expectedImp{
 					VideoIsNil: true,
 				},
 				User: expectedUser{
-					Ext: json.RawMessage(`{"impdepth":2,"lastadomain":"banner.example.com","eds":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}}`),
+					Ext: json.RawMessage(`{"impdepth":2,"lastadomain":"banner.example.com"}`),
 				},
+			},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}}`),
 			},
 		},
 		{
-			name:     "rewarded_maps_nucleus_phase2_params_to_user_ext_eds",
+			name:     "rewarded_maps_nucleus_phase2_params_to_signal_user_ext_eds",
 			adFormat: apsAdFormatRewarded,
 			signalExt: json.RawMessage(`{
 				"extendedsignal": {
@@ -2320,18 +2326,19 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				}},
 				User: &openrtb2.User{},
 			},
+			signal:   &openrtb2.BidRequest{},
 			apsVideo: &apsVideoFields{W: ptrutil.ToPtr[int64](640), H: ptrutil.ToPtr[int64](360)},
 			expected: adFormatExpected{
 				Imp: expectedImp{
 					BannerIsNil: true,
 				},
-				User: expectedUser{
-					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.rewarded.app","lastclick":4,"lastcpm":1.5}}`),
-				},
+			},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.rewarded.app","lastclick":4,"lastcpm":1.5}}`),
 			},
 		},
 		{
-			name:     "interstitial_maps_nucleus_phase2_params_to_user_ext_eds",
+			name:     "interstitial_maps_nucleus_phase2_params_to_signal_user_ext_eds",
 			adFormat: apsAdFormatInterstitial,
 			signalExt: json.RawMessage(`{
 				"extendedsignal": {
@@ -2350,14 +2357,13 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				}},
 				User: &openrtb2.User{},
 			},
-			expected: adFormatExpected{
-				User: expectedUser{
-					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.interstitial.app","lastclick":1,"lastcpm":0.5}}`),
-				},
+			signal: &openrtb2.BidRequest{},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.interstitial.app","lastclick":1,"lastcpm":0.5}}`),
 			},
 		},
 		{
-			name:     "mrec_maps_nucleus_phase2_params_to_user_ext_eds",
+			name:     "mrec_maps_nucleus_phase2_params_to_signal_user_ext_eds",
 			adFormat: apsAdFormatMrec,
 			signalExt: json.RawMessage(`{
 				"extendedsignal": {
@@ -2376,10 +2382,9 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				}},
 				User: &openrtb2.User{},
 			},
-			expected: adFormatExpected{
-				User: expectedUser{
-					Ext: json.RawMessage(`{"eds":{"lastbundle":"com.mrec.app","lastclick":2,"lastcpm":3.3}}`),
-				},
+			signal: &openrtb2.BidRequest{},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.mrec.app","lastclick":2,"lastcpm":3.3}}`),
 			},
 		},
 	}
@@ -2395,8 +2400,16 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				updateUser(tt.request, tt.prepSignalUser)
 			}
 
-			applyAdFormatModifications(tt.request, tt.adFormat, tt.signalExt)
+			signal := tt.signal
+			if signal == nil {
+				signal = &openrtb2.BidRequest{}
+			}
+			applyAdFormatModifications(tt.request, signal, tt.adFormat, tt.signalExt)
 			assertAdFormatExpected(t, tt.request, tt.expected)
+			if len(tt.expectedSignalUser.Ext) > 0 {
+				require.NotNil(t, signal.User)
+				assert.JSONEq(t, string(tt.expectedSignalUser.Ext), string(signal.User.Ext))
+			}
 		})
 	}
 }
