@@ -34,6 +34,9 @@ const (
 	adAttributes = "adattributes"
 )
 
+// Nucleus phase-2 user EDS keys from extendedsignal.<adFormat> → user.ext.eds.*.
+var apsUserEdsKeys = []string{"lastbundle", "lastclick", "lastcpm"}
+
 type apsVideoFields struct {
 	W           *int64
 	H           *int64
@@ -176,7 +179,7 @@ func (a *Aps) modifyRequestWithSignalData(request *openrtb2.BidRequest, rctx *mo
 	// Request Ext
 	request.Ext, _ = sdkutils.CopyPath(signalRequest.Ext, request.Ext, "wrapper", "clientconfig")
 
-	applyAdFormatModifications(request, adFormat, signalRequest.Ext)
+	applyAdFormatModifications(request, signalRequest, adFormat, signalRequest.Ext)
 
 	// Embedded signal lives in buyeruid; merged device/app/imp/user/source/regs stay—do not forward raw JSON to partners.
 	if request.User != nil {
@@ -423,7 +426,7 @@ func getExtendedSignalForFormat(signalExt []byte, adFormat string) []byte {
 	return extSignal
 }
 
-func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, signalExt []byte) {
+func applyAdFormatModifications(request, signal *openrtb2.BidRequest, adFormat string, signalExt []byte) {
 	if len(request.Imp) == 0 || adFormat == "" {
 		return
 	}
@@ -447,7 +450,7 @@ func applyAdFormatModifications(request *openrtb2.BidRequest, adFormat string, s
 		return
 	}
 
-	setUserExtFromExtendedSignal(request, extSignal)
+	setUserExtFromExtendedSignal(request, signal, extSignal)
 	if adFormat != apsAdFormatBanner {
 		setImpExtFromExtendedSignal(request, extSignal, request.Device)
 	}
@@ -480,12 +483,49 @@ func setFormatLevelAdAttributesFromExtendedSignal(imp *openrtb2.Imp, extSignal [
 	}
 }
 
-func setUserExtFromExtendedSignal(request *openrtb2.BidRequest, extSignal []byte) {
+// setUserExtFromExtendedSignal maps flat user fields onto the auction request and nucleus
+// EDS params onto signal.user.ext.eds (same place other SDK endpoints keep EDS for ResolveEds).
+func setUserExtFromExtendedSignal(request, signal *openrtb2.BidRequest, extSignal []byte) {
 	if request.User == nil {
 		request.User = &openrtb2.User{}
 	}
 
 	request.User.Ext = sdkutils.SetIfKeysExists(extSignal, request.User.Ext, "impdepth", "lastadomain")
+	setSignalUserEdsFromExtendedSignal(signal, extSignal)
+}
+
+// setSignalUserEdsFromExtendedSignal maps extendedsignal.<adFormat> lastbundle/lastclick/lastcpm
+// onto signal.user.ext.eds so ResolveEds (signal-first) picks them up like other endpoints.
+func setSignalUserEdsFromExtendedSignal(signal *openrtb2.BidRequest, extSignal []byte) {
+	if signal == nil {
+		return
+	}
+	if signal.User == nil {
+		signal.User = &openrtb2.User{}
+	}
+	signal.User.Ext = setUserEdsFromExtendedSignal(signal.User.Ext, extSignal)
+}
+
+// setUserEdsFromExtendedSignal merges extendedsignal lastbundle/lastclick/lastcpm into user.ext.eds.
+func setUserEdsFromExtendedSignal(userExt, extSignal []byte) []byte {
+	edsParams := sdkutils.SetIfKeysExists(extSignal, nil, apsUserEdsKeys...)
+	if len(edsParams) == 0 {
+		return userExt
+	}
+
+	if len(userExt) == 0 {
+		userExt = []byte(`{}`)
+	}
+
+	if existing, dataType, _, err := jsonparser.Get(userExt, models.ExtEDSKey); err == nil && dataType == jsonparser.Object {
+		edsParams = sdkutils.SetIfKeysExists(edsParams, existing, apsUserEdsKeys...)
+	}
+
+	updated, err := jsonparser.Set(userExt, edsParams, models.ExtEDSKey)
+	if err != nil {
+		return userExt
+	}
+	return updated
 }
 
 func setImpExtFromExtendedSignal(request *openrtb2.BidRequest, extSignal []byte, device *openrtb2.Device) {

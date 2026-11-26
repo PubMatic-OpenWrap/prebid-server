@@ -1858,14 +1858,16 @@ func TestDetermineAdFormat(t *testing.T) {
 
 func TestApplyAdFormatModifications(t *testing.T) {
 	tests := []struct {
-		name           string
-		adFormat       string
-		signalExt      []byte
-		request        *openrtb2.BidRequest
-		prepSignalImps []openrtb2.Imp
-		prepSignalUser *openrtb2.User
-		apsVideo       *apsVideoFields
-		expected       adFormatExpected
+		name               string
+		adFormat           string
+		signalExt          []byte
+		request            *openrtb2.BidRequest
+		signal             *openrtb2.BidRequest
+		prepSignalImps     []openrtb2.Imp
+		prepSignalUser     *openrtb2.User
+		apsVideo           *apsVideoFields
+		expected           adFormatExpected
+		expectedSignalUser expectedUser
 	}{
 		{
 			name:     "banner_removes_video_and_sets_user_ext",
@@ -2273,6 +2275,118 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "banner_maps_nucleus_phase2_params_to_signal_user_ext_eds",
+			adFormat: apsAdFormatBanner,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"banner": {
+						"impdepth": 2,
+						"lastadomain": "banner.example.com",
+						"lastbundle": "com.company.app",
+						"lastclick": 0,
+						"lastcpm": 2.1
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp:  []openrtb2.Imp{{ID: "1", Banner: &openrtb2.Banner{}, Video: &openrtb2.Video{}}},
+				User: &openrtb2.User{},
+			},
+			signal: &openrtb2.BidRequest{},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					VideoIsNil: true,
+				},
+				User: expectedUser{
+					Ext: json.RawMessage(`{"impdepth":2,"lastadomain":"banner.example.com"}`),
+				},
+			},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.company.app","lastclick":0,"lastcpm":2.1}}`),
+			},
+		},
+		{
+			name:     "rewarded_maps_nucleus_phase2_params_to_signal_user_ext_eds",
+			adFormat: apsAdFormatRewarded,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"rewarded": {
+						"lastbundle": "com.rewarded.app",
+						"lastclick": 4,
+						"lastcpm": 1.5
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{},
+				}},
+				User: &openrtb2.User{},
+			},
+			signal:   &openrtb2.BidRequest{},
+			apsVideo: &apsVideoFields{W: ptrutil.ToPtr[int64](640), H: ptrutil.ToPtr[int64](360)},
+			expected: adFormatExpected{
+				Imp: expectedImp{
+					BannerIsNil: true,
+				},
+			},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.rewarded.app","lastclick":4,"lastcpm":1.5}}`),
+			},
+		},
+		{
+			name:     "interstitial_maps_nucleus_phase2_params_to_signal_user_ext_eds",
+			adFormat: apsAdFormatInterstitial,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"interstitial": {
+						"lastbundle": "com.interstitial.app",
+						"lastclick": 1,
+						"lastcpm": 0.5
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+				User: &openrtb2.User{},
+			},
+			signal: &openrtb2.BidRequest{},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.interstitial.app","lastclick":1,"lastcpm":0.5}}`),
+			},
+		},
+		{
+			name:     "mrec_maps_nucleus_phase2_params_to_signal_user_ext_eds",
+			adFormat: apsAdFormatMrec,
+			signalExt: json.RawMessage(`{
+				"extendedsignal": {
+					"mrec": {
+						"lastbundle": "com.mrec.app",
+						"lastclick": 2,
+						"lastcpm": 3.3
+					}
+				}
+			}`),
+			request: &openrtb2.BidRequest{
+				Imp: []openrtb2.Imp{{
+					ID:     "1",
+					Banner: &openrtb2.Banner{},
+					Video:  &openrtb2.Video{MIMEs: []string{"video/mp4"}},
+				}},
+				User: &openrtb2.User{},
+			},
+			signal: &openrtb2.BidRequest{},
+			expectedSignalUser: expectedUser{
+				Ext: json.RawMessage(`{"eds":{"lastbundle":"com.mrec.app","lastclick":2,"lastcpm":3.3}}`),
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2286,8 +2400,61 @@ func TestApplyAdFormatModifications(t *testing.T) {
 				updateUser(tt.request, tt.prepSignalUser)
 			}
 
-			applyAdFormatModifications(tt.request, tt.adFormat, tt.signalExt)
+			signal := tt.signal
+			if signal == nil {
+				signal = &openrtb2.BidRequest{}
+			}
+			applyAdFormatModifications(tt.request, signal, tt.adFormat, tt.signalExt)
 			assertAdFormatExpected(t, tt.request, tt.expected)
+			if len(tt.expectedSignalUser.Ext) > 0 {
+				require.NotNil(t, signal.User)
+				assert.JSONEq(t, string(tt.expectedSignalUser.Ext), string(signal.User.Ext))
+			}
+		})
+	}
+}
+
+func TestSetUserEdsFromExtendedSignal(t *testing.T) {
+	tests := []struct {
+		name      string
+		userExt   []byte
+		extSignal []byte
+		want      []byte
+	}{
+		{
+			name:      "nil_ext_signal",
+			userExt:   []byte(`{"impdepth":1}`),
+			extSignal: nil,
+			want:      []byte(`{"impdepth":1}`),
+		},
+		{
+			name:      "maps_all_keys",
+			userExt:   nil,
+			extSignal: []byte(`{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1,"impdepth":1}`),
+			want:      []byte(`{"eds":{"lastbundle":"com.app","lastclick":0,"lastcpm":2.1}}`),
+		},
+		{
+			name:      "merges_into_existing_eds",
+			userExt:   []byte(`{"eds":{"other":"keep"},"impdepth":1}`),
+			extSignal: []byte(`{"lastbundle":"com.app","lastclick":4}`),
+			want:      []byte(`{"eds":{"other":"keep","lastbundle":"com.app","lastclick":4},"impdepth":1}`),
+		},
+		{
+			name:      "partial_keys_only",
+			userExt:   []byte(`{}`),
+			extSignal: []byte(`{"lastcpm":1.25}`),
+			want:      []byte(`{"eds":{"lastcpm":1.25}}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := setUserEdsFromExtendedSignal(tt.userExt, tt.extSignal)
+			if tt.want == nil {
+				assert.Nil(t, got)
+				return
+			}
+			assert.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }
