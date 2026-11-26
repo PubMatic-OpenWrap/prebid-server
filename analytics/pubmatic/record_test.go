@@ -42,6 +42,11 @@ func TestLogIntegrationType(t *testing.T) {
 			integrationType: models.TypeSDK,
 		},
 		{
+			name:            "pangle",
+			endpoint:        models.EndpointPangle,
+			integrationType: models.TypeSDK,
+		},
+		{
 			name:            "aps",
 			endpoint:        models.EndpointAPS,
 			integrationType: models.TypeSDK,

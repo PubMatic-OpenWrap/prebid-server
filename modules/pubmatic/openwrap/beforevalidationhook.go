@@ -845,7 +845,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 	if rctx.Endpoint == models.EndpointUnityLevelPlay && bidRequest.App != nil {
 		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
-	if rctx.Endpoint == models.EndpointCloudX {
+	if rctx.Endpoint == models.EndpointCloudX || rctx.Endpoint == models.EndpointPangle {
 		if len(bidRequest.Imp) > 0 {
 			bidRequest.Imp[0].Ext = jsonparser.Delete(bidRequest.Imp[0].Ext, "buyer_generated_request_data")
 		}
@@ -957,7 +957,7 @@ func (m *OpenWrap) applyVideoAdUnitConfig(rCtx models.RequestCtx, imp *openrtb2.
 }
 
 // appStatusSchemesForPartners keeps imp.ext.owsdk.appstatusschemes for OpenBid v25 and SDK
-// bidding endpoints (applovinmax, googlesdk, ulevelplay, aps). The value is copied as sent.
+// bidding endpoints (applovinmax, googlesdk, ulevelplay, cloudx, pangle, aps). The value is copied as sent.
 // Other endpoints keep existing behavior (imp.ext.owsdk = nil). The returned map is new; the
 // caller's map is not modified.
 func appStatusSchemesForPartners(owsdk map[string]any, endpoint string) map[string]any {

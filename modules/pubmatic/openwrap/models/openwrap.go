@@ -125,6 +125,7 @@ type RequestCtx struct {
 	AppStoreUrl                     string
 	UnityLevelPlay                  UnityLevelPlay
 	CloudX                          CloudX
+	Pangle                          Pangle
 	APS                             APS
 	SignalRequest                   *openrtb2.BidRequest
 	EdsStatus                       *int
@@ -155,6 +156,9 @@ type UnityLevelPlay struct {
 	Reject bool
 }
 type CloudX struct {
+	Reject bool
+}
+type Pangle struct {
 	Reject bool
 }
 type APS struct {

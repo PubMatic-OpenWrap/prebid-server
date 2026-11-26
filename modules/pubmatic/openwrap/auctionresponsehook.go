@@ -19,6 +19,7 @@ import (
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/aps"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/cloudx"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/pangle"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/tracker"
@@ -406,6 +407,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 	rctx.GoogleSDK.Reject = googlesdk.SetGoogleSDKResponseReject(rctx, payload.BidResponse)
 	rctx.UnityLevelPlay.Reject = unitylevelplay.SetUnityLevelPlayResponseReject(rctx, payload.BidResponse)
 	rctx.CloudX.Reject = cloudx.SetCloudXResponseReject(rctx, payload.BidResponse)
+	rctx.Pangle.Reject = pangle.SetPangleResponseReject(rctx, payload.BidResponse)
 	rctx.APS.Reject = aps.SetAPSResponseReject(rctx, payload.BidResponse)
 
 	if rctx.Endpoint == models.EndpointWebS2S {
@@ -454,6 +456,7 @@ func (m OpenWrap) handleAuctionResponseHook(
 
 		ap.BidResponse = unitylevelplay.ApplyUnityLevelPlayResponse(rctx, ap.BidResponse)
 		ap.BidResponse = cloudx.ApplyCloudXResponse(rctx, ap.BidResponse)
+		ap.BidResponse = pangle.ApplyPangleResponse(rctx, ap.BidResponse)
 		ap.BidResponse = aps.ApplyAPSResponse(rctx, ap.BidResponse)
 		if rctx.Endpoint == models.EndpointAppLovinMax {
 			ap.BidResponse = applyAppLovinMaxResponse(rctx, ap.BidResponse)

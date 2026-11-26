@@ -8711,6 +8711,12 @@ func TestAppStatusSchemesForPartners(t *testing.T) {
 			want:     map[string]any{models.AppStatusSchemes: schemes},
 		},
 		{
+			name:     "pangle_keeps_appstatusschemes",
+			owsdk:    fullOWSDK,
+			endpoint: models.EndpointPangle,
+			want:     map[string]any{models.AppStatusSchemes: schemes},
+		},
+		{
 			name:     "amp_keeps_nil_existing_behavior",
 			owsdk:    map[string]any{models.AppStatusSchemes: "installed"},
 			endpoint: models.EndpointAMP,

@@ -21,6 +21,7 @@ import (
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/aps"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/cloudx"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/pangle"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
@@ -121,6 +122,17 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-cloudx-request")
+	}
+
+	if endpoint == models.EndpointPangle {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		pg := pangle.NewPangle(m.metricEngine)
+		payload.Body = pg.ModifyRequestWithPangleParams(payload.Body, &rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-pangle-request")
 	}
 
 	// Publisher id from raw body after any SDK merge (e.g. Google SDK injects app.publisher.id from signal).
@@ -300,6 +312,8 @@ func GetEndpoint(path, source string, agent string) string {
 				return models.EndpointUnityLevelPlay
 			case models.CloudXAgent:
 				return models.EndpointCloudX
+			case models.PangleAgent:
+				return models.EndpointPangle
 			case models.ApsAgent:
 				return models.EndpointAPS
 			}
