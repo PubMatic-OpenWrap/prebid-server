@@ -39,6 +39,11 @@ func TestShouldApplyCountryFilter(t *testing.T) {
 			want:     true,
 		},
 		{
+			name:     "EndpointTradPlus",
+			endpoint: models.EndpointTradPlus,
+			want:     true,
+		},
+		{
 			name:     "EndpointV25",
 			endpoint: models.EndpointV25,
 			want:     false,

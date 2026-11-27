@@ -842,7 +842,7 @@ func (m *OpenWrap) applyProfileChanges(rctx models.RequestCtx, bidRequest *openr
 		bidRequest.App.StoreURL = rctx.AppStoreUrl
 	}
 
-	if rctx.Endpoint == models.EndpointUnityLevelPlay && bidRequest.App != nil {
+	if (rctx.Endpoint == models.EndpointUnityLevelPlay || rctx.Endpoint == models.EndpointTradPlus) && bidRequest.App != nil {
 		bidRequest.App.Ext = jsonparser.Delete(bidRequest.App.Ext, "token")
 	}
 	if rctx.Endpoint == models.EndpointCloudX {

@@ -893,6 +893,15 @@ func TestGetEndpoint(t *testing.T) {
 			},
 			want: models.EndpointCloudX,
 		},
+		{
+			name: "TradPlus",
+			args: args{
+				path:   hookexecution.EndpointAuction,
+				source: "owsdk",
+				agent:  models.TradPlusAgent,
+			},
+			want: models.EndpointTradPlus,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -941,6 +950,14 @@ func TestGetSendBurl(t *testing.T) {
 			args: args{
 				request:  []byte(`{}`),
 				endpoint: models.EndpointCloudX,
+			},
+			want: true,
+		},
+		{
+			name: "TradPlus endpoint should always return true",
+			args: args{
+				request:  []byte(`{}`),
+				endpoint: models.EndpointTradPlus,
 			},
 			want: true,
 		},
