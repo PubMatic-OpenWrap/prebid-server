@@ -40,22 +40,23 @@ func newContainer() regexMap {
 
 func (s *regexMap) Get(str string) (*regexp.Regexp, error) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	re, ok := s.regexps[str]
+	s.mu.RUnlock()
 	if ok {
 		return re, nil
 	}
 
-	var err error
-
-	re, err = regexp.Compile(str)
-
+	re, err := regexp.Compile(str)
 	if err != nil {
 		return nil, err
 	}
-	s.regexps[str] = re
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if existing, ok := s.regexps[str]; ok {
+		return existing, nil
+	}
+	s.regexps[str] = re
 	return re, nil
 }
 

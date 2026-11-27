@@ -267,6 +267,21 @@ func TestGetCountryFromRequest(t *testing.T) {
 			want: "JPN",
 		},
 		{
+			name: "reuses_derived_alpha3_without_geo_lookup",
+			args: args{
+				rCtx: models.RequestCtx{
+					DeviceCtx: models.DeviceCtx{
+						IP:                       "101.143.255.255",
+						DerivedCountryCode:       "JP",
+						DerivedAlpha3CountryCode: "JPN",
+					},
+				},
+				bidRequest: &openrtb2.BidRequest{},
+			},
+			setup: func() {},
+			want:  "JPN",
+		},
+		{
 			name: "both_ip_and_country_are_missing_in_request",
 			args: args{
 				rCtx: models.RequestCtx{

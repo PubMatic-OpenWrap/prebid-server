@@ -35,7 +35,7 @@ func shouldApplyCountryFilter(endpoint string) bool {
 	return sdkutils.IsSdkBiddingEndpoint(endpoint)
 }
 
-func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx) (map[string]struct{}, bool) {
+func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx, partners []auctionPartner) (map[string]struct{}, bool) {
 
 	throttleMap, err := m.cache.GetThrottlePartnersWithCriteria(rCtx.DeviceCtx.DerivedCountryCode)
 	if err != nil {
@@ -48,12 +48,9 @@ func (m *OpenWrap) applyPartnerThrottling(rCtx models.RequestCtx) (map[string]st
 
 	adapterThrottleMap := make(map[string]struct{})
 	allPartnersThrottledFlag := true
-	for _, cfg := range rCtx.PartnerConfigMap {
-		if cfg[models.SERVER_SIDE_FLAG] != "1" {
-			continue
-		}
-		bidderCode, ok := cfg[models.BidderCode]
-		if !ok || bidderCode == "" {
+	for _, partner := range partners {
+		bidderCode := partner.BidderCode
+		if bidderCode == "" {
 			continue
 		}
 

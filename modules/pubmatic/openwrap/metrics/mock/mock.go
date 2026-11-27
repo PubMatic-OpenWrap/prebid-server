@@ -599,6 +599,18 @@ func (mr *MockMetricsEngineMockRecorder) RecordPreProcessingTimeStats(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPreProcessingTimeStats", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPreProcessingTimeStats), arg0, arg1)
 }
 
+// RecordPreProcessingPhaseTime mocks base method.
+func (m *MockMetricsEngine) RecordPreProcessingPhaseTime(arg0, arg1 string, arg2 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordPreProcessingPhaseTime", arg0, arg1, arg2)
+}
+
+// RecordPreProcessingPhaseTime indicates an expected call of RecordPreProcessingPhaseTime.
+func (mr *MockMetricsEngineMockRecorder) RecordPreProcessingPhaseTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordPreProcessingPhaseTime", reflect.TypeOf((*MockMetricsEngine)(nil).RecordPreProcessingPhaseTime), arg0, arg1, arg2)
+}
+
 // RecordPrebidAuctionBidResponse mocks base method.
 func (m *MockMetricsEngine) RecordPrebidAuctionBidResponse(arg0, arg1, arg2, arg3 string) {
 	m.ctrl.T.Helper()

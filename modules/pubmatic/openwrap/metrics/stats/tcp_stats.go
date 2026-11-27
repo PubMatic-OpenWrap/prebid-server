@@ -151,6 +151,9 @@ func (st *StatsTCP) RecordVideoImpDisabledViaConnTypeStats(publisher, profileID 
 	st.statsClient.PublishStat(fmt.Sprintf(statKeys[statsKeyVideoImpDisabledViaConnType], publisher, profileID), 1)
 }
 
+func (st *StatsTCP) RecordPreProcessingPhaseTime(publisher, phase string, processingTimeMs int) {
+}
+
 func (st *StatsTCP) RecordPreProcessingTimeStats(publisher string, processingTime int) {
 	statKeyIndex := 0
 	switch {

@@ -9,17 +9,18 @@ import (
 
 // GetAdapterThrottleMap creates a map of adapters that should be throttled and returns whether all partners are throttled.
 func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string, adapterThrottleMap map[string]struct{}) (map[string]struct{}, bool) {
+	return applyAdapterThrottle(collectServerSidePartners(partnerConfigMap), adapterThrottleMap)
+}
+
+// applyAdapterThrottle evaluates throttle for a precomputed server-side partner list.
+func applyAdapterThrottle(partners []auctionPartner, adapterThrottleMap map[string]struct{}) (map[string]struct{}, bool) {
 	totalValidPartners := 0
 	if adapterThrottleMap == nil {
 		adapterThrottleMap = make(map[string]struct{})
 	}
 
-	for _, partnerConfig := range partnerConfigMap {
-		if partnerConfig[models.SERVER_SIDE_FLAG] != "1" {
-			continue
-		}
-
-		bidderCode := partnerConfig[models.BidderCode]
+	for _, partner := range partners {
+		bidderCode := partner.BidderCode
 		if bidderCode == "" {
 			continue
 		}
@@ -31,7 +32,7 @@ func GetAdapterThrottleMap(partnerConfigMap map[int]map[string]string, adapterTh
 			continue
 		}
 
-		if ThrottleAdapter(partnerConfig) {
+		if ThrottleAdapter(partner.Config) {
 			adapterThrottleMap[bidderCode] = struct{}{}
 		}
 	}

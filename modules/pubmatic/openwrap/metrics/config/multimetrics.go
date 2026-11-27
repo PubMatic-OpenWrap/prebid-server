@@ -243,6 +243,13 @@ func (me *MultiMetricsEngine) RecordPreProcessingTimeStats(publisher string, pro
 	}
 }
 
+// RecordPreProcessingPhaseTime across all engines
+func (me *MultiMetricsEngine) RecordPreProcessingPhaseTime(publisher, phase string, processingTimeMs int) {
+	for _, thisME := range *me {
+		thisME.RecordPreProcessingPhaseTime(publisher, phase, processingTimeMs)
+	}
+}
+
 // RecordStatsKeyCTVPrebidFailedImpression across all engines
 func (me *MultiMetricsEngine) RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisher string, profile string) {
 	for _, thisME := range *me {

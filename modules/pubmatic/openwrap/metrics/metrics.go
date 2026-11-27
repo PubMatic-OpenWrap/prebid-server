@@ -2,6 +2,14 @@ package metrics
 
 import "time"
 
+// BeforeValidation sub-phase labels for RecordPreProcessingPhaseTime.
+const (
+	PreProcessPhaseProfileLoad   = "profile_load_ms"
+	PreProcessPhaseImpLoop       = "imp_loop_ms"
+	PreProcessPhasePartnerParams = "partner_params_ms"
+	PreProcessPhaseMutation      = "mutation_ms"
+)
+
 // MetricsEngine is a generic interface to record PBS metrics into the desired backend
 type MetricsEngine interface {
 	RecordOpenWrapServerPanicStats(hostName, method string)
@@ -41,6 +49,7 @@ type MetricsEngine interface {
 	RecordSSTimeoutRequests(publisher, profileID string)
 	RecordPartnerTimeoutInPBS(publisher, profile, aliasBidder string)
 	RecordPreProcessingTimeStats(publisher string, processingTime int)
+	RecordPreProcessingPhaseTime(publisher, phase string, processingTimeMs int)
 
 	// CTV specific metrics (not implemented in openwrap module yet)
 	RecordStatsKeyCTVPrebidFailedImpression(errorcode int, publisher string, profile string)
