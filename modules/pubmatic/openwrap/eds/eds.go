@@ -10,10 +10,12 @@ import (
 
 const bidderParamsEdsKey = "eds"
 
-// ResolveEds extracts device.ext.eds and app.ext.eds from signal first, then the main request.
+// ResolveEds extracts *.ext.eds (device/app/user/imp) from signal first, then the main request.
+// When EDS comes from signal, imp EDS keys are remapped onto request imp IDs by index so the
+// PubMatic adapter can match session_count onto the auction request imps (signal/request IDs often differ).
 func ResolveEds(signal, request *openrtb2.BidRequest) models.ResolvedEds {
 	if resolved := resolveEdsFromRequest(signal); !resolved.IsEmpty() {
-		return resolved
+		return remapSignalImpEdsToRequestIDs(resolved, signal, request)
 	}
 	return resolveEdsFromRequest(request)
 }
@@ -30,8 +32,30 @@ func BuildPubmaticEdsBidderParams(bidderParams json.RawMessage, signal, request 
 	return updated, resolved, err
 }
 
-// StripFromRequest removes device.ext.eds and app.ext.eds from the shared bid request
-// so other bidders do not receive PubMatic-only EDS.
+// remapSignalImpEdsToRequestIDs re-keys resolved.Imp from signal imp IDs to request imp IDs by position.
+func remapSignalImpEdsToRequestIDs(resolved models.ResolvedEds, signal, request *openrtb2.BidRequest) models.ResolvedEds {
+	if len(resolved.Imp) == 0 || signal == nil || request == nil || len(signal.Imp) == 0 || len(request.Imp) == 0 {
+		return resolved
+	}
+
+	remapped := make(map[string]json.RawMessage, len(resolved.Imp))
+	n := len(signal.Imp)
+	if len(request.Imp) < n {
+		n = len(request.Imp)
+	}
+	for i := 0; i < n; i++ {
+		edsObj, ok := resolved.Imp[signal.Imp[i].ID]
+		if !ok || len(edsObj) == 0 {
+			continue
+		}
+		remapped[request.Imp[i].ID] = edsObj
+	}
+	resolved.Imp = remapped
+	return resolved
+}
+
+// StripFromRequest removes *.ext.eds from the shared bid request so other bidders
+// do not receive PubMatic-only EDS (device/app/user/imp).
 func StripFromRequest(req *openrtb2.BidRequest) {
 	if req == nil {
 		return
@@ -42,6 +66,12 @@ func StripFromRequest(req *openrtb2.BidRequest) {
 	}
 	if req.App != nil {
 		req.App.Ext = nilIfEmptyExt(jsonparser.Delete(req.App.Ext, "eds"))
+	}
+	if req.User != nil {
+		req.User.Ext = nilIfEmptyExt(jsonparser.Delete(req.User.Ext, "eds"))
+	}
+	for i := range req.Imp {
+		req.Imp[i].Ext = nilIfEmptyExt(jsonparser.Delete(req.Imp[i].Ext, "eds"))
 	}
 }
 
@@ -65,6 +95,17 @@ func resolveEdsFromRequest(req *openrtb2.BidRequest) models.ResolvedEds {
 	}
 	if req.App != nil {
 		resolved.App = nestedObject(req.App.Ext, "eds")
+	}
+	if req.User != nil {
+		resolved.User = nestedObject(req.User.Ext, "eds")
+	}
+	for _, imp := range req.Imp {
+		if edsObj := nestedObject(imp.Ext, "eds"); len(edsObj) > 0 {
+			if resolved.Imp == nil {
+				resolved.Imp = make(map[string]json.RawMessage, len(req.Imp))
+			}
+			resolved.Imp[imp.ID] = edsObj
+		}
 	}
 	return resolved
 }
@@ -98,13 +139,32 @@ func buildEdsPayload(resolved models.ResolvedEds) (json.RawMessage, error) {
 	var err error
 
 	if len(resolved.Device) > 0 {
-		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.Device), "device")
+		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.Device), models.EDSDeviceKey)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(resolved.App) > 0 {
-		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.App), "app")
+		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.App), models.EDSAppKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(resolved.User) > 0 {
+		payload, err = jsonparser.Set(payload, cloneJSONBytes(resolved.User), models.EDSUserKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(resolved.Imp) > 0 {
+		impPayload := []byte(`{}`)
+		for impID, edsObj := range resolved.Imp {
+			impPayload, err = jsonparser.Set(impPayload, cloneJSONBytes(edsObj), impID)
+			if err != nil {
+				return nil, err
+			}
+		}
+		payload, err = jsonparser.Set(payload, impPayload, models.EDSImpKey)
 		if err != nil {
 			return nil, err
 		}

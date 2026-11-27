@@ -123,7 +123,7 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		displayManager, displayManagerVer = getDisplayManagerAndVer(request.App)
 	}
 
-	// flatten eds object in bidderparams onto device.ext and app.ext
+	// flatten eds object in bidderparams onto device/app/user/imp.ext
 	// on the outbound PubMatic bid request.
 	reqExt, err := unmarshalRequestExt(request)
 	if err != nil {
@@ -133,7 +133,13 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 	if err != nil {
 		return nil, []error{err}
 	}
-	applyEdsFromBidderParams(request, bidderParams)
+	// Imp EDS must be applied after parseImpressionObject, which rebuilds imp.ext.
+	edsResolved := extractEdsFromBidderParams(bidderParams)
+	applyEdsToRequest(request, resolvedEds{
+		Device: edsResolved.Device,
+		App:    edsResolved.App,
+		User:   edsResolved.User,
+	})
 
 	newReqExt, cookies, err := extractPubmaticExtFromRequest(request, reqExt, bidderParams)
 	if err != nil {
@@ -193,6 +199,8 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 		return nil, errs
 	}
 
+	applyEdsToRequest(request, resolvedEds{Imp: edsResolved.Imp})
+
 	newReqExt.Wrapper = wrapperExt
 	rawExt, err := json.Marshal(newReqExt)
 	if err != nil {
@@ -220,43 +228,6 @@ func (a *PubmaticAdapter) MakeRequests(request *openrtb2.BidRequest, reqInfo *ad
 			appCopy.Publisher = &openrtb2.Publisher{ID: pubID}
 		}
 		request.App = &appCopy
-	}
-
-	// move user.ext.eids to user.eids
-	if request.User != nil && request.User.Ext != nil {
-		var userExt *openrtb_ext.ExtUser
-		if err = json.Unmarshal(request.User.Ext, &userExt); err == nil {
-			if userExt != nil && userExt.Eids != nil {
-				var eidArr []openrtb2.EID
-				for _, eid := range userExt.Eids {
-					newEid := &openrtb2.EID{
-						ID:     eid.ID,
-						Source: eid.Source,
-						Ext:    eid.Ext,
-					}
-					var uidArr []openrtb2.UID
-					for _, uid := range eid.UIDs {
-						newUID := &openrtb2.UID{
-							ID:    uid.ID,
-							AType: uid.AType,
-							Ext:   uid.Ext,
-						}
-						uidArr = append(uidArr, *newUID)
-					}
-					newEid.UIDs = uidArr
-					eidArr = append(eidArr, *newEid)
-				}
-
-				user := *request.User
-				user.EIDs = eidArr
-				userExt.Eids = nil
-				updatedUserExt, err1 := json.Marshal(userExt)
-				if err1 == nil {
-					user.Ext = updatedUserExt
-				}
-				request.User = &user
-			}
-		}
 	}
 
 	//adding hack to support DNT, since hbopenbid does not support lmt
