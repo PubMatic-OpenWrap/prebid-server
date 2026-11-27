@@ -22,6 +22,7 @@ import (
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/cloudx"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/googlesdk"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/sdkutils"
+	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/tradplus"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/sdk/unitylevelplay"
 	"github.com/prebid/prebid-server/v4/modules/pubmatic/openwrap/wakanda"
 	"github.com/prebid/prebid-server/v4/openrtb_ext"
@@ -121,6 +122,17 @@ func (m OpenWrap) handleEntrypointHook(
 			ep.Body = payload.Body
 			return ep, nil
 		}, hookstage.MutationUpdate, "update-cloudx-request")
+	}
+
+	if endpoint == models.EndpointTradPlus {
+		rCtx.MetricsEngine = m.metricEngine
+		// Update fields from signal
+		tp := tradplus.NewTradPlus(m.metricEngine)
+		payload.Body = tp.ModifyRequestWithTradPlusParams(payload.Body, &rCtx)
+		result.ChangeSet.AddMutation(func(ep hookstage.EntrypointPayload) (hookstage.EntrypointPayload, error) {
+			ep.Body = payload.Body
+			return ep, nil
+		}, hookstage.MutationUpdate, "update-tradplus-request")
 	}
 
 	// Publisher id from raw body after any SDK merge (e.g. Google SDK injects app.publisher.id from signal).
@@ -300,6 +312,8 @@ func GetEndpoint(path, source string, agent string) string {
 				return models.EndpointUnityLevelPlay
 			case models.CloudXAgent:
 				return models.EndpointCloudX
+			case models.TradPlusAgent:
+				return models.EndpointTradPlus
 			case models.ApsAgent:
 				return models.EndpointAPS
 			}
